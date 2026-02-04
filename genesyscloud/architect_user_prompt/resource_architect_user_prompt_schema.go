@@ -10,8 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const ResourceType = "genesyscloud_architect_user_prompt"
-const S3Enabled = false
+const (
+	ResourceType = "genesyscloud_architect_user_prompt"
+	S3Enabled    = true
+)
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -28,6 +30,10 @@ func ArchitectUserPromptExporter() *resourceExporter.ResourceExporter {
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ArchitectPromptAudioResolver,
 			SubDirectory:              "audio_prompts",
+		},
+		ThirdPartyRefAttrs: []string{
+			"resources.filename",
+			"resources.file_content_hash",
 		},
 	}
 }
@@ -65,7 +71,7 @@ var userPromptResource = &schema.Resource{
 			Optional:    true,
 		},
 		"filename": {
-			Description: "Path or URL to the file to be uploaded as prompt.",
+			Description: "Path or URL to the file to be uploaded as prompt. Note: Changes to prompts stored in S3 will not be detected by Terraform due to a technical limitation in the Terraform Plugin SDK.",
 			Type:        schema.TypeString,
 			Optional:    true,
 		},

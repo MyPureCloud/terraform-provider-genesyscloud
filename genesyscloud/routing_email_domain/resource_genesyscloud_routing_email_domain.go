@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -45,15 +45,9 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 
 	domainID := d.Get("domain_id").(string)
 	subdomain := d.Get("subdomain").(bool)
-	mxRecordStatus := "VALID"
-	if !subdomain {
-		mxRecordStatus = "NOT_AVAILABLE"
-	}
-
-	sdkDomain := platformclientv2.Inbounddomain{
-		Id:             &domainID,
-		SubDomain:      &subdomain,
-		MxRecordStatus: &mxRecordStatus,
+	sdkDomain := platformclientv2.Inbounddomaincreaterequest{
+		Id:        &domainID,
+		SubDomain: &subdomain,
 	}
 
 	log.Printf("Creating routing email domain %s", domainID)

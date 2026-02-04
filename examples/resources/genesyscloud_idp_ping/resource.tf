@@ -4,4 +4,5 @@ resource "genesyscloud_idp_ping" "ping" {
   issuer_uri               = "https://example.com"
   target_uri               = "https://example.com/login"
   relying_party_identifier = "unique-id-from-ping"
+  sign_authn_requests      = false
 }

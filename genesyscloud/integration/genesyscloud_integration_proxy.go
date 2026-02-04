@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -127,7 +127,7 @@ func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platfor
 	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
 		if err != nil {
 			return nil, resp, err
 		}
@@ -166,7 +166,7 @@ func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrati
 	var resp *platformclientv2.APIResponse
 	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
-		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
 		if err != nil {
 			return nil, false, resp, err
 		}

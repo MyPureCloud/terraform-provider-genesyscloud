@@ -7,6 +7,7 @@ import (
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -15,7 +16,7 @@ Defines the resource schema, the datasource, and the exporters for the scripts p
 */
 const (
 	ResourceType = "genesyscloud_script"
-	S3Enabled    = false
+	S3Enabled    = true
 )
 
 // SetRegistrar registers all the resources, data sources and exporters in the packages
@@ -49,6 +50,9 @@ func ResourceScript() *schema.Resource {
 		ReadContext:   provider.ReadWithPooledClient(readScript),
 		UpdateContext: provider.UpdateWithPooledClient(updateScript),
 		DeleteContext: provider.DeleteWithPooledClient(deleteScript),
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filepath", "file_content_hash", S3Enabled)),
+		),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -69,7 +73,8 @@ func ResourceScript() *schema.Resource {
 			"file_content_hash": {
 				Description: "Hash value of the script file content. Used to detect changes.",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 			"substitutions": {
 				Description: "A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.",
@@ -99,6 +104,10 @@ func ExporterScript() *resourceExporter.ResourceExporter {
 		},
 		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
 			{Attr: "name"}: {Attr: "script_name"},
+		},
+		ThirdPartyRefAttrs: []string{
+			"filepath",
+			"file_content_hash",
 		},
 	}
 }

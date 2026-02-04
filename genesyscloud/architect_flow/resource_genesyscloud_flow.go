@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -60,6 +60,8 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagno
 
 	proxy := newArchitectFlowProxy(sdkConfig)
 
+	log.Printf("Reading flow  %s", d.Id())
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		flow, resp, err := proxy.GetFlow(ctx, d.Id())
 		if err != nil {
@@ -73,7 +75,7 @@ func readFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagno
 		resourcedata.SetNillableValue(d, "name", flow.Name)
 		resourcedata.SetNillableValue(d, "type", flow.VarType)
 
-		log.Printf("Read flow %s %s", d.Id(), *flow.Name)
+		log.Printf("Read flow %s, %s", d.Id(), *flow.Name)
 		return nil
 	})
 }
@@ -87,7 +89,21 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 
-	log.Printf("Updating flow")
+	var flowName string
+
+	if nameInterface := d.Get("name"); nameInterface != nil {
+		if name, ok := nameInterface.(string); ok && name != "" {
+			flowName = name
+		} else if !ok {
+			log.Printf("Warning: 'name' attribute is not a string, got type: %T, using empty name", nameInterface)
+			flowName = ""
+		}
+	} else {
+		log.Printf("Info: 'name' attribute is nil, using empty name")
+		flowName = ""
+	}
+
+	log.Printf("Updating flow  %s, %s", flowName, d.Id())
 
 	//Check to see if we need to force and unlock on an architect flow
 	if isForceUnlockEnabled(d) {
@@ -124,6 +140,8 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, diag.FromErr(err)...)
 	}
 
+	log.Printf("Uploading flow  %s, %s, %s", flowName, d.Id(), jobId)
+
 	s3Uploader := files.NewS3Uploader(reader, nil, substitutions, headers, "PUT", presignedUrl)
 
 	_, uploadErr := s3Uploader.UploadWithRetries(ctx, filePath, 20*time.Second)
@@ -132,28 +150,47 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		return append(diags, diag.FromErr(uploadErr)...)
 	}
 
+	log.Printf("Uploaded flow %s, %s, %s", flowName, d.Id(), jobId)
+
 	// Pre-define here before entering retry function, otherwise it will be overwritten
 	flowID := ""
 
 	retryErr := util.WithRetries(ctx, 16*time.Minute, func() *retry.RetryError {
 		flowJob, response, err := p.GetFlowsDeployJob(ctx, jobId)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, error: %s ", jobId, err), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving job status. JobID: %s, flowName: %s, error: %s", jobId, flowName, err), response))
 		}
 
-		if *flowJob.Status == "Failure" {
+		if flowJob.Status != nil {
+			log.Printf("Job status for flow %s, jobId %s: %s", flowName, jobId, *flowJob.Status)
+		} else {
+			log.Printf("Job status for flow %s, jobId %s: <nil status>", flowName, jobId)
+		}
+
+		if flowJob.Status != nil && *flowJob.Status == "Failure" {
+			log.Printf("Failed to Get flow %s, %s, %s", flowName, d.Id(), jobId)
 			if flowJob.Messages == nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, no tracing messages available", jobId), response))
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s,  no tracing messages available", jobId, flowName), response))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
-				messages = append(messages, *m.Text)
+				if m.Text != nil {
+					log.Printf("API Message for flow %s, jobId %s: %s", flowName, jobId, *m.Text)
+					messages = append(messages, *m.Text)
+				} else {
+					log.Printf("API Message for flow %s, jobId %s: <nil message>", flowName, jobId)
+				}
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, tracing messages: %v ", jobId, strings.Join(messages, "\n\n")), response))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s, tracing messages: %v ", jobId, flowName, strings.Join(messages, "\n\n")), response))
 		}
 
-		if *flowJob.Status == "Success" {
-			flowID = *flowJob.Flow.Id
+		if flowJob.Status != nil && *flowJob.Status == "Success" {
+			log.Printf("Success for flow %s, %s", flowName, jobId)
+			if flowJob.Flow != nil && flowJob.Flow.Id != nil {
+				flowID = *flowJob.Flow.Id
+			} else {
+				log.Printf("Warning: Flow or Flow.Id is nil for successful job %s", jobId)
+			}
 			return nil
 		}
 
@@ -179,7 +216,7 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 
 	d.SetId(flowID)
 
-	log.Printf("Updated flow %s. ", d.Id())
+	log.Printf("Updated flow %s, %s", flowName, d.Id())
 	return append(diags, readFlow(ctx, d, meta)...)
 }
 
@@ -205,10 +242,11 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diag
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
 			}
+			diagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp)
 			if resp.StatusCode == http.StatusConflict {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
+				return retry.RetryableError(diagErr)
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
+			return retry.NonRetryableError(diagErr)
 		}
 		return nil
 	})

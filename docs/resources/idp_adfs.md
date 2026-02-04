@@ -25,6 +25,7 @@ resource "genesyscloud_idp_adfs" "adfs" {
   target_uri               = "https://example.com/login"
   relying_party_identifier = "unique-id-from-adfs"
   disabled                 = true
+  sign_authn_requests      = false
 }
 ```
 
@@ -41,6 +42,7 @@ resource "genesyscloud_idp_adfs" "adfs" {
 - `disabled` (Boolean) True if ADFS is disabled. Defaults to `false`.
 - `name` (String) IDP ADFS resource name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to ADFS.
+- `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
 - `slo_binding` (String)
 - `slo_uri` (String) Provided by ADFS on app creation
 - `target_uri` (String) Target URI provided by ADFS.

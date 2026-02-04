@@ -23,21 +23,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES controls whether to display the full output
 // of the Terraform configuration with line numbers during test execution.
 // Set to TRUE to enable this feature, which is useful for debugging configuration issues.
 var SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES = false
-
-// If you need to just test a specific resource type, you can manually override the resource(s)
-// under test by adding resources to this string list like so:
-//
-//	var TEST_SPECIFIC_RESOURCE_TYPES = []string{
-//		"genesyscloud_foo",
-//	}
-var TEST_SPECIFIC_RESOURCE_TYPES = []string{}
 
 // ResultsStatus represents the outcome of a test execution.
 type ResultsStatus string
@@ -77,18 +69,17 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 
+	testResourceTypes := getTestResourceTypes()
 	var resources = []string{}
-	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
+	if len(testResourceTypes) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
+		resources = RemoveIgnoredResources(resources)
 	} else {
-		resources = TEST_SPECIFIC_RESOURCE_TYPES
+		resources = testResourceTypes
 	}
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
-
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, ExampleUtilsProviderFactory())
 
 	// External providers
 	externalProviders := map[string]resource.ExternalProvider{
@@ -99,6 +90,10 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 		"time": {
 			Source:            "hashicorp/time",
 			VersionConstraint: "0.13.1",
+		},
+		"tls": {
+			Source:            "hashicorp/tls",
+			VersionConstraint: "~> 4.0",
 		},
 	}
 
@@ -221,12 +216,10 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	resources := provider_registrar.GetResourceTypeNames()
+	resources = RemoveIgnoredResources(resources)
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
-
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, ExampleUtilsProviderFactory())
 
 	// External providers
 	externalProviders := map[string]resource.ExternalProvider{
@@ -237,6 +230,10 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 		"time": {
 			Source:            "hashicorp/time",
 			VersionConstraint: "0.13.1",
+		},
+		"tls": {
+			Source:            "hashicorp/tls",
+			VersionConstraint: "~> 4.0",
 		},
 	}
 
@@ -310,17 +307,16 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	var resources = []string{}
-	if len(TEST_SPECIFIC_RESOURCE_TYPES) == 0 {
+	testResourceTypes := getTestResourceTypes()
+	if len(testResourceTypes) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
+		resources = RemoveIgnoredResources(resources)
 	} else {
-		resources = TEST_SPECIFIC_RESOURCE_TYPES
+		resources = testResourceTypes
 	}
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
-
-	// Add some extra built in providers to be able to be used
-	providerFactories = provider.CombineProviderFactories(providerFactories, ExampleUtilsProviderFactory())
 
 	// External providers
 	externalProviders := map[string]resource.ExternalProvider{
@@ -331,6 +327,10 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 		"time": {
 			Source:            "hashicorp/time",
 			VersionConstraint: "0.13.1",
+		},
+		"tls": {
+			Source:            "hashicorp/tls",
+			VersionConstraint: "~> 4.0",
 		},
 	}
 

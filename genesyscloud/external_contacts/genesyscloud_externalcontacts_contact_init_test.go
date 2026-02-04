@@ -1,9 +1,10 @@
 package external_contacts
 
 import (
-	externalContactOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"sync"
 	"testing"
+
+	externalContactOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

@@ -12,7 +12,7 @@
 package routing_wrapupcode
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // buildWrapupcodeAttributes creates a flat attribute map from SDK wrapupcode object for export.

@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -424,6 +424,151 @@ func TestAccResourceGroupMembers(t *testing.T) {
 			},
 			{
 				ResourceName:      "genesyscloud_user." + testUserResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Destroy:           true,
+			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
+	})
+}
+
+func TestAccResourceGroupVoicemailPolicy(t *testing.T) {
+	var (
+		groupResourceLabel1 = "test-group-voicemail"
+		groupName           = "terraform-" + uuid.NewString()
+		groupDesc1          = "Terraform Group Description with Voicemail Policy"
+		addrPhoneNumber     = "+13174269099"
+		addrPhoneType       = "GROUPRING"
+
+		testUserResourceLabel = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@group.com"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				//create
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.TrueValue,
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+						generateGroupAddress(
+							strconv.Quote(addrPhoneNumber),
+							addrPhoneType,
+							util.NullValue,
+						),
+						generateGroupVoicemailPolicy(
+							util.TrueValue,
+							util.TrueValue,
+							util.FalseValue, //disabled at org level (test org)
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.send_email_notifications", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.disable_email_pii", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.include_email_transcriptions", util.FalseValue),
+				),
+			},
+			{
+				//update
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+						generateGroupAddress(
+							strconv.Quote(addrPhoneNumber),
+							addrPhoneType,
+							util.NullValue,
+						),
+						generateGroupVoicemailPolicy(
+							util.FalseValue,
+							util.TrueValue,
+							util.FalseValue,
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.send_email_notifications", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.disable_email_pii", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.include_email_transcriptions", util.FalseValue),
+				),
+			},
+			{
+				//update
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+						generateGroupAddress(
+							strconv.Quote(addrPhoneNumber),
+							addrPhoneType,
+							util.NullValue,
+						),
+						generateGroupVoicemailPolicy(
+							util.FalseValue,
+							util.FalseValue,
+							util.FalseValue,
+						),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.send_email_notifications", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.disable_email_pii", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "voicemail_policy.0.include_email_transcriptions", util.FalseValue),
+				),
+			},
+			{
+				//remove completely
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+				),
+			},
+			{
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
+				// Import/Read
+				ResourceName:      "genesyscloud_group." + groupResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
 				Destroy:           true,

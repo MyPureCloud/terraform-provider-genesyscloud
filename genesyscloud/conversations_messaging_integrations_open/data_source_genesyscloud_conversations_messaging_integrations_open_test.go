@@ -27,13 +27,17 @@ func TestAccDataSourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 		outboundNotificationWebhookUrl1                 = "https://mock-server.prv-use1.test-pure.cloud/messaging-service/webhook"
 		outboundNotificationWebhookSignatureSecretToken = uuid.NewString()
 
-		nameSupportedContent       = "Terraform Supported Content - " + uuid.NewString()
+		nameSupportedContent       = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceIdSupportedContent = "testSupportedContent"
 		inboundType                = "*/*"
 
 		nameMessagingSetting       = "testSettings"
 		resourceIdMessagingSetting = "testConversationsMessagingSettings"
 	)
+
+	if cleanupErr := CleanupConversationsMessagingIntegrationsOpen("TestTerraformSupportedContent-" + uuid.NewString()); cleanupErr != nil {
+		t.Logf("Failed to clean up conversations messaging integrations open with name '%s': %s", name, cleanupErr.Error())
+	}
 
 	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
 		"genesyscloud_conversations_messaging_supportedcontent",

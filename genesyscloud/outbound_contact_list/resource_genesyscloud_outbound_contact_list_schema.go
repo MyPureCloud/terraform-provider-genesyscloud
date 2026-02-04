@@ -105,7 +105,7 @@ func ResourceOutboundContactList() *schema.Resource {
 		},
 		SchemaVersion: 2,
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash", false)),
+			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash", S3Enabled)),
 			validators.ValidateCSVWithColumns("contacts_filepath", "column_names"),
 		),
 		Schema: map[string]*schema.Schema{
@@ -226,6 +226,10 @@ func OutboundContactListExporter() *resourceExporter.ResourceExporter {
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: ContactsExporterResolver,
 			SubDirectory:              "contacts",
+		},
+		ThirdPartyRefAttrs: []string{
+			"contacts_filepath",
+			"contacts_file_content_hash",
 		},
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -176,6 +176,7 @@ func (p *userProxy) updatePassword(ctx context.Context, userId string, newPasswo
 	return p.updatePasswordAttr(ctx, p, userId, newPassword)
 }
 
+// getTelephonyExtensionPoolByExtension
 func (p *userProxy) getTelephonyExtensionPoolByExtension(ctx context.Context, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
 	return p.getTelephonyExtensionPoolByExtensionAttr(ctx, p, extNum)
 }

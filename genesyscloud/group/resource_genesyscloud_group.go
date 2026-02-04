@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -92,6 +92,11 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return diagErr
 	}
 
+	diagErr = updateGroupVoicemailPolicy(ctx, d, gp)
+	if diagErr != nil {
+		return diagErr
+	}
+
 	log.Printf("Created group %s %s", name, *group.Id)
 	return readGroup(ctx, d, meta)
 }
@@ -135,6 +140,20 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		_ = d.Set("member_ids", members)
+
+		voicemailPolicy, vmResp, vmErr := gp.getGroupVoicemailPolicy(ctx, d.Id())
+		if vmErr != nil {
+			errMsg := fmt.Sprintf("Failed to read group voicemail policy %s | error: %s", d.Id(), vmErr)
+			if vmResp != nil && (vmResp.StatusCode == 401 || vmResp.StatusCode == 403) {
+				errMsg = fmt.Sprintf("%s. This may be due to missing permissions: export -> [voicemail:groupPolicy:view], import -> [voicemail:groupPolicy:edit]", errMsg)
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, errMsg, vmResp))
+		}
+		if voicemailPolicy.Enabled != nil && *voicemailPolicy.Enabled {
+			_ = d.Set("voicemail_policy", flattenGroupVoicemailPolicy(voicemailPolicy))
+		} else {
+			_ = d.Set("voicemail_policy", nil)
+		}
 
 		log.Printf("Read group %s %s", d.Id(), *group.Name)
 		return cc.CheckState(d)
@@ -199,6 +218,11 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	}
 
 	diagErr = updateGroupMembers(ctx, d, sdkConfig)
+	if diagErr != nil {
+		return diagErr
+	}
+
+	diagErr = updateGroupVoicemailPolicy(ctx, d, gp)
 	if diagErr != nil {
 		return diagErr
 	}

@@ -6,13 +6,21 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
-func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *resourceExporter.ResourceExporter, resourceId string) (_ util.JsonMap, diags diag.Diagnostics) {
+type MrMoExportResponse struct {
+	Config       util.JsonMap
+	ResourceData *schema.ResourceData
+}
+
+func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportResponse, diags diag.Diagnostics) {
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
 	exporters[resType] = exporter
 	g.exporters = &exporters
@@ -21,6 +29,21 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *r
 	diags = append(diags, g.retrieveSanitizedResourceMapsForMrMo()...)
 	if diags.HasError() {
 		return nil, diags
+	}
+
+	if resType == architectFlow.ResourceType {
+		var flowExporterToUse *resourceExporter.ResourceExporter
+		if generateOutputFiles {
+			// Use archy export service to download the flow config file (create, update)
+			log.Printf("Replaced flow exporter with new exporter")
+			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
+		} else {
+			// Use legacy exporter to be more efficient (more appropriate for flow deletion events that don't only require the ResourceData be exported)
+			log.Printf("Using legacy flow exporter")
+			flowExporterToUse = architectFlow.ArchitectFlowExporter()
+		}
+		flowExporterToUse.SetSanitizedResourceMap(exporter.GetSanitizedResourceMap())
+		(*g.exporters)[resType] = flowExporterToUse
 	}
 
 	// Step #3 Filter out all resources from the resType exporters SanitizedResourceMap besides the one at index "{resourceId}"
@@ -53,8 +76,19 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType string, exporter *r
 		return nil, diags
 	}
 
-	return util.JsonMap{
-		"resource": g.resourceTypesMaps,
+	if generateOutputFiles {
+		// Step #7 Write the terraform state file along with either the HCL or JSON
+		diags = append(diags, g.generateOutputFiles()...)
+		if diags.HasError() {
+			return nil, diags
+		}
+	}
+
+	return &MrMoExportResponse{
+		Config: util.JsonMap{
+			"resource": g.resourceTypesMaps,
+		},
+		ResourceData: g.resourceExportedForMrMo,
 	}, diags
 }
 
@@ -126,7 +160,7 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMapsForMrMo() (d
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrMo() diag.Diagnostics {
 	log.Printf("Retrieving Genesys Cloud objects from Genesys Cloud")
 	for resType, exporter := range *g.exporters {
-		log.Printf("Getting exported resources for [%s] o0o", resType)
+		log.Printf("Getting exported resources for [%s]", resType)
 		typeResources, err := g.getResourcesForType(resType, g.provider, exporter, g.meta)
 		if err != nil {
 			return err
@@ -147,7 +181,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMapsForMrMo(exporte
 			continue
 		}
 
-		if !containsPermissionsErrorOnly(err) {
+		if !errors.ContainsPermissionsErrorOnly(err) {
 			return err
 		}
 

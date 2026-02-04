@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceIdpOnelogin(t *testing.T) {
@@ -41,6 +41,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					util.NullValue, // No relying party ID
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -50,6 +51,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "disabled", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -63,6 +65,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					strconv.Quote(relyingPartyID1),
 					uri3,
 					slo_binding2,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -73,6 +76,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "relying_party_identifier", relyingPartyID1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.TrueValue),
 				),
 			},
 			{
@@ -86,6 +90,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					strconv.Quote(relyingPartyID2),
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -97,6 +102,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -110,6 +116,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					strconv.Quote(relyingPartyID2),
 					uri3,
 					slo_binding2,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -121,6 +128,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding2),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -134,6 +142,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					strconv.Quote(relyingPartyID2),
 					uri3,
 					slo_binding1,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -146,6 +155,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
 				),
 			},
 			{
@@ -167,7 +177,8 @@ func generateIdpOneloginResource(
 	disabled string,
 	partyID string,
 	sloURI string,
-	sloBinding string) string {
+	sloBinding string,
+	signAuthnRequests string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_onelogin" "onelogin" {
 		name = "%s"
 		certificates = %s
@@ -177,8 +188,9 @@ func generateIdpOneloginResource(
 		relying_party_identifier = %s
 		slo_uri = "%s"
 		slo_binding = "%s"
+		sign_authn_requests = %s
 	}
-	`, name, certs, issuerURI, targetURI, disabled, partyID, sloURI, sloBinding)
+	`, name, certs, issuerURI, targetURI, disabled, partyID, sloURI, sloBinding, signAuthnRequests)
 }
 
 func testVerifyIdpOneloginDestroyed(state *terraform.State) error {

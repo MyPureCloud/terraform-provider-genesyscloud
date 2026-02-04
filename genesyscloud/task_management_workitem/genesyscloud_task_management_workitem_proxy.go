@@ -7,7 +7,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -193,7 +193,6 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 		},
 	}
 
-	// Filter for the worktype id
 	if worktypeId != "" {
 		*queryReq.Filters = append(*queryReq.Filters, platformclientv2.Workitemfilter{
 			Name:     platformclientv2.String("typeId"),
@@ -201,10 +200,7 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 			Operator: platformclientv2.String("EQ"),
 			Values:   &[]string{worktypeId},
 		})
-	}
-
-	// Filter for the workbin id
-	if workbinId != "" {
+	} else if workbinId != "" {
 		*queryReq.Filters = append(*queryReq.Filters, platformclientv2.Workitemfilter{
 			Name:     platformclientv2.String("workbinId"),
 			VarType:  platformclientv2.String("String"),
@@ -235,7 +231,7 @@ func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorki
 		return workitem, nil, nil
 	}
 
-	return p.taskManagementApi.GetTaskmanagementWorkitem(id, "")
+	return p.taskManagementApi.GetTaskmanagementWorkitem(id, nil)
 }
 
 // updateTaskManagementWorkitemFn is an implementation of the function to update a Genesys Cloud task management workitem

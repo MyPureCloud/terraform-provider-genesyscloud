@@ -1,12 +1,11 @@
 package outbound_campaign
 
 import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 /*
@@ -94,7 +93,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validation.StringInSlice([]string{`on`, `off`}, false),
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return (old == `complete` && new == `off`) || (old == `invalid` && new == `off`) || (old == `stopping` && new == `off` || old == `complete` && new == `on`)
+					return (old == `complete` && new == `off`) || (old == `invalid` && new == `off`) || (old == `stopping` && new == `off`)
 				},
 			},
 			`phone_columns`: {

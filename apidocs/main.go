@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/examples"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
 // Method to insert the contents of each resource's apis.md file into the markdown documentation
@@ -19,14 +22,35 @@ func main() {
 		apiDocsTag     = "**No APIs**"
 	)
 
+	missingExamples := []string{}
+	ignoredExamples := examples.GetIgnoredResources()
+
 	files, err := ioutil.ReadDir("docs/resources")
 	if err != nil {
 		log.Fatalf("Failed to read folder %s", resourceFolder)
 	}
 
 	for _, file := range files {
+
+		shortResourceName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		resourceName := fmt.Sprintf("genesyscloud_%s", shortResourceName)
+		fullResourceFilePath := fmt.Sprintf("%s/%s", resourceFolder, file.Name())
+
+		// Remove any docs generated for ignored examples
+		if lists.ItemInSlice(resourceName, ignoredExamples) {
+			os.Remove(fullResourceFilePath)
+			continue
+		}
+
+		// If no examples are provided, note, and alert at end
+		examplesDir := fmt.Sprintf("%s/%s", exampleFolder, resourceName)
+		if _, err := os.Stat(examplesDir); os.IsNotExist(err) {
+			log.Printf("No examples found! %s", resourceName)
+			missingExamples = append(missingExamples, shortResourceName)
+		}
+
 		// Open and read the apis.md file for this resource
-		apiFileName := fmt.Sprintf("%s/genesyscloud_%s/apis.md", exampleFolder, strings.TrimSuffix(file.Name(), filepath.Ext(file.Name())))
+		apiFileName := fmt.Sprintf("%s/apis.md", examplesDir)
 		apisFile, err := os.Open(apiFileName)
 		if err != nil {
 			fmt.Printf("Missing APIs file: %s\n", apiFileName)
@@ -60,4 +84,9 @@ func main() {
 		docFile.WriteAt(newBytes, 0)
 		fmt.Printf("Updated APIs in doc file: %s\n", file.Name())
 	}
+
+	fmt.Println()
+	fmt.Printf("The following resources were explicitly ignored, and so no docs were generated: %v", ignoredExamples)
+	fmt.Println()
+	fmt.Printf("The following resources did not have any examples, and so docs without examples or APIs were generated: %v", missingExamples)
 }

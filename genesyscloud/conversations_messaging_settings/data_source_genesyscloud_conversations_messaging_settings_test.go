@@ -2,11 +2,12 @@ package conversations_messaging_settings
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -79,10 +80,12 @@ func CleanupMessagingSettings(name string) error {
 
 		for _, setting := range *cmMessagingSetting.Entities {
 			if setting.Name != nil && strings.HasPrefix(*setting.Name, name) {
+				log.Printf("Deleting messaging settings: %v", *setting.Id)
 				_, err := cmMessagingSettingApi.DeleteConversationsMessagingSetting(*setting.Id)
 				if err != nil {
 					return fmt.Errorf("failed to delete messaging settings: %v", err)
 				}
+				log.Printf("Deleted messaging settings: %v", *setting.Id)
 				time.Sleep(5 * time.Second)
 			}
 		}

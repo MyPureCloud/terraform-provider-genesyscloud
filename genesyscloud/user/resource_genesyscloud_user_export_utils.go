@@ -18,7 +18,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // buildUserAttributes creates a flat attribute map from SDK user object for export.

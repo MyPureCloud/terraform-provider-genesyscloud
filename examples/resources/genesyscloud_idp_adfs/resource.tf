@@ -5,4 +5,5 @@ resource "genesyscloud_idp_adfs" "adfs" {
   target_uri               = "https://example.com/login"
   relying_party_identifier = "unique-id-from-adfs"
   disabled                 = true
+  sign_authn_requests      = false
 }

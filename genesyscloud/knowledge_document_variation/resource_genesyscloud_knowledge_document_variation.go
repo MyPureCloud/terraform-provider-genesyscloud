@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 const variationIdSeparator = " "
@@ -126,7 +126,10 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		published = publishedIn.(bool)
 	}
 
-	knowledgeDocumentVariationRequest := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
+	knowledgeDocumentVariationRequest, err := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
+	if err != nil {
+		return util.BuildDiagnosticError(ResourceType, "Knowledge document variation exceeds supported nesting depth", err)
+	}
 
 	log.Printf("Creating knowledge document variation for document %s", ids.knowledgeDocumentID)
 
@@ -193,7 +196,11 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 		_ = d.Set("knowledge_base_id", *knowledgeDocVariation.Document.KnowledgeBase.Id)
 		_ = d.Set("knowledge_document_id", ids.knowledgeDocumentResourceDataID)
-		_ = d.Set("knowledge_document_variation", flattenKnowledgeDocumentVariation(*knowledgeDocVariation))
+		variationOut, err := flattenKnowledgeDocumentVariation(*knowledgeDocVariation)
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+		_ = d.Set("knowledge_document_variation", variationOut)
 
 		if knowledgeDocVariation.DocumentVersion != nil && knowledgeDocVariation.DocumentVersion.Id != nil && len(*knowledgeDocVariation.DocumentVersion.Id) > 0 {
 			_ = d.Set("published", true)
@@ -233,7 +240,10 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, getErr), resp)
 		}
 
-		knowledgeDocumentVariationUpdate := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
+		knowledgeDocumentVariationUpdate, err := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
+		if err != nil {
+			return resp, util.BuildDiagnosticError(ResourceType, "Knowledge document variation exceeds supported nesting depth", err)
+		}
 
 		_, resp, putErr := variationProxy.updateVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, *knowledgeDocumentVariationUpdate)
 		if putErr != nil {
@@ -275,7 +285,19 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	resp, err := variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			resp, err = variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+		}
 	}
 
 	if published {
@@ -310,4 +332,48 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document variation %s still exists", ids.knowledgeDocumentVariationID), resp))
 	})
+}
+
+func rebuildDatabase() diag.Diagnostics {
+	log.Printf("Rebuilding knowledge base database")
+
+	architectApi := platformclientv2.NewArchitectApi()
+
+	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
+	if architectError != nil {
+		return diag.Errorf("Failed to build dependency tracking: %v with resp: %v", architectError, resp)
+	}
+
+	if resp.StatusCode != 202 {
+		log.Printf("Dependency tracking rebuild started")
+	}
+
+	for {
+		time.Sleep(10 * time.Second)
+
+		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
+		if buildErr != nil {
+			log.Printf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
+			break
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				log.Printf("Dependency tracking Complete")
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				log.Printf("Dependency tracking status: %s, waiting...", *status.Status)
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				return diag.Errorf("Dependency Rebuild Failed")
+			default:
+				log.Printf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+			}
+			break
+		} else {
+			log.Printf("No status returned from dependency tracking build, proceeding anyway")
+			break
+		}
+	}
+	return nil
 }

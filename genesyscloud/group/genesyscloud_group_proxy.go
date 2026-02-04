@@ -6,7 +6,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 type createGroupFunc func(ctx context.Context, p *groupProxy, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error)
@@ -18,39 +18,48 @@ type deleteGroupMembersFunc func(ctx context.Context, p *groupProxy, id string, 
 type getGroupMembersFunc func(ctx context.Context, p *groupProxy, id string) (*[]string, *platformclientv2.APIResponse, error)
 type getGroupByNameFunc func(ctx context.Context, p *groupProxy, name string) (*platformclientv2.Groupssearchresponse, *platformclientv2.APIResponse, error)
 type deleteGroupFunc func(ctx context.Context, p *groupProxy, id string) (*platformclientv2.APIResponse, error)
+type updateGroupVoicemailPolicyFunc func(ctx context.Context, p *groupProxy, id string, policy *platformclientv2.Voicemailgrouppolicy) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error)
+type getGroupVoicemailPolicyFunc func(ctx context.Context, p *groupProxy, id string) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error)
 
 type groupProxy struct {
-	clientConfig           *platformclientv2.Configuration
-	groupsApi              *platformclientv2.GroupsApi
-	createGroupAttr        createGroupFunc
-	getAllGroupAttr        getAllGroupFunc
-	updateGroupAttr        updateGroupFunc
-	deleteGroupAttr        deleteGroupFunc
-	getGroupByNameAttr     getGroupByNameFunc
-	getGroupByIdAttr       getGroupByIdFunc
-	addGroupMembersAttr    addGroupMembersFunc
-	deleteGroupMembersAttr deleteGroupMembersFunc
-	getGroupMembersAttr    getGroupMembersFunc
-	groupCache             rc.CacheInterface[platformclientv2.Group]
+	clientConfig                   *platformclientv2.Configuration
+	groupsApi                      *platformclientv2.GroupsApi
+	voicemailApi                   *platformclientv2.VoicemailApi
+	createGroupAttr                createGroupFunc
+	getAllGroupAttr                getAllGroupFunc
+	updateGroupAttr                updateGroupFunc
+	deleteGroupAttr                deleteGroupFunc
+	getGroupByNameAttr             getGroupByNameFunc
+	getGroupByIdAttr               getGroupByIdFunc
+	addGroupMembersAttr            addGroupMembersFunc
+	deleteGroupMembersAttr         deleteGroupMembersFunc
+	getGroupMembersAttr            getGroupMembersFunc
+	updateGroupVoicemailPolicyAttr updateGroupVoicemailPolicyFunc
+	getGroupVoicemailPolicyAttr    getGroupVoicemailPolicyFunc
+	groupCache                     rc.CacheInterface[platformclientv2.Group]
 }
 
 var groupCache = rc.NewResourceCache[platformclientv2.Group]()
 
 func newGroupProxy(clientConfig *platformclientv2.Configuration) *groupProxy {
 	api := platformclientv2.NewGroupsApiWithConfig(clientConfig)
+	voicemailApi := platformclientv2.NewVoicemailApiWithConfig(clientConfig)
 	return &groupProxy{
-		clientConfig:           clientConfig,
-		groupsApi:              api,
-		createGroupAttr:        createGroupFn,
-		getAllGroupAttr:        getAllGroupFn,
-		updateGroupAttr:        updateGroupFn,
-		deleteGroupAttr:        deleteGroupFn,
-		getGroupByNameAttr:     getGroupByNameFn,
-		getGroupByIdAttr:       getGroupByIdFn,
-		addGroupMembersAttr:    addGroupMembersFn,
-		deleteGroupMembersAttr: deleteGroupMembersFn,
-		getGroupMembersAttr:    getGroupMembersFn,
-		groupCache:             groupCache,
+		clientConfig:                   clientConfig,
+		groupsApi:                      api,
+		voicemailApi:                   voicemailApi,
+		createGroupAttr:                createGroupFn,
+		getAllGroupAttr:                getAllGroupFn,
+		updateGroupAttr:                updateGroupFn,
+		deleteGroupAttr:                deleteGroupFn,
+		getGroupByNameAttr:             getGroupByNameFn,
+		getGroupByIdAttr:               getGroupByIdFn,
+		addGroupMembersAttr:            addGroupMembersFn,
+		deleteGroupMembersAttr:         deleteGroupMembersFn,
+		getGroupMembersAttr:            getGroupMembersFn,
+		updateGroupVoicemailPolicyAttr: updateGroupVoicemailPolicyFn,
+		getGroupVoicemailPolicyAttr:    getGroupVoicemailPolicyFn,
+		groupCache:                     groupCache,
 	}
 }
 
@@ -92,6 +101,14 @@ func (p *groupProxy) getGroupMembers(ctx context.Context, id string) (*[]string,
 
 func (p *groupProxy) getGroupsByName(ctx context.Context, name string) (*platformclientv2.Groupssearchresponse, *platformclientv2.APIResponse, error) {
 	return p.getGroupByNameAttr(ctx, p, name)
+}
+
+func (p *groupProxy) updateGroupVoicemailPolicy(ctx context.Context, id string, policy *platformclientv2.Voicemailgrouppolicy) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
+	return p.updateGroupVoicemailPolicyAttr(ctx, p, id, policy)
+}
+
+func (p *groupProxy) getGroupVoicemailPolicy(ctx context.Context, id string) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
+	return p.getGroupVoicemailPolicyAttr(ctx, p, id)
 }
 
 func createGroupFn(_ context.Context, p *groupProxy, group *platformclientv2.Groupcreate) (*platformclientv2.Group, *platformclientv2.APIResponse, error) {
@@ -185,4 +202,12 @@ func getAllGroupFn(_ context.Context, p *groupProxy) (*[]platformclientv2.Group,
 	}
 
 	return &allGroups, nil, nil
+}
+
+func updateGroupVoicemailPolicyFn(_ context.Context, p *groupProxy, id string, policy *platformclientv2.Voicemailgrouppolicy) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
+	return p.voicemailApi.PatchVoicemailGroupPolicy(id, *policy)
+}
+
+func getGroupVoicemailPolicyFn(_ context.Context, p *groupProxy, id string) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
+	return p.voicemailApi.GetVoicemailGroupPolicy(id)
 }

@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -40,6 +40,16 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
+
+	// Add logging for call_analysis_response_set_id
+	callAnalysisResponseSetId := d.Get("call_analysis_response_set_id").(string)
+	campaignName := d.Get("name").(string)
+	if callAnalysisResponseSetId != "" {
+		log.Printf("Campaign '%s': call_analysis_response_set_id is set to: %s", campaignName, callAnalysisResponseSetId)
+	} else {
+		log.Printf("Campaign '%s': call_analysis_response_set_id is empty/unset (will be nil in API call)", campaignName)
+	}
+
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
 		DialingMode:                    platformclientv2.String(d.Get("dialing_mode").(string)),
@@ -99,11 +109,12 @@ func updateOutboundCampaignStatus(ctx context.Context, campaignId string, proxy 
 	if newCampaignStatus == "" {
 		return nil
 	}
+	log.Printf("Attempting to update campaign status from '%s' ---> '%s'", *campaign.CampaignStatus, newCampaignStatus)
 	// Campaign status can only go from ON -> OFF or OFF, COMPLETE, INVALID, ETC -> ON
 	if (*campaign.CampaignStatus == "on" && newCampaignStatus == "off") || newCampaignStatus == "on" {
 		campaign.CampaignStatus = &newCampaignStatus
 		log.Printf("Updating Outbound Campaign %s status to %s", *campaign.Name, newCampaignStatus)
-		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign)
+		_, resp, err := proxy.updateOutboundCampaign(ctx, campaignId, &campaign, true)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound Campaign %s error: %s", *campaign.Name, err), resp)
 		}

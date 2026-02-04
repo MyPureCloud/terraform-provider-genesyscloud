@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 type SurveyFormStruct struct {
@@ -120,7 +120,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	// Publishing
 	if published {
-		if _, err := proxy.publishQualityFormsSurvey(ctx, *formId, published); err != nil {
+		if _, resp, err := proxy.publishQualityFormsSurvey(ctx, *formId, published); err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), resp)
 		}
 	}
@@ -254,8 +254,13 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		// Set published property on survey form update.
 		if published {
-			if _, err := proxy.publishQualityFormsSurvey(ctx, *form.Id, published); err != nil {
+			publishedForm, resp, err := proxy.publishQualityFormsSurvey(ctx, *form.Id, published)
+			if err != nil {
 				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish survey form %s error: %s", name, err), resp)
+			}
+			if publishedForm != nil || publishedForm.Id != nil {
+				// when published the id is replaced
+				d.SetId(*publishedForm.Id)
 			}
 		}
 

@@ -4,7 +4,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func buildSelectorEventTriggers(triggers []interface{}) *[]platformclientv2.Selectoreventtrigger {
@@ -91,6 +91,61 @@ func buildScrollPercentageEventTriggers(triggers []interface{}) *[]platformclien
 	return &results
 }
 
+func buildIpFilters(filters []interface{}) *[]platformclientv2.Ipfilter {
+	if filters == nil || len(filters) < 1 {
+		return nil
+	}
+
+	results := make([]platformclientv2.Ipfilter, len(filters))
+	for i, value := range filters {
+		if filter, ok := value.(map[string]interface{}); ok {
+			ipAddress := filter["ip_address"].(string)
+			name := filter["name"].(string)
+			results[i] = platformclientv2.Ipfilter{
+				IpAddress: &ipAddress,
+				Name:      &name,
+			}
+		}
+	}
+
+	return &results
+}
+
+func buildTrackingSettings(settings []interface{}) *platformclientv2.Trackingsettings {
+	if settings == nil || len(settings) < 1 {
+		return nil
+	}
+
+	setting, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	trackingSettings := &platformclientv2.Trackingsettings{}
+
+	if shouldKeepUrlFragment, ok := setting["should_keep_url_fragment"].(bool); ok {
+		trackingSettings.ShouldKeepUrlFragment = &shouldKeepUrlFragment
+	}
+
+	if searchQueryParams, ok := setting["search_query_parameters"].([]interface{}); ok && searchQueryParams != nil {
+		searchParams := lists.InterfaceListToStrings(searchQueryParams)
+		trackingSettings.SearchQueryParameters = &searchParams
+	}
+
+	if excludedQueryParams, ok := setting["excluded_query_parameters"].([]interface{}); ok && excludedQueryParams != nil {
+		excludedParams := lists.InterfaceListToStrings(excludedQueryParams)
+		trackingSettings.ExcludedQueryParameters = &excludedParams
+	}
+
+	if ipFiltersData, ok := setting["ip_filters"].([]interface{}); ok && ipFiltersData != nil {
+		if ipFilters := buildIpFilters(ipFiltersData); ipFilters != nil {
+			trackingSettings.IpFilters = ipFilters
+		}
+	}
+
+	return trackingSettings
+}
+
 func flattenSelectorEventTriggers(triggers *[]platformclientv2.Selectoreventtrigger) []interface{} {
 	if triggers == nil || len(*triggers) < 1 {
 		return nil
@@ -153,6 +208,34 @@ func flattenScrollPercentageEventTriggers(triggers *[]platformclientv2.Scrollper
 	return result
 }
 
+func flattenIpFilters(filters *[]platformclientv2.Ipfilter) []interface{} {
+	if filters == nil || len(*filters) < 1 {
+		return nil
+	}
+
+	result := make([]interface{}, len(*filters))
+	for i, filter := range *filters {
+		result[i] = map[string]interface{}{
+			"ip_address": filter.IpAddress,
+			"name":       filter.Name,
+		}
+	}
+	return result
+}
+
+func flattenTrackingSettings(settings *platformclientv2.Trackingsettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"should_keep_url_fragment":  settings.ShouldKeepUrlFragment,
+		"search_query_parameters":   settings.SearchQueryParameters,
+		"excluded_query_parameters": settings.ExcludedQueryParameters,
+		"ip_filters":                flattenIpFilters(settings.IpFilters),
+	}}
+}
+
 func buildJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyeventssettings {
 	value, ok := d.GetOk("journey_events")
 	if !ok {
@@ -207,6 +290,10 @@ func buildJourneySettings(d *schema.ResourceData) *platformclientv2.Journeyevent
 		journeySettings.ScrollDepthEvents = scrollDepthEvents
 	}
 
+	if trackingSettings := buildTrackingSettings(cfg["tracking_settings"].([]interface{})); trackingSettings != nil {
+		journeySettings.TrackingSettings = trackingSettings
+	}
+
 	return journeySettings
 }
 
@@ -226,5 +313,6 @@ func FlattenJourneyEvents(journeyEvents *platformclientv2.Journeyeventssettings)
 		"idle_event":                flattenIdleEventTriggers(journeyEvents.IdleEvents),
 		"in_viewport_event":         flattenSelectorEventTriggers(journeyEvents.InViewportEvents),
 		"scroll_depth_event":        flattenScrollPercentageEventTriggers(journeyEvents.ScrollDepthEvents),
+		"tracking_settings":         flattenTrackingSettings(journeyEvents.TrackingSettings),
 	}}
 }

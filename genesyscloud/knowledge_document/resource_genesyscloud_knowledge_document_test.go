@@ -1,9 +1,11 @@
 package knowledge_document
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	knowledgeBases "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 
@@ -12,8 +14,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
@@ -25,7 +28,7 @@ func TestAccResourceKnowledgeDocumentBasic(t *testing.T) {
 		labelResourceLabel1               = "test-label1"
 		labelName                         = "Terraform Knowledge Label " + uuid.NewString()
 		labelColor                        = "#0F0F0F"
-		knowledgeBaseName1                = "Terraform Knowledge Base " + uuid.NewString()
+		knowledgeBaseName1                = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1         = "test-knowledgebase-description1"
 		coreLanguage1                     = "en-US"
 		knowledgeDocumentResourceLabel1   = "test-knowledge-document1"
@@ -239,29 +242,53 @@ func generateKnowledgeLabelRequestBody(labelName string, labelColor string) stri
 func testVerifyKnowledgeDocumentDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
 	var knowledgeBaseId string
+
+	// Find the knowledge base ID
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type == knowledgeBases.ResourceType {
 			knowledgeBaseId = rs.Primary.ID
 			break
 		}
 	}
+
+	// Validate all documents are deleted
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != ResourceType {
 			continue
 		}
-		id := strings.Split(rs.Primary.ID, " ")
-		knowledgeDocumentId := id[0]
-		_, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(knowledgeBaseId, knowledgeDocumentId, nil, "")
-		if err == nil {
-			return fmt.Errorf("knowledge document (%s) still exists", knowledgeDocumentId)
-		} else if util.IsStatus404(resp) || util.IsStatus400(resp) {
-			// Knowledge base document not found as expected
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("unexpected error: %s", err.Error())
+
+		idParts := strings.Split(rs.Primary.ID, " ")
+		knowledgeDocumentId := idParts[0]
+
+		// Retry up to 180s for proper deletion
+		if err := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
+
+			// Query the knowledge document
+			knowledgeDocument, resp, err := knowledgeAPI.GetKnowledgeKnowledgebaseDocument(
+				knowledgeBaseId,
+				knowledgeDocumentId,
+				nil,
+				"",
+			)
+
+			if knowledgeDocument != nil {
+				// Resource still exists → retry
+				return retry.RetryableError(fmt.Errorf("knowledge document (%s) still exists", knowledgeDocumentId))
+			}
+
+			if util.IsStatus404(resp) || util.IsStatus400(resp) {
+				// Deleted successfully
+				return nil
+			}
+
+			// Any other error → non-retryable
+			return retry.NonRetryableError(fmt.Errorf("unexpected error: %v", err))
+
+		}); err != nil {
+			return fmt.Errorf("unexpected error: %v", err)
 		}
 	}
-	// Success. All knowledge base documents destroyed
+
+	// Success. All knowledge documents deleted
 	return nil
 }

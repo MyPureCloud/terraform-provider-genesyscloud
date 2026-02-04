@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -251,6 +251,30 @@ func TestUnitIntegrationInstagramUpdate(t *testing.T) {
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, instagramId, d.Id())
 	assert.Equal(t, supportedcontentreference, &platformclientv2.Supportedcontentreference{Id: &scReference})
+}
+
+func TestUnitDataSourceInstagramRead(t *testing.T) {
+	targetId := uuid.NewString()
+	targetName := "MyTargetId"
+	instagramProxy := &conversationsMessagingIntegrationsInstagramProxy{}
+	instagramProxy.getConversationsMessagingIntegrationsInstagramIdByNameAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+		assert.Equal(t, targetName, name)
+		return targetId, false, nil, nil
+	}
+	internalProxy = instagramProxy
+	defer func() { internalProxy = nil }()
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := DataSourceConversationsMessagingIntegrationsInstagram().Schema
+
+	resourceDataMap := map[string]interface{}{
+		"name": targetName,
+	}
+
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	dataSourceConversationsMessagingIntegrationsInstagramRead(ctx, d, gcloud)
+	assert.Equal(t, targetId, d.Id())
 }
 
 func buildIntegrationInstagramResourceMap(fId string, name string, supportedContentId string, messagingSettingId string, pageId string, appId string, pageAccessToken string) map[string]interface{} {

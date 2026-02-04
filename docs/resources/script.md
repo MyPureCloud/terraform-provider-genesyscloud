@@ -36,13 +36,13 @@ resource "genesyscloud_script" "example_script" {
 
 ### Required
 
-- `file_content_hash` (String) Hash value of the script file content. Used to detect changes.
 - `filepath` (String) Path to the script file to upload.
 - `script_name` (String) Display name for the script. A reliably unique name is recommended. Updating this field will result in the script being dropped and recreated with a new GUID.
 
 ### Optional
 
 - `division_id` (String) Specify division id
+- `file_content_hash` (String) Hash value of the script file content. Used to detect changes.
 - `substitutions` (Map of String) A substitution is a key value pair where the key is the value you want to replace, and the value is the value to substitute in its place.
 
 ### Read-Only

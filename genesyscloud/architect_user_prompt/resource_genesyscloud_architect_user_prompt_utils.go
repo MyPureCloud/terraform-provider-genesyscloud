@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -40,13 +40,13 @@ type UserPromptResourceStruct struct {
 }
 
 func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformclientv2.Promptasset) *schema.Set {
-	resourceSet := schema.NewSet(schema.HashResource(userPromptResource), []interface{}{})
+	resourceSet := schema.NewSet(schema.HashResource(userPromptResource), []any{})
 	if promptResources == nil || len(*promptResources) == 0 {
 		return nil
 	}
 
 	for _, sdkPromptAsset := range *promptResources {
-		promptResource := make(map[string]interface{})
+		promptResource := make(map[string]any)
 
 		resourcedata.SetMapValueIfNotNil(promptResource, "language", sdkPromptAsset.Language)
 		resourcedata.SetMapValueIfNotNil(promptResource, "tts_string", sdkPromptAsset.TtsString)
@@ -63,7 +63,7 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 		}
 
 		for _, r := range schemaResources.List() {
-			rMap, ok := r.(map[string]interface{})
+			rMap, ok := r.(map[string]any)
 			if !ok {
 				continue
 			}
@@ -84,13 +84,13 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 // updateFilenamesInExportConfigMap replaces (or creates) the filenames key in configMap with the FileName fields in audioDataList
 // which point towards the downloaded audio files stored in the export folder.
 // Since a language can only appear once in a resources array, we can match resources[n]["language"] with audioDataList[n].Language
-func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDataList []PromptAudioData, subDir string, exportDir string, res resourceExporter.ResourceInfo) {
-	resources, _ := configMap["resources"].([]interface{})
+func updateFilenamesInExportConfigMap(configMap map[string]any, audioDataList []PromptAudioData, subDir, exportDir string, res resourceExporter.ResourceInfo) {
+	resources, _ := configMap["resources"].([]any)
 	if len(resources) == 0 {
 		return
 	}
 	for _, resource := range resources {
-		r, ok := resource.(map[string]interface{})
+		r, ok := resource.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -102,25 +102,29 @@ func updateFilenamesInExportConfigMap(configMap map[string]interface{}, audioDat
 				break
 			}
 		}
-		if fileName != "" {
-			fileNameVal := filepath.Join(subDir, fileName)
-			fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, filepath.Join(subDir, fileName))
-			r["filename"] = fileNameVal
-			r["file_content_hash"] = fileContentVal
 
-			if resourceID := findResourceID(res, languageStr); resourceID != "" {
-				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "filename")] = fileNameVal
-				res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = fileContentVal
-				fullPath := filepath.Join(exportDir, subDir)
-				hash, er := files.HashFileContent(context.Background(), filepath.Join(fullPath, fileName), S3Enabled)
-				if er != nil {
-					log.Printf("Error Calculating Hash '%s' ", er)
-				} else {
-					res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = hash
-				}
-			}
-
+		if fileName == "" {
+			continue
 		}
+
+		fileNameVal := filepath.Join(subDir, fileName)
+		fileContentVal := fmt.Sprintf(`${filesha256("%s")}`, filepath.Join(subDir, fileName))
+		r["filename"] = fileNameVal
+		r["file_content_hash"] = fileContentVal
+
+		resourceID := findResourceID(res, languageStr)
+		if resourceID == "" {
+			continue
+		}
+
+		res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "filename")] = fileNameVal
+		fullPath := filepath.Join(exportDir, subDir)
+		hash, err := files.HashFileContent(context.Background(), filepath.Join(fullPath, fileName), S3Enabled)
+		if err != nil {
+			log.Printf("Error Calculating Hash for resource '%s' with language '%s' and filename '%s': %s", resourceID, languageStr, fileName, err.Error())
+			continue
+		}
+		res.State.Attributes[fmt.Sprintf("resources.%s.%s", resourceID, "file_content_hash")] = hash
 	}
 }
 

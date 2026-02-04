@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestFrameworkProviderMeta(t *testing.T) {
