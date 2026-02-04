@@ -114,6 +114,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func containsFunctionDataAction(s string) bool {
 	normalized := strings.ToLower(s)
 	normalized = strings.ReplaceAll(normalized, "_", " ")
+	normalized = strings.ReplaceAll(normalized, "-", " ")
 	return strings.Contains(normalized, "function data action")
 }
 
