@@ -398,6 +398,105 @@ var (
 		},
 	}
 
+	backgroundImageSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"url": {
+				Description: "BackgroundImage URL for agent video settings",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	agentVideoSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"allow_camera": {
+				Description: "Whether or not agent camera is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_screen_share": {
+				Description: "Whether or not agent screen share is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_microphone": {
+				Description: "Whether or not agent microphone is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"background": {
+				Description:  "Background for agent. Valid values: BLUR, NONE, IMAGE",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"BLUR", "NONE", "IMAGE"}, false),
+			},
+			"background_image": {
+				Description: "Background image settings for agent",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        backgroundImageSettings,
+			},
+		},
+	}
+
+	userVideoSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"allow_camera": {
+				Description: "Whether or not user camera is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_screen_share": {
+				Description: "Whether or not user screen share is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"allow_microphone": {
+				Description: "Whether or not user microphone is allowed",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+		},
+	}
+
+	videoSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "Whether or not video is enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
+			"agent": {
+				Description: "Video Settings for agent",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        agentVideoSettings,
+			},
+			"user": {
+				Description: "Video Settings for user",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem:        userVideoSettings,
+			},
+		},
+	}
+
 	selectorEventTrigger = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"selector": {
@@ -622,6 +721,53 @@ var (
 		},
 	}
 
+	ipFilter = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"ip_address": {
+				Description: "IP address or CIDR range to filter e.g. '192.168.1.0/24'",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"name": {
+				Description: "Descriptive name for the IP address filter",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+
+	trackingSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"should_keep_url_fragment": {
+				Description: "Whether to keep the URL fragment & it defaults to `false`",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"search_query_parameters": {
+				Description: "List of query parameters used for search e.g. 'query'",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    50,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"excluded_query_parameters": {
+				Description: "List of parameters to be excluded from the query string",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    50,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"ip_filters": {
+				Description: "IP address filtering configuration for tracking restrictions",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    10,
+				Elem:        ipFilter,
+			},
+		},
+	}
+
 	journeyEventsSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enabled": {
@@ -689,6 +835,13 @@ var (
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        scrollPercentageEventTrigger,
+			},
+			"tracking_settings": {
+				Description: "Configuration settings for tracking behavior and filtering",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        trackingSettings,
 			},
 		},
 	}
@@ -885,6 +1038,13 @@ func ResourceWebDeploymentConfiguration() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        cobrowseSettings,
+			},
+			"video": {
+				Description: "Settings concerning video chat",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        videoSettings,
 			},
 			"journey_events": {
 				Description: "Settings concerning journey events",

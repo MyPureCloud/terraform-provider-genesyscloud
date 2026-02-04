@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -64,6 +64,9 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		DefaultDueDurationSeconds:    resourcedata.GetNillableValue[int](d, "default_due_duration_seconds"),
 		DefaultTtlSeconds:            resourcedata.GetNillableValue[int](d, "default_ttl_seconds"),
 		DefaultScriptId:              resourcedata.GetNillableValue[string](d, "default_script_id"),
+		RuleSettings: &platformclientv2.Workitemrulesettings{
+			FlowRulesEnabled: resourcedata.GetNillableValue[bool](d, "flow_rules_enabled"),
+		},
 	}
 
 	return worktype
@@ -126,6 +129,12 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 
 	if d.HasChange("default_script_id") {
 		worktype.SetField("DefaultScriptId", resourcedata.GetNillableValue[string](d, "default_script_id"))
+	}
+
+	if d.HasChange("flow_rules_enabled") {
+		worktype.SetField("RuleSettings", &platformclientv2.Workitemrulesettings{
+			FlowRulesEnabled: resourcedata.GetNillableValue[bool](d, "flow_rules_enabled"),
+		})
 	}
 
 	return worktype

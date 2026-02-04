@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -27,7 +27,7 @@ The resource_genesyscloud_flow_outcome.go contains all of the methods that perfo
 
 // getAllAuthFlowOutcome retrieves all of the flow outcome via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthFlowOutcomes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newFlowOutcomeProxy(clientConfig)
+	proxy := getFlowOutcomeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	flowOutcomes, resp, err := proxy.getAllFlowOutcome(ctx)

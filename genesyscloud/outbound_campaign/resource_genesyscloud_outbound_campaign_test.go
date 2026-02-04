@@ -31,7 +31,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -716,6 +716,35 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
 				),
 			},
+			// re-run the campaign
+			{
+				Config: referencedResources + fmt.Sprintf(`
+				resource "%s" "%s" {
+					name                          = "%s"
+					dialing_mode                  = "agentless"
+					caller_name                   = "Test Name"
+					caller_address                = "+353371111111"
+					outbound_line_count           = 2
+					campaign_status               = "on"
+					contact_list_id               = genesyscloud_outbound_contact_list.%s.id
+					site_id                       = genesyscloud_telephony_providers_edges_site.%s.id
+					call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.%s.id
+					phone_columns {
+						column_name = "Cell"
+					}
+				}
+				`, ResourceType, resourceLabel, name, contactListResourceLabel, siteId, carResourceLabel),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					util.VerifyAttributeInArrayOfPotentialValues(resourcePath, "campaign_status", []string{"on"}),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "site_id",
+						"genesyscloud_telephony_providers_edges_site."+siteId, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "call_analysis_response_set_id",
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel, "id"),
+				),
+			},
 			{
 				// Import/Read
 				ResourceName:            resourcePath,
@@ -822,6 +851,7 @@ func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 						return nil
 					},
 				),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				// Import/Read

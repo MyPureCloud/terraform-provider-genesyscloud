@@ -6,6 +6,7 @@ import (
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -17,8 +18,9 @@ resource_genesycloud_responsemanagement_responseasset_schema.go holds four funct
 3.  The datasource schema definitions for the responsemanagement_responseasset datasource.
 4.  The resource exporter configuration for the responsemanagement_responseasset exporter.
 */
+
 const ResourceType = "genesyscloud_responsemanagement_responseasset"
-const S3Enabled = false
+const S3Enabled = true
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -39,10 +41,13 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("file_content_hash", validators.ValidateFileContentHashChanged("filename", "file_content_hash", S3Enabled)),
+		),
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`filename`: {
-				Description:      "Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \\{^}%`]\">[~<#|",
+				Description:      "Name of the file to upload. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. If the referenced file is stored on S3, it will be downloaded to temporary storage to satisfy API requirements. When referencing a local file, the following characters are not allowed: \\{^}%`]\">[~<#|",
 				Required:         true,
 				ForceNew:         true,
 				Type:             schema.TypeString,
@@ -55,9 +60,18 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"file_content_hash": {
-				Description: "Hash value of the response asset file content. Used to detect changes.",
+				Description: "Hash value of the response asset file content. Used to detect changes. Note: If the file content hash changes, the existing response asset will be dropped and recreated with a new ID",
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+			},
+			`name`: {
+				Description: "Name of the response asset. Can be optionally defined to replace the name given in the filename. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \\{^}%`]\">[~<#|,",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -86,6 +100,10 @@ func ExporterResponseManagementResponseAsset() *resourceExporter.ResourceExporte
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: responsemanagementResponseassetResolver,
 			SubDirectory:              "response_assets",
+		},
+		ThirdPartyRefAttrs: []string{
+			"filename",
+			"file_content_hash",
 		},
 	}
 }

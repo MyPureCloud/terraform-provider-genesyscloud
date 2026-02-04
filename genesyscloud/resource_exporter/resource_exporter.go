@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -46,7 +46,7 @@ type ResourceMeta struct {
 // ResourceIDMetaMap is a map of IDs to ResourceMeta
 type ResourceIDMetaMap map[string]*ResourceMeta
 
-type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *DependencyResource, diag.Diagnostics)
+type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *DependencyResource, []string, diag.Diagnostics)
 
 // GetAllResourcesFunc is a method that returns all resource IDs
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
@@ -126,6 +126,9 @@ type ResourceExporter struct {
 	// Attributes in nested objects can be defined with a '.' separator
 	RefAttrs map[string]*RefAttrSettings
 
+	// ThirdPartyRefAttrs specifies which attributes reference third party files e.g. genesyscloud_flow.filepath references a YAML file
+	ThirdPartyRefAttrs []string
+
 	// AllowZeroValues is a list of attributes that should allow zero values in the export.
 	// By default zero values are removed from the config due to lack of "null" support in the plugin SDK
 	AllowZeroValues []string
@@ -149,6 +152,10 @@ type ResourceExporter struct {
 	// RemoveIfMissing is a map of attributes to a list of inner object attributes.
 	// When all specified inner attributes are missing from an object, that object is removed
 	RemoveIfMissing map[string][]string
+
+	// RemoveIfSelfReferential is a list of attributes that should be removed from the export config
+	// if the value matches the id of the resource.
+	RemoveIfSelfReferential []string
 
 	// Map of resource id->labels. This is set after a call to loadSanitizedResourceMap
 	SanitizedResourceMap ResourceIDMetaMap
@@ -333,6 +340,18 @@ func (r *ResourceExporter) RemoveFieldIfMissing(attribute string, config map[str
 			}
 		}
 		return missingAll
+	}
+	return false
+}
+
+func (r *ResourceExporter) RemoveFieldIfSelfReferential(resourceId, fullAttribute, attributeKey string, config map[string]interface{}) bool {
+	if ok := lists.ItemInSlice(fullAttribute, r.RemoveIfSelfReferential); ok {
+		attributeValue := config[attributeKey]
+		if attributeValue == nil {
+			return false
+		}
+		attributeStr := attributeValue.(string)
+		return attributeStr == resourceId
 	}
 	return false
 }

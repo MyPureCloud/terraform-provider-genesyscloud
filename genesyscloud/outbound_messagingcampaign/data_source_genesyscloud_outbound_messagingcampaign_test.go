@@ -16,7 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -24,7 +24,12 @@ This test can only pass in a test org because it requires an active provisioned 
 Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone number in test orgs only.
 */
 func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
-
+	v := os.Getenv("GENESYSCLOUD_REGION")
+	switch v {
+	case "mx-central-1", "ap-southeast-1":
+		t.Skipf("sms number not configured in %s org", v)
+		return
+	}
 	var (
 		resourceLabel       = "campaign"
 		dataSourceLabel     = "campaign_data"
@@ -106,7 +111,7 @@ func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 
 	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
 		api := platformclientv2.NewRoutingApiWithConfig(config)
-		err = createRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
+		err = CreateRoutingSmsPhoneNumber(smsConfigSenderSMSPhoneNumber, api)
 		if err != nil {
 			t.Errorf("error creating sms phone number %s: %v", smsConfigSenderSMSPhoneNumber, err)
 		}

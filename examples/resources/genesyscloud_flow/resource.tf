@@ -1,6 +1,5 @@
 resource "genesyscloud_flow" "inbound_call_flow" {
-  filepath          = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml" // Also supports S3 paths e.g. s3://my-bucket/flows/example.yaml
-  file_content_hash = filesha256("${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml")
+  filepath = "${local.working_dir.flow}/inboundcall_flow_example_substitutions.yaml" // Also supports S3 paths e.g. s3://my-bucket/flows/example.yaml
   // Example flow configuration using substitutions:
   /*
   inboundCall:
@@ -30,8 +29,7 @@ resource "genesyscloud_flow" "inbound_call_flow" {
   }
 }
 resource "genesyscloud_flow" "outbound_call_flow" {
-  filepath          = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
-  file_content_hash = filesha256("${local.working_dir.flow}/outboundcall_flow_example.yaml")
+  filepath = "${local.working_dir.flow}/outboundcall_flow_example.yaml"
   substitutions = {
     flow_name          = "An example outbound flow"
     home_division_name = data.genesyscloud_auth_division_home.home.name

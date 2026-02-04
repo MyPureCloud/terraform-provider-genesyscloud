@@ -22,8 +22,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-// Architect grammars languages are still in beta and protected by a feature toggle.
-// To enable grammars in your org contact your Genesys Cloud account manager
 resource "genesyscloud_architect_grammar_language" "example-language" {
   grammar_id = genesyscloud_architect_grammar.example-grammar.id
   language   = "en-us"
@@ -62,9 +60,12 @@ resource "genesyscloud_architect_grammar_language" "example-language" {
 
 Required:
 
-- `file_content_hash` (String) Hash value of the file content. Used to detect changes.
-- `file_name` (String) The name of the file as defined by the user.
+- `file_name` (String) The name of the file as defined by the user. Note: Changes to files stored in S3 will not be detected by Terraform due to a technical limitation in the Terraform Plugin SDK.
 - `file_type` (String) The extension of the file.
+
+Optional:
+
+- `file_content_hash` (String) Hash value of the file content. Used to detect changes. Required for non-S3 file paths.
 
 
 <a id="nestedblock--voice_file_data"></a>
@@ -72,7 +73,10 @@ Required:
 
 Required:
 
-- `file_content_hash` (String) Hash value of the file content. Used to detect changes.
-- `file_name` (String) The name of the file as defined by the user.
+- `file_name` (String) The name of the file as defined by the user. Note: Changes to files stored in S3 will not be detected by Terraform due to a technical limitation in the Terraform Plugin SDK.
 - `file_type` (String) The extension of the file.
+
+Optional:
+
+- `file_content_hash` (String) Hash value of the file content. Used to detect changes. Required for non-S3 file paths.
 

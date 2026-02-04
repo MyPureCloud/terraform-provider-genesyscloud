@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
@@ -27,7 +27,9 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 		domainId            = "terraformdomain" + strings.Replace(uuid.NewString(), "-", "", -1)
 	)
 
-	CleanupRoutingEmailDomains()
+	if cleanupErr := CleanupRoutingEmailDomains("terraformdomain"); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -41,7 +43,11 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 					util.TrueValue, // Subdomain clear
 					util.NullValue,
 				),
-				Check: resource.ComposeTestCheckFunc(
+				Check: resource.ComposeTestCheckFunc( //Wait for resource creatio
+					func(state *terraform.State) error {
+						time.Sleep(45 * time.Second)
+						return nil
+					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", util.TrueValue),
 				),
@@ -64,7 +70,9 @@ func TestAccResourceRoutingEmailDomainCustom(t *testing.T) {
 		mailFromDomain1     = "test." + domainId
 	)
 
-	CleanupRoutingEmailDomains()
+	if cleanupErr := CleanupRoutingEmailDomains("terraformdomain"); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -111,7 +119,7 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 			if rs.Type != "genesyscloud_routing_email_domain" {
 				continue
 			}
-			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID)
+			_, resp, err := routingAPI.GetRoutingEmailDomain(rs.Primary.ID, "")
 			if err != nil {
 				if util.IsStatus404(resp) {
 					continue

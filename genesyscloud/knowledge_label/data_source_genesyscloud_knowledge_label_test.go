@@ -20,7 +20,7 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 
 		labelName                  = "Terraform Test Label 1-" + uuid.NewString()
 		labelColor                 = "#ffffff"
-		knowledgeBaseName1         = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseName1         = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1  = "test-knowledgebase-description1"
 		knowledgeBaseCoreLanguage1 = "en-US"
 
@@ -57,7 +57,7 @@ func TestAccDataSourceKnowledgeLabelBasic(t *testing.T) {
 					),
 				),
 			},
-		},
+		}, CheckDestroy: testVerifyKnowledgeLabelDestroyed,
 	})
 }
 

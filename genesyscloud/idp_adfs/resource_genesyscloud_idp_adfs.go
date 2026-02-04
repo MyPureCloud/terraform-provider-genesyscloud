@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -81,6 +81,7 @@ func readIdpAdfs(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		resourcedata.SetNillableValue(d, "relying_party_identifier", aDFS.RelyingPartyIdentifier)
 		resourcedata.SetNillableValue(d, "slo_uri", aDFS.SloURI)
 		resourcedata.SetNillableValue(d, "slo_binding", aDFS.SloBinding)
+		resourcedata.SetNillableValue(d, "sign_authn_requests", aDFS.SignAuthnRequests)
 
 		if aDFS.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*aDFS.Certificate}))
@@ -152,5 +153,6 @@ func getIdpAdfsFromResourceData(d *schema.ResourceData) platformclientv2.Adfs {
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
 		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
 		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
+		SignAuthnRequests:      platformclientv2.Bool(d.Get("sign_authn_requests").(bool)),
 	}
 }

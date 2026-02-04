@@ -2,9 +2,10 @@ package provider
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type sdkDebugRequest struct {
@@ -69,6 +70,6 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 		InvocationMethod:     response.Request.Method,
 		InvocationUrl:        response.Request.URL.Path,
 		InvocationStatusCode: response.StatusCode,
-		InvocationRetryAfter: response.Request.Header.Get("Retry-After"),
+		InvocationRetryAfter: response.Header.Get("Retry-After"),
 	}
 }

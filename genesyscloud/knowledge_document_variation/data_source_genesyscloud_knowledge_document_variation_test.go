@@ -19,7 +19,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 	var (
 		// Knowledge Base
 		knowledgeBaseResourceLabel1 = "test-knowledgebase1"
-		knowledgeBaseName1          = uuid.NewString()
+		knowledgeBaseName1          = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1   = "test-knowledgebase-description1"
 		coreLanguage1               = "en-US"
 
@@ -43,6 +43,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 		documentText            = "stuff"
 		marks                   = []string{"Bold", "Italic", "Underline"}
 		name                    = "Terraform Test Knowledge Document Variation"
+		priority                        = 1
 		contextId               = uuid.NewString()
 		valueId                 = uuid.NewString()
 		paragraphTestProperties = map[string]string{
@@ -89,6 +90,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 					documentText,
 					marks,
 					name,
+					priority,
 					contextId,
 					valueId,
 					paragraphTestProperties,
@@ -97,6 +99,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 					name,
 					knowledgeBaseResourceLabel1,
 					knowledgeDocumentResourceLabel1,
+					ResourceType+"."+variationResourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					// As the ID is a concatenation of multiple IDs, this function will be used to test the ids
@@ -147,11 +150,12 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 	})
 }
 
-func generateKnowledgeDocumentVariationDataSource(resourceLabel, variationName, knowledgeBaseID, knowledgeDocumentID string) string {
+func generateKnowledgeDocumentVariationDataSource(resourceLabel, variationName, knowledgeBaseID, knowledgeDocumentID, dependsOn string) string {
 	return fmt.Sprintf(`data "genesyscloud_knowledge_document_variation" "%s" {
 		knowledge_base_id = genesyscloud_knowledge_knowledgebase.%s.id
 		knowledge_document_id = genesyscloud_knowledge_document.%s.id
 		name = "%s"
+		depends_on=[%s]
 	}
-	`, resourceLabel, knowledgeBaseID, knowledgeDocumentID, variationName)
+	`, resourceLabel, knowledgeBaseID, knowledgeDocumentID, variationName, dependsOn)
 }

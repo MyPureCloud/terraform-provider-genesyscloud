@@ -483,6 +483,14 @@ func UserExporter() *resourceExporter.ResourceExporter {
 			"voicemail_userpolicies": {"alert_timeout_seconds"},
 		},
 		AllowEmptyArrays: []string{"routing_skills", "routing_languages"},
-		AllowZeroValues:  []string{"routing_skills.proficiency", "routing_languages.proficiency"},
+		AllowZeroValues: []string{
+			"routing_skills.proficiency",
+			"routing_languages.proficiency",
+			"routing_utilization.call.maximum_capacity",
+			"routing_utilization.callback.maximum_capacity",
+			"routing_utilization.chat.maximum_capacity",
+			"routing_utilization.email.maximum_capacity",
+			"routing_utilization.message.maximum_capacity",
+		},
 	}
 }

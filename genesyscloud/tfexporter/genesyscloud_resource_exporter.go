@@ -21,10 +21,12 @@ import (
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -39,7 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -102,6 +104,9 @@ type GenesysCloudResourceExporter struct {
 	filterType          ExporterFilterType
 	flowResourcesList   []string
 
+	// resourceExportedForMrMo stores the schema.ResourceData object of the resource that was exported to Mr Mo
+	resourceExportedForMrMo *schema.ResourceData
+
 	meta                  interface{}
 	provider              *schema.Provider
 	replaceWithDatasource []string
@@ -121,14 +126,20 @@ type GenesysCloudResourceExporter struct {
 	// 4-byte alignment
 	// .. Mutex
 	buildSecondDepsMutex       sync.RWMutex
+	cyclicDependsListMutex     sync.Mutex
 	dataSourceTypesMapsMutex   sync.RWMutex
+	dependsListMutex           sync.RWMutex
 	exMutex                    sync.RWMutex
+	exportersMutex             sync.RWMutex
+	filterListMutex            sync.RWMutex
+	flowResourcesListMutex     sync.RWMutex
 	replaceWithDatasourceMutex sync.Mutex
 	resourceErrorsMutex        sync.RWMutex
 	resourcesMutex             sync.Mutex
 	resourceStateMutex         sync.Mutex
 	resourceTypesMapsMutex     sync.RWMutex
 	unresolvedAttrsMutex       sync.Mutex
+	attributesDecodedMutex     sync.Mutex
 
 	// .. Int
 	maxConcurrentOps int // New field to control concurrency
@@ -165,6 +176,16 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 		//Setting up the resource type filter
 		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
 		gre.resourceFilter = IncludeFilterResourceByRegex    //Setting up the resource filters
+	case IncludeResourcesById:
+		var filter []string
+		if resourceTypes, ok := d.GetOk("include_filter_resources_by_id"); ok {
+			filter = lists.InterfaceListToStrings(resourceTypes.([]interface{}))
+			gre.filterList = &filter
+		}
+
+		//Setting up the resource type filter
+		gre.resourceTypeFilter = IncludeFilterByResourceType //Setting up the resource type filter
+		gre.resourceFilter = FilterResourceById              //Setting up the resource filters
 	case ExcludeResources:
 		var filter []string
 		if resourceTypes, ok := d.GetOk("exclude_filter_resources"); ok {
@@ -197,7 +218,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,
-		maxConcurrentOps:     10, // Default to 10 concurrent operations
+		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
 	// Set max concurrent operations based on provider configuration if available
@@ -292,6 +313,18 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	diagErr = append(diagErr, g.retrieveSanitizedResourceMaps()...)
 	if diagErr.HasError() {
 		return diagErr
+	}
+
+	if !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+		currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
+
+		if currentFlowExporter != nil && len(currentFlowExporter.SanitizedResourceMap) > 0 {
+			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
+
+			newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
+			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
+			tflog.Info(g.ctx, fmt.Sprintf("Replaced flow exporter with new exporter preserving %d flow resources in SanitizedResourceMap", len(currentFlowExporter.SanitizedResourceMap)))
+		}
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instances
@@ -420,13 +453,21 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	tflog.Debug(g.ctx, "Retrieving exporters list")
 	exports := resourceExporter.GetResourceExporters()
 
-	tflog.Trace(g.ctx, fmt.Sprintf("Retrieving exporters filtered list %v", g.filterList))
+	// Thread-safe read of filterList
+	g.filterListMutex.RLock()
+	filterList := g.filterList
+	g.filterListMutex.RUnlock()
 
-	if g.resourceTypeFilter != nil && g.filterList != nil {
-		exports = g.resourceTypeFilter(exports, *g.filterList)
+	tflog.Trace(g.ctx, fmt.Sprintf("Retrieving exporters filtered list %v", filterList))
+
+	if g.resourceTypeFilter != nil && filterList != nil {
+		exports = g.resourceTypeFilter(exports, *filterList)
 	}
 
+	// Thread-safe update of exporters
+	g.exportersMutex.Lock()
 	g.exporters = &exports
+	g.exportersMutex.Unlock()
 
 	// Assign excluded attributes to the config Map
 	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
@@ -456,6 +497,10 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 	}
 
 	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources"); ok {
+		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+	}
+
+	if exportableResourceTypes, ok := g.d.GetOk("include_filter_resources_by_id"); ok {
 		filter = lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 	}
 
@@ -489,17 +534,27 @@ func (g *GenesysCloudResourceExporter) retrieveSanitizedResourceMaps() (diagErr 
 // retrieveGenesysCloudObjectInstances will take a list of exporters and then return the actual terraform Genesys Cloud data
 func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() diag.Diagnostics {
 	tflog.Info(g.ctx, "Starting to retrieve Genesys Cloud objects from Genesys Cloud")
-	tflog.Info(g.ctx, fmt.Sprintf("Number of exporters to process: %d", len(*g.exporters)))
+
+	// Thread-safe read of exporters
+	g.exportersMutex.RLock()
+	exportersCopy := make(map[string]*resourceExporter.ResourceExporter)
+	for k, v := range *g.exporters {
+		exportersCopy[k] = v
+	}
+	exportersLen := len(*g.exporters)
+	g.exportersMutex.RUnlock()
+
+	tflog.Info(g.ctx, fmt.Sprintf("Number of exporters to process: %d", exportersLen))
 
 	// Log all exporter types being processed
-	for resType, exporter := range *g.exporters {
+	for resType, exporter := range exportersCopy {
 		tflog.Debug(g.ctx, fmt.Sprintf("Exporter for %s has %d resources in SanitizedResourceMap", resType, len(exporter.SanitizedResourceMap)))
 	}
 
 	// Retrieves data on each individual Genesys Cloud object from each registered exporter
 
 	// Buffer error channel to prevent goroutine leaks or deadlocks
-	errorChan := make(chan diag.Diagnostics, len(*g.exporters))
+	errorChan := make(chan diag.Diagnostics, exportersLen)
 	wgDone := make(chan bool)
 	var wg sync.WaitGroup
 
@@ -513,7 +568,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	var statsMutex sync.Mutex
 
 	// We use concurrency here to spin off each exporter type and getting the data
-	for resType, exporter := range *g.exporters {
+	for resType, exporter := range exportersCopy {
 		tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource type: %s", resType))
 		wg.Add(1)
 		go func(resType string, exporter *resourceExporter.ResourceExporter) {
@@ -611,83 +666,183 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	// Get resources using thread-safe method
 	resources := g.getResources()
 
+	// Initialize channels for results and errors
+	type resourceResult struct {
+		resource     resourceExporter.ResourceInfo
+		configMap    util.JsonMap
+		isDataSource bool
+		diagnostics  diag.Diagnostics
+	}
+
+	resultChan := make(chan resourceResult, len(resources))
+	errorChan := make(chan diag.Diagnostics, len(resources))
+
+	// Initialize semaphore to limit concurrent operations
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	semaphore := make(chan struct{}, maxConcurrentOps)
+
+	// Initialize wait group
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(g.ctx)
+	defer cancel()
+
 	for _, resource := range resources {
-		// 1. Get instance state as JSON Map
-		jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
-		if diagErr != nil {
-			diagnostics = append(diagnostics, diagErr...)
-			if diagnostics.HasError() {
+
+		wg.Add(1)
+		go func(resource resourceExporter.ResourceInfo) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			select {
+			case semaphore <- struct{}{}:
+				defer func() { <-semaphore }()
+			case <-ctx.Done():
 				return
 			}
+
+			var result resourceResult
+			result.resource = resource
+
+			// 1. Get instance state as JSON Map
+			jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
+			if diagErr != nil {
+				select {
+				case errorChan <- diagErr:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			// 2. Determine if instance is a data source
+			result.isDataSource = g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
+
+			// 3. Convert the instance state to a map
+			configMap := maps.Clone(jsonResult)
+
+			// 4. Sanitize the config map
+			unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
+			if len(unresolvableAttrs) > 0 {
+				g.addUnresolvedAttrs(unresolvableAttrs)
+			}
+
+			// 5. Handle custom write attributes (i.e. exporting files like prompts, flows, scripts, etc)
+			if !result.isDataSource {
+				diagErr = g.customWriteAttributes(configMap, resource)
+				if diagErr != nil && diagErr.HasError() {
+					result.diagnostics = diagErr
+				}
+			}
+
+			// 6. Set resulting configMap and return on the results channel
+			result.configMap = configMap
+			select {
+			case resultChan <- result:
+			case <-ctx.Done():
+				return
+			}
+		}(resource)
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultChan)
+		close(errorChan)
+	}()
+
+	// Collect results and handle errors
+	var allDiagnostics diag.Diagnostics
+
+	// Process errors first
+	for diagErr := range errorChan {
+		allDiagnostics = append(allDiagnostics, diagErr...)
+		if allDiagnostics.HasError() {
+			cancel()
+			return allDiagnostics
+		}
+	}
+
+	// Now process successful results
+	for result := range resultChan {
+		if result.diagnostics != nil && result.diagnostics.HasError() {
+			allDiagnostics = append(allDiagnostics, result.diagnostics...)
+			return allDiagnostics
 		}
 
-		// 2. Determine if instance is a data source
-		isDataSource := g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel)
-		if isDataSource {
+		// Handling duplicate block labels
+		// Ensure the maps are instantiated
+		if result.isDataSource {
 			dataSourceMaps := g.getDataSourceTypesMaps()
-			if dataSourceMaps[resource.Type] == nil {
-				dataSourceMaps[resource.Type] = make(ResourceJSONMaps)
+			if dataSourceMaps[result.resource.Type] == nil {
+				dataSourceMaps[result.resource.Type] = make(ResourceJSONMaps)
 			}
 			g.setDataSourceTypesMaps(dataSourceMaps)
 		} else {
-			// 3. Ensure the resource type is instantiated
 			resourceMaps := g.getResourceTypesMaps()
-			if resourceMaps[resource.Type] == nil {
-				resourceMaps[resource.Type] = make(ResourceJSONMaps)
+			if resourceMaps[result.resource.Type] == nil {
+				resourceMaps[result.resource.Type] = make(ResourceJSONMaps)
 			}
 			g.setResourceTypesMaps(resourceMaps)
 		}
-
 		// Theoretically this should only ever occur when using the Original Sanitizer as it doesn't have guaranteed
 		// uniqueness for generating the block labels. See resource_name_sanitizer_test.go
 		resourceMaps := g.getResourceTypesMaps()
 		dataSourceMaps := g.getDataSourceTypesMaps()
-
-		if len(resourceMaps[resource.Type][resource.BlockLabel]) > 0 || len(dataSourceMaps[resource.Type][resource.BlockLabel]) > 0 {
+		if len(resourceMaps[result.resource.Type][result.resource.BlockLabel]) > 0 || len(dataSourceMaps[result.resource.Type][result.resource.BlockLabel]) > 0 {
 			algorithm := fnv.New32()
 			algorithm.Write([]byte(uuid.NewString()))
 			// The _BRCM prefix is meant to be an identifier so we can tell that the hash was generated here and not in the sanitizer.
-			resource.BlockLabel = resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
-			g.updateSanitizeMap(*g.exporters, resource)
+			result.resource.BlockLabel = result.resource.BlockLabel + "_BRCM" + strconv.FormatUint(uint64(algorithm.Sum32()), 10)
+			g.updateSanitizeMap(*g.exporters, result.resource)
 		}
 
-		if resource.Type == architectFlow.ResourceType && !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-			(*g.exporters)[architectFlow.ResourceType] = resourceExporter.GetNewFlowResourceExporter()
-		}
-
-		// 4. Convert the instance state to a map
-		configMap := maps.Clone(jsonResult)
-
-		// 5. Sanitize the config map
-		unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
-		if len(unresolvableAttrs) > 0 {
-			g.addUnresolvedAttrs(unresolvableAttrs)
-		}
-
-		// 6. Add the resource to the appropriate map
-		if isDataSource {
-			dataSourceMaps = g.getDataSourceTypesMaps()
-			dataSourceMaps[resource.Type][resource.BlockLabel] = configMap
-			g.setDataSourceTypesMaps(dataSourceMaps)
+		// Add the resource to the appropriate map (thread-safe)
+		if result.isDataSource {
+			g.addToDataSourceMaps(result.resource.Type, result.resource.BlockLabel, result.configMap)
 		} else {
-			// 6. Handles writing external files as part of the export process
-			diagnostics = append(diagnostics, g.customWriteAttributes(configMap, resource)...)
-			if diagnostics.HasError() {
-				return diagnostics
-			}
-			resourceMaps = g.getResourceTypesMaps()
-			resourceMaps[resource.Type][resource.BlockLabel] = configMap
-			g.setResourceTypesMaps(resourceMaps)
+			g.addToResourceMaps(result.resource.Type, result.resource.BlockLabel, result.configMap)
 		}
 	}
 
 	tflog.Info(g.ctx, fmt.Sprintf("Successfully built resource config map with %d resources", len(resources)))
-	return diagnostics
+	return allDiagnostics
+}
+
+// Helper methods for thread-safe map updates
+func (g *GenesysCloudResourceExporter) addToResourceMaps(resourceType, blockLabel string, configMap util.JsonMap) {
+	g.resourceTypesMapsMutex.Lock()
+	defer g.resourceTypesMapsMutex.Unlock()
+
+	if g.resourceTypesMaps[resourceType] == nil {
+		g.resourceTypesMaps[resourceType] = make(ResourceJSONMaps)
+	}
+	g.resourceTypesMaps[resourceType][blockLabel] = configMap
+}
+
+func (g *GenesysCloudResourceExporter) addToDataSourceMaps(resourceType, blockLabel string, configMap util.JsonMap) {
+	g.dataSourceTypesMapsMutex.Lock()
+	defer g.dataSourceTypesMapsMutex.Unlock()
+
+	if g.dataSourceTypesMaps[resourceType] == nil {
+		g.dataSourceTypesMaps[resourceType] = make(ResourceJSONMaps)
+	}
+	g.dataSourceTypesMaps[resourceType][blockLabel] = configMap
 }
 
 func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.JsonMap,
 	resource resourceExporter.ResourceInfo) (diagnostics diag.Diagnostics) {
-	exporters := *g.exporters
+	// Thread-safe read of exporters
+	g.exportersMutex.RLock()
+	exportersCopy := make(map[string]*resourceExporter.ResourceExporter)
+	for k, v := range *g.exporters {
+		exportersCopy[k] = v
+	}
+	g.exportersMutex.RUnlock()
+
+	exporters := exportersCopy
 
 	if resourceFilesWriterFunc := exporters[resource.Type].CustomFileWriter.RetrieveAndWriteFilesFunc; resourceFilesWriterFunc != nil {
 		exportDir, getFilePathDiags := getFilePath(g.d, "")
@@ -782,8 +937,17 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnos
 		return diags
 	}
 
-	if g.cyclicDependsList != nil && len(g.cyclicDependsList) > 0 {
-		diags = append(diags, files.WriteToFile([]byte(strings.Join(g.cyclicDependsList, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))...)
+	// Thread-safe read of cyclicDependsList
+	g.cyclicDependsListMutex.Lock()
+	cyclicDependsListCopy := make([]string, 0)
+	if g.cyclicDependsList != nil {
+		cyclicDependsListCopy = make([]string, len(g.cyclicDependsList))
+		copy(cyclicDependsListCopy, g.cyclicDependsList)
+	}
+	g.cyclicDependsListMutex.Unlock()
+
+	if len(cyclicDependsListCopy) > 0 {
+		diags = append(diags, files.WriteToFile([]byte(strings.Join(cyclicDependsListCopy, "\n")), filepath.Join(g.exportDirPath, "cyclicDepends.txt"))...)
 		if diags.HasError() {
 			return diags
 		}
@@ -840,72 +1004,227 @@ func (g *GenesysCloudResourceExporter) generateZipForExporter() diag.Diagnostics
 }
 
 func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows() diag.Diagnostics {
+	tflog.Info(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Starting dependency resolution for flows")
 
 	if g.addDependsOn {
+		tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution enabled, processing dependencies")
 		filterList, resources, err := g.processAndBuildDependencies()
 		if err != nil {
+			tflog.Error(g.ctx, fmt.Sprintf("[buildAndExportDependsOnResourcesForFlows] ERROR in processAndBuildDependencies: %v", err))
 			return err
 		}
+		tflog.Info(g.ctx, fmt.Sprintf("[buildAndExportDependsOnResourcesForFlows] Processed dependencies: filterList size=%d, resources count=%d",
+			len(filterList), len(resources)))
+
 		if len(filterList) > 0 {
+			tflog.Info(g.ctx, fmt.Sprintf("[buildAndExportDependsOnResourcesForFlows] Exporting %d dependent resources", len(filterList)))
 			diagErr := g.exportDependentResources(filterList, resources)
 			if diagErr != nil {
+				tflog.Error(g.ctx, fmt.Sprintf("[buildAndExportDependsOnResourcesForFlows] ERROR in exportDependentResources: %v", diagErr))
 				return diagErr
 			}
+			tflog.Info(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Successfully exported dependent resources")
+		} else {
+			tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] No dependent resources to export (filterList is empty)")
 		}
+		tflog.Info(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Completed dependency resolution for flows")
 		return nil
 	}
+	tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution disabled (addDependsOn=false)")
 	return nil
 }
 
 func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []string, resources resourceExporter.ResourceIDMetaMap, diagErr diag.Diagnostics) {
+	tflog.Info(g.ctx, "[processAndBuildDependencies] Starting dependency processing for all resources")
 	filterList := make([]string, 0)
 	totalResources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := dependentconsumers.GetDependentConsumerProxy(nil)
 
-	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
+	// Get initial state of dependsList
+	g.dependsListMutex.RLock()
+	initialDependsListSize := len(g.dependsList)
+	initialDependsListKeys := make([]string, 0, initialDependsListSize)
+	for k := range g.dependsList {
+		initialDependsListKeys = append(initialDependsListKeys, k)
+	}
+	g.dependsListMutex.RUnlock()
+	tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Initial dependsList state: %d entries, keys: %v", initialDependsListSize, initialDependsListKeys))
+
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 			proxy = dependentconsumers.GetDependentConsumerProxy(clientConfig)
 			resources := make(resourceExporter.ResourceIDMetaMap)
-			resources, dependsMap, err := proxy.GetDependentConsumers(ctx, resourceKeys)
+
+			// Thread-safe read of flowResourcesList
+			g.flowResourcesListMutex.RLock()
+			flowResourcesListCopy := make([]string, len(g.flowResourcesList))
+			copy(flowResourcesListCopy, g.flowResourcesList)
+			g.flowResourcesListMutex.RUnlock()
+
+			resources, dependsMap, totalFlowResources, err := proxy.GetDependentConsumers(ctx, resourceKeys, flowResourcesListCopy)
 
 			if err != nil {
-				return nil, nil, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
+				return nil, nil, totalFlowResources, diag.Errorf("Failed to retrieve Dependent Flows %s: %s", resourceKeys.State.ID, err)
 			}
-			return resources, dependsMap, nil
+			return resources, dependsMap, totalFlowResources, nil
 		}
 	}
 
-	for _, resourceKeys := range g.resources {
+	processedCount := 0
+	skippedCount := 0
 
-		exists := util.StringExists(resourceKeys.State.ID, g.flowResourcesList)
+	// Thread-safe read of resources
+	resourcesList := g.getResources()
+	for _, resourceKeys := range resourcesList {
+		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Processing resource: type=%s, id=%s, label=%s", resourceKeys.Type, resourceKeys.State.ID, resourceKeys.BlockLabel))
+
+		// Thread-safe read of flowResourcesList
+		g.flowResourcesListMutex.RLock()
+		flowResourcesListCopy := make([]string, len(g.flowResourcesList))
+		copy(flowResourcesListCopy, g.flowResourcesList)
+		g.flowResourcesListMutex.RUnlock()
+
+		exists := util.StringExists(resourceKeys.State.ID, flowResourcesListCopy)
 		if exists {
-			tflog.Debug(g.ctx, fmt.Sprintf("dependent consumers retrieved %v", resourceKeys.State.ID))
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping resource %s (already processed in flowResourcesList)", resourceKeys.State.ID))
+			skippedCount++
 			continue
 		}
 
-		resources, dependsStruct, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 
-		g.flowResourcesList = append(g.flowResourcesList, resourceKeys.State.ID)
+		// Thread-safe write of flowResourcesList
+		g.flowResourcesListMutex.Lock()
+		g.flowResourcesList = flowResources
+		g.flowResourcesListMutex.Unlock()
 
 		if err != nil {
+			tflog.Error(g.ctx, fmt.Sprintf("[processAndBuildDependencies] ERROR retrieving dependencies for resource %s: %v", resourceKeys.State.ID, err))
 			return nil, nil, err
 		}
 
-		if len(resources) > 0 {
-			resourcesTobeExported := retrieveExportResources(g.resources, resources)
-			for _, meta := range resourcesTobeExported {
+		if len(resources) > 0 && dependsStruct != nil {
 
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieved dependencies for resource %s: found %d dependent resources, dependsMap entries: %d",
+				resourceKeys.State.ID, len(resources), len(dependsStruct.DependsMap)))
+			// Thread-safe read of resources for retrieveExportResources
+			resourcesListForExport := g.getResources()
+			resourcesTobeExported := retrieveExportResources(resourcesListForExport, resources)
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Resource %s: %d total dependencies, %d to be exported",
+				resourceKeys.State.ID, len(resources), len(resourcesTobeExported)))
+
+			for _, meta := range resourcesTobeExported {
 				resource := strings.Split(meta.BlockLabel, "::::")
 				filterList = append(filterList, fmt.Sprintf("%s::%s", resource[0], resource[1]))
 			}
+
+			// Log before merge - show current dependsList state for this resource
+			g.dependsListMutex.RLock()
+			beforeMergeSize := len(g.dependsList)
+			beforeMergeKeys := make([]string, 0, beforeMergeSize)
+			currentDependsListForResource, resourceExistsBefore := g.dependsList[resourceKeys.State.ID]
+			beforeMergeFullState := make(map[string][]string)
+			for k, v := range g.dependsList {
+				beforeMergeKeys = append(beforeMergeKeys, k)
+				beforeMergeFullState[k] = make([]string, len(v))
+				copy(beforeMergeFullState[k], v)
+			}
+			g.dependsListMutex.RUnlock()
+
+			if resourceExistsBefore {
+				tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] BEFORE MERGE for resource %s: Current dependsList entry: %v",
+					resourceKeys.State.ID, currentDependsListForResource))
+			} else {
+				tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] BEFORE MERGE for resource %s: No existing dependsList entry",
+					resourceKeys.State.ID))
+			}
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] BEFORE MERGE for resource %s: Total dependsList has %d entries, keys: %v",
+				resourceKeys.State.ID, beforeMergeSize, beforeMergeKeys))
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Merging dependsMap for resource %s: %v", resourceKeys.State.ID, dependsStruct.DependsMap))
+
+			// Log what we're about to merge for this specific resource
+			if newDependsList, ok := dependsStruct.DependsMap[resourceKeys.State.ID]; ok {
+				tflog.Info(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Resource %s: New dependsList to merge: %v (count=%d)",
+					resourceKeys.State.ID, newDependsList, len(newDependsList)))
+			}
+
+			g.dependsListMutex.Lock()
 			g.dependsList = stringmap.MergeMaps(g.dependsList, dependsStruct.DependsMap)
+
+			// Log after merge - show updated dependsList state for this resource
+			afterMergeSize := len(g.dependsList)
+			afterMergeKeys := make([]string, 0, afterMergeSize)
+			afterMergeDependsListForResource, resourceExistsAfter := g.dependsList[resourceKeys.State.ID]
+			afterMergeFullState := make(map[string][]string)
+			for k, v := range g.dependsList {
+				afterMergeKeys = append(afterMergeKeys, k)
+				afterMergeFullState[k] = make([]string, len(v))
+				copy(afterMergeFullState[k], v)
+			}
+			g.dependsListMutex.Unlock()
+
+			if resourceExistsAfter {
+				tflog.Info(g.ctx, fmt.Sprintf("[processAndBuildDependencies] AFTER MERGE for resource %s: Updated dependsList entry: %v (count=%d)",
+					resourceKeys.State.ID, afterMergeDependsListForResource, len(afterMergeDependsListForResource)))
+			}
+			tflog.Info(g.ctx, fmt.Sprintf("[processAndBuildDependencies] AFTER MERGE for resource %s: Total dependsList now has %d entries (was %d), keys: %v",
+				resourceKeys.State.ID, afterMergeSize, beforeMergeSize, afterMergeKeys))
+
+			// Log the complete dependsList state for this resource
+			if len(afterMergeDependsListForResource) > 0 {
+				tflog.Info(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Resource %s dependsList DETAIL: %v",
+					resourceKeys.State.ID, afterMergeDependsListForResource))
+			}
+
+			if len(dependsStruct.CyclicDependsList) > 0 {
+				tflog.Warn(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Cyclic dependencies for resource %s: %v",
+					resourceKeys.State.ID, dependsStruct.CyclicDependsList))
+			}
+			// Thread-safe append to cyclicDependsList
+			g.cyclicDependsListMutex.Lock()
 			g.cyclicDependsList = append(g.cyclicDependsList, dependsStruct.CyclicDependsList...)
+			g.cyclicDependsListMutex.Unlock()
 			totalResources = stringmap.MergeSingularMaps(totalResources, resources)
+			processedCount++
+		} else {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Resource %s has no dependencies to process", resourceKeys.State.ID))
 		}
 	}
 
-	if !g.ignoreCyclicDeps && len(g.cyclicDependsList) > 0 {
-		return nil, nil, diag.Errorf("Cyclic Dependencies Identified:  %v ", strings.Join(g.cyclicDependsList, "\n"))
+	// Final state - log complete dependsList for all resources
+	g.dependsListMutex.RLock()
+	finalDependsListSize := len(g.dependsList)
+	finalDependsListKeys := make([]string, 0, finalDependsListSize)
+	finalDependsListFullState := make(map[string][]string)
+	for k, v := range g.dependsList {
+		finalDependsListKeys = append(finalDependsListKeys, k)
+		finalDependsListFullState[k] = make([]string, len(v))
+		copy(finalDependsListFullState[k], v)
+	}
+	g.dependsListMutex.RUnlock()
+
+	tflog.Info(g.ctx, fmt.Sprintf("[processAndBuildDependencies] COMPLETE: processed %d resources, skipped %d, final dependsList has %d entries (started with %d), keys: %v",
+		processedCount, skippedCount, finalDependsListSize, initialDependsListSize, finalDependsListKeys))
+
+	// Log the complete dependsList state for all resources
+	tflog.Info(g.ctx, "[processAndBuildDependencies] FINAL dependsList STATE for all resources:")
+	for k, v := range finalDependsListFullState {
+		if len(v) > 0 {
+			tflog.Info(g.ctx, fmt.Sprintf("[processAndBuildDependencies]   Resource %s dependsList: %v (count=%d)", k, v, len(v)))
+		} else {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies]   Resource %s dependsList: [] (empty)", k))
+		}
+	}
+
+	// Thread-safe read of cyclicDependsList
+	g.cyclicDependsListMutex.Lock()
+	cyclicDependsListCopy := make([]string, len(g.cyclicDependsList))
+	copy(cyclicDependsListCopy, g.cyclicDependsList)
+	g.cyclicDependsListMutex.Unlock()
+
+	if !g.ignoreCyclicDeps && len(cyclicDependsListCopy) > 0 {
+		return nil, nil, diag.Errorf("Cyclic Dependencies Identified:  %v ", strings.Join(cyclicDependsListCopy, "\n"))
 	}
 	return filterList, totalResources, nil
 }
@@ -930,37 +1249,67 @@ func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diag
 }
 
 func (g *GenesysCloudResourceExporter) exportDependentResources(filterList []string, resources resourceExporter.ResourceIDMetaMap) (diagErr diag.Diagnostics) {
+	tflog.Info(g.ctx, fmt.Sprintf("[exportDependentResources] Starting export of %d dependent resources, filterList size=%d", len(resources), len(filterList)))
+
 	g.reAssignFilters()
+
+	// Thread-safe update of filterList
+	g.filterListMutex.Lock()
 	g.filterList = &filterList
+	g.filterListMutex.Unlock()
+
 	existingExporters := g.copyExporters()
 	existingResources := g.copyResources()
-	tflog.Info(g.ctx, "Rebuilding exports from exportDependentResources")
+	tflog.Debug(g.ctx, fmt.Sprintf("[exportDependentResources] Preserved %d existing exporters and %d existing resources",
+		len(existingExporters), len(existingResources)))
+	tflog.Info(g.ctx, "[exportDependentResources] Rebuilding exports from exportDependentResources")
 
 	err := g.rebuildExports(filterList)
 	if err != nil {
+		tflog.Error(g.ctx, fmt.Sprintf("[exportDependentResources] ERROR in rebuildExports: %v", err))
 		return err
 	}
+	tflog.Debug(g.ctx, "[exportDependentResources] Rebuilt exports successfully")
 
 	// retain the exporters and resources
 	g.retainExporterList(resources)
 	uniqueResources := g.attainUniqueResourceList(resources)
+	tflog.Debug(g.ctx, fmt.Sprintf("[exportDependentResources] Retained exporters and resources: uniqueResources count=%d", len(uniqueResources)))
 
 	// deep copy is needed here else exporters being overridden
 	depExporters := g.copyExporters()
+	tflog.Debug(g.ctx, fmt.Sprintf("[exportDependentResources] Copied %d dependent exporters", len(depExporters)))
 
 	// this is done before the merge of exporters and this will make sure only dependency resources are resolved
+	tflog.Info(g.ctx, "[exportDependentResources] Building resource config map for dependent resources")
 	diagErr = append(diagErr, g.buildResourceConfigMap()...)
 	if diagErr.HasError() {
+		tflog.Error(g.ctx, fmt.Sprintf("[exportDependentResources] ERROR in buildResourceConfigMap: %v", diagErr))
 		return diagErr
 	}
+	tflog.Debug(g.ctx, "[exportDependentResources] Built resource config map successfully")
+
+	tflog.Info(g.ctx, "[exportDependentResources] Exporting and resolving dependency attributes")
 	diagErr = append(diagErr, g.exportAndResolveDependencyAttributes()...)
 	if diagErr.HasError() {
+		tflog.Error(g.ctx, fmt.Sprintf("[exportDependentResources] ERROR in exportAndResolveDependencyAttributes: %v", diagErr))
 		return diagErr
 	}
+	tflog.Debug(g.ctx, "[exportDependentResources] Exported and resolved dependency attributes successfully")
+
+	tflog.Debug(g.ctx, fmt.Sprintf("[exportDependentResources] Appending %d unique resources and %d existing resources", len(uniqueResources), len(existingResources)))
 	g.appendResources(uniqueResources)
 	g.appendResources(existingResources)
-	g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
 
+	if g.exporters != nil {
+		tflog.Debug(g.ctx, "[exportDependentResources] Merging exporters")
+		g.exportersMutex.Lock()
+		g.exporters = mergeExporters(existingExporters, *mergeExporters(depExporters, *g.exporters))
+		g.exportersMutex.Unlock()
+		tflog.Debug(g.ctx, fmt.Sprintf("[exportDependentResources] Merged exporters: final count=%d", len(*g.exporters)))
+	}
+
+	tflog.Info(g.ctx, "[exportDependentResources] COMPLETE: Successfully exported dependent resources")
 	return diagErr
 }
 
@@ -975,7 +1324,9 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 
 		// merge the resources and exporters after the dependencies are resolved
 		g.appendResources(existingResources)
+		g.exportersMutex.Lock()
 		g.exporters = mergeExporters(existingExporters, *g.exporters)
+		g.exportersMutex.Unlock()
 
 		// rebuild the config map
 		diagErr = g.buildResourceConfigMap()
@@ -984,8 +1335,11 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependentResources() (diagE
 }
 
 func (g *GenesysCloudResourceExporter) copyExporters() map[string]*resourceExporter.ResourceExporter {
-	// deep copy is needed here else exporters are being overridden
+	// Thread-safe read of exporters before deep copy
+	g.exportersMutex.RLock()
 	existingExportersInterface := deepcopy.Copy(*g.exporters)
+	g.exportersMutex.RUnlock()
+
 	existingExporters, _ := existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 	return existingExporters
 }
@@ -1026,8 +1380,16 @@ func extractResource(resource resourceExporter.ResourceInfo) resourceExporter.Re
 }
 
 func (g *GenesysCloudResourceExporter) retainExporterList(resources resourceExporter.ResourceIDMetaMap) diag.Diagnostics {
+	// Thread-safe read of exporters
+	g.exportersMutex.RLock()
+	exportersCopy := make(map[string]*resourceExporter.ResourceExporter)
+	for k, v := range *g.exporters {
+		exportersCopy[k] = v
+	}
+	g.exportersMutex.RUnlock()
+
 	removeChan := make([]string, 0)
-	for _, exporter := range *g.exporters {
+	for _, exporter := range exportersCopy {
 		for id, _ := range exporter.SanitizedResourceMap {
 			_, exists := resources[id]
 			if !exists {
@@ -1106,14 +1468,26 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 			}
 		}
 	}
+
+	// Thread-safe update of filterList
+	g.filterListMutex.Lock()
 	g.filterList = &filterListById
+	g.filterListMutex.Unlock()
+
 	g.buildSecondDeps = nil
 
-	if len(*g.filterList) > 0 {
+	g.filterListMutex.RLock()
+	filterListLen := len(*g.filterList)
+	filterListCopy := *g.filterList
+	g.filterListMutex.RUnlock()
+
+	if filterListLen > 0 {
 		g.resources = nil
+		g.exportersMutex.Lock()
 		g.exporters = nil
+		g.exportersMutex.Unlock()
 		tflog.Debug(g.ctx, "Rebuilding exporters list from chainDependencies")
-		diagErr = append(diagErr, g.rebuildExports(*g.filterList)...)
+		diagErr = append(diagErr, g.rebuildExports(filterListCopy)...)
 		if diagErr.HasError() {
 			return
 		}
@@ -1129,10 +1503,14 @@ func (g *GenesysCloudResourceExporter) chainDependencies(
 		}
 		//append the resources and exporters
 		g.appendResources(existingResources)
+		g.exportersMutex.Lock()
 		g.exporters = mergeExporters(existingExporters, *g.exporters)
+		g.exportersMutex.Unlock()
 
 		// deep copy is needed here else exporters being overridden
+		g.exportersMutex.RLock()
 		existingExportersInterface := deepcopy.Copy(*g.exporters)
+		g.exportersMutex.RUnlock()
 		existingExporters, _ = existingExportersInterface.(map[string]*resourceExporter.ResourceExporter)
 		existingResources = g.resources
 
@@ -1187,8 +1565,13 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 	defer cancel()
 
 	// Create semaphore to limit concurrent operations to the configured maximum
-	sem := make(chan struct{}, g.maxConcurrentOps)
-	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", g.maxConcurrentOps))
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", maxConcurrentOps))
 
 	var wg sync.WaitGroup
 	for resourceType, exporter := range exporters {
@@ -1212,7 +1595,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			if mockError != nil {
 				err = mockError
 			}
-			if containsPermissionsErrorOnly(err) && logErrors {
+			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
@@ -1299,19 +1682,6 @@ func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, 
 	return resourcesTobeExported
 }
 
-func containsPermissionsErrorOnly(err diag.Diagnostics) bool {
-	foundPermissionsError := false
-	for _, v := range err {
-		if strings.Contains(v.Summary, "403") ||
-			strings.Contains(v.Summary, "501") {
-			foundPermissionsError = true
-		} else {
-			return false
-		}
-	}
-	return foundPermissionsError
-}
-
 var logAttrInfo = "\nTo continue exporting other resources in spite of this error, set the 'log_permission_errors' attribute to 'true'"
 
 func addLogAttrInfoToErrorSummary(err diag.Diagnostics) diag.Diagnostics {
@@ -1376,8 +1746,13 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	tflog.Trace(g.ctx, fmt.Sprintf("Retrieved sanitized resource map with %d entries for type %s", len(resourceMap), resType))
 
 	// Create a semaphore to limit concurrent operations
-	sem := make(chan struct{}, g.maxConcurrentOps)
-	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations"))
+	// Use a default value if maxConcurrentOps is not set (0)
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10 // Default to 10 concurrent operations
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+	tflog.Trace(g.ctx, fmt.Sprintf("Using semaphore to limit concurrent operations to %d", maxConcurrentOps))
 
 	for id, resMeta := range resourceMap {
 		tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource ID: %s, BlockLabel: %s", id, resMeta.BlockLabel))
@@ -1471,8 +1846,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 							tflog.Debug(g.ctx, fmt.Sprintf("Resource ID %s will NOT be exported as data source", id))
 						}
 					}
-				} else {
-					tflog.Debug(g.ctx, fmt.Sprintf("No ExportAsDataFunc defined for resource ID: %s", id))
 				}
 
 				blockType := ""
@@ -1754,6 +2127,10 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		return nil, nil
 	}
 
+	if mrmo.IsActive() {
+		g.resourceExportedForMrMo = resource.Data(state)
+	}
+
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))
 	return state, nil
 }
@@ -1827,103 +2204,112 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	resourceLabel := resource.BlockLabel
 	resourceBlockType := resource.BlockType
 	exporter := exporters[resourceType] //Get the specific export that we will be working with
-
+	resourceId := resource.State.ID
 	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
 
-	for key, val := range configMap {
-		currAttr := key
+	for attributeConfigKey, val := range configMap {
+		fullAttributePath := attributeConfigKey
 		wildcardAttr := "*"
 		if prevAttr != "" {
-			currAttr = prevAttr + "." + key
+			fullAttributePath = prevAttr + "." + attributeConfigKey
 			wildcardAttr = prevAttr + "." + "*"
 		}
 
 		// Identify configMap for the parent resource and add depends_on for the parent resource
 		if parentKey {
-			if currAttr == "id" {
-				g.addDependsOnValues(val.(string), configMap)
+			if fullAttributePath == "id" {
+				resourceId := val.(string)
+				tflog.Debug(g.ctx, fmt.Sprintf("[sanitizeConfigMap] Calling addDependsOnValues for resource: type=%s, id=%s, label=%s",
+					resourceType, resourceId, resourceLabel))
+				g.addDependsOnValues(resourceId, configMap)
 			}
 		}
 
-		if currAttr == "id" {
+		if fullAttributePath == "id" {
 			// Strip off IDs from the root resource
-			delete(configMap, currAttr)
+			delete(configMap, fullAttributePath)
 			continue
 		}
 
-		if exporter.IsAttributeExcluded(currAttr) {
+		if exporter.IsAttributeExcluded(fullAttributePath) {
 			// Excluded. Remove from the config.
-			configMap[key] = nil
+			configMap[attributeConfigKey] = nil
 			continue
 		}
 
-		if exporter.IsAttributeE164(currAttr) {
-			if _, ok := configMap[key].(string); !ok {
+		if exporter.IsAttributeE164(fullAttributePath) {
+			if _, ok := configMap[attributeConfigKey].(string); !ok {
 				continue
 			}
-			configMap[key] = sanitizeE164Number(configMap[key].(string))
+			configMap[attributeConfigKey] = sanitizeE164Number(configMap[attributeConfigKey].(string))
 		}
 
-		if exporter.IsAttributeRrule(currAttr) {
-			if _, ok := configMap[key].(string); !ok {
+		if exporter.IsAttributeRrule(fullAttributePath) {
+			if _, ok := configMap[attributeConfigKey].(string); !ok {
 				continue
 			}
-			configMap[key] = sanitizeRrule(configMap[key].(string))
+			configMap[attributeConfigKey] = sanitizeRrule(configMap[attributeConfigKey].(string))
+		}
+
+		if exporter.RemoveFieldIfSelfReferential(resourceId, fullAttributePath, attributeConfigKey, configMap) {
+			// Remove if self-referential
+			configMap[attributeConfigKey] = nil
+			continue
 		}
 
 		switch val.(type) {
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), currAttr, exporters, exportingState, exportFormat, false)
+			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), fullAttributePath, exporters, exportingState, exportFormat, false)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
-				configMap[key] = nil
+				configMap[attributeConfigKey] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat); len(arr) > 0 {
-				configMap[key] = arr
+			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), fullAttributePath, exporters, exportingState, exportFormat); len(arr) > 0 {
+				configMap[attributeConfigKey] = arr
 			} else {
 				// Remove empty arrays
-				configMap[key] = nil
+				configMap[attributeConfigKey] = nil
 			}
 		case string:
 			// Check if string contains nested Ref Attributes (can occur if the string is escaped json)
-			if _, ok := exporter.ContainsNestedRefAttrs(currAttr); ok {
-				resolvedJsonString, err := g.resolveRefAttributesInJsonString(currAttr, val.(string), exporter, exporters, exportingState)
+			if _, ok := exporter.ContainsNestedRefAttrs(fullAttributePath); ok {
+				resolvedJsonString, err := g.resolveRefAttributesInJsonString(fullAttributePath, val.(string), exporter, exporters, exportingState)
 				if err != nil {
 					tflog.Error(g.ctx, err.Error())
 				} else {
-					keys := strings.Split(currAttr, ".")
+					keys := strings.Split(fullAttributePath, ".")
 					configMap[keys[len(keys)-1]] = resolvedJsonString
 					break
 				}
 			}
 
 			// Check if we are on a reference attribute and update as needed
-			refSettings := exporter.GetRefAttrSettings(currAttr)
+			refSettings := exporter.GetRefAttrSettings(fullAttributePath)
 			if refSettings == nil {
 				// Check for wildcard attribute indicating all attributes in the map
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
 			if refSettings != nil {
-				configMap[key] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
-				configMap[key] = escapeString(val.(string))
+				configMap[attributeConfigKey] = escapeString(val.(string))
 			}
 
 			// custom function to resolve the field to a data source depending on the value
-			g.resolveValueToDataSource(exporter, configMap, currAttr, val)
+			g.resolveValueToDataSource(exporter, configMap, fullAttributePath, val)
 		}
 
-		if attr, ok := attrInUnResolvableAttrs(key, exporter.UnResolvableAttributes); ok {
+		if attr, ok := attrInUnResolvableAttrs(attributeConfigKey, exporter.UnResolvableAttributes); ok {
 			if resourceBlockType != "data" {
-				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, key)
+				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, attributeConfigKey)
 				unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
 					ResourceType:  resourceType,
 					ResourceLabel: resourceLabel,
-					Name:          key,
+					Name:          attributeConfigKey,
 					Schema:        attr,
 				})
 				if properties, ok := attr.Elem.(*schema.Resource); ok {
@@ -1931,9 +2317,9 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 					for k := range properties.Schema {
 						propertiesMap[k] = fmt.Sprintf("${var.%s.%s}", varReference, k)
 					}
-					configMap[key] = propertiesMap
+					configMap[attributeConfigKey] = propertiesMap
 				} else {
-					configMap[key] = fmt.Sprintf("${var.%s}", varReference)
+					configMap[attributeConfigKey] = fmt.Sprintf("${var.%s}", varReference)
 				}
 			}
 		}
@@ -1942,39 +2328,41 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		// This can cause invalid config files due to including attributes with limits that don't allow for zero values, so we remove
 		// those attributes from the config by default. Attributes can opt-out of this behavior by being added to a ResourceExporter's
 		// AllowZeroValues list.
-		if !exporter.AllowForZeroValues(currAttr) && !exporter.AllowForZeroValuesInMap(prevAttr) {
-			removeZeroValues(key, configMap[key], configMap)
+		if !exporter.AllowForZeroValues(fullAttributePath) && !exporter.AllowForZeroValuesInMap(prevAttr) {
+			removeZeroValues(attributeConfigKey, configMap[attributeConfigKey], configMap)
 		}
 
 		// Nil arrays will be turned into empty arrays if they're defined in AllowEmptyArrays.
 		// We do this after the initial sanitization of empty arrays to nil
 		// so this will cover both cases where the attribute on the state is: null or [].
-		if exporter.AllowForEmptyArrays(currAttr) {
-			if configMap[key] == nil {
-				configMap[key] = []interface{}{}
+		if exporter.AllowForEmptyArrays(fullAttributePath) {
+			if configMap[attributeConfigKey] == nil {
+				configMap[attributeConfigKey] = []interface{}{}
 			}
 		}
 
 		//If the exporter as has customer resolver for an attribute, invoke it.
-		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok {
-			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", currAttr))
+		if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+			tflog.Debug(g.ctx, fmt.Sprintf("Custom resolver invoked for attribute: %s", fullAttributePath))
 			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
 				if err := resolverFunc(configMap, exporters, resourceLabel); err != nil {
-					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", currAttr, err))
+					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", fullAttributePath, err))
 				}
 			}
 		}
 
-		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(currAttr) {
-			if vStr, ok := configMap[key].(string); ok {
-				decodedData, err := getDecodedData(vStr, currAttr)
+		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(fullAttributePath) {
+			if vStr, ok := configMap[attributeConfigKey].(string); ok {
+				decodedData, err := getDecodedData(vStr, fullAttributePath)
 				if err != nil {
 					tflog.Error(g.ctx, fmt.Sprintf("Error decoding JSON string: %v\n", err))
-					configMap[key] = vStr
+					configMap[attributeConfigKey] = vStr
 				} else {
 					uid := uuid.NewString()
+					g.attributesDecodedMutex.Lock()
 					attributesDecoded[uid] = decodedData
-					configMap[key] = uid
+					g.attributesDecodedMutex.Unlock()
+					configMap[attributeConfigKey] = uid
 				}
 			}
 		}
@@ -2007,15 +2395,7 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 		return
 	}
 
-	if g.dataSourceTypesMaps[dataSourceType] == nil {
-		g.dataSourceTypesMaps[dataSourceType] = make(ResourceJSONMaps)
-	}
-
-	// add the data source to the export if it hasn't already been added
-	if _, ok := g.dataSourceTypesMaps[dataSourceType][dataSourceLabel]; ok {
-		return
-	}
-	g.dataSourceTypesMaps[dataSourceType][dataSourceLabel] = dataSourceConfig
+	g.addToDataSourceMaps(dataSourceType, dataSourceLabel, dataSourceConfig)
 }
 
 func attrInUnResolvableAttrs(a string, myMap map[string]*schema.Schema) (*schema.Schema, bool) {
@@ -2038,33 +2418,69 @@ func removeZeroValues(key string, val interface{}, configMap util.JsonMap) {
 
 // Identify the parent config map and if the resources have further dependent resources add a new attribute depends_on
 func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap util.JsonMap) {
+	tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] Called for resource key=%s", key))
+
+	g.dependsListMutex.RLock()
 	list, exists := g.dependsList[key]
-	if !exists {
-		return
+	// Get available keys and full state for debugging (while holding the lock)
+	availableKeys := make([]string, 0, len(g.dependsList))
+	totalDependsListSize := len(g.dependsList)
+	fullDependsListState := make(map[string][]string)
+	for k, v := range g.dependsList {
+		availableKeys = append(availableKeys, k)
+		fullDependsListState[k] = make([]string, len(v))
+		copy(fullDependsListState[k], v)
+	}
+	g.dependsListMutex.RUnlock()
+
+	// Log the complete dependsList state
+	tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] Current dependsList state: total entries=%d, keys: %v",
+		totalDependsListSize, availableKeys))
+	for k, v := range fullDependsListState {
+		if len(v) > 0 {
+			tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] dependsList[%s] = %v (count=%d)", k, v, len(v)))
+		}
 	}
 
-	// Build a quick lookup map from resource ID to resource
+	if !exists {
+		tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] No dependsList entry found for key=%s. Total dependsList size=%d, available keys: %v",
+			key, totalDependsListSize, availableKeys))
+		return
+	}
+	tflog.Info(g.ctx, fmt.Sprintf("[addDependsOnValues] Found dependsList for resource key=%s: %v (count=%d)", key, list, len(list)))
+	tflog.Info(g.ctx, fmt.Sprintf("[addDependsOnValues] Resource %s dependsList DETAIL: %v", key, list))
+
+	// Build a quick lookup map from resource ID to resource (thread-safe access)
+	resources := g.getResources()
+	tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] Retrieved %d resources from getResources() for key=%s", len(resources), key))
+
 	resourceMap := make(map[string]resourceExporter.ResourceInfo)
-	for _, resource := range g.resources {
+	for _, resource := range resources {
 		resourceMap[resource.State.ID] = resource
 	}
 
 	resource, found := resourceMap[key]
 	if found && g.isDataSource(resource.Type, resource.BlockLabel, resource.OriginalLabel) {
+		tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] Skipping data source for key=%s", key))
 		return
 	}
 
 	resourceDependsList := make([]string, 0)
+	resolvedCount := 0
+	unresolvedCount := 0
 
 	for _, res := range list {
 		parts := strings.SplitN(res, ".", 2)
 		if len(parts) != 2 {
+			tflog.Warn(g.ctx, fmt.Sprintf("[addDependsOnValues] Invalid dependency format for key=%s: %s", key, res))
 			continue
 		}
 		prefix, id := parts[0], parts[1]
 
 		resource, found := resourceMap[id]
 		if !found {
+			tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] Dependent resource not found in resourceMap: key=%s, dependency=%s, id=%s", key, res, id))
+			unresolvedCount++
 			continue
 		}
 
@@ -2073,11 +2489,19 @@ func (g *GenesysCloudResourceExporter) addDependsOnValues(key string, configMap 
 			resourceName = "data." + resourceName
 		}
 
-		resourceDependsList = append(resourceDependsList, fmt.Sprintf("$dep$%s$dep$", resourceName))
+		dependsOnString := fmt.Sprintf("$dep$%s$dep$", resourceName)
+		resourceDependsList = append(resourceDependsList, dependsOnString)
+		resolvedCount++
+		tflog.Debug(g.ctx, fmt.Sprintf("[addDependsOnValues] Resolved dependency: key=%s -> %s (id=%s)", key, dependsOnString, id))
 	}
 
 	if len(resourceDependsList) > 0 {
 		configMap["depends_on"] = resourceDependsList
+		tflog.Info(g.ctx, fmt.Sprintf("[addDependsOnValues] SUCCESS: Added depends_on to resource key=%s with %d dependencies (resolved=%d, unresolved=%d): %v",
+			key, len(resourceDependsList), resolvedCount, unresolvedCount, resourceDependsList))
+	} else {
+		tflog.Warn(g.ctx, fmt.Sprintf("[addDependsOnValues] WARNING: No valid dependencies resolved for key=%s. Total dependencies in list=%d, unresolved=%d",
+			key, len(list), unresolvedCount))
 	}
 }
 

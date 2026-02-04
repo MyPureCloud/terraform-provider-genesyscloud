@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
@@ -16,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -1021,6 +1022,38 @@ func flattenVoicemailUserpolicies(d *schema.ResourceData, voicemail *platformcli
 	}
 
 	return []interface{}{voicemailUserpolicy}
+}
+
+func waitForExtensionPoolActivation(ctx context.Context, d *schema.ResourceData, proxy *userProxy) {
+	addresses := d.Get("addresses").([]interface{})
+	if len(addresses) == 0 {
+		return
+	}
+
+	addressMap := addresses[0].(map[string]interface{})
+	phoneNumbers := addressMap["phone_numbers"].(*schema.Set)
+	if phoneNumbers == nil {
+		return
+	}
+
+	for _, phoneInterface := range phoneNumbers.List() {
+		phoneMap := phoneInterface.(map[string]interface{})
+		if extensionPoolId, ok := phoneMap["extension_pool_id"].(string); ok && extensionPoolId != "" {
+			pool, _, err := proxy.getTelephonyExtensionPoolById(ctx, extensionPoolId)
+			if err != nil {
+				log.Printf("Warning: could not validate the extension pool %s on user creation: %s", extensionPoolId, err)
+				return
+			}
+
+			if pool.DateCreated != nil && time.Since(*pool.DateCreated) < 5*time.Second {
+				log.Printf("Waiting 5 seconds for extension pool %s to be created", extensionPoolId)
+				// give the extension pool time to be created
+				time.Sleep(5 * time.Second)
+			}
+		}
+	}
+
+	return
 }
 
 // GenerateBasicUserResource generates a basic user resource with minimum required fields

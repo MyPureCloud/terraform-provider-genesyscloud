@@ -3,7 +3,6 @@ package outbound_digitalruleset
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -41,14 +40,15 @@ var (
 				Type:        schema.TypeString,
 			},
 			`value`: {
-				Description: `The value to compare against the contact's data.`,
-				Required:    true,
+				Description: `The value to compare against the contact's data. If 'value_type' is Numeric or Period, value is required`,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`value_type`: {
-				Description: `The data type the value should be treated as.`,
-				Required:    true,
-				Type:        schema.TypeString,
+				Description:  `The data type the value should be treated as.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"String", "Numeric", "Period", "DateTime"}, false),
 			},
 		},
 	}
@@ -493,6 +493,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: validateDigitalRulesetData,
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the digital rule set`,
@@ -522,6 +523,9 @@ func OutboundDigitalrulesetExporter() *resourceExporter.ResourceExporter {
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
+		},
+		AllowZeroValues: []string{
+			"rules.order",
 		},
 	}
 }

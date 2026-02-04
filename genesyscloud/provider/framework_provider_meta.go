@@ -14,7 +14,7 @@ package provider
 import (
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // SharedProviderMeta provides thread-safe access to provider metadata that can be

@@ -1,4 +1,7 @@
 locals {
+  working_dir = {
+    integration_action = "."
+  }
   dependencies = {
     resource = [
       "../genesyscloud_integration/resource.tf"

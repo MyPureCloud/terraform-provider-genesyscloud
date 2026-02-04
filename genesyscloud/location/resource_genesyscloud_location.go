@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllLocations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -54,12 +54,13 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	proxy := getLocationProxy(sdkConfig)
 	name := d.Get("name").(string)
 	notes := d.Get("notes").(string)
+	addressList, _ := d.Get("address").([]any)
 
 	create := platformclientv2.Locationcreatedefinition{
 		Name:            &name,
 		Path:            buildSdkLocationPath(d),
 		EmergencyNumber: buildSdkLocationEmergencyNumber(d),
-		Address:         buildSdkLocationAddress(d),
+		Address:         buildSdkLocationAddress(addressList),
 	}
 
 	if notes != "" {
@@ -131,9 +132,10 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 			EmergencyNumber: buildSdkLocationEmergencyNumber(d),
 		}
 
-		if d.HasChange("address") {
+		if shouldIncludeAddress(d, sdkConfig) {
 			// Even if address is the same, the API does not allow it in the patch request if a number is assigned
-			update.Address = buildSdkLocationAddress(d)
+			addressList, _ := d.Get("address").([]any)
+			update.Address = buildSdkLocationAddress(addressList)
 		}
 		if notes != "" {
 			update.Notes = &notes

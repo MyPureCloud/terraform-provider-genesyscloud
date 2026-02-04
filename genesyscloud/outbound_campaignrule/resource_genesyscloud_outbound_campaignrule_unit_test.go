@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -189,13 +189,17 @@ func generateCampaignRuleData(id string, name string) platformclientv2.Campaignr
 	// Create campaign rule entity
 	campaignsEntities := make([]platformclientv2.Domainentityref, 3)
 	sequencesEntities := make([]platformclientv2.Domainentityref, 3)
+	var smsCampaignsEntities []platformclientv2.Domainentityref
+	var emailCampaignsEntities []platformclientv2.Domainentityref
 	for i := 0; i < 3; i++ {
 		campaignsEntities[i] = generateRandomDomainEntityRef()
 		sequencesEntities[i] = generateRandomDomainEntityRef()
 	}
 	campaignRuleEntities := platformclientv2.Campaignruleentities{
-		Campaigns: &campaignsEntities,
-		Sequences: &sequencesEntities,
+		Campaigns:      &campaignsEntities,
+		Sequences:      &sequencesEntities,
+		SmsCampaigns:   &smsCampaignsEntities,
+		EmailCampaigns: &emailCampaignsEntities,
 	}
 
 	// Create campaign rule conditions
@@ -221,6 +225,9 @@ func generateCampaignRuleData(id string, name string) platformclientv2.Campaignr
 	}
 	campaignsActions := make([]platformclientv2.Domainentityref, 3)
 	sequencesActions := make([]platformclientv2.Domainentityref, 3)
+	var smsCampaignsActions []platformclientv2.Domainentityref
+	var emailCampaignsActions []platformclientv2.Domainentityref
+
 	for i := 0; i < 3; i++ {
 		campaignsActions[i] = generateRandomDomainEntityRef()
 		sequencesActions[i] = generateRandomDomainEntityRef()
@@ -229,6 +236,8 @@ func generateCampaignRuleData(id string, name string) platformclientv2.Campaignr
 		UseTriggeringEntity: platformclientv2.Bool(false),
 		Campaigns:           &campaignsActions,
 		Sequences:           &sequencesActions,
+		SmsCampaigns:        &smsCampaignsActions,
+		EmailCampaigns:      &emailCampaignsActions,
 	}
 	campaignRuleAction := platformclientv2.Campaignruleaction{
 		Id:                         platformclientv2.String(uuid.NewString()),
@@ -275,6 +284,8 @@ func generateCampaignruleEntityInterface(campaignRuleEntities *platformclientv2.
 		campaignRuleEntitiesMap = make(map[string]interface{})
 		campaigns               []interface{}
 		sequences               []interface{}
+		smsCampaigns            []interface{}
+		emailCampaigns          []interface{}
 	)
 
 	if campaignRuleEntities.Campaigns != nil {
@@ -289,17 +300,33 @@ func generateCampaignruleEntityInterface(campaignRuleEntities *platformclientv2.
 		}
 	}
 
+	if campaignRuleEntities.SmsCampaigns != nil {
+		for _, v := range *campaignRuleEntities.SmsCampaigns {
+			smsCampaigns = append(smsCampaigns, *v.Id)
+		}
+	}
+
+	if campaignRuleEntities.EmailCampaigns != nil {
+		for _, v := range *campaignRuleEntities.EmailCampaigns {
+			emailCampaigns = append(emailCampaigns, *v.Id)
+		}
+	}
+
 	campaignRuleEntitiesMap["campaign_ids"] = campaigns
 	campaignRuleEntitiesMap["sequence_ids"] = sequences
+	campaignRuleEntitiesMap["sms_campaign_ids"] = smsCampaigns
+	campaignRuleEntitiesMap["email_campaign_ids"] = emailCampaigns
 
 	return []interface{}{campaignRuleEntitiesMap}
 }
 
 func generateActionEntities(entities *platformclientv2.Campaignruleactionentities) []interface{} {
 	var (
-		campaigns   []interface{}
-		sequences   []interface{}
-		entitiesMap = make(map[string]interface{})
+		campaigns      []interface{}
+		sequences      []interface{}
+		smsCampaigns   []interface{}
+		emailCampaigns []interface{}
+		entitiesMap    = make(map[string]interface{})
 	)
 
 	if entities == nil {
@@ -318,8 +345,22 @@ func generateActionEntities(entities *platformclientv2.Campaignruleactionentitie
 		}
 	}
 
+	if entities.SmsCampaigns != nil {
+		for _, v := range *entities.SmsCampaigns {
+			smsCampaigns = append(smsCampaigns, *v.Id)
+		}
+	}
+
+	if entities.EmailCampaigns != nil {
+		for _, v := range *entities.EmailCampaigns {
+			emailCampaigns = append(emailCampaigns, *v.Id)
+		}
+	}
+
 	entitiesMap["campaign_ids"] = campaigns
 	entitiesMap["sequence_ids"] = sequences
+	entitiesMap["sms_campaign_ids"] = smsCampaigns
+	entitiesMap["email_campaign_ids"] = emailCampaigns
 	entitiesMap["use_triggering_entity"] = *entities.UseTriggeringEntity
 
 	return []interface{}{entitiesMap}

@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func createConversationsMessagingSettingsDefault(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -39,6 +39,10 @@ func readConversationsMessagingSettingsDefault(ctx context.Context, d *schema.Re
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging settings default %s: %s", d.Id(), getErr), resp))
 		}
 
+		if messagingSettingDefault.Id == nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging settings default %s: messaging setting default Id is nil", d.Id()), resp))
+		}
+
 		resourcedata.SetNillableValue(d, "setting_id", messagingSettingDefault.Id)
 
 		log.Printf("Read conversations messaging settings default %s %s", d.Id(), *messagingSettingDefault.Id)
@@ -60,6 +64,10 @@ func updateConversationsMessagingSettingsDefault(ctx context.Context, d *schema.
 	messagingSettingDefault, resp, err := proxy.updateConversationsMessagingSettingsDefault(ctx, &updateRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update conversations messaging settings default %s: %s", d.Id(), err), resp)
+	}
+
+	if messagingSettingDefault.Id == nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update conversations messaging settings default %s: messaging setting default Id is nil", d.Id()), resp)
 	}
 
 	log.Printf("Updated conversations messaging settings default %s", *messagingSettingDefault.Id)

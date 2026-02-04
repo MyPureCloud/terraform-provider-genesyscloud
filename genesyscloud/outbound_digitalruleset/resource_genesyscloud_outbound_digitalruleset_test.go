@@ -2,13 +2,14 @@ package outbound_digitalruleset
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -164,6 +165,31 @@ func TestAccResourceOutboundDigitalruleset(t *testing.T) {
 				ResourceName:      "genesyscloud_outbound_digitalruleset." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				Config: contactListResourceGenerate +
+					GenerateOutboundDigitalRuleSetResource(
+						resourceLabel,
+						name2,
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel1+".id",
+						GenerateDigitalRules(
+							ruleName,
+							ruleOrder,
+							ruleCategory,
+							GenerateDigitalRuleSetConditions(
+								GenerateContactColumnConditionSettings(
+									contactColumnName,
+									columnOperator,
+									"",        // Empty value
+									"Numeric", // Numeric type requires value
+								),
+							),
+							GenerateDigitalRuleSetActions(
+								GenerateDoNotSendActionSettings(),
+							),
+						),
+					),
+				ExpectError: regexp.MustCompile(`value_type\s+Numeric requires value to be set`),
 			},
 		},
 		CheckDestroy: testVerifyOutboundDigitalrulesetDestroyed,

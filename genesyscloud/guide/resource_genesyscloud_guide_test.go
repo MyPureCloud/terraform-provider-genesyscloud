@@ -14,8 +14,9 @@ import (
 )
 
 func TestAccResourceGuideManual(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
-		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
+
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
 		return
 	}
 
@@ -56,16 +57,15 @@ func TestAccResourceGuideManual(t *testing.T) {
 }
 
 func TestAccResourceGuidePrompt(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" {
-		t.Skipf("Skipping test for region %s. genesyscloud_guide is currently only supported in tca", v)
-		return
-	}
 	var (
 		resourceLabel = "guide"
 
 		name = "Test Guide Prompt" + uuid.NewString()
 	)
-
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),

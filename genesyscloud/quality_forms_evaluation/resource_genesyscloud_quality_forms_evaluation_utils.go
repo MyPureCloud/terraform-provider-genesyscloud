@@ -2,12 +2,13 @@ package quality_forms_evaluation
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func buildSdkQuestionGroups(d *schema.ResourceData) *[]platformclientv2.Evaluationquestiongroup {
@@ -48,8 +49,6 @@ func buildSdkQuestionGroups(d *schema.ResourceData) *[]platformclientv2.Evaluati
 }
 
 func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationquestion {
-	questionType := "multipleChoiceQuestion"
-
 	sdkQuestions := make([]platformclientv2.Evaluationquestion, 0)
 	for _, question := range questions {
 		questionsMap := question.(map[string]interface{})
@@ -58,22 +57,89 @@ func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationqu
 		helpText := questionsMap["help_text"].(string)
 		naEnabled := questionsMap["na_enabled"].(bool)
 		commentsRequired := questionsMap["comments_required"].(bool)
-		answerQuestions := questionsMap["answer_options"].([]interface{})
 		isKill := questionsMap["is_kill"].(bool)
 		isCritical := questionsMap["is_critical"].(bool)
 
 		sdkQuestion := platformclientv2.Evaluationquestion{
 			Text:             &text,
 			HelpText:         &helpText,
-			VarType:          &questionType,
 			NaEnabled:        &naEnabled,
 			CommentsRequired: &commentsRequired,
 			IsKill:           &isKill,
 			IsCritical:       &isCritical,
-			AnswerOptions:    BuildSdkAnswerOptions(answerQuestions),
+		}
+
+		// Handle type field - use explicit type if provided, otherwise infer from content
+		if questionType, ok := questionsMap["type"].(string); ok && questionType != "" {
+			sdkQuestion.VarType = &questionType
+		} else {
+			// Infer type based on which options are provided
+			multipleSelectOptionQuestions := questionsMap["multiple_select_option_questions"].([]interface{})
+			if len(multipleSelectOptionQuestions) > 0 {
+				multipleSelectType := "multipleSelectQuestion"
+				sdkQuestion.VarType = &multipleSelectType
+			} else {
+				multipleChoiceType := "multipleChoiceQuestion"
+				sdkQuestion.VarType = &multipleChoiceType
+			}
+		}
+
+		// Set answer options or multiple select option questions based on type
+		multipleSelectOptionQuestions := questionsMap["multiple_select_option_questions"].([]interface{})
+		if len(multipleSelectOptionQuestions) > 0 {
+			sdkQuestion.MultipleSelectOptionQuestions = buildSdkMultipleSelectOptionQuestions(multipleSelectOptionQuestions)
+		}
+		answerOptions := questionsMap["answer_options"].([]interface{})
+		if len(answerOptions) > 0 {
+			sdkQuestion.AnswerOptions = BuildSdkAnswerOptions(answerOptions)
 		}
 
 		visibilityCondition := questionsMap["visibility_condition"].([]interface{})
+		sdkQuestion.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
+
+		sdkQuestions = append(sdkQuestions, sdkQuestion)
+	}
+
+	return &sdkQuestions
+}
+
+func buildSdkMultipleSelectOptionQuestions(optionQuestions []interface{}) *[]platformclientv2.Evaluationquestion {
+	sdkQuestions := make([]platformclientv2.Evaluationquestion, 0)
+	for _, optionQuestion := range optionQuestions {
+		optionMap := optionQuestion.(map[string]interface{})
+
+		text := optionMap["text"].(string)
+		helpText := optionMap["help_text"].(string)
+		naEnabled := optionMap["na_enabled"].(bool)
+		commentsRequired := optionMap["comments_required"].(bool)
+		isKill := optionMap["is_kill"].(bool)
+		isCritical := optionMap["is_critical"].(bool)
+
+		sdkQuestion := platformclientv2.Evaluationquestion{
+			Text:             &text,
+			HelpText:         &helpText,
+			NaEnabled:        &naEnabled,
+			CommentsRequired: &commentsRequired,
+			IsKill:           &isKill,
+			IsCritical:       &isCritical,
+		}
+
+		// Handle type field - use explicit type if provided, otherwise default to multipleChoiceQuestion
+		if questionType, ok := optionMap["type"].(string); ok && questionType != "" {
+			sdkQuestion.VarType = &questionType
+		} else {
+			// Default to multipleChoiceQuestion for option questions
+			multipleChoiceType := "multipleChoiceQuestion"
+			sdkQuestion.VarType = &multipleChoiceType
+		}
+
+		// Set answer options
+		answerOptions := optionMap["answer_options"].([]interface{})
+		if len(answerOptions) > 0 {
+			sdkQuestion.AnswerOptions = BuildSdkAnswerOptions(answerOptions)
+		}
+
+		visibilityCondition := optionMap["visibility_condition"].([]interface{})
 		sdkQuestion.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
 
 		sdkQuestions = append(sdkQuestions, sdkQuestion)
@@ -87,18 +153,55 @@ func BuildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 	for _, answerOptionsList := range answerOptions {
 		answerOptionsMap := answerOptionsList.(map[string]interface{})
 
-		answerText := answerOptionsMap["text"].(string)
 		answerValue := answerOptionsMap["value"].(int)
 
 		sdkAnswerOption := platformclientv2.Answeroption{
-			Text:  &answerText,
 			Value: &answerValue,
+		}
+
+		// Handle text field (optional for built-in types)
+		if answerText, ok := answerOptionsMap["text"].(string); ok && answerText != "" {
+			sdkAnswerOption.Text = &answerText
+		}
+
+		// Handle built_in_type field for multiple select answer options
+		if builtInType, ok := answerOptionsMap["built_in_type"].(string); ok && builtInType != "" {
+			sdkAnswerOption.BuiltInType = &builtInType
+		}
+
+		// Handle assistance_conditions
+		if assistanceConditions, ok := answerOptionsMap["assistance_conditions"].([]interface{}); ok && len(assistanceConditions) > 0 {
+			sdkAnswerOption.AssistanceConditions = buildSdkAssistanceConditions(assistanceConditions)
 		}
 
 		sdkAnswerOptions = append(sdkAnswerOptions, sdkAnswerOption)
 	}
 
 	return &sdkAnswerOptions
+}
+
+func buildSdkAssistanceConditions(assistanceConditions []interface{}) *[]platformclientv2.Assistancecondition {
+	sdkConditions := make([]platformclientv2.Assistancecondition, 0)
+	for _, condition := range assistanceConditions {
+		conditionMap := condition.(map[string]interface{})
+
+		operator := conditionMap["operator"].(string)
+		topicIdsList := conditionMap["topic_ids"].([]interface{})
+
+		topicIds := make([]string, len(topicIdsList))
+		for i, id := range topicIdsList {
+			topicIds[i] = id.(string)
+		}
+
+		sdkCondition := platformclientv2.Assistancecondition{
+			Operator: &operator,
+			TopicIds: &topicIds,
+		}
+
+		sdkConditions = append(sdkConditions, sdkCondition)
+	}
+
+	return &sdkConditions
 }
 
 func BuildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
@@ -171,14 +274,21 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 
 	for _, question := range *questions {
 		questionMap := make(map[string]interface{})
+
+		questionText := ""
+		if question.Text != nil {
+			questionText = *question.Text
+			questionMap["text"] = *question.Text
+		}
+
 		if question.Id != nil {
 			questionMap["id"] = *question.Id
 		}
-		if question.Text != nil {
-			questionMap["text"] = *question.Text
-		}
 		if question.HelpText != nil {
 			questionMap["help_text"] = *question.HelpText
+		}
+		if question.VarType != nil {
+			questionMap["type"] = *question.VarType
 		}
 		if question.NaEnabled != nil {
 			questionMap["na_enabled"] = *question.NaEnabled
@@ -195,13 +305,62 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 		if question.VisibilityCondition != nil {
 			questionMap["visibility_condition"] = FlattenVisibilityCondition(question.VisibilityCondition)
 		}
-		if question.AnswerOptions != nil {
+		if question.AnswerOptions != nil && len(*question.AnswerOptions) > 0 {
 			questionMap["answer_options"] = FlattenAnswerOptions(question.AnswerOptions)
+		}
+		if question.MultipleSelectOptionQuestions != nil && len(*question.MultipleSelectOptionQuestions) > 0 {
+			questionMap["multiple_select_option_questions"] = flattenMultipleSelectOptionQuestions(question.MultipleSelectOptionQuestions)
+			log.Printf("flattenQuestions: Question '%s' has %d multiple_select_option_questions", questionText, len(*question.MultipleSelectOptionQuestions))
 		}
 
 		questionList = append(questionList, questionMap)
 	}
 	return questionList
+}
+
+func flattenMultipleSelectOptionQuestions(optionQuestions *[]platformclientv2.Evaluationquestion) []interface{} {
+	if optionQuestions == nil {
+		return nil
+	}
+
+	var optionList []interface{}
+
+	for _, option := range *optionQuestions {
+		optionMap := make(map[string]interface{})
+		if option.Id != nil {
+			optionMap["id"] = *option.Id
+		}
+		if option.Text != nil {
+			optionMap["text"] = *option.Text
+		}
+		if option.HelpText != nil {
+			optionMap["help_text"] = *option.HelpText
+		}
+		if option.VarType != nil {
+			optionMap["type"] = *option.VarType
+		}
+		if option.NaEnabled != nil {
+			optionMap["na_enabled"] = *option.NaEnabled
+		}
+		if option.CommentsRequired != nil {
+			optionMap["comments_required"] = *option.CommentsRequired
+		}
+		if option.IsKill != nil {
+			optionMap["is_kill"] = *option.IsKill
+		}
+		if option.IsCritical != nil {
+			optionMap["is_critical"] = *option.IsCritical
+		}
+		if option.VisibilityCondition != nil {
+			optionMap["visibility_condition"] = FlattenVisibilityCondition(option.VisibilityCondition)
+		}
+		if option.AnswerOptions != nil {
+			optionMap["answer_options"] = FlattenAnswerOptions(option.AnswerOptions)
+		}
+
+		optionList = append(optionList, optionMap)
+	}
+	return optionList
 }
 
 func FlattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []interface{} {
@@ -222,9 +381,34 @@ func FlattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []inte
 		if answerOption.Value != nil {
 			answerOptionMap["value"] = *answerOption.Value
 		}
+		if answerOption.BuiltInType != nil {
+			answerOptionMap["built_in_type"] = *answerOption.BuiltInType
+		}
+		if answerOption.AssistanceConditions != nil {
+			answerOptionMap["assistance_conditions"] = flattenAssistanceConditions(answerOption.AssistanceConditions)
+		}
 		answerOptionsList = append(answerOptionsList, answerOptionMap)
 	}
 	return answerOptionsList
+}
+
+func flattenAssistanceConditions(assistanceConditions *[]platformclientv2.Assistancecondition) []interface{} {
+	if assistanceConditions == nil {
+		return nil
+	}
+
+	var conditionList []interface{}
+	for _, condition := range *assistanceConditions {
+		conditionMap := make(map[string]interface{})
+		if condition.Operator != nil {
+			conditionMap["operator"] = *condition.Operator
+		}
+		if condition.TopicIds != nil {
+			conditionMap["topic_ids"] = *condition.TopicIds
+		}
+		conditionList = append(conditionList, conditionMap)
+	}
+	return conditionList
 }
 
 func FlattenVisibilityCondition(visibilityCondition *platformclientv2.Visibilitycondition) []interface{} {
@@ -299,10 +483,24 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
 	questionsString := ""
 
 	for _, question := range *questions {
+		var optionsString string
+		if len(question.MultipleSelectOptionQuestions) > 0 {
+			optionsString = GenerateMultipleSelectOptionQuestions(&question.MultipleSelectOptionQuestions)
+		} else {
+			optionsString = GenerateFormAnswerOptions(&question.AnswerOptions)
+		}
+
+		// Generate type field if specified
+		typeString := ""
+		if question.Type != "" {
+			typeString = fmt.Sprintf(`type = "%s"`, question.Type)
+		}
+
 		questionString := fmt.Sprintf(`
         questions {
             text              = "%s"
             help_text         = "%s"
+            %s
             na_enabled        = %v
             comments_required = %v
             is_kill           = %v
@@ -312,18 +510,62 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
         }
         `, question.Text,
 			question.HelpText,
+			typeString,
 			question.NaEnabled,
 			question.CommentsRequired,
 			question.IsKill,
 			question.IsCritical,
 			GenerateFormVisibilityCondition(&question.VisibilityCondition),
-			GenerateFormAnswerOptions(&question.AnswerOptions),
+			optionsString,
 		)
 
 		questionsString += questionString
 	}
 
 	return questionsString
+}
+
+func GenerateMultipleSelectOptionQuestions(optionQuestions *[]MultipleSelectOptionQuestionStruct) string {
+	if optionQuestions == nil {
+		return ""
+	}
+
+	optionsString := ""
+
+	for _, option := range *optionQuestions {
+		// Generate type field if specified
+		typeString := ""
+		if option.Type != "" {
+			typeString = fmt.Sprintf(`type = "%s"`, option.Type)
+		}
+
+		optionString := fmt.Sprintf(`
+        multiple_select_option_questions {
+            text              = "%s"
+            help_text         = "%s"
+            %s
+            na_enabled        = %v
+            comments_required = %v
+            is_kill           = %v
+            is_critical       = %v
+            %s
+            %s
+        }
+        `, option.Text,
+			option.HelpText,
+			typeString,
+			option.NaEnabled,
+			option.CommentsRequired,
+			option.IsKill,
+			option.IsCritical,
+			GenerateFormVisibilityCondition(&option.VisibilityCondition),
+			GenerateFormAnswerOptions(&option.AnswerOptions),
+		)
+
+		optionsString += optionString
+	}
+
+	return optionsString
 }
 
 func GenerateFormAnswerOptions(answerOptions *[]AnswerOptionStruct) string {
@@ -334,19 +576,68 @@ func GenerateFormAnswerOptions(answerOptions *[]AnswerOptionStruct) string {
 	answerOptionsString := ""
 
 	for _, answerOption := range *answerOptions {
-		answerOptionString := fmt.Sprintf(`
+		var answerOptionString string
+		assistanceConditionsString := GenerateAssistanceConditions(&answerOption.AssistanceConditions)
+
+		if answerOption.BuiltInType != "" {
+			answerOptionString = fmt.Sprintf(`
+        answer_options {
+            built_in_type = "%s"
+            value         = %v
+            %s
+        }
+        `, answerOption.BuiltInType,
+				answerOption.Value,
+				assistanceConditionsString,
+			)
+		} else {
+			answerOptionString = fmt.Sprintf(`
         answer_options {
             text  = "%s"
             value = %v
+            %s
         }
         `, answerOption.Text,
-			answerOption.Value,
-		)
+				answerOption.Value,
+				assistanceConditionsString,
+			)
+		}
 
 		answerOptionsString += answerOptionString
 	}
 
 	return answerOptionsString
+}
+
+func GenerateAssistanceConditions(assistanceConditions *[]AssistanceConditionStruct) string {
+	if assistanceConditions == nil || len(*assistanceConditions) == 0 {
+		return ""
+	}
+
+	conditionsString := ""
+
+	for _, condition := range *assistanceConditions {
+		topicIdsString := ""
+		for i, topicId := range condition.TopicIds {
+			if i > 0 {
+				topicIdsString += ", "
+			}
+			topicIdsString += strconv.Quote(topicId)
+		}
+
+		conditionString := fmt.Sprintf(`
+        assistance_conditions {
+            operator  = "%s"
+            topic_ids = [%s]
+        }
+        `, condition.Operator,
+			topicIdsString,
+		)
+
+		conditionsString += conditionString
+	}
+
+	return conditionsString
 }
 
 func GenerateFormVisibilityCondition(condition *VisibilityConditionStruct) string {

@@ -69,8 +69,8 @@ type Registrar interface {
 	GetDataSourceProviderType(dataSourceType string) ProviderType
 }
 
-// Package-level variables for managing provider resources and data sources.
-// These variables are used by the TFexport functionality and provider initialization.
+// need this for TFexport where Resources are required for provider initialization.
+// NewGenesysCloudResourceExporter
 
 // SDKv2 provider resources and data sources (legacy architecture)
 var providerResources map[string]*schema.Resource   // Maps resource names to SDKv2 resource definitions

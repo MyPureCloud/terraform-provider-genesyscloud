@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllWebDeploymentConfigurations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -150,6 +150,7 @@ func readWebDeploymentConfiguration(ctx context.Context, d *schema.ResourceData,
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "messenger", configuration.Messenger, wdcUtils.FlattenMessengerSettings)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "cobrowse", configuration.Cobrowse, wdcUtils.FlattenCobrowseSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "video", configuration.Video, wdcUtils.FlattenVideoSettings)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "journey_events", configuration.JourneyEvents, wdcUtils.FlattenJourneyEvents)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "support_center", configuration.SupportCenter, wdcUtils.FlattenSupportCenterSettings)
 

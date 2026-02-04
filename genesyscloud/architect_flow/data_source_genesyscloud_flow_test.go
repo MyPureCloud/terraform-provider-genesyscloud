@@ -2,6 +2,7 @@ package architect_flow
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -17,13 +18,23 @@ import (
 )
 
 func TestAccDataSourceArchitectFlow(t *testing.T) {
+	tempDir := testrunner.GetTestTempPath()
+	os.MkdirAll(tempDir, 0755)
+	tempFilePath := filepath.Join(tempDir, "data_source_architect_flow_test_"+uuid.NewString()+".yaml")
+
+	defer func() {
+		if err := os.Remove(tempFilePath); err != nil {
+			t.Logf("Failed to remove temp file %s: %v", tempFilePath, err)
+		}
+		t.Logf("Temp file %s removed", tempFilePath)
+	}()
+
 	var (
 		flowDataSourceLabel = "flow-data"
 		flowName            = "test_data_flow" + uuid.NewString()
 		inboundcallConfig   = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 
 		flowResourceLabel = "test_flow"
-		filePath          = filepath.Join(testrunner.RootDir, "examples", "resources", ResourceType, "inboundcall_flow_example.yaml")
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -33,7 +44,7 @@ func TestAccDataSourceArchitectFlow(t *testing.T) {
 			{
 				Config: GenerateFlowResource(
 					flowResourceLabel,
-					filePath,
+					tempFilePath,
 					inboundcallConfig,
 					false,
 				) + generateFlowDataSource(

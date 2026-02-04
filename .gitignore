@@ -28,6 +28,8 @@ website/node_modules
 terraform-provider-genesyscloud
 .env
 .vscode
+.kiro
+.cursor
 **/true
 website/vendor
 vendor/

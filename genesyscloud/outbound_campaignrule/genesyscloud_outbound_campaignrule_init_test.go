@@ -11,7 +11,11 @@ import (
 	obResponseSet "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callanalysisresponseset"
 	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	outboundContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	outboundMessagingcampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
+	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	responseManagementResponse "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_response"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
@@ -58,6 +62,10 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
 	providerResources[outboundSequence.ResourceType] = outboundSequence.ResourceOutboundSequence()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
+	providerResources[outboundMessagingcampaign.ResourceType] = outboundMessagingcampaign.ResourceOutboundMessagingcampaign()
+	providerResources[responseManagementLibrary.ResourceType] = responseManagementLibrary.ResourceResponsemanagementLibrary()
+	providerResources[responseManagementResponse.ResourceType] = responseManagementResponse.ResourceResponsemanagementResponse()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

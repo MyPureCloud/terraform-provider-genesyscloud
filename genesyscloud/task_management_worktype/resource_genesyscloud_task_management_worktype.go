@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -117,6 +117,10 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 
 		if worktype.DefaultScript != nil {
 			resourcedata.SetNillableValue(d, "default_script_id", worktype.DefaultScript.Id)
+		}
+
+		if worktype.RuleSettings != nil {
+			resourcedata.SetNillableValue(d, "flow_rules_enabled", worktype.RuleSettings.FlowRulesEnabled)
 		}
 
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)

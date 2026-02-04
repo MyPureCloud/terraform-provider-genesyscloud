@@ -11,11 +11,13 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -42,7 +44,7 @@ func getArchitectGrammarLanguageFromResourceData(d *schema.ResourceData) platfor
 }
 
 func buildGrammarLanguageFileMetadata(fileMetadata []interface{}) *platformclientv2.Grammarlanguagefilemetadata {
-	if fileMetadata == nil || len(fileMetadata) <= 0 {
+	if len(fileMetadata) == 0 {
 		return nil
 	}
 
@@ -258,4 +260,28 @@ func splitGrammarLanguageId(languageId string) (grammarId string, languageCode s
 		return split[0], split[1]
 	}
 	return "", ""
+}
+
+// validateFileContentHash validates that file_content_hash is provided for non-S3 file paths
+func validateFileContentHash(d *schema.ResourceData) diag.Diagnostics {
+	validatorFunc := func(attr string) diag.Diagnostics {
+		if fileDataSlice := d.Get(attr).([]any); len(fileDataSlice) > 0 {
+			fileDataMap := fileDataSlice[0].(map[string]any)
+			fch, ok := fileDataMap["file_content_hash"].(string)
+			if (!ok || fch == "") && !aws.IsS3Path(fileDataMap["file_name"].(string)) {
+				return diag.Errorf("file_content_hash is required for non-S3 file paths")
+			}
+		}
+		return nil
+	}
+
+	if diags := validatorFunc("voice_file_data"); diags.HasError() {
+		return diags
+	}
+
+	if diags := validatorFunc("dtmf_file_data"); diags.HasError() {
+		return diags
+	}
+
+	return nil
 }

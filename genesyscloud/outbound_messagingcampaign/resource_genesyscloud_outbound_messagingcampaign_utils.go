@@ -2,9 +2,12 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -380,4 +383,122 @@ func GetOutboundDigitalRuleSets() (string, error) {
 		return *ruleSet.Id, nil
 	}
 	return "", err
+}
+
+func CreateRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclientv2.RoutingApi) error {
+	var (
+		phoneNumberType = "local"
+		countryCode     = "US"
+		status          string
+		maxRetries      = 10
+	)
+	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
+	if resp.StatusCode == 200 {
+		// Number already exists
+		return nil
+	} else if resp.StatusCode == http.StatusNotFound {
+		body := platformclientv2.Smsphonenumberprovision{
+			PhoneNumber:     &inputSmsPhoneNumber,
+			PhoneNumberType: &phoneNumberType,
+			CountryCode:     &countryCode,
+		}
+		// POST /api/v2/routing/sms/phonenumbers
+		address, _, err := api.PostRoutingSmsPhonenumbers(body)
+		if err != nil {
+			return err
+		}
+		// Ensure status transitions to complete before proceeding
+		for i := 0; i <= maxRetries; i++ {
+			time.Sleep(3 * time.Second)
+			// GET /api/v2/routing/sms/phonenumbers/{addressId}
+			sdkSmsPhoneNumber, _, err := api.GetRoutingSmsPhonenumber(*address.PhoneNumber, "compliance")
+			if err != nil {
+				return err
+			}
+			status = *sdkSmsPhoneNumber.ProvisioningStatus.State
+			if status == "Running" {
+				if i == maxRetries {
+					return fmt.Errorf(`sms phone number status did not transition to "Completed" within max retries %v`, maxRetries)
+				}
+				continue
+			}
+			break
+		}
+		if status == "Failed" {
+			return fmt.Errorf(`sms phone number provisioning failed`)
+		}
+	} else if err != nil {
+		return fmt.Errorf("error checking for sms phone number %v: %v", inputSmsPhoneNumber, err)
+	}
+	return nil
+}
+func CheckOutboundDomainExists(id string) error {
+	config, _ := provider.AuthorizeSdk()
+	routingApi := platformclientv2.NewRoutingApiWithConfig(config)
+
+	log.Printf("Checking if outbound domain (%s) exists", id)
+	outboundDomain, resp, err := routingApi.GetRoutingEmailOutboundDomain(id, "")
+	if err != nil && resp.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("error getting outbound domain (%s): %v", id, err)
+	}
+
+	if isDomainVerified(outboundDomain) {
+		log.Printf("Outbound domain (%s) exists and is verified", id)
+		return nil
+	}
+
+	if resp.StatusCode == 404 {
+		// outbound domain for test does not exist so create it
+		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
+		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomaincreaterequest{
+			Id: &id,
+		})
+		if postErr != nil {
+			return fmt.Errorf("failed to create outbound domain: %v", err)
+		}
+
+		log.Printf("Outbound domain (%s) created", id)
+		time.Sleep(3 * time.Second)
+	}
+
+	// ensure domain is verified
+	if !isDomainVerified(outboundDomain) {
+		log.Printf("Verifying outbound domain (%s)...", id)
+
+		result, _, putErr := routingApi.PutRoutingEmailOutboundDomainActivation(id)
+		if putErr != nil {
+			return fmt.Errorf("failed to verify outbound domain (%s): %v", id, err)
+		}
+
+		if checkDomainVerification(result) {
+			log.Printf("Outbound domain (%s) verified", id)
+		}
+	}
+	return nil
+}
+
+func isDomainVerified(domain *platformclientv2.Outbounddomain) bool {
+	if domain == nil ||
+		domain.DkimVerificationResult == nil ||
+		domain.CnameVerificationResult == nil ||
+		domain.DkimVerificationResult.Status == nil ||
+		domain.CnameVerificationResult.Status == nil {
+		return false
+	}
+
+	return *domain.DkimVerificationResult.Status == "VERIFIED" &&
+		*domain.CnameVerificationResult.Status == "VERIFIED"
+}
+
+func checkDomainVerification(domain *platformclientv2.Emailoutbounddomainresult) bool {
+	if domain == nil ||
+		domain.DnsTxtSendingRecord == nil ||
+		domain.DnsCnameBounceRecord == nil ||
+		domain.DnsTxtSendingRecord.VerificationStatus == nil ||
+		domain.DnsCnameBounceRecord.VerificationStatus == nil {
+		return false
+	}
+
+	return *domain.DnsTxtSendingRecord.VerificationStatus == "Verified" &&
+		*domain.DnsCnameBounceRecord.VerificationStatus == "Verified"
 }

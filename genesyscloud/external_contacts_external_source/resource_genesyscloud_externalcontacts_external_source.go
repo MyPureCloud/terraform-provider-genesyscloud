@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -35,7 +35,17 @@ func getAllAuthExternalContactsExternalSources(ctx context.Context, clientConfig
 			continue
 		}
 		log.Printf("Dealing with external source id : %s", *externalSource.Id)
-		resources[*externalSource.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalSource.Id}
+
+		// Use source name as blockLabel for portability across orgs
+		// Fall back to GUID if no name exists
+		blockLabel := ""
+		if externalSource.Name != nil && *externalSource.Name != "" {
+			blockLabel = *externalSource.Name
+		} else {
+			blockLabel = *externalSource.Id
+		}
+
+		resources[*externalSource.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 	return resources, nil
 }

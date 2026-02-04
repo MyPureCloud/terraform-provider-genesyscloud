@@ -6,7 +6,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
@@ -59,7 +59,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)
-	sdkPatchSegment.AssignmentExpirationDays = resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days")
+	sdkPatchSegment.SetField("AssignmentExpirationDays", resourcedata.GetNillableValue[int](journeySegment, "assignment_expiration_days"))
 
 	return &sdkPatchSegment
 }

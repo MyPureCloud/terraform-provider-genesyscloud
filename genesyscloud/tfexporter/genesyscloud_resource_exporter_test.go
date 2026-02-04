@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -271,6 +271,7 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		resourceTypeFilter: IncludeFilterByResourceType,
 		resourceFilter:     IncludeFilterResourceByRegex,
 		exportFormat:       "hcl",
+		maxConcurrentOps:   10,
 		exporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
@@ -359,12 +360,12 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 		CyclicDependsList: nil,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
-		return resources, dependencyStruct, nil
+	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
+		return resources, dependencyStruct, nil, nil
 	}
 
-	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, diag.Diagnostics) {
-		return resources, dependencyStruct, nil
+	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		return resources, dependencyStruct, nil, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{

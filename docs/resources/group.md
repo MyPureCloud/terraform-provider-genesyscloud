@@ -19,6 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/groups/{groupId}/individuals](https://developer.mypurecloud.com/api/rest/v2/groups/#get-api-v2-groups--groupId--individuals)
 * [POST /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#post-api-v2-groups--groupId--members)
 * [DELETE /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#delete-api-v2-groups--groupId--members)
+* [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#get-api-v2-voicemail-groups--groupId--policy)
+* [PATCH /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#patch-api-v2-voicemail-groups--groupId--policy)
 
 ## Example Usage
 
@@ -75,6 +77,7 @@ resource "genesyscloud_group" "example_group2" {
 - `rules_visible` (Boolean) Are membership rules visible to the person requesting to view the group. Defaults to `true`.
 - `type` (String) Group type (official | social). This cannot be modified. Changing type attribute will cause the existing genesys_group object to dropped and recreated with a new ID. Defaults to `official`.
 - `visibility` (String) Who can view this group (public | owners | members). Defaults to `public`.
+- `voicemail_policy` (Block List, Max: 1) The voicemail policy associated with this group (see [below for nested schema](#nestedblock--voicemail_policy))
 
 ### Read-Only
 
@@ -91,4 +94,14 @@ Optional:
 
 - `extension` (String) Phone extension.
 - `number` (String) Phone number for this contact type. Must be in an E.164 number format.
+
+
+<a id="nestedblock--voicemail_policy"></a>
+### Nested Schema for `voicemail_policy`
+
+Optional:
+
+- `disable_email_pii` (Boolean) Removes any PII from group emails. This is overridden by the analogous organization configuration value. This is always true if HIPAA is enabled or unknown for an organization.
+- `include_email_transcriptions` (Boolean) Whether to include the voicemail transcription in a group notification email.
+- `send_email_notifications` (Boolean) Whether email notifications are sent to group members when a new voicemail is received.
 

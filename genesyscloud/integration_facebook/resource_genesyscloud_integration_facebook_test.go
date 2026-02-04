@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -34,7 +34,7 @@ func TestAccResourceIntegrationFacebook(t *testing.T) {
 		appSecret          = ""
 		name2              = "Terraform Facebook2-" + uuid.NewString()
 
-		nameSupportedContent          = "Terraform Supported Content - " + uuid.NewString()
+		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"
 		inboundType                   = "*/*"
 

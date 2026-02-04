@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -82,6 +82,7 @@ func readIdpPing(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		resourcedata.SetNillableValue(d, "relying_party_identifier", pingIdentity.RelyingPartyIdentifier)
 		resourcedata.SetNillableValue(d, "slo_uri", pingIdentity.SloURI)
 		resourcedata.SetNillableValue(d, "slo_binding", pingIdentity.SloBinding)
+		resourcedata.SetNillableValue(d, "sign_authn_requests", pingIdentity.SignAuthnRequests)
 
 		if pingIdentity.Certificate != nil {
 			d.Set("certificates", lists.StringListToInterfaceList([]string{*pingIdentity.Certificate}))
@@ -156,5 +157,6 @@ func getIdpPingFromResourceData(d *schema.ResourceData) platformclientv2.Pingide
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
 		SloURI:                 platformclientv2.String(d.Get("slo_uri").(string)),
 		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
+		SignAuthnRequests:      platformclientv2.Bool(d.Get("sign_authn_requests").(bool)),
 	}
 }

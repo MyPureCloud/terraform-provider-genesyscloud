@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -27,7 +27,6 @@ The resource_genesyscloud_external_contacts_organization.go contains all of the 
 
 // getAllAuthExternalContactsOrganization retrieves all of the external contacts organization via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthExternalContactsOrganizations(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-
 	proxy := getExternalContactsOrganizationProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -40,7 +39,19 @@ func getAllAuthExternalContactsOrganizations(ctx context.Context, clientConfig *
 		if externalOrganization.Id == nil {
 			continue
 		}
-		resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: *externalOrganization.Id}
+
+		// Use organization name as blockLabel for portability across orgs
+		// Fall back to external system URL, then GUID if no portable identifier exists
+		blockLabel := ""
+		if externalOrganization.Name != nil && *externalOrganization.Name != "" {
+			blockLabel = *externalOrganization.Name
+		} else if externalOrganization.ExternalSystemUrl != nil && *externalOrganization.ExternalSystemUrl != "" {
+			blockLabel = *externalOrganization.ExternalSystemUrl
+		} else {
+			blockLabel = *externalOrganization.Id
+		}
+		log.Printf("External contacts organization BlockLabel: %s", blockLabel)
+		resources[*externalOrganization.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 
 	return resources, nil

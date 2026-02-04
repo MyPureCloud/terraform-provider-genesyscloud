@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -105,6 +105,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
+		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -231,8 +232,13 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		if currentQueue.Bullseye != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
 		}
+
 		if currentQueue.CannedResponseLibraries != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
+		}
+
+		if currentQueue.ConditionalGroupActivation != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -344,6 +350,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
+		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
 	}
 
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
@@ -359,6 +366,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if lastAgentRoutingMode != "" {
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
+	}
+
+	if d.HasChange("bullseye_rings") && updateQueue.Bullseye == nil {
+		if diagErr := clearBullseyeRingMemberGroups(ctx, d, &updateQueue, proxy); diagErr.HasError() {
+			return diagErr
+		}
 	}
 
 	log.Printf("Updating queue %s", *updateQueue.Name)

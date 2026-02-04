@@ -126,13 +126,14 @@ func TestAccResourceOAuthClient(t *testing.T) {
 				ResourceName:            "genesyscloud_oauth_client." + clientResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name", "client_id", "client_secret"},
+				ImportStateVerifyIgnore: []string{"integration_credential_id", "integration_credential_name", "client_id", "client_secret", "expose_client_secret"},
 			},
 		},
 	})
 }
 
 func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
+	t.Skipf("Skipping test as GET/PUT oauth client is not supported anymore")
 	var (
 		clientResourceLabel1 = "test-client-expose-secret"
 		clientName1          = "terraform-expose-secret-" + uuid.NewString()

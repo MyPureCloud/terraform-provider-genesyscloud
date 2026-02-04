@@ -1,16 +1,32 @@
 package group
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
+
+func updateGroupVoicemailPolicy(ctx context.Context, d *schema.ResourceData, gp *groupProxy) diag.Diagnostics {
+	voicemailPolicy := buildSdkGroupVoicemailPolicy(d)
+	_, resp, err := gp.updateGroupVoicemailPolicy(ctx, d.Id(), voicemailPolicy)
+	if err != nil {
+		errMsg := fmt.Sprintf("Failed to update group voicemail policy %s: %s", d.Id(), err)
+		if resp != nil && (resp.StatusCode == 401 || resp.StatusCode == 403) {
+			errMsg = fmt.Sprintf("%s. This may be due to missing permissions: export -> [voicemail:groupPolicy:view], import -> [voicemail:groupPolicy:edit]", errMsg)
+		}
+		return util.BuildAPIDiagnosticError(ResourceType, errMsg, resp)
+	}
+	return nil
+}
 
 // 'number' and 'extension' conflict with eachother. However, one must be set.
 // This function validates that the user has satisfied these conditions
@@ -93,33 +109,68 @@ func flattenGroupOwners(owners *[]platformclientv2.User) []interface{} {
 }
 
 func buildSdkGroupAddresses(d *schema.ResourceData) (*[]platformclientv2.Groupcontact, error) {
-	if addressSlice, ok := d.Get("addresses").([]interface{}); ok && len(addressSlice) > 0 {
+	if addressSlice, ok := d.Get("addresses").([]interface{}); ok {
 		sdkContacts := make([]platformclientv2.Groupcontact, len(addressSlice))
-		for i, configPhone := range addressSlice {
-			phoneMap := configPhone.(map[string]interface{})
-			phoneType := phoneMap["type"].(string)
-			contact := platformclientv2.Groupcontact{
-				VarType:   &phoneType,
-				MediaType: &groupPhoneType, // Only option is PHONE
-			}
+		// This "if" statement is important logic to be kept separate from the above "if" statement.
+		// If an addressSlice is empty, we need to be able to return an empty (not a nil)
+		// platformclientv2.Groupcontact slice. Otherwise, the API will ignore this field and not remove
+		// any existing items.
+		if len(addressSlice) > 0 {
+			for i, configPhone := range addressSlice {
+				phoneMap := configPhone.(map[string]interface{})
+				phoneType := phoneMap["type"].(string)
+				contact := platformclientv2.Groupcontact{
+					VarType:   &phoneType,
+					MediaType: &groupPhoneType, // Only option is PHONE
+				}
 
-			if err := validateAddressesMap(phoneMap); err != nil {
-				return nil, err
-			}
+				if err := validateAddressesMap(phoneMap); err != nil {
+					return nil, err
+				}
 
-			if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
-				contact.Address = &phoneNum
-			}
+				if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
+					contact.Address = &phoneNum
+				}
 
-			if phoneExt := phoneMap["extension"].(string); ok && phoneExt != "" {
-				contact.Extension = &phoneExt
-			}
+				if phoneExt := phoneMap["extension"].(string); ok && phoneExt != "" {
+					contact.Extension = &phoneExt
+				}
 
-			sdkContacts[i] = contact
+				sdkContacts[i] = contact
+			}
 		}
 		return &sdkContacts, nil
 	}
 	return nil, nil
+}
+
+func buildSdkGroupVoicemailPolicy(d *schema.ResourceData) *platformclientv2.Voicemailgrouppolicy {
+	voicemailPolicies := d.Get("voicemail_policy").([]any)
+	if len(voicemailPolicies) == 0 {
+		return &platformclientv2.Voicemailgrouppolicy{Enabled: platformclientv2.Bool(false)}
+	}
+	var sdkVoicemailPolicy platformclientv2.Voicemailgrouppolicy
+	voicemailPolicyMap, ok := voicemailPolicies[0].(map[string]any)
+	if !ok {
+		return &platformclientv2.Voicemailgrouppolicy{Enabled: platformclientv2.Bool(false)}
+	}
+
+	sdkVoicemailPolicy.Enabled = platformclientv2.Bool(true)
+	sdkVoicemailPolicy.SendEmailNotifications = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "send_email_notifications", true)
+	sdkVoicemailPolicy.DisableEmailPii = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "disable_email_pii", true)
+	sdkVoicemailPolicy.IncludeEmailTranscriptions = resourcedata.GetNillableValueFromMap[bool](voicemailPolicyMap, "include_email_transcriptions", true)
+
+	return &sdkVoicemailPolicy
+}
+
+func flattenGroupVoicemailPolicy(sdkVoicemailPolicy *platformclientv2.Voicemailgrouppolicy) []any {
+	voicemailPolicyMap := make(map[string]any, 1)
+
+	resourcedata.SetMapValueIfNotNil(voicemailPolicyMap, "send_email_notifications", sdkVoicemailPolicy.SendEmailNotifications)
+	resourcedata.SetMapValueIfNotNil(voicemailPolicyMap, "disable_email_pii", sdkVoicemailPolicy.DisableEmailPii)
+	resourcedata.SetMapValueIfNotNil(voicemailPolicyMap, "include_email_transcriptions", sdkVoicemailPolicy.IncludeEmailTranscriptions)
+
+	return []any{voicemailPolicyMap}
 }
 
 func GenerateBasicGroupResource(resourceLabel string, name string, nestedBlocks ...string) string {
@@ -162,4 +213,13 @@ func GenerateGroupOwners(userIDs ...string) string {
 func generateGroupMembers(userIDs ...string) string {
 	return fmt.Sprintf(`member_ids = [%s]
 	`, strings.Join(userIDs, ","))
+}
+
+func generateGroupVoicemailPolicy(sendEmailNotifications, disableEmailPii, includeEmailTranscriptions string) string {
+	return fmt.Sprintf(`voicemail_policy {
+		send_email_notifications = %s
+		disable_email_pii = %s
+		include_email_transcriptions = %s
+	}
+	`, sendEmailNotifications, disableEmailPii, includeEmailTranscriptions)
 }

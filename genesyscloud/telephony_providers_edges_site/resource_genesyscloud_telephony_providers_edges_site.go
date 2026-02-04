@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllSites(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -187,15 +187,7 @@ func readSite(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	sp := GetSiteProxy(sdkConfig)
-
-	site := &platformclientv2.Site{
-		Name:                        platformclientv2.String(d.Get("name").(string)),
-		CallerId:                    platformclientv2.String(d.Get("caller_id").(string)),
-		CallerName:                  platformclientv2.String(d.Get("caller_name").(string)),
-		MediaModel:                  platformclientv2.String(d.Get("media_model").(string)),
-		Description:                 platformclientv2.String(d.Get("description").(string)),
-		MediaRegionsUseLatencyBased: platformclientv2.Bool(d.Get("media_regions_use_latency_based").(bool)),
-	}
+	var site *platformclientv2.Site
 
 	locationId := d.Get("location_id").(string)
 	edgeAutoUpdateConfig, err := buildSdkEdgeAutoUpdateConfig(d)
@@ -212,45 +204,53 @@ func updateSite(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get location %s error: %s", locationId, err), resp)
 	}
-	site.Location = &platformclientv2.Locationdefinition{
-		Id:              &locationId,
-		EmergencyNumber: location.EmergencyNumber,
-	}
 
 	err = validateMediaRegions(ctx, sp, mediaRegions)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	if edgeAutoUpdateConfig != nil {
-		site.EdgeAutoUpdateConfig = edgeAutoUpdateConfig
-	}
-
-	if mediaRegions != nil {
-		site.MediaRegions = mediaRegions
-	}
-
-	if len(primarySites) > 0 {
-		site.PrimarySites = util.BuildSdkDomainEntityRefArr(d, "primary_sites")
-	}
-
-	if len(secondarySites) > 0 {
-		site.SecondarySites = util.BuildSdkDomainEntityRefArr(d, "secondary_sites")
-	}
-
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		// Get current site version
+		// Get current site to preserve all fields
 		currentSite, resp, err := sp.GetSiteById(ctx, d.Id())
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read site %s error: %s", d.Id(), err), resp)
 		}
-		site.Version = currentSite.Version
 
-		log.Printf("Updating site %s", *site.Name)
-		site, resp, err = sp.updateSite(ctx, d.Id(), site)
+		currentSite.Name = platformclientv2.String(d.Get("name").(string))
+		currentSite.CallerId = platformclientv2.String(d.Get("caller_id").(string))
+		currentSite.CallerName = platformclientv2.String(d.Get("caller_name").(string))
+		currentSite.MediaModel = platformclientv2.String(d.Get("media_model").(string))
+		currentSite.Description = platformclientv2.String(d.Get("description").(string))
+		currentSite.MediaRegionsUseLatencyBased = platformclientv2.Bool(d.Get("media_regions_use_latency_based").(bool))
+
+		currentSite.Location = &platformclientv2.Locationdefinition{
+			Id:              &locationId,
+			EmergencyNumber: location.EmergencyNumber,
+		}
+
+		if edgeAutoUpdateConfig != nil {
+			currentSite.EdgeAutoUpdateConfig = edgeAutoUpdateConfig
+		}
+
+		if mediaRegions != nil {
+			currentSite.MediaRegions = mediaRegions
+		}
+
+		if len(primarySites) > 0 {
+			currentSite.PrimarySites = util.BuildSdkDomainEntityRefArr(d, "primary_sites")
+		}
+
+		if len(secondarySites) > 0 {
+			currentSite.SecondarySites = util.BuildSdkDomainEntityRefArr(d, "secondary_sites")
+		}
+
+		log.Printf("Updating site %s", *currentSite.Name)
+		updatedSite, resp, err := sp.updateSite(ctx, d.Id(), currentSite)
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update site %s error: %s", *currentSite.Name, err), resp)
 		}
+		site = updatedSite
 
 		return resp, nil
 	})

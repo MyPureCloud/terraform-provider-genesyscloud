@@ -3,6 +3,7 @@ package routing_queue
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // Build Functions
@@ -205,7 +206,41 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
 	}
 
+	if enableInactivityTimeout, ok := settingsMap["enable_inactivity_timeout"].(bool); ok {
+		messageMediaSettings.EnableInactivityTimeout = &enableInactivityTimeout
+	}
+
+	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
+		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
+	}
+
 	return &messageMediaSettings
+}
+
+func buildInactivityTimeoutSettings(settings []interface{}) *platformclientv2.Inactivitytimeoutsettings {
+	if len(settings) == 0 {
+		return nil
+	}
+	settingsMap, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	var inactivityTimeoutSettings platformclientv2.Inactivitytimeoutsettings
+
+	if timeoutSeconds, ok := settingsMap["timeout_seconds"].(int); ok {
+		inactivityTimeoutSettings.TimeoutSeconds = &timeoutSeconds
+	}
+
+	if actionType, ok := settingsMap["action_type"].(string); ok {
+		inactivityTimeoutSettings.ActionType = &actionType
+	}
+
+	if flowId, ok := settingsMap["flow_id"].(string); ok && flowId != "" {
+		inactivityTimeoutSettings.FlowId = &platformclientv2.Domainentityref{Id: platformclientv2.String(flowId)}
+	}
+
+	return &inactivityTimeoutSettings
 }
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
@@ -245,6 +280,8 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.LiveVoiceFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "live_voice_flow_id")
 	callbackSettings.AnsweringMachineReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "answering_machine_reaction_type", false)
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
+	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
+	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
 
 	return &callbackSettings
 }
@@ -394,6 +431,133 @@ func buildMemberGroupList(d *schema.ResourceData, groupKey string, groupType str
 	return &memberGroups
 }
 
+func buildCgaSimpleMetric(simpleMetric []interface{}) *platformclientv2.Conditionalgroupactivationsimplemetric {
+	var sdkSimpleMetric platformclientv2.Conditionalgroupactivationsimplemetric
+
+	for _, simpleMetricElement := range simpleMetric {
+		simpleMetricMap, ok := simpleMetricElement.(map[string]interface{})
+		if !ok {
+			log.Print("Incoming CGA condition does not contain a simple_metric object.")
+			continue
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkSimpleMetric.Metric, simpleMetricMap, "metric")
+		if queueId, ok := simpleMetricMap["queue_id"].(string); ok && queueId != "" {
+			sdkSimpleMetric.Queue = &platformclientv2.Domainentityref{Id: &queueId}
+		}
+	}
+
+	return &sdkSimpleMetric
+}
+
+func buildCgaConditions(condition []interface{}) *[]platformclientv2.Conditionalgroupactivationcondition {
+	var sdkConditions []platformclientv2.Conditionalgroupactivationcondition
+
+	for _, conditionElement := range condition {
+		var sdkCondition platformclientv2.Conditionalgroupactivationcondition
+
+		conditionMap, ok := conditionElement.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.SimpleMetric, conditionMap, "simple_metric", buildCgaSimpleMetric)
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Operator, conditionMap, "operator")
+
+		if value, ok := conditionMap["value"]; ok {
+			switch v := value.(type) {
+			case float64:
+				sdkCondition.Value = &v
+			case int:
+				floatVal := float64(v)
+				sdkCondition.Value = &floatVal
+			}
+		}
+
+		sdkConditions = append(sdkConditions, sdkCondition)
+	}
+
+	return &sdkConditions
+}
+
+func buildCgaGroups(memberGroups []interface{}) *[]platformclientv2.Membergroup {
+	var sdkMemberGroups []platformclientv2.Membergroup
+
+	for _, memberGroupElement := range memberGroups {
+		var sdkMemberGroup platformclientv2.Membergroup
+
+		memberGroupMap, ok := memberGroupElement.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkMemberGroup.Id, memberGroupMap, "member_group_id")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkMemberGroup.VarType, memberGroupMap, "member_group_type")
+
+		sdkMemberGroups = append(sdkMemberGroups, sdkMemberGroup)
+	}
+
+	return &sdkMemberGroups
+}
+
+func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgroupactivationpilotrule {
+	var sdkPilotRule platformclientv2.Conditionalgroupactivationpilotrule
+
+	for _, pilotRuleElement := range pilotRule {
+		pilotRuleMap, ok := pilotRuleElement.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkPilotRule.ConditionExpression, pilotRuleMap, "condition_expression")
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkPilotRule.Conditions, pilotRuleMap, "conditions", buildCgaConditions)
+	}
+
+	return &sdkPilotRule
+}
+
+func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalgroupactivationrule {
+	var sdkRules []platformclientv2.Conditionalgroupactivationrule
+
+	for _, ruleElement := range rules {
+		var sdkRule platformclientv2.Conditionalgroupactivationrule
+		ruleMap, ok := ruleElement.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.ConditionExpression, ruleMap, "condition_expression")
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", buildCgaConditions)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Groups, ruleMap, "groups", buildCgaGroups)
+
+		sdkRules = append(sdkRules, sdkRule)
+	}
+
+	return &sdkRules
+}
+
+func buildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv2.Conditionalgroupactivation {
+	cga, ok := d.GetOk("conditional_group_activation")
+	if !ok {
+		return nil
+	}
+
+	var sdkCga platformclientv2.Conditionalgroupactivation
+
+	cgaArray := cga.([]interface{})
+	for _, cgaEntry := range cgaArray {
+		cgaMap, ok := cgaEntry.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.PilotRule, cgaMap, "pilot_rule", buildCgaPilotRule)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.Rules, cgaMap, "rules", buildCgaNumberedRules)
+	}
+
+	return &sdkCga
+}
+
 func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye {
 	if configRings, ok := d.GetOk("bullseye_rings"); ok {
 		var sdkRings []platformclientv2.Ring
@@ -451,22 +615,6 @@ func buildSdkBullseyeSettings(d *schema.ResourceData) *platformclientv2.Bullseye
 			sdkRings = append(sdkRings, sdkRing)
 		}
 
-		/*
-			The routing queues API is a little unusual.  You can have up to six bullseye routing rings but the last one is always
-			a treated as the default ring.  This means you can actually ony define a maximum of 5.  So, I have changed the behavior of this
-			resource to only allow you to add 5 items and then the code always adds a 6 item (see the code below) with a default timeout of 2.
-		*/
-		var defaultSdkRing platformclientv2.Ring
-		defaultTimeoutInt := 2
-		defaultTimeoutFloat := float64(defaultTimeoutInt)
-		defaultSdkRing.ExpansionCriteria = &[]platformclientv2.Expansioncriterium{
-			{
-				VarType:   &bullseyeExpansionTypeTimeout,
-				Threshold: &defaultTimeoutFloat,
-			},
-		}
-
-		sdkRings = append(sdkRings, defaultSdkRing)
 		return &platformclientv2.Bullseye{Rings: &sdkRings}
 	}
 	return nil
@@ -553,7 +701,24 @@ func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings
 		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
 	}
 
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_inactivity_timeout", settings.EnableInactivityTimeout)
+
+	if settings.InactivityTimeoutSettings != nil {
+		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(settings.InactivityTimeoutSettings)
+	}
+
 	return []any{settingsMap}
+}
+
+func flattenInactivityTimeoutSettings(settings *platformclientv2.Inactivitytimeoutsettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(settingsMap, "timeout_seconds", settings.TimeoutSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "action_type", settings.ActionType)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "flow_id", settings.FlowId)
+	return []interface{}{settingsMap}
 }
 
 func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypesettings) []interface{} {
@@ -654,6 +819,8 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "live_voice_flow_id", settings.LiveVoiceFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "answering_machine_reaction_type", settings.AnsweringMachineReactionType)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "max_retry_count", settings.MaxRetryCount)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "retry_delay_seconds", settings.RetryDelaySeconds)
 
 	return []interface{}{settingsMap}
 }
@@ -733,6 +900,92 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	return nil
 }
 
+func flattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactivationsimplemetric) []interface{} {
+	if simpleMetric == nil {
+		return nil
+	}
+
+	simpleMetricMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(simpleMetricMap, "metric", simpleMetric.Metric)
+	resourcedata.SetMapReferenceValueIfNotNil(simpleMetricMap, "queue_id", simpleMetric.Queue)
+
+	return []interface{}{simpleMetricMap}
+}
+
+func flattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupactivationcondition) []interface{} {
+	if conditions == nil || len(*conditions) == 0 {
+		return nil
+	}
+
+	conditionsOut := make([]interface{}, 0)
+
+	for _, condition := range *conditions {
+		conditionOut := make(map[string]interface{})
+
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionOut, "simple_metric", condition.SimpleMetric, flattenCgaSimpleMetric)
+		resourcedata.SetMapValueIfNotNil(conditionOut, "operator", condition.Operator)
+		resourcedata.SetMapValueIfNotNil(conditionOut, "value", condition.Value)
+		conditionsOut = append(conditionsOut, conditionOut)
+	}
+	return conditionsOut
+}
+
+func flattenCgaRuleGroups(groups *[]platformclientv2.Membergroup) []interface{} {
+	if groups == nil || len(*groups) == 0 {
+		return nil
+	}
+
+	groupsOut := make([]interface{}, 0)
+
+	for _, group := range *groups {
+		groupOut := make(map[string]interface{})
+
+		resourcedata.SetMapValueIfNotNil(groupOut, "member_group_id", group.Id)
+		resourcedata.SetMapValueIfNotNil(groupOut, "member_group_type", group.VarType)
+		groupsOut = append(groupsOut, groupOut)
+	}
+	return groupsOut
+}
+
+func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) []interface{} {
+	if rules == nil || len(*rules) == 0 {
+		return nil
+	}
+
+	rulesOut := make([]interface{}, 0)
+
+	for _, rule := range *rules {
+		ruleOut := make(map[string]interface{})
+
+		resourcedata.SetMapValueIfNotNil(ruleOut, "condition_expression", rule.ConditionExpression)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "conditions", rule.Conditions, flattenCgaRuleConditions)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "groups", rule.Groups, flattenCgaRuleGroups)
+		rulesOut = append(rulesOut, ruleOut)
+	}
+	return rulesOut
+}
+
+func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroupactivation) []interface{} {
+	cgaMap := make(map[string]interface{})
+
+	// convert pilot rule
+	if sdkCga.PilotRule != nil {
+		pilotRuleMap := make(map[string]interface{})
+
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(pilotRuleMap, "conditions", sdkCga.PilotRule.Conditions, flattenCgaRuleConditions)
+		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", sdkCga.PilotRule.ConditionExpression)
+
+		cgaMap["pilot_rule"] = []interface{}{pilotRuleMap}
+	}
+
+	// convert numbered rules
+	if sdkCga.Rules != nil {
+		cgaMap["rules"] = flattenCgaRules(sdkCga.Rules)
+	}
+
+	return []interface{}{cgaMap}
+}
+
 /*
 The flattenBullseyeRings function maps the data retrieved from our SDK call over to the bullseye_ring attribute within the provider.
 You might notice in the code that we are always mapping all but the last item in the list of rings retrieved by the API.  The reason for this
@@ -741,11 +994,19 @@ This is a change from earlier parts of the API where you could define 6 bullseye
 the public API will take the list item in the list and make it the default and it will not show up on the screen.  To get around this you needed
 to always add a dumb bullseye ring block.  Now, we automatically add one for you.  We only except a maximum of 5 bullseyes_ring blocks, but we will always
 remove the last block returned by the API.
+
+Correction to the above comment:
+
+The last ring (identified as the default/dummy ring) can have member groups attached.
+PS reported this in DEVTOOLING-1167: the last ring is being missed, causing member groups assigned to the bullseye to be omitted.
+This happens when only the export process from the source is managed by CX code and import of the source is managed manually.
+If import is done outside Terraform, no dummy ring is added (as in buildSdkBullseyeSettings). So during subsequent export, valid ring with member groups is skipped due to the omission in the flatten function.
+This is corrected in the flatten function below; the last ring is no longer omitted and buildSdkBullseyeSettings is also corrected.
 */
 func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
-	rings := make([]interface{}, len(*sdkRings)-1) //Sizing the target array of Rings to account for us removing the default block
+	rings := make([]interface{}, len(*sdkRings))
 	for i, sdkRing := range *sdkRings {
-		if i < len(*sdkRings)-1 { //Checking to make sure we are do nothing with the last item in the list by skipping processing if it is defined
+		if i < len(*sdkRings) {
 			ringSettings := make(map[string]interface{})
 			if sdkRing.ExpansionCriteria != nil {
 				for _, criteria := range *sdkRing.ExpansionCriteria {
@@ -828,6 +1089,49 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	}
 
 	return nil, nil
+}
+
+func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s error: %s", d.Id(), err), resp)
+	}
+	if currentQueue.Bullseye == nil || currentQueue.Bullseye.Rings == nil {
+		return nil
+	}
+
+	hasMemberGroups := false
+	for _, ring := range *currentQueue.Bullseye.Rings {
+		if ring.MemberGroups != nil && len(*ring.MemberGroups) > 0 {
+			hasMemberGroups = true
+			break
+		}
+	}
+
+	if !hasMemberGroups {
+		log.Printf("No member_groups found in bullseye rings for queue %s", d.Id())
+		return nil
+	}
+	log.Printf("Clearing member_groups from bullseye rings in queue %s", d.Id())
+
+	clearedRings := make([]platformclientv2.Ring, len(*currentQueue.Bullseye.Rings))
+	for i, ring := range *currentQueue.Bullseye.Rings {
+		clearedRings[i] = ring
+		clearedRings[i].MemberGroups = nil
+	}
+
+	updateQueue.Bullseye = &platformclientv2.Bullseye{
+		Rings: &clearedRings,
+	}
+
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
+	}
+
+	updateQueue.Bullseye = nil
+	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
+	return nil
 }
 
 // Generate Functions
@@ -942,6 +1246,26 @@ func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enab
 	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay, strings.Join(nestedBlocks, "\n"))
 }
 
+func GenerateMediaSettingsMessage(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableInactivityTimeout string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`%s {
+		alerting_timeout_sec = %s
+		enable_auto_answer = %s
+		service_level_percentage = %s
+		service_level_duration_ms = %s
+		enable_inactivity_timeout = %s
+		%s
+	}
+	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableInactivityTimeout, strings.Join(nestedBlocks, "\n"))
+}
+
+func GenerateInactivityTimeoutSettings(timeoutSeconds string, actionType string) string {
+	return fmt.Sprintf(`inactivity_timeout_settings {
+		timeout_seconds = %s
+		action_type = "%s"
+	}
+	`, timeoutSeconds, actionType)
+}
+
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {
 	return fmt.Sprintf(`routing_rules {
 		operator = "%s"
@@ -984,6 +1308,45 @@ func GenerateConditionalGroupRoutingRuleGroup(groupId, groupType string) string 
 		member_group_type = "%s"
 	}
 	`, groupId, groupType)
+}
+
+func GenerateConditionalGroupActivation(groupId string) string {
+	// leave the queue ID fields empty for simplicity.  the backend will default to the current queue.
+	return fmt.Sprintf(
+		`conditional_group_activation {
+			pilot_rule {
+				condition_expression = "C1"
+				conditions {
+					simple_metric {
+						metric		= "EstimatedWaitTime"
+					}
+					operator        = "GreaterThan"
+					value 			= 30
+				}
+			}
+			rules {
+				condition_expression = "C1 or C2"
+				conditions {
+					simple_metric {
+						metric		= "EstimatedWaitTime"
+					}
+					operator        = "GreaterThan"
+					value 			= 60
+				}
+				conditions {
+					simple_metric {
+						metric		= "EstimatedWaitTime"
+					}
+					operator        = "LessThan"
+					value 			= 90
+				}
+				groups {
+					member_group_id   = %s
+					member_group_type = "GROUP"
+				}
+			}
+		}
+		`, groupId)
 }
 
 func GenerateBullseyeSettingsWithMemberGroup(expTimeout, memberGroupId, memberGroupType string, skillsToRemove ...string) string {

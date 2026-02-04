@@ -1,5 +1,5 @@
 locals {
-  adfs_certificate = utils_certificates.certificates.cert1
+  adfs_certificate = tls_self_signed_cert.example.cert_pem
 
   dependencies = {
     resource = [

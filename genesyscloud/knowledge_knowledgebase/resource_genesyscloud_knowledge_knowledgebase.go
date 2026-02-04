@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -18,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 func getAllKnowledgeKnowledgebases(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -132,6 +133,47 @@ func updateKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	return readKnowledgeKnowledgebase(ctx, d, meta)
 }
 
+func rebuildDatabase() diag.Diagnostics {
+	log.Printf("Rebuilding knowledge base database")
+
+	architectApi := platformclientv2.NewArchitectApi()
+
+	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
+	if architectError != nil {
+		return diag.Errorf("Failed to build dependency tracking: %v with resp: %v", architectError, resp)
+	}
+
+	if resp.StatusCode != 202 {
+		log.Printf("Knowledge base dependency tracking rebuild started")
+	}
+
+	for {
+		time.Sleep(10 * time.Second)
+
+		status, resp, buildErr := architectApi.GetArchitectDependencytrackingBuild()
+		if buildErr != nil {
+			return diag.Errorf("Failed to get dependency tracking build status: %v with resp: %v", buildErr, resp)
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				log.Printf("Dependency tracking Complete")
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				log.Printf("Dependency tracking status: %s, waiting...", *status.Status)
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				return diag.Errorf("Dependency Rebuild Failed")
+			default:
+				return diag.Errorf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status)
+			}
+			return nil
+		} else {
+			return diag.Errorf("No status returned from dependency tracking build, proceeding anyway")
+		}
+	}
+}
+
 func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 
@@ -141,7 +183,19 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	log.Printf("Deleting knowledge base %s", name)
 	_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+			rebuildErr := rebuildDatabase()
+			if rebuildErr != nil {
+				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+			}
+			time.Sleep(10 * time.Second)
+			_, resp, err = knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+			}
+		} else {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+		}
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

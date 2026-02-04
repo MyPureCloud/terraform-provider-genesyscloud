@@ -2,13 +2,18 @@ package architect_flow
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"time"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -66,6 +71,13 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		pollExportJobForDownloadUrlAttr: pollExportJobForDownloadUrlFn,
 		flowCache:                       flowCache,
 	}
+}
+
+func IsStatus429(resp *platformclientv2.APIResponse) bool {
+	if resp != nil {
+		return resp.StatusCode == http.StatusTooManyRequests
+	}
+	return false
 }
 
 func getArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *architectFlowProxy {
@@ -295,72 +307,95 @@ func getArchitectFlowJobsFn(_ context.Context, p *architectFlowProxy, jobId stri
 }
 
 // getAllArchitectFlowsFn is the implementation function for GetAllFlows
-func getAllArchitectFlowsFn(_ context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	totalFlows, resp, err := p.getAllFlows(name, varType, false)
+func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	baseURL := p.clientConfig.BasePath + "/api/v2/flows"
+
+	params := url.Values{}
+	if name != "" {
+		params.Add("name", name)
+	}
+	for _, t := range varType {
+		params.Add("type", t)
+	}
+	params.Add("includeSchemas", "true")
+
+	client := &http.Client{}
+	var allFlows []platformclientv2.Flow
+
+	params.Set("pageSize", "100")
+	params.Set("pageNumber", "1")
+
+	u, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, resp, err
+		return nil, nil, fmt.Errorf("error parsing URL: %v", err)
+	}
+	u.RawQuery = params.Encode()
+
+	flows, apiResp, err := makeFlowRequest(ctx, client, u.String(), p)
+	if err != nil {
+		return nil, apiResp, err
 	}
 
-	totalFlowsWithVirtualAgentEnabled, resp, err := p.getAllFlows(name, varType, true)
-	if err != nil {
-		return nil, resp, err
+	if flows.Entities != nil {
+		allFlows = append(allFlows, *flows.Entities...)
 	}
 
-	totalFlows = append(totalFlows, totalFlowsWithVirtualAgentEnabled...)
+	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
+		params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
+		u.RawQuery = params.Encode()
 
-	for _, flow := range totalFlows {
+		pageFlows, _, err := makeFlowRequest(ctx, client, u.String(), p)
+		if err != nil {
+			return nil, apiResp, err
+		}
+
+		if pageFlows.Entities != nil {
+			allFlows = append(allFlows, *pageFlows.Entities...)
+		}
+	}
+
+	for _, flow := range allFlows {
 		rc.SetCache(p.flowCache, *flow.Id, flow)
 	}
 
-	return &totalFlows, resp, nil
+	return &allFlows, apiResp, nil
 }
 
-func (a *architectFlowProxy) getAllFlows(name string, varType []string, virtualAgentEnabled bool) ([]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	const pageSize = 100
-	var totalFlows []platformclientv2.Flow
-
-	flows, resp, err := a.api.GetFlows(
-		varType,
-		1,
-		pageSize,
-		"",
-		"",
-		nil,
-		name,
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"", false,
-		true,
-		virtualAgentEnabled,
-		"",
-		"",
-		nil,
-	)
+func makeFlowRequest(ctx context.Context, client *http.Client, url string, p *architectFlowProxy) (*platformclientv2.Flowentitylisting, *platformclientv2.APIResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get page of flows: %v %v", err, resp)
-	}
-	if flows.Entities == nil || len(*flows.Entities) == 0 {
-		return totalFlows, nil, nil
+		return nil, nil, err
 	}
 
-	totalFlows = append(totalFlows, *flows.Entities...)
+	req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	req.Header.Set("Content-Type", "application/json")
 
-	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		flows, resp, err = a.api.GetFlows(varType, pageNum, pageSize, "", "", nil, name, "", "", "", "", "", "", "", false, true, false, "", "", nil)
-		if err != nil {
-			return nil, resp, fmt.Errorf("failed to get page %d of flows: %v", pageNum, err)
-		}
-		if flows.Entities == nil || len(*flows.Entities) == 0 {
-			break
-		}
-		totalFlows = append(totalFlows, *flows.Entities...)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading response: %v", err)
 	}
 
-	return totalFlows, resp, nil
+	apiResp := &platformclientv2.APIResponse{
+		StatusCode: resp.StatusCode,
+		Response:   resp,
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var flows platformclientv2.Flowentitylisting
+	if err := json.Unmarshal(respBody, &flows); err != nil {
+		return nil, apiResp, err
+	}
+
+	return &flows, apiResp, nil
 }
 
 // generateDownloadUrlFn is the implementation function for the generateDownloadUrl method
@@ -371,28 +406,68 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 			log.Println(err.Error())
 		}
 	}()
-	log.Printf("Creating export job for flow %s", flowId)
-	exportJob, resp, err := a.createExportJob(flowId)
-	if err != nil {
+
+	const maxRetries = 5
+	var exportJob *platformclientv2.Registerarchitectexportjobresponse
+	var resp *platformclientv2.APIResponse
+
+	// Retry logic for creating export job (handles 429 rate limits)
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		log.Printf("Creating export job for flow %s (attempt %d/%d)", flowId, attempt+1, maxRetries)
+		exportJob, resp, err = a.createExportJob(flowId)
+
+		if err == nil {
+			break // Success
+		}
+
+		// Check if it's a rate limit error (HTTP 429)
+		if resp != nil && IsStatus429(resp) {
+			// Check for Retry-After header first
+			if delay, ok := util.GetRetryAfterDelay(resp); ok {
+				log.Printf("Rate limited (429) creating export job for flow %s. Retry-After header indicates %v delay. Retrying (attempt %d/%d)...",
+					flowId, delay, attempt+1, maxRetries)
+				time.Sleep(delay)
+			} else {
+				// Fall back
+				backoffDuration := time.Duration(1<<attempt) * time.Second
+				if backoffDuration > 60*time.Second {
+					backoffDuration = 60 * time.Second
+				}
+				log.Printf("Rate limited (429) creating export job for flow %s. Retrying with exponential backoff %v (attempt %d/%d)...",
+					flowId, backoffDuration, attempt+1, maxRetries)
+				time.Sleep(backoffDuration)
+			}
+			continue // Retry the request
+		}
+
+		// Non-retryable error
 		if resp != nil {
 			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
 		}
 		return "", err
 	}
 
+	// Check if all retries were exhausted
+	if err != nil {
+		if resp != nil {
+			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
+		}
+		return "", fmt.Errorf("failed to create export job for flow %s after %d attempts: %w", flowId, maxRetries, err)
+	}
+
 	if exportJob == nil || exportJob.Id == nil {
 		return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
 	}
 
-	log.Printf("Successfully created export job '%s' for flow '%s'", exportJob, flowId)
+	log.Printf("Successfully created export job '%s' for flow '%s'", *exportJob.Id, flowId)
 
-	log.Printf("Polling job '%s' for download url", exportJob)
+	log.Printf("Polling job '%s' for download url", *exportJob.Id)
 	const pollTimeoutInSeconds float64 = 90
 	downloadUrl, err = a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
 	if err != nil {
 		return "", err
 	}
-	log.Printf("Successfully read download URL. Export job: %s", exportJob)
+	log.Printf("Successfully read download URL. Export job: %s", *exportJob.Id)
 
 	return downloadUrl, err
 }
@@ -428,6 +503,8 @@ func getExportJobStatusByIdFn(a *architectFlowProxy, jobId string) (*platformcli
 // pollExportJobForDownloadUrlFn is the implementation function for pollExportJobForDownloadUrl
 func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (string, error) {
 	startTime := time.Now()
+	const maxRetries = 5
+	retryCount := 0
 
 	for {
 		elapsedTimeInSeconds := time.Since(startTime).Seconds()
@@ -435,17 +512,50 @@ func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string, timeoutI
 			return "", fmt.Errorf("timed out after %f seconds waiting for job %s to complete", elapsedTimeInSeconds, jobId)
 		}
 
-		log.Printf("Sleeping for 1 seconds before polling job.")
-		time.Sleep(1 * time.Second)
+		// Increase polling interval to reduce rate limit hits
+		sleepDuration := 2 * time.Second // Increased from 1 second to reduce API load
+		if retryCount > 0 {
+			sleepDuration = time.Duration(1<<retryCount) * time.Second
+			if sleepDuration > 10*time.Second {
+				sleepDuration = 10 * time.Second
+			}
+		}
+		log.Printf("Sleeping for %v before polling job %s", sleepDuration, jobId)
+		time.Sleep(sleepDuration)
 
 		exportJob, resp, err := a.getExportJobStatusById(jobId)
 		if err != nil {
-			log.Println(err)
+			// Check if it's a rate limit error (HTTP 429)
+			if resp != nil && IsStatus429(resp) && retryCount < maxRetries {
+				retryCount++
+				// Check for Retry-After header
+				if delay, ok := util.GetRetryAfterDelay(resp); ok {
+					log.Printf("Rate limited (429) polling job %s. Retry-After header indicates %v delay. Retrying (attempt %d/%d)...",
+						jobId, delay, retryCount, maxRetries)
+					time.Sleep(delay)
+				} else {
+					// Exponential backoff if no Retry-After header
+					backoffDuration := time.Duration(1<<retryCount) * time.Second
+					if backoffDuration > 10*time.Second {
+						backoffDuration = 10 * time.Second
+					}
+					log.Printf("Rate limited (429) polling job %s. Retrying with exponential backoff %v (attempt %d/%d)...",
+						jobId, backoffDuration, retryCount, maxRetries)
+					time.Sleep(backoffDuration)
+				}
+				continue // Retry the request
+			}
+
+			// Non-retryable error
+			log.Printf("Error polling job %s: %v", jobId, err)
 			if resp != nil {
 				log.Printf("API Response: %s", resp.String())
 			}
 			return "", err
 		}
+
+		// Reset retry count on successful call
+		retryCount = 0
 
 		status := *exportJob.Status
 

@@ -3,13 +3,15 @@ package knowledge_category
 import (
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
@@ -18,7 +20,7 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 		categoryResourceLabel1      = "test-category1"
 		categoryName                = "Terraform Test Category 1-" + uuid.NewString()
 		categoryDescription         = "category description"
-		knowledgeBaseName1          = "Terraform Test Knowledge Base 1-" + uuid.NewString()
+		knowledgeBaseName1          = "Test-Terraform-Knowledge-Base" + uuid.NewString()
 		knowledgeBaseDescription1   = "test-knowledgebase-description1"
 		knowledgeBaseCoreLanguage1  = "en-US"
 
@@ -52,6 +54,10 @@ func TestAccDataSourceKnowledgeCategoryBasic(t *testing.T) {
 					resource.TestCheckResourceAttrPair("data.genesyscloud_knowledge_category."+categoryDataSourceLabel,
 						"id", "genesyscloud_knowledge_category."+categoryResourceLabel1, "id",
 					),
+					func(s *terraform.State) error {
+						time.Sleep(20 * time.Second) // Wait for 20 seconds for proper deletion of knowledgebase
+						return nil
+					},
 				),
 			},
 		},

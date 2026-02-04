@@ -81,11 +81,41 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
       condition    = "Includes"
     }
   }
+  video {
+    enabled = true
+    agent {
+      allow_camera       = true
+      allow_screen_share = true
+      allow_microphone   = true
+      background         = "BLUR"
+      background_image {
+        url = "https://my-domain/images/background.png"
+      }
+    }
+    user {
+      allow_camera       = true
+      allow_screen_share = true
+      allow_microphone   = true
+    }
+  }
   # journey_events {
   #   enabled                   = true
   #   excluded_query_parameters = ["marketingCampaign"]
 
   #   pageview_config = "Auto"
+  #   tracking_settings {
+  #     should_keep_url_fragment   = true
+  #     search_query_parameters    = ["q", "search", "term"]
+  #     excluded_query_parameters  = ["utm_source", "utm_medium"]
+  #     ip_filters {
+  #       ip_address = "192.168.1.1"
+  #       name       = "office-network"
+  #     }
+  #     ip_filters {
+  #       ip_address = "2001:db8::1"
+  #       name       = "ipv6-network"
+  #     }
+  #   }
 
   #   click_event {
   #     selector   = ".promo-button"
