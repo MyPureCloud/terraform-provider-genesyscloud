@@ -22,6 +22,7 @@ import (
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	bcpTfExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/bcp_tf_exporter"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
@@ -364,7 +365,8 @@ func registerResources() {
 	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
 	workforcemanagementBusinessunits.SetRegistrar(regInstance)             //Registering workforcemanagement businessunits
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
-	tfexp.SetRegistrar(regInstance) //Registering tf exporter
+	tfexp.SetRegistrar(regInstance)         //Registering tf exporter
+	bcpTfExporter.SetRegistrar(regInstance) //Registering bcp tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
 }
 
