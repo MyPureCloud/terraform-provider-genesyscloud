@@ -18,10 +18,10 @@ Test Class for the intent category Data Source
 func TestAccDataSourceIntentCategoryBasic(t *testing.T) {
 	t.Parallel()
 	var (
-		resourceLabel    = "test-intent-category"
-		dataSourceLabel  = "test-intent-category-ds"
-		categoryName     = "Terraform Intent Category DS " + uuid.NewString()
-		categoryDesc     = "Test intent category for data source"
+		resourceLabel   = "test-intent-category"
+		dataSourceLabel = "test-intent-category-ds"
+		categoryName    = "Terraform Intent Category DS " + uuid.NewString()
+		categoryDesc    = "Test intent category for data source"
 	)
 
 	resource.Test(t, resource.TestCase{

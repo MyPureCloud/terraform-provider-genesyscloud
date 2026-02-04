@@ -29,7 +29,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 func ResourceIntentCategory() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud intent category`,
-		
+
 		CreateContext: provider.CreateWithPooledClient(createIntentCategory),
 		ReadContext:   provider.ReadWithPooledClient(readIntentCategory),
 		UpdateContext: provider.UpdateWithPooledClient(updateIntentCategory),
@@ -39,25 +39,25 @@ func ResourceIntentCategory() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
-			`name`: { 
-			    Description: `Name of the category`,
-			    Required: true,
-			    Type:   schema.TypeString,
+			`name`: {
+				Description: `Name of the category`,
+				Required:    true,
+				Type:        schema.TypeString,
 			},
-			`description`: { 
-			    Description: `Description of the category`,
-			    Required: true,
-			    Type:   schema.TypeString,
+			`description`: {
+				Description: `Description of the category`,
+				Required:    true,
+				Type:        schema.TypeString,
 			},
 		},
 	}
-}																																																											
+}
 
 // IntentCategoryExporter returns the resourceExporter object used to hold the genesyscloud_intent_category exporter's config
 func IntentCategoryExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIntentCategories),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},
 	}

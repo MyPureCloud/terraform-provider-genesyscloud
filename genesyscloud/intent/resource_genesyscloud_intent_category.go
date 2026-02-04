@@ -2,14 +2,14 @@ package intent_category
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"fmt"
 	"log"
 	"time"
-	
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -45,7 +45,7 @@ func getAllAuthIntentCategories(ctx context.Context, clientConfig *platformclien
 func createIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)
-	
+
 	intentCategory := getIntentCategoryFromResourceData(d)
 
 	log.Printf("Creating intent category %s", *intentCategory.Name)
@@ -78,7 +78,6 @@ func readIntentCategory(ctx context.Context, d *schema.ResourceData, meta interf
 
 		resourcedata.SetNillableValue(d, "name", intentsCategory.Name)
 		resourcedata.SetNillableValue(d, "description", intentsCategory.Description)
-		
 
 		log.Printf("Read intent category %s %s", d.Id(), *intentsCategory.Name)
 		return cc.CheckState(d)
@@ -89,7 +88,7 @@ func readIntentCategory(ctx context.Context, d *schema.ResourceData, meta interf
 func updateIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)
-	
+
 	intentCategory := getIntentCategoryFromResourceData(d)
 
 	log.Printf("Updating intent category %s", *intentCategory.Name)
@@ -106,7 +105,7 @@ func updateIntentCategory(ctx context.Context, d *schema.ResourceData, meta inte
 func deleteIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)
-	
+
 	resp, err := proxy.deleteIntentCategory(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete intent category %s: %s", d.Id(), err), resp)
@@ -130,9 +129,7 @@ func deleteIntentCategory(ctx context.Context, d *schema.ResourceData, meta inte
 // getIntentCategoryFromResourceData maps data from schema ResourceData object to a platformclientv2.Intentscategory
 func getIntentCategoryFromResourceData(d *schema.ResourceData) platformclientv2.Intentscategory {
 	return platformclientv2.Intentscategory{
-                        Name: platformclientv2.String(d.Get("name").(string)),
-                Description: platformclientv2.String(d.Get("description").(string)),
-
+		Name:        platformclientv2.String(d.Get("name").(string)),
+		Description: platformclientv2.String(d.Get("description").(string)),
 	}
 }
-

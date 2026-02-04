@@ -1,29 +1,54 @@
 package intent_category
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-/*
-The resource_genesyscloud_intent_category_test.go contains all of the test cases for running the resource
-tests for intent_category.
-*/
-
 func TestAccResourceIntentCategory(t *testing.T) {
 	t.Parallel()
-	var ()
+	var (
+		resourcePath = "genesyscloud_intent_category.test_category"
+	)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{},
+		Steps: []resource.TestStep{
+			{
+				Config: generateIntentCategoryResource(
+					"test_category",
+					"Test category",
+					"Test description",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "name", "Test category"),
+					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "description", "Test description"),
+				),
+			},
+			{
+				Config: generateIntentCategoryResource(
+					"test_category",
+					"Updated test category",
+					"The category has been updated",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "name", "Updated test category"),
+					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "description", "The category has been updated"),
+				),
+			},
+			{
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
 		CheckDestroy: testVerifyIntentCategoryDestroyed,
 	})
 }
