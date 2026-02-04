@@ -62,7 +62,7 @@ func readConversationsSettings(ctx context.Context, d *schema.ResourceData, meta
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Conversations Settings %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		log.Printf("DEBUG: API returned: CommunicationBasedACW=%v, IncludeNonAgentConversationSummary=%v", 
+		log.Printf("DEBUG: API returned: CommunicationBasedACW=%v, IncludeNonAgentConversationSummary=%v",
 			*settings.CommunicationBasedACW, *settings.IncludeNonAgentConversationSummary)
 
 		// Map API response to Terraform state
@@ -104,7 +104,7 @@ func updateConversationsSettings(ctx context.Context, d *schema.ResourceData, me
 		TotalActiveCallback:                    &totalActiveCallback,
 	}
 
-	log.Printf("DEBUG: Sending update with values: CommunicationBasedACW=%v, IncludeNonAgentConversationSummary=%v", 
+	log.Printf("DEBUG: Sending update with values: CommunicationBasedACW=%v, IncludeNonAgentConversationSummary=%v",
 		*update.CommunicationBasedACW, *update.IncludeNonAgentConversationSummary)
 
 	// PATCH returns no body, so we just check for errors

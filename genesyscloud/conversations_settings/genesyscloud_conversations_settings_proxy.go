@@ -13,10 +13,10 @@ type updateConversationsSettingsFunc func(ctx context.Context, p *conversationsS
 
 // conversationsSettingsProxy contains all of the methods that call genesys cloud APIs.
 type conversationsSettingsProxy struct {
-	clientConfig                        *platformclientv2.Configuration
-	conversationsApi                    *platformclientv2.ConversationsApi
-	getConversationsSettingsAttr        getConversationsSettingsFunc
-	updateConversationsSettingsAttr     updateConversationsSettingsFunc
+	clientConfig                    *platformclientv2.Configuration
+	conversationsApi                *platformclientv2.ConversationsApi
+	getConversationsSettingsAttr    getConversationsSettingsFunc
+	updateConversationsSettingsAttr updateConversationsSettingsFunc
 }
 
 // newConversationsSettingsProxy initializes the conversations settings proxy with all of the data needed to communicate with Genesys Cloud

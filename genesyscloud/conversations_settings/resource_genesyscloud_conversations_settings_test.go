@@ -83,8 +83,8 @@ func TestAccResourceConversationsSettingsMinimal(t *testing.T) {
 				// Create with only the two required fields for customer
 				Config: generateConversationsSettingsResourceMinimal(
 					resourceLabel,
-					"true",  // communication_based_acw
-					"true",  // complete_acw_when_agent_transitions_offline
+					"true", // communication_based_acw
+					"true", // complete_acw_when_agent_transitions_offline
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_conversations_settings."+resourceLabel, "communication_based_acw", "true"),
