@@ -43,7 +43,7 @@ func TestAccDataSourceVariationRequest(t *testing.T) {
 		documentText            = "stuff"
 		marks                   = []string{"Bold", "Italic", "Underline"}
 		name                    = "Terraform Test Knowledge Document Variation"
-		priority                        = 1
+		priority                = 1
 		contextId               = uuid.NewString()
 		valueId                 = uuid.NewString()
 		paragraphTestProperties = map[string]string{
