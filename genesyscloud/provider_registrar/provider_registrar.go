@@ -28,6 +28,7 @@ import (
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
+	conversationsSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_settings"
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	cmSupportedContentDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
@@ -341,6 +342,7 @@ func registerResources() {
 	supportedContent.SetRegistrar(regInstance)                             //Registering Supported Content
 	routingSkill.SetRegistrar(regInstance)                                 //Registering Routing Skill
 	cMessageSettings.SetRegistrar(regInstance)                             //Registering conversations messaging settings
+	conversationsSettings.SetRegistrar(regInstance)                        //Registering conversations settings
 	routingSkillGroup.SetRegistrar(regInstance)                            //Registering routing skill group
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
