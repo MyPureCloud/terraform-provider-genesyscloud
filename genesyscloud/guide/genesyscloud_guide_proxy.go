@@ -3,16 +3,18 @@ package guide
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/request"
 )
 
 var internalProxy *guideProxy
+var requestutil = request.NewRequestUtil[Guide](setGuideRequestHeader)
+var deleteutil = request.NewRequestUtil[DeleteObjectJob](setGuideRequestHeader)
 
 type getAllGuidesFunc func(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error)
 type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error)
@@ -97,18 +99,18 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 	u.RawQuery = q.Encode()
 
-	req, err := createHTTPRequest(action, u.String(), nil, p)
+	req, err := requestutil.CreateHTTPRequest(action, u.String(), nil, p)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	body, resp, err := callAPI(ctx, client, req)
+	body, resp, err := requestutil.CallAPI(ctx, client, req)
 	if err != nil {
 		return nil, resp, err
 	}
 
 	var guides GuideEntityListing
-	if err := unmarshalResponse(body, &guides); err != nil {
+	if err := requestutil.UnmarshalResponse(body, &guides); err != nil {
 		return nil, resp, err
 	}
 
@@ -122,13 +124,13 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 		q.Set("pageNumber", fmt.Sprintf("%v", pageNum))
 		req.URL.RawQuery = q.Encode()
 
-		body, resp, err = callAPI(ctx, client, req)
+		body, resp, err = requestutil.CallAPI(ctx, client, req)
 		if err != nil {
 			return nil, resp, err
 		}
 
 		var respBody GuideEntityListing
-		if err := unmarshalResponse(body, &respBody); err != nil {
+		if err := requestutil.UnmarshalResponse(body, &respBody); err != nil {
 			return nil, resp, err
 		}
 
@@ -146,7 +148,7 @@ func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guid
 
 func createGuideFn(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
-	return makeAPIRequest[Guide](ctx, http.MethodPost, baseURL, guide, p)
+	return requestutil.MakeAPIRequest(ctx, http.MethodPost, baseURL, guide, p)
 }
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
@@ -154,7 +156,7 @@ func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *pla
 		return guide, nil, nil
 	}
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id
-	return makeAPIRequest[Guide](ctx, http.MethodGet, baseURL, nil, p)
+	return requestutil.MakeAPIRequest(ctx, http.MethodGet, baseURL, nil, p)
 }
 
 func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
@@ -181,7 +183,7 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 
 func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id + "/jobs"
-	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodDelete, baseURL, nil, p)
+	jobResponse, resp, err := deleteutil.MakeAPIRequest(ctx, http.MethodDelete, baseURL, nil, p)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -191,7 +193,7 @@ func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObject
 
 func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
 	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/jobs/" + jobId
-	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodGet, baseURL, nil, p)
+	jobResponse, resp, err := deleteutil.MakeAPIRequest(ctx, http.MethodGet, baseURL, nil, p)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -202,60 +204,4 @@ func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, 
 	}
 
 	return jobResponse, resp, nil
-}
-
-// makeAPIRequest performs a complete API request for any of the guide endpoints
-func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody interface{}, p *guideProxy) (*T, *platformclientv2.APIResponse, error) {
-	var req *http.Request
-	var err error
-
-	if requestBody != nil {
-		req, err = marshalAndCreateRequest(method, url, requestBody, p)
-	} else {
-		req, err = createHTTPRequest(method, url, nil, p)
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	client := &http.Client{}
-	respBody, resp, err := callAPI(ctx, client, req)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	var result T
-	if err := unmarshalResponse(respBody, &result); err != nil {
-		return nil, resp, err
-	}
-
-	return &result, resp, nil
-}
-
-// callAPI is a helper function which will be removed when the endpoints are public
-func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
-	req = req.WithContext(ctx)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error making request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading response: %v", err)
-	}
-
-	response := &platformclientv2.APIResponse{
-		StatusCode: resp.StatusCode,
-		Response:   resp,
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, response, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	return respBody, response, nil
 }
