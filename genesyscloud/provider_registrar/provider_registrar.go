@@ -260,15 +260,14 @@ func registerResources() {
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
+	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
+	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
 	obContactListFilter.SetRegistrar(regInstance)                          //Registering outbound contact list filter
 	obContactListTemplate.SetRegistrar(regInstance)                        //Registering outbound contact list template
 	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence
-	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obSettings.SetRegistrar(regInstance)                                   //Registering outbound settings
-	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
-	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obfst.SetRegistrar(regInstance)                                        //Registering outbound file specification template
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
 	obDigitalRuleSet.SetRegistrar(regInstance)                             //Registering outbound digital ruleset
