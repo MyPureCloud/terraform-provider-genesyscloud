@@ -154,16 +154,167 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		log.Printf("Syncing queue state")
+		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
+		if readDiags != nil {
+			diagErr = append(diagErr, readDiags...)
+		}
 		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		log.Printf("Syncing queue state")
+		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
+		if readDiags != nil {
+			diagErr = append(diagErr, readDiags...)
+		}
 		return diagErr
 	}
 
 	log.Printf("Created Routing Queue %s", d.Id())
 	return readRoutingQueue(ctx, d, meta)
+}
+
+func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := GetRoutingQueueProxy(sdkConfig)
+
+	log.Printf("Syncing queue state from API for %s after partial update failure", d.Id())
+
+	currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
+	if getErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp)
+	}
+
+	resourcedata.SetNillableValue(d, "name", currentQueue.Name)
+	resourcedata.SetNillableValue(d, "description", currentQueue.Description)
+	resourcedata.SetNillableValue(d, "skill_evaluation_method", currentQueue.SkillEvaluationMethod)
+	resourcedata.SetNillableReferenceDivision(d, "division_id", currentQueue.Division)
+
+	_ = d.Set("acw_wrapup_prompt", nil)
+	_ = d.Set("acw_timeout_ms", nil)
+
+	if currentQueue.AcwSettings != nil {
+		resourcedata.SetNillableValue(d, "acw_wrapup_prompt", currentQueue.AcwSettings.WrapupPrompt)
+		resourcedata.SetNillableValue(d, "acw_timeout_ms", currentQueue.AcwSettings.TimeoutMs)
+	}
+
+	_ = d.Set("media_settings_call", nil)
+	_ = d.Set("media_settings_callback", nil)
+	_ = d.Set("media_settings_chat", nil)
+	_ = d.Set("media_settings_email", nil)
+	_ = d.Set("media_settings_message", nil)
+	_ = d.Set("agent_owned_routing", nil)
+
+	if currentQueue.MediaSettings != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_call", currentQueue.MediaSettings.Call, flattenMediaSetting)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_callback", currentQueue.MediaSettings.Callback, flattenMediaSettingCallback)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_chat", currentQueue.MediaSettings.Chat, flattenMediaSetting)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSettingsMessage)
+	}
+	_ = d.Set("outbound_messaging_sms_address_id", nil)
+	_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
+	_ = d.Set("outbound_messaging_open_messaging_recipient_id", nil)
+
+	if currentQueue.OutboundMessagingAddresses != nil {
+		if currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
+			_ = d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
+		}
+		if currentQueue.OutboundMessagingAddresses.WhatsAppRecipient != nil {
+			_ = d.Set("outbound_messaging_whatsapp_recipient_id", *currentQueue.OutboundMessagingAddresses.WhatsAppRecipient.Id)
+		}
+		if currentQueue.OutboundMessagingAddresses.OpenMessagingRecipient != nil {
+			_ = d.Set("outbound_messaging_open_messaging_recipient_id", *currentQueue.OutboundMessagingAddresses.OpenMessagingRecipient.Id)
+		}
+	}
+
+	if currentQueue.AgentOwnedRouting != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "agent_owned_routing", currentQueue.AgentOwnedRouting, flattenAgentOwnedRouting)
+	}
+
+	if currentQueue.Bullseye != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
+	}
+
+	if currentQueue.CannedResponseLibraries != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
+	}
+
+	if currentQueue.ConditionalGroupActivation != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
+	}
+
+	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
+	resourcedata.SetNillableReference(d, "queue_flow_id", currentQueue.QueueFlow)
+	resourcedata.SetNillableReference(d, "message_in_queue_flow_id", currentQueue.MessageInQueueFlow)
+	resourcedata.SetNillableReference(d, "email_in_queue_flow_id", currentQueue.EmailInQueueFlow)
+	resourcedata.SetNillableReference(d, "whisper_prompt_id", currentQueue.WhisperPrompt)
+	resourcedata.SetNillableReference(d, "on_hold_prompt_id", currentQueue.OnHoldPrompt)
+	resourcedata.SetNillableValue(d, "auto_answer_only", currentQueue.AutoAnswerOnly)
+	resourcedata.SetNillableValue(d, "enable_transcription", currentQueue.EnableTranscription)
+	resourcedata.SetNillableValue(d, "suppress_in_queue_call_recording", currentQueue.SuppressInQueueCallRecording)
+	resourcedata.SetNillableValue(d, "enable_audio_monitoring", currentQueue.EnableAudioMonitoring)
+	resourcedata.SetNillableValue(d, "enable_manual_assignment", currentQueue.EnableManualAssignment)
+	resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
+	resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
+	resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
+	resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
+	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
+	resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
+
+	if currentQueue.DefaultScripts != nil {
+		_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
+	} else {
+		_ = d.Set("default_script_ids", nil)
+	}
+
+	wrapupCodes, diagErr := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
+	if diagErr != nil && diagErr.HasError() {
+		return diagErr
+	}
+	_ = d.Set("wrapup_codes", wrapupCodes)
+
+	if !d.Get("ignore_members").(bool) {
+		members, diagErr := flattenQueueMembers(d.Id(), "user", sdkConfig)
+		if diagErr != nil && diagErr.HasError() {
+			return diagErr
+		}
+		_ = d.Set("members", members)
+	} else {
+		log.Println("Not reading queue members because ignore_members is set to true. Queue ID: ", strconv.Quote(d.Id()))
+	}
+
+	skillGroup := "SKILLGROUP"
+	team := "TEAM"
+	group := "GROUP"
+
+	_ = d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, &skillGroup))
+	_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
+	_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
+
+	if exists := featureToggles.CSGToggleExists(); !exists {
+		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+	} else {
+		log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+	}
+
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
+			outboundEmailAddress := *currentQueue.OutboundEmailAddress
+			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
+		} else {
+			_ = d.Set("outbound_email_address", nil)
+		}
+	} else {
+		log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+	}
+
+	log.Printf("Synced queue %s %s from API", d.Id(), *currentQueue.Name)
+	return nil
 }
 
 func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -265,16 +416,16 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			_ = d.Set("default_script_ids", nil)
 		}
 
-		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("%v", err))
+		wrapupCodes, diagErr := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
+		if diagErr != nil && diagErr.HasError() {
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 		_ = d.Set("wrapup_codes", wrapupCodes)
 
 		if !d.Get("ignore_members").(bool) {
-			members, err := flattenQueueMembers(d.Id(), "user", sdkConfig)
-			if err != nil {
-				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			members, diagErr := flattenQueueMembers(d.Id(), "user", sdkConfig)
+			if diagErr != nil && diagErr.HasError() {
+				return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 			}
 			_ = d.Set("members", members)
 		} else {
@@ -388,11 +539,23 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
 	if diagErr.HasError() {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		log.Printf("Syncing queue state")
+		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
+		if readDiags != nil {
+			diagErr = append(diagErr, readDiags...)
+		}
 		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		log.Printf("Syncing queue state")
+		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
+		if readDiags != nil {
+			diagErr = append(diagErr, readDiags...)
+		}
 		return diagErr
 	}
 
