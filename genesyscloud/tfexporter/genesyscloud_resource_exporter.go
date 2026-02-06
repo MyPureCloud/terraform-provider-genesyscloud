@@ -2602,12 +2602,7 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		g.buildSecondDeps[refSettings.RefType] = []string{refID}
 	}
 
-	if exportingState {
-		// Don't remove unmatched IDs when exporting state. This will keep existing config in an org
-		return refID
-	}
-	// No match found. Remove the value from the config since we do not have a reference to use
-	return ""
+	return refID
 }
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
