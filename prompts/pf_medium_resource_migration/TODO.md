@@ -1,0 +1,1 @@
+# When medium resource migrated store that details here for future reference
