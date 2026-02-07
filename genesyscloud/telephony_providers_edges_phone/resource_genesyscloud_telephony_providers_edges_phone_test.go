@@ -140,7 +140,7 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -289,7 +289,7 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 	}, capabilities, generatePhoneProperties(phoneMacUpdated))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -390,7 +390,7 @@ func TestAccResourcePhoneStandalone(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
@@ -533,7 +533,7 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 	}, capabilities, generateLinePropertiesRemoteAddress(strconv.Quote(remoteStationAddress)), generatePhoneProperties(uuid.NewString()))
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
 		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
