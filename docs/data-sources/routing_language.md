@@ -27,4 +27,4 @@ data "genesyscloud_routing_language" "english" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the routing language.
