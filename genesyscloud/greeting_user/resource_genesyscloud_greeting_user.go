@@ -62,7 +62,8 @@ func readUserGreeting(ctx context.Context, d *schema.ResourceData, meta interfac
 
 	log.Printf("Reading greeting %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		greeting, resp, getErr := proxy.getUserGreetingById(ctx, d.Id())
+		userId, _ := d.Get("user_id").(string)
+		greeting, resp, getErr := proxy.getUserGreetingById(ctx, userId, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read greeting %s | error: %s", d.Id(), getErr), resp))
@@ -73,7 +74,9 @@ func readUserGreeting(ctx context.Context, d *schema.ResourceData, meta interfac
 		resourcedata.SetNillableValue(d, "name", greeting.Name)
 		resourcedata.SetNillableValue(d, "type", greeting.VarType)
 		resourcedata.SetNillableValue(d, "owner_type", greeting.OwnerType)
-		resourcedata.SetNillableValue(d, "audio_tts", greeting.AudioTTS)
+		if greeting.AudioTTS != nil {
+			resourcedata.SetNillableValue(d, "audio_tts", greeting.AudioTTS)
+		}
 		resourcedata.SetNillableValue(d, "user_id", greeting.Owner.Id)
 		resourcedata.SetNillableValue(d, "audio_file", greeting.AudioFile)
 
@@ -112,7 +115,8 @@ func deleteUserGreeting(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getUserGreetingById(ctx, d.Id())
+		userId, _ := d.Get("user_id").(string)
+		_, resp, err := proxy.getUserGreetingById(ctx, userId, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Greeting deleted
