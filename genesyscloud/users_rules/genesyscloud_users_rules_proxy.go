@@ -103,7 +103,7 @@ func createUsersRulesFn(ctx context.Context, p *usersRulesProxy, usersRules *pla
 // getAllUsersRulesFn is the implementation for retrieving all users rules in Genesys Cloud
 func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm string) (*[]platformclientv2.Usersrulesrule, *platformclientv2.APIResponse, error) {
 	var allUsersRules []platformclientv2.Usersrulesrule
-	types := []string{"Learning", "ActivityPlan"}
+	types := []string{"Learning"}
 	const pageSize = 100
 	const pageNumber = 1
 	const sortOrder = ""
