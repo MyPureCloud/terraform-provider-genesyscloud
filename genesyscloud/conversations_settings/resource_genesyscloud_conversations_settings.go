@@ -6,9 +6,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -16,6 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
+
+/*
+The resource_genesyscloud_conversations_settings.go contains all the methods that perform the core logic for a resource.
+*/
 
 // getAllConversationsSettings retrieves all conversations settings for export
 func getAllConversationsSettings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -41,7 +47,7 @@ func getAllConversationsSettings(ctx context.Context, clientConfig *platformclie
 
 // createConversationsSettings creates the conversations settings resource
 func createConversationsSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("Creating Conversations Settings")
+	log.Printf("Creating Conversations Setting")
 	d.SetId("settings")
 	return updateConversationsSettings(ctx, d, meta)
 }
@@ -50,6 +56,7 @@ func createConversationsSettings(ctx context.Context, d *schema.ResourceData, me
 func readConversationsSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsSettingsProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsSettings(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading conversations settings")
 
@@ -57,13 +64,14 @@ func readConversationsSettings(ctx context.Context, d *schema.ResourceData, meta
 		settings, resp, getErr := proxy.getConversationsSettings(ctx)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Conversations Settings %s | error: %s", d.Id(), getErr), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Conversations Setting %s | error: %s", d.Id(), getErr), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Conversations Settings %s | error: %s", d.Id(), getErr), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read Conversations Setting %s | error: %s", d.Id(), getErr), resp))
 		}
 
-		log.Printf("DEBUG: API returned: CommunicationBasedACW=%v, IncludeNonAgentConversationSummary=%v",
-			*settings.CommunicationBasedACW, *settings.IncludeNonAgentConversationSummary)
+		if settings == nil {
+			return retry.NonRetryableError(fmt.Errorf("conversations settings response was nil"))
+		}
 
 		// Map API response to Terraform state
 		resourcedata.SetNillableValue(d, "communication_based_acw", settings.CommunicationBasedACW)
@@ -73,8 +81,8 @@ func readConversationsSettings(ctx context.Context, d *schema.ResourceData, meta
 		resourcedata.SetNillableValue(d, "complete_acw_when_agent_transitions_offline", settings.CompleteAcwWhenAgentTransitionsOffline)
 		resourcedata.SetNillableValue(d, "total_active_callback", settings.TotalActiveCallback)
 
-		log.Printf("Read Conversations Settings")
-		return nil
+		log.Printf("Read Conversations Setting")
+		return cc.CheckState(d)
 	})
 }
 
@@ -104,16 +112,11 @@ func updateConversationsSettings(ctx context.Context, d *schema.ResourceData, me
 		TotalActiveCallback:                    &totalActiveCallback,
 	}
 
-	log.Printf("DEBUG: Sending update with values: CommunicationBasedACW=%v, IncludeNonAgentConversationSummary=%v",
-		*update.CommunicationBasedACW, *update.IncludeNonAgentConversationSummary)
-
 	// PATCH returns no body, so we just check for errors
 	resp, err := proxy.updateConversationsSettings(ctx, &update)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update conversations settings %s error: %s", d.Id(), err), resp)
 	}
-
-	log.Printf("DEBUG: PATCH successful, response status: %d", resp.StatusCode)
 
 	// Wait for API to propagate changes (same as routing_settings)
 	time.Sleep(5 * time.Second)

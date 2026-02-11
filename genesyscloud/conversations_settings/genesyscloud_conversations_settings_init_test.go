@@ -1,25 +1,17 @@
 package conversations_settings
 
 import (
-	"log"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
-var (
-	providerDataSources map[string]*schema.Resource
-	providerResources   map[string]*schema.Resource
-	sdkConfig           *platformclientv2.Configuration
-	authErr             error
-)
+// providerResources holds a map of all registered resources
+var providerResources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -30,29 +22,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceConversationsSettings()
 }
 
-// registerTestDataSources registers all data sources used in the tests.
-func (r *registerTestInstance) registerTestDataSources() {
-	r.datasourceMapMutex.Lock()
-	defer r.datasourceMapMutex.Unlock()
-
-	// Add data source if created in the future
-	// providerDataSources[ResourceType] = DataSourceConversationsSettings()
-}
-
-// initTestResources initializes all test resources and data sources.
+// initTestResources initializes all test resources.
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
-
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for package conversations_settings: %v", authErr)
-	}
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
-	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test
