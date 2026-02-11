@@ -108,6 +108,9 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 
 	log.Printf("Reading integration %s", d.Id())
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentIntegration, resp, getErr := ip.getIntegrationById(ctx, d.Id())
 		if getErr != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -69,16 +71,25 @@ func (p *idpPingProxy) deleteIdpPing(ctx context.Context, id string) (response *
 
 // getAllIdpPingFn is the implementation for retrieving all idp ping in Genesys Cloud
 func getIdpPingFn(ctx context.Context, p *idpPingProxy) (*platformclientv2.Pingidentity, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.identityProviderApi.GetIdentityprovidersPing()
 }
 
 // updateIdpPingFn is an implementation of the function to update a Genesys Cloud idp ping
 func updateIdpPingFn(ctx context.Context, p *idpPingProxy, id string, idpPing *platformclientv2.Pingidentity) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.identityProviderApi.PutIdentityprovidersPing(*idpPing)
 }
 
 // deleteIdpPingFn is an implementation function for deleting a Genesys Cloud idp ping
 func deleteIdpPingFn(ctx context.Context, p *idpPingProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersPing()
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete idp ping: %s", err)

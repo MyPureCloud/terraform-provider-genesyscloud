@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -85,6 +86,9 @@ func (p *knowledgeCategoryProxy) deleteKnowledgeCategory(ctx context.Context, kn
 }
 
 func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeCategoryProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		after    string
 		entities []platformclientv2.Knowledgebase
@@ -121,6 +125,9 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeCategoryProx
 }
 
 func getAllKnowledgeCategoryEntitiesFn(ctx context.Context, p *knowledgeCategoryProxy, knowledgeBase *platformclientv2.Knowledgebase, categoryName string) (*[]platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		after    string
 		entities []platformclientv2.Categoryresponse
@@ -163,6 +170,9 @@ func getAllKnowledgeCategoryEntitiesFn(ctx context.Context, p *knowledgeCategory
 }
 
 func getKnowledgeKnowledgebaseCategoryFn(ctx context.Context, p *knowledgeCategoryProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if knowledgeCategory := rc.GetCacheItem(p.knowledgeCategoryCache, categoryId); knowledgeCategory != nil {
 		return knowledgeCategory, nil, nil
 	}
@@ -170,6 +180,9 @@ func getKnowledgeKnowledgebaseCategoryFn(ctx context.Context, p *knowledgeCatego
 }
 
 func getKnowledgeCategoryByNameFn(ctx context.Context, p *knowledgeCategoryProxy, categoryName string, knowledgeBaseName string) (string, bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageSize = 100
 	publishedKnowledgeBases, publishedResp, getPublishedErr := p.KnowledgeApi.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
 	unpublishedKnowledgeBases, unpublishedResp, getUnpublishedErr := p.KnowledgeApi.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
@@ -225,14 +238,23 @@ func getKnowledgeCategoryByNameFn(ctx context.Context, p *knowledgeCategoryProxy
 	return "", true, publishedResp, nil
 }
 func createKnowledgeCategoryFn(ctx context.Context, p *knowledgeCategoryProxy, knowledgeBaseId string, body platformclientv2.Categorycreaterequest) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.KnowledgeApi.PostKnowledgeKnowledgebaseCategories(knowledgeBaseId, body)
 }
 
 func updateKnowledgeCategoryFn(ctx context.Context, p *knowledgeCategoryProxy, knowledgeBaseId string, categoryId string, body platformclientv2.Categoryupdaterequest) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.KnowledgeApi.PatchKnowledgeKnowledgebaseCategory(knowledgeBaseId, categoryId, body)
 }
 
 func deleteKnowledgeCategoryFn(ctx context.Context, p *knowledgeCategoryProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	delete, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebaseCategory(knowledgeBaseId, categoryId)
 	if err != nil {
 		return delete, resp, err

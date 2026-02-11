@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -93,10 +94,16 @@ func (p *outboundDnclistProxy) uploadPhoneEntriesToDncList(dncList *platformclie
 }
 
 func createOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclist *platformclientv2.Dnclistcreate) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.PostOutboundDnclists(*dnclist)
 }
 
 func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allDnclists []platformclientv2.Dnclist
 	const pageSize = 100
 
@@ -128,6 +135,9 @@ func getAllOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy) (*[]p
 }
 
 func updateOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.PutOutboundDnclist(dnclistId, *dnclist)
 }
 
@@ -153,14 +163,23 @@ func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformcli
 }
 
 func deleteOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.DeleteOutboundDnclist(dnclistId)
 }
 
 func getOutboundDnclistByIdFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.GetOutboundDnclist(dnclistId, false, false)
 }
 
 func getOutboundDnclistByNameFn(ctx context.Context, p *outboundDnclistProxy, name string) (dnclistId string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	dnclists, resp, err := getAllOutboundDnclistFn(ctx, p)
 	if err != nil {
 		return "", false, resp, fmt.Errorf("error searching outbound dnc list %s: %s", name, err)
