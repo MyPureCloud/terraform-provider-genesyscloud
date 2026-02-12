@@ -183,7 +183,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
-	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := archProxy.getArchitectDatatableRow(ctx, tableId, keyStr)
 		if err != nil {
 			if util.IsStatus404(resp) {

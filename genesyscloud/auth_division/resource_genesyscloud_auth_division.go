@@ -136,6 +136,10 @@ func deleteAuthDivision(ctx context.Context, d *schema.ResourceData, meta interf
 		log.Printf("Deleting division %s", name)
 		resp, err := proxy.deleteAuthDivision(ctx, d.Id(), false)
 		if err != nil {
+			if util.IsStatus404(resp) {
+				log.Printf("Failed to delete division '%s' because it already does not exist in the org. Response: %s", d.Id(), resp.String())
+				return resp, nil
+			}
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Division %s error: %s", d.Id(), err), resp)
 		}
 		log.Printf("Successfully deleted division %s", name)

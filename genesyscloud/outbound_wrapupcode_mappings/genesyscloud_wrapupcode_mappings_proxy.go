@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -61,12 +63,18 @@ func (p *outboundWrapupCodeMappingsProxy) getAllWrapupCodes(ctx context.Context)
 
 // getAllOutboundWrapupCodeMappingsFn( is the implementation of the getAllOutboundWrapupCodeMappings call
 func getAllOutboundWrapupCodeMappingsFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (wrapupcodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	wrapupcodemappings, resp, err := p.outboundApi.GetOutboundWrapupcodemappings()
 	return wrapupcodemappings, resp, err
 }
 
 // updateOutboundWrapUpCodeMappingsFn is the implementation of the updateOutboundWrapUpCodeMappings call
 func updateOutboundWrapUpCodeMappingsFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy, outBoundWrapupCodes *platformclientv2.Wrapupcodemapping) (updatedWrapupCodeMappings *platformclientv2.Wrapupcodemapping, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	w, resp, err := p.outboundApi.PutOutboundWrapupcodemappings(*outBoundWrapupCodes)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update wrap-up code mappings: %s", err)
@@ -76,6 +84,9 @@ func updateOutboundWrapUpCodeMappingsFn(ctx context.Context, p *outboundWrapupCo
 
 // getAllWrapupCodesFn is the implementation of the getAllWrapupCodes call
 func getAllWrapupCodesFn(ctx context.Context, p *outboundWrapupCodeMappingsProxy) (updatedWrapupCodeMappings *[]platformclientv2.Wrapupcode, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	wucs := []platformclientv2.Wrapupcode{}
 	const pageSize = 100
 

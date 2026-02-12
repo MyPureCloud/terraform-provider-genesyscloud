@@ -23,6 +23,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
+// To enable nested tables, set ENABLE_NESTED_TABLES as an environment variable
 resource "genesyscloud_knowledge_document_variation" "example_document_variation" {
   knowledge_base_id     = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   knowledge_document_id = genesyscloud_knowledge_document.example_unpublished_document.id
@@ -38,6 +39,11 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
               text      = "Paragraph text"
               marks     = ["Bold", "Italic", "Underline"]
               hyperlink = "https://example.com/hyperlink"
+              properties {
+                font_size        = "Large"
+                text_color       = "#000000"
+                background_color = "#FFFFFF"
+              }
             }
           }
           blocks {
@@ -70,10 +76,26 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
         }
       }
       blocks {
-        type = "Image"
-        image {
-          url       = "https://example.com/image"
-          hyperlink = "https://example.com/hyperlink"
+        type = "Table"
+        table {
+          rows {
+            cells {
+              blocks {
+                type = "Text"
+                text {
+                  text = "Cell A1"
+                }
+              }
+            }
+            cells {
+              blocks {
+                type = "Text"
+                text {
+                  text = "Cell B1"
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -86,9 +108,9 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
 
 ### Required
 
-- `knowledge_base_id` (String) Knowledge base id of the label
-- `knowledge_document_id` (String) Knowledge document id of the label
-- `knowledge_document_variation` (Block List, Min: 1, Max: 1) Knowledge document variation (see [below for nested schema](#nestedblock--knowledge_document_variation))
+- `knowledge_base_id` (String) The knowledge base id of the variation
+- `knowledge_document_id` (String) The knowledge document id of the variation
+- `knowledge_document_variation` (Block List, Min: 1, Max: 1) The knowledge document variation (see [below for nested schema](#nestedblock--knowledge_document_variation))
 
 ### Optional
 
@@ -106,6 +128,7 @@ Optional:
 - `body` (Block List, Max: 1) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body))
 - `contexts` (Block List) The context values associated with the variation (see [below for nested schema](#nestedblock--knowledge_document_variation--contexts))
 - `name` (String) The name of the variation
+- `priority` (Number) The priority of the variation
 
 Read-Only:
 
@@ -116,20 +139,21 @@ Read-Only:
 
 Required:
 
-- `blocks` (Block List, Min: 1) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks))
+- `blocks` (Block List, Min: 1) The content for the body. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks`
 
 Required:
 
-- `type` (String) The type of the block for the body. This determines which body block object (paragraph, list, video or image) would have a value.
+- `type` (String) The type of the block for the body. This determines which body block object (paragraph, image, video, list or table) would have a value.
 
 Optional:
 
 - `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image))
 - `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list))
 - `paragraph` (Block List, Max: 1) Paragraph. It must contain a value if the type of the block is Paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph))
+- `table` (Block List, Max: 1) Table. It must contain a value if the type of the block is Table. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table))
 - `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--image"></a>
@@ -150,18 +174,33 @@ Optional:
 Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
 
 
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list`
 
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks))
+
 Optional:
 
-- `blocks` (Block List) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks))
-- `properties` (Block List) Properties for the UnorderedList or OrderedList (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--properties))
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--properties))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks`
@@ -169,7 +208,7 @@ Optional:
 Required:
 
 - `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks))
-- `type` (String) The type of the list block.
+- `type` (String) The type of the list. Valid values: ListItem
 
 Optional:
 
@@ -180,11 +219,12 @@ Optional:
 
 Required:
 
-- `type` (String) The type of the content block.
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
 
 Optional:
 
 - `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list))
 - `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--text))
 - `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video))
 
@@ -206,8 +246,1339 @@ Optional:
 Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
 
 
 
@@ -230,7 +1601,7 @@ Optional:
 Optional:
 
 - `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
-- `font_size` (String) The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
 - `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
 
 
@@ -253,7 +1624,27 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
 
 
 
@@ -263,14 +1654,14 @@ Optional:
 
 Optional:
 
-- `align` (String) The align type for the list item.Valid values: Center, Left, Right, Justify
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
-- `font_size` (String) The font size for the list item. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
 - `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
 - `indentation` (Number) The indentation property for the list item. The valid values in 'em'
-- `ordered_type` (String) The type of icon for the ordered list.Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
 - `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
-- `unordered_type` (String) The type of icon for the unordered list.Valid values: Normal, Square, Circle, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
 
 
 
@@ -279,17 +1670,20 @@ Optional:
 
 Optional:
 
-- `ordered_type` (String) The type of icon for the ordered list.Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
-- `unordered_type` (String) The type of icon for the unordered list.Valid values: Normal, Square, Circle, None
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
 
 
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--paragraph"></a>
 ### Nested Schema for `knowledge_document_variation.body.blocks.paragraph`
 
+Required:
+
+- `blocks` (Block List, Min: 1) The content for the paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks))
+
 Optional:
 
-- `blocks` (Block List) The content for the variation. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks))
 - `properties` (Block List) The properties for the paragraph (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--properties))
 
 <a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks"></a>
@@ -297,7 +1691,7 @@ Optional:
 
 Required:
 
-- `type` (String) The type of the content block.
+- `type` (String) The type of the content block. Valid values: Text, Image, Video
 
 Optional:
 
@@ -323,8 +1717,20 @@ Optional:
 Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
 
 
 
@@ -347,7 +1753,7 @@ Optional:
 Optional:
 
 - `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
-- `font_size` (String) The font size for the text. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
 - `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
 
 
@@ -370,7 +1776,27 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--paragraph--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.paragraph.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
 
 
 
@@ -380,12 +1806,3607 @@ Optional:
 
 Optional:
 
-- `align` (String) The align type for the paragraph.Valid values: Center, Left, Right, Justify
+- `align` (String) The align type for the paragraph. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the paragraph. The valid values in hex color code representation. For example black color - #000000
-- `font_size` (String) The font size for the paragraph. The valid values in 'em'.Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
-- `font_type` (String) The font type for the paragraph.Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
-- `indentation` (Number) The indentation color for the paragraph. The valid values in 'em'
+- `font_size` (String) The font size for the paragraph. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the paragraph. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the paragraph. The valid values in 'em'
 - `text_color` (String) The text color for the paragraph. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table`
+
+Required:
+
+- `rows` (Block List, Min: 1) The rows in the table (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows))
+
+Optional:
+
+- `properties` (Block List) The properties for the table (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows`
+
+Required:
+
+- `cells` (Block List, Min: 1) The cells in a table row (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells))
+
+Optional:
+
+- `properties` (Block List) The properties for a table row (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items in a row cell (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks))
+
+Optional:
+
+- `properties` (Block List) The properties for a row cell (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the table. This determines which table block object (text, image, video, list, paragraph, or table) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list))
+- `paragraph` (Block List, Max: 1) Paragraph. It must contain a value if the type of the block is Paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The content for the paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks))
+
+Optional:
+
+- `properties` (Block List) The properties for the paragraph (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks`
+
+Required:
+
+- `type` (String) The type of the content block. Valid values: Text, Image, Video
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--paragraph--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.paragraph.properties`
+
+Optional:
+
+- `align` (String) The align type for the paragraph. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the paragraph. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the paragraph. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the paragraph. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the paragraph. The valid values in 'em'
+- `text_color` (String) The text color for the paragraph. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.properties`
+
+Optional:
+
+- `background_color` (String) The background color of the cell
+- `border_color` (String) The color of the cell's border
+- `border_style` (String) The style of the cell's border. Valid values: Solid, Dotted, Dashed, Double, Groove, Ridge, Inset, Outset, Hidden, None
+- `border_width` (Number) The width of the cell's border
+- `cell_type` (String) The type of cell. Valid values: Cell, HeaderCell
+- `col_span` (Number) The number of columns to span for the cell
+- `height` (Number) The height of the cell
+- `horizontal_align` (String) The horizontal alignment of the cell. Valid values: Center, Left, Right
+- `row_span` (Number) The number of rows to span for the cell
+- `scope` (String) The scope of the cell. Valid values: Row, Column, RowGroup, ColumnGroup, None
+- `vertical_align` (String) The vertical alignment of the cell. Valid values: Top, Middle, Bottom
+- `width` (Number) The width of the cell (without unit)
+- `width_with_unit` (Block List, Max: 1) The width of the cell (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--cells--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.cells.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--rows--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.rows.properties`
+
+Optional:
+
+- `alignment` (String) The alignment of the row. Valid values: Center, Left, Right
+- `background_color` (String) The background color of the row
+- `border_color` (String) The color of the row's border
+- `border_style` (String) The style of the row's border. Valid values: Solid, Dotted, Dashed, Double, Groove, Ridge, Inset, Outset, Hidden, None
+- `height` (Number) The height of the row
+- `row_type` (String) The type of row. Valid values: Header, Footer, Body
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties`
+
+Optional:
+
+- `alignment` (String) The alignment of the table. Valid values: Center, Left, Right
+- `background_color` (String) The background color of the table
+- `border_color` (String) The color of the table's border
+- `border_style` (String) The style of the table's border. Valid values: Solid, Dotted, Dashed, Double, Groove, Ridge, Inset, Outset, Hidden, None
+- `border_width` (Number) The width of the table's border
+- `caption` (Block List) The caption of the table (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption))
+- `cell_padding` (Number) The padding of cells in the table
+- `cell_spacing` (Number) The spacing of cells in the table
+- `height` (Number) The height of the table
+- `width` (Number) The width of the table (without unit)
+- `width_with_unit` (Block List, Max: 1) The width of the table (with unit) (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of captions for a Table. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks`
+
+Required:
+
+- `type` (String) The type of the table caption. Valid Values: Paragraph, Text, Image, Video, OrderedList, UnorderedList
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the caption is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the caption is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list))
+- `paragraph` (Block List, Max: 1) Paragraph. It must contain a value if the type of the caption is Paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the caption is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the caption is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `list` (Block List, Max: 1) List. It must contain a value if the type of the block is UnorderedList or OrderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The items in the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks))
+
+Optional:
+
+- `properties` (Block List) Properties for the list (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The list of items for an OrderedList or an UnorderedList. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks))
+- `type` (String) The type of the list. Valid values: ListItem
+
+Optional:
+
+- `properties` (Block List) The properties for the list block (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks`
+
+Required:
+
+- `type` (String) The type of the block for the list. This determines which list block object (text, video, image or list) would have a value.
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--blocks--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.blocks.properties`
+
+Optional:
+
+- `align` (String) The align type for the list item. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the list item. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the list item. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the list item. The valid values in 'em'
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `text_color` (String) The text color for the list item. The valid values in hex color code representation. For example black color - #000000
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--list--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.list.properties`
+
+Optional:
+
+- `ordered_type` (String) The type of icon for the ordered list. Valid values: Number, LowerAlpha, LowerGreek, LowerRoman, UpperAlpha, UpperRoman, None
+- `unordered_type` (String) The type of icon for the unordered list. Valid values: Normal, Square, Circle, None
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph`
+
+Required:
+
+- `blocks` (Block List, Min: 1) The content for the paragraph. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks))
+
+Optional:
+
+- `properties` (Block List) The properties for the paragraph (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks`
+
+Required:
+
+- `type` (String) The type of the content block. Valid values: Text, Image, Video
+
+Optional:
+
+- `image` (Block List, Max: 1) Image. It must contain a value if the type of the block is Image. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image))
+- `text` (Block List, Max: 1) Text. It must contain a value if the type of the block is Text. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--text))
+- `video` (Block List, Max: 1) Video. It must contain a value if the type of the block is Video. (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.image`
+
+Required:
+
+- `url` (String) The URL for the image.
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `properties` (Block List) The properties for the image (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.image.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `alt_text` (String) The image alt text for the property
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Number) The width (without unit) for the property
+- `width_with_unit` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--image--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.image.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--paragraph--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.paragraph.properties`
+
+Optional:
+
+- `align` (String) The align type for the paragraph. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the paragraph. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the paragraph. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `font_type` (String) The font type for the paragraph. Valid values: Paragraph, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Preformatted
+- `indentation` (Number) The indentation property for the paragraph. The valid values in 'em'
+- `text_color` (String) The text color for the paragraph. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--text"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.text`
+
+Required:
+
+- `text` (String) Text
+
+Optional:
+
+- `hyperlink` (String) The URL of the page that the hyperlink goes to.
+- `marks` (Set of String) The unique list of marks (whether it is bold and/or underlined etc.) for the text. Valid values: Bold | Italic | Underline
+- `properties` (Block List) The properties for the text (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--text--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--text--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.text.properties`
+
+Optional:
+
+- `background_color` (String) The background color for the text. The valid values in hex color code representation. For example black color - #000000
+- `font_size` (String) The font size for the text. The valid values in 'em'. Valid values: XxSmall, XSmall, Small, Medium, Large, XLarge, XxLarge, XxxLarge
+- `text_color` (String) The text color for the text. The valid values in hex color code representation. For example black color - #000000
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.video`
+
+Required:
+
+- `url` (String) The URL for the video.
+
+Optional:
+
+- `properties` (Block List) The properties for the video (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.video.properties`
+
+Optional:
+
+- `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
+- `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--height))
+- `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--caption--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.caption.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+
+
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--table--properties--width_with_unit"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.table.properties.width_with_unit`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
 
 
 
@@ -407,7 +5428,27 @@ Optional:
 
 - `align` (String) The align type for the property. Valid values: Center, Left, Right, Justify
 - `background_color` (String) The background color for the property. The valid values in hex color code representation. For example black color - #000000
+- `height` (Block List, Max: 1) The height (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties--height))
 - `indentation` (Number) The indentation for the property. The valid values in 'em'
+- `width` (Block List, Max: 1) The width (with unit) for the property (see [below for nested schema](#nestedblock--knowledge_document_variation--body--blocks--video--properties--width))
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--video--properties--height"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.video.properties.height`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
+
+<a id="nestedblock--knowledge_document_variation--body--blocks--video--properties--width"></a>
+### Nested Schema for `knowledge_document_variation.body.blocks.video.properties.width`
+
+Required:
+
+- `unit` (String) The unit of the number. Valid values: Em, Percentage, Px
+- `value` (Number) A number
+
 
 
 

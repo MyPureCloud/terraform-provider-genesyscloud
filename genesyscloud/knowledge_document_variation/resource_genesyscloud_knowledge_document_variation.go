@@ -126,7 +126,10 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		published = publishedIn.(bool)
 	}
 
-	knowledgeDocumentVariationRequest := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
+	knowledgeDocumentVariationRequest, err := buildKnowledgeDocumentVariation(knowledgeDocumentVariation)
+	if err != nil {
+		return util.BuildDiagnosticError(ResourceType, "Knowledge document variation exceeds supported nesting depth", err)
+	}
 
 	log.Printf("Creating knowledge document variation for document %s", ids.knowledgeDocumentID)
 
@@ -193,7 +196,11 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 
 		_ = d.Set("knowledge_base_id", *knowledgeDocVariation.Document.KnowledgeBase.Id)
 		_ = d.Set("knowledge_document_id", ids.knowledgeDocumentResourceDataID)
-		_ = d.Set("knowledge_document_variation", flattenKnowledgeDocumentVariation(*knowledgeDocVariation))
+		variationOut, err := flattenKnowledgeDocumentVariation(*knowledgeDocVariation)
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+		_ = d.Set("knowledge_document_variation", variationOut)
 
 		if knowledgeDocVariation.DocumentVersion != nil && knowledgeDocVariation.DocumentVersion.Id != nil && len(*knowledgeDocVariation.DocumentVersion.Id) > 0 {
 			_ = d.Set("published", true)
@@ -233,7 +240,10 @@ func updateKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, getErr), resp)
 		}
 
-		knowledgeDocumentVariationUpdate := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
+		knowledgeDocumentVariationUpdate, err := buildKnowledgeDocumentVariationUpdate(knowledgeDocumentVariation)
+		if err != nil {
+			return resp, util.BuildDiagnosticError(ResourceType, "Knowledge document variation exceeds supported nesting depth", err)
+		}
 
 		_, resp, putErr := variationProxy.updateVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID, *knowledgeDocumentVariationUpdate)
 		if putErr != nil {

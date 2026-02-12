@@ -55,6 +55,11 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// adding members to the team
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
 	if diagErr != nil {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		readDiags := readTeam(ctx, d, meta)
+		if readDiags != nil {
+			diagErr = append(diagErr, readDiags...)
+		}
 		return diagErr
 	}
 
@@ -66,9 +71,9 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading team %s", d.Id())
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		team, resp, getErr := proxy.getTeamById(ctx, d.Id())
 		if getErr != nil {
@@ -82,12 +87,13 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
 		resourcedata.SetNillableValue(d, "description", team.Description)
 
-		// reading members
 		members, err := readTeamMembers(ctx, d.Id(), sdkConfig)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("%v", err))
 		}
 		_ = d.Set("member_ids", members)
+
+		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.ConsistencyChecks(), ResourceType)
 
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
 		return cc.CheckState(d)
@@ -108,6 +114,11 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
 	if diagErr != nil {
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		readDiags := readTeam(ctx, d, meta)
+		if readDiags != nil {
+			diagErr = append(diagErr, readDiags...)
+		}
 		return diagErr
 	}
 

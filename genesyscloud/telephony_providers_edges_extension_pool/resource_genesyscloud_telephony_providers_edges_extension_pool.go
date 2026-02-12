@@ -43,12 +43,19 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
 
-	log.Printf("Creating Extension pool %s", startNumber)
-	extensionPool, resp, err := extensionPoolProxy.createExtensionPool(ctx, platformclientv2.Extensionpool{
+	extensionPoolReq := platformclientv2.Extensionpool{
 		StartNumber: &startNumber,
 		EndNumber:   &endNumber,
 		Description: &description,
-	})
+	}
+
+	divisionId := d.Get("division_id").(string)
+	if divisionId != "" {
+		extensionPoolReq.Division = &platformclientv2.Division{Id: &divisionId}
+	}
+
+	log.Printf("Creating Extension pool %s", startNumber)
+	extensionPool, resp, err := extensionPoolProxy.createExtensionPool(ctx, extensionPoolReq)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create extension pool %s error: %s", startNumber, err), resp)
 	}
@@ -86,7 +93,11 @@ func readExtensionPool(ctx context.Context, d *schema.ResourceData, meta interfa
 		} else {
 			d.Set("description", nil)
 		}
-
+		if extensionPool.Division != nil && extensionPool.Division.Id != nil {
+			d.Set("division_id", *extensionPool.Division.Id)
+		} else {
+			d.Set("division_id", nil)
+		}
 		log.Printf("Read Extension pool %s %s", d.Id(), *extensionPool.StartNumber)
 		return cc.CheckState(d)
 	})
@@ -104,6 +115,12 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 		EndNumber:   &endNumber,
 		Description: &description,
 	}
+
+	divisionId := d.Get("division_id").(string)
+	if divisionId != "" {
+		extensionPoolBody.Division = &platformclientv2.Division{Id: &divisionId}
+	}
+
 	log.Printf("Updating Extension pool %s", d.Id())
 	if _, resp, err := extensionPoolProxy.updateExtensionPool(ctx, d.Id(), extensionPoolBody); err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update extension pool %s error: %s", startNumber, err), resp)

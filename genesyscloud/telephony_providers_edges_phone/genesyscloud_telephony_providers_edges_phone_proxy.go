@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -169,6 +170,7 @@ func (p *phoneProxy) assignStationAsDefault(ctx context.Context, userId string, 
 
 // getAllPhonesFn is an implementation function for retrieving all Genesys Cloud Phones
 func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	log.Printf("Entering the getAllPhonesFn method to retrieve all of the phone ids for export")
 	var allPhones []platformclientv2.Phone
 	const pageSize = 100
@@ -225,6 +227,7 @@ func getAllPhonesFn(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Pho
 
 // createPhoneFn is an implementation function for creating a Genesys Cloud Phone
 func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phone, resp, err := p.edgesApi.PostTelephonyProvidersEdgesPhones(*phoneConfig)
 	if err != nil {
 		return nil, resp, err
@@ -234,6 +237,7 @@ func createPhoneFn(ctx context.Context, p *phoneProxy, phoneConfig *platformclie
 
 // getPhoneByIdFn is an implementation function for retrieving a Genesys Cloud Phone by id
 func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phone, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhone(phoneId)
 
 	if err != nil {
@@ -246,6 +250,7 @@ func getPhoneByIdFn(ctx context.Context, p *phoneProxy, phoneId string) (*platfo
 
 // getPhoneByNameFn is an implementation function for retrieving a Genesys Cloud Phone by name
 func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 100
 	expand := []string{"lines", "properties"}
 	fields := []string{"webRtcUser"}
@@ -284,6 +289,7 @@ func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (pho
 
 // updatePhoneFn is an implementation function for updating a Genesys Cloud Phone
 func updatePhoneFn(ctx context.Context, p *phoneProxy, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phone, resp, err := p.edgesApi.PutTelephonyProvidersEdgesPhone(phoneId, *phoneConfig)
 	if err != nil {
 		return nil, resp, err
@@ -293,6 +299,7 @@ func updatePhoneFn(ctx context.Context, p *phoneProxy, phoneId string, phoneConf
 
 // deletePhoneFn is an implementation function for deleting a Genesys Cloud Phone
 func deletePhoneFn(ctx context.Context, p *phoneProxy, phoneId string) (response *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesPhone(phoneId)
 	if err != nil {
 		return resp, err
@@ -303,6 +310,7 @@ func deletePhoneFn(ctx context.Context, p *phoneProxy, phoneId string) (response
 
 // getPhoneBaseSettingFn is an implementation function for retrieving a Genesys Cloud Phone Base Setting
 func getPhoneBaseSettingFn(ctx context.Context, p *phoneProxy, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	phoneBase, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhonebasesetting(phoneBaseSettingsId)
 	if err != nil {
 		return nil, resp, err
@@ -312,6 +320,7 @@ func getPhoneBaseSettingFn(ctx context.Context, p *phoneProxy, phoneBaseSettings
 
 // getStationOfUserFn is an implementation function for retrieving a Genesys Cloud User Station
 func getStationOfUserFn(ctx context.Context, p *phoneProxy, userId string) (station *platformclientv2.Station, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	const pageSize = 100
 	const pageNum = 1
 	stations, resp, err := p.stationsApi.GetStations(pageSize, pageNum, "", "", "", userId, "", "")
@@ -326,16 +335,19 @@ func getStationOfUserFn(ctx context.Context, p *phoneProxy, userId string) (stat
 
 // unassignUserFromStationFn is an implementation function for unassigning a Genesys Cloud User from a Station
 func unassignUserFromStationFn(ctx context.Context, p *phoneProxy, stationId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.stationsApi.DeleteStationAssociateduser(stationId)
 }
 
 // assignUserToStationFn is an implementation function for assigning a Genesys Cloud User to a Station
 func assignUserToStationFn(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.usersApi.PutUserStationAssociatedstationStationId(userId, stationId)
 
 }
 
 // assignStationAsDefaultFn is an implementation function for assigning a station as Default Station
 func assignStationAsDefaultFn(ctx context.Context, p *phoneProxy, userId string, stationId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.usersApi.PutUserStationDefaultstationStationId(userId, stationId)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
@@ -99,11 +100,13 @@ func (p *outboundMessagingcampaignProxy) deleteOutboundMessagingcampaign(ctx con
 
 // createOutboundMessagingcampaignFn is an implementation function for creating a Genesys Cloud outbound messagingcampaign
 func createOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy, outboundMessagingcampaign *platformclientv2.Messagingcampaign) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.outboundApi.PostOutboundMessagingcampaigns(*outboundMessagingcampaign)
 }
 
 // getAllOutboundMessagingcampaignFn is the implementation for retrieving all outbound messagingcampaign in Genesys Cloud
 func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy) (*[]platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allMessagingCampaigns []platformclientv2.Messagingcampaign
 	const pageSize = 100
 
@@ -139,6 +142,7 @@ func getAllOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessaging
 
 // getOutboundMessagingcampaignIdByNameFn is an implementation of the function to get a Genesys Cloud outbound messagingcampaign by name
 func getOutboundMessagingcampaignIdByNameFn(ctx context.Context, p *outboundMessagingcampaignProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	messagingCampaigns, resp, err := getAllOutboundMessagingcampaignFn(ctx, p)
 	if err != nil {
 		return "", false, resp, err
@@ -160,6 +164,7 @@ func getOutboundMessagingcampaignIdByNameFn(ctx context.Context, p *outboundMess
 
 // getOutboundMessagingcampaignByIdFn is an implementation of the function to get a Genesys Cloud outbound messagingcampaign by Id
 func getOutboundMessagingcampaignByIdFn(ctx context.Context, p *outboundMessagingcampaignProxy, id string) (outboundMessagingcampaign *platformclientv2.Messagingcampaign, response *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	if outboundMessagingcampaign := rc.GetCacheItem(p.obMessagingCampaignCache, id); outboundMessagingcampaign != nil {
 		log.Printf("Retrieved outbound messagingcampaign %s by id from cache", id)
 		return outboundMessagingcampaign, nil, nil
@@ -169,11 +174,13 @@ func getOutboundMessagingcampaignByIdFn(ctx context.Context, p *outboundMessagin
 
 // updateOutboundMessagingcampaignFn is an implementation of the function to update a Genesys Cloud outbound messagingcampaign
 func updateOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy, id string, outboundMessagingcampaign *platformclientv2.Messagingcampaign) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.outboundApi.PutOutboundMessagingcampaign(id, *outboundMessagingcampaign)
 }
 
 // deleteOutboundMessagingcampaignFn is an implementation function for deleting a Genesys Cloud outbound messagingcampaign
 func deleteOutboundMessagingcampaignFn(ctx context.Context, p *outboundMessagingcampaignProxy, id string) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	campaign, resp, err := p.outboundApi.DeleteOutboundMessagingcampaign(id)
 	if err != nil {
 		return nil, resp, err

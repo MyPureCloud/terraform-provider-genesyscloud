@@ -3,6 +3,8 @@ package idp_generic
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -68,16 +70,25 @@ func (p *idpGenericProxy) deleteIdpGeneric(ctx context.Context, id string) (resp
 
 // getIdpGenericFn is the implementation for retrieving all idp generic in Genesys Cloud
 func getIdpGenericFn(ctx context.Context, p *idpGenericProxy) (*platformclientv2.Genericsaml, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.identityProviderApi.GetIdentityprovidersGeneric()
 }
 
 // updateIdpGenericFn is an implementation of the function to update a Genesys Cloud idp generic
 func updateIdpGenericFn(ctx context.Context, p *idpGenericProxy, id string, idpGeneric *platformclientv2.Genericsaml) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.identityProviderApi.PutIdentityprovidersGeneric(*idpGeneric)
 }
 
 // deleteIdpGenericFn is an implementation function for deleting a Genesys Cloud idp generic
 func deleteIdpGenericFn(ctx context.Context, p *idpGenericProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.identityProviderApi.DeleteIdentityprovidersGeneric()
 	if err != nil {
 		return resp, err

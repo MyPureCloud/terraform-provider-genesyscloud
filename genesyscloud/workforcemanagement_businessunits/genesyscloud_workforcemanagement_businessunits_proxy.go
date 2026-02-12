@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -94,11 +96,13 @@ func (p *workforceManagementBusinessUnitsProxy) deleteWorkforceManagementBusines
 
 // createWorkforceManagementBusinessUnitFn is an implementation function for creating a Genesys Cloud workforce management business unit
 func createWorkforceManagementBusinessUnitFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, workforceManagementBusinessUnits *platformclientv2.Createbusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.workforceManagementApi.PostWorkforcemanagementBusinessunits(*workforceManagementBusinessUnits, false)
 }
 
 // getAllWorkforceManagementBusinessUnitsFn is the implementation for retrieving all workforce management business units in Genesys Cloud
 func getAllWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy) (*[]platformclientv2.Businessunitlistitem, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Empty strings are for feature (so no special permission checking overrides) and divisionId (so no filtering by divisionId)
 	businessUnitResponses, resp, err := p.workforceManagementApi.GetWorkforcemanagementBusinessunits("", "")
 	if err != nil {
@@ -110,6 +114,7 @@ func getAllWorkforceManagementBusinessUnitsFn(ctx context.Context, p *workforceM
 
 // getWorkforceManagementBusinessUnitIdByExactNameFn is an implementation of the function to get a Genesys Cloud workforce management business unit ID by exact name match
 func getWorkforceManagementBusinessUnitIdByExactNameFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Empty strings for feature and divisionId parameters mean no filtering - retrieve all business units to search by name
 	businessUnitResponses, resp, err := p.workforceManagementApi.GetWorkforcemanagementBusinessunits("", "")
 	if err != nil {
@@ -132,15 +137,18 @@ func getWorkforceManagementBusinessUnitIdByExactNameFn(ctx context.Context, p *w
 
 // getWorkforceManagementBusinessUnitByIdFn is an implementation of the function to get a Genesys Cloud workforce management business unit by ID
 func getWorkforceManagementBusinessUnitByIdFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.workforceManagementApi.GetWorkforcemanagementBusinessunit(id, []string{"settings"}, false)
 }
 
 // updateWorkforceManagementBusinessUnitFn is an implementation of the function to update a Genesys Cloud workforce management business unit
 func updateWorkforceManagementBusinessUnitFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string, updateRequest *platformclientv2.Updatebusinessunitrequest) (*platformclientv2.Businessunitresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.workforceManagementApi.PatchWorkforcemanagementBusinessunit(id, *updateRequest, false)
 }
 
 // deleteWorkforceManagementBusinessUnitFn is an implementation function for deleting a Genesys Cloud workforce management business unit
 func deleteWorkforceManagementBusinessUnitFn(ctx context.Context, p *workforceManagementBusinessUnitsProxy, id string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.workforceManagementApi.DeleteWorkforcemanagementBusinessunit(id)
 }

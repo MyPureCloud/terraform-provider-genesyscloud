@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -93,6 +95,7 @@ func (p *outboundContactlisttemplateProxy) deleteOutboundContactlisttemplate(ctx
 
 // createOutboundContactlisttemplateFn is an implementation function for creating a Genesys Cloud outbound Contactlisttemplate
 func createOutboundContactlisttemplateFn(ctx context.Context, p *outboundContactlisttemplateProxy, outboundContactlisttemplate *platformclientv2.Contactlisttemplate) (*platformclientv2.Contactlisttemplate, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	Contactlisttemplate, resp, err := p.outboundApi.PostOutboundContactlisttemplates(*outboundContactlisttemplate)
 	if err != nil {
 		return nil, resp, err
@@ -102,6 +105,7 @@ func createOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 
 // getAllOutboundContactlisttemplateFn is the implementation for retrieving all outbound Contactlisttemplate in Genesys Cloud
 func getAllOutboundContactlisttemplateFn(ctx context.Context, p *outboundContactlisttemplateProxy, name string) (*[]platformclientv2.Contactlisttemplate, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allContactlisttemplates []platformclientv2.Contactlisttemplate
 	const pageSize = 100
 
@@ -138,6 +142,7 @@ func getAllOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 
 // getOutboundContactlisttemplateIdByNameFn is an implementation of the function to get a Genesys Cloud outbound Contactlisttemplate by name
 func getOutboundContactlisttemplateIdByNameFn(ctx context.Context, p *outboundContactlisttemplateProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	Contactlisttemplates, resp, err := getAllOutboundContactlisttemplateFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, fmt.Errorf("error searching outbound contact list template  %s: %s", name, err)
@@ -157,6 +162,7 @@ func getOutboundContactlisttemplateIdByNameFn(ctx context.Context, p *outboundCo
 
 // getOutboundContactlisttemplateByIdFn is an implementation of the function to get a Genesys Cloud outbound Contactlisttemplate by Id
 func getOutboundContactlisttemplateByIdFn(ctx context.Context, p *outboundContactlisttemplateProxy, id string) (outboundContactlisttemplate *platformclientv2.Contactlisttemplate, response *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	Contactlisttemplate, resp, err := p.outboundApi.GetOutboundContactlisttemplate(id)
 	if err != nil {
 		return nil, resp, err
@@ -166,6 +172,7 @@ func getOutboundContactlisttemplateByIdFn(ctx context.Context, p *outboundContac
 
 // updateOutboundContactlisttemplateFn is an implementation of the function to update a Genesys Cloud outbound Contactlisttemplate
 func updateOutboundContactlisttemplateFn(ctx context.Context, p *outboundContactlisttemplateProxy, id string, outboundContactlisttemplate *platformclientv2.Contactlisttemplate) (*platformclientv2.Contactlisttemplate, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	Contactlisttemplate, resp, err := p.outboundApi.GetOutboundContactlisttemplate(id)
 	if err != nil {
 		return nil, resp, err
@@ -181,5 +188,6 @@ func updateOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 
 // deleteOutboundContactlisttemplateFn is an implementation function for deleting a Genesys Cloud outbound Contactlisttemplate
 func deleteOutboundContactlisttemplateFn(ctx context.Context, p *outboundContactlisttemplateProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.outboundApi.DeleteOutboundContactlisttemplate(id)
 }

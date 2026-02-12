@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -93,6 +95,9 @@ func (p *outboundContactlistfilterProxy) deleteOutboundContactlistfilter(ctx con
 
 // createOutboundContactlistfilterFn is an implementation function for creating a Genesys Cloud outbound contactlistfilter
 func createOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	contactListFilter, resp, err := p.outboundApi.PostOutboundContactlistfilters(*outboundContactlistfilter)
 	if err != nil {
 		return nil, resp, err
@@ -102,6 +107,9 @@ func createOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 
 // getAllOutboundContactlistfilterFn is the implementation for retrieving all outbound contactlistfilter in Genesys Cloud
 func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, name string) (*[]platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allContactlistfilters []platformclientv2.Contactlistfilter
 	const pageSize = 100
 
@@ -138,6 +146,9 @@ func getAllOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 
 // getOutboundContactlistfilterIdByNameFn is an implementation of the function to get a Genesys Cloud outbound contactlistfilter by name
 func getOutboundContactlistfilterIdByNameFn(ctx context.Context, p *outboundContactlistfilterProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	contactListFilters, resp, err := getAllOutboundContactlistfilterFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, fmt.Errorf("error searching outbound contact list filter %s: %s", name, err)
@@ -157,6 +168,9 @@ func getOutboundContactlistfilterIdByNameFn(ctx context.Context, p *outboundCont
 
 // getOutboundContactlistfilterByIdFn is an implementation of the function to get a Genesys Cloud outbound contactlistfilter by Id
 func getOutboundContactlistfilterByIdFn(ctx context.Context, p *outboundContactlistfilterProxy, id string) (outboundContactlistfilter *platformclientv2.Contactlistfilter, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	contactListFilter, resp, err := p.outboundApi.GetOutboundContactlistfilter(id)
 	if err != nil {
 		return nil, resp, err
@@ -166,6 +180,9 @@ func getOutboundContactlistfilterByIdFn(ctx context.Context, p *outboundContactl
 
 // updateOutboundContactlistfilterFn is an implementation of the function to update a Genesys Cloud outbound contactlistfilter
 func updateOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, id string, outboundContactlistfilter *platformclientv2.Contactlistfilter) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	contactListFilter, resp, err := p.outboundApi.GetOutboundContactlistfilter(id)
 	if err != nil {
 		return nil, resp, err
@@ -181,5 +198,8 @@ func updateOutboundContactlistfilterFn(ctx context.Context, p *outboundContactli
 
 // deleteOutboundContactlistfilterFn is an implementation function for deleting a Genesys Cloud outbound contactlistfilter
 func deleteOutboundContactlistfilterFn(ctx context.Context, p *outboundContactlistfilterProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.DeleteOutboundContactlistfilter(id)
 }
