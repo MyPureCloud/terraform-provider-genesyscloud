@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-digitalrulesets)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:digitalRuleSet:add`
+* `outbound:digitalRuleSet:delete`
+* `outbound:digitalRuleSet:edit`
+* `outbound:digitalRuleSet:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

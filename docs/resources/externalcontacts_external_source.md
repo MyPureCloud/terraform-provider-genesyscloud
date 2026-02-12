@@ -16,6 +16,22 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-externalsources--externalSourceId-)
 * [PUT /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-externalcontacts-externalsources--externalSourceId-)
 * [DELETE /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-externalcontacts-externalsources--externalSourceId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `externalContacts:contact:view`
+* `externalContacts:externalOrganization:view`
+* `externalContacts:externalSource:add`
+* `externalContacts:externalSource:delete`
+* `externalContacts:externalSource:edit`
+* `externalContacts:externalSource:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `external-contacts`
+* `external-contacts:readonly`
+
 
 ## Example Usage
 

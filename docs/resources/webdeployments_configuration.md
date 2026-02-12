@@ -19,6 +19,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#put-api-v2-webdeployments-configurations--configurationId--versions-draft)
 * [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
 * [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `webDeployments:configuration:add`
+* `webDeployments:configuration:delete`
+* `webDeployments:configuration:edit`
+* `webDeployments:configuration:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `webdeployments`
+* `webdeployments:readonly`
+
 
 ## Example Usage
 

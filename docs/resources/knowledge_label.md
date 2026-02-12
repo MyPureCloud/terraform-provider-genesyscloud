@@ -19,6 +19,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `knowledge:label:add`
+* `knowledge:label:delete`
+* `knowledge:label:edit`
+* `knowledge:label:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `knowledge`
+* `knowledge:readonly`
+
 
 ## Example Usage
 

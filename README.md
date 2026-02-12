@@ -170,6 +170,160 @@ $ make testunit
 
 If you want to go off of an example, we recommend using the [external contacts](https://github.com/MyPureCloud/terraform-provider-genesyscloud/tree/main/genesyscloud/external_contacts) package.
 
+### Documentation Generation
+
+The provider documentation is automatically generated from resource schemas and example files. Understanding this process is crucial when adding new resources.
+
+#### How Documentation is Generated
+
+Documentation generation is a two-step process triggered by running `make docs`:
+
+1. **terraform-plugin-docs** - Generates base documentation from the resource schema and the template at `templates/resources.md.tmpl`
+2. **apidocs tool** - Enhances the documentation by injecting API endpoint information and automatically extracting permissions and OAuth scopes from the Genesys Cloud Swagger specification
+
+#### Creating the apis.md File
+
+When adding a new resource, you must create an `apis.md` file in the resource's examples directory (`examples/resources/genesyscloud_{resource_name}/apis.md`). This file lists all API endpoints used by the resource.
+
+**Format Requirements:**
+
+- Each endpoint must be on its own line
+- Start each line with a dash (`-`) or asterisk (`*`) followed by a space
+- Wrap the endpoint in square brackets with the HTTP method and path: `[METHOD /api/v2/path]`
+- Follow with a link in parentheses (the URL is for documentation purposes only)
+- The HTTP method must be uppercase (GET, POST, PUT, PATCH, DELETE)
+- The path must start with `/api/v2/`
+- Path parameters should use curly braces: `{parameterId}`
+
+**Example apis.md:**
+
+```markdown
+- [POST /api/v2/authorization/roles](https://developer.mypurecloud.com/api/rest/v2/authorization/#post-api-v2-authorization-roles)
+- [GET /api/v2/authorization/roles](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-roles)
+- [GET /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-roles--roleId-)
+- [PUT /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-roles--roleId-)
+- [DELETE /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-roles--roleId-)
+```
+
+**Important Notes:**
+
+- The `apis.md` file should **only** contain the list of API endpoints - no additional content
+- The apidocs tool will automatically fetch the Swagger specification and extract:
+  - Required permissions from `x-inin-requires-permissions.permissions`
+  - Required OAuth scopes from `security[x]."PureCloud OAuth"`
+- All permissions and scopes across all endpoints are aggregated and deduplicated
+- If an endpoint is not found in the Swagger spec, it will be silently skipped
+- The generated documentation will include a "Permissions and Scopes" section listing all required permissions and OAuth scopes
+
+**Generated Output:**
+
+The documentation will automatically include sections like:
+
+```markdown
+## API Usage
+
+The following Genesys Cloud APIs are used by this resource...
+
+- [POST /api/v2/authorization/roles](...)
+- [GET /api/v2/authorization/roles](...)
+  ...
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+- `authorization:role:add`
+- `authorization:role:delete`
+- `authorization:role:edit`
+- `authorization:role:view`
+
+The following OAuth scopes are required to use this resource:
+
+- `authorization`
+- `authorization:readonly`
+```
+
+#### Regenerating Documentation
+
+After creating or modifying an `apis.md` file, regenerate the documentation:
+
+```sh
+$ make docs
+```
+
+This will:
+
+1. Run unit tests to validate examples
+2. Fetch the latest Swagger specification from Genesys Cloud
+3. Generate documentation with API endpoints, permissions, and scopes
+4. Update all files in the `docs/` directory
+
+**Never manually edit files in the `docs/` directory** - they will be overwritten on the next documentation generation.
+
+#### Programmatic Access to Permissions Data
+
+In addition to the human-readable documentation, the tool generates a JSON file containing all permissions and scopes data for programmatic consumption:
+
+**File Location:** `public/data/resource_permissions-{version}.json`
+
+By default, the file is named `resource_permissions-latest.json`. You can specify a version when running the tool:
+
+```bash
+go run ./apidocs "1.0.0"  # Creates resource_permissions-1.0.0.json
+```
+
+**Structure:**
+
+```json
+{
+  "version": "latest",
+  "resources": [
+    {
+      "resource_type": "genesyscloud_auth_role",
+      "resource_name": "auth_role",
+      "permissions": ["authorization:role:add", "authorization:role:delete", "authorization:role:edit", "authorization:role:view"],
+      "scopes": ["authorization", "authorization:readonly"],
+      "endpoints": [
+        "POST /api/v2/authorization/roles",
+        "GET /api/v2/authorization/roles",
+        "GET /api/v2/authorization/roles/{roleId}",
+        "PUT /api/v2/authorization/roles/{roleId}",
+        "DELETE /api/v2/authorization/roles/{roleId}"
+      ]
+    }
+  ]
+}
+```
+
+This file is automatically generated alongside the documentation and can be used for:
+
+- Automated OAuth client configuration
+- Permission auditing and validation
+- Integration with CI/CD pipelines
+- Custom tooling and scripts
+
+#### Troubleshooting
+
+**Permissions and Scopes Not Appearing:**
+
+If the "Permissions and Scopes" section is not appearing in your generated documentation:
+
+1. Verify your `apis.md` file follows the correct format (see requirements above)
+2. Check that the HTTP method is uppercase (GET, POST, PUT, PATCH, DELETE)
+3. Ensure the path starts with `/api/v2/`
+4. Verify the endpoints exist in the Swagger specification at `https://api.mypurecloud.com/api/v2/docs/swagger`
+5. Check the console output when running `make docs` for any warnings about fetching the Swagger spec
+
+**Testing Your apis.md Format:**
+
+You can test if your endpoints are being parsed correctly by running:
+
+```sh
+$ go run ./apidocs
+```
+
+This will show console output indicating whether the Swagger spec was fetched successfully and which documentation files were updated.
+
 ### Cx As Code Resource Generator
 
 [The Cx as Code Resource Generator](https://github.com/MyPureCloud/cxascode-resource-generator) is a tool that can help generate resources for Cx as Code and speed up development. The resource generator will generate resources using the package structure mentioned above. The project can be found [here](https://github.com/MyPureCloud/cxascode-resource-generator) and all usage is documented in the README. Please note that the resource generator is not perfect, it is a tool to help with development and the generated code will require review and the package will still need to be registered manually in `main.go`.
