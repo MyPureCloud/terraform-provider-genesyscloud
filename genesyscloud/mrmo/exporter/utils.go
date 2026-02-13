@@ -54,7 +54,11 @@ func CreateClientConfig(creds Credentials) (_ *platformclientv2.Configuration, e
 	}
 
 	config := platformclientv2.GetDefaultConfiguration()
-	config.BasePath = provider.GetRegionBasePath(creds.Region)
+	if creds.BasePathOverride != "" {
+		config.BasePath = creds.BasePathOverride
+	} else {
+		config.BasePath = provider.GetRegionBasePath(creds.Region)
+	}
 
 	err = config.AuthorizeClientCredentials(creds.ClientId, creds.ClientSecret)
 	return config, err
