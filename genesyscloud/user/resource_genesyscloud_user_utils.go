@@ -113,7 +113,7 @@ func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userP
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, proxy)
+	diagErr = updateUserRoutingUtilization(ctx, d, proxy)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -297,7 +297,7 @@ func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.
 	return nil
 }
 
-func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
+func updateUserRoutingUtilization(ctx context.Context, d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
 	if d.HasChange("routing_utilization") {
 		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
 			var err error
@@ -310,6 +310,8 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
 
 				if len(labelUtilizations) > 0 {
+					// Set resource context for SDK debug logging
+
 					apiClient := &proxy.routingApi.Configuration.APIClient
 
 					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())

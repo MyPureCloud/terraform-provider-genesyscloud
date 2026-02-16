@@ -19,6 +19,17 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/telephony/providers/edges/trunks/{trunkId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunks--trunkId-)
 * [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `telephony:plugin:all`
+
+The following OAuth scopes are required to use this resource:
+
+* `telephony`
+* `telephony:readonly`
+
 
 ## Example Usage
 

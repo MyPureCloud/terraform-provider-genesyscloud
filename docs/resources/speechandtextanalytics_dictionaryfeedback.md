@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/speechandtextanalytics/dictionaryfeedback](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-dictionaryfeedback)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `speechAndTextAnalytics:dictionaryterm:add`
+* `speechAndTextAnalytics:dictionaryterm:delete`
+* `speechAndTextAnalytics:dictionaryterm:edit`
+* `speechAndTextAnalytics:dictionaryterm:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `speech-and-text-analytics`
+* `speech-and-text-analytics:readonly`
+
 
 ## Example Usage
 

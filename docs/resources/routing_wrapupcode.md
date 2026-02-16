@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/routing/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-wrapupcodes)
 * [PUT /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-wrapupcodes--codeId-)
 * [DELETE /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-wrapupcodes--codeId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:wrapupCode:add`
+* `routing:wrapupCode:delete`
+* `routing:wrapupCode:edit`
+* `routing:wrapupCode:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 

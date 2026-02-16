@@ -80,6 +80,10 @@ func readRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta int
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingSmsAddress(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Routing Sms Address %s", d.Id())
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		sdkSmsAddress, resp, getErr := proxy.getSmsAddressById(d.Id())
 		if getErr != nil {
@@ -111,6 +115,9 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 		return nil
 	}
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Routing Sms Address")
 		resp, err := proxy.deleteSmsAddress(d.Id())
@@ -122,6 +129,9 @@ func deleteRoutingSmsAddress(ctx context.Context, d *schema.ResourceData, meta i
 	if diagErr != nil {
 		return diagErr
 	}
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getSmsAddressById(d.Id())

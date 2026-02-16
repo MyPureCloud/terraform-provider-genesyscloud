@@ -3,17 +3,17 @@ package responsemanagement_responseasset
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
-
-	"io"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
@@ -186,6 +186,9 @@ func downloadFileIfNotPresent(s3Path, filename string) error {
 }
 
 func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allResponseAssets []platformclientv2.Responseasset
 	var response *platformclientv2.APIResponse
 	pageSize := 100
@@ -229,6 +232,9 @@ func getAllResponseAssetsFn(ctx context.Context, p *responsemanagementResponseas
 
 // createRespManagementRespAssetFn is an implementation of the function to create a Genesys Cloud responsemanagement responseasset
 func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	postResponseData, resp, err := p.responseManagementApi.PostResponsemanagementResponseassetsUploads(*respAsset)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to upload response asset: %v", err)
@@ -238,11 +244,17 @@ func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 
 // updateRespManagementRespAssetFn is an implementation of the function to update a Genesys Cloud responsemanagement responseasset
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 }
 
 // getRespManagementRespAssetByIdFn is an implementation of the function to get a Genesys Cloud responsemanagement responseasset by Id
 func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	asset := rc.GetCacheItem(p.assetCache, id)
 	if asset != nil {
 		return asset, nil, nil
@@ -256,6 +268,9 @@ func getRespManagementRespAssetByIdFn(ctx context.Context, p *responsemanagement
 }
 
 func getRespManagementRespAssetByNameFn(ctx context.Context, p *responsemanagementResponseassetProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		field   = "name"
 		fields  = []string{field}
@@ -291,6 +306,9 @@ func getRespManagementRespAssetByNameFn(ctx context.Context, p *responsemanageme
 
 // deleteRespManagementRespAssetFn is an implementation function for deleting a Genesys Cloud responsemanagement responseasset
 func deleteRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.responseManagementApi.DeleteResponsemanagementResponseasset(id)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete response asset: %s", err)

@@ -14,6 +14,19 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/responsemanagement/responseassets/{responseAssetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responseassets--responseAssetId-)
 * [POST /api/v2/responsemanagement/responseassets/uploads](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-responsemanagement-responseassets-uploads)
 * [DELETE /api/v2/responsemanagement/responseassets/{responseAssetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-responseassets--responseAssetId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `responseAssets:asset:add`
+* `responseAssets:asset:delete`
+* `responseAssets:asset:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `response-management`
+* `response-management:readonly`
+
 
 ## Example Usage
 

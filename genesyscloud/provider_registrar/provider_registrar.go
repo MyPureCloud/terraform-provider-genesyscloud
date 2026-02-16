@@ -5,6 +5,7 @@ import (
 
 	integrationApple "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple"
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -332,15 +333,14 @@ func registerResources() {
 	gcloud.SetRegistrar(regInstance)                                       //Registering genesyscloud
 	obAttemptLimit.SetRegistrar(regInstance)                               //Registering outbound attempt limit
 	obCallableTimeset.SetRegistrar(regInstance)                            //Registering outbound callable timeset
+	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
 	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
+	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obContactList.SetRegistrar(regInstance)                                //Registering outbound contact list
 	obContactListFilter.SetRegistrar(regInstance)                          //Registering outbound contact list filter
 	obContactListTemplate.SetRegistrar(regInstance)                        //Registering outbound contact list template
 	obSequence.SetRegistrar(regInstance)                                   //Registering outbound sequence
-	obCampaignRule.SetRegistrar(regInstance)                               //Registering outbound campaignrule
 	obSettings.SetRegistrar(regInstance)                                   //Registering outbound settings
-	obCallResponseSet.SetRegistrar(regInstance)                            //Registering outbound call analysis response set
-	obCampaign.SetRegistrar(regInstance)                                   //Registering outbound campaign
 	obfst.SetRegistrar(regInstance)                                        //Registering outbound file specification template
 	obDncList.SetRegistrar(regInstance)                                    //Registering outbound dnclist
 	obDigitalRuleSet.SetRegistrar(regInstance)                             //Registering outbound digital ruleset
@@ -444,6 +444,12 @@ func registerResources() {
 func (r *RegisterInstance) RegisterResource(resourceType string, resource *schema.Resource) {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
+
+	// Wrap CRUD methods to automatically inject resource type into context
+	// This allows SDK debug logs to include resource type without requiring
+	// each resource file to manually call SetResourceContext
+	provider.WrapResourceWithType(resourceType, resource)
+
 	providerResources[resourceType] = resource
 	providerResourceTypes = append(providerResourceTypes, resourceType)
 
@@ -456,6 +462,12 @@ func (r *RegisterInstance) RegisterResource(resourceType string, resource *schem
 func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
+
+	// Wrap ReadContext to automatically inject data source type into context
+	// This allows SDK debug logs to include data source type without requiring
+	// each data source file to manually call SetResourceContext
+	provider.WrapResourceWithType(dataSourceType, datasource)
+
 	providerDataSources[dataSourceType] = datasource
 
 	// Track as SDKv2 provider type

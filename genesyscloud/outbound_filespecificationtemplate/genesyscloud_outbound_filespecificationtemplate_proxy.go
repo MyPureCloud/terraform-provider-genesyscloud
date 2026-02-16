@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -96,6 +98,9 @@ func (p *outboundFilespecificationtemplateProxy) deleteOutboundFilespecification
 // createOutboundFilespecificationtemplateFn is an implementation function
 // for creating a Genesys Cloud outbound filespecificationtemplate
 func createOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	fst, resp, err := p.outboundApi.PostOutboundFilespecificationtemplates(*outboundFilespecificationtemplate)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create file specification template %s", err)
@@ -106,6 +111,9 @@ func createOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundF
 // getAllOutboundFilespecificationtemplateFn is the implementation for retrieving
 // all outbound filespecificationtemplate in Genesys Cloud
 func getAllOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (*[]platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allFileSpecificationTemplates []platformclientv2.Filespecificationtemplate
 	const pageSize = 100
 
@@ -144,6 +152,9 @@ func getAllOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundF
 // getOutboundFilespecificationtemplateIdByNameFn is an implementation of the function
 // to get a Genesys Cloud outbound filespecificationtemplate by name
 func getOutboundFilespecificationtemplateIdByNameFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	fileSpecificationTemplates, resp, err := getAllOutboundFilespecificationtemplateFn(ctx, p, name)
 
 	if err != nil {
@@ -166,6 +177,9 @@ func getOutboundFilespecificationtemplateIdByNameFn(ctx context.Context, p *outb
 // getOutboundFilespecificationtemplateByIdFn is an implementation of the function
 // to get a Genesys Cloud outbound filespecificationtemplate by id
 func getOutboundFilespecificationtemplateByIdFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	fst, resp, err := p.outboundApi.GetOutboundFilespecificationtemplate(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve file specification template by id %s: %s", id, err)
@@ -176,6 +190,9 @@ func getOutboundFilespecificationtemplateByIdFn(ctx context.Context, p *outbound
 // updateOutboundFilespecificationtemplateFn is an implementation of the function
 // to update a Genesys Cloud outbound filespecificationtemplate
 func updateOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string, outboundFilespecificationtemplate *platformclientv2.Filespecificationtemplate) (*platformclientv2.Filespecificationtemplate, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	fst, resp, err := getOutboundFilespecificationtemplateByIdFn(ctx, p, id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to file specification template by id %s: %s", id, err)
@@ -192,5 +209,8 @@ func updateOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundF
 // deleteOutboundFilespecificationtemplateFn is an implementation function for
 // deleting a Genesys Cloud outbound filespecificationtemplate
 func deleteOutboundFilespecificationtemplateFn(ctx context.Context, p *outboundFilespecificationtemplateProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.DeleteOutboundFilespecificationtemplate(id)
 }

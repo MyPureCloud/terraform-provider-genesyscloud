@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
@@ -94,11 +96,17 @@ func (p *conversationsMessagingIntegrationsInstagramProxy) deleteConversationsMe
 
 // createConversationsMessagingIntegrationsInstagramFn is an implementation function for creating a Genesys Cloud conversations messaging integrations instagram
 func createConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PostConversationsMessagingIntegrationsInstagram(*conversationsMessagingIntegrationsInstagram)
 }
 
 // getAllConversationsMessagingIntegrationsInstagramFn is the implementation for retrieving all conversations messaging integrations instagram in Genesys Cloud
 func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allInstagramIntegrationRequests []platformclientv2.Instagramintegration
 	const pageSize = 100
 
@@ -131,6 +139,9 @@ func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 
 // getConversationsMessagingIntegrationsInstagramIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations instagram by name
 func getConversationsMessagingIntegrationsInstagramIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	instagramIntegrationRequests, resp, err := p.getAllConversationsMessagingIntegrationsInstagram(ctx)
 	if err != nil {
 		return "", false, resp, err
@@ -152,15 +163,24 @@ func getConversationsMessagingIntegrationsInstagramIdByNameFn(ctx context.Contex
 
 // getConversationsMessagingIntegrationsInstagramByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations instagram by Id
 func getConversationsMessagingIntegrationsInstagramByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.GetConversationsMessagingIntegrationsInstagramIntegrationId(id, "")
 }
 
 // updateConversationsMessagingIntegrationsInstagramFn is an implementation of the function to update a Genesys Cloud conversations messaging integrations instagram
 func updateConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PatchConversationsMessagingIntegrationsInstagramIntegrationId(id, *conversationsMessagingIntegrationsInstagram)
 }
 
 // deleteConversationsMessagingIntegrationsInstagramFn is an implementation function for deleting a Genesys Cloud conversations messaging integrations instagram
 func deleteConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.DeleteConversationsMessagingIntegrationsInstagramIntegrationId(id)
 }
