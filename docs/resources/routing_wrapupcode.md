@@ -40,9 +40,9 @@ resource "genesyscloud_routing_wrapupcode" "unknown" {
 ### Optional
 
 - `description` (String) The wrap-up code description.
-- `division_id` (String) The division to which this routing wrapupcode will belong. If not set, * will be used to indicate all divisions.
+- `division_id` (String) The division to which this routing wrapupcode will belong.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The globally unique identifier for the wrapup code.
 
