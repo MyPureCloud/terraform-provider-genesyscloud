@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
@@ -15,17 +16,12 @@ import (
 //
 // It returns the exported data that would be written to the .tf.json file during export, the schema.ResourceData object representing the resource
 // (this can be passed to the C/U/D context functions), and a diagnostics object which can contain errors or warnings.
-func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *ExportOutput, diags diag.Diagnostics) {
+func Export(ctx context.Context, input ExportInput, clientConfig *platformclientv2.Configuration) (resp *ExportOutput, diags diag.Diagnostics) {
 	if err := validateExportInput(input); err != nil {
 		return nil, diag.FromErr(err)
 	}
 
 	generateDefaults(&input)
-
-	clientConfig, err := CreateClientConfig(creds)
-	if err != nil {
-		return nil, diag.FromErr(err)
-	}
 
 	log.Println("Activating MRMO")
 	mrmo.Activate(clientConfig)
@@ -58,7 +54,7 @@ func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *Ex
 	}
 
 	if diags.HasError() {
-		log.Printf("Error returned from ExportForMrMo: %v", err)
+		log.Printf("Error returned from ExportForMrMo: %v", diags)
 		return nil, diags
 	}
 
