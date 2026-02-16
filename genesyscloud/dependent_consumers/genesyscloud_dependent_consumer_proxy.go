@@ -3,6 +3,7 @@ package dependent_consumers
 import (
 	"context"
 	"fmt"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"log"
@@ -108,6 +109,9 @@ func fetchDepConsumers(ctx context.Context,
 			flowTypeObjectMaps := SetFlowTypeObjectMaps()
 			objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
 			if flowTypeExists {
+				// Mark this flow as being processed EARLY to prevent re-entry during recursive calls
+				// Only add after confirming: flow exists, has published version, and has valid flow type
+				totalFlowResources = append(totalFlowResources, resourceKey)
 				pageCount := 1
 				const pageSize = 100
 				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
@@ -148,8 +152,6 @@ func fetchDepConsumers(ctx context.Context,
 						return nil, nil, nil, err, totalFlowResources
 					}
 				}
-
-				totalFlowResources = append(totalFlowResources, resourceKey)
 			}
 		}
 	}
