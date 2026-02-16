@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/conversations/messaging/integrations/facebook](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-facebook)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `messaging:integration:add`
+* `messaging:integration:delete`
+* `messaging:integration:edit`
+* `messaging:integration:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `messaging`
+* `messaging:readonly`
+
 
 ## Example Usage
 

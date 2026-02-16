@@ -3,11 +3,12 @@ package user
 import (
 	"context"
 	"fmt"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 	"net/http"
 	"strconv"
 
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
@@ -187,27 +188,42 @@ func (p *userProxy) getTelephonyExtensionPoolById(ctx context.Context, id string
 }
 
 // createUserFn is an implementation function for creating a Genesys Cloud user
-func createUserFn(_ context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func createUserFn(ctx context.Context, p *userProxy, createUser *platformclientv2.Createuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.userApi.PostUsers(*createUser)
 }
 
 // getUserByIdFn is an implementation of the function to get a Genesys Cloud user by Id
-func getUserByIdFn(_ context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
+func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string, state string) (user *platformclientv2.User, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.userApi.GetUser(id, expand, "", state)
 }
 
 // hydrateUserCacheFn
-func hydrateUserCacheFn(_ context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error) {
+func hydrateUserCacheFn(ctx context.Context, p *userProxy, pageSize int, pageNum int) (*platformclientv2.Userentitylisting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
 }
 
 // getUserByNameFn
-func getUserByNameFn(_ context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
+func getUserByNameFn(ctx context.Context, p *userProxy, searchUser platformclientv2.Usersearchrequest) (*platformclientv2.Userssearchresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.userApi.PostUsersSearch(searchUser)
 }
 
 // deleteUserFn is an implementation function for deleting a Genesys Cloud user
-func deleteUserFn(_ context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
+func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	data, resp, err := p.userApi.DeleteUser(id)
 	if err != nil {
 		return nil, resp, err
@@ -216,16 +232,24 @@ func deleteUserFn(_ context.Context, p *userProxy, id string) (*interface{}, *pl
 	return data, nil, nil
 }
 
-func patchUserWithStateFn(_ context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func patchUserWithStateFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.userApi.PatchUser(id, *updateUser)
 }
 
-func updateUserFn(_ context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+func updateUserFn(ctx context.Context, p *userProxy, id string, updateUser *platformclientv2.Updateuser) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.userApi.PatchUser(id, *updateUser)
 }
 
 // GetAllUserFn is the implementation for retrieving all user in Genesys Cloud
-func GetAllUserFn(_ context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
+func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	//Inner function to get user based on status
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
@@ -289,18 +313,27 @@ func GetAllUserFn(_ context.Context, p *userProxy) (*[]platformclientv2.User, *p
 	return &allUsers, apiResponse, nil
 }
 
-func getVoicemailUserpoliciesByUserIdFn(_ context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id string) (*platformclientv2.Voicemailuserpolicy, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.voicemailApi.GetVoicemailUserpolicy(id)
 }
 
-func updatePasswordFn(_ context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
+func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Get the user's current password
 	return p.userApi.PostUserPassword(userId, platformclientv2.Changepasswordrequest{
 		NewPassword: &newPassword,
 	})
 }
 
-func getTelephonyExtensionPoolByExtensionFn(_ context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, extNum string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageSize = 100
 	var allPools []platformclientv2.Extensionpool
 
@@ -358,6 +391,9 @@ func getTelephonyExtensionPoolByExtensionFn(_ context.Context, p *userProxy, ext
 	return nil, nil, fmt.Errorf("unable to find corresponding extension pool")
 }
 
-func getTelephonyExtensionPoolByIdFn(_ context.Context, p *userProxy, id string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+func getTelephonyExtensionPoolByIdFn(ctx context.Context, p *userProxy, id string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.extensionPoolApi.GetTelephonyProvidersEdgesExtensionpool(id)
 }

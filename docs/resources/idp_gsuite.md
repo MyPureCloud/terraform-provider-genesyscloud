@@ -14,6 +14,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/identityproviders/gsuite](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#get-api-v2-identityproviders-gsuite)
 * [PUT /api/v2/identityproviders/gsuite](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#put-api-v2-identityproviders-gsuite)
 * [DELETE /api/v2/identityproviders/gsuite](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#delete-api-v2-identityproviders-gsuite)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `sso:provider:add`
+* `sso:provider:delete`
+* `sso:provider:edit`
+* `sso:provider:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `identity-providers`
+* `identity-providers:readonly`
+
 
 ## Example Usage
 

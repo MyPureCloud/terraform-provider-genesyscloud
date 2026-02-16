@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -48,7 +49,10 @@ func (p *groupRolesProxy) updateGroupRoles(ctx context.Context, roleID string, r
 	return p.updateGroupRolesAttr(ctx, p, roleID, rolesConfig, subjectType)
 }
 
-func getGroupRolesByIdFn(_ context.Context, p *groupRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
+func getGroupRolesByIdFn(ctx context.Context, p *groupRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var grants []platformclientv2.Authzgrant
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 	if err != nil {
@@ -68,7 +72,10 @@ func getGroupRolesByIdFn(_ context.Context, p *groupRolesProxy, roleId string) (
 	return &grants, resp, nil
 }
 
-func updateGroupRolesFn(_ context.Context, p *groupRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
+func updateGroupRolesFn(ctx context.Context, p *groupRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 

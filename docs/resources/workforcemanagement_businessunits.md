@@ -17,6 +17,86 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#patch-api-v2-workforcemanagement-businessunits--businessUnitId-)
 * [DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#delete-api-v2-workforcemanagement-businessunits--businessUnitId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `coaching:appointment:add`
+* `coaching:appointment:edit`
+* `learning:assignment:add`
+* `learning:assignment:reschedule`
+* `wfm:activityCode:add`
+* `wfm:activityCode:delete`
+* `wfm:activityCode:edit`
+* `wfm:activityCode:view`
+* `wfm:agent:edit`
+* `wfm:agent:view`
+* `wfm:agentSchedule:view`
+* `wfm:agentShiftTradeRequest:participate`
+* `wfm:agentTimeOffRequest:submit`
+* `wfm:businessUnit:add`
+* `wfm:businessUnit:delete`
+* `wfm:businessUnit:edit`
+* `wfm:businessUnit:view`
+* `wfm:historicalAdherence:view`
+* `wfm:intraday:view`
+* `wfm:managementUnit:add`
+* `wfm:managementUnit:delete`
+* `wfm:managementUnit:edit`
+* `wfm:managementUnit:view`
+* `wfm:planningGroup:add`
+* `wfm:planningGroup:delete`
+* `wfm:planningGroup:edit`
+* `wfm:planningGroup:view`
+* `wfm:publishedSchedule:view`
+* `wfm:realtimeAdherence:view`
+* `wfm:schedule:add`
+* `wfm:schedule:delete`
+* `wfm:schedule:edit`
+* `wfm:schedule:generate`
+* `wfm:schedule:view`
+* `wfm:serviceGoalTemplate:add`
+* `wfm:serviceGoalTemplate:delete`
+* `wfm:serviceGoalTemplate:edit`
+* `wfm:serviceGoalTemplate:view`
+* `wfm:shiftTradeRequest:edit`
+* `wfm:shiftTradeRequest:view`
+* `wfm:shortTermForecast:add`
+* `wfm:shortTermForecast:delete`
+* `wfm:shortTermForecast:edit`
+* `wfm:shortTermForecast:view`
+* `wfm:shrinkage:view`
+* `wfm:staffingGroup:add`
+* `wfm:staffingGroup:delete`
+* `wfm:staffingGroup:edit`
+* `wfm:staffingGroup:view`
+* `wfm:timeOffLimit:add`
+* `wfm:timeOffLimit:delete`
+* `wfm:timeOffLimit:edit`
+* `wfm:timeOffLimit:view`
+* `wfm:timeOffPlan:add`
+* `wfm:timeOffPlan:delete`
+* `wfm:timeOffPlan:edit`
+* `wfm:timeOffPlan:view`
+* `wfm:timeOffRequest:add`
+* `wfm:timeOffRequest:edit`
+* `wfm:timeOffRequest:view`
+* `wfm:workPlan:add`
+* `wfm:workPlan:delete`
+* `wfm:workPlan:edit`
+* `wfm:workPlan:view`
+* `wfm:workPlanRotation:add`
+* `wfm:workPlanRotation:delete`
+* `wfm:workPlanRotation:edit`
+* `wfm:workPlanRotation:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `coaching`
+* `learning`
+* `workforce-management`
+* `workforce-management:readonly`
+
 
 ## Example Usage
 

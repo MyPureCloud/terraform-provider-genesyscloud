@@ -69,6 +69,9 @@ resource-metadata-exporter validate --path ./genesyscloud
 
 # Generate template
 resource-metadata-exporter template --resource genesyscloud_new_resource --package new_package
+
+# Generate documentation report
+resource-metadata-exporter report --output resource-metadata-report
 ```
 
 ### Command Reference
@@ -97,6 +100,7 @@ Exports discovered metadata in various formats.
 resource-metadata-exporter export [flags]
 
 Flags:
+  -p, --path   string   Path to scan for resource schema files (default "./genesyscloud")
   -f, --format string   Output format (markdown, json, csv) (default "markdown")
   -o, --output string   Output file (defaults to stdout)
 ```
@@ -148,6 +152,31 @@ Required flags:
 ```bash
 resource-metadata-exporter template --resource genesyscloud_new_resource --package new_package
 ```
+
+#### Report Command
+
+```bash
+resource-metadata-exporter report [flags]
+
+Flags:
+  -p, --path string      Path to scan for resource schema files (default "./genesyscloud")
+  -o, --output string    Output location and base name for the report (default "resource-annotation-report")
+```
+
+**Examples:**
+```bash
+# Generate report with default name
+resource-metadata-exporter report
+
+# Generate report with custom name
+resource-metadata-exporter report --output docs/resource-ownership
+```
+
+**Output:**
+The report command generates three files:
+- `{output-name}.md` - Markdown report
+- `{output-name}.json.md` - JSON export
+- `{output-name}.csv.md` - CSV export
 
 ## Resource Annotation Guide
 
@@ -322,12 +351,15 @@ Use Go build tags for metadata:
 Generates a human-readable table format:
 
 ```markdown
-# Genesys Cloud Terraform Provider - Resource Metadata
+# CX as Code - Resource Support Directory
 
-| Resource Type | Package | Team | Chat Room | Description |
-|---------------|---------|------|-----------|-------------|
-| genesyscloud_flow | architect_flow | Platform Team | #platform-team | Manages Genesys Cloud flows |
-| genesyscloud_queue | routing_queue | Routing Team | #routing-team | Manages routing queues |
+This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
+	
+Total Resources: 2
+
+| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |
+|--------------|:--------:|------|:-----------------------------:|-------------|
+| genesyscloud\_flow | `architect_flow` | Platform Team | platform-team | Manages Genesys Cloud flows |
 ```
 
 ### JSON
@@ -417,6 +449,9 @@ resource-metadata-exporter discover --path ./genesyscloud
 resource-metadata-exporter validate --path ./genesyscloud
 
 # 3. Export report
+resource-metadata-exporter report --output resource-ownership
+
+# Or export individual formats
 resource-metadata-exporter export --format markdown --output resource-ownership.md
 
 # 4. Generate template for new resource
@@ -430,7 +465,7 @@ resource-metadata-exporter template --resource genesyscloud_new_feature --packag
 resource-metadata-exporter validate --path ./genesyscloud || exit 1
 
 # Generate reports for documentation
-resource-metadata-exporter export --format markdown --output docs/resource-ownership.md
+resource-metadata-exporter report --output docs/resource-ownership
 ```
 
 ## Troubleshooting
