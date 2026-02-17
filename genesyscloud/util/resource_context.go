@@ -49,4 +49,3 @@ func extractResourceIdAndName(d *schema.ResourceData) (resourceId, resourceName 
 
 	return resourceId, resourceName
 }
-
