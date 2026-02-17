@@ -198,6 +198,36 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 			input:    map[string]interface{}{"timeout_settings": []interface{}{}},
 			expected: nil,
 		},
+		{
+			name: "Timeout disabled - IdleTokenTimeoutSeconds should be nil",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 0,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: nil,
+			},
+		},
+		{
+			name: "Timeout disabled with non-zero value - IdleTokenTimeoutSeconds should be nil",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 300,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: nil,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -244,10 +274,19 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 					*result.EnableIdleTokenTimeout)
 			}
 
-			if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
-				t.Errorf("IdleTokenTimeoutSeconds: expected %v, got %v",
-					*tt.expected.IdleTokenTimeoutSeconds,
-					*result.IdleTokenTimeoutSeconds)
+			// Check IdleTokenTimeoutSeconds - it can be nil when enable_idle_token_timeout is false
+			if tt.expected.IdleTokenTimeoutSeconds == nil {
+				if result.IdleTokenTimeoutSeconds != nil {
+					t.Errorf("IdleTokenTimeoutSeconds: expected nil, got %v", *result.IdleTokenTimeoutSeconds)
+				}
+			} else {
+				if result.IdleTokenTimeoutSeconds == nil {
+					t.Errorf("IdleTokenTimeoutSeconds: expected %v, got nil", *tt.expected.IdleTokenTimeoutSeconds)
+				} else if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
+					t.Errorf("IdleTokenTimeoutSeconds: expected %v, got %v",
+						*tt.expected.IdleTokenTimeoutSeconds,
+						*result.IdleTokenTimeoutSeconds)
+				}
 			}
 		})
 	}
