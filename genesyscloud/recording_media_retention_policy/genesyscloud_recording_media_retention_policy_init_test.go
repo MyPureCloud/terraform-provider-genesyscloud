@@ -13,13 +13,15 @@ import (
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
@@ -40,9 +42,17 @@ var providerDataSources map[string]*schema.Resource
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
+// frameworkResources holds a map of all registered Framework resources
+var frameworkResources map[string]func() resource.Resource
+
+// frameworkDataSources holds a map of all registered Framework data sources
+var frameworkDataSources map[string]func() datasource.DataSource
+
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex            sync.RWMutex
+	datasourceMapMutex          sync.RWMutex
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -55,12 +65,9 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
-	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
 	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
-	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
-	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources[flow.ResourceType] = flow.ResourceArchitectFlow()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[team.ResourceType] = team.ResourceTeam()
@@ -74,6 +81,26 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[ResourceType] = DataSourceRecordingMediaRetentionPolicy()
 }
 
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+
+	frameworkResources[routinglanguage.ResourceType] = routinglanguage.NewFrameworkRoutingLanguageResource
+	frameworkResources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkResource
+	frameworkResources[user.ResourceType] = user.NewUserFrameworkResource
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+
+	frameworkDataSources[routinglanguage.ResourceType] = routinglanguage.NewFrameworkRoutingLanguageDataSource
+	frameworkDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.NewRoutingWrapupcodeFrameworkDataSource
+	frameworkDataSources[user.ResourceType] = user.NewUserFrameworkDataSource
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
@@ -82,11 +109,15 @@ func initTestResources() {
 
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
+	frameworkResources = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestDataSources()
 	regInstance.registerTestResources()
+	regInstance.registerFrameworkTestResources()
+	regInstance.registerFrameworkTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

@@ -1,465 +1,563 @@
 package user
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	listvalidator "github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	datasourceschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/phoneplan"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const ResourceType = "genesyscloud_user"
 
+var (
+	contactTypeEmail = "EMAIL"
+)
+
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterDataSource(ResourceType, DataSourceUser())
-	l.RegisterResource(ResourceType, ResourceUser())
+	l.RegisterFrameworkDataSource(ResourceType, NewUserFrameworkDataSource)
+	l.RegisterFrameworkResource(ResourceType, NewUserFrameworkResource)
 	l.RegisterExporter(ResourceType, UserExporter())
 }
 
-var (
-	contactTypeEmail = "EMAIL"
-
-	phoneNumberResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"number": {
-				Description:      "Phone number. Phone number must be in an E.164 number format.",
-				Type:             schema.TypeString,
-				Optional:         true,
-				ValidateDiagFunc: validators.ValidatePhoneNumber,
-			},
-			"media_type": {
-				Description:  "Media type of phone number (SMS | PHONE).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "PHONE",
-				ValidateFunc: validation.StringInSlice([]string{"PHONE", "SMS"}, false),
-			},
-			"type": {
-				Description:  "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE | OTHER).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "WORK",
-				ValidateFunc: validation.StringInSlice([]string{"WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "OTHER"}, false),
-			},
-			"extension": {
-				Description: "Phone number extension",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"extension_pool_id": {
-				Description: "Id of the extension pool which contains this extension.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
-	utilizationSettingsResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"maximum_capacity": {
-				Description:  "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
-				Type:         schema.TypeInt,
-				Required:     true,
-				ValidateFunc: validation.IntBetween(0, 25),
-			},
-			"interruptible_media_types": {
-				Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(getSdkUtilizationTypes(), " | ")),
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"include_non_acd": {
-				Description: "Block this media type when on a non-ACD conversation.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-		},
-	}
-
-	utilizationLabelResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"label_id": {
-				Description: "Id of the label being configured.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"maximum_capacity": {
-				Description:  "Maximum capacity of conversations with this label. Value must be between 0 and 25.",
-				Type:         schema.TypeInt,
-				Required:     true,
-				ValidateFunc: validation.IntBetween(0, 25),
-			},
-			"interrupting_label_ids": {
-				Description: "Set of other labels that can interrupt this label.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-		},
-	}
-
-	otherEmailResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"address": {
-				Description: "Email address.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"type": {
-				Description:  "Type of email address (WORK | HOME).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "WORK",
-				ValidateFunc: validation.StringInSlice([]string{"WORK", "HOME"}, false),
-			},
-		},
-	}
-	userSkillResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"skill_id": {
-				Description: "ID of routing skill.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"proficiency": {
-				Description:  "Rating from 0.0 to 5.0 on how competent an agent is for a particular skill. It is used when a queue is set to 'Best available skills' mode to allow acd interactions to target agents with higher proficiency ratings.",
-				Type:         schema.TypeFloat,
-				Required:     true,
-				ValidateFunc: validation.FloatBetween(0, 5),
-			},
-		},
-	}
-	userLanguageResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"language_id": {
-				Description: "ID of routing language.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"proficiency": {
-				Description:  "Proficiency is a rating from 0 to 5 on how competent an agent is for a particular language. It is used when a queue is set to 'Best available language' mode to allow acd interactions to target agents with higher proficiency ratings.",
-				Type:         schema.TypeInt, // The API accepts a float, but the backend rounds to the nearest int
-				Required:     true,
-				ValidateFunc: validation.IntBetween(0, 5),
-			},
-		},
-	}
-	userLocationResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"location_id": {
-				Description: "ID of location.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"notes": {
-				Description: "Optional description on the user's location.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-	voicemailUserpoliciesResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"alert_timeout_seconds": {
-				Description: "The number of seconds to ring the user's phone before a call is transferred to voicemail.",
-				Type:        schema.TypeInt,
-				Optional:    true,
-			},
-			"send_email_notifications": {
-				Description: "Whether email notifications are sent to the user when a new voicemail is received.",
-				Type:        schema.TypeBool,
-				Optional:    true,
+// UserDataSourceSchema returns the schema for the user data source following SDK DataSourceUser() pattern
+func UserDataSourceSchema() datasourceschema.Schema {
+	return datasourceschema.Schema{
+		Description: "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
+		Attributes: map[string]datasourceschema.Attribute{
+			"id": datasourceschema.StringAttribute{
+				Description: "The ID of the user.",
 				Computed:    true,
 			},
+			"email": datasourceschema.StringAttribute{
+				Description: "User email.",
+				Optional:    true,
+			},
+			"name": datasourceschema.StringAttribute{
+				Description: "User name.",
+				Optional:    true,
+			},
 		},
 	}
-)
-
-// customizeDiffAddressRemoval is a CustomizeDiffFunc that detects when addresses are removed from the configuration
-func customizeDiffAddressRemoval(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
-	// Only run this for updates, not for resource creation
-	if diff.Id() == "" {
-		return nil
-	}
-
-	// Check if addresses exist in the configuration
-	_, addressesExistInConfig := diff.GetOk("addresses")
-
-	// If addresses don't exist in config but exist in state, mark it as a change
-	if !addressesExistInConfig {
-		oldAddresses, _ := diff.GetOk("addresses")
-		if oldAddresses != nil && len(oldAddresses.([]interface{})) > 0 {
-			// Force a change on addresses to trigger an update
-			_ = diff.SetNew("addresses", []interface{}{})
-		}
-	}
-
-	return nil
 }
 
-func ResourceUser() *schema.Resource {
-	return &schema.Resource{
+// UserResourceSchema returns the schema for the user resource following SDK ResourceUser() pattern
+func UserResourceSchema() schema.Schema {
+	return schema.Schema{
 		Description: `Genesys Cloud User.
 
 Export block label: "{email}"`,
-
-		CreateContext: provider.CreateWithPooledClient(createUser),
-		ReadContext:   provider.ReadWithPooledClient(readUser),
-		UpdateContext: provider.UpdateWithPooledClient(updateUser),
-		DeleteContext: provider.DeleteWithPooledClient(deleteUser),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		CustomizeDiff: customizeDiffAddressRemoval,
-		Schema: map[string]*schema.Schema{
-			"email": {
+		Attributes: map[string]schema.Attribute{
+			//TODO
+			/* will handel this condition later
+			// NOTE: phone_extension_pools is defined at the top level (outside addresses.phone_numbers)
+			// instead of being nested under each phone number. In SDKv2, extension_pool_id was excluded
+			// from the custom hash used for the phone_numbers Set to prevent plan diffs when only the
+			// pool mapping changed. Since Plugin Framework does not support custom Set hash functions,
+			// this top-level Computed map preserves the same behavior: extension pool IDs are
+			// represented as computed metadata (identity-insensitive) rather than user-managed fields.
+			// This avoids unwanted diffs when pool assignments change while keeping phone_numbers
+			// identity stable across plans and refreshes.
+			"phone_extension_pools": schema.MapAttribute{
+				ElementType: types.StringType,
+				Computed:    true,
+				Description: "Id of the extension pool which contains this extension." +
+					"Computed mapping of phone identity keys to  (MEDIA|TYPE|E164|EXT) to extension_pool_id." +
+					"Used internally to prevent diffs when pool assignments change.",
+			},
+			//-------------------------------------------------------------------------------------------
+			*/
+			"id": schema.StringAttribute{
+				Description: "The ID of the user.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"email": schema.StringAttribute{
 				Description: "User's primary email and username.",
-				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				Description: "User's full name.",
-				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"password": {
+			"password": schema.StringAttribute{
 				Description: "User's password. If specified, this is only set on user create.",
-				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
 			},
-			"state": {
-				Description:  "User's state (active | inactive). Default is 'active'.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "active",
-				ValidateFunc: validation.StringInSlice([]string{"active", "inactive"}, false),
+			"state": schema.StringAttribute{
+				Description: "User's state (active | inactive). Default is 'active'.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("active"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("active", "inactive"),
+				},
 			},
-			"division_id": {
+			"division_id": schema.StringAttribute{
 				Description: "The division to which this user will belong. If not set, the home division will be used.",
-				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 			},
-			"department": {
+			"department": schema.StringAttribute{
 				Description: "User's department.",
-				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"title": {
+			"title": schema.StringAttribute{
 				Description: "User's title.",
-				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"manager": {
+			"manager": schema.StringAttribute{
 				Description: "User ID of this user's manager.",
-				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"acd_auto_answer": {
+			"acd_auto_answer": schema.BoolAttribute{
 				Description: "Enable ACD auto-answer.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"routing_skills": {
-				Description: "Skills and proficiencies for this user. If not set, this resource will not manage user skills.",
-				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        userSkillResource,
+				Default:     booldefault.StaticBool(false),
 			},
-			"routing_languages": {
-				Description: "Languages and proficiencies for this user. If not set, this resource will not manage user languages.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        userLanguageResource,
-			},
-			"locations": {
-				Description: "The user placement at each site location. If not set, this resource will not manage user locations.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem:        userLocationResource,
-			},
-			"addresses": {
-				Description: "The address settings for this user. If not set, this resource will not manage addresses.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"other_emails": {
-							Description: "Other Email addresses for this user.",
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Elem:        otherEmailResource,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-						},
-						"phone_numbers": {
-							Description: "Phone number addresses for this user.",
-							Type:        schema.TypeSet,
-							Optional:    true,
-							Set:         phoneNumberHash,
-							Elem:        phoneNumberResource,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-						},
-					},
-				},
-			},
-			"profile_skills": {
+			"profile_skills": schema.SetAttribute{
 				Description: "Profile skills for this user. If not set, this resource will not manage profile skills.",
-				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				ElementType: types.StringType,
 			},
-			"certifications": {
+			"certifications": schema.SetAttribute{
 				Description: "Certifications for this user. If not set, this resource will not manage certifications.",
-				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"employer_info": {
-				Description: "The employer info for this user. If not set, this resource will not manage employer info.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"official_name": {
-							Description: "User's official name.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"employee_id": {
-							Description: "Employee ID.",
-							Type:        schema.TypeString,
-							Optional:    true,
-						},
-						"employee_type": {
-							Description:  "Employee type (Full-time | Part-time | Contractor).",
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validation.StringInSlice([]string{"Full-time", "Part-time", "Contractor"}, false),
-						},
-						"date_hire": {
-							Description:      "Hiring date. Dates must be an ISO-8601 string. For example: yyyy-MM-dd.",
-							Type:             schema.TypeString,
-							Optional:         true,
-							ValidateDiagFunc: validators.ValidateDate,
-						},
-					},
-				},
-			},
-			"routing_utilization": {
-				Description: "The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"call": {
-							Description: "Call media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"callback": {
-							Description: "Callback media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"message": {
-							Description: "Message media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"email": {
-							Description: "Email media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"chat": {
-							Description: "Chat media settings. If not set, this reverts to the default media type settings.",
-							Type:        schema.TypeList,
-							MaxItems:    1,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationSettingsResource,
-						},
-						"label_utilizations": {
-							Description: "Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization.",
-							Type:        schema.TypeList,
-							Optional:    true,
-							Computed:    true,
-							ConfigMode:  schema.SchemaConfigModeAttr,
-							Elem:        utilizationLabelResource,
-						},
-					},
-				},
-			},
-			"voicemail_userpolicies": {
-				Description: "User's voicemail policies. If not set, default user policies will be applied.",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Computed:    true,
-				Elem:        voicemailUserpoliciesResource,
+				ElementType: types.StringType,
 			},
 		},
-	}
-}
-
-func DataSourceUser() *schema.Resource {
-	return &schema.Resource{
-		Description:        "Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup",
-		ReadWithoutTimeout: provider.ReadWithPooledClient(DataSourceUserRead),
-		Schema: map[string]*schema.Schema{
-			"email": {
-				Description: "User email.",
-				Type:        schema.TypeString,
-				Optional:    true,
+		Blocks: map[string]schema.Block{
+			//NOTE:
+			// In the Terraform Plugin Framework, SetNestedBlock (and ListNestedBlock)
+			// does NOT support the `Optional` or `Required` fields like attributes do.
+			// To emulate SDKv2 behavior where `routing_languages` was both Optional and Computed,
+			// we use a SetNestedBlock WITHOUT `Optional`, and apply a plan modifier:
+			//   setplanmodifier.UseStateForUnknown()
+			// This causes Terraform to retain prior state if the block is omitted in config,
+			// which mirrors how Computed: true worked in the SDKv2 TypeSet.
+			// Inner attributes should remain Required: true to enforce valid entries.
+			"routing_skills": schema.SetNestedBlock{
+				Description: "Skills and proficiencies for this user. If not set, this resource will not manage user skills.",
+				// Emulate SDKv2 Computed at the container level:
+				// - When config omits routing_skills, keep prior state (acts like Computed)
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"skill_id": schema.StringAttribute{
+							Description: "ID of routing skill.",
+							Required:    true,
+						},
+						"proficiency": schema.Float64Attribute{
+							Description: "Rating from 0.0 to 5.0 on how competent an agent is for a particular skill. It is used when a queue is set to 'Best available skills' mode to allow acd interactions to target agents with higher proficiency ratings.",
+							Required:    true,
+							Validators: []validator.Float64{
+								float64validator.Between(0, 5),
+							},
+						},
+					},
+				},
 			},
-			"name": {
-				Description: "User name.",
-				Type:        schema.TypeString,
-				Optional:    true,
+			"routing_languages": schema.SetNestedBlock{
+				Description: "Languages and proficiencies for this user. If not set, this resource will not manage user languages.",
+				// Emulate SDKv2 Computed at the container level:
+				// - When config omits routing_languages, keep prior state (acts like Computed)
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"language_id": schema.StringAttribute{
+							Description: "ID of routing language.",
+							Required:    true,
+						},
+						"proficiency": schema.Int64Attribute{
+							Description: "Proficiency is a rating from 0 to 5 on how competent an agent is for a particular language. It is used when a queue is set to 'Best available language' mode to allow acd interactions to target agents with higher proficiency ratings.",
+							Required:    true,
+							Validators: []validator.Int64{
+								int64validator.Between(0, 5),
+							},
+						},
+					},
+				},
+			},
+			"locations": schema.SetNestedBlock{
+				Description: "The user placement at each site location. If not set, this resource will not manage user locations.",
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.UseStateForUnknown(),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"location_id": schema.StringAttribute{
+							Description: "ID of location.",
+							Required:    true,
+						},
+						"notes": schema.StringAttribute{
+							Description: "Optional description on the user's location.",
+							Optional:    true,
+						},
+					},
+				},
+			},
+			"addresses": schema.ListNestedBlock{
+				Description: "The address settings for this user. If not set, this resource will not manage addresses.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"other_emails": schema.SetNestedBlock{
+							Description: "Other Email addresses for this user.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"address": schema.StringAttribute{
+										Description: "Email address.",
+										Required:    true,
+									},
+									"type": schema.StringAttribute{
+										Description: "Type of email address (WORK | HOME).",
+										Optional:    true,
+										// PF rule: Attributes with Default must be Computed. We keep Optional+Computed+Default to mirror SDK v2
+										// behavior where omitting this field yields "WORK", while still allowing user overrides.
+										Computed: true,
+										Default:  stringdefault.StaticString("WORK"),
+										Validators: []validator.String{
+											stringvalidator.OneOf("WORK", "HOME"),
+										},
+									},
+								},
+							},
+						},
+						"phone_numbers": schema.SetNestedBlock{
+							Description: "Phone number addresses for this user.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"number": schema.StringAttribute{
+										Description: "Phone number. Phone number must be in an E.164 number format.",
+										Optional:    true,
+										Validators:  []validator.String{validators.FWValidatePhoneNumber()},
+										//TODO
+										// PlanModifiers for now as Validators will do all the required check
+										// if required we can review and enable it later.
+										// Safe E.164 canonicalization: noop if null/unknown/empty or parse fails
+										//PlanModifiers: []planmodifier.String{phoneplan.E164{DefaultRegion: "US"}},
+									},
+									"media_type": schema.StringAttribute{
+										Description: "Media type of phone number (SMS | PHONE).",
+										Optional:    true,
+										Computed:    true,
+										Default:     stringdefault.StaticString("PHONE"),
+										Validators: []validator.String{
+											stringvalidator.OneOf("PHONE", "SMS"),
+										},
+									},
+									"type": schema.StringAttribute{
+										Description: "Type of number (WORK | WORK2 | WORK3 | WORK4 | HOME | MOBILE | OTHER).",
+										Optional:    true,
+										Computed:    true,
+										Default:     stringdefault.StaticString("WORK"),
+										Validators: []validator.String{
+											stringvalidator.OneOf("WORK", "WORK2", "WORK3", "WORK4", "HOME", "MOBILE", "OTHER"),
+										},
+									},
+									"extension": schema.StringAttribute{
+										Description: "Phone number extension",
+										Optional:    true,
+									},
+									"extension_pool_id": schema.StringAttribute{
+										//TODO
+										//Issue: In SDKv2 hashing you explicitly removed extension_pool_id before hashing
+										// a phone element, so pool changes didn’t create new set elements or diffs.
+										// In PF, set element identity is the full object value; including extension_pool_id
+										// means a pool change will look like an element replacement and cause perpetual diffs.
+										Description:   "Id of the extension pool which contains this extension.",
+										Optional:      true,
+										PlanModifiers: []planmodifier.String{phoneplan.NullIfEmpty{}},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"employer_info": schema.ListNestedBlock{
+				Description: "The employer info for this user. If not set, this resource will not manage employer info.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"official_name": schema.StringAttribute{
+							Description: "User's official name.",
+							Optional:    true,
+						},
+						"employee_id": schema.StringAttribute{
+							Description: "Employee ID.",
+							Optional:    true,
+						},
+						"employee_type": schema.StringAttribute{
+							Description: "Employee type (Full-time | Part-time | Contractor).",
+							Optional:    true,
+							Validators: []validator.String{
+								stringvalidator.OneOf("Full-time", "Part-time", "Contractor"),
+							},
+						},
+						"date_hire": schema.StringAttribute{
+							Description: "Hiring date. Dates must be an ISO-8601 string. For example: yyyy-MM-dd.",
+							Optional:    true,
+							Validators: []validator.String{
+								validators.FWValidateDate(),
+							},
+						},
+					},
+				},
+			},
+			"routing_utilization": schema.ListNestedBlock{
+				Description: "The routing utilization settings for this user. If empty list, the org default settings are used. If not set, this resource will not manage the users's utilization settings.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"call": schema.ListNestedBlock{
+							Description: "Call media settings. If not set, this reverts to the default media type settings.",
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"maximum_capacity": schema.Int64Attribute{
+										Description: "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
+										Required:    true,
+										Validators: []validator.Int64{
+											int64validator.Between(0, 25),
+										},
+									},
+									"interruptible_media_types": schema.SetAttribute{
+										Description: fmt.Sprintf("Set of other media types that can interrupt this media type (%s).", strings.Join(getSdkUtilizationTypes(), " | ")),
+										Optional:    true,
+										ElementType: types.StringType,
+									},
+									"include_non_acd": schema.BoolAttribute{
+										Description: "Block this media type when on a non-ACD conversation.",
+										Optional:    true,
+										Computed:    true,
+										Default:     booldefault.StaticBool(false),
+									},
+								},
+							},
+						},
+						"callback": schema.ListNestedBlock{
+							Description: "Callback media settings. If not set, this reverts to the default media type settings.",
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"maximum_capacity": schema.Int64Attribute{
+										Description: "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
+										Required:    true,
+										Validators: []validator.Int64{
+											int64validator.Between(0, 25),
+										},
+									},
+									"interruptible_media_types": schema.SetAttribute{
+										Description: "Set of other media types that can interrupt this media type.",
+										Optional:    true,
+										ElementType: types.StringType,
+									},
+									"include_non_acd": schema.BoolAttribute{
+										Description: "Block this media type when on a non-ACD conversation.",
+										Optional:    true,
+										Computed:    true,
+										Default:     booldefault.StaticBool(false),
+									},
+								},
+							},
+						},
+						"message": schema.ListNestedBlock{
+							Description: "Message media settings. If not set, this reverts to the default media type settings.",
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"maximum_capacity": schema.Int64Attribute{
+										Description: "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
+										Required:    true,
+										Validators: []validator.Int64{
+											int64validator.Between(0, 25),
+										},
+									},
+									"interruptible_media_types": schema.SetAttribute{
+										Description: "Set of other media types that can interrupt this media type.",
+										Optional:    true,
+										ElementType: types.StringType,
+									},
+									"include_non_acd": schema.BoolAttribute{
+										Description: "Block this media type when on a non-ACD conversation.",
+										Optional:    true,
+										Computed:    true,
+										Default:     booldefault.StaticBool(false),
+									},
+								},
+							},
+						},
+						"email": schema.ListNestedBlock{
+							Description: "Email media settings. If not set, this reverts to the default media type settings.",
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"maximum_capacity": schema.Int64Attribute{
+										Description: "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
+										Required:    true,
+										Validators: []validator.Int64{
+											int64validator.Between(0, 25),
+										},
+									},
+									"interruptible_media_types": schema.SetAttribute{
+										Description: "Set of other media types that can interrupt this media type.",
+										Optional:    true,
+										ElementType: types.StringType,
+									},
+									"include_non_acd": schema.BoolAttribute{
+										Description: "Block this media type when on a non-ACD conversation.",
+										Optional:    true,
+										Computed:    true,
+										Default:     booldefault.StaticBool(false),
+									},
+								},
+							},
+						},
+						"chat": schema.ListNestedBlock{
+							Description: "Chat media settings. If not set, this reverts to the default media type settings.",
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.UseStateForUnknown(),
+							},
+							Validators: []validator.List{
+								listvalidator.SizeAtMost(1),
+							},
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"maximum_capacity": schema.Int64Attribute{
+										Description: "Maximum capacity of conversations of this media type. Value must be between 0 and 25.",
+										Required:    true,
+										Validators: []validator.Int64{
+											int64validator.Between(0, 25),
+										},
+									},
+									"interruptible_media_types": schema.SetAttribute{
+										Description: "Set of other media types that can interrupt this media type.",
+										Optional:    true,
+										ElementType: types.StringType,
+									},
+									"include_non_acd": schema.BoolAttribute{
+										Description: "Block this media type when on a non-ACD conversation.",
+										Optional:    true,
+										Computed:    true,
+										Default:     booldefault.StaticBool(false),
+									},
+								},
+							},
+						},
+						"label_utilizations": schema.ListNestedBlock{
+							Description: "Label utilization settings. If not set, default label settings will be applied. This is in PREVIEW and should not be used unless the feature is available to your organization.",
+							PlanModifiers: []planmodifier.List{
+								listplanmodifier.UseStateForUnknown(),
+							},
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"label_id": schema.StringAttribute{
+										Description: "Id of the label being configured.",
+										Required:    true,
+									},
+									"maximum_capacity": schema.Int64Attribute{
+										Description: "Maximum capacity of conversations with this label. Value must be between 0 and 25.",
+										Required:    true,
+										Validators: []validator.Int64{
+											int64validator.Between(0, 25),
+										},
+									},
+									"interrupting_label_ids": schema.SetAttribute{
+										Description: "Set of other labels that can interrupt this label.",
+										Optional:    true,
+										ElementType: types.StringType,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"voicemail_userpolicies": schema.ListNestedBlock{
+				Description: "User's voicemail policies. If not set, default user policies will be applied.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"alert_timeout_seconds": schema.Int64Attribute{
+							Description: "The number of seconds to ring the user's phone before a call is transferred to voicemail.",
+							Optional:    true,
+						},
+						"send_email_notifications": schema.BoolAttribute{
+							Description: "Whether email notifications are sent to the user when a new voicemail is received.",
+							Optional:    true,
+							Computed:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -467,7 +565,7 @@ func DataSourceUser() *schema.Resource {
 
 func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsersSDK),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"manager":                                   {RefType: ResourceType},
 			"division_id":                               {RefType: "genesyscloud_auth_division"},
@@ -486,6 +584,7 @@ func UserExporter() *resourceExporter.ResourceExporter {
 		AllowZeroValues: []string{
 			"routing_skills.proficiency",
 			"routing_languages.proficiency",
+			//added for PF migration
 			"routing_utilization.call.maximum_capacity",
 			"routing_utilization.callback.maximum_capacity",
 			"routing_utilization.chat.maximum_capacity",

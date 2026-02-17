@@ -25,6 +25,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
+	routingwrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -35,6 +38,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
+	fwresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	fwschema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -109,6 +115,7 @@ type GenesysCloudResourceExporter struct {
 
 	meta                  interface{}
 	provider              *schema.Provider
+	providerResources     map[string]func() fwresource.Resource // Framework resource factories
 	replaceWithDatasource []string
 	resources             []resourceExporter.ResourceInfo
 	resourceErrors        map[string][]ResourceErrorInfo
@@ -214,7 +221,8 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
 		version:              meta.(*provider.ProviderMeta).Version,
 		providerRegistry:     meta.(*provider.ProviderMeta).Registry,
-		provider:             provider.New(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
+		provider:             provider.NewSDKv2Provider(meta.(*provider.ProviderMeta).Version, providerResources, providerDataSources)(),
+		providerResources:    getFrameworkResourceFactories(),
 		d:                    d,
 		ctx:                  ctx,
 		meta:                 meta,
@@ -657,7 +665,7 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 
 // buildResourceConfigMap Builds a map of all the Terraform resources data returned for each resource
 func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics diag.Diagnostics) {
-	tflog.Info(g.ctx, "Build Genesys Cloud Resources Map")
+	tflog.Info(g.ctx, "EXPORT: Build Genesys Cloud Resources Map - START")
 
 	// Initialize maps using thread-safe methods
 	g.setResourceTypesMaps(make(map[string]ResourceJSONMaps))
@@ -665,6 +673,7 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 
 	// Get resources using thread-safe method
 	resources := g.getResources()
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Processing %d resources in buildResourceConfigMap", len(resources)))
 
 	// Initialize channels for results and errors
 	type resourceResult struct {
@@ -691,6 +700,9 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 	defer cancel()
 
 	for _, resource := range resources {
+		tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Processing resource - Type: %s, Label: %s, StateID: %s",
+			resource.Type, resource.BlockLabel, resource.State.ID))
+		tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Resource state has %d attributes", len(resource.State.Attributes)))
 
 		wg.Add(1)
 		go func(resource resourceExporter.ResourceInfo) {
@@ -708,13 +720,17 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			result.resource = resource
 
 			// 1. Get instance state as JSON Map
-			jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType)
+			jsonResult, diagErr := g.instanceStateToMap(resource.State, resource.CtyType, resource.IsFramework)
 			if diagErr != nil {
+				tflog.Error(g.ctx, fmt.Sprintf("EXPORT: instanceStateToMap FAILED for %s: %v", resource.BlockLabel, diagErr))
 				select {
 				case errorChan <- diagErr:
 				case <-ctx.Done():
 				}
 				return
+			} else {
+				tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: instanceStateToMap SUCCESS for %s - result has %d entries",
+					resource.BlockLabel, len(jsonResult)))
 			}
 
 			// 2. Determine if instance is a data source
@@ -885,22 +901,51 @@ func (g *GenesysCloudResourceExporter) updateSanitizeMap(exporters map[string]*r
 	}
 }
 
-func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type) (util.JsonMap, diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) instanceStateToMap(state *terraform.InstanceState, ctyType cty.Type, isFramework bool) (util.JsonMap, diag.Diagnostics) {
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: instanceStateToMap called - StateID: %s, AttributeCount: %d, IsFramework: %v",
+		state.ID, len(state.Attributes), isFramework))
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Input state attributes sample: %v", getSampleAttributes(state.Attributes, 5)))
+
+	// Use CTY conversion for both SDKv2 and Framework resources
+	// Framework resources now have full CTY type (not just id+name stub)
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Using CTY conversion for %s resource", map[bool]string{true: "Framework", false: "SDKv2"}[isFramework]))
 	stateVal, err := schema.StateValueFromInstanceState(state, ctyType)
 	if err != nil {
+		tflog.Error(g.ctx, fmt.Sprintf("EXPORT: StateValueFromInstanceState FAILED: %v", err))
 		return nil, diag.FromErr(err)
 	}
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: StateValueFromInstanceState SUCCESS - Type: %s", stateVal.Type().GoString()))
 
 	jsonMap, err := schema.StateValueToJSONMap(stateVal, ctyType)
-
 	if err != nil {
+		tflog.Error(g.ctx, fmt.Sprintf("EXPORT: StateValueToJSONMap FAILED: %v", err))
 		return nil, diag.FromErr(err)
 	}
+
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: instanceStateToMap returning map with %d entries", len(jsonMap)))
+	tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Output map keys: %v", getMapKeys(jsonMap)))
+
 	return jsonMap, nil
 }
 
 // generateOutputFiles is used to generate the tfStateFile and either the tf export or the json based export
 func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnostics) {
+	tflog.Info(g.ctx, "EXPORT: Generate Output Files - START")
+
+	if g.resourceTypesMaps == nil || g.dataSourceTypesMaps == nil {
+		tflog.Error(g.ctx, "EXPORT: resourceTypesMaps or dataSourceTypesMaps is nil!")
+	} else {
+		tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: resourceTypesMaps has %d resource types", len(g.resourceTypesMaps)))
+		for resType, resMap := range g.resourceTypesMaps {
+			tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Resource type '%s' has %d instances", resType, len(resMap)))
+			for resLabel, resData := range resMap {
+				tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Resource '%s.%s' has %d attributes in map",
+					resType, resLabel, len(resData)))
+				tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Resource '%s.%s' attribute keys: %v",
+					resType, resLabel, getMapKeys(resData)))
+			}
+		}
+	}
 
 	if g.resourceTypesMaps == nil || g.dataSourceTypesMaps == nil {
 		return diag.Errorf("required fields resourceTypesMaps or dataSourceTypesMaps are nil")
@@ -954,6 +999,8 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnos
 	}
 
 	diags = append(diags, g.generateZipForExporter()...)
+
+	tflog.Info(g.ctx, "EXPORT: Generate Output Files - COMPLETE")
 	return diags
 }
 
@@ -1713,8 +1760,14 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 	res := schemaProvider.ResourcesMap[resType]
 	if res == nil {
-		tflog.Error(g.ctx, fmt.Sprintf("Resource type %v not defined in schema provider", resType))
-		return nil, diag.Errorf("Resource type %v not defined", resType)
+		// Check if it's a Framework resource
+		frameworkResources, _ := rRegistrar.GetFrameworkResources()
+		if _, exists := frameworkResources[resType]; !exists {
+			tflog.Error(g.ctx, fmt.Sprintf("Resource type %v not defined in schema provider or Framework resources", resType))
+			return nil, diag.Errorf("Resource type %v not defined", resType)
+		}
+		// For Framework resources, we'll skip the schema validation and proceed with export
+		tflog.Info(g.ctx, fmt.Sprintf("Resource type %s is a Framework resource, proceeding with export", resType))
 	}
 	tflog.Trace(g.ctx, fmt.Sprintf("Successfully retrieved resource schema for type %s", resType))
 
@@ -1773,24 +1826,115 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				defer resourceCancel()
 				tflog.Trace(g.ctx, fmt.Sprintf("Created resource context for ID: %s", id))
 
-				ctyType := res.CoreConfigSchema().ImpliedType()
-				tflog.Trace(g.ctx, fmt.Sprintf("Retrieved CTY type for resource ctyType: %v", ctyType))
+				var ctyType cty.Type
+				if res != nil {
+					ctyType = res.CoreConfigSchema().ImpliedType()
+					tflog.Trace(g.ctx, fmt.Sprintf("Retrieved CTY type for resource ctyType: %v", ctyType))
+				} else {
+					// Framework resource - build CTY type from Framework schema
+					tflog.Trace(g.ctx, "Building CTY type from Framework schema", map[string]interface{}{
+						"resource_type": resType,
+					})
 
-				tflog.Trace(g.ctx, fmt.Sprintf("Calling getResourceState for resource ID: %s", id))
-				instanceState, err := g.getResourceState(resourceCtx, res, id, resMeta, meta)
-
-				if err != nil {
-					tflog.Error(g.ctx, fmt.Sprintf("Error while fetching read context type %s and instance %s : %v", resType, id, err))
-					return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, err)
+					// Get Framework schema
+					frameworkSchema, err := g.getFrameworkSchema(resourceCtx, resType)
+					if err != nil {
+						tflog.Error(g.ctx, fmt.Sprintf("Failed to get Framework schema for %s: %v", resType, err))
+						// Fallback to basic type (backward compatibility)
+						ctyType = cty.Object(map[string]cty.Type{
+							"id":   cty.String,
+							"name": cty.String,
+						})
+					} else {
+						// Convert Framework schema to CTY type
+						ctyType, err = frameworkSchemaToCtyType(frameworkSchema)
+						if err != nil {
+							tflog.Error(g.ctx, fmt.Sprintf("Failed to convert Framework schema to CTY type for %s: %v", resType, err))
+							// Fallback to basic type (backward compatibility)
+							ctyType = cty.Object(map[string]cty.Type{
+								"id":   cty.String,
+								"name": cty.String,
+							})
+						} else {
+							tflog.Trace(g.ctx, "Successfully built CTY type from Framework schema", map[string]interface{}{
+								"resource_type":   resType,
+								"attribute_count": len(ctyType.AttributeTypes()),
+							})
+						}
+					}
 				}
 
-				if instanceState == nil {
-					tflog.Warn(g.ctx, fmt.Sprintf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel))
-					toRemoveMutex.Lock()
-					toRemove = append(toRemove, id)
-					toRemoveMutex.Unlock()
-					tflog.Debug(g.ctx, fmt.Sprintf("Added resource ID %s to removal list", id))
-					return nil
+				var instanceState *terraform.InstanceState
+
+				if res != nil {
+					// SDKv2 resource - use getResourceState
+					tflog.Trace(g.ctx, fmt.Sprintf("Calling getResourceState for SDKv2 resource ID: %s", id))
+					var diagErr diag.Diagnostics
+					instanceState, diagErr = g.getResourceState(resourceCtx, res, id, resMeta, meta)
+
+					if diagErr.HasError() {
+						tflog.Error(g.ctx, fmt.Sprintf("Error while fetching read context type %s and instance %s : %v", resType, id, diagErr))
+						return fmt.Errorf("Failed to get state for %s instance %s: %v", resType, id, diagErr)
+					}
+
+					if instanceState == nil {
+						tflog.Warn(g.ctx, fmt.Sprintf("Resource %s no longer exists. Skipping.", resMeta.BlockLabel))
+						toRemoveMutex.Lock()
+						toRemove = append(toRemove, id)
+						toRemoveMutex.Unlock()
+						tflog.Debug(g.ctx, fmt.Sprintf("Added resource ID %s to removal list", id))
+						return nil
+					}
+				} else {
+					// Framework resource - create instance state
+					tflog.Trace(g.ctx, fmt.Sprintf("Creating instance state for Framework resource ID: %s", id))
+					tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Processing Framework resource ID: %s, Type: %s", id, resType))
+					tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: ResourceMeta - BlockLabel: %s, HasLazyCallback: %v, HasExportAttrs: %v",
+						resMeta.BlockLabel,
+						resMeta.LazyFetchAttributes != nil,
+						resMeta.ExportAttributes != nil))
+
+					var attributes map[string]string
+
+					// Option 1: Check if resource supports lazy loading (preferred - efficient)
+					if resMeta.LazyFetchAttributes != nil {
+						tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Calling lazy fetch callback for resource ID: %s", id))
+						fetchedAttrs, err := resMeta.LazyFetchAttributes(resourceCtx)
+						if err != nil {
+							tflog.Warn(g.ctx, fmt.Sprintf("EXPORT: Lazy fetch FAILED for %s: %v - falling back to basic attributes", id, err))
+							// Fall through to next option
+						} else {
+							attributes = fetchedAttrs
+							tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Lazy fetch SUCCESS - received %d attributes for %s", len(attributes), id))
+							tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Sample attributes: %v", getSampleAttributes(attributes, 5)))
+						}
+					}
+
+					// Option 2: Check if resource provided pre-fetched attributes (backward compatibility)
+					if attributes == nil && resMeta.ExportAttributes != nil && len(resMeta.ExportAttributes) > 0 {
+						attributes = resMeta.ExportAttributes
+						tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Using pre-fetched export attributes (%d attributes)", len(attributes)))
+					}
+
+					// Option 3: Fallback to basic attributes (for resources not yet migrated)
+					if attributes == nil {
+						attributes = map[string]string{
+							"id":   resMeta.IdPrefix + id,
+							"name": resMeta.BlockLabel,
+						}
+						tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Using basic instance state - no export attributes available"))
+					}
+
+					tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Final attributes count: %d for %s", len(attributes), id))
+
+					instanceState = &terraform.InstanceState{
+						ID:         resMeta.IdPrefix + id,
+						Attributes: attributes,
+					}
+
+					tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: Created InstanceState for %s - ID: %s, AttributeCount: %d",
+						id, instanceState.ID, len(instanceState.Attributes)))
+					tflog.Debug(g.ctx, fmt.Sprintf("EXPORT: InstanceState.Attributes keys: %v", getInstanceStateKeys(instanceState)))
 				}
 				tflog.Info(g.ctx, fmt.Sprintf("Successfully retrieved instance state for resource ID: %s", id))
 
@@ -1833,18 +1977,22 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					blockType = "data"
 				}
 
-				for resAttribute, resSchema := range res.Schema {
-					// Remove any computed attributes if export computed exporter config not set
-					if resSchema.Computed == true && !exportComputed {
-						delete(instanceState.Attributes, resAttribute)
-						continue
+				if res != nil {
+					for resAttribute, resSchema := range res.Schema {
+						// Remove any computed attributes if export computed exporter config not set
+						if resSchema.Computed == true && !exportComputed {
+							delete(instanceState.Attributes, resAttribute)
+							continue
+						}
+						// Remove any computed read-only attributes from being exported regardless of exporter config
+						// because they cannot be set by a user when reapplying the configuration in a different org
+						if resSchema.Computed == true && resSchema.Optional == false {
+							delete(instanceState.Attributes, resAttribute)
+							continue
+						}
 					}
-					// Remove any computed read-only attributes from being exported regardless of exporter config
-					// because they cannot be set by a user when reapplying the configuration in a different org
-					if resSchema.Computed == true && resSchema.Optional == false {
-						delete(instanceState.Attributes, resAttribute)
-						continue
-					}
+				} else {
+					tflog.Debug(g.ctx, fmt.Sprintf("Skipping schema processing for Framework resource %s (ID: %s)", resType, id))
 				}
 				tflog.Debug(g.ctx, fmt.Sprintf("Finished processing schema attributes for resource ID: %s", id))
 
@@ -1857,6 +2005,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					CtyType:       ctyType,
 					BlockType:     blockType,
 					OriginalLabel: resMeta.OriginalLabel,
+					IsFramework:   res == nil, // TODO: Phase 2 - Remove after all resources migrated
 				}:
 					tflog.Trace(g.ctx, fmt.Sprintf("Successfully sent ResourceInfo to channel for resource ID: %s", id))
 				case <-ctx.Done():
@@ -2772,4 +2921,427 @@ func (g *GenesysCloudResourceExporter) getUnresolvedAttrs() []unresolvableAttrib
 	g.unresolvedAttrsMutex.Lock()
 	defer g.unresolvedAttrsMutex.Unlock()
 	return g.unresolvedAttrs
+}
+
+// EXPORT DEBUG HELPER FUNCTIONS - TEMPORARY, REMOVE AFTER DEBUGGING
+
+// getSampleAttributes returns a sample of attributes for logging (limits output size).
+func getSampleAttributes(attrs map[string]string, limit int) map[string]string {
+	sample := make(map[string]string)
+	count := 0
+	for k, v := range attrs {
+		if count >= limit {
+			break
+		}
+		sample[k] = v
+		count++
+	}
+	return sample
+}
+
+// getInstanceStateKeys returns all keys from InstanceState.Attributes for logging.
+func getInstanceStateKeys(state *terraform.InstanceState) []string {
+	if state == nil || state.Attributes == nil {
+		return []string{}
+	}
+	keys := make([]string, 0, len(state.Attributes))
+	for k := range state.Attributes {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// getMapKeys returns all keys from a JsonMap for logging.
+func getMapKeys(m util.JsonMap) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// ============================================================================
+// Framework Schema to CTY Type Converter Functions
+// ============================================================================
+// These functions convert Plugin Framework schemas to CTY types, enabling
+// proper export of Framework resources alongside SDKv2 resources.
+// ============================================================================
+
+// getFrameworkResourceFactories returns a map of Framework resource factories.
+// This allows the exporter to create Framework resource instances for schema retrieval.
+func getFrameworkResourceFactories() map[string]func() fwresource.Resource {
+	return map[string]func() fwresource.Resource{
+		"genesyscloud_user": func() fwresource.Resource {
+			return user.NewUserFrameworkResource()
+		},
+		"genesyscloud_routing_language": func() fwresource.Resource {
+			return routinglanguage.NewFrameworkRoutingLanguageResource()
+		},
+		"genesyscloud_routing_wrapupcode": func() fwresource.Resource {
+			return routingwrapupcode.NewRoutingWrapupcodeFrameworkResource()
+		},
+		// Add more Framework resources as they are migrated
+	}
+}
+
+// getFrameworkSchema retrieves the schema for a Framework resource.
+// This method creates a temporary Framework resource instance and calls its Schema method.
+//
+// Parameters:
+//   - ctx: Context for the operation
+//   - resourceType: Resource type name (e.g., "genesyscloud_user")
+//
+// Returns:
+//   - fwschema.Schema: Framework schema for the resource
+//   - error: Error if resource not found or schema retrieval fails
+func (g *GenesysCloudResourceExporter) getFrameworkSchema(ctx context.Context, resourceType string) (fwschema.Schema, error) {
+	// Get Framework resource factory from provider
+	resourceFactory, ok := g.providerResources[resourceType]
+	if !ok {
+		return fwschema.Schema{}, fmt.Errorf("Framework resource %s not found in provider", resourceType)
+	}
+
+	// Create Framework resource instance
+	frameworkResource := resourceFactory()
+
+	// Call Schema method to get schema
+	var schemaReq fwresource.SchemaRequest
+
+	var schemaResp fwresource.SchemaResponse
+	frameworkResource.Schema(ctx, schemaReq, &schemaResp)
+
+	if schemaResp.Diagnostics.HasError() {
+		return fwschema.Schema{}, fmt.Errorf("failed to get schema for %s: %v", resourceType, schemaResp.Diagnostics)
+	}
+
+	return schemaResp.Schema, nil
+}
+
+// frameworkSchemaToCtyType converts a Plugin Framework schema to a CTY type.
+// This enables proper export of Framework resources by building the complete
+// CTY type structure needed for StateValueFromInstanceState conversion.
+//
+// Parameters:
+//   - schema: Framework schema from resource.Schema() method
+//
+// Returns:
+//   - cty.Type: Complete CTY type with all attributes and blocks
+//   - error: Error if conversion fails for any attribute/block type
+func frameworkSchemaToCtyType(schema fwschema.Schema) (cty.Type, error) {
+	attributes := make(map[string]cty.Type)
+
+	// Convert all attributes from Framework schema to CTY types
+	for name, attr := range schema.GetAttributes() {
+		ctyAttrType, err := frameworkAttributeToCtyType(attr)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert attribute %s: %w", name, err)
+		}
+		attributes[name] = ctyAttrType
+	}
+
+	// Convert all blocks from Framework schema to CTY types
+	for name, block := range schema.GetBlocks() {
+		ctyBlockType, err := frameworkBlockToCtyType(block)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert block %s: %w", name, err)
+		}
+		attributes[name] = ctyBlockType
+	}
+
+	return cty.Object(attributes), nil
+}
+
+// frameworkAttributeToCtyType converts a Framework attribute to a CTY type.
+// Handles all Framework attribute types including primitives, collections, and nested.
+//
+// Supported attribute types:
+//   - StringAttribute → cty.String
+//   - BoolAttribute → cty.Bool
+//   - Int64Attribute → cty.Number
+//   - Float64Attribute → cty.Number
+//   - NumberAttribute → cty.Number
+//   - ListAttribute → cty.List(elementType)
+//   - SetAttribute → cty.Set(elementType)
+//   - MapAttribute → cty.Map(elementType)
+//   - SingleNestedAttribute → cty.Object(nestedAttributes)
+//   - ListNestedAttribute → cty.List(cty.Object(nestedAttributes))
+//   - SetNestedAttribute → cty.Set(cty.Object(nestedAttributes))
+//   - MapNestedAttribute → cty.Map(cty.Object(nestedAttributes))
+func frameworkAttributeToCtyType(attr fwschema.Attribute) (cty.Type, error) {
+	// Get the attribute type using reflection to handle all attribute types
+	attrType := reflect.TypeOf(attr).String()
+
+	// Handle primitive types
+	if strings.Contains(attrType, "StringAttribute") {
+		return cty.String, nil
+	}
+	if strings.Contains(attrType, "BoolAttribute") {
+		return cty.Bool, nil
+	}
+	if strings.Contains(attrType, "Int64Attribute") {
+		return cty.Number, nil
+	}
+	if strings.Contains(attrType, "Float64Attribute") {
+		return cty.Number, nil
+	}
+	if strings.Contains(attrType, "NumberAttribute") {
+		return cty.Number, nil
+	}
+
+	// Handle collection types with element type
+	if strings.Contains(attrType, "ListAttribute") && !strings.Contains(attrType, "Nested") {
+		// Use reflection to access ElementType field
+		attrValue := reflect.ValueOf(attr)
+		elemTypeField := attrValue.FieldByName("ElementType")
+
+		if elemTypeField.IsValid() && !elemTypeField.IsZero() {
+			// Get the interface value and pass it directly
+			elemTypeInterface := elemTypeField.Interface()
+			ctyElemType, err := frameworkTypeToCtType(elemTypeInterface)
+			if err != nil {
+				return cty.NilType, fmt.Errorf("failed to convert list element type: %w", err)
+			}
+			return cty.List(ctyElemType), nil
+		}
+
+		return cty.NilType, fmt.Errorf("failed to get ElementType field for ListAttribute")
+	}
+
+	if strings.Contains(attrType, "SetAttribute") && !strings.Contains(attrType, "Nested") {
+		// Use reflection to access ElementType field
+		attrValue := reflect.ValueOf(attr)
+		elemTypeField := attrValue.FieldByName("ElementType")
+
+		if elemTypeField.IsValid() && !elemTypeField.IsZero() {
+			// Get the interface value and pass it directly
+			elemTypeInterface := elemTypeField.Interface()
+			ctyElemType, err := frameworkTypeToCtType(elemTypeInterface)
+			if err != nil {
+				return cty.NilType, fmt.Errorf("failed to convert set element type: %w", err)
+			}
+			return cty.Set(ctyElemType), nil
+		}
+
+		return cty.NilType, fmt.Errorf("failed to get ElementType field for SetAttribute")
+	}
+
+	if strings.Contains(attrType, "MapAttribute") && !strings.Contains(attrType, "Nested") {
+		// Use reflection to access ElementType field
+		attrValue := reflect.ValueOf(attr)
+		elemTypeField := attrValue.FieldByName("ElementType")
+
+		if elemTypeField.IsValid() && !elemTypeField.IsZero() {
+			// Get the interface value and pass it directly
+			elemTypeInterface := elemTypeField.Interface()
+			ctyElemType, err := frameworkTypeToCtType(elemTypeInterface)
+			if err != nil {
+				return cty.NilType, fmt.Errorf("failed to convert map element type: %w", err)
+			}
+			return cty.Map(ctyElemType), nil
+		}
+
+		return cty.NilType, fmt.Errorf("failed to get ElementType field for MapAttribute")
+	}
+
+	// Handle nested attribute types
+	if strings.Contains(attrType, "SingleNestedAttribute") {
+		if nestedAttr, ok := attr.(interface {
+			GetAttributes() map[string]fwschema.Attribute
+		}); ok {
+			nestedAttrs := make(map[string]cty.Type)
+			for name, nested := range nestedAttr.GetAttributes() {
+				nestedCtyType, err := frameworkAttributeToCtyType(nested)
+				if err != nil {
+					return cty.NilType, fmt.Errorf("failed to convert nested attribute %s: %w", name, err)
+				}
+				nestedAttrs[name] = nestedCtyType
+			}
+			return cty.Object(nestedAttrs), nil
+		}
+		return cty.NilType, fmt.Errorf("failed to get nested attributes for SingleNestedAttribute")
+	}
+
+	if strings.Contains(attrType, "ListNestedAttribute") {
+		if nestedAttr, ok := attr.(interface {
+			GetNestedObject() fwschema.NestedAttributeObject
+		}); ok {
+			nestedObj := nestedAttr.GetNestedObject()
+			nestedAttrs := make(map[string]cty.Type)
+			for name, nested := range nestedObj.GetAttributes() {
+				nestedCtyType, err := frameworkAttributeToCtyType(nested)
+				if err != nil {
+					return cty.NilType, fmt.Errorf("failed to convert nested attribute %s: %w", name, err)
+				}
+				nestedAttrs[name] = nestedCtyType
+			}
+			return cty.List(cty.Object(nestedAttrs)), nil
+		}
+		return cty.NilType, fmt.Errorf("failed to get nested object for ListNestedAttribute")
+	}
+
+	if strings.Contains(attrType, "SetNestedAttribute") {
+		if nestedAttr, ok := attr.(interface {
+			GetNestedObject() fwschema.NestedAttributeObject
+		}); ok {
+			nestedObj := nestedAttr.GetNestedObject()
+			nestedAttrs := make(map[string]cty.Type)
+			for name, nested := range nestedObj.GetAttributes() {
+				nestedCtyType, err := frameworkAttributeToCtyType(nested)
+				if err != nil {
+					return cty.NilType, fmt.Errorf("failed to convert nested attribute %s: %w", name, err)
+				}
+				nestedAttrs[name] = nestedCtyType
+			}
+			return cty.Set(cty.Object(nestedAttrs)), nil
+		}
+		return cty.NilType, fmt.Errorf("failed to get nested object for SetNestedAttribute")
+	}
+
+	if strings.Contains(attrType, "MapNestedAttribute") {
+		if nestedAttr, ok := attr.(interface {
+			GetNestedObject() fwschema.NestedAttributeObject
+		}); ok {
+			nestedObj := nestedAttr.GetNestedObject()
+			nestedAttrs := make(map[string]cty.Type)
+			for name, nested := range nestedObj.GetAttributes() {
+				nestedCtyType, err := frameworkAttributeToCtyType(nested)
+				if err != nil {
+					return cty.NilType, fmt.Errorf("failed to convert nested attribute %s: %w", name, err)
+				}
+				nestedAttrs[name] = nestedCtyType
+			}
+			return cty.Map(cty.Object(nestedAttrs)), nil
+		}
+		return cty.NilType, fmt.Errorf("failed to get nested object for MapNestedAttribute")
+	}
+
+	return cty.NilType, fmt.Errorf("unsupported attribute type: %s", attrType)
+}
+
+// frameworkBlockToCtyType converts a Framework block to a CTY type.
+// Blocks are Framework-specific constructs that represent nested configuration.
+//
+// Supported block types:
+//   - ListNestedBlock → cty.List(cty.Object(nestedAttributes))
+//   - SetNestedBlock → cty.Set(cty.Object(nestedAttributes))
+//   - SingleNestedBlock → cty.Object(nestedAttributes)
+func frameworkBlockToCtyType(block fwschema.Block) (cty.Type, error) {
+	blockType := reflect.TypeOf(block).String()
+
+	// Get NestedObject field using reflection
+	// Block types (ListNestedBlock, SetNestedBlock, SingleNestedBlock) have NestedObject as a field, not a method
+	nestedObjValue := reflect.ValueOf(block).FieldByName("NestedObject")
+	if !nestedObjValue.IsValid() {
+		return cty.NilType, fmt.Errorf("block type %s does not have NestedObject field", blockType)
+	}
+
+	// Type assert the field value to NestedBlockObject
+	nestedObj, ok := nestedObjValue.Interface().(fwschema.NestedBlockObject)
+	if !ok {
+		return cty.NilType, fmt.Errorf("NestedObject field is not of type NestedBlockObject for block type: %s", blockType)
+	}
+
+	// Build object type from nested attributes and blocks
+	nestedAttrs := make(map[string]cty.Type)
+
+	// Convert nested attributes
+	for name, nestedAttr := range nestedObj.GetAttributes() {
+		nestedCtyType, err := frameworkAttributeToCtyType(nestedAttr)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert nested attribute %s: %w", name, err)
+		}
+		nestedAttrs[name] = nestedCtyType
+	}
+
+	// Convert nested blocks (recursive)
+	for name, nestedBlock := range nestedObj.GetBlocks() {
+		nestedCtyType, err := frameworkBlockToCtyType(nestedBlock)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert nested block %s: %w", name, err)
+		}
+		nestedAttrs[name] = nestedCtyType
+	}
+
+	objectType := cty.Object(nestedAttrs)
+
+	// Wrap in appropriate collection type based on block type
+	if strings.Contains(blockType, "ListNestedBlock") {
+		return cty.List(objectType), nil
+	}
+	if strings.Contains(blockType, "SetNestedBlock") {
+		return cty.Set(objectType), nil
+	}
+	if strings.Contains(blockType, "SingleNestedBlock") {
+		return objectType, nil
+	}
+
+	return cty.NilType, fmt.Errorf("unsupported block type: %s", blockType)
+}
+
+// frameworkTypeToCtType converts a Framework attr.Type to a CTY type.
+// Used for converting element types of collections (List, Set, Map).
+//
+// Supported Framework types:
+//   - types.StringType → cty.String
+//   - types.BoolType → cty.Bool
+//   - types.Int64Type → cty.Number
+//   - types.Float64Type → cty.Number
+//   - types.NumberType → cty.Number
+//   - types.ListType → cty.List(elementType)
+//   - types.SetType → cty.Set(elementType)
+//   - types.MapType → cty.Map(elementType)
+//   - types.ObjectType → cty.Object(attributeTypes)
+func frameworkTypeToCtType(fwType interface{}) (cty.Type, error) {
+	typeName := reflect.TypeOf(fwType).String()
+
+	// Primitive types
+	if strings.Contains(typeName, "StringType") {
+		return cty.String, nil
+	}
+	if strings.Contains(typeName, "BoolType") {
+		return cty.Bool, nil
+	}
+	if strings.Contains(typeName, "Int64Type") || strings.Contains(typeName, "Float64Type") || strings.Contains(typeName, "NumberType") {
+		return cty.Number, nil
+	}
+
+	// Collection types
+	if listType, ok := fwType.(types.ListType); ok {
+		elemType, err := frameworkTypeToCtType(listType.ElemType)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert list element type: %w", err)
+		}
+		return cty.List(elemType), nil
+	}
+
+	if setType, ok := fwType.(types.SetType); ok {
+		elemType, err := frameworkTypeToCtType(setType.ElemType)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert set element type: %w", err)
+		}
+		return cty.Set(elemType), nil
+	}
+
+	if mapType, ok := fwType.(types.MapType); ok {
+		elemType, err := frameworkTypeToCtType(mapType.ElemType)
+		if err != nil {
+			return cty.NilType, fmt.Errorf("failed to convert map element type: %w", err)
+		}
+		return cty.Map(elemType), nil
+	}
+
+	// Object type
+	if objType, ok := fwType.(types.ObjectType); ok {
+		attrTypes := make(map[string]cty.Type)
+		for name, attrType := range objType.AttrTypes {
+			ctyAttrType, err := frameworkTypeToCtType(attrType)
+			if err != nil {
+				return cty.NilType, fmt.Errorf("failed to convert object attribute %s: %w", name, err)
+			}
+			attrTypes[name] = ctyAttrType
+		}
+		return cty.Object(attrTypes), nil
+	}
+
+	return cty.NilType, fmt.Errorf("unsupported Framework type: %s", typeName)
 }

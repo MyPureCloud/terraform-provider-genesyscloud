@@ -46,8 +46,8 @@ func TestAccResourceGroupRolesMembership(t *testing.T) {
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, nil, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create group with 1 role in default division

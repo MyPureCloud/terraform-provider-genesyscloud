@@ -70,7 +70,7 @@ Terraform expects to manage the resources that are defined in its stack. You can
 // UserRolesExporter returns the resourceExporter object used to hold the genesyscloud_user_roles exporter's config
 func UserRolesExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(user.GetAllUsers),
+		GetResourcesFunc: provider.GetAllWithPooledClient(user.GetAllUsersSDK),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"user_id":            {RefType: "genesyscloud_user"},
 			"roles.role_id":      {RefType: "genesyscloud_auth_role"},

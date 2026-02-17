@@ -6,6 +6,9 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -17,11 +20,14 @@ import (
 // The factory function will be invoked for every Terraform CLI command executed
 // to create a provider server to which the CLI can reattach.
 
-func GetProviderFactories(providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) map[string]func() (*schema.Provider, error) {
+func GetProviderFactories(
+	providerResources map[string]*schema.Resource,
+	providerDataSources map[string]*schema.Resource,
+) map[string]func() (*schema.Provider, error) {
 	return map[string]func() (*schema.Provider, error){
 		"genesyscloud": func() (*schema.Provider, error) {
-			provider := New("0.1.0", providerResources, providerDataSources)()
-			return provider, nil
+			// For tests that still need an SDKv2 provider, build it explicitly.
+			return NewSDKv2Provider("0.1.0", providerResources, providerDataSources)(), nil
 		},
 	}
 }
@@ -36,12 +42,59 @@ func CombineProviderFactories(providers ...map[string]func() (*schema.Provider, 
 	return combined
 }
 
+// GetMuxedProviderFactories creates muxed provider factories that include both SDKv2 and Framework resources.
+// This is the centralized function to avoid duplication across test files.
+//
+// Parameters:
+//   - providerResources: Map of SDKv2 resource names to resource implementations
+//   - providerDataSources: Map of SDKv2 data source names to data source implementations
+//   - frameworkResources: Map of Framework resource names to resource factory functions
+//   - frameworkDataSources: Map of Framework data source names to data source factory functions
+//
+// Returns:
+//   - A map of provider names to factory functions that create tfprotov6.ProviderServer instances
+//
+// Usage:
+//
+//	This function is primarily used in acceptance tests to create provider instances
+//	that support both SDKv2 and Framework resources in a single muxed provider.
+//
+// Example:
+//
+//	factories := GetMuxedProviderFactories(sdkResources, sdkDataSources, fwResources, fwDataSources)
+//	resource.Test(t, resource.TestCase{
+//	    ProtoV6ProviderFactories: factories,
+//	    // ... test configuration
+//	})
+func GetMuxedProviderFactories(
+	providerResources map[string]*schema.Resource,
+	providerDataSources map[string]*schema.Resource,
+	frameworkResources map[string]func() frameworkresource.Resource,
+	frameworkDataSources map[string]func() datasource.DataSource,
+) map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"genesyscloud": func() (tfprotov6.ProviderServer, error) {
+			// Create muxed provider factory
+			muxFactoryFuncFunc := New("test", providerResources, providerDataSources, frameworkResources, frameworkDataSources)
+			muxFactoryFunc, err := muxFactoryFuncFunc()
+			if err != nil {
+				return nil, err
+			}
+			return muxFactoryFunc(), nil
+		},
+	}
+}
+
+// Note: For specific test scenarios that need particular Framework resources,
+// create helper functions in the test files that call GetMuxedProviderFactories()
+// with the specific Framework resources they need. This avoids circular import issues.
+
 // TestDefaultHomeDivision Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		homeDivID, err := getHomeDivisionID()
 		if err != nil {
-			return fmt.Errorf("Failed to query home division: %v", err)
+			return fmt.Errorf("failed to query home division: %v", err)
 		}
 
 		r := state.RootModule().Resources[resource]
@@ -89,6 +142,24 @@ func validateLogFilePath(filepath any, _ cty.Path) (err diag.Diagnostics) {
 
 // Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially
 // within acceptance testing
+//
+// # LOCK ORDER POLICY
+//
+// This section uses mutex (RWMutex) to protect SDKv2 provider metadata (providerMeta and providerConfig).
+// There is a separate mutex in framework_provider_meta.go (sharedMeta.mutex) that protects
+// shared metadata between SDKv2 and Framework providers.
+//
+// CRITICAL RULES TO PREVENT DEADLOCKS:
+//  1. NEVER acquire both mutexes in the same function call stack
+//  2. If you absolutely must acquire both (which you shouldn't need to):
+//     - ALWAYS acquire mutex (this file) FIRST
+//     - THEN acquire sharedMeta.mutex (framework_provider_meta.go) SECOND
+//     - Release in REVERSE order (sharedMeta.mutex first, then mutex)
+//  3. Keep critical sections minimal (simple assignments/returns only)
+//  4. Always use defer for unlock to ensure cleanup on panic
+//
+// CURRENT STATUS: The two mutex systems are completely isolated and never
+// acquired together, making the code deadlock-free.
 var (
 	providerMeta   *ProviderMeta
 	mutex          sync.RWMutex

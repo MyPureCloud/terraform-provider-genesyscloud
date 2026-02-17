@@ -6,61 +6,70 @@ package routing_language
 
 import (
 	"fmt"
+
+	datasourceschema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const ResourceType = "genesyscloud_routing_language"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceRoutingLanguage())
+	regInstance.RegisterFrameworkResource(ResourceType, NewFrameworkRoutingLanguageResource)
+	regInstance.RegisterFrameworkDataSource(ResourceType, NewFrameworkRoutingLanguageDataSource)
 	regInstance.RegisterExporter(ResourceType, RoutingLanguageExporter())
-	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingLanguage())
 }
 
-func ResourceRoutingLanguage() *schema.Resource {
-	return &schema.Resource{
+// RoutingLanguageResourceSchema returns the schema for the routing language resource
+func RoutingLanguageResourceSchema() schema.Schema {
+	return schema.Schema{
 		Description: "Genesys Cloud Routing Language",
-
-		CreateContext: provider.CreateWithPooledClient(createRoutingLanguage),
-		ReadContext:   provider.ReadWithPooledClient(readRoutingLanguage),
-		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingLanguage),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "The ID of the routing language.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
 				Description: "Language name. Changing the language_name attribute will cause the language object to be dropped and recreated with a new ID.",
-				Type:        schema.TypeString,
 				Required:    true,
-				ForceNew:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
 }
 
-func DataSourceRoutingLanguage() *schema.Resource {
-	return &schema.Resource{
+// RoutingLanguageDataSourceSchema returns the schema for the routing language data source
+func RoutingLanguageDataSourceSchema() datasourceschema.Schema {
+	return datasourceschema.Schema{
 		Description: "Data source for Genesys Cloud Routing Languages. Select a language by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingLanguageRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
+		Attributes: map[string]datasourceschema.Attribute{
+			"id": datasourceschema.StringAttribute{
+				Description: "The ID of the routing language.",
+				Computed:    true,
+			},
+			"name": datasourceschema.StringAttribute{
 				Description: "Language name.",
-				Type:        schema.TypeString,
 				Required:    true,
 			},
 		},
 	}
 }
+
+// SDKv2 resource and data source functions removed - Framework-only migration
 
 func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingLanguages),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingLanguagesSDK),
 	}
 }
 

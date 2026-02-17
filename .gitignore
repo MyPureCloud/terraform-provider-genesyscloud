@@ -29,6 +29,7 @@ terraform-provider-genesyscloud
 .env
 .vscode
 .kiro
+.kiro
 .cursor
 **/true
 website/vendor

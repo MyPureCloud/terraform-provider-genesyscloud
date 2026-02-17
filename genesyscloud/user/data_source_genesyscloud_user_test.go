@@ -2,8 +2,6 @@ package user
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"log"
 	"testing"
 	"time"
@@ -11,21 +9,30 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-func TestAccDataSourceUser(t *testing.T) {
+// Ensure test resources are initialized for Framework tests
+func init() {
+	if frameworkResources == nil || frameworkDataSources == nil {
+		initTestResources()
+	}
+}
+
+func TestAccFrameworkDataSourceUser(t *testing.T) {
+	t.Parallel()
 	var (
-		userResourceLabel   = "test-user"
-		userDataSourceLabel = "test-user-data"
+		userResourceLabel   = "test-user-resource"
+		userDataSourceLabel = "test-user-data-source"
 		randomString        = uuid.NewString()
-		userEmail           = "John_Doe" + randomString + "@exampleuser.com"
-		userName            = "John_Doe" + randomString
+		userEmail           = "framework_user_" + randomString + "@example.com"
+		userName            = "Framework_User_" + randomString
 		userID              string
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: getFrameworkProviderFactories(),
 		Steps: []resource.TestStep{
 			{
 				// Search by email
@@ -41,10 +48,15 @@ func TestAccDataSourceUser(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+userDataSourceLabel, "id", ResourceType+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+userDataSourceLabel, "name", ResourceType+"."+userResourceLabel, "name"),
 					func(s *terraform.State) error {
 						rs, ok := s.RootModule().Resources[ResourceType+"."+userResourceLabel]
 						if !ok {
 							return fmt.Errorf("not found: %s", ResourceType+"."+userResourceLabel)
+						}
+						// Verify user ID is set
+						if rs.Primary.ID == "" {
+							return fmt.Errorf("user ID is empty")
 						}
 						userID = rs.Primary.ID
 						log.Printf("User ID: %s\n", userID) // Print user ID
@@ -66,8 +78,9 @@ func TestAccDataSourceUser(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+userDataSourceLabel, "id", ResourceType+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+userDataSourceLabel, "name", ResourceType+"."+userResourceLabel, "name"),
 					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for proper deletion
+						time.Sleep(30 * time.Second) // Wait for proper cleanup
 						return nil
 					},
 				),
@@ -78,19 +91,4 @@ func TestAccDataSourceUser(t *testing.T) {
 			return testVerifyUsersDestroyed(state)
 		},
 	})
-}
-
-func generateUserDataSource(
-	resourceLabel string,
-	email string,
-	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOnResource string) string {
-	return fmt.Sprintf(`data "%s" "%s" {
-        email = %s
-		name = %s
-        depends_on=[%s]
-	}
-	`, ResourceType, resourceLabel, email, name, dependsOnResource)
 }

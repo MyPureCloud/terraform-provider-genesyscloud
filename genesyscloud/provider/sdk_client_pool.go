@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -92,10 +93,15 @@ var Once sync.Once
 
 // ResetSDKClientPool resets the global client pool for testing purposes
 func ResetSDKClientPool() {
+	ResetSDKClientPoolWithContext(context.Background())
+}
+
+// ResetSDKClientPoolWithContext resets the global client pool with a provided context
+func ResetSDKClientPoolWithContext(ctx context.Context) {
 	if SdkClientPool != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
-		_ = SdkClientPool.Reset(ctx)
+		_ = SdkClientPool.Reset(timeoutCtx)
 	}
 	SdkClientPool = nil
 	SdkClientPoolErr = nil
@@ -183,7 +189,7 @@ func (p *SDKClientPool) startMetricsLogging() {
 
 func (p *SDKClientPool) logDebug(msg string, args ...interface{}) {
 	if p.config.DebugLogging {
-		formattedMsg := fmt.Sprintf("[DEBUG] "+msg, args...)
+		formattedMsg := fmt.Sprintf("[DEBUG] SDKClientPool: "+msg, args...)
 		tflog.Debug(p.ctx, formattedMsg)
 		// Also log to standard logger for test capture
 		log.Println(formattedMsg)
@@ -194,22 +200,27 @@ func (p *SDKClientPool) formatMetrics() string {
 	metrics := p.GetMetrics()
 	lastAcquireTime := metrics.lastAcquireTime
 
-	// Check if the last acquire time is zero, if so, set it to a default value
-	var lastAcquireTimeStr string
+	// Use strings.Builder for efficient string concatenation
+	var sb strings.Builder
+	sb.Grow(128) // Pre-allocate reasonable capacity
+
+	sb.WriteString("Active: ")
+	sb.WriteString(fmt.Sprintf("%d/%d", metrics.activeClients, p.config.MaxClients))
+	sb.WriteString(", Acquires: ")
+	sb.WriteString(fmt.Sprintf("%d", metrics.totalAcquires))
+	sb.WriteString(", Releases: ")
+	sb.WriteString(fmt.Sprintf("%d", metrics.totalReleases))
+	sb.WriteString(", Timeouts: ")
+	sb.WriteString(fmt.Sprintf("%d", metrics.acquireTimeouts))
+	sb.WriteString(", Last Acquire: ")
+
 	if lastAcquireTime.IsZero() {
-		lastAcquireTimeStr = "never"
+		sb.WriteString("never")
 	} else {
-		lastAcquireTimeStr = lastAcquireTime.Format(time.RFC3339)
+		sb.WriteString(lastAcquireTime.Format(time.RFC3339))
 	}
 
-	return fmt.Sprintf("Active: %d/%d, Acquires: %d, Releases: %d, Timeouts: %d, Last Acquire: %s",
-		metrics.activeClients,
-		p.config.MaxClients,
-		metrics.totalAcquires,
-		metrics.totalReleases,
-		metrics.acquireTimeouts,
-		lastAcquireTimeStr,
-	)
+	return sb.String()
 }
 
 func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.ResourceData, version string) diag.Diagnostics {
@@ -338,7 +349,7 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 		case client := <-p.Pool:
 			cancel()
 			if client == nil {
-				return nil, fmt.Errorf("received nil client from the pool")
+				return nil, fmt.Errorf("received nil client from pool (pool size: %d, active: %d)", p.config.MaxClients, atomic.LoadInt64(&p.metrics.activeClients))
 			}
 			p.metrics.recordAcquire()
 
@@ -390,7 +401,7 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 	if c == nil {
-		return fmt.Errorf("attempted to release a nil configuration ?!?")
+		return fmt.Errorf("attempted to release nil configuration (pool size: %d, active: %d)", p.config.MaxClients, atomic.LoadInt64(&p.metrics.activeClients))
 	}
 	p.metrics.recordRelease()
 
@@ -727,14 +738,6 @@ func (p *SDKClientPool) AdjustPoolForTimeout(version string) {
 	log.Printf("[AdjustPoolForTimeout] Successfully added %d new client connection to pool", newClientsToAdd)
 	log.Printf("[AdjustPoolForTimeout] Pool capacity increased from %d to %d clients",
 		currentMaxClients, newMaxClients)
-}
-
-// Helper function to find minimum of two values
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics

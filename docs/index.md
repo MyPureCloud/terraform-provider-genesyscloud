@@ -33,8 +33,8 @@ If the stack trace occurs within the create context and before the ID is set in 
 If you encounter any stack traces, please report them so we can address the underlying issues.
 - `log_stack_traces_file_path` (String) Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log
 - `oauthclient_id` (String) OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.
-- `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
-- `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))
+- `oauthclient_secret` (String) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
+- `proxy` (Block Set) (see [below for nested schema](#nestedblock--proxy))
 - `sdk_client_pool_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK client pool. Output will be written to standard log output. Can be set with the `GENESYSCLOUD_SDK_CLIENT_POOL_DEBUG` environment variable.
 - `sdk_debug` (Boolean) Enables debug tracing in the Genesys Cloud SDK. Output will be written to the local file 'sdk_debug.log'. Can be set with the `GENESYSCLOUD_SDK_DEBUG` environment variable.
 - `sdk_debug_file_path` (String) Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log
@@ -48,7 +48,7 @@ If you encounter any stack traces, please report them so we can address the unde
 
 Optional:
 
-- `auth` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--gateway--auth))
+- `auth` (Block Set) (see [below for nested schema](#nestedblock--gateway--auth))
 - `host` (String) Host for the gateway can be set with the `GENESYSCLOUD_GATEWAY_HOST` environment variable.
 - `path_params` (Block Set) (see [below for nested schema](#nestedblock--gateway--path_params))
 - `port` (String) Port for the gateway can be set with the `GENESYSCLOUD_GATEWAY_PORT` environment variable.
@@ -78,7 +78,7 @@ Required:
 
 Optional:
 
-- `auth` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy--auth))
+- `auth` (Block Set) (see [below for nested schema](#nestedblock--proxy--auth))
 - `host` (String) Host for the proxy can be set with the `GENESYSCLOUD_PROXY_HOST` environment variable.
 - `port` (String) Port for the proxy can be set with the `GENESYSCLOUD_PROXY_PORT` environment variable.
 - `protocol` (String) Protocol for the proxy can be set with the `GENESYSCLOUD_PROXY_PROTOCOL` environment variable.

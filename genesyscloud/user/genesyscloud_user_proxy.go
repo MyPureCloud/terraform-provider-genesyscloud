@@ -380,7 +380,10 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 			continue
 		}
 
-		if extNumInt > startNum && extNumInt < endNum {
+		// FIX: Use inclusive comparison (>= and <=) to include extensions at boundaries
+		// Previous bug: Used strict inequality (> and <) which excluded start/end numbers
+		// Example: Pool 7700-7799 should include both 7700 and 7799
+		if extNumInt >= startNum && extNumInt <= endNum {
 			return &pool, apiResponse, nil
 		}
 	}

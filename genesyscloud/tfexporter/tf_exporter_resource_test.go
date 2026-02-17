@@ -3,6 +3,8 @@ package tfexporter
 import (
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	frameworkresource "github.com/hashicorp/terraform-plugin-framework/resource"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -78,6 +80,8 @@ import (
 	obSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_settings"
 	obw "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_wrapupcode_mappings"
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
@@ -138,6 +142,63 @@ func initTestResources() {
 type registerTestInstance struct {
 }
 
+// Implement the Registrar interface for Framework resource support
+func (r *registerTestInstance) RegisterResource(resourceType string, resource *schema.Resource) {
+	providerResources[resourceType] = resource
+}
+
+func (r *registerTestInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
+	providerDataSources[dataSourceType] = datasource
+}
+
+func (r *registerTestInstance) RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {
+	RegisterExporter(exporterResourceType, resourceExporter)
+}
+
+func (r *registerTestInstance) RegisterFrameworkResource(resourceType string, resourceFactory func() frameworkresource.Resource) {
+	// Initialize the global Framework resources map if needed
+	currentFrameworkResources, currentFrameworkDataSources := registrar.GetFrameworkResources()
+	if currentFrameworkResources == nil {
+		currentFrameworkResources = make(map[string]func() frameworkresource.Resource)
+	}
+
+	// Add the new Framework resource
+	currentFrameworkResources[resourceType] = resourceFactory
+
+	// Update the global registrar
+	registrar.SetFrameworkResources(currentFrameworkResources, currentFrameworkDataSources)
+}
+
+func (r *registerTestInstance) RegisterFrameworkDataSource(dataSourceType string, dataSourceFactory func() datasource.DataSource) {
+	// Initialize the global Framework data sources map if needed
+	currentFrameworkResources, currentFrameworkDataSources := registrar.GetFrameworkResources()
+	if currentFrameworkDataSources == nil {
+		currentFrameworkDataSources = make(map[string]func() datasource.DataSource)
+	}
+
+	// Add the new Framework data source
+	currentFrameworkDataSources[dataSourceType] = dataSourceFactory
+
+	// Update the global registrar
+	registrar.SetFrameworkResources(currentFrameworkResources, currentFrameworkDataSources)
+}
+
+func (r *registerTestInstance) GetResourceProviderType(resourceType string) registrar.ProviderType {
+	// For test purposes, assume SDKv2 unless it's a Framework resource
+	if resourceType == routinglanguage.ResourceType || resourceType == routingWrapupcode.ResourceType {
+		return registrar.FrameworkProvider
+	}
+	return registrar.SDKv2Provider
+}
+
+func (r *registerTestInstance) GetDataSourceProviderType(dataSourceType string) registrar.ProviderType {
+	// For test purposes, assume SDKv2 unless it's a Framework resource
+	if dataSourceType == routinglanguage.ResourceType || dataSourceType == routingWrapupcode.ResourceType {
+		return registrar.FrameworkProvider
+	}
+	return registrar.SDKv2Provider
+}
+
 func (r *registerTestInstance) registerTestResources() {
 	providerResources[oAuthSettings.ResourceType] = oAuthSettings.ResourceOrganizationAuthenticationSettings()
 	providerResources[oAuthPairing.ResourceType] = oAuthPairing.ResourceOrgauthorizationPairing()
@@ -184,12 +245,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[recMediaRetPolicy.ResourceType] = recMediaRetPolicy.ResourceMediaRetentionPolicy()
 	providerResources[oauth_client.ResourceType] = oauth_client.ResourceOAuthClient()
 	providerResources[obSettings.ResourceType] = obSettings.ResourceOutboundSettings()
-	providerResources[user.ResourceType] = user.ResourceUser()
+	// providerResources[user.ResourceType] = user.ResourceUser() // Removed - now Framework-only
 	providerResources[respmanagementLibrary.ResourceType] = respmanagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources[respManagementRespAsset.ResourceType] = respManagementRespAsset.ResourceResponseManagementResponseAsset()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingEmailRoute.ResourceType] = routingEmailRoute.ResourceRoutingEmailRoute()
-	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
 	providerResources[routingQueue.ResourceType] = routingQueue.ResourceRoutingQueue()
 	providerResources[routingQueueConditionalGroupRouting.ResourceType] = routingQueueConditionalGroupRouting.ResourceRoutingQueueConditionalGroupRouting()
 	providerResources[routingQueueOutboundEmailAddress.ResourceType] = routingQueueOutboundEmailAddress.ResourceRoutingQueueOutboundEmailAddress()
@@ -197,7 +257,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
 	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
-	providerResources[routingWrapupcode.ResourceType] = routingWrapupcode.ResourceRoutingWrapupCode()
 	providerResources[edgeExtension.ResourceType] = edgeExtension.ResourceTelephonyExtensionPool()
 	providerResources[edgePhone.ResourceType] = edgePhone.ResourcePhone()
 	providerResources[edgeSite.ResourceType] = edgeSite.ResourceSite()
@@ -255,6 +314,16 @@ func (r *registerTestInstance) registerTestResources() {
 }
 
 func (r *registerTestInstance) registerTestExporters() {
+	// Create a registrar instance for proper resource registration
+	regInstance := &registerTestInstance{}
+
+	// Register routing_language using its SetRegistrar method (Framework resource)
+	routinglanguage.SetRegistrar(regInstance)
+
+	// Register routing_wrapupcode using its SetRegistrar method (Framework resource)
+	routingWrapupcode.SetRegistrar(regInstance)
+
+	// Continue with manual exporter registrations for SDKv2 resources
 	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
 	RegisterExporter(architectSchedules.ResourceType, architectSchedules.ArchitectSchedulesExporter())
 	RegisterExporter(knowledgeCategory.ResourceType, knowledgeCategory.KnowledgeCategoryExporter())
@@ -325,7 +394,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(respManagementRespAsset.ResourceType, respManagementRespAsset.ExporterResponseManagementResponseAsset())
 	RegisterExporter(routingEmailDomain.ResourceType, routingEmailDomain.RoutingEmailDomainExporter())
 	RegisterExporter(routingEmailRoute.ResourceType, routingEmailRoute.RoutingEmailRouteExporter())
-	RegisterExporter(routinglanguage.ResourceType, routinglanguage.RoutingLanguageExporter())
+	// routinglanguage exporter is registered via SetRegistrar call above
 	RegisterExporter(routingQueue.ResourceType, routingQueue.RoutingQueueExporter())
 	RegisterExporter(routingQueueConditionalGroupRouting.ResourceType, routingQueueConditionalGroupRouting.RoutingQueueConditionalGroupRoutingExporter())
 	RegisterExporter(routingQueueOutboundEmailAddress.ResourceType, routingQueueOutboundEmailAddress.OutboundRoutingQueueOutboundEmailAddressExporter())
@@ -335,7 +404,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(routingSmsAddress.ResourceType, routingSmsAddress.RoutingSmsAddressExporter())
 	RegisterExporter(routingUtilization.ResourceType, routingUtilization.RoutingUtilizationExporter())
 	RegisterExporter(routingUtilizationLabel.ResourceType, routingUtilizationLabel.RoutingUtilizationLabelExporter())
-	RegisterExporter(routingWrapupcode.ResourceType, routingWrapupcode.RoutingWrapupCodeExporter())
+	// routingWrapupcode.ResourceType exporter registered via SetRegistrar method (Framework resource)
 	RegisterExporter(edgeGroup.ResourceType, edgeGroup.EdgeGroupExporter())
 	RegisterExporter(edgeExtension.ResourceType, edgeExtension.TelephonyExtensionPoolExporter())
 	RegisterExporter(edgePhone.ResourceType, edgePhone.PhoneExporter())
@@ -377,7 +446,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources[tbs.ResourceType] = tbs.DataSourceTrunkBaseSettings()
-	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
 	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 	providerDataSources[guide.ResourceType] = guide.DataSourceGuide()
 }

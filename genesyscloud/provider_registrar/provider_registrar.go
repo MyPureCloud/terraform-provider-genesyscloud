@@ -7,6 +7,8 @@ import (
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	aiStudioSummarySetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/ai_studio_summary_setting"
@@ -174,16 +176,38 @@ circular dependency issues with the package tf_exporter
 */
 
 var (
+	// SDKv2 provider resources and data sources
 	providerResources     = make(map[string]*schema.Resource)
 	providerResourceTypes = make([]string, 0)
 	providerDataSources   = make(map[string]*schema.Resource)
 	resourceExporters     = make(map[string]*resourceExporter.ResourceExporter)
+
+	// Framework provider resources and data sources (Plugin Framework migration)
+	// These maps store factory functions for Framework resources and data sources
+	frameworkResources   = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
+
+	// Provider type tracking for muxer routing
+	// These maps track which provider architecture should handle each resource/data source
+	resourceProviderTypes   = make(map[string]registrar.ProviderType)
+	dataSourceProviderTypes = make(map[string]registrar.ProviderType)
 )
 
+// RegisterInstance provides thread-safe registration of provider resources, data sources,
+// and exporters for both SDKv2 and Framework provider architectures.
+//
+// This struct uses separate mutexes for different registration operations to minimize
+// lock contention and improve concurrent registration performance during provider initialization.
 type RegisterInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
-	exporterMapMutex   sync.RWMutex
+	// SDKv2 provider mutexes (legacy architecture)
+	resourceMapMutex   sync.RWMutex // Protects SDKv2 resource registration
+	datasourceMapMutex sync.RWMutex // Protects SDKv2 data source registration
+	exporterMapMutex   sync.RWMutex // Protects resource exporter registration
+
+	// Framework provider mutexes (modern architecture - Plugin Framework migration)
+	frameworkResourceMapMutex   sync.RWMutex // Protects Framework resource registration
+	frameworkDataSourceMapMutex sync.RWMutex // Protects Framework data source registration
+	providerTypeMapMutex        sync.RWMutex // Protects provider type tracking maps
 }
 
 func GetProviderResources() (resources map[string]*schema.Resource, datasources map[string]*schema.Resource) {
@@ -216,13 +240,61 @@ func GetResourceTypeNames() []string {
 	return providerResourceTypes
 }
 
+// GetFrameworkResources returns the Framework resources and data sources
+func GetFrameworkResources() (resources map[string]func() resource.Resource, datasources map[string]func() datasource.DataSource) {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return frameworkResources, frameworkDataSources
+}
+
+// GetResourceProviderType returns the provider type for a given resource type
+func GetResourceProviderType(resourceType string) registrar.ProviderType {
+	if providerType, exists := resourceProviderTypes[resourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
+}
+
+// GetDataSourceProviderType returns the provider type for a given data source type
+func GetDataSourceProviderType(dataSourceType string) registrar.ProviderType {
+	if providerType, exists := dataSourceProviderTypes[dataSourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
+}
+
+// GetAllResourcesByProvider returns resources separated by provider type
+func GetAllResourcesByProvider() (sdkv2Resources map[string]*schema.Resource, frameworkResourceFactories map[string]func() resource.Resource, sdkv2DataSources map[string]*schema.Resource, frameworkDataSourceFactories map[string]func() datasource.DataSource) {
+	if !resourceMapsAreRegistered() {
+		registerResources()
+	}
+	return providerResources, frameworkResources, providerDataSources, frameworkDataSources
+}
+
 func resourceMapsAreRegistered() bool {
+	// Check SDKv2 maps
 	if providerResources == nil || providerDataSources == nil || resourceExporters == nil {
 		return false
 	}
 	if len(providerResources) == 0 || len(providerDataSources) == 0 || len(resourceExporters) == 0 {
 		return false
 	}
+
+	// Initialize Framework maps if they're nil (they start empty, which is valid)
+	if frameworkResources == nil {
+		frameworkResources = make(map[string]func() resource.Resource)
+	}
+	if frameworkDataSources == nil {
+		frameworkDataSources = make(map[string]func() datasource.DataSource)
+	}
+	if resourceProviderTypes == nil {
+		resourceProviderTypes = make(map[string]registrar.ProviderType)
+	}
+	if dataSourceProviderTypes == nil {
+		dataSourceProviderTypes = make(map[string]registrar.ProviderType)
+	}
+
 	return true
 }
 
@@ -366,6 +438,7 @@ func registerResources() {
 	tfexp.SetRegistrar(regInstance)         //Registering tf exporter
 	bcpTfExporter.SetRegistrar(regInstance) //Registering bcp tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
+	registrar.SetFrameworkResources(frameworkResources, frameworkDataSources)
 }
 
 func (r *RegisterInstance) RegisterResource(resourceType string, resource *schema.Resource) {
@@ -379,6 +452,11 @@ func (r *RegisterInstance) RegisterResource(resourceType string, resource *schem
 
 	providerResources[resourceType] = resource
 	providerResourceTypes = append(providerResourceTypes, resourceType)
+
+	// Track as SDKv2 provider type
+	r.providerTypeMapMutex.Lock()
+	resourceProviderTypes[resourceType] = registrar.SDKv2Provider
+	r.providerTypeMapMutex.Unlock()
 }
 
 func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource *schema.Resource) {
@@ -391,10 +469,111 @@ func (r *RegisterInstance) RegisterDataSource(dataSourceType string, datasource 
 	provider.WrapResourceWithType(dataSourceType, datasource)
 
 	providerDataSources[dataSourceType] = datasource
+
+	// Track as SDKv2 provider type
+	r.providerTypeMapMutex.Lock()
+	dataSourceProviderTypes[dataSourceType] = registrar.SDKv2Provider
+	r.providerTypeMapMutex.Unlock()
 }
 
 func (r *RegisterInstance) RegisterExporter(exporterName string, resourceExporter *resourceExporter.ResourceExporter) {
 	r.exporterMapMutex.Lock()
 	defer r.exporterMapMutex.Unlock()
 	resourceExporters[exporterName] = resourceExporter
+}
+
+// RegisterFrameworkResource registers a Plugin Framework resource with the provider.
+// This method is used during the SDKv2 to Framework migration to register resources
+// that have been migrated to the modern Plugin Framework architecture.
+//
+// The method performs two operations:
+//  1. Registers the resource factory function for the Framework provider
+//  2. Tracks the resource as a Framework provider type for muxer routing
+//
+// Parameters:
+//   - resourceType: The Terraform resource type name (e.g., "genesyscloud_routing_language")
+//   - resourceFactory: Factory function that creates new instances of the Framework resource
+//
+// Thread Safety: This method is thread-safe and can be called concurrently.
+func (r *RegisterInstance) RegisterFrameworkResource(resourceType string, resourceFactory func() resource.Resource) {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+	frameworkResources[resourceType] = resourceFactory
+
+	// Track as Framework provider type for muxer routing
+	r.providerTypeMapMutex.Lock()
+	resourceProviderTypes[resourceType] = registrar.FrameworkProvider
+	r.providerTypeMapMutex.Unlock()
+}
+
+// RegisterFrameworkDataSource registers a Plugin Framework data source with the provider.
+// This method is used during the SDKv2 to Framework migration to register data sources
+// that have been migrated to the modern Plugin Framework architecture.
+//
+// The method performs two operations:
+//  1. Registers the data source factory function for the Framework provider
+//  2. Tracks the data source as a Framework provider type for muxer routing
+//
+// Parameters:
+//   - dataSourceType: The Terraform data source type name (e.g., "genesyscloud_routing_language")
+//   - dataSourceFactory: Factory function that creates new instances of the Framework data source
+//
+// Thread Safety: This method is thread-safe and can be called concurrently.
+func (r *RegisterInstance) RegisterFrameworkDataSource(dataSourceType string, dataSourceFactory func() datasource.DataSource) {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+	frameworkDataSources[dataSourceType] = dataSourceFactory
+
+	// Track as Framework provider type for muxer routing
+	r.providerTypeMapMutex.Lock()
+	dataSourceProviderTypes[dataSourceType] = registrar.FrameworkProvider
+	r.providerTypeMapMutex.Unlock()
+}
+
+// GetResourceProviderType returns the provider type for a given resource type.
+// This method is used by the muxer to determine which provider (SDKv2 or Framework)
+// should handle a specific resource request.
+//
+// Parameters:
+//   - resourceType: The Terraform resource type name to look up
+//
+// Returns:
+//   - registrar.ProviderType: The provider type that should handle this resource
+//
+// Default Behavior: Returns SDKv2Provider for unknown resource types to maintain
+// backward compatibility during the migration process.
+//
+// Thread Safety: This method is thread-safe for concurrent read access.
+func (r *RegisterInstance) GetResourceProviderType(resourceType string) registrar.ProviderType {
+	r.providerTypeMapMutex.RLock()
+	defer r.providerTypeMapMutex.RUnlock()
+
+	if providerType, exists := resourceProviderTypes[resourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
+}
+
+// GetDataSourceProviderType returns the provider type for a given data source type.
+// This method is used by the muxer to determine which provider (SDKv2 or Framework)
+// should handle a specific data source request.
+//
+// Parameters:
+//   - dataSourceType: The Terraform data source type name to look up
+//
+// Returns:
+//   - registrar.ProviderType: The provider type that should handle this data source
+//
+// Default Behavior: Returns SDKv2Provider for unknown data source types to maintain
+// backward compatibility during the migration process.
+//
+// Thread Safety: This method is thread-safe for concurrent read access.
+func (r *RegisterInstance) GetDataSourceProviderType(dataSourceType string) registrar.ProviderType {
+	r.providerTypeMapMutex.RLock()
+	defer r.providerTypeMapMutex.RUnlock()
+
+	if providerType, exists := dataSourceProviderTypes[dataSourceType]; exists {
+		return providerType
+	}
+	return registrar.SDKv2Provider // Default to SDKv2 for backward compatibility
 }

@@ -143,8 +143,8 @@ data "genesyscloud_auth_division_home" "home" {}
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -305,8 +305,8 @@ data "genesyscloud_auth_division_home" "home" {}
 	)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: config1,
@@ -503,8 +503,8 @@ resource "genesyscloud_routing_skill_group" "%s" {
 		skillGroupDescription, routingSkillName, user1ResourceLabel, user2ResourceLabel, user3ResourceLabel)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck:                 func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(providerResources, providerDataSources, frameworkResources, frameworkDataSources),
 		Steps: []resource.TestStep{
 			{
 				Config: routingSkillResource +

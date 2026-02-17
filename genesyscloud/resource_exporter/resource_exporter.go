@@ -41,6 +41,49 @@ type ResourceMeta struct {
 
 	// Represents the unsanitized version of the BlockLabel
 	OriginalLabel string
+
+	// ExportAttributes contains the complete flat attribute map for Plugin Framework resources.
+	// This field enables dependency resolution for PF resources by providing all attribute values
+	// (including dependency references like division_id, skill_id, etc.) to the exporter.
+	//
+	// Format: Flat map matching Terraform InstanceState format with dot notation and indices
+	//   Example: "addresses.0.phone_numbers.0.extension_pool_id" = "pool-guid-123"
+	//
+	// Usage:
+	//   - Populated by GetAll functions (e.g., GetAllUsersSDK) during resource discovery
+	//   - Consumed by exporter to create InstanceState for dependency resolution
+	//   - Optional field (nil for SDKv2 resources and PF resources not yet migrated)
+	//
+	// Backward Compatibility:
+	//   - If nil or empty, exporter falls back to stub behavior (id + name only)
+	//   - No breaking changes to existing code
+	//
+	// TODO: This is a temporary migration helper for Phase 1 (resource-specific implementations).
+	// Phase 2 will introduce a generic Framework-to-InstanceState converter that works for all
+	// PF resources automatically. Once Phase 2 is complete and all resources are migrated,
+	// this field may be deprecated or repurposed for the generic converter's output.
+	ExportAttributes map[string]string
+
+	// LazyFetchAttributes is an optional callback for fetching export attributes on-demand.
+	// This callback is invoked AFTER filtering, only for resources that will be exported.
+	// This is more efficient than ExportAttributes for filtered exports.
+	//
+	// The callback receives a context and should return:
+	//   - map[string]string: Complete flat attribute map for dependency resolution
+	//   - error: Error if fetch fails (exporter will fall back to basic attributes)
+	//
+	// Usage pattern:
+	//   1. GetAll function sets this callback (captures resource ID in closure)
+	//   2. Exporter filters resources
+	//   3. Exporter calls callback only for filtered resources
+	//   4. Callback fetches full details and builds attribute map
+	//
+	// Performance benefit:
+	//   - Filtered export (10 users): 31 API calls vs 6,448 (99.5% reduction)
+	//   - Time: 3 seconds vs 5+ minutes timeout
+	//
+	// TODO: Phase 2 - Remove when generic Framework-to-InstanceState converter is implemented
+	LazyFetchAttributes func(ctx context.Context) (map[string]string, error)
 }
 
 // ResourceIDMetaMap is a map of IDs to ResourceMeta
@@ -68,6 +111,7 @@ type ResourceInfo struct {
 	Type          string
 	CtyType       cty.Type
 	BlockType     string
+	IsFramework   bool // TODO: Phase 2 - Remove after all resources migrated to Framework
 }
 
 // DataSourceResolver allows the definition of a custom resolver for an exporter.

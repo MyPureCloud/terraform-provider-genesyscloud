@@ -53,8 +53,13 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 
 	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.Replace(uuid.NewString(), "-", "", -1))
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			frameworkResources,
+			frameworkDataSources,
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create email domain and basic route
