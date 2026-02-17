@@ -195,7 +195,10 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("attempt_limit_id", *sdkContactList.AttemptLimits.Id)
 		}
 		if sdkContactList.AutomaticTimeZoneMapping != nil {
-			_ = d.Set("automatic_time_zone_mapping", *sdkContactList.AutomaticTimeZoneMapping)
+			// Avoid overwriting a configured true value with a false response during read
+			if *sdkContactList.AutomaticTimeZoneMapping || !d.Get("automatic_time_zone_mapping").(bool) {
+				_ = d.Set("automatic_time_zone_mapping", *sdkContactList.AutomaticTimeZoneMapping)
+			}
 		}
 		if sdkContactList.ZipCodeColumnName != nil {
 			_ = d.Set("zip_code_column_name", *sdkContactList.ZipCodeColumnName)
