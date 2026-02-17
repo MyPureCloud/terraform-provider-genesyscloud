@@ -1,5 +1,9 @@
 package external_contacts_external_source
 
+// @team: External Contacts
+// @chat: #Genesys Cloud Single Customer View 
+// @description: Home of record for external contacts, identifiers, and external orgs.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

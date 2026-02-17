@@ -1,5 +1,9 @@
 package conversations_messaging_integrations_open
 
+// @team: Messaging Platform
+// @chat: Messaging Platform
+// @description: Messaging Connector Open is the Open Messaging connector for Messaging Platform (Platypus). 
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
