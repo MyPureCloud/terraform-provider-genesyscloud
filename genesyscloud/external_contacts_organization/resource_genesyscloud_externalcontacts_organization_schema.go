@@ -1,7 +1,7 @@
 package external_contacts_organization
 
 // @team: External Contacts
-// @chat: #Genesys Cloud Single Customer View 
+// @chat: #Genesys Cloud Single Customer View
 // @description: Home of record for external contacts, identifiers, and external orgs.
 
 import (

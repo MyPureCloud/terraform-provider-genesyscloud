@@ -4,7 +4,6 @@ package conversations_messaging_integrations_apple
 // @chat: AAPL-DEV
 // @description: Messaging Connector for Apple Messages for Business. Allows Apple Messages to send inbound and receive outbound messages through the Messaging Platform.
 
-
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
