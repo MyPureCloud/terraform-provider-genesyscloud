@@ -1,17 +1,18 @@
 package user
 
 import (
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"sync"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+
+	"testing"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
-	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -41,7 +42,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[location.ResourceType] = location.ResourceLocation()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
-	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
 	providerResources[extensionPool.ResourceType] = extensionPool.ResourceTelephonyExtensionPool()
 
@@ -56,7 +56,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
 	providerDataSources[location.ResourceType] = location.DataSourceLocation()
 	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
-	providerDataSources[routinglanguage.ResourceType] = routinglanguage.DataSourceRoutingLanguage()
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 }
 

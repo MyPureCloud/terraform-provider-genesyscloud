@@ -5,63 +5,53 @@ package routing_language
 // @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const ResourceType = "genesyscloud_routing_language"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceType, ResourceRoutingLanguage())
+	// Framework-only registration (SDKv2 removed)
+	regInstance.RegisterFrameworkResource(ResourceType, NewFrameworkRoutingLanguageResource)
+	regInstance.RegisterFrameworkDataSource(ResourceType, NewFrameworkRoutingLanguageDataSource)
 	regInstance.RegisterExporter(ResourceType, RoutingLanguageExporter())
-	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingLanguage())
 }
 
-func ResourceRoutingLanguage() *schema.Resource {
-	return &schema.Resource{
-		Description: "Genesys Cloud Routing Language",
-
-		CreateContext: provider.CreateWithPooledClient(createRoutingLanguage),
-		ReadContext:   provider.ReadWithPooledClient(readRoutingLanguage),
-		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingLanguage),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
-		SchemaVersion: 1,
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Language name. Changing the language_name attribute will cause the language object to be dropped and recreated with a new ID.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-			},
-		},
-	}
-}
-
-func DataSourceRoutingLanguage() *schema.Resource {
-	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Routing Languages. Select a language by name.",
-		ReadContext: provider.ReadWithPooledClient(dataSourceRoutingLanguageRead),
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Description: "Language name.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-		},
-	}
-}
+// SDKv2 resource and data source functions removed - Framework-only migration
 
 func RoutingLanguageExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingLanguages),
+		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingLanguages),
 	}
+}
+
+// GetAllRoutingLanguages retrieves all routing languages for export using the proxy
+func GetAllRoutingLanguages(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	proxy := getRoutingLanguageProxy(clientConfig)
+	languages, _, err := proxy.getAllRoutingLanguages(ctx, "")
+	if err != nil {
+		return nil, diag.Errorf("Failed to get routing languages for export: %v", err)
+	}
+
+	if languages == nil {
+		return resourceExporter.ResourceIDMetaMap{}, nil
+	}
+
+	exportMap := make(resourceExporter.ResourceIDMetaMap)
+	for _, language := range *languages {
+		exportMap[*language.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: *language.Name,
+		}
+	}
+	return exportMap, nil
 }
 
 func GenerateRoutingLanguageResource(

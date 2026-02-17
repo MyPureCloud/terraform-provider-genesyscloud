@@ -17,14 +17,12 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
-	routinglanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
-	routingWrapupCode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
@@ -57,13 +55,11 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[user.ResourceType] = user.ResourceUser()
-	providerResources[routinglanguage.ResourceType] = routinglanguage.ResourceRoutingLanguage()
 	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
 	providerResources[routingSkillGroup.ResourceType] = routingSkillGroup.ResourceRoutingSkillGroup()
 	providerResources[routingSkill.ResourceType] = routingSkill.ResourceRoutingSkill()
 	providerResources[routingSettings.ResourceType] = routingSettings.ResourceRoutingSettings()
 	providerResources[routingUtilization.ResourceType] = routingUtilization.ResourceRoutingUtilization()
-	providerResources[routingWrapupCode.ResourceType] = routingWrapupCode.ResourceRoutingWrapupCode()
 	providerResources[archScheduleGroup.ResourceType] = archScheduleGroup.ResourceArchitectSchedulegroups()
 	providerResources[architectSchedules.ResourceType] = architectSchedules.ResourceArchitectSchedules()
 	providerResources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.ResourceRoutingUtilizationLabel()
@@ -87,7 +83,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingSkill.ResourceType] = routingSkill.DataSourceRoutingSkill()
 	providerDataSources[routingEmailDomain.ResourceType] = routingEmailDomain.DataSourceRoutingEmailDomain()
 	providerDataSources[routingSkillGroup.ResourceType] = routingSkillGroup.DataSourceRoutingSkillGroup()
-	providerDataSources[routingWrapupCode.ResourceType] = routingWrapupCode.DataSourceRoutingWrapupCode()
 	providerDataSources[routingUtilizationLabel.ResourceType] = routingUtilizationLabel.DataSourceRoutingUtilizationLabel()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources[DataSourceOrganizationsMeResourceType] = DataSourceOrganizationsMe()

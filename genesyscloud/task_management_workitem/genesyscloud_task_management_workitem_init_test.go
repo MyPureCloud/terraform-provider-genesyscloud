@@ -2,25 +2,24 @@ package task_management_workitem
 
 import (
 	"sync"
+	"testing"
 
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
-
-	"testing"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
-
-	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-
 	worktypeStatus "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -35,9 +34,17 @@ var providerDataSources map[string]*schema.Resource
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
+// frameworkResources holds a map of all registered Framework resources
+var frameworkResources map[string]func() resource.Resource
+
+// frameworkDataSources holds a map of all registered Framework data sources
+var frameworkDataSources map[string]func() datasource.DataSource
+
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	datasourceMapMutex sync.RWMutex
+	resourceMapMutex            sync.RWMutex
+	datasourceMapMutex          sync.RWMutex
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -49,7 +56,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
-	providerResources[routingLanguage.ResourceType] = routingLanguage.ResourceRoutingLanguage()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
 	providerResources[user.ResourceType] = user.ResourceUser()
 	providerResources[externalContacts.ResourceType] = externalContacts.ResourceExternalContact()
@@ -68,15 +74,35 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
 }
 
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+
+	frameworkResources[routingLanguage.ResourceType] = routingLanguage.NewFrameworkRoutingLanguageResource
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+
+	frameworkDataSources[routingLanguage.ResourceType] = routingLanguage.NewFrameworkRoutingLanguageDataSource
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
+	frameworkResources = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
 	regInstance.registerTestDataSources()
+	regInstance.registerFrameworkTestResources()
+	regInstance.registerFrameworkTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

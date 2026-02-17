@@ -2,11 +2,12 @@ package outbound_campaign
 
 import (
 	"fmt"
+	"path/filepath"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
-	"path/filepath"
-	"testing"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	edgeSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -31,8 +32,13 @@ func TestAccDataSourceOutboundCampaign(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			frameworkResources,
+			frameworkDataSources,
+		),
 		Steps: []resource.TestStep{
 			{
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +

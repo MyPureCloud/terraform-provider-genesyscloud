@@ -27,4 +27,4 @@ data "genesyscloud_routing_wrapupcode" "example-routing-wrapupcode" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The globally unique identifier for the wrapup code.

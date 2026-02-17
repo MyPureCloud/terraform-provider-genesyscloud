@@ -46,8 +46,13 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			frameworkResources,
+			frameworkDataSources,
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create
@@ -154,8 +159,13 @@ func TestAccResourceOutboundSequenceStatus(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		PreCheck: func() { util.TestAccPreCheck(t) },
+		ProtoV6ProviderFactories: provider.GetMuxedProviderFactories(
+			providerResources,
+			providerDataSources,
+			frameworkResources,
+			frameworkDataSources,
+		),
 		Steps: []resource.TestStep{
 			{
 				// Create

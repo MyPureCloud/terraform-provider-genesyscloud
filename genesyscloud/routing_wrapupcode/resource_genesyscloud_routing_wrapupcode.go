@@ -6,146 +6,289 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
-func getAllRoutingWrapupCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getRoutingWrapupcodeProxy(clientConfig)
-	resources := make(resourceExporter.ResourceIDMetaMap)
+// Ensure routingWrapupcodeFrameworkResource satisfies various resource interfaces.
+var (
+	_ resource.Resource                = &routingWrapupcodeFrameworkResource{}
+	_ resource.ResourceWithConfigure   = &routingWrapupcodeFrameworkResource{}
+	_ resource.ResourceWithImportState = &routingWrapupcodeFrameworkResource{}
+)
 
-	wrapupcodes, proxyResponse, getErr := proxy.getAllRoutingWrapupcode(ctx)
-	if getErr != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of routing wrapupcode error: %s", getErr), proxyResponse)
-	}
-
-	for _, wrapupcode := range *wrapupcodes {
-		resources[*wrapupcode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *wrapupcode.Name}
-	}
-
-	return resources, nil
+// routingWrapupcodeFrameworkResource defines the resource implementation for Plugin Framework.
+type routingWrapupcodeFrameworkResource struct {
+	clientConfig *platformclientv2.Configuration
 }
 
-func createRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingWrapupcodeProxy(sdkConfig)
+// routingWrapupcodeFrameworkResourceModel describes the resource data model.
+type routingWrapupcodeFrameworkResourceModel struct {
+	Id          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	DivisionId  types.String `tfsdk:"division_id"`
+	Description types.String `tfsdk:"description"`
+}
 
-	name := d.Get("name").(string)
-	wrapupCode := buildWrapupCodeFromResourceData(d)
+// NewRoutingWrapupcodeFrameworkResource is a helper function to simplify the provider implementation.
+func NewRoutingWrapupcodeFrameworkResource() resource.Resource {
+	return &routingWrapupcodeFrameworkResource{}
+}
 
-	log.Printf("Creating wrapupcode %s", name)
-	wrapupcodeResponse, proxyResponse, err := proxy.createRoutingWrapupcode(ctx, wrapupCode)
+func (r *routingWrapupcodeFrameworkResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_routing_wrapupcode"
+}
 
+func (r *routingWrapupcodeFrameworkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Genesys Cloud Routing Wrapup Code",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "The globally unique identifier for the wrapup code.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"name": schema.StringAttribute{
+				Description: "Wrapup Code name.",
+				Required:    true,
+				// Note: name does NOT force replacement - updates are supported
+			},
+			"division_id": schema.StringAttribute{
+				Description: "The division to which this routing wrapupcode will belong.",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"description": schema.StringAttribute{
+				Description: "The wrap-up code description.",
+				Optional:    true,
+			},
+		},
+	}
+}
+
+func (r *routingWrapupcodeFrameworkResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+
+	providerMeta, ok := req.ProviderData.(*provider.ProviderMeta)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *provider.ProviderMeta, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+
+	r.clientConfig = providerMeta.ClientConfig
+}
+
+func (r *routingWrapupcodeFrameworkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan routingWrapupcodeFrameworkResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	proxy := getRoutingWrapupcodeProxy(r.clientConfig)
+	wrapupcodeRequest := buildWrapupcodeFromFrameworkModel(plan)
+
+	log.Printf("Creating routing wrapupcode %s", plan.Name.ValueString())
+
+	wrapupcode, _, err := proxy.createRoutingWrapupcode(ctx, wrapupcodeRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create wrapupcode %s error: %s", name, err), proxyResponse)
+		resp.Diagnostics.AddError(
+			"Error Creating Routing Wrapupcode",
+			fmt.Sprintf("Could not create routing wrapupcode %s: %s", plan.Name.ValueString(), err),
+		)
+		return
 	}
 
-	d.SetId(*wrapupcodeResponse.Id)
-	log.Printf("Created wrapupcode %s %s", name, *wrapupcodeResponse.Id)
-	return readRoutingWrapupCode(ctx, d, meta)
+	// Update model with response data
+	updateFrameworkModelFromAPI(&plan, wrapupcode)
+
+	log.Printf("Created routing wrapupcode %s with ID %s", plan.Name.ValueString(), *wrapupcode.Id)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func readRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingWrapupcodeProxy(sdkConfig)
+func (r *routingWrapupcodeFrameworkResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state routingWrapupcodeFrameworkResourceModel
 
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingWrapupCode(), constants.ConsistencyChecks(), ResourceType)
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	log.Printf("Reading wrapupcode %s", d.Id())
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		wrapupcode, proxyResponse, err := proxy.getRoutingWrapupcodeById(ctx, d.Id())
-		if err != nil {
-			if util.IsStatus404(proxyResponse) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), err), proxyResponse))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read wrapupcode %s | error: %s", d.Id(), err), proxyResponse))
+	proxy := getRoutingWrapupcodeProxy(r.clientConfig)
+	id := state.Id.ValueString()
+
+	log.Printf("Reading routing wrapupcode %s", id)
+
+	wrapupcode, apiResp, err := proxy.getRoutingWrapupcodeById(ctx, id)
+	if err != nil {
+		if util.IsStatus404(apiResp) {
+			// Wrapupcode not found, remove from state
+			resp.State.RemoveResource(ctx)
+			return
 		}
-
-		resourcedata.SetNillableValue(d, "name", wrapupcode.Name)
-		if wrapupcode.Division != nil && wrapupcode.Division.Id != nil {
-			_ = d.Set("division_id", *wrapupcode.Division.Id)
-		}
-		resourcedata.SetNillableValue(d, "description", wrapupcode.Description)
-
-		log.Printf("Read wrapupcode %s %s", d.Id(), *wrapupcode.Name)
-		return cc.CheckState(d)
-	})
-}
-
-func updateRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingWrapupcodeProxy(sdkConfig)
-
-	name := d.Get("name").(string)
-	wrapupCode := buildWrapupCodeFromResourceData(d)
-
-	log.Printf("Updating wrapupcode %s", name)
-	_, proxyUpdResponse, err := proxy.updateRoutingWrapupcode(ctx, d.Id(), wrapupCode)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update wrapupcode %s error: %s", name, err), proxyUpdResponse)
+		resp.Diagnostics.AddError(
+			"Error Reading Routing Wrapupcode",
+			fmt.Sprintf("Could not read routing wrapupcode %s: %s", id, err),
+		)
+		return
 	}
 
-	log.Printf("Updated wrapupcode %s", name)
+	// Update the state with the latest data
+	updateFrameworkModelFromAPI(&state, wrapupcode)
 
-	return readRoutingWrapupCode(ctx, d, meta)
+	log.Printf("Read routing wrapupcode %s %s", id, *wrapupcode.Name)
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func deleteRoutingWrapupCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingWrapupcodeProxy(sdkConfig)
+func (r *routingWrapupcodeFrameworkResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan routingWrapupcodeFrameworkResourceModel
+	var state routingWrapupcodeFrameworkResourceModel
 
-	name := d.Get("name").(string)
-
-	log.Printf("Deleting wrapupcode %s", name)
-	proxyDelResponse, err := proxy.deleteRoutingWrapupcode(ctx, d.Id())
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete wrapupcode %s error: %s", name, err), proxyDelResponse)
+	// Read Terraform plan and current state data into the models
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, proxyGetResponse, err := proxy.getRoutingWrapupcodeById(ctx, d.Id())
+	proxy := getRoutingWrapupcodeProxy(r.clientConfig)
+	id := state.Id.ValueString()
+	wrapupcodeRequest := buildWrapupcodeFromFrameworkModel(plan)
+
+	log.Printf("Updating routing wrapupcode %s", plan.Name.ValueString())
+
+	wrapupcode, _, err := proxy.updateRoutingWrapupcode(ctx, id, wrapupcodeRequest)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Updating Routing Wrapupcode",
+			fmt.Sprintf("Could not update routing wrapupcode %s: %s", plan.Name.ValueString(), err),
+		)
+		return
+	}
+
+	// Update model with response data
+	updateFrameworkModelFromAPI(&plan, wrapupcode)
+
+	log.Printf("Updated routing wrapupcode %s", plan.Name.ValueString())
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *routingWrapupcodeFrameworkResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state routingWrapupcodeFrameworkResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	proxy := getRoutingWrapupcodeProxy(r.clientConfig)
+	id := state.Id.ValueString()
+	name := state.Name.ValueString()
+
+	log.Printf("Deleting routing wrapupcode %s", name)
+
+	_, err := proxy.deleteRoutingWrapupcode(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Deleting Routing Wrapupcode",
+			fmt.Sprintf("Could not delete routing wrapupcode %s: %s", name, err),
+		)
+		return
+	}
+
+	// Verify deletion with retry logic
+	retryErr := retry.RetryContext(ctx, 30*time.Second, func() *retry.RetryError {
+		_, apiResp, err := proxy.getRoutingWrapupcodeById(ctx, id)
 		if err != nil {
-			if util.IsStatus404(proxyGetResponse) {
-				// Routing wrapup code deleted
-				log.Printf("Deleted Routing wrapup code %s", d.Id())
+			if util.IsStatus404(apiResp) {
+				// Wrapupcode deleted successfully
+				log.Printf("Deleted routing wrapupcode %s", id)
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting Routing wrapup code %s | error: %s", d.Id(), err), proxyGetResponse))
+			return retry.NonRetryableError(fmt.Errorf("error deleting routing wrapupcode %s: %s", id, err))
 		}
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Routing wrapup code %s still exists", d.Id()), proxyGetResponse))
+
+		return retry.RetryableError(fmt.Errorf("routing wrapupcode %s still exists", id))
 	})
+
+	if retryErr != nil {
+		resp.Diagnostics.AddError(
+			"Error Verifying Routing Wrapupcode Deletion",
+			fmt.Sprintf("Could not verify deletion of routing wrapupcode %s: %s", id, retryErr),
+		)
+		return
+	}
+
+	log.Printf("Successfully deleted routing wrapupcode %s", name)
 }
 
-func buildWrapupCodeFromResourceData(d *schema.ResourceData) *platformclientv2.Wrapupcoderequest {
-	name := d.Get("name").(string)
-	description := d.Get("description").(string)
-	divisionId, _ := d.Get("division_id").(string)
-	wrapupCode := &platformclientv2.Wrapupcoderequest{
-		Name:        &name,
-		Description: &description,
-	}
-	if divisionId != "" {
-		wrapupCode.Division = &platformclientv2.Writablestarrabledivision{Id: &divisionId}
-	}
-	return wrapupCode
+func (r *routingWrapupcodeFrameworkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Retrieve import ID and save to id attribute
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func GenerateRoutingWrapupcodeResource(resourceLabel string, name string, divisionId string, description string) string {
-	return fmt.Sprintf(`resource "%s" "%s" {
-		name = "%s"
-		division_id = %s
-		description = "%s"
+// buildWrapupcodeFromFrameworkModel converts Framework model to API request model
+func buildWrapupcodeFromFrameworkModel(model routingWrapupcodeFrameworkResourceModel) *platformclientv2.Wrapupcoderequest {
+	request := &platformclientv2.Wrapupcoderequest{
+		Name: model.Name.ValueStringPointer(),
 	}
-	`, ResourceType, resourceLabel, name, divisionId, description)
+
+	if !model.Description.IsNull() && !model.Description.IsUnknown() {
+		request.Description = model.Description.ValueStringPointer()
+	}
+
+	if !model.DivisionId.IsNull() && !model.DivisionId.IsUnknown() {
+		request.Division = &platformclientv2.Writablestarrabledivision{
+			Id: model.DivisionId.ValueStringPointer(),
+		}
+	}
+
+	return request
+}
+
+// updateFrameworkModelFromAPI updates Framework model from API response
+func updateFrameworkModelFromAPI(model *routingWrapupcodeFrameworkResourceModel, wrapupcode *platformclientv2.Wrapupcode) {
+	model.Id = types.StringValue(*wrapupcode.Id)
+	model.Name = types.StringValue(*wrapupcode.Name)
+
+	if wrapupcode.Description != nil {
+		model.Description = types.StringValue(*wrapupcode.Description)
+	} else {
+		model.Description = types.StringNull()
+	}
+
+	if wrapupcode.Division != nil && wrapupcode.Division.Id != nil {
+		model.DivisionId = types.StringValue(*wrapupcode.Division.Id)
+	} else {
+		model.DivisionId = types.StringNull()
+	}
 }

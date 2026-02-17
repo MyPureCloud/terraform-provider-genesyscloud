@@ -4,7 +4,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 /*
@@ -12,42 +13,54 @@ The genesyscloud_routing_language_init_test.go file is used to initialize the da
 used in testing the routing_language resource.
 */
 
-// providerDataSources holds a map of all registered datasources
-var providerDataSources map[string]*schema.Resource
+// frameworkResources holds a map of all registered Framework resources
+var frameworkResources map[string]func() resource.Resource
 
-// providerResources holds a map of all registered resources
-var providerResources map[string]*schema.Resource
+// frameworkDataSources holds a map of all registered Framework data sources
+var frameworkDataSources map[string]func() datasource.DataSource
 
 type registerTestInstance struct {
-	resourceMapMutex   sync.RWMutex
-	dataSourceMapMutex sync.RWMutex
+	frameworkResourceMapMutex   sync.RWMutex
+	frameworkDataSourceMapMutex sync.RWMutex
 }
 
-// registerTestResources registers all resources used in the tests
+// registerTestResources registers all resources used in the tests (Framework-only)
 func (r *registerTestInstance) registerTestResources() {
-	r.resourceMapMutex.Lock()
-	defer r.resourceMapMutex.Unlock()
-
-	providerResources[ResourceType] = ResourceRoutingLanguage()
+	// SDKv2 resources removed - Framework-only migration
 }
 
-// registerTestDataSources registers all data sources used in the tests.
+// registerTestDataSources registers all data sources used in the tests (Framework-only)
 func (r *registerTestInstance) registerTestDataSources() {
-	r.dataSourceMapMutex.Lock()
-	defer r.dataSourceMapMutex.Unlock()
-
-	providerDataSources[ResourceType] = DataSourceRoutingLanguage()
+	// SDKv2 data sources removed - Framework-only migration
 }
 
-// initTestResources initializes all test resources and data sources.
+// registerFrameworkTestResources registers all Framework resources used in the tests
+func (r *registerTestInstance) registerFrameworkTestResources() {
+	r.frameworkResourceMapMutex.Lock()
+	defer r.frameworkResourceMapMutex.Unlock()
+
+	frameworkResources[ResourceType] = NewFrameworkRoutingLanguageResource
+}
+
+// registerFrameworkTestDataSources registers all Framework data sources used in the tests
+func (r *registerTestInstance) registerFrameworkTestDataSources() {
+	r.frameworkDataSourceMapMutex.Lock()
+	defer r.frameworkDataSourceMapMutex.Unlock()
+
+	frameworkDataSources[ResourceType] = NewFrameworkRoutingLanguageDataSource
+}
+
+// initTestResources initializes all test resources and data sources (Framework-only).
 func initTestResources() {
-	providerDataSources = make(map[string]*schema.Resource)
-	providerResources = make(map[string]*schema.Resource)
+	// Framework-only initialization
+	frameworkResources = make(map[string]func() resource.Resource)
+	frameworkDataSources = make(map[string]func() datasource.DataSource)
 
 	regInstance := &registerTestInstance{}
 
-	regInstance.registerTestResources()
-	regInstance.registerTestDataSources()
+	// Framework resources only
+	regInstance.registerFrameworkTestResources()
+	regInstance.registerFrameworkTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

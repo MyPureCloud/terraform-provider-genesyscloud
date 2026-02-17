@@ -18,6 +18,9 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -30,7 +33,7 @@ func init() {
 	// and the language server.
 	// providerResources = make(map[string]*schema.Resource)
 	// providerDataSources = make(map[string]*schema.Resource)
-	schema.DescriptionKind = schema.StringMarkdown
+	schema.DescriptionKind = schema.StringPlain
 
 	// Customize the content of descriptions when output.
 	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
@@ -46,8 +49,8 @@ func init() {
 
 }
 
-// New initializes the provider schema
-func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
+// NewSDKv2Provider initializes the SDKv2 provider schema
+func NewSDKv2Provider(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource) func() *schema.Provider {
 	return func() *schema.Provider {
 
 		/*
@@ -67,6 +70,11 @@ func New(version string, providerResources map[string]*schema.Resource, provider
 			ConfigureContextFunc: configure(version),
 		}
 	}
+}
+
+// New creates a muxed provider factory (Protocol v6) combining SDKv2 (upgraded to v6) and Framework providers.
+func New(version string, providerResources map[string]*schema.Resource, providerDataSources map[string]*schema.Resource, frameworkResources map[string]func() resource.Resource, frameworkDataSources map[string]func() datasource.DataSource) func() (func() tfprotov6.ProviderServer, error) {
+	return NewMuxedProvider(version, providerResources, providerDataSources, frameworkResources, frameworkDataSources)
 }
 
 type ProviderMeta struct {
@@ -167,6 +175,10 @@ func configure(version string) schema.ConfigureContextFunc {
 		setProviderMeta(meta)
 		setProviderConfig(data) // Store the provider configuration for later use
 
+		// Share provider meta with Framework provider
+		log.Printf("[DEBUG] SDKv2 provider configuration complete - sharing metadata with Framework provider")
+		SetSharedProviderMeta(meta)
+
 		return meta, nil
 
 	}
@@ -176,18 +188,20 @@ func configure(version string) schema.ConfigureContextFunc {
 // It handles special cases for developer versions (0.1.0) and platform-specific registries.
 //
 // Parameters:
-//
-//	platform: *platform.Platform - The platform configuration (must not be nil)
-//	version: string - The version string in semver format (e.g., "1.2.3")
+//   - platform: *platform.Platform - The platform configuration (must not be nil)
+//   - version: string - The version string in semver format (e.g., "1.2.3")
 //
 // Returns:
-//
-//	string: The determined registry URL
-//	error: Any error encountered during processing
+//   - string: The determined registry URL
 //
 // Special cases:
 //   - Version "0.1.0" (development version) always returns "genesys.com"
 //   - If platform.GetProviderRegistry() returns empty, falls back to "registry.terraform.io"
+//
+// Registry Selection Logic:
+//  1. For development builds (version "0.1.0"), use "genesys.com"
+//  2. For production builds, use platform-specific registry if available
+//  3. Fall back to "registry.terraform.io" as default
 func getRegistry(platform *platform.Platform, version string) string {
 
 	defaultRegistry := "registry.terraform.io"
@@ -217,7 +231,7 @@ func getAuthorizationProducts(defaultConfig *platformclientv2.Configuration) ([]
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
-	products := make([]string, *productEntities.Total)
+	products := make([]string, 0, *productEntities.Total)
 	for _, product := range *productEntities.Entities {
 		products = append(products, *product.Id)
 	}
@@ -233,37 +247,43 @@ func getOrganizationMe(defaultConfig *platformclientv2.Configuration) (*platform
 	return me, nil
 }
 
-func getRegionMap() map[string]string {
-	return map[string]string{
-		"dca":            "inindca.com",
-		"tca":            "inintca.com",
-		"us-east-1":      "mypurecloud.com",
-		"us-east-2":      "use2.us-gov-pure.cloud",
-		"us-west-2":      "usw2.pure.cloud",
-		"eu-west-1":      "mypurecloud.ie",
-		"eu-west-2":      "euw2.pure.cloud",
-		"ap-southeast-2": "mypurecloud.com.au",
-		"ap-northeast-1": "mypurecloud.jp",
-		"eu-central-1":   "mypurecloud.de",
-		"ca-central-1":   "cac1.pure.cloud",
-		"ap-northeast-2": "apne2.pure.cloud",
-		"ap-south-1":     "aps1.pure.cloud",
-		"sa-east-1":      "sae1.pure.cloud",
-		"ap-northeast-3": "apne3.pure.cloud",
-		"eu-central-2":   "euc2.pure.cloud",
-		"me-central-1":   "mec1.pure.cloud",
-		"mx-central-1":   "mxc1.pure.cloud",
-		"ap-southeast-1": "apse1.pure.cloud",
-	}
+// regionMap is cached to avoid recreating the map on every call
+var regionMap = map[string]string{
+	"dca":            "inindca.com",
+	"tca":            "inintca.com",
+	"us-east-1":      "mypurecloud.com",
+	"us-east-2":      "use2.us-gov-pure.cloud",
+	"us-west-2":      "usw2.pure.cloud",
+	"eu-west-1":      "mypurecloud.ie",
+	"eu-west-2":      "euw2.pure.cloud",
+	"ap-southeast-2": "mypurecloud.com.au",
+	"ap-northeast-1": "mypurecloud.jp",
+	"eu-central-1":   "mypurecloud.de",
+	"ca-central-1":   "cac1.pure.cloud",
+	"ap-northeast-2": "apne2.pure.cloud",
+	"ap-south-1":     "aps1.pure.cloud",
+	"sa-east-1":      "sae1.pure.cloud",
+	"ap-northeast-3": "apne3.pure.cloud",
+	"eu-central-2":   "euc2.pure.cloud",
+	"me-central-1":   "mec1.pure.cloud",
 }
 
+func getRegionMap() map[string]string {
+	return regionMap
+}
+
+// allowedRegions is cached to avoid recreating the slice on every call
+var allowedRegions []string
+
 func getAllowedRegions() []string {
-	regionMap := getRegionMap()
-	regionKeys := make([]string, 0, len(regionMap))
-	for k := range regionMap {
-		regionKeys = append(regionKeys, k)
+	if allowedRegions == nil {
+		regionMap := getRegionMap()
+		allowedRegions = make([]string, 0, len(regionMap))
+		for k := range regionMap {
+			allowedRegions = append(allowedRegions, k)
+		}
 	}
-	return regionKeys
+	return allowedRegions
 }
 
 func getRegionDomain(region string) string {
@@ -327,9 +347,9 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
 			if err != nil {
 				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-					return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
+					return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %w", err))
 				}
-				return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials. %v", err))
+				return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials: %w", err))
 			}
 
 			return nil
@@ -454,6 +474,21 @@ func setupGateway(data *schema.ResourceData, config *platformclientv2.Configurat
 	}
 }
 
+// AuthorizeSdk creates and authorizes a new SDK configuration using environment variables.
+// This function is primarily used for standalone SDK operations outside of the provider context.
+//
+// Environment Variables Used:
+//   - GENESYSCLOUD_OAUTHCLIENT_ID: OAuth client ID for authentication
+//   - GENESYSCLOUD_OAUTHCLIENT_SECRET: OAuth client secret for authentication
+//   - GENESYSCLOUD_REGION: AWS region for the Genesys Cloud organization
+//   - TF_UNIT: If set, skips authorization (for unit testing)
+//
+// Returns:
+//   - *platformclientv2.Configuration: Configured and authorized SDK client
+//   - error: Any error encountered during authorization
+//
+// The function includes retry logic for rate-limited authorization requests
+// and automatically sets the appropriate API base path based on the region.
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
@@ -470,15 +505,15 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 		err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
 		if err != nil {
 			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
-				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
+				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %w", err))
 			}
-			return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials. %v", err))
+			return retry.RetryableError(fmt.Errorf("exhausted retries on Genesys Cloud client credentials: %w", err))
 		}
 
 		return nil
 	})
 	if diagErr != nil {
-		return sdkConfig, fmt.Errorf("%v", diagErr)
+		return sdkConfig, fmt.Errorf("SDK authorization failed: %v", diagErr)
 	}
 
 	return sdkConfig, nil

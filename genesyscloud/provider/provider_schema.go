@@ -1,3 +1,9 @@
+// Package provider contains the schema definitions and validation functions
+// for the Genesys Cloud Terraform provider configuration.
+//
+// This file defines the provider-level configuration schema that users specify
+// in their Terraform configuration files, including authentication settings,
+// debugging options, and connection parameters.
 package provider
 
 import (
@@ -40,7 +46,6 @@ func ProviderSchema() map[string]*schema.Schema {
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc("GENESYSCLOUD_OAUTHCLIENT_SECRET", nil),
 			Description: "OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.",
-			Sensitive:   true,
 		},
 		"aws_region": {
 			Type:         schema.TypeString,
@@ -67,7 +72,7 @@ func ProviderSchema() map[string]*schema.Schema {
 			Optional:     true,
 			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_SDK_DEBUG_FILE_PATH", "sdk_debug.log"),
 			Description:  "Specifies the file path for the log file. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FILE_PATH` environment variable. Default value is sdk_debug.log",
-			ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile("^(|\\s+)$"), "Invalid File path "),
+			ValidateFunc: validation.StringDoesNotMatch(regexp.MustCompile(`^(|\s+)$`), "Invalid File path "),
 		},
 		AttrSdkClientPoolDebug: {
 			Type:        schema.TypeBool,
@@ -100,10 +105,7 @@ func ProviderSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			DefaultFunc: schema.EnvDefaultFunc(logStackTracesEnvVar, false),
-			Description: fmt.Sprintf(`If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.
-If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message
-"Root object was present, but now absent." Can be set with the %s environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.
-If you encounter any stack traces, please report them so we can address the underlying issues.`, logStackTracesEnvVar),
+			Description: "If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.\nIf the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message\n\"Root object was present, but now absent.\" Can be set with the GENESYSCLOUD_LOG_STACK_TRACES environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.\nIf you encounter any stack traces, please report them so we can address the underlying issues.",
 		},
 		"log_stack_traces_file_path": {
 			Type:             schema.TypeString,
@@ -230,14 +232,28 @@ If you encounter any stack traces, please report them so we can address the unde
 	}
 }
 
-func validateDuration(i interface{}, k string) ([]string, []error) {
+// validateDuration validates that a string value represents a valid Go duration.
+// This function is used as a ValidateFunc in Terraform schema definitions.
+//
+// Parameters:
+//   - i: The value to validate (expected to be a string)
+//   - k: The key/field name being validated (for error messages)
+//
+// Returns:
+//   - []string: Warnings (always nil for this validator)
+//   - []error: Validation errors, if any
+//
+// Valid duration formats include:
+//   - "300ms", "1.5h", "2h45m", "10s", "1m30s", etc.
+//   - Any format accepted by time.ParseDuration()
+func validateDuration(i any, k string) ([]string, []error) {
 	v, ok := i.(string)
 	if !ok {
 		return nil, []error{fmt.Errorf("expected type of %s to be string", k)}
 	}
 	_, err := time.ParseDuration(v)
 	if err != nil {
-		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %v", k, err)}
+		return nil, []error{fmt.Errorf("expected %s to be a valid duration string: %w", k, err)}
 	}
 	return nil, nil
 }
