@@ -1,5 +1,9 @@
 package knowledge_knowledgebase
 
+// @team: Knowledge Administration Service Team
+// @chat: #knowledge-team
+// @description: Knowledge Administration service manages knowledge content for agent assistance. Provides APIs and UI for creating, searching, rating, and organizing knowledge articles that agents use to answer customer interactions effectively.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
