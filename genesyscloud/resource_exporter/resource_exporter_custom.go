@@ -109,6 +109,31 @@ func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string
 	return nil
 }
 
+// MemberGroupsRefTypeResolver resolves the resource type to use for member_group_id based on member_group_type.
+// This allows the exporter to use the standard reference resolution pipeline (including data source replacement).
+func MemberGroupsRefTypeResolver(configMap map[string]interface{}) (string, error) {
+	memberGroupTypeRaw, ok := configMap["member_group_type"]
+	if !ok {
+		return "", fmt.Errorf("member_group_type is missing from the config map")
+	}
+
+	memberGroupType, ok := memberGroupTypeRaw.(string)
+	if !ok {
+		return "", fmt.Errorf("member_group_type is not a string")
+	}
+
+	switch memberGroupType {
+	case "SKILLGROUP":
+		return "genesyscloud_routing_skill_group", nil
+	case "GROUP":
+		return "genesyscloud_group", nil
+	case "TEAM":
+		return "genesyscloud_team", nil
+	default:
+		return "", fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
+	}
+}
+
 /*
 RuleSetPropertyResolver
 For resource_genesyscloud_outbound_ruleset, there is a property called properties which is a map of stings.
