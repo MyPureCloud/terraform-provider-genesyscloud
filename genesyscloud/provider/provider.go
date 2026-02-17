@@ -176,6 +176,7 @@ func configure(version string) schema.ConfigureContextFunc {
 		setProviderConfig(data) // Store the provider configuration for later use
 
 		// Share provider meta with Framework provider
+		log.Printf("[DEBUG] SDKv2 provider configuration complete - sharing metadata with Framework provider")
 		SetSharedProviderMeta(meta)
 
 		return meta, nil

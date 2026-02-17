@@ -142,6 +142,24 @@ func validateLogFilePath(filepath any, _ cty.Path) (err diag.Diagnostics) {
 
 // Ensure the Meta (with ClientCredentials) is accessible throughout the provider, especially
 // within acceptance testing
+//
+// # LOCK ORDER POLICY
+//
+// This section uses mutex (RWMutex) to protect SDKv2 provider metadata (providerMeta and providerConfig).
+// There is a separate mutex in framework_provider_meta.go (sharedMeta.mutex) that protects
+// shared metadata between SDKv2 and Framework providers.
+//
+// CRITICAL RULES TO PREVENT DEADLOCKS:
+//  1. NEVER acquire both mutexes in the same function call stack
+//  2. If you absolutely must acquire both (which you shouldn't need to):
+//     - ALWAYS acquire mutex (this file) FIRST
+//     - THEN acquire sharedMeta.mutex (framework_provider_meta.go) SECOND
+//     - Release in REVERSE order (sharedMeta.mutex first, then mutex)
+//  3. Keep critical sections minimal (simple assignments/returns only)
+//  4. Always use defer for unlock to ensure cleanup on panic
+//
+// CURRENT STATUS: The two mutex systems are completely isolated and never
+// acquired together, making the code deadlock-free.
 var (
 	providerMeta   *ProviderMeta
 	mutex          sync.RWMutex

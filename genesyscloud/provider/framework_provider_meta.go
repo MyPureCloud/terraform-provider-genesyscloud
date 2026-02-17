@@ -9,6 +9,23 @@
 //
 // The shared metadata system uses thread-safe operations to ensure data consistency
 // when both providers are accessing the same metadata concurrently.
+//
+// # LOCK ORDER POLICY
+//
+// This file uses sharedMeta.mutex (RWMutex) to protect shared provider metadata.
+// There is a separate mutex in provider_utils.go that protects SDKv2-specific metadata.
+//
+// CRITICAL RULES TO PREVENT DEADLOCKS:
+//  1. NEVER acquire both mutexes in the same function call stack
+//  2. If you absolutely must acquire both (which you shouldn't need to):
+//     - ALWAYS acquire mutex (provider_utils.go) FIRST
+//     - THEN acquire sharedMeta.mutex (this file) SECOND
+//     - Release in REVERSE order (sharedMeta.mutex first, then mutex)
+//  3. Keep critical sections minimal (simple assignments/returns only)
+//  4. Always use defer for unlock to ensure cleanup on panic
+//
+// CURRENT STATUS: The two mutex systems are completely isolated and never
+// acquired together, making the code deadlock-free.
 package provider
 
 import (
