@@ -16,6 +16,7 @@ package provider
 
 import (
 	"context"
+	"log"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -254,13 +255,15 @@ func (p *GenesysCloudFrameworkProvider) Schema(ctx context.Context, req provider
 
 // Configure configures the Framework provider with the given configuration.
 // This method handles authentication, API client setup, and provider metadata creation.
-// It attempts to share configuration with the SDKv2 provider when possible to avoid
-// duplicate authentication and API client creation in muxed environments.
+//
+// In muxed environments (SDKv2 + Framework), this method first checks for shared metadata
+// from the SDKv2 provider to avoid duplicate authentication. If shared metadata exists,
+// it is reused immediately without performing any authentication calls.
 //
 // Configuration priority:
-//  1. Explicit configuration values
-//  2. Environment variables
-//  3. Shared metadata from SDKv2 provider (if available)
+//  1. Shared metadata from SDKv2 provider (if available in muxed environment)
+//  2. Explicit configuration values
+//  3. Environment variables
 //
 // The configured provider metadata is made available to Framework resources and data sources.
 func (p *GenesysCloudFrameworkProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -272,6 +275,17 @@ func (p *GenesysCloudFrameworkProvider) Configure(ctx context.Context, req provi
 		return
 	}
 
+	// Check if SDKv2 provider has already configured and shared metadata
+	// This avoids duplicate authentication in muxed provider scenarios
+	if sharedMeta := GetSharedProviderMeta(); sharedMeta != nil {
+		log.Printf("[DEBUG] Framework provider using shared metadata from SDKv2 provider (muxed environment)")
+		resp.DataSourceData = sharedMeta
+		resp.ResourceData = sharedMeta
+		return
+	}
+
+	// If no shared metadata available, configure authentication for Framework-only usage
+	log.Printf("[DEBUG] Framework provider configuring independently - no shared metadata found (Framework-only environment)")
 	// Get configuration values with environment variable fallbacks
 	accessToken := getStringValue(data.AccessToken, "GENESYSCLOUD_ACCESS_TOKEN")
 	oauthClientID := getStringValue(data.OAuthClientID, "GENESYSCLOUD_OAUTHCLIENT_ID")
@@ -314,15 +328,14 @@ func (p *GenesysCloudFrameworkProvider) Configure(ctx context.Context, req provi
 		}
 	}
 
-	// Create or use shared provider meta
-	providerMeta := FrameworkProviderMeta(p.version, config, getRegionDomain(awsRegion))
-
-	// If we created new meta (not shared), update it with our config
-	if !IsSharedMetaAvailable() {
-		providerMeta.Version = p.version
-		providerMeta.ClientConfig = config
-		providerMeta.Domain = getRegionDomain(awsRegion)
+	// Create new provider metadata (only when not using shared metadata)
+	providerMeta := &ProviderMeta{
+		Version:      p.version,
+		ClientConfig: config,
+		Domain:       getRegionDomain(awsRegion),
 	}
+
+	log.Printf("[DEBUG] Framework provider configuration complete - created independent metadata")
 
 	// Store the configuration for Framework resources to use
 	resp.DataSourceData = providerMeta
