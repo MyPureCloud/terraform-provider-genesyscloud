@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
 * [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:callableTimeSet:add`
+* `outbound:callableTimeSet:delete`
+* `outbound:callableTimeSet:edit`
+* `outbound:callableTimeSet:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

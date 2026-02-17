@@ -19,6 +19,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/api/rest/v2/architect/#post-api-v2-architect-prompts--promptId--resources)
 * [GET /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-prompts--promptId--resources--languageCode-)
 * [PUT /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-prompts--promptId--resources--languageCode-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `architect:userPrompt:add`
+* `architect:userPrompt:delete`
+* `architect:userPrompt:edit`
+* `architect:userPrompt:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

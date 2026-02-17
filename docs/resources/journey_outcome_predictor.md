@@ -15,6 +15,19 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/journey/outcomes/predictors](https://apicentral.genesys.cloud/api-explorer#post-api-v2-journey-outcomes-predictors)
 * [GET /api/v2/journey/outcomes/predictors/{predictorId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-journey-outcomes-predictors--predictorId-)
 * [DELETE /api/v2/journey/outcomes/predictors/{predictorId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-journey-outcomes-predictors--predictorId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:outcomepredictor:add`
+* `journey:outcomepredictor:delete`
+* `journey:outcomepredictor:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

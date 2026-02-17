@@ -124,16 +124,16 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 					}
 				}
 
-			credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
-		}
+				credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
+			}
 
-		// Set resource context for SDK debug logging before entering retry loop
-		ctx = util.SetResourceContext(ctx, d, ResourceType)
+			// Set resource context for SDK debug logging before entering retry loop
+			ctx = util.SetResourceContext(ctx, d, ResourceType)
 
-		diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
-			// Get latest config version
-			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
+				// Get latest config version
+				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
 				if err != nil {
 					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
 				}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	contactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 

@@ -18,6 +18,23 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#patch-api-v2-integrations-actions--actionId-)
 * [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#delete-api-v2-integrations-actions--actionId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `bridge:actions:view`
+* `integrations:action:add`
+* `integrations:action:delete`
+* `integrations:action:edit`
+* `integrations:action:view`
+* `integrations:actionFunction:edit`
+* `integrations:actionFunction:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `integrations`
+* `integrations:readonly`
+* `upload`
 ## Function Configuration APIs
 
 * [POST /api/v2/integrations/actions/{actionId}/draft/function/upload](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-function-upload)

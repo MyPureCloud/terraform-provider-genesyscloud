@@ -1,5 +1,9 @@
 package conversations_messaging_settings
 
+// @team: Messaging Platform
+// @chat: Messaging Platform
+// @description: Messaging Service is the core of Messaging Platform. It provides the APIs for normalized digital private messaging and public social interactions across a range of external providers
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

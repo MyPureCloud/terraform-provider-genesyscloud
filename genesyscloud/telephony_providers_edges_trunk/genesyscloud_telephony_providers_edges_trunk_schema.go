@@ -1,5 +1,9 @@
 package telephony_providers_edges_trunk
 
+// @team: Media Resources
+// @chat: #media-infrastructure-team
+// @description: Telephony infrastructure and configuration management for Genesys Cloud Edge devices. Manages sites, phones, trunks, DIDs, and base settings for voice connectivity and call routing.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
