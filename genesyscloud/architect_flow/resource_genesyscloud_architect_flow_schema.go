@@ -37,6 +37,9 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 	legacyExporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		ExcludedAttributes: []string{
+			"file_content_hash",
+		},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"filepath": ResourceArchitectFlow().Schema["filepath"],
 		},
@@ -50,6 +53,9 @@ func ArchitectFlowExporter() *resourceExporter.ResourceExporter {
 	newExporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlows),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		ExcludedAttributes: []string{
+			"file_content_hash",
+		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
 			RetrieveAndWriteFilesFunc: architectFlowResolver,
 			SubDirectory:              ExportSubDirectoryName,
