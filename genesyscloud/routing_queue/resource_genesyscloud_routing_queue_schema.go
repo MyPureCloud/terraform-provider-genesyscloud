@@ -882,9 +882,9 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id"},
 		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":              {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id":    {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_activation.rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsRefTypeResolver},
+			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsRefTypeResolver},
+			"conditional_group_activation.rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsRefTypeResolver},
 		},
 	}
 }
