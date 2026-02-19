@@ -39,6 +39,7 @@ resource "genesyscloud_telephony_providers_edges_extension_pool" "example_extens
 ### Optional
 
 - `description` (String) Extension Pool description.
+- `division_id` (String) The division this campaign belongs to.
 
 ### Read-Only
 

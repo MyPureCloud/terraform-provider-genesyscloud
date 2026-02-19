@@ -129,6 +129,12 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 			return retry.NonRetryableError(diagErr)
 		}
 
+		// Check if script is nil (resource was deleted outside Terraform)
+		if script == nil {
+			d.SetId("") // Remove from state
+			return nil
+		}
+
 		resourcedata.SetNillableValue(d, "script_name", script.Name)
 		resourcedata.SetNillableReferenceDivision(d, "division_id", script.Division)
 

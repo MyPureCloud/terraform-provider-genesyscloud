@@ -22,6 +22,7 @@ import (
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	bcpTfExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/bcp_tf_exporter"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
@@ -112,6 +113,7 @@ import (
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	dictionaryFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_dictionaryfeedback"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitem "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem"
@@ -139,6 +141,7 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	workforcemanagementBusinessunits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
 )
 
 /*
@@ -233,6 +236,7 @@ func registerResources() {
 	emergencyGroup.SetRegistrar(regInstance)                               //Registering architect emergency group
 	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
 	architectSchedules.SetRegistrar(regInstance)                           //Registering architect schedules
+	dictionaryFeedback.SetRegistrar(regInstance)                           //Registering dictionary feedback
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
@@ -357,8 +361,10 @@ func registerResources() {
 	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
 	businessRulesSchema.SetRegistrar(regInstance)                          //Registering business rules schema
 	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
+	workforcemanagementBusinessunits.SetRegistrar(regInstance)             //Registering workforcemanagement businessunits
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
-	tfexp.SetRegistrar(regInstance) //Registering tf exporter
+	tfexp.SetRegistrar(regInstance)         //Registering tf exporter
+	bcpTfExporter.SetRegistrar(regInstance) //Registering bcp tf exporter
 	registrar.SetResources(providerResources, providerDataSources)
 }
 

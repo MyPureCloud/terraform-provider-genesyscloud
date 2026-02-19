@@ -128,6 +128,53 @@ var (
 			},
 		},
 	}
+	queueMediaSettingsMessageResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"sub_type_settings": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        subTypeSettingsResource,
+			},
+			"enable_auto_answer": {
+				Description: "Auto-Answer for digital channels(Email, Message)",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+			"enable_inactivity_timeout": {
+				Description: "Indicates if inactivity timeout is enabled for all subtypes.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"inactivity_timeout_settings": {
+				Description: "Inactivity timeout settings for messages.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        inactivityTimeoutSettingsResource,
+			},
+		},
+	}
 
 	queueCallbackMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -369,6 +416,27 @@ var (
 			},
 		},
 	}
+
+	inactivityTimeoutSettingsResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"timeout_seconds": {
+				Description: "Timeout in seconds for inactivity on the interaction.",
+				Type:        schema.TypeInt,
+				Required:    true,
+			},
+			"action_type": {
+				Description:  "Action to take when timeout occurs. Valid values: DISCONNECT, SEND_TO_ARCHITECT_FLOW.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"DISCONNECT", "SEND_TO_ARCHITECT_FLOW"}, false),
+			},
+			"flow_id": {
+				Description: "Flow ID for architect flow action.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
 )
 
 func ResourceRoutingQueue() *schema.Resource {
@@ -460,7 +528,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsMessageResource,
 			},
 			"routing_rules": {
 				Description: "The routing rules for the queue, used for routing to known or preferred agents.",
@@ -810,8 +878,9 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id"},
 		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"bullseye_rings.member_groups.member_group_id":              {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_routing_rules.groups.member_group_id":    {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_activation.rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
 		},
 	}
 }

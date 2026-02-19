@@ -2,15 +2,22 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
+<<<<<<< HEAD
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 
+=======
+>>>>>>> eadbfcab3297818192c5726b2be1ffaae855a570
 	obDigRuleset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
 	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"os"
+	"strconv"
+	"strings"
+	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
