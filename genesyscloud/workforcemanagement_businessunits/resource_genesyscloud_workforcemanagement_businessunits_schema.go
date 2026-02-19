@@ -1,5 +1,9 @@
 package workforcemanagement_businessunits
 
+// @team: Workforce Management
+// @chat: #genesys-cloud-wfm-dev
+// @description: A service to help our customer manage their workforce spanning disciplines such as forecasting, scheduling, and time off management.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -9,21 +13,20 @@ import (
 )
 
 /*
-ResourceName is defined in this file along with four functions:
+ResourceType is defined in this file along with four functions:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
 2.  The resource schema definitions for the workforcemanagement_businessunits resource.
 3.  The datasource schema definitions for the workforcemanagement_businessunits datasource.
 4.  The resource exporter configuration for the workforcemanagement_businessunits exporter.
 */
-const ResourceName = "genesyscloud_workforcemanagement_businessunits"
-const ResourceType = ResourceName
+const ResourceType = "genesyscloud_workforcemanagement_businessunits"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceName, ResourceWorkforcemanagementBusinessunits())
-	regInstance.RegisterDataSource(ResourceName, DataSourceWorkforcemanagementBusinessunits())
-	regInstance.RegisterExporter(ResourceName, WorkforcemanagementBusinessunitsExporter())
+	regInstance.RegisterResource(ResourceType, ResourceWorkforcemanagementBusinessunits())
+	regInstance.RegisterDataSource(ResourceType, DataSourceWorkforcemanagementBusinessunits())
+	regInstance.RegisterExporter(ResourceType, WorkforcemanagementBusinessunitsExporter())
 }
 
 // ResourceWorkforcemanagementBusinessunits registers the genesyscloud_workforcemanagement_businessunits resource with Terraform
@@ -33,6 +36,7 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 			`default_history_weeks`: {
 				Description: `The number of historical weeks to consider when creating a forecast. This setting is only used for legacy weighted average forecasts`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 		},
@@ -44,12 +48,14 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 			`type`: {
 				Description: `The type of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			// See API documentation for valid enum values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits
 			`severity`: {
 				Description: `The severity of the message. Validation is handled by the API to avoid maintaining a potentially stale list of enum values. See API documentation for valid values: https://developer.genesys.cloud/useragentman/workforcemanagement/#post-api-v2-workforcemanagement-businessunits`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -107,12 +113,14 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 			`sync_time_off_properties`: {
 				Description: `Synchronize set of time off properties from scheduled activities to time off requests when the schedule is published.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`service_goal_impact`: {
 				Description: `Configures the max percent increase and decrease of service goals for this business unit`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        wfmServiceGoalImpactSettingsResource,
@@ -120,13 +128,20 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 			`allow_work_plan_per_minute_granularity`: {
 				Description: `Indicates whether or not per minute granularity for scheduling will be enabled for this business unit. Defaults to false.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeBool,
 			},
 		},
 	}
 
 	wfmVersionedEntityMetadataResource := &schema.Resource{
-		Schema: map[string]*schema.Schema{},
+		Schema: map[string]*schema.Schema{
+			`version`: {
+				Description: `The version of the associated entity. Used to prevent conflicts on concurrent edits`,
+				Computed:    true,
+				Type:        schema.TypeInt,
+			},
+		},
 	}
 
 	businessUnitSettingsResponseResource := &schema.Resource{
@@ -144,6 +159,7 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 			`short_term_forecasting`: {
 				Description: `Short term forecasting settings`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        buShortTermForecastingSettingsResource,
@@ -151,15 +167,15 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 			`scheduling`: {
 				Description: `Scheduling settings`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        buSchedulingSettingsResponseResource,
 			},
 			`metadata`: {
 				Description: `Version metadata for this business unit`,
-				Required:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
-				MaxItems:    1,
 				Elem:        wfmVersionedEntityMetadataResource,
 			},
 		},
@@ -178,20 +194,21 @@ func ResourceWorkforcemanagementBusinessunits() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`name`: {
-				Description: ``,
-				Optional:    true,
+				Description: `The name of the business unit`,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`settings`: {
-				Description: `Settings for this business unit`,
-				Optional:    true,
+				Description: `Configuration for the business unit`,
+				Required:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        businessUnitSettingsResponseResource,
 			},
 			`division_id`: {
-				Description: `The division to which this entity belongs.`,
+				Description: `The ID of the division to which the business unit should be added. If not set the home division will be used`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 		},

@@ -16,6 +16,24 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#get-api-v2-externalcontacts-contacts--contactId-)
 * [PUT /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#put-api-v2-externalcontacts-contacts--contactId-)
 * [DELETE /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#delete-api-v2-externalcontacts-contacts--contactId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `externalContacts:contact:add`
+* `externalContacts:contact:delete`
+* `externalContacts:contact:edit`
+* `externalContacts:contact:view`
+* `relate:contact:add`
+* `relate:contact:delete`
+* `relate:contact:edit`
+* `relate:contact:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `external-contacts`
+* `external-contacts:readonly`
+
 
 ## Example Usage
 

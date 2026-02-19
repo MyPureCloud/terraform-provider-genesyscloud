@@ -3,6 +3,8 @@ package idp_salesforce
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -68,6 +70,9 @@ func (p *idpSalesforceProxy) deleteIdpSalesforce(ctx context.Context) (resp *pla
 
 // getIdpSalesforceFn is an implementation of the function to get a Genesys Cloud idp salesforce
 func getIdpSalesforceFn(ctx context.Context, p *idpSalesforceProxy) (idpSalesforce *platformclientv2.Salesforce, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	salesforce, resp, err := p.identityProviderApi.GetIdentityprovidersSalesforce()
 	if err != nil {
 		return nil, resp, err
@@ -78,6 +83,9 @@ func getIdpSalesforceFn(ctx context.Context, p *idpSalesforceProxy) (idpSalesfor
 
 // updateIdpSalesforceFn is an implementation of the function to update a Genesys Cloud idp salesforce
 func updateIdpSalesforceFn(ctx context.Context, p *idpSalesforceProxy, idpSalesforce *platformclientv2.Salesforce) (*platformclientv2.Identityprovider, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	salesForce, resp, err := p.identityProviderApi.PutIdentityprovidersSalesforce(*idpSalesforce)
 	if err != nil {
 		return nil, resp, err
@@ -88,6 +96,9 @@ func updateIdpSalesforceFn(ctx context.Context, p *idpSalesforceProxy, idpSalesf
 
 // deleteIdpSalesforceFn is an implementation function for deleting a Genesys Cloud idp salesforce
 func deleteIdpSalesforceFn(ctx context.Context, p *idpSalesforceProxy) (resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err = p.identityProviderApi.DeleteIdentityprovidersSalesforce()
 	return resp, err
 }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -82,26 +83,32 @@ func (p *webDeploymentsProxy) deleteWebDeployment(ctx context.Context, deploymen
 }
 
 func getAllWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.GetWebdeploymentsDeployments([]string{})
 }
 
 func getWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.GetWebdeploymentsDeployment(deployId, []string{})
 }
 
 func createWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PostWebdeploymentsDeployments(deployment)
 }
 
 func updateWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PutWebdeploymentsDeployment(deploymentId, deployment)
 }
 
 func deleteWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.DeleteWebdeploymentsDeployment(deploymentId)
 }
 
 func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	version := ""
 	draft := "DRAFT"
 	versionList := []string{}

@@ -17,6 +17,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-filespecificationtemplates--filespecificationtemplateId-)
 * [DELETE /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-filespecificationtemplates--filespecificationtemplateId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:fileSpecificationTemplate:add`
+* `outbound:fileSpecificationTemplate:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

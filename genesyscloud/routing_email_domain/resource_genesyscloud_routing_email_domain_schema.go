@@ -78,5 +78,8 @@ func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}: {Attr: "domain_id"},
+		},
 	}
 }

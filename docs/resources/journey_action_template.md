@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/commdigital/journey/journey-apis#get-api-v2-journey-actiontemplates--actionTemplateId-)
 * [PATCH /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/commdigital/journey/journey-apis#patch-api-v2-journey-actiontemplates--actionTemplateId-)
 * [DELETE /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/commdigital/journey/journey-apis#delete-api-v2-journey-actiontemplates--actionTemplateId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:actiontemplate:add`
+* `journey:actiontemplate:delete`
+* `journey:actiontemplate:edit`
+* `journey:actiontemplate:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

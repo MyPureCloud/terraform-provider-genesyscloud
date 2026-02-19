@@ -3,6 +3,8 @@ package routing_settings
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -83,29 +85,50 @@ func (p *routingSettingsProxy) updateRoutingSettingsTranscription(ctx context.Co
 }
 
 func getRoutingSettingsFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.Routingsettings, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.GetRoutingSettings()
 }
 
 func updateRoutingSettingsFn(ctx context.Context, p *routingSettingsProxy, routingSettings *platformclientv2.Routingsettings) (*platformclientv2.Routingsettings, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.PutRoutingSettings(*routingSettings)
 }
 
 func deleteRoutingSettingsFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.DeleteRoutingSettings()
 }
 
 func getRoutingSettingsContactCenterFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.Contactcentersettings, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.GetRoutingSettingsContactcenter()
 }
 
 func updateRoutingSettingsContactCenterFn(ctx context.Context, p *routingSettingsProxy, contactCenterSettings platformclientv2.Contactcentersettings) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.PatchRoutingSettingsContactcenter(contactCenterSettings)
 }
 
 func getRoutingSettingsTranscriptionFn(ctx context.Context, p *routingSettingsProxy) (*platformclientv2.Transcriptionsettings, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.GetRoutingSettingsTranscription()
 }
 
 func updateRoutingSettingsTranscriptionFn(ctx context.Context, p *routingSettingsProxy, transcriptionSettings platformclientv2.Transcriptionsettings) (*platformclientv2.Transcriptionsettings, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingSettingsApi.PutRoutingSettingsTranscription(transcriptionSettings)
 }

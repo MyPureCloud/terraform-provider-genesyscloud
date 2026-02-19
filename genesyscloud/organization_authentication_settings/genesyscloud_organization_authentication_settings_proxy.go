@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -76,6 +78,9 @@ func (p *orgAuthSettingsProxy) updateOrgAuthSettings(ctx context.Context, orgAut
 }
 
 func getTokensTimeOutSettingsFn(ctx context.Context, p *orgAuthSettingsProxy) (*platformclientv2.Idletokentimeout, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	idleTokenTimeout, resp, err := p.tokensApi.GetTokensTimeout()
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to retrieve token timeout settings: %s", err)
@@ -84,6 +89,9 @@ func getTokensTimeOutSettingsFn(ctx context.Context, p *orgAuthSettingsProxy) (*
 }
 
 func updateTokensTimeOutSettingsFn(ctx context.Context, p *orgAuthSettingsProxy, idletimeout *platformclientv2.Idletokentimeout) (*platformclientv2.Idletokentimeout, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	idleTokenTimeout, resp, err := p.tokensApi.PutTokensTimeout(*idletimeout)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update token timeout settings: %s", err)
@@ -93,6 +101,9 @@ func updateTokensTimeOutSettingsFn(ctx context.Context, p *orgAuthSettingsProxy,
 
 // getOrgAuthSettingsFn is an implementation of the function to get a Genesys Cloud organization authentication settings by Id
 func getOrgAuthSettingsFn(ctx context.Context, p *orgAuthSettingsProxy) (orgAuthSettings *platformclientv2.Orgauthsettings, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	orgAuthSettings, resp, err := p.organizationApi.GetOrganizationsAuthenticationSettings()
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to retrieve organization authentication settings: %s", err)
@@ -102,6 +113,9 @@ func getOrgAuthSettingsFn(ctx context.Context, p *orgAuthSettingsProxy) (orgAuth
 
 // updateOrgAuthSettingsFn is an implementation of the function to update a Genesys Cloud organization authentication settings
 func updateOrgAuthSettingsFn(ctx context.Context, p *orgAuthSettingsProxy, orgAuthSettings *platformclientv2.Orgauthsettings) (*platformclientv2.Orgauthsettings, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	authSettings, resp, err := p.organizationApi.PatchOrganizationsAuthenticationSettings(*orgAuthSettings)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update organization authentication settings: %s", err)

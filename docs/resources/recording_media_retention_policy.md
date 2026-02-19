@@ -20,6 +20,24 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId--versions)
 * [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `quality:evaluationForm:view`
+* `quality:surveyForm:view`
+* `recording:retentionPolicy:add`
+* `recording:retentionPolicy:delete`
+* `recording:retentionPolicy:edit`
+* `recording:retentionPolicy:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `quality`
+* `quality:readonly`
+* `recordings`
+* `recordings:readonly`
+
 
 ## Example Usage
 

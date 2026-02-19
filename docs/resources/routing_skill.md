@@ -15,6 +15,19 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/routing/skills](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-skills)
 * [GET /api/v2/routing/skills/{skillId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-skills--skillId-)
 * [DELETE /api/v2/routing/skills/{skillId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-skills--skillId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:skill:create`
+* `routing:skill:delete`
+* `routing:skill:manage`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 

@@ -1,5 +1,9 @@
 package journey_views
 
+// @team: Journey Data
+// @chat: #customer-journey-data
+// @description: Manages customer journey analytics and predictive engagement. Provides customer segmentation, outcome tracking, predictive modeling, and journey visualization for proactive customer engagement strategies.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

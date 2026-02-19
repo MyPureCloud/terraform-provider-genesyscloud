@@ -3,6 +3,8 @@ package telephony_providers_edges_extension_pool
 import (
 	"context"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -69,6 +71,7 @@ func (p *extensionPoolProxy) getAllExtensionPools(ctx context.Context) (*[]platf
 }
 
 func getExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extensionPoolId string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	extensionPool, resp, err := p.edgesApi.GetTelephonyProvidersEdgesExtensionpool(extensionPoolId)
 	if err != nil {
 		return nil, resp, err
@@ -78,11 +81,13 @@ func getExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extensionPoo
 }
 
 func deleteExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extensionPoolId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err := p.edgesApi.DeleteTelephonyProvidersEdgesExtensionpool(extensionPoolId)
 	return resp, err
 }
 
 func updateExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extensionPoolId string, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	extensionPool, resp, err := p.edgesApi.PutTelephonyProvidersEdgesExtensionpool(extensionPoolId, body)
 	if err != nil {
 		return nil, resp, err
@@ -92,6 +97,7 @@ func updateExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, extension
 }
 
 func createExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, body platformclientv2.Extensionpool) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	extensionPool, resp, err := p.edgesApi.PostTelephonyProvidersEdgesExtensionpools(body)
 	if err != nil {
 		return nil, resp, err
@@ -101,6 +107,7 @@ func createExtensionPoolFn(ctx context.Context, p *extensionPoolProxy, body plat
 }
 
 func getAllExtensionPoolsFn(ctx context.Context, p *extensionPoolProxy) (*[]platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	const pageSize = 100
 	var (

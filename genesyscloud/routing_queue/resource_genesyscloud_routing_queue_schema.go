@@ -1,5 +1,9 @@
 package routing_queue
 
+// @team: Assignment
+// @chat: #genesys-cloud-acd-routing
+// @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -348,10 +352,9 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo", "EqualTo", "NotEqualTo"}, false),
 			},
 			"value": {
-				Description:  "The threshold value, beyond which a rule evaluates as true.",
-				Type:         schema.TypeFloat,
-				Required:     true,
-				ValidateFunc: validation.FloatBetween(0, 1000000),
+				Description: "The threshold value, beyond which a rule evaluates as true.",
+				Type:        schema.TypeFloat,
+				Required:    true,
 			},
 		},
 	}
@@ -878,8 +881,9 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id"},
 		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"bullseye_rings.member_groups.member_group_id":              {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_routing_rules.groups.member_group_id":    {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_activation.rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
 		},
 	}
 }
