@@ -352,10 +352,9 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo", "EqualTo", "NotEqualTo"}, false),
 			},
 			"value": {
-				Description:  "The threshold value, beyond which a rule evaluates as true.",
-				Type:         schema.TypeFloat,
-				Required:     true,
-				ValidateFunc: validation.FloatBetween(0, 1000000),
+				Description: "The threshold value, beyond which a rule evaluates as true.",
+				Type:        schema.TypeFloat,
+				Required:    true,
 			},
 		},
 	}
