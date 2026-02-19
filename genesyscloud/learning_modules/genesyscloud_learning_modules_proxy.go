@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 /*
@@ -101,6 +102,9 @@ func (p *learningModulesProxy) deleteLearningModule(ctx context.Context, id stri
 
 // createLearningModuleFn is an implementation function for creating a Genesys Cloud learning module
 func createLearningModuleFn(ctx context.Context, p *learningModulesProxy, learningModule *platformclientv2.Learningmodulerequest) (*platformclientv2.Learningmodule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	module, resp, err := p.learningApi.PostLearningModules(*learningModule)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create learning module: %s", err)
@@ -110,6 +114,9 @@ func createLearningModuleFn(ctx context.Context, p *learningModulesProxy, learni
 
 // publishLearningModuleFn is an implementation function for publishing a Genesys Cloud learning module
 func publishLearningModuleFn(ctx context.Context, p *learningModulesProxy, id string) (*platformclientv2.Learningmodulepublishresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	request := platformclientv2.Learningmodulepublishrequest{
 		TermsAndConditionsAccepted: platformclientv2.Bool(true),
 	}
@@ -122,6 +129,9 @@ func publishLearningModuleFn(ctx context.Context, p *learningModulesProxy, id st
 
 // getAllLearningModulesFn is the implementation for retrieving all learning modules in Genesys Cloud
 func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searchTerm string) (*[]platformclientv2.Learningmodule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allModules []platformclientv2.Learningmodule
 	const isArchived = true
 	types := []string{}
@@ -189,6 +199,9 @@ func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searc
 
 // getLearningModuleIdByNameFn is an implementation of the function to get a Genesys Cloud learning module by name
 func getLearningModuleIdByNameFn(ctx context.Context, p *learningModulesProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	modules, resp, err := getAllLearningModulesFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, err
@@ -209,6 +222,9 @@ func getLearningModuleIdByNameFn(ctx context.Context, p *learningModulesProxy, n
 
 // getLearningModuleByIdFn is an implementation of the function to get a Genesys Cloud learning module by Id
 func getLearningModuleByIdFn(ctx context.Context, p *learningModulesProxy, id string) (learningModule *platformclientv2.Learningmodule, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	module, resp, err := p.learningApi.GetLearningModule(id, []string{"assessmentForm"})
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve learning module by id %s: %s", id, err)
@@ -218,6 +234,9 @@ func getLearningModuleByIdFn(ctx context.Context, p *learningModulesProxy, id st
 
 // updateLearningModuleFn is an implementation of the function to update a Genesys Cloud learning module
 func updateLearningModuleFn(ctx context.Context, p *learningModulesProxy, id string, learningModule *platformclientv2.Learningmodulerequest) (*platformclientv2.Learningmodule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	module, resp, err := p.learningApi.PutLearningModule(id, *learningModule)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to update learning module: %s", err)
@@ -227,6 +246,9 @@ func updateLearningModuleFn(ctx context.Context, p *learningModulesProxy, id str
 
 // deleteLearningModuleFn is an implementation function for deleting a Genesys Cloud learning module
 func deleteLearningModuleFn(ctx context.Context, p *learningModulesProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.learningApi.DeleteLearningModule(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete learning module: %s", err)

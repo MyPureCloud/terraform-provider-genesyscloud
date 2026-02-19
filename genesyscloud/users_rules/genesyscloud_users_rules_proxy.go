@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 /*
@@ -93,6 +94,9 @@ func (p *usersRulesProxy) deleteUsersRules(ctx context.Context, id string) (resp
 
 // createUsersRulesFn is an implementation function for creating a Genesys Cloud users rule
 func createUsersRulesFn(ctx context.Context, p *usersRulesProxy, usersRules *platformclientv2.Usersrulescreaterulerequest) (*platformclientv2.Usersrulesrule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	usersRule, resp, err := p.usersRulesApi.PostUsersRules(*usersRules)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create users rule: %s", err)
@@ -102,6 +106,9 @@ func createUsersRulesFn(ctx context.Context, p *usersRulesProxy, usersRules *pla
 
 // getAllUsersRulesFn is the implementation for retrieving all users rules in Genesys Cloud
 func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm string) (*[]platformclientv2.Usersrulesrule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allUsersRules []platformclientv2.Usersrulesrule
 	types := []string{"Learning"}
 	const pageSize = 100
@@ -157,6 +164,9 @@ func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm stri
 
 // getUsersRulesIdByNameFn is an implementation of the function to get a Genesys Cloud users rule by name
 func getUsersRulesIdByNameFn(ctx context.Context, p *usersRulesProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	usersRules, resp, err := getAllUsersRulesFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, err
@@ -177,6 +187,9 @@ func getUsersRulesIdByNameFn(ctx context.Context, p *usersRulesProxy, name strin
 
 // getUsersRulesByIdFn is an implementation of the function to get a Genesys Cloud users rule by Id
 func getUsersRulesByIdFn(ctx context.Context, p *usersRulesProxy, id string) (usersRules *platformclientv2.Usersrulesrule, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	usersRule, resp, err := p.usersRulesApi.GetUsersRule(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve users rule by id %s: %s", id, err)
@@ -186,6 +199,9 @@ func getUsersRulesByIdFn(ctx context.Context, p *usersRulesProxy, id string) (us
 
 // updateUsersRulesFn is an implementation of the function to update a Genesys Cloud users rule
 func updateUsersRulesFn(ctx context.Context, p *usersRulesProxy, id string, usersRules *platformclientv2.Usersrulesupdaterulerequest) (*platformclientv2.Usersrulesrule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	usersRule, resp, err := p.usersRulesApi.PatchUsersRule(id, *usersRules)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to update users rule: %s", err)
@@ -195,6 +211,9 @@ func updateUsersRulesFn(ctx context.Context, p *usersRulesProxy, id string, user
 
 // deleteUsersRulesFn is an implementation function for deleting a Genesys Cloud users rule
 func deleteUsersRulesFn(ctx context.Context, p *usersRulesProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.usersRulesApi.DeleteUsersRule(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete users rule: %s", err)
