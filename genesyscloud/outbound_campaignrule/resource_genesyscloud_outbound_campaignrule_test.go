@@ -2,7 +2,6 @@ package outbound_campaignrule
 
 import (
 	"fmt"
-<<<<<<< HEAD
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -10,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-=======
->>>>>>> eadbfcab3297818192c5726b2be1ffaae855a570
 	outboundMessagingCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_messagingcampaign"
 	outboundSequence "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_sequence"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -20,12 +17,6 @@ import (
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
-	"math/rand"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
