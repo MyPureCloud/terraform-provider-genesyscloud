@@ -1,5 +1,9 @@
 package task_management_workitem
 
+// @team: Ashford
+// @chat: #workitem-development
+// @description: Task Management service for workitem orchestration and automation. Manages workitems, worktypes, workbins, status workflows, and automated rules for task assignment and lifecycle management.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

@@ -1,5 +1,9 @@
 package journey_action_map
 
+// @team: Journey Data
+// @chat: #customer-journey-data
+// @description: Action Map Qualification Service determines if actions should be triggered for customers based on configured action maps. Handles action templates and qualification logic for content offers, architect flows, webchat, web messaging, and open actions.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
