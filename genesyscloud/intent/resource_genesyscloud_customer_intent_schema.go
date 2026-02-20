@@ -62,6 +62,40 @@ func ResourceCustomerIntent() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
+			`source_intents`: {
+				Description: `List of source intents mapped to this customer intent`,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`source_intent_id`: {
+							Description: `ID of the source intent`,
+							Required:    true,
+							Type:        schema.TypeString,
+						},
+						`source_intent_name`: {
+							Description: `Name of the source intent`,
+							Optional:    true,
+							Type:        schema.TypeString,
+						},
+						`source_type`: {
+							Description: `Type of the source (e.g., Bot)`,
+							Optional:    true,
+							Type:        schema.TypeString,
+						},
+						`source_id`: {
+							Description: `ID of the source`,
+							Optional:    true,
+							Type:        schema.TypeString,
+						},
+						`source_name`: {
+							Description: `Name of the source`,
+							Optional:    true,
+							Type:        schema.TypeString,
+						},
+					},
+				},
+			},
 		},
 	}
 }

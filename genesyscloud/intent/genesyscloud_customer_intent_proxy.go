@@ -23,6 +23,9 @@ type getCustomerIntentIdByNameFunc func(ctx context.Context, p *customerIntentPr
 type getCustomerIntentByIdFunc func(ctx context.Context, p *customerIntentProxy, id string) (*platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error)
 type updateCustomerIntentFunc func(ctx context.Context, p *customerIntentProxy, id string, customerIntentResponse *platformclientv2.Customerintentresponse) (*platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error)
 type deleteCustomerIntentFunc func(ctx context.Context, p *customerIntentProxy, id string) (*platformclientv2.APIResponse, error)
+type getSourceIntentsFunc func(ctx context.Context, p *customerIntentProxy, customerIntentId string) (*[]platformclientv2.Customersourceintent, *platformclientv2.APIResponse, error)
+type bulkAddSourceIntentsFunc func(ctx context.Context, p *customerIntentProxy, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error)
+type bulkRemoveSourceIntentsFunc func(ctx context.Context, p *customerIntentProxy, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error)
 
 // customerIntentProxy contains all of the methods that call genesys cloud APIs.
 type customerIntentProxy struct {
@@ -34,6 +37,9 @@ type customerIntentProxy struct {
 	getCustomerIntentByIdAttr     getCustomerIntentByIdFunc
 	updateCustomerIntentAttr      updateCustomerIntentFunc
 	deleteCustomerIntentAttr      deleteCustomerIntentFunc
+	getSourceIntentsAttr          getSourceIntentsFunc
+	bulkAddSourceIntentsAttr      bulkAddSourceIntentsFunc
+	bulkRemoveSourceIntentsAttr   bulkRemoveSourceIntentsFunc
 }
 
 // newCustomerIntentProxy initializes the customer intent proxy with all of the data needed to communicate with Genesys Cloud
@@ -48,6 +54,9 @@ func newCustomerIntentProxy(clientConfig *platformclientv2.Configuration) *custo
 		getCustomerIntentByIdAttr:     getCustomerIntentByIdFn,
 		updateCustomerIntentAttr:      updateCustomerIntentFn,
 		deleteCustomerIntentAttr:      deleteCustomerIntentFn,
+		getSourceIntentsAttr:          getSourceIntentsFn,
+		bulkAddSourceIntentsAttr:      bulkAddSourceIntentsFn,
+		bulkRemoveSourceIntentsAttr:   bulkRemoveSourceIntentsFn,
 	}
 }
 
@@ -184,4 +193,81 @@ func updateCustomerIntentFn(ctx context.Context, p *customerIntentProxy, id stri
 // deleteCustomerIntentFn is an implementation function for deleting a Genesys Cloud customer intent
 func deleteCustomerIntentFn(ctx context.Context, p *customerIntentProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.intentsApi.DeleteIntentsCustomerintent(id)
+}
+
+// getSourceIntents retrieves source intents mapped to a customer intent
+func (p *customerIntentProxy) getSourceIntents(ctx context.Context, customerIntentId string) (*[]platformclientv2.Customersourceintent, *platformclientv2.APIResponse, error) {
+	return p.getSourceIntentsAttr(ctx, p, customerIntentId)
+}
+
+// bulkAddSourceIntents adds source intents to a customer intent
+func (p *customerIntentProxy) bulkAddSourceIntents(ctx context.Context, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error) {
+	return p.bulkAddSourceIntentsAttr(ctx, p, customerIntentId, sourceIntents)
+}
+
+// bulkRemoveSourceIntents removes source intents from a customer intent
+func (p *customerIntentProxy) bulkRemoveSourceIntents(ctx context.Context, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error) {
+	return p.bulkRemoveSourceIntentsAttr(ctx, p, customerIntentId, sourceIntents)
+}
+
+// getSourceIntentsFn is the implementation for retrieving source intents mapped to a customer intent
+func getSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerIntentId string) (*[]platformclientv2.Customersourceintent, *platformclientv2.APIResponse, error) {
+	var allSourceIntents []platformclientv2.Customersourceintent
+	const pageSize = 100
+
+	sourceIntentListing, resp, err := p.intentsApi.GetIntentsCustomerintentSourceintents(customerIntentId, pageSize, 1, "")
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if sourceIntentListing.Entities == nil || len(*sourceIntentListing.Entities) == 0 {
+		return &allSourceIntents, resp, nil
+	}
+
+	for _, sourceIntent := range *sourceIntentListing.Entities {
+		allSourceIntents = append(allSourceIntents, sourceIntent)
+	}
+
+	// Handle pagination if needed
+	if sourceIntentListing.PageCount != nil && *sourceIntentListing.PageCount > 1 {
+		for pageNum := 2; pageNum <= *sourceIntentListing.PageCount; pageNum++ {
+			sourceIntentListing, resp, err := p.intentsApi.GetIntentsCustomerintentSourceintents(customerIntentId, pageSize, pageNum, "")
+			if err != nil {
+				return nil, resp, err
+			}
+
+			if sourceIntentListing.Entities == nil || len(*sourceIntentListing.Entities) == 0 {
+				break
+			}
+
+			for _, sourceIntent := range *sourceIntentListing.Entities {
+				allSourceIntents = append(allSourceIntents, sourceIntent)
+			}
+		}
+	}
+
+	return &allSourceIntents, resp, nil
+}
+
+// bulkAddSourceIntentsFn is the implementation for adding source intents to a customer intent
+func bulkAddSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error) {
+	body := platformclientv2.Bulkaddsourceintentsrequest{
+		Items: &sourceIntents,
+	}
+	return p.intentsApi.PostIntentsCustomerintentSourceintentsBulkAdd(customerIntentId, body)
+}
+
+// bulkRemoveSourceIntentsFn is the implementation for removing source intents from a customer intent
+func bulkRemoveSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error) {
+	// Extract IDs from source intents for removal
+	ids := make([]string, 0, len(sourceIntents))
+	for _, si := range sourceIntents {
+		if si.SourceIntentId != nil {
+			ids = append(ids, *si.SourceIntentId)
+		}
+	}
+	body := platformclientv2.Bulkremovesourceintentsrequest{
+		Items: &ids,
+	}
+	return p.intentsApi.PostIntentsCustomerintentSourceintentsBulkRemove(customerIntentId, body)
 }
