@@ -440,7 +440,7 @@ func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx cont
 	uploadUrl := fmt.Sprintf("%s/api/v2/architect/prompts/%s/resources/%s/uploads", p.clientConfig.BasePath, language, *asset.PromptId)
 
 	if err := p.uploadPromptFile(ctx, uploadUrl, filename); err != nil {
-		return fmt.Errorf("failed to upload user prompt resource '%s' to %s", filename, uploadUrl)
+		return fmt.Errorf("failed to upload user prompt resource '%s' to %s: %w", filename, uploadUrl, err)
 	}
 	return nil
 }
