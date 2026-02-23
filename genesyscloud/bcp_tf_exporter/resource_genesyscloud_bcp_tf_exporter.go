@@ -168,15 +168,6 @@ func validatePath(dir, filename string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid directory path: %v", err)
 	}
 
-	// Ensure directory is within the current working directory
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return "", "", fmt.Errorf("unable to get current working directory: %v", err)
-	}
-	if !strings.HasPrefix(absDir, workingDir) {
-		return "", "", fmt.Errorf("directory path is outside the current working directory")
-	}
-
 	return absDir, cleanBaseFilePath, nil
 }
 

@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -172,6 +172,9 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueue(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading queue %s", d.Id())
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
@@ -457,6 +460,9 @@ func deleteRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	time.Sleep(5 * time.Second)
 
 	//DEVTOOLING-238- Increasing this to a 120 seconds to see if we can temporarily mitigate a problem for a customer
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	return util.WithRetries(ctx, 120*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), false)
 		if err != nil {

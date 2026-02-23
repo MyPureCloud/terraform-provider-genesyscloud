@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -126,6 +126,9 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 
 				credential = buildConfigCredentials(configMap["credentials"].(map[string]interface{}))
 			}
+
+			// Set resource context for SDK debug logging before entering retry loop
+			ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 

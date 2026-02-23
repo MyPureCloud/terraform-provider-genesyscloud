@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-presence-definitions)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `presence:presenceDefinition:add`
+* `presence:presenceDefinition:delete`
+* `presence:presenceDefinition:edit`
+* `presence:presenceDefinition:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `presence`
+* `presence:readonly`
+
 
 ## Example Usage
 

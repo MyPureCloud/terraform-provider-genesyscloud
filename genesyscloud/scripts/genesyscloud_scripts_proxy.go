@@ -12,11 +12,12 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -133,7 +134,10 @@ func (p *scriptsProxy) getScriptById(ctx context.Context, scriptId string) (scri
 }
 
 // publishScriptFn will publish the script after it has been successfully upload
-func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error) {
+func publishScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	publishScriptBody := &platformclientv2.Publishscriptrequestdata{
 		ScriptId: &scriptId,
 	}
@@ -142,7 +146,10 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 }
 
 // getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud org
-func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allPublishedScripts []platformclientv2.Script
 	var resp *platformclientv2.APIResponse
 	const pageSize = 100
@@ -177,7 +184,10 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
-func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (scriptsThatMatchName []platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+func getScriptsByNameFn(ctx context.Context, p *scriptsProxy, scriptName string) (scriptsThatMatchName []platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("getScriptsByNameFn: %w", err)
@@ -261,6 +271,9 @@ func (p *scriptsProxy) uploadScriptFile(filePath, scriptName, scriptId string, s
 
 // getScriptIdByNameFn is the implementation function for retrieving a script ID by name, if no other scripts have the same name
 func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (_ string, _ bool, _ *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("getScriptIdByNameFn: %w", err)
@@ -294,6 +307,9 @@ func isDefaultScriptById(id string) bool {
 
 // verifyScriptUploadSuccessFn checks to see if a file has successfully uploaded
 func verifyScriptUploadSuccessFn(ctx context.Context, p *scriptsProxy, body []byte) (bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	uploadId, err := p.getUploadIdFromBody(body)
 	if err != nil {
 		return false, err
@@ -332,7 +348,9 @@ func (p *scriptsProxy) getUploadIdFromBody(body []byte) (string, error) {
 }
 
 // scriptWasUploadedSuccessfullyFn checks the Genesys Cloud API to see if the script was successfully uploaded
-func scriptWasUploadedSuccessfullyFn(_ context.Context, p *scriptsProxy, uploadId string) (bool, *platformclientv2.APIResponse, error) {
+func scriptWasUploadedSuccessfullyFn(ctx context.Context, p *scriptsProxy, uploadId string) (bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	data, resp, err := p.scriptsApi.GetScriptsUploadStatus(uploadId, false)
 	if err != nil {
@@ -346,7 +364,10 @@ func scriptWasUploadedSuccessfullyFn(_ context.Context, p *scriptsProxy, uploadI
 }
 
 // getScriptExportUrlFn retrieves the export URL for a targeted script
-func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (string, *platformclientv2.APIResponse, error) {
+func getScriptExportUrlFn(ctx context.Context, p *scriptsProxy, scriptId string) (string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		body platformclientv2.Exportscriptrequest
 	)
@@ -369,9 +390,12 @@ func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (
 }
 
 // deleteScriptFn deletes a script from Genesys Cloud
-func deleteScriptFn(_ context.Context, p *scriptsProxy, scriptId string) error {
+func deleteScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + scriptId
-	r, _ := http.NewRequest(http.MethodDelete, fullPath, nil)
+	r, _ := http.NewRequestWithContext(ctx, http.MethodDelete, fullPath, nil)
 	r.Header.Set("Authorization", "Bearer "+p.scriptsApi.Configuration.AccessToken)
 	r.Header.Set("Content-Type", "application/json")
 
@@ -398,7 +422,10 @@ func deleteScriptFn(_ context.Context, p *scriptsProxy, scriptId string) error {
 }
 
 // getScriptByIdFn retrieves a script by Id
-func getScriptByIdFn(_ context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+func getScriptByIdFn(ctx context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if script := rc.GetCacheItem(p.scriptCache, scriptId); script != nil {
 		return script, nil, nil
 	}
@@ -416,6 +443,9 @@ func getScriptByIdFn(_ context.Context, p *scriptsProxy, scriptId string) (scrip
 
 // createScriptFn is an implementation function for creating a Genesys Cloud Script
 func createScriptFn(ctx context.Context, filePath, scriptName, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.uploadScriptFile(filePath, scriptName, "", substitutions)
 	if err != nil {
 		return "", err
@@ -452,6 +482,9 @@ func createScriptFn(ctx context.Context, filePath, scriptName, divisionId string
 
 // updateScriptFn is an implementation function for updating a Genesys Cloud Script
 func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.uploadScriptFile(filePath, scriptName, scriptId, substitutions)
 	if err != nil {
 		return "", err
@@ -483,6 +516,9 @@ func setScriptDivision(scriptId, divisionId string, p *scriptsProxy) error {
 	if divisionId == "" {
 		return nil
 	}
+	// Set resource context for SDK debug logging
+	_ = provider.EnsureResourceContext(context.Background(), ResourceType)
+
 	apiClient := &p.scriptsApi.Configuration.APIClient
 	action := http.MethodPost
 	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/authorization/divisions/" + divisionId + "/objects/SCRIPT"

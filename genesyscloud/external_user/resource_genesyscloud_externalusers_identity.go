@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -167,10 +167,20 @@ func getAllHelperExternalUser(ctx context.Context, externalUserproxy *externalUs
 		if err != nil || externalUseList == nil {
 			return nil, response, err
 		}
-		for _, externalUser := range *externalUseList {
 
+		// Create a user identifier for the block label
+		userIdentifier := userId
+		if eachUser.Email != nil && *eachUser.Email != "" {
+			userIdentifier = *eachUser.Email
+		} else if eachUser.Name != nil && *eachUser.Name != "" {
+			userIdentifier = *eachUser.Name
+		}
+
+		for _, externalUser := range *externalUseList {
 			id := createCompoundKey(userId, *externalUser.AuthorityName, *externalUser.ExternalKey)
-			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: id}
+			// Create a descriptive block label using user identifier and authority name
+			blockLabel := fmt.Sprintf("%s_%s", userIdentifier, *externalUser.AuthorityName)
+			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 		}
 
 	}

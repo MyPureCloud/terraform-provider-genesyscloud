@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 var internalProxy *routingLanguageProxy
@@ -80,6 +81,9 @@ func (p *routingLanguageProxy) deleteRoutingLanguage(ctx context.Context, id str
 
 // getAllRoutingLanguageFn is the implementation for retrieving all routing language in Genesys Cloud
 func getAllRoutingLanguagesFn(ctx context.Context, p *routingLanguageProxy, name string) (*[]platformclientv2.Language, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		allLanguages []platformclientv2.Language
 		response     *platformclientv2.APIResponse
@@ -117,11 +121,17 @@ func getAllRoutingLanguagesFn(ctx context.Context, p *routingLanguageProxy, name
 
 // createRoutingLanguageFn is an implementation function for creating a Genesys Cloud routing language
 func createRoutingLanguageFn(ctx context.Context, p *routingLanguageProxy, routingLanguage *platformclientv2.Language) (*platformclientv2.Language, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PostRoutingLanguages(*routingLanguage)
 }
 
 // getRoutingLanguageByIdFn is an implementation of the function to get a Genesys Cloud routing language by Id
 func getRoutingLanguageByIdFn(ctx context.Context, p *routingLanguageProxy, id string) (*platformclientv2.Language, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if language := rc.GetCacheItem(p.routingLanguageCache, id); language != nil {
 		return language, nil, nil
 	}
@@ -130,6 +140,9 @@ func getRoutingLanguageByIdFn(ctx context.Context, p *routingLanguageProxy, id s
 
 // getRoutingLanguageIdByNameFn is an implementation of the function to get a Genesys Cloud routing language by name
 func getRoutingLanguageIdByNameFn(ctx context.Context, p *routingLanguageProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	languages, resp, err := getAllRoutingLanguagesFn(ctx, p, name)
 	if err != nil {
 		return "", resp, false, err
@@ -150,6 +163,9 @@ func getRoutingLanguageIdByNameFn(ctx context.Context, p *routingLanguageProxy, 
 
 // deleteRoutingLanguageFn is an implementation function for deleting a Genesys Cloud routing language
 func deleteRoutingLanguageFn(ctx context.Context, p *routingLanguageProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.routingApi.DeleteRoutingLanguage(id)
 	if err != nil {
 		return resp, err

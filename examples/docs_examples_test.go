@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 // SHOW_EXAMPLE_TERRAFORM_CONFIG_OUTPUT_WITH_LINES controls whether to display the full output
@@ -274,6 +274,12 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		// Skip if no resources were loaded
+		if len(combinedExample.Resources) == 0 {
+			t.Skip("No resources loaded - all examples may be missing or skipped")
+		}
+
 		// Run test
 		resource.Test(t, resource.TestCase{
 			PreCheck: func() {

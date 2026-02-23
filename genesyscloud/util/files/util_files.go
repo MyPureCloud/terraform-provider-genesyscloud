@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 type S3Uploader struct {
@@ -348,4 +348,36 @@ func GetDirPath(directory string) (string, diag.Diagnostics) {
 	}
 
 	return directory, nil
+}
+
+// DownloadAndReadCSVFromURI downloads a CSV file from a URI with optional access token authentication and reads the CSV file
+func DownloadAndReadCSVFromURI(uri, accessToken string) ([][]string, error) {
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if accessToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP error downloading CSV: %d", resp.StatusCode)
+	}
+
+	csvReader := csv.NewReader(resp.Body)
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read CSV: %w", err)
+	}
+
+	return records, nil
 }
