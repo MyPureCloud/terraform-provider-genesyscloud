@@ -7,6 +7,8 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
@@ -22,33 +24,45 @@ type getOutboundDnclistByNameFunc func(ctx context.Context, p *outboundDnclistPr
 type updateOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string, dnclist *platformclientv2.Dnclist) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error)
 type deleteOutboundDnclistFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error)
 type uploadPhoneEntriesToDncListFunc func(p *outboundDnclistProxy, dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics)
+type deleteOutboundDnclistPhoneEntriesFunc func(ctx context.Context, p *outboundDnclistProxy, dnclistId string, expiredOnly bool) (*platformclientv2.APIResponse, error)
+type initiateOutboundDnclistExportFunc func(ctx context.Context, p *outboundDnclistProxy, dncListId string) (*platformclientv2.Domainentityref, *platformclientv2.APIResponse, error)
+type getOutboundDnclistExportFunc func(ctx context.Context, p *outboundDnclistProxy, dncListId string, download string) (*platformclientv2.Exporturi, *platformclientv2.APIResponse, error)
+type getOutboundDnclistEntriesFunc func(ctx context.Context, p *outboundDnclistProxy, dncListId string) ([]interface{}, *platformclientv2.APIResponse, error)
 
 // outboundDnclistProxy contains all the methods that call genesys cloud APIs
 type outboundDnclistProxy struct {
-	clientConfig                    *platformclientv2.Configuration
-	outboundApi                     *platformclientv2.OutboundApi
-	createOutboundDnclistAttr       createOutboundDnclistFunc
-	getAllOutboundDnclistAttr       getAllOutboundDnclistFunc
-	getOutboundDnclistByIdAttr      getOutboundDnclistByIdFunc
-	getOutboundDnclistByNameAttr    getOutboundDnclistByNameFunc
-	updateOutboundDnclistAttr       updateOutboundDnclistFunc
-	deleteOutboundDnclistAttr       deleteOutboundDnclistFunc
-	uploadPhoneEntriesToDncListAttr uploadPhoneEntriesToDncListFunc
+	clientConfig                          *platformclientv2.Configuration
+	outboundApi                           *platformclientv2.OutboundApi
+	createOutboundDnclistAttr             createOutboundDnclistFunc
+	getAllOutboundDnclistAttr             getAllOutboundDnclistFunc
+	getOutboundDnclistByIdAttr            getOutboundDnclistByIdFunc
+	getOutboundDnclistByNameAttr          getOutboundDnclistByNameFunc
+	updateOutboundDnclistAttr             updateOutboundDnclistFunc
+	deleteOutboundDnclistAttr             deleteOutboundDnclistFunc
+	uploadPhoneEntriesToDncListAttr       uploadPhoneEntriesToDncListFunc
+	deleteOutboundDnclistPhoneEntriesAttr deleteOutboundDnclistPhoneEntriesFunc
+	initiateOutboundDnclistExportAttr     initiateOutboundDnclistExportFunc
+	getOutboundDnclistExportAttr          getOutboundDnclistExportFunc
+	getOutboundDnclistEntriesAttr         getOutboundDnclistEntriesFunc
 }
 
 // newOutboundDnclistProxy initializes the dnclist proxy with the data needed for communication with the genesys cloud
 func newOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outboundDnclistProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
 	return &outboundDnclistProxy{
-		clientConfig:                    clientConfig,
-		outboundApi:                     api,
-		createOutboundDnclistAttr:       createOutboundDnclistFn,
-		getAllOutboundDnclistAttr:       getAllOutboundDnclistFn,
-		getOutboundDnclistByIdAttr:      getOutboundDnclistByIdFn,
-		getOutboundDnclistByNameAttr:    getOutboundDnclistByNameFn,
-		updateOutboundDnclistAttr:       updateOutboundDnclistFn,
-		deleteOutboundDnclistAttr:       deleteOutboundDnclistFn,
-		uploadPhoneEntriesToDncListAttr: uploadPhoneEntriesToDncListFn,
+		clientConfig:                          clientConfig,
+		outboundApi:                           api,
+		createOutboundDnclistAttr:             createOutboundDnclistFn,
+		getAllOutboundDnclistAttr:             getAllOutboundDnclistFn,
+		getOutboundDnclistByIdAttr:            getOutboundDnclistByIdFn,
+		getOutboundDnclistByNameAttr:          getOutboundDnclistByNameFn,
+		updateOutboundDnclistAttr:             updateOutboundDnclistFn,
+		deleteOutboundDnclistAttr:             deleteOutboundDnclistFn,
+		uploadPhoneEntriesToDncListAttr:       uploadPhoneEntriesToDncListFn,
+		deleteOutboundDnclistPhoneEntriesAttr: deleteOutboundDnclistPhoneEntriesFn,
+		initiateOutboundDnclistExportAttr:     initiateOutboundDnclistExportFn,
+		getOutboundDnclistExportAttr:          getOutboundDnclistExportFn,
+		getOutboundDnclistEntriesAttr:         getOutboundDnclistEntriesFn,
 	}
 }
 
@@ -91,6 +105,26 @@ func (p *outboundDnclistProxy) deleteOutboundDnclist(ctx context.Context, dnclis
 
 func (p *outboundDnclistProxy) uploadPhoneEntriesToDncList(dncList *platformclientv2.Dnclist, entry interface{}) (*platformclientv2.APIResponse, diag.Diagnostics) {
 	return p.uploadPhoneEntriesToDncListAttr(p, dncList, entry)
+}
+
+// deleteOutboundDnclistPhoneEntries deletes phone entries from a Genesys Cloud Outbound Dnclist
+func (p *outboundDnclistProxy) deleteOutboundDnclistPhoneEntries(ctx context.Context, dnclistId string, expiredOnly bool) (*platformclientv2.APIResponse, error) {
+	return p.deleteOutboundDnclistPhoneEntriesAttr(ctx, p, dnclistId, expiredOnly)
+}
+
+// initiateOutboundDnclistExport initiates the export for a Genesys Cloud Outbound Dnclist
+func (p *outboundDnclistProxy) initiateOutboundDnclistExport(ctx context.Context, dncListId string) (*platformclientv2.Domainentityref, *platformclientv2.APIResponse, error) {
+	return p.initiateOutboundDnclistExportAttr(ctx, p, dncListId)
+}
+
+// getOutboundDnclistExport retrieves the export status or download URI for a Genesys Cloud Outbound Dnclist
+func (p *outboundDnclistProxy) getOutboundDnclistExport(ctx context.Context, dncListId string, download string) (*platformclientv2.Exporturi, *platformclientv2.APIResponse, error) {
+	return p.getOutboundDnclistExportAttr(ctx, p, dncListId, download)
+}
+
+// getOutboundDnclistEntries retrieves the phone entries from a Genesys Cloud Outbound Dnclist
+func (p *outboundDnclistProxy) getOutboundDnclistEntries(ctx context.Context, dncListId string) ([]interface{}, *platformclientv2.APIResponse, error) {
+	return p.getOutboundDnclistEntriesAttr(ctx, p, dncListId)
 }
 
 func createOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclist *platformclientv2.Dnclistcreate) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
@@ -162,6 +196,10 @@ func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformcli
 	return resp, nil
 }
 
+func deleteOutboundDnclistPhoneEntriesFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string, expiredOnly bool) (*platformclientv2.APIResponse, error) {
+	return p.outboundApi.DeleteOutboundDnclistPhonenumbers(dnclistId, expiredOnly)
+}
+
 func deleteOutboundDnclistFn(ctx context.Context, p *outboundDnclistProxy, dnclistId string) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
@@ -191,4 +229,51 @@ func getOutboundDnclistByNameFn(ctx context.Context, p *outboundDnclistProxy, na
 		}
 	}
 	return "", true, resp, fmt.Errorf("unable to find dnc list with name %s", name)
+}
+
+func initiateOutboundDnclistExportFn(ctx context.Context, p *outboundDnclistProxy, dncListId string) (*platformclientv2.Domainentityref, *platformclientv2.APIResponse, error) {
+	return p.outboundApi.PostOutboundDnclistExport(dncListId)
+}
+
+func getOutboundDnclistExportFn(ctx context.Context, p *outboundDnclistProxy, dncListId string, download string) (*platformclientv2.Exporturi, *platformclientv2.APIResponse, error) {
+	return p.outboundApi.GetOutboundDnclistExport(dncListId, download)
+}
+
+func getOutboundDnclistEntriesFn(ctx context.Context, p *outboundDnclistProxy, dncListId string) ([]interface{}, *platformclientv2.APIResponse, error) {
+	data, resp, err := p.getOutboundDnclistExport(ctx, dncListId, "")
+	if err != nil {
+		if util.IsStatus400(resp) {
+			return nil, resp, fmt.Errorf("Export not ready yet for Outbound DNC list %s: %s", dncListId, err)
+		}
+		return nil, resp, fmt.Errorf("Failed to retrieve export URI for Outbound DNC list %s: %s", dncListId, err)
+	}
+
+	if data == nil || data.Uri == nil {
+		return nil, resp, fmt.Errorf("Export URI is not found for Outbound DNC list %s", dncListId)
+	}
+
+	records, err := files.DownloadAndReadCSVFromURI(*data.Uri, p.clientConfig.AccessToken)
+	if err != nil {
+		return nil, resp, fmt.Errorf("Failed to download and read CSV for Outbound DNC list %s: %s", dncListId, err)
+	}
+
+	// If only header row exists (no data), return empty list
+	if len(records) <= 1 {
+		return []interface{}{}, resp, nil
+	}
+
+	entries := make(map[string][]string)
+	for _, record := range records[1:] {
+		entries[record[2]] = append(entries[record[2]], record[0])
+	}
+
+	entriesList := make([]interface{}, 0)
+	for expirationDate, phoneNumbers := range entries {
+		entriesList = append(entriesList, map[string]interface{}{
+			"expiration_date": expirationDate,
+			"phone_numbers":   lists.StringListToInterfaceList(phoneNumbers),
+		})
+	}
+
+	return entriesList, resp, nil
 }
