@@ -242,7 +242,10 @@ func KnowledgeDocumentLabelNamesResolver(configMap map[string]interface{}, expor
 		}
 
 		for _, labelResource := range exporter.SanitizedResourceMap {
-			if strings.HasSuffix(labelResource.BlockLabel, "_"+name) {
+
+			// OriginalLabel preserves the original format (with spaces) which matches the labelName format
+			// whereas BlockLabel is sanitized
+			if strings.HasSuffix(labelResource.OriginalLabel, "_"+name) {
 				resolvedNames = append(resolvedNames, fmt.Sprintf("${genesyscloud_knowledge_label.%s.knowledge_label[0].name}", labelResource.BlockLabel))
 				break
 			}
