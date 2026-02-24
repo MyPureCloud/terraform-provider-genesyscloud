@@ -9,11 +9,10 @@ import (
 )
 
 type customMemberGroupTest struct {
-	MemberGroupID        string
-	MemberGroupType      string
-	ExporterResourceType string
-	GroupName            string
-	ExpectedResult       string
+	MemberGroupID   string
+	MemberGroupType string
+	GroupName       string
+	ExpectedRefType string
 }
 
 type propertyGroupTest struct {
@@ -28,46 +27,50 @@ type propertyGroupTest struct {
 func TestUnitExporterCustomMemberGroup(t *testing.T) {
 	teamID := uuid.NewString()
 	testResults := []*customMemberGroupTest{
-		{MemberGroupID: uuid.NewString(), MemberGroupType: "SKILLGROUP", GroupName: "test_skill_group_name", ExporterResourceType: "genesyscloud_routing_skill_group", ExpectedResult: "${genesyscloud_routing_skill_group.test_skill_group_name.id}"},
-		{MemberGroupID: uuid.NewString(), MemberGroupType: "GROUP", GroupName: "test_group_name", ExporterResourceType: "genesyscloud_group", ExpectedResult: "${genesyscloud_group.test_group_name.id}"},
-		{MemberGroupID: teamID, MemberGroupType: "TEAM", GroupName: "test_team_name", ExporterResourceType: "genesyscloud_team_NA", ExpectedResult: teamID},
+		{MemberGroupID: uuid.NewString(), MemberGroupType: "SKILLGROUP", GroupName: "test_skill_group_name", ExpectedRefType: "genesyscloud_routing_skill_group"},
+		{MemberGroupID: uuid.NewString(), MemberGroupType: "GROUP", GroupName: "test_group_name", ExpectedRefType: "genesyscloud_group"},
+		{MemberGroupID: teamID, MemberGroupType: "TEAM", GroupName: "test_team_name", ExpectedRefType: "genesyscloud_team"},
 	}
 
 	for _, testResult := range testResults {
 		configMap := make(map[string]interface{})
-		exporters := make(map[string]*ResourceExporter)
 
 		//Make the config map object
 		configMap["member_group_type"] = testResult.MemberGroupType
 		configMap["member_group_id"] = testResult.MemberGroupID
-
-		//Create an exporter
-		skillGroupSanitizedResourceMap := make(map[string]*ResourceMeta)
-		skillGroupSanitizedResourceMap[testResult.MemberGroupID] = &ResourceMeta{BlockLabel: testResult.GroupName}
-
-		firstResourceExport := &ResourceExporter{
-			SanitizedResourceMap: skillGroupSanitizedResourceMap,
-		}
-		exporters[testResult.ExporterResourceType] = firstResourceExport
 
 		//Pre-Check to make sure the member_group_id has been set to the GUID I have at the start of the test
 		if configMap["member_group_id"] != testResult.MemberGroupID {
 			t.Errorf("The member_group_id set in the config map was %v,but  wanted %v", configMap["member_group_id"], testResult.MemberGroupID)
 		}
 
-		//Invoke the resolver
-		err := MemberGroupsResolver(configMap, exporters, testResult.ExporterResourceType)
-
-		if err != nil && testResult.MemberGroupType != "TEAM" {
-			t.Errorf("Received an unexpected error while calling MemberGroupResolver:  %v", err)
+		refType, err := MemberGroupsResolver(configMap)
+		if err != nil {
+			t.Errorf("Received an unexpected error while calling MemberGroupsResolver: %v", err)
 		}
 
-		//The member_group_id should now be replaced by the expected out put with th
-		if configMap["member_group_id"].(string) != testResult.ExpectedResult {
-			t.Errorf("The member_group_id set in the config map was %v, but wanted %v", configMap["member_group_id"], testResult.ExpectedResult)
+		if refType != testResult.ExpectedRefType {
+			t.Errorf("Expected ref type %v but got %v", testResult.ExpectedRefType, refType)
 		}
 	}
 
+}
+
+func TestUnitExporterCustomMemberGroupMissingOrInvalidType(t *testing.T) {
+	_, err := MemberGroupsResolver(map[string]interface{}{})
+	if err == nil {
+		t.Error("expected error for missing member_group_type")
+	}
+
+	_, err = MemberGroupsResolver(map[string]interface{}{"member_group_type": 123})
+	if err == nil {
+		t.Error("expected error for non-string member_group_type")
+	}
+
+	_, err = MemberGroupsResolver(map[string]interface{}{"member_group_type": "NOPE"})
+	if err == nil {
+		t.Error("expected error for unknown member_group_type")
+	}
 }
 
 func TestUnitRuleSetPropertyGroup(t *testing.T) {
