@@ -44,14 +44,6 @@ func outboundContactListHasCallableTimeColumn(phoneColumns *schema.Set) bool {
 }
 
 // outboundContactListAutomaticTimeZoneMappingForRequest controls what value (if any) we send to the API.
-//
-// Problem this solves:
-// - The UI can flip AutomaticTimeZoneMapping to true, at which point the API may null out PhoneColumns[*].CallableTimeColumn.
-// - If the provider then echoes AutomaticTimeZoneMapping=true back during an update, it can repeatedly wipe CallableTimeColumn.
-//
-// Behavior:
-// - If any phone column has callable_time_column set in config/state, always force AutomaticTimeZoneMapping=false in the request.
-// - Otherwise, only send AutomaticTimeZoneMapping on create; omit it on update to avoid propagating UI-side drift.
 func outboundContactListAutomaticTimeZoneMappingForRequest(d *schema.ResourceData, isUpdate bool, phoneColumns *schema.Set) *bool {
 	if outboundContactListHasCallableTimeColumn(phoneColumns) {
 		v := false
