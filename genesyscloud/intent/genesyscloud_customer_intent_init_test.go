@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 
+	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intent_category"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -29,7 +31,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceCustomerIntent()
-	// TODO: Add references
+	providerResources[intentCategory.ResourceType] = intentCategory.ResourceIntentCategory()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceCustomerIntent()
-	// TODO: Add references
+	providerDataSources[intentCategory.ResourceType] = intentCategory.DataSourceIntentCategory()
 }
 
 // initTestResources initializes all test resources and data sources.

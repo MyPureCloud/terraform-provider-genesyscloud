@@ -29,7 +29,6 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceIntentCategory()
-	// TODO: Add references
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -38,7 +37,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceIntentCategory()
-	// TODO: Add references
 }
 
 // initTestResources initializes all test resources and data sources.

@@ -75,12 +75,12 @@ func ResourceCustomerIntent() *schema.Resource {
 						},
 						`source_intent_name`: {
 							Description: `Name of the source intent`,
-							Optional:    true,
+							Required:    true,
 							Type:        schema.TypeString,
 						},
 						`source_type`: {
 							Description: `Type of the source (e.g., Bot)`,
-							Optional:    true,
+							Required:    true,
 							Type:        schema.TypeString,
 						},
 						`source_id`: {
