@@ -404,7 +404,7 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 
 			// Check import status
 			diags := util.WithRetries(ctx, 300*time.Second, func() *retry.RetryError {
-				// Check Import Status for any status update
+
 				status, resp, err := cp.getOutboundContactListImportStatus(ctx, contactListId)
 				tflog.Debug(ctx, fmt.Sprintf("Outbound contact list (%s) import status: %v", contactListId, status))
 				if err != nil {
@@ -435,7 +435,6 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 					return nil
 				}
 
-				// Otherwise lets retry and continue checking the import status
 				return retry.RetryableError(fmt.Errorf("Outbound contact list (%s) import contacts attempt has not completed yet: %v", contactListId, status))
 			})
 			if diags.HasError() {
