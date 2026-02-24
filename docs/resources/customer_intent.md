@@ -85,10 +85,11 @@ resource "genesyscloud_customer_intent" "example_with_source_intents" {
 Required:
 
 - `source_intent_id` (String) ID of the source intent
-- `source_type` (String) Type of the source (e.g., Bot)
 - `source_intent_name` (String) Name of the source intent
+- `source_type` (String) Type of the source (e.g., Bot)
 
 Optional:
 
 - `source_id` (String) ID of the source
 - `source_name` (String) Name of the source
+
