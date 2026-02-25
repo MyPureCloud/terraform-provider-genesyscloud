@@ -9,6 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -195,7 +196,17 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("attempt_limit_id", *sdkContactList.AttemptLimits.Id)
 		}
 		if sdkContactList.AutomaticTimeZoneMapping != nil {
-			_ = d.Set("automatic_time_zone_mapping", *sdkContactList.AutomaticTimeZoneMapping)
+			apiValue := *sdkContactList.AutomaticTimeZoneMapping
+			if configVal, ok := d.GetOk("automatic_time_zone_mapping"); ok {
+				configBoolVal := configVal.(bool)
+				if !apiValue && configBoolVal {
+					_ = d.Set("automatic_time_zone_mapping", true)
+				} else {
+					resourcedata.SetNillableValue(d, "automatic_time_zone_mapping", sdkContactList.AutomaticTimeZoneMapping)
+				}
+			} else {
+				resourcedata.SetNillableValue(d, "automatic_time_zone_mapping", sdkContactList.AutomaticTimeZoneMapping)
+			}
 		}
 		if sdkContactList.ZipCodeColumnName != nil {
 			_ = d.Set("zip_code_column_name", *sdkContactList.ZipCodeColumnName)
