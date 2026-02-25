@@ -105,7 +105,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
-		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
+		ConditionalGroupActivation:   BuildSdkConditionalGroupActivation(d),
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -241,7 +241,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		if currentQueue.ConditionalGroupActivation != nil {
-			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, FlattenConditionalGroupActivation)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -353,7 +353,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
-		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
+		ConditionalGroupActivation:   BuildSdkConditionalGroupActivation(d),
 	}
 
 	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
