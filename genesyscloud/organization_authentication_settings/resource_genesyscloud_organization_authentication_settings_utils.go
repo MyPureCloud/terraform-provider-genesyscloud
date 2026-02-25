@@ -34,10 +34,13 @@ func getTimeOutSettingsFromResourceData(d *schema.ResourceData) *platformclientv
 	timeOutData := d.Get("timeout_settings").([]interface{})
 	if len(timeOutData) > 0 {
 		if timeOutMap, ok := timeOutData[0].(map[string]interface{}); ok {
-			return &platformclientv2.Idletokentimeout{
-				EnableIdleTokenTimeout:  platformclientv2.Bool(timeOutMap["enable_idle_token_timeout"].(bool)),
-				IdleTokenTimeoutSeconds: platformclientv2.Int(timeOutMap["idle_token_timeout_seconds"].(int)),
+			idleTokenTimeout := &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout: platformclientv2.Bool(timeOutMap["enable_idle_token_timeout"].(bool)),
 			}
+			if *idleTokenTimeout.EnableIdleTokenTimeout {
+				idleTokenTimeout.IdleTokenTimeoutSeconds = platformclientv2.Int(timeOutMap["idle_token_timeout_seconds"].(int))
+			}
+			return idleTokenTimeout
 		}
 	}
 	return nil
