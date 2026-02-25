@@ -122,7 +122,7 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 	}
 
 	if members == nil || len(*members) == 0 {
-		return schema.NewSet(schema.HashString, []interface{}{}), nil
+		return nil, nil
 	}
 
 	interfaceList := make([]interface{}, len(*members))
