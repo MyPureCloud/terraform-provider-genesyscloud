@@ -204,6 +204,17 @@ func getOutboundDnclistEntriesWithRetries(ctx context.Context, proxy *outboundDn
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
+
+	// Store original entries structure before normalization
+	originalEntries, _ := d.Get("entries").([]interface{})
+
+	// Normalize entries in state before creating consistency checker
+	// This ensures consistency checker captures normalized state for comparison
+	if len(originalEntries) > 0 {
+		normalizedEntries := normalizeEntries(originalEntries)
+		_ = d.Set("entries", normalizedEntries)
+	}
+
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
@@ -227,17 +238,28 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
+		var apiEntries []interface{}
+		var entriesEquivalent bool
+		var normalizedOriginalEntries []interface{}
 		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
-			entries := d.Get("entries").([]interface{})
-			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
-			if err != nil {
-				return retry.NonRetryableError(fmt.Errorf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err))
+			var diagErr diag.Diagnostics
+			apiEntries, diagErr = getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
+			if diagErr != nil {
+				return retry.NonRetryableError(fmt.Errorf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), diagErr))
 			}
 
-			// preserve ordering and avoid a plan not empty error
-			if areEntriesEquivalent(apiEntries, entries) {
-				_ = d.Set("entries", entries)
+			// Normalize original entries for comparison (compute once, use multiple times)
+			normalizedOriginalEntries = normalizeEntries(originalEntries)
+			entriesEquivalent = areEntriesEquivalent(normalizedOriginalEntries, apiEntries)
+			log.Printf("Entries equivalent: %v", entriesEquivalent)
+			log.Printf("Normalized original entries: %v", normalizedOriginalEntries)
+			log.Printf("API entries: %v", apiEntries)
+			if entriesEquivalent {
+				// Entries are equivalent - preserve original structure to avoid perpetual diffs
+				// This ensures Terraform doesn't see a diff between config (3 blocks) and state (3 blocks)
+				_ = d.Set("entries", originalEntries)
 			} else {
+				// Entries differ - use API entries (which may have different data)
 				_ = d.Set("entries", apiEntries)
 			}
 		}
@@ -252,7 +274,22 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "custom_exclusion_column", sdkDncList.CustomExclusionColumn)
 
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
-		return cc.CheckState(d)
+
+		// For consistency checker, temporarily set normalized entries
+		// The consistency checker captured normalized state, so we need normalized current state
+		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && entriesEquivalent {
+			_ = d.Set("entries", normalizedOriginalEntries)
+		}
+
+		checkErr := cc.CheckState(d)
+
+		// After consistency check, restore original structure if entries were equivalent
+		// This prevents Terraform from seeing a diff between config (3 blocks) and state (1 block)
+		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && entriesEquivalent {
+			_ = d.Set("entries", originalEntries)
+		}
+
+		return checkErr
 	})
 }
 
@@ -322,6 +359,30 @@ func groupEntriesByExpirationDate(entries []interface{}) map[string][]string {
 		result[*expirationDate] = append(result[*expirationDate], phoneNumbers...)
 	}
 	return result
+}
+
+// normalizeEntries merges entries with the same expiration date, matching API behavior
+func normalizeEntries(entries []interface{}) []interface{} {
+	grouped := groupEntriesByExpirationDate(entries)
+	log.Printf("Grouped entries: %v", grouped)
+	normalized := make([]interface{}, 0)
+	for expirationDate, phoneNumbers := range grouped {
+		// Remove duplicates from phone numbers using a map
+		seen := make(map[string]bool)
+		uniquePhones := make([]string, 0)
+		for _, phone := range phoneNumbers {
+			if !seen[phone] {
+				seen[phone] = true
+				uniquePhones = append(uniquePhones, phone)
+			}
+		}
+		normalized = append(normalized, map[string]interface{}{
+			"expiration_date": expirationDate,
+			"phone_numbers":   lists.StringListToInterfaceList(uniquePhones),
+		})
+	}
+	log.Printf("Normalized entries: %v", normalized)
+	return normalized
 }
 
 func areEntriesEquivalent(a, b []interface{}) bool {
