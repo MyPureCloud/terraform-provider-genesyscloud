@@ -75,7 +75,6 @@ func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExport
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
 	resourceKey := resourceKeys.State.ID
 	resourceLabel := resourceKeys.BlockLabel
-	log.Printf("[DEBUG_ENTRY] retrieveDependentConsumersFn: START processing resourceKey=%s, resourceLabel=%s, resourceType=%s, totalFlowResourcesCount=%d", resourceKey, resourceLabel, resourceKeys.Type, len(totalFlowResources))
 	dependsMap := make(map[string][]string)
 	architectDependencies := make(map[string][]string)
 	dependentResources, dependsMap, cyclicDependsList, err, totalFlowResources := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceLabel, make(resourceExporter.ResourceIDMetaMap), dependsMap, architectDependencies, make([]string, 0), totalFlowResources)
@@ -84,7 +83,6 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 		return nil, nil, totalFlowResources, err
 	}
 	finalDependsMap := buildDependsMap(dependentResources, dependsMap, resourceKey)
-	log.Printf("[DEBUG_ENTRY] retrieveDependentConsumersFn: END processing resourceKey=%s, resourceLabel=%s, dependentResourcesCount=%d, finalDependsMapForKey=%v, totalFlowResourcesCount=%d", resourceKey, resourceLabel, len(dependentResources), finalDependsMap[resourceKey], len(totalFlowResources))
 	return dependentResources, &resourceExporter.DependencyResource{
 		DependsMap:        finalDependsMap,
 		CyclicDependsList: cyclicDependsList,
@@ -115,14 +113,14 @@ func fetchDepConsumers(ctx context.Context,
 			log.Printf("Error calling GetFlow: %v\n", err)
 		}
 		// Fetch Dependent Consumed Resources only for Published Versions
-		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil {
+		// Require VarType as well, since it is used to look up the flow type.
+		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil && data.VarType != nil {
 			flowTypeObjectMaps := SetFlowTypeObjectMaps()
 			objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
 			log.Printf("[DEBUG_FLOW] Flow %s (%s): VarType=%s, flowTypeExists=%v, objectType=%s", resourceKey, resourceLabel, *data.VarType, flowTypeExists, objectType)
 			if flowTypeExists {
 				// Mark this flow as being processed EARLY to prevent re-entry during recursive calls
 				// Only add after confirming: flow exists, has published version, and has valid flow type
-				log.Printf("[DEBUG_FLOW] ADDING flow %s (%s) to totalFlowResources (before: %d items)", resourceKey, resourceLabel, len(totalFlowResources))
 				totalFlowResources = append(totalFlowResources, resourceKey)
 				pageCount := 1
 				const pageSize = 100
@@ -199,6 +197,10 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 	dependentConsumerMap := SetDependentObjectMaps()
 	log.Printf("[DEBUG_DEPS] iterateDependencies for flow key=%s, label=%s, entityCount=%d", key, resourceLabel, len(*dependencies.Entities))
 	for _, consumer := range *dependencies.Entities {
+		if consumer.Id == nil || consumer.VarType == nil {
+			continue
+		}
+
 		resourceType, exists := getResourceType(consumer, dependentConsumerMap)
 		log.Printf("[DEBUG_DEPS] Processing consumer: Id=%s, Name=%s, VarType=%s, mappedResourceType=%s, exists=%v (parent flow: %s)",
 			*consumer.Id, *consumer.Name, *consumer.VarType, resourceType, exists, resourceLabel)
@@ -257,9 +259,7 @@ func fetchAndProcessDependentConsumers(ctx context.Context,
 	cyclicDependsList []string,
 	totalFlowResources []string,
 	resourceType string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, error) {
-	log.Printf("[DEBUG_RECURSIVE] fetchAndProcessDependentConsumers: Starting recursive call for consumer Id=%s, Name=%s, totalFlowResourcesCount=%d", *consumer.Id, *consumer.Name, len(totalFlowResources))
 	innerDependentResources, innerDependsMap, cyclicDependsList, err, totalFlowResources := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string), architectDependencies, cyclicDependsList, totalFlowResources)
-	log.Printf("[DEBUG_RECURSIVE] fetchAndProcessDependentConsumers: Completed for consumer Id=%s, Name=%s, innerResourcesCount=%d, totalFlowResourcesCount=%d", *consumer.Id, *consumer.Name, len(innerDependentResources), len(totalFlowResources))
 
 	// Merge inner resources back to parent's resources map so dependencies are properly propagated
 	for id, meta := range innerDependentResources {

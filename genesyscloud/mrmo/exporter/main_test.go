@@ -46,7 +46,7 @@ func TestAccMrmoExport(t *testing.T) {
 	output, diags := Export(context.Background(), ExportInput{
 		ResourceType: "genesyscloud_outbound_attempt_limit",
 		EntityId:     attemptLimitId,
-	}, *creds)
+	}, clientConfig)
 
 	if diags.HasError() {
 		t.Fatalf("Expected no diagnostics errors, got: %v", diags)
