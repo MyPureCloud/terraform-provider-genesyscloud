@@ -130,15 +130,17 @@ func fetchDepConsumers(ctx context.Context,
 				}
 				log.Printf("Retrieved dependencies for ID %s", resourceKey)
 
-				pageCount = *dependencies.PageCount
-
 				// return empty dependsMap and  resources
 				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 					log.Printf("Retrieved dependencies for ID  noresult %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
 					return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
 				}
 
-				// iterate dependencies
+				if dependencies.PageCount != nil {
+					pageCount = *dependencies.PageCount
+				}
+
+				// iterate dependencies (already checked Entities is not nil above)
 				if pageCount < 2 {
 					resources, dependsMap, cyclicDependsList, totalFlowResources, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources)
 					if err != nil {
@@ -195,9 +197,10 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 	totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, []string, error) {
 	var err error
 	dependentConsumerMap := SetDependentObjectMaps()
+
 	log.Printf("[DEBUG_DEPS] iterateDependencies for flow key=%s, label=%s, entityCount=%d", key, resourceLabel, len(*dependencies.Entities))
 	for _, consumer := range *dependencies.Entities {
-		if consumer.Id == nil || consumer.VarType == nil {
+		if consumer.Id == nil || consumer.VarType == nil || consumer.Name == nil {
 			continue
 		}
 
