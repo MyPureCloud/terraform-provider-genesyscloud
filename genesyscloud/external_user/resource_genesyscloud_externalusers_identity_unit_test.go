@@ -117,7 +117,8 @@ func TestGetAllHelperExternalUser(t *testing.T) {
 				expectedKey := createCompoundKey("user1", "auth1", "key1")
 				_, exists := resources[expectedKey]
 				assert.True(t, exists)
-				assert.Equal(t, expectedKey, resources[expectedKey].BlockLabel)
+				expectedBlockLabel := fmt.Sprintf("%s_%s", "user1", "auth1")
+				assert.Equal(t, expectedBlockLabel, resources[expectedKey].BlockLabel)
 			}
 		})
 	}
