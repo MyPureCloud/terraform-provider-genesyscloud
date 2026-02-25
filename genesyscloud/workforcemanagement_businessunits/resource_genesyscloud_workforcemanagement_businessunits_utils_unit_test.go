@@ -101,7 +101,8 @@ func TestUnitBuildSchedulerMessageTypeSeverities(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := buildSchedulerMessageTypeSeverities(tt.input)
-			if result == nil && len(*tt.expected) == 0 {
+			if result == nil {
+				t.Errorf("Expected non-nil result but got nil")
 				return
 			}
 			if len(*result) != len(*tt.expected) {

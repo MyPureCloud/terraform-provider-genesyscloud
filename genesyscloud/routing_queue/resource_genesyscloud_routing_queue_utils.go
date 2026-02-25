@@ -206,41 +206,7 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
 	}
 
-	if enableInactivityTimeout, ok := settingsMap["enable_inactivity_timeout"].(bool); ok {
-		messageMediaSettings.EnableInactivityTimeout = &enableInactivityTimeout
-	}
-
-	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
-		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
-	}
-
 	return &messageMediaSettings
-}
-
-func buildInactivityTimeoutSettings(settings []interface{}) *platformclientv2.Inactivitytimeoutsettings {
-	if len(settings) == 0 {
-		return nil
-	}
-	settingsMap, ok := settings[0].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	var inactivityTimeoutSettings platformclientv2.Inactivitytimeoutsettings
-
-	if timeoutSeconds, ok := settingsMap["timeout_seconds"].(int); ok {
-		inactivityTimeoutSettings.TimeoutSeconds = &timeoutSeconds
-	}
-
-	if actionType, ok := settingsMap["action_type"].(string); ok {
-		inactivityTimeoutSettings.ActionType = &actionType
-	}
-
-	if flowId, ok := settingsMap["flow_id"].(string); ok && flowId != "" {
-		inactivityTimeoutSettings.FlowId = &platformclientv2.Domainentityref{Id: platformclientv2.String(flowId)}
-	}
-
-	return &inactivityTimeoutSettings
 }
 
 func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Callbackmediasettings {
@@ -701,24 +667,7 @@ func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings
 		settingsMap["sub_type_settings"] = flattenSubTypeSettings(*settings.SubTypeSettings)
 	}
 
-	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_inactivity_timeout", settings.EnableInactivityTimeout)
-
-	if settings.InactivityTimeoutSettings != nil {
-		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(settings.InactivityTimeoutSettings)
-	}
-
 	return []any{settingsMap}
-}
-
-func flattenInactivityTimeoutSettings(settings *platformclientv2.Inactivitytimeoutsettings) []interface{} {
-	if settings == nil {
-		return nil
-	}
-	settingsMap := make(map[string]interface{})
-	resourcedata.SetMapValueIfNotNil(settingsMap, "timeout_seconds", settings.TimeoutSeconds)
-	resourcedata.SetMapValueIfNotNil(settingsMap, "action_type", settings.ActionType)
-	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "flow_id", settings.FlowId)
-	return []interface{}{settingsMap}
 }
 
 func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypesettings) []interface{} {
@@ -1244,26 +1193,6 @@ func GenerateMediaSettingsCallBack(attrName string, alertingTimeout string, enab
 		%s
 	}
 	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableAutoDial, autoEndDelay, autoDailDelay, strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateMediaSettingsMessage(attrName string, alertingTimeout string, enableAutoAnswer string, slPercent string, slDurationMs string, enableInactivityTimeout string, nestedBlocks ...string) string {
-	return fmt.Sprintf(`%s {
-		alerting_timeout_sec = %s
-		enable_auto_answer = %s
-		service_level_percentage = %s
-		service_level_duration_ms = %s
-		enable_inactivity_timeout = %s
-		%s
-	}
-	`, attrName, alertingTimeout, enableAutoAnswer, slPercent, slDurationMs, enableInactivityTimeout, strings.Join(nestedBlocks, "\n"))
-}
-
-func GenerateInactivityTimeoutSettings(timeoutSeconds string, actionType string) string {
-	return fmt.Sprintf(`inactivity_timeout_settings {
-		timeout_seconds = %s
-		action_type = "%s"
-	}
-	`, timeoutSeconds, actionType)
 }
 
 func GenerateRoutingRules(operator string, threshold string, waitSeconds string) string {

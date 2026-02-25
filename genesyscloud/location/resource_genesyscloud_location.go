@@ -54,13 +54,12 @@ func createLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 	proxy := getLocationProxy(sdkConfig)
 	name := d.Get("name").(string)
 	notes := d.Get("notes").(string)
-	addressList, _ := d.Get("address").([]any)
 
 	create := platformclientv2.Locationcreatedefinition{
 		Name:            &name,
 		Path:            buildSdkLocationPath(d),
 		EmergencyNumber: buildSdkLocationEmergencyNumber(d),
-		Address:         buildSdkLocationAddress(addressList),
+		Address:         buildSdkLocationAddress(d),
 	}
 
 	if notes != "" {
@@ -132,10 +131,9 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 			EmergencyNumber: buildSdkLocationEmergencyNumber(d),
 		}
 
-		if shouldIncludeAddress(d, sdkConfig) {
+		if d.HasChange("address") {
 			// Even if address is the same, the API does not allow it in the patch request if a number is assigned
-			addressList, _ := d.Get("address").([]any)
-			update.Address = buildSdkLocationAddress(addressList)
+			update.Address = buildSdkLocationAddress(d)
 		}
 		if notes != "" {
 			update.Notes = &notes

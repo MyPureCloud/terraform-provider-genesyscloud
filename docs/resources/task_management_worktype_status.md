@@ -79,7 +79,6 @@ resource "genesyscloud_task_management_worktype_status" "closed" {
 
 ### Optional
 
-- `auto_terminate_workitem` (Boolean) When set to true, workitems will be automatically terminated when they enter this status (typically used for Closed category statuses).
 - `default` (Boolean) This status is the default status for Workitems created from this Worktype. Only one status can be set as the default status at a time. Once set there must always be a default status. The default can not be deleted.
 - `default_destination_status_id` (String, Deprecated) *DEPRECATED: Deprecated. Use default_destination_status_id in genesyscloud_task_management_worktype_status_transition instead* Default destination status to which this Status will transition to if auto status transition enabled.
 - `description` (String) The description of the Status.

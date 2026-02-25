@@ -19,11 +19,7 @@ func updateGroupVoicemailPolicy(ctx context.Context, d *schema.ResourceData, gp 
 	voicemailPolicy := buildSdkGroupVoicemailPolicy(d)
 	_, resp, err := gp.updateGroupVoicemailPolicy(ctx, d.Id(), voicemailPolicy)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to update group voicemail policy %s: %s", d.Id(), err)
-		if resp != nil && (resp.StatusCode == 401 || resp.StatusCode == 403) {
-			errMsg = fmt.Sprintf("%s. This may be due to missing permissions: export -> [voicemail:groupPolicy:view], import -> [voicemail:groupPolicy:edit]", errMsg)
-		}
-		return util.BuildAPIDiagnosticError(ResourceType, errMsg, resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group voucemail policy %s: %s", d.Id(), err), resp)
 	}
 	return nil
 }

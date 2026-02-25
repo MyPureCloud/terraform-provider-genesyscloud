@@ -73,7 +73,6 @@ func TeamExporter() *resourceExporter.ResourceExporter {
 			"division_id": {RefType: "genesyscloud_auth_division"},
 			"member_ids":  {RefType: "genesyscloud_user"},
 		},
-		AllowEmptyArrays: []string{"member_ids"},
 	}
 }
 

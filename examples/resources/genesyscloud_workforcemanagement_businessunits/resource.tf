@@ -1,4 +1,9 @@
 # Example: Basic Business Unit
+resource "genesyscloud_workforcemanagement_businessunits" "example_basic" {
+  name = "Example Business Unit"
+}
+
+# Example: Business Unit with Settings
 resource "genesyscloud_workforcemanagement_businessunits" "example_with_settings" {
   name        = "Example Business Unit with Settings"
   division_id = data.genesyscloud_auth_division_home.home.id

@@ -87,13 +87,6 @@ var (
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
-			"type": {
-				Description:  "The type of question. Valid values: multipleChoiceQuestion, multipleSelectQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"multipleChoiceQuestion", "multipleSelectQuestion", "freeTextQuestion", "npsQuestion", "readOnlyTextBlockQuestion"}, false),
-			},
 			"na_enabled": {
 				Description: "Specifies whether a not applicable answer is enabled.",
 				Type:        schema.TypeBool,
@@ -114,16 +107,11 @@ var (
 				Elem:        evaluationFormVisibilityCondition,
 			},
 			"answer_options": {
-				Description: "Options from which to choose an answer for this question. Required for multipleChoiceQuestion type.",
+				Description: "Options from which to choose an answer for this question.",
 				Type:        schema.TypeList,
-				Optional:    true,
+				Required:    true,
+				MinItems:    2,
 				Elem:        evaluationFormAnswerOptionsResource,
-			},
-			"multiple_select_option_questions": {
-				Description: "Options for a multiple select question. Each option is itself a question with Selected/Unselected answer options. Required for multipleSelectQuestion type.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        evaluationFormMultipleSelectOptionQuestion,
 			},
 			"is_kill": {
 				Description: "True if the question is a fatal question",
@@ -157,70 +145,6 @@ var (
 		},
 	}
 
-	evaluationFormMultipleSelectOptionQuestion = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"id": {
-				Description: "ID of the question.",
-				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"text": {
-				Description: "The text/label for the multiple select option.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"help_text": {
-				Description: "Help text for the option.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"type": {
-				Description:  "The type of question. Valid values: multipleChoiceQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validation.StringInSlice([]string{"multipleChoiceQuestion", "freeTextQuestion", "npsQuestion", "readOnlyTextBlockQuestion"}, false),
-			},
-			"na_enabled": {
-				Description: "Specifies whether a not applicable answer is enabled.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"comments_required": {
-				Description: "Specifies whether comments are required.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"visibility_condition": {
-				Description: "Defines conditions where the option would be visible",
-				Type:        schema.TypeList,
-				Optional:    true,
-				MaxItems:    1,
-				Elem:        evaluationFormVisibilityCondition,
-			},
-			"answer_options": {
-				Description: "Options from which to choose an answer for this option question. Required for multipleChoiceQuestion type options.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        evaluationFormAnswerOptionsResource,
-			},
-			"is_kill": {
-				Description: "True if the option is a fatal question",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-			"is_critical": {
-				Description: "True if the option is a critical question",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-			},
-		},
-	}
-
 	evaluationFormAnswerOptionsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"id": {
@@ -229,41 +153,12 @@ var (
 				Computed:    true,
 			},
 			"text": {
-				Description: "The text for the answer option. Required for regular answer options.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Type:     schema.TypeString,
+				Required: true,
 			},
 			"value": {
 				Type:     schema.TypeInt,
 				Required: true,
-			},
-			"built_in_type": {
-				Description: "The built-in type of this answer option. Only used for Multiple Select answer options. Valid values: Selected, Unselected.",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"assistance_conditions": {
-				Description: "List of assistance conditions which are combined together with a logical AND operator.",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        evaluationFormAssistanceCondition,
-			},
-		},
-	}
-
-	evaluationFormAssistanceCondition = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"operator": {
-				Description:  "The operator for the assistance condition. Valid values: EXISTS, NOTEXISTS.",
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"EXISTS", "NOTEXISTS"}, false),
-			},
-			"topic_ids": {
-				Description: "List of topic IDs which would be combined together using logical OR operator.",
-				Type:        schema.TypeList,
-				Required:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 	}
@@ -287,22 +182,8 @@ type EvaluationFormStruct struct {
 }
 
 type EvaluationFormQuestionStruct struct {
-	Text                          string
-	HelpText                      string
-	Type                          string
-	NaEnabled                     bool
-	CommentsRequired              bool
-	IsKill                        bool
-	IsCritical                    bool
-	VisibilityCondition           VisibilityConditionStruct
-	AnswerOptions                 []AnswerOptionStruct
-	MultipleSelectOptionQuestions []MultipleSelectOptionQuestionStruct
-}
-
-type MultipleSelectOptionQuestionStruct struct {
 	Text                string
 	HelpText            string
-	Type                string
 	NaEnabled           bool
 	CommentsRequired    bool
 	IsKill              bool
@@ -314,7 +195,6 @@ type MultipleSelectOptionQuestionStruct struct {
 type AnswerOptionStruct struct {
 	Text                 string
 	Value                int
-	BuiltInType          string
 	AssistanceConditions []AssistanceConditionStruct
 }
 
@@ -385,17 +265,11 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllEvaluationForms),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
-		AllowZeroValues: []string{
-			"question_groups.questions.answer_options.value",
-			"question_groups.questions.multiple_select_option_questions.answer_options.value",
-			"question_groups.weight",
-		},
+		AllowZeroValues:  []string{"question_groups.questions.answer_options.value", "question_groups.weight"},
 		ExcludedAttributes: []string{
 			"question_groups.id",
 			"question_groups.questions.id",
 			"question_groups.questions.answer_options.id",
-			"question_groups.questions.multiple_select_option_questions.id",
-			"question_groups.questions.multiple_select_option_questions.answer_options.id",
 		},
 	}
 }

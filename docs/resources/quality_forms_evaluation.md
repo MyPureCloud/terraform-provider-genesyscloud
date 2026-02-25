@@ -89,61 +89,6 @@ resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
       }
     }
   }
-  question_groups {
-    name   = "Question Group with Multiple Select"
-    weight = 2.0
-    questions {
-      text = "Multiple Select Question with options."
-      type = "multipleSelectQuestion"
-      multiple_select_option_questions {
-        text              = "Option A - Basic"
-        help_text         = "Help text for Option A"
-        na_enabled        = true
-        comments_required = true
-        is_kill           = false
-        is_critical       = true
-        answer_options {
-          built_in_type = "Selected"
-          value         = 1
-        }
-        answer_options {
-          built_in_type = "Unselected"
-          value         = 0
-        }
-      }
-      multiple_select_option_questions {
-        text              = "Option B - With Visibility"
-        help_text         = "This option has a visibility condition"
-        na_enabled        = false
-        comments_required = false
-        is_kill           = true
-        is_critical       = false
-        visibility_condition {
-          combining_operation = "OR"
-          predicates          = ["../question/0/answer/0"]
-        }
-        answer_options {
-          built_in_type = "Selected"
-          value         = 2
-        }
-        answer_options {
-          built_in_type = "Unselected"
-          value         = 0
-        }
-      }
-      multiple_select_option_questions {
-        text = "Option C - Minimal"
-        answer_options {
-          built_in_type = "Selected"
-          value         = 1
-        }
-        answer_options {
-          built_in_type = "Unselected"
-          value         = 0
-        }
-      }
-    }
-  }
 }
 ```
 
@@ -191,18 +136,16 @@ Read-Only:
 
 Required:
 
+- `answer_options` (Block List, Min: 2) Options from which to choose an answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options))
 - `text` (String) Individual question
 
 Optional:
 
-- `answer_options` (Block List) Options from which to choose an answer for this question. Required for multipleChoiceQuestion type. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options))
 - `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
 - `help_text` (String) Help text for the question.
 - `is_critical` (Boolean) True if the question is a critical question Defaults to `false`.
 - `is_kill` (Boolean) True if the question is a fatal question Defaults to `false`.
-- `multiple_select_option_questions` (Block List) Options for a multiple select question. Each option is itself a question with Selected/Unselected answer options. Required for multipleSelectQuestion type. (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions))
 - `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
-- `type` (String) The type of question. Valid values: multipleChoiceQuestion, multipleSelectQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion.
 - `visibility_condition` (Block List, Max: 1) Defines conditions where question would be visible (see [below for nested schema](#nestedblock--question_groups--questions--visibility_condition))
 
 Read-Only:
@@ -214,85 +157,12 @@ Read-Only:
 
 Required:
 
+- `text` (String)
 - `value` (Number)
-
-Optional:
-
-- `assistance_conditions` (Block List) List of assistance conditions which are combined together with a logical AND operator. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options--assistance_conditions))
-- `built_in_type` (String) The built-in type of this answer option. Only used for Multiple Select answer options. Valid values: Selected, Unselected.
-- `text` (String) The text for the answer option. Required for regular answer options.
 
 Read-Only:
 
 - `id` (String) The ID for the answer option.
-
-<a id="nestedblock--question_groups--questions--answer_options--assistance_conditions"></a>
-### Nested Schema for `question_groups.questions.answer_options.assistance_conditions`
-
-Required:
-
-- `operator` (String) The operator for the assistance condition. Valid values: EXISTS, NOTEXISTS.
-- `topic_ids` (List of String) List of topic IDs which would be combined together using logical OR operator.
-
-
-
-<a id="nestedblock--question_groups--questions--multiple_select_option_questions"></a>
-### Nested Schema for `question_groups.questions.multiple_select_option_questions`
-
-Required:
-
-- `text` (String) The text/label for the multiple select option.
-
-Optional:
-
-- `answer_options` (Block List) Options from which to choose an answer for this option question. Required for multipleChoiceQuestion type options. (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions--answer_options))
-- `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
-- `help_text` (String) Help text for the option.
-- `is_critical` (Boolean) True if the option is a critical question Defaults to `false`.
-- `is_kill` (Boolean) True if the option is a fatal question Defaults to `false`.
-- `na_enabled` (Boolean) Specifies whether a not applicable answer is enabled. Defaults to `false`.
-- `type` (String) The type of question. Valid values: multipleChoiceQuestion, freeTextQuestion, npsQuestion, readOnlyTextBlockQuestion.
-- `visibility_condition` (Block List, Max: 1) Defines conditions where the option would be visible (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions--visibility_condition))
-
-Read-Only:
-
-- `id` (String) ID of the question.
-
-<a id="nestedblock--question_groups--questions--multiple_select_option_questions--answer_options"></a>
-### Nested Schema for `question_groups.questions.multiple_select_option_questions.answer_options`
-
-Required:
-
-- `value` (Number)
-
-Optional:
-
-- `assistance_conditions` (Block List) List of assistance conditions which are combined together with a logical AND operator. (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions--answer_options--assistance_conditions))
-- `built_in_type` (String) The built-in type of this answer option. Only used for Multiple Select answer options. Valid values: Selected, Unselected.
-- `text` (String) The text for the answer option. Required for regular answer options.
-
-Read-Only:
-
-- `id` (String) The ID for the answer option.
-
-<a id="nestedblock--question_groups--questions--multiple_select_option_questions--answer_options--assistance_conditions"></a>
-### Nested Schema for `question_groups.questions.multiple_select_option_questions.answer_options.assistance_conditions`
-
-Required:
-
-- `operator` (String) The operator for the assistance condition. Valid values: EXISTS, NOTEXISTS.
-- `topic_ids` (List of String) List of topic IDs which would be combined together using logical OR operator.
-
-
-
-<a id="nestedblock--question_groups--questions--multiple_select_option_questions--visibility_condition"></a>
-### Nested Schema for `question_groups.questions.multiple_select_option_questions.visibility_condition`
-
-Required:
-
-- `combining_operation` (String) Valid Values: AND, OR
-- `predicates` (List of String) A list of strings, each representing the location in the form of the Answer Option to depend on. In the format of "/form/questionGroup/{questionGroupIndex}/question/{questionIndex}/answer/{answerIndex}" or, to assume the current question group, "../question/{questionIndex}/answer/{answerIndex}". Note: Indexes are zero-based
-
 
 
 <a id="nestedblock--question_groups--questions--visibility_condition"></a>
