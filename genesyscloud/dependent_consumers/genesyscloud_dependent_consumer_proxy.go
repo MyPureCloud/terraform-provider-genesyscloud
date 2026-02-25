@@ -117,6 +117,7 @@ func fetchDepConsumers(ctx context.Context,
 		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil && data.VarType != nil {
 			flowTypeObjectMaps := SetFlowTypeObjectMaps()
 			objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
+			log.Printf("[DEBUG_FLOW] Flow %s (%s): VarType=%s, flowTypeExists=%v, objectType=%s", resourceKey, resourceLabel, *data.VarType, flowTypeExists, objectType)
 			if flowTypeExists {
 				// Mark this flow as being processed EARLY to prevent re-entry during recursive calls
 				// Only add after confirming: flow exists, has published version, and has valid flow type
@@ -194,14 +195,18 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 	totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, []string, error) {
 	var err error
 	dependentConsumerMap := SetDependentObjectMaps()
+	log.Printf("[DEBUG_DEPS] iterateDependencies for flow key=%s, label=%s, entityCount=%d", key, resourceLabel, len(*dependencies.Entities))
 	for _, consumer := range *dependencies.Entities {
 		if consumer.Id == nil || consumer.VarType == nil {
 			continue
 		}
 
 		resourceType, exists := getResourceType(consumer, dependentConsumerMap)
+		log.Printf("[DEBUG_DEPS] Processing consumer: Id=%s, Name=%s, VarType=%s, mappedResourceType=%s, exists=%v (parent flow: %s)",
+			*consumer.Id, *consumer.Name, *consumer.VarType, resourceType, exists, resourceLabel)
 		if exists {
 			resources, architectDependencies = processResource(consumer, resourceType, resources, architectDependencies, key)
+			log.Printf("[DEBUG_DEPS] Added resource %s.%s as dependency of %s (total resources now: %d)", resourceType, *consumer.Id, resourceLabel, len(resources))
 			if resourceType == gflow && *consumer.Id != key {
 				if !isDependencyPresent(architectDependencies, *consumer.Id, key) {
 					resources, dependsMap, totalFlowResources, err = fetchAndProcessDependentConsumers(ctx, p, consumer, architectDependencies, resources, dependsMap, cyclicDependsList, totalFlowResources, resourceType)
