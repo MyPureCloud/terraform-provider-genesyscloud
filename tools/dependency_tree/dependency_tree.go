@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -60,9 +61,9 @@ func main() {
 	versionedFilename := fmt.Sprintf("%s-%s%s", filename, version, ext)
 	outputPath = filepath.Join(dir, versionedFilename)
 
-	providerResourceNames := providerRegistrar.GetResourceTypeNames()
+	exporters := providerRegistrar.GetResourceExporters()
 
-	dependencyTree := buildDependencyTree(providerResourceNames)
+	dependencyTree := buildDependencyTree(exporters)
 
 	dependencyTree.Version = version
 
@@ -84,22 +85,15 @@ func main() {
 }
 
 // buildDependencyTree creates a tree structure of resources and their dependencies
-func buildDependencyTree(resourceNames []string) DependencyTree {
+func buildDependencyTree(exporters map[string]*resourceExporter.ResourceExporter) DependencyTree {
 	resourceNodes := []ResourceNode{}
 
 	// Process each resource and its dependencies
-	for _, resourceType := range resourceNames {
+	for resourceType, exporter := range exporters {
 		node := ResourceNode{
 			Name:         buildResourceName(resourceType),
 			Type:         resourceType,
 			Dependencies: []string{},
-		}
-
-		exporter := providerRegistrar.GetResourceExporterByResourceType(resourceType)
-		if exporter == nil {
-			fmt.Fprintf(os.Stderr, "No exporter found for resource type: %s\n", resourceType)
-			resourceNodes = append(resourceNodes, node)
-			continue
 		}
 
 		// Get dependencies from RefAttrs in the exporter

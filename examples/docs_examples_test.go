@@ -73,7 +73,6 @@ func TestAccExampleResourcesComplete(t *testing.T) {
 	var resources = []string{}
 	if len(testResourceTypes) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
-		resources = RemoveIgnoredResources(resources)
 	} else {
 		resources = testResourceTypes
 	}
@@ -216,7 +215,6 @@ func TestUnitExampleResourcesPlanOnly(t *testing.T) {
 
 	providerResources, providerDataSources := provider_registrar.GetProviderResources()
 	resources := provider_registrar.GetResourceTypeNames()
-	resources = RemoveIgnoredResources(resources)
 	sort.Strings(resources)
 
 	providerFactories := provider.GetProviderFactories(providerResources, providerDataSources)
@@ -310,7 +308,6 @@ func TestAccExampleResourcesAudit(t *testing.T) {
 	testResourceTypes := getTestResourceTypes()
 	if len(testResourceTypes) == 0 {
 		resources = provider_registrar.GetResourceTypeNames()
-		resources = RemoveIgnoredResources(resources)
 	} else {
 		resources = testResourceTypes
 	}

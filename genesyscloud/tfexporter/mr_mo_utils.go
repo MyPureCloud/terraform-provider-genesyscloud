@@ -10,7 +10,6 @@ import (
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
@@ -181,7 +180,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMapsForMrMo(exporte
 			continue
 		}
 
-		if !errors.ContainsPermissionsErrorOnly(err) {
+		if !containsPermissionsErrorOnly(err) {
 			return err
 		}
 

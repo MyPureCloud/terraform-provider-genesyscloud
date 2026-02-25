@@ -12,7 +12,7 @@ type Registrar interface {
 	RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter)
 }
 
-// need this for TFexport where Resources are required for provider initialization.
+// need this for TFexport where Resources are required for provider initialisation.
 // NewGenesysCloudResourceExporter
 
 var providerResources map[string]*schema.Resource

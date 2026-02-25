@@ -26,7 +26,6 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -1595,7 +1594,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			if mockError != nil {
 				err = mockError
 			}
-			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
+			if containsPermissionsErrorOnly(err) && logErrors {
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
@@ -1680,6 +1679,19 @@ func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, 
 	}
 
 	return resourcesTobeExported
+}
+
+func containsPermissionsErrorOnly(err diag.Diagnostics) bool {
+	foundPermissionsError := false
+	for _, v := range err {
+		if strings.Contains(v.Summary, "403") ||
+			strings.Contains(v.Summary, "501") {
+			foundPermissionsError = true
+		} else {
+			return false
+		}
+	}
+	return foundPermissionsError
 }
 
 var logAttrInfo = "\nTo continue exporting other resources in spite of this error, set the 'log_permission_errors' attribute to 'true'"
