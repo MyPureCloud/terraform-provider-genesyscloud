@@ -2,6 +2,8 @@ package journey_outcome_predictor
 
 // @team: Journey Data
 // @chat: #customer-journey-data
+// @pm: Angelo Cicchitto
+// @jira: CPR
 // @description: Manages customer journey analytics and predictive engagement. Provides customer segmentation, outcome tracking, predictive modeling, and journey visualization for proactive customer engagement strategies.
 
 import (

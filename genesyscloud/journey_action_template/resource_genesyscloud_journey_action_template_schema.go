@@ -2,6 +2,8 @@ package journey_action_template
 
 // @team: Journey Data
 // @chat: #customer-journey-data
+// @pm: Angelo Cicchitto
+// @jira: CPR
 // @description: Action Map Qualification Service determines if actions should be triggered for customers based on configured action maps. Handles action templates and qualification logic for content offers, architect flows, webchat, web messaging, and open actions.
 
 import (
