@@ -688,10 +688,13 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 		log.Printf("UPLOAD ASSET ERR: %v\n", err)
 		return fmt.Errorf("failed to perform PUT request: %w", err)
 	}
+
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
+	log.Printf("UPLOAD ASSET RESPONSE: status=%d body=%s\n", resp.StatusCode, string(body))
+
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		log.Printf("UPLOAD ASSET STATUS NOT OK: %v %v\n", resp.StatusCode, string(body))
 		return fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
 	}
