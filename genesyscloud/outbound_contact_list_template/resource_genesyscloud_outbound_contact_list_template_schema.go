@@ -1,5 +1,4 @@
-﻿package outbound_contact_list_template
-
+package outbound_contact_list_template
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -193,4 +192,3 @@ func DataSourceOutboundContactListTemplate() *schema.Resource {
 		},
 	}
 }
-
