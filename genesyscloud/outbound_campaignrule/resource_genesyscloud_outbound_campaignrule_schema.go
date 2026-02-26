@@ -282,6 +282,39 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 		},
 	}
 
+	outboundCampaignRuleConditionGroup := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`match_any_conditions`: {
+				Description: `Whether or not this condition group should be evaluated as true if any of sub conditions is matched.`,
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			`conditions`: {
+				Description: `The list of conditions in this group.`,
+				Required:    true,
+				MinItems:    1,
+				Type:        schema.TypeList,
+				Elem:        outboundCampaignRuleCondition,
+			},
+		},
+	}
+
+	outboundCampaignRuleExecutionSettings := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`frequency`: {
+				Description:  `Execution control frequency. Valid values: onEachTrigger, oncePerDay.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"onEachTrigger", "oncePerDay"}, true),
+			},
+			`time_zone_id`: {
+				Description: `The time zone for the execution control frequency="oncePerDay"; for example, Africa/Abidjan. This property is ignored when frequency is not "oncePerDay".`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
 	outboundCampaignRuleAction := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`id`: {
@@ -336,9 +369,8 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Elem:        outboundCampaignRuleEntities,
 			},
 			`campaign_rule_conditions`: {
-				Description: `The list of conditions that are evaluated on the entities.`,
-				Required:    true,
-				MinItems:    1,
+				Description: `The list of conditions that are evaluated on the entities. Required when not using condition_groups (campaign_rule_processing "v2").`,
+				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        outboundCampaignRuleCondition,
 			},
@@ -353,6 +385,25 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				Type:        schema.TypeBool,
+			},
+			`campaign_rule_processing`: {
+				Description:  `Campaign rule processing algorithm. Use "v2" to enable condition groups.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"", "v2"}, true),
+			},
+			`condition_groups`: {
+				Description: `List of condition groups that are evaluated, used only with campaignRuleProcessing="v2".`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        outboundCampaignRuleConditionGroup,
+			},
+			`execution_settings`: {
+				Description: `Campaign rule execution settings.`,
+				Optional:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Elem:        outboundCampaignRuleExecutionSettings,
 			},
 			`enabled`: {
 				Description: `Whether or not this campaign rule is currently enabled.`,
@@ -409,6 +460,15 @@ func OutboundCampaignruleExporter() *resourceExporter.ResourceExporter {
 				RefType: "genesyscloud_responsemanagement_response",
 			},
 			`campaign_rule_conditions.parameters.email_content_template_id`: {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			`condition_groups.conditions.parameters.queue_id`: {
+				RefType: "genesyscloud_routing_queue",
+			},
+			`condition_groups.conditions.parameters.sms_content_template_id`: {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			`condition_groups.conditions.parameters.email_content_template_id`: {
 				RefType: "genesyscloud_responsemanagement_response",
 			},
 		},
