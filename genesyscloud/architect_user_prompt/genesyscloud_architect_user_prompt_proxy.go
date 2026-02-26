@@ -440,7 +440,7 @@ func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx cont
 	if asset.Language != nil && len(*asset.Language) > 0 {
 		language = *asset.Language
 	}
-	uploadUrl := fmt.Sprintf("%s/api/v2/architect/prompts/%s/resources/%s/uploads", p.clientConfig.BasePath, language, *asset.PromptId)
+	uploadUrl := fmt.Sprintf("%s/api/v2/architect/prompts/%s/resources/%s/uploads", p.clientConfig.BasePath, *asset.PromptId, language)
 	fmt.Println("URL", uploadUrl)
 
 	if err := p.uploadPromptFile(ctx, uploadUrl, filename); err != nil {
