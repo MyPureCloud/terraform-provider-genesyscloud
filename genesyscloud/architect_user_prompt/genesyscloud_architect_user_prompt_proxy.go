@@ -607,7 +607,7 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 
 	// Upload the file.
 	err = uploadWavFile(body.Url, body.Headers, reader, p)
-	log.Printf("UPLOAD WAV FILE ERR: %v\n", err)
+	fmt.Printf("UPLOAD WAV FILE ERR: %v\n", err)
 	return err
 }
 
