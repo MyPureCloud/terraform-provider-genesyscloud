@@ -2,6 +2,8 @@ package responsemanagement_response
 
 // @team: Response Management
 // @chat: #genesys-cloud-canned-responses
+// @pm: Marudhu Pandian
+// @jira: RESPONSES
 // @description: Response management provides the ability to support 'canned' responses to commonly asked questions for contact center users. The responses are designed to be used with email, chat, SMS, etc.
 
 import (

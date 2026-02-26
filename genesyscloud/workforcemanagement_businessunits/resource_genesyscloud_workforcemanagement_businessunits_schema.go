@@ -2,6 +2,8 @@ package workforcemanagement_businessunits
 
 // @team: Workforce Management
 // @chat: #genesys-cloud-wfm-dev
+// @pm: Paul Wood
+// @jira: WFM
 // @description: A service to help our customer manage their workforce spanning disciplines such as forecasting, scheduling, and time off management.
 
 import (

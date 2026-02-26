@@ -2,6 +2,8 @@ package conversations_messaging_integrations_apple
 
 // @team: AAPL
 // @chat: AAPL-DEV
+// @pm: Katie Ritz
+// @jira: AAPL
 // @description: Messaging Connector for Apple Messages for Business. Allows Apple Messages to send inbound and receive outbound messages through the Messaging Platform.
 
 import (

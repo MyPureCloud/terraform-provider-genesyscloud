@@ -2,6 +2,8 @@ package knowledge_label
 
 // @team: Knowledge Administration Service Team
 // @chat: #knowledge-team
+// @pm: Harshali Desai
+// @jira: GKC
 // @description: Knowledge Administration service manages knowledge content for agent assistance. Provides APIs and UI for creating, searching, rating, and organizing knowledge articles that agents use to answer customer interactions effectively.
 
 import (

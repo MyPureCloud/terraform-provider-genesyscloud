@@ -2,6 +2,7 @@ package conversations_messaging_integrations_instagram
 
 // @team: Messaging Platform
 // @chat: Messaging Platform
+// @jira: PLT
 // @description: Messaging Service is the core of Messaging Platform. It provides the APIs for normalized digital private messaging and public social interactions across a range of external providers
 
 import (
