@@ -434,17 +434,13 @@ func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx cont
 	}
 	filename := filenameTagsArray[0]
 
-	fmt.Println("FILENAME", filename)
-
 	language := "en-us"
 	if asset.Language != nil && len(*asset.Language) > 0 {
 		language = *asset.Language
 	}
 	uploadUrl := fmt.Sprintf("%s/api/v2/architect/prompts/%s/resources/%s/uploads", p.clientConfig.BasePath, *asset.PromptId, language)
-	fmt.Println("URL", uploadUrl)
 
 	if err := p.uploadPromptFile(ctx, uploadUrl, filename); err != nil {
-		fmt.Printf("failed to upload user prompt resource '%s' to %s\n", filename, uploadUrl)
 		return fmt.Errorf("failed to upload user prompt resource '%s' to %s", filename, uploadUrl)
 	}
 	return nil
@@ -580,7 +576,6 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 }
 
 func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
-	fmt.Println("ENTERED UPLOAD PROMPT FILE")
 	// Get the prompt asset audio file.
 	reader, file, err := files.DownloadOrOpenFile(ctx, filename, S3Enabled)
 	if err != nil {
@@ -594,26 +589,19 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 	// Generate a presigned url for upload.
 	body, _, err := requestutil.MakeAPIRequest(ctx, http.MethodPost, uploadUri, nil, p)
 	if err != nil {
-		fmt.Printf("ERROR GENERATING PRESIGNED URL %v\n", err)
 		return err
 	}
 	if body == nil {
-		fmt.Println("NO PRESIGNED URL FOUND IN RESPONSE")
 		return errors.New("no presigned url found in response")
 	}
 
-	fmt.Printf("PRESIGNED URL: %s\n", body.Url)
-	fmt.Printf("PRESIGNED RES HEADERS: %+v\n", body.Headers)
-
 	// Upload the file.
 	err = uploadWavFile(body.Url, body.Headers, reader, p)
-	fmt.Printf("UPLOAD WAV FILE ERR: %v\n", err)
 	return err
 }
 
 // uploadWavFile performs an HTTP PUT request with the raw file data to the presigned URL.
 func uploadWavFile(presignedURL string, headers map[string]string, reader io.Reader, p *architectUserPromptProxy) error {
-	fmt.Println("ENTERED UPLOAD WAV")
 	var size int64
 	var file *os.File
 	var buffer *bytes.Buffer
@@ -680,22 +668,16 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 
 	client := &http.Client{}
 
-	log.Printf("UPLOAD ASSET REQ: %+v\n", req)
-	log.Println("UPLOAD ASSET URL", presignedURL)
-
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("UPLOAD ASSET ERR: %v\n", err)
 		return fmt.Errorf("failed to perform PUT request: %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	log.Printf("UPLOAD ASSET RESPONSE: status=%d body=%s\n", resp.StatusCode, string(body))
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("UPLOAD ASSET STATUS NOT OK: %v %v\n", resp.StatusCode, string(body))
 		return fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
