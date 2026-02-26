@@ -104,8 +104,13 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
-		CannedResponseLibraries:      buildCannedResponseLibraries(d),
-		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
+		CannedResponseLibraries: buildCannedResponseLibraries(d),
+	}
+
+	if exists := featureToggles.CGAToggleExists(); !exists {
+		createQueue.ConditionalGroupActivation = BuildSdkConditionalGroupActivation(d)
+	} else {
+		log.Printf("%s is set, not creating conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -240,8 +245,12 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
 		}
 
-		if currentQueue.ConditionalGroupActivation != nil {
-			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
+		if exists := featureToggles.CGAToggleExists(); !exists {
+			if currentQueue.ConditionalGroupActivation != nil {
+				resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, FlattenConditionalGroupActivation)
+			}
+		} else {
+			log.Printf("%s is set, not reading conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -352,11 +361,10 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
-		CannedResponseLibraries:      buildCannedResponseLibraries(d),
-		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
+		CannedResponseLibraries: buildCannedResponseLibraries(d),
 	}
 
-	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
+	diagErr := addCGRAndOEAAndCGA(proxy, d, &updateQueue)
 	if diagErr.HasError() {
 		return diagErr
 	}
@@ -404,11 +412,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 /*
-DEVTOOLING-751: If conditional group routing rules and outbound email address are managed by their independent resource
-they are being removed when the parent queue is updated since the update body does not contain them.
-If the independent resources are enabled, pass in the current OEA and/or CGR to the update queue so they are not removed
+DEVTOOLING-751: If conditional group routing rules, outbound email address, or conditional group activation
+are managed by their independent resource, they are being removed when the parent queue is updated since the
+update body does not contain them.
+If the independent resources are enabled, pass in the current OEA, CGR, and/or CGA to the update queue so they are not removed.
 */
-func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
+func addCGRAndOEAAndCGA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
@@ -428,6 +437,13 @@ func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platf
 		if queue.ConditionalGroupRouting != nil && len(*queue.ConditionalGroupRouting.Rules) > 0 {
 			(*queue.ConditionalGroupRouting.Rules)[0].Queue = nil
 		}
+	}
+
+	if exists := featureToggles.CGAToggleExists(); !exists {
+		queue.ConditionalGroupActivation = BuildSdkConditionalGroupActivation(d)
+	} else {
+		log.Printf("%s is set, not updating conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
+		queue.ConditionalGroupActivation = currentQueue.ConditionalGroupActivation
 	}
 
 	if exists := featureToggles.OEAToggleExists(); !exists {
