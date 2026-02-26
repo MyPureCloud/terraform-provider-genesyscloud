@@ -320,6 +320,7 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 		}
 
 		if err = p.retrieveFilenameAndUploadPromptAsset(ctx, resource); err != nil {
+			log.Printf("failed to retrieve and upload prompt asset: %v\n", err)
 			return nil, err
 		}
 
@@ -433,13 +434,17 @@ func (p *architectUserPromptProxy) retrieveFilenameAndUploadPromptAsset(ctx cont
 	}
 	filename := filenameTagsArray[0]
 
+	fmt.Println("FILENAME", filename)
+
 	language := "en-us"
 	if asset.Language != nil && len(*asset.Language) > 0 {
 		language = *asset.Language
 	}
 	uploadUrl := fmt.Sprintf("%s/api/v2/architect/prompts/%s/resources/%s/uploads", p.clientConfig.BasePath, language, *asset.PromptId)
+	fmt.Println("URL", uploadUrl)
 
 	if err := p.uploadPromptFile(ctx, uploadUrl, filename); err != nil {
+		fmt.Printf("failed to upload user prompt resource '%s' to %s\n", filename, uploadUrl)
 		return fmt.Errorf("failed to upload user prompt resource '%s' to %s", filename, uploadUrl)
 	}
 	return nil
@@ -596,6 +601,7 @@ func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, upload
 
 	// Upload the file.
 	err = uploadWavFile(body.Url, body.Headers, reader, p)
+	fmt.Printf("UPLOAD WAV FILE ERR: %w", err)
 	return err
 }
 
@@ -667,14 +673,19 @@ func uploadWavFile(presignedURL string, headers map[string]string, reader io.Rea
 
 	client := &http.Client{}
 
+	fmt.Printf("UPLOAD ASSET REQ: %+v\n", req)
+	fmt.Println("UPLOAD ASSET URL", presignedURL)
+
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Printf("UPLOAD ASSET ERR: %v\n", err)
 		return fmt.Errorf("failed to perform PUT request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("UPLOAD ASSET STATUS NOT OK: %v %v\n", resp.StatusCode, string(body))
 		return fmt.Errorf("upload failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
