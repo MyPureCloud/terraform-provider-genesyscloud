@@ -1,4 +1,4 @@
-package greeting_group
+package group_greeting
 
 import (
 	"context"

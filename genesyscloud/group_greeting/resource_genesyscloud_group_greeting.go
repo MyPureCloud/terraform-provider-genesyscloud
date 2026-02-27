@@ -1,4 +1,4 @@
-package greeting_group
+package group_greeting
 
 import (
 	"context"
@@ -57,7 +57,7 @@ func createGroupGreeting(ctx context.Context, d *schema.ResourceData, meta inter
 func readGroupGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getGreeetingProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGreeting(), constants.ConsistencyChecks(), ResourceType)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupGreeting(), constants.ConsistencyChecks(), ResourceType)
 	groupID := ""
 	if groupValue, ok := d.GetOk("group_id"); ok {
 		groupID = groupValue.(string)

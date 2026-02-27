@@ -1,4 +1,4 @@
-package greeting_group
+package group_greeting
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -11,13 +11,13 @@ import (
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(ResourceType, ResourceGreeting())
+	l.RegisterResource(ResourceType, ResourceGroupGreeting())
 	l.RegisterExporter(ResourceType, GreetingExporter())
 }
 
-const ResourceType = "genesyscloud_greeting_group"
+const ResourceType = "genesyscloud_group_greeting"
 
-func ResourceGreeting() *schema.Resource {
+func ResourceGroupGreeting() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Greetings (Group)",
 

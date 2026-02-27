@@ -1,4 +1,4 @@
-package greeting_group
+package group_greeting
 
 import (
 	"sync"
@@ -11,8 +11,7 @@ import (
 )
 
 /*
-The genesyscloud_greetings_init_test.go file is used to initialize the data sources and resources
-used in testing the greetings resource.
+This file initializes the data sources and resources used in testing the group greeting resource.
 */
 
 // providerResources holds a map of all registered resources
@@ -30,7 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[userResource.ResourceType] = userResource.ResourceUser()
 	providerResources[groupResource.ResourceType] = groupResource.ResourceGroup()
-	providerResources[ResourceType] = ResourceGreeting()
+	providerResources[ResourceType] = ResourceGroupGreeting()
 }
 
 // initTestResources initializes all test resources and data sources.
@@ -44,9 +43,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for greetings package
+	// Run setup function before starting the test suite for group_greeting package
 	initTestResources()
 
-	// Run the test suite for the greetings package
+	// Run the test suite for the group_greeting package
 	m.Run()
 }

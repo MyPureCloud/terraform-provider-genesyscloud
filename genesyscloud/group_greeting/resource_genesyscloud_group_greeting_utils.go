@@ -1,4 +1,4 @@
-package greeting_group
+package group_greeting
 
 import (
 	"fmt"
@@ -92,7 +92,7 @@ func extractDomainEntityName(entity *platformclientv2.Domainentityref) *string {
 	return entity.Name
 }
 
-func GenerateGreetingGroup(
+func GenerateGroupGreeting(
 	resourceLabel string,
 	name string,
 	greetingType string,
@@ -100,7 +100,7 @@ func GenerateGreetingGroup(
 	group string,
 	audioTts string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_greeting_group" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_group_greeting" "%s" {
   name        = "%s"
   type        = "%s"
   owner_type  = "%s"

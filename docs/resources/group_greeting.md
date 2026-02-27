@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_greeting_group Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_group_greeting Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
 Genesys Cloud Greetings (Group)
 ---
-# genesyscloud_greeting_group (Resource)
+# genesyscloud_group_greeting (Resource)
 
 Genesys Cloud Greetings (Group)
 
@@ -24,7 +24,7 @@ resource "genesyscloud_group" "ExampleTestGroup" {
 name = "Example Test Group"
 }
 
-resource "genesyscloud_greeting_group" "Test_Greeting" {
+resource "genesyscloud_group_greeting" "Test_Greeting" {
 name = "Example Test Group Greeting"
 type = "VOICEMAIL"
 owner_type = "GROUP"

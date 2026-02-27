@@ -38,7 +38,7 @@ import (
 	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
-	greetingGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting_group"
+	groupGreeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_greeting"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
@@ -237,7 +237,7 @@ func registerResources() {
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
-	greetingGroup.SetRegistrar(regInstance)                                //Registering greeting group
+	groupGreeting.SetRegistrar(regInstance)                                //Registering group greeting
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	guide.SetRegistrar(regInstance)                                        //Registering guide
 	guideVersion.SetRegistrar(regInstance)                                 //Registering Guide Version

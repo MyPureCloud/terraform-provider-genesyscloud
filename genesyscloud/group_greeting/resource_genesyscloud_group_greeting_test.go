@@ -1,4 +1,4 @@
-package greeting_group
+package group_greeting
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ func TestAccResourceGroupGreeting(t *testing.T) {
 				Config: groupResource.GenerateBasicGroupResource(
 					groupResourceLabel,
 					groupName,
-				) + GenerateGreetingGroup(
+				) + GenerateGroupGreeting(
 					resourceLabel,
 					name1,
 					type1,
@@ -49,18 +49,18 @@ func TestAccResourceGroupGreeting(t *testing.T) {
 					audioTts1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_greeting_group."+resourceLabel, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_group."+resourceLabel, "type", type1),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_group."+resourceLabel, "owner_type"),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_group."+resourceLabel, "audio_tts", audioTts1),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_group."+resourceLabel, "group_id"),
+					resource.TestCheckResourceAttr("genesyscloud_group_greeting."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_group_greeting."+resourceLabel, "type", type1),
+					resource.TestCheckResourceAttrSet("genesyscloud_group_greeting."+resourceLabel, "owner_type"),
+					resource.TestCheckResourceAttr("genesyscloud_group_greeting."+resourceLabel, "audio_tts", audioTts1),
+					resource.TestCheckResourceAttrSet("genesyscloud_group_greeting."+resourceLabel, "group_id"),
 				),
 			},
 			{
 				Config: groupResource.GenerateBasicGroupResource(
 					groupResourceLabel,
 					groupName,
-				) + GenerateGreetingGroup(
+				) + GenerateGroupGreeting(
 					resourceLabel,
 					name2,
 					type2,
@@ -69,15 +69,15 @@ func TestAccResourceGroupGreeting(t *testing.T) {
 					audioTts2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_greeting_group."+resourceLabel, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_group."+resourceLabel, "type", type2),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_group."+resourceLabel, "owner_type"),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_group."+resourceLabel, "audio_tts", audioTts2),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_group."+resourceLabel, "group_id"),
+					resource.TestCheckResourceAttr("genesyscloud_group_greeting."+resourceLabel, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_group_greeting."+resourceLabel, "type", type2),
+					resource.TestCheckResourceAttrSet("genesyscloud_group_greeting."+resourceLabel, "owner_type"),
+					resource.TestCheckResourceAttr("genesyscloud_group_greeting."+resourceLabel, "audio_tts", audioTts2),
+					resource.TestCheckResourceAttrSet("genesyscloud_group_greeting."+resourceLabel, "group_id"),
 				),
 			},
 			{
-				ResourceName:            "genesyscloud_greeting_group." + resourceLabel,
+				ResourceName:            "genesyscloud_group_greeting." + resourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"group_id"},
@@ -90,7 +90,7 @@ func TestAccResourceGroupGreeting(t *testing.T) {
 func testVerifyGreetingDestroyed(state *terraform.State) error {
 	greetingAPI := platformclientv2.NewGreetingsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_greeting_group" {
+		if rs.Type != "genesyscloud_group_greeting" {
 			continue
 		}
 		greeting, resp, err := greetingAPI.GetGreeting(rs.Primary.ID)
