@@ -228,14 +228,13 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
-		entries := d.Get("entries").([]interface{})
-		normalizedEntries := normalizeEntries(entries)
-
 		apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
 		if err != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
 		}
 
+		entries := d.Get("entries").([]interface{})
+		normalizedEntries := normalizeEntries(entries)
 		if areEntriesEquivalent(normalizedEntries, apiEntries) {
 			_ = d.Set("entries", entries)
 		} else {
