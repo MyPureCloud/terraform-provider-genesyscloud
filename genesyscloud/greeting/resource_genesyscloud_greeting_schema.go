@@ -1,4 +1,4 @@
-package greeting_organization
+package greeting
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -15,16 +15,16 @@ func SetRegistrar(l registrar.Registrar) {
 	l.RegisterExporter(ResourceType, GreetingExporter())
 }
 
-const ResourceType = "genesyscloud_greeting_organization"
+const ResourceType = "genesyscloud_greeting"
 
 func ResourceGreeting() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Greetings (Organization)",
+		Description: "Genesys Cloud Greeting",
 
-		CreateContext: provider.CreateWithPooledClient(createOrganizationGreeting),
-		ReadContext:   provider.ReadWithPooledClient(readOrganizationGreeting),
-		UpdateContext: provider.UpdateWithPooledClient(updateOrganizationGreeting),
-		DeleteContext: provider.DeleteWithPooledClient(deleteOrganizationGreeting),
+		CreateContext: provider.CreateWithPooledClient(createGreeting),
+		ReadContext:   provider.ReadWithPooledClient(readGreeting),
+		UpdateContext: provider.UpdateWithPooledClient(updateGreeting),
+		DeleteContext: provider.DeleteWithPooledClient(deleteGreeting),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

@@ -1,4 +1,4 @@
-package greeting_organization
+package greeting
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-func TestAccResourceOrganizationGreeting(t *testing.T) {
+func TestAccResourceGreeting(t *testing.T) {
 
 	var (
 		resourceLabel = "greeting"
@@ -32,7 +32,7 @@ func TestAccResourceOrganizationGreeting(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateGreetingOrganization(
+				Config: GenerateGreeting(
 					resourceLabel,
 					name1,
 					type1,
@@ -41,14 +41,14 @@ func TestAccResourceOrganizationGreeting(t *testing.T) {
 					audioTts1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_greeting_organization."+resourceLabel, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_organization."+resourceLabel, "type", type1),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_organization."+resourceLabel, "owner_type"),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_organization."+resourceLabel, "audio_tts", audioTts1),
+					resource.TestCheckResourceAttr("genesyscloud_greeting."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr("genesyscloud_greeting."+resourceLabel, "type", type1),
+					resource.TestCheckResourceAttrSet("genesyscloud_greeting."+resourceLabel, "owner_type"),
+					resource.TestCheckResourceAttr("genesyscloud_greeting."+resourceLabel, "audio_tts", audioTts1),
 				),
 			},
 			{
-				Config: GenerateGreetingOrganization(
+				Config: GenerateGreeting(
 					resourceLabel,
 					name2,
 					type2,
@@ -57,14 +57,14 @@ func TestAccResourceOrganizationGreeting(t *testing.T) {
 					audioTts2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_greeting_organization."+resourceLabel, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_organization."+resourceLabel, "type", type2),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_organization."+resourceLabel, "owner_type"),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_organization."+resourceLabel, "audio_tts", audioTts2),
+					resource.TestCheckResourceAttr("genesyscloud_greeting."+resourceLabel, "name", name2),
+					resource.TestCheckResourceAttr("genesyscloud_greeting."+resourceLabel, "type", type2),
+					resource.TestCheckResourceAttrSet("genesyscloud_greeting."+resourceLabel, "owner_type"),
+					resource.TestCheckResourceAttr("genesyscloud_greeting."+resourceLabel, "audio_tts", audioTts2),
 				),
 			},
 			{
-				ResourceName:      "genesyscloud_greeting_organization." + resourceLabel,
+				ResourceName:      "genesyscloud_greeting." + resourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -76,7 +76,7 @@ func TestAccResourceOrganizationGreeting(t *testing.T) {
 func testVerifyGreetingDestroyed(state *terraform.State) error {
 	greetingAPI := platformclientv2.NewGreetingsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_greeting_organization" {
+		if rs.Type != "genesyscloud_greeting" {
 			continue
 		}
 		greeting, resp, err := greetingAPI.GetGreeting(rs.Primary.ID)

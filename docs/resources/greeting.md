@@ -1,12 +1,12 @@
 ---
-page_title: "genesyscloud_greeting_organization Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_greeting Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Genesys Cloud Greetings (Organization)
+Genesys Cloud Greeting
 ---
-# genesyscloud_greeting_organization (Resource)
+# genesyscloud_greeting (Resource)
 
-Genesys Cloud Greetings (Organization)
+Genesys Cloud Greeting
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -20,16 +20,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_user" "ExampleTestOrganization" {
-name = "Example Test Organization"
-email = "example.test.organization@example.com"
-}
-
-resource "genesyscloud_greeting_organization" "Test_Greeting" {
-name = "Example Test Organization Greeting"
-type = "NAME"
-owner_type = "ORGANIZATION"
-audio_tts = "This is a test greeting"
+resource "genesyscloud_greeting" "test_greeting" {
+  name       = "Example Greeting"
+  type       = "NAME"
+  owner_type = "ORGANIZATION"
+  audio_tts  = "This is a test greeting"
 }
 ```
 

@@ -1,4 +1,4 @@
-package greeting_organization
+package greeting
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 
 func getAllGreetings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getGreeetingProxy(clientConfig)
+	proxy := getGreetingProxy(clientConfig)
 
 	greetings, resp, getErr := proxy.getAllGreetings(ctx)
 	if getErr != nil {
@@ -37,14 +37,14 @@ func getAllGreetings(ctx context.Context, clientConfig *platformclientv2.Configu
 	return resources, nil
 }
 
-func createOrganizationGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func createGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 
-	greetingReq := getOrganizationGreetingFromResourceData(d)
+	greetingReq := getGreetingFromResourceData(d)
 
 	log.Printf("Creating greeting")
-	greeting, resp, err := proxy.createOrganizationGreeting(ctx, &greetingReq)
+	greeting, resp, err := proxy.createGreeting(ctx, &greetingReq)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create greeting error: %s", err), resp)
 	}
@@ -52,17 +52,17 @@ func createOrganizationGreeting(ctx context.Context, d *schema.ResourceData, met
 	d.SetId(*greeting.Id)
 
 	log.Printf("Created greeting %s", *greeting.Id)
-	return readOrganizationGreeting(ctx, d, meta)
+	return readGreeting(ctx, d, meta)
 }
 
-func readOrganizationGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func readGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGreeting(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading greeting %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		greeting, resp, getErr := proxy.getOrganizationGreetingById(ctx, d.Id())
+		greeting, resp, getErr := proxy.getGreetingById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read greeting %s | error: %s", d.Id(), getErr), resp))
@@ -84,13 +84,13 @@ func readOrganizationGreeting(ctx context.Context, d *schema.ResourceData, meta 
 	})
 }
 
-func updateOrganizationGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func updateGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 
-	greetingReq := getOrganizationGreetingFromResourceData(d)
+	greetingReq := getGreetingFromResourceData(d)
 	if greetingReq.Owner == nil || greetingReq.Owner.Id == nil || *greetingReq.Owner.Id == "" {
-		currentGreeting, resp, getErr := proxy.getOrganizationGreetingById(ctx, d.Id())
+		currentGreeting, resp, getErr := proxy.getGreetingById(ctx, d.Id())
 		if getErr != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read greeting for update %s | error: %s", d.Id(), getErr), resp)
 		}
@@ -100,7 +100,7 @@ func updateOrganizationGreeting(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating greeting")
-	greeting, resp, err := proxy.updateOrganizationGreeting(ctx, d.Id(), &greetingReq)
+	greeting, resp, err := proxy.updateGreeting(ctx, d.Id(), &greetingReq)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update greeting error: %s", err), resp)
 	}
@@ -108,22 +108,22 @@ func updateOrganizationGreeting(ctx context.Context, d *schema.ResourceData, met
 	if greeting != nil && greeting.Id != nil {
 		log.Printf("Updated greeting %s", *greeting.Id)
 	}
-	return readOrganizationGreeting(ctx, d, meta)
+	return readGreeting(ctx, d, meta)
 }
 
-func deleteOrganizationGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func deleteGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 
 	log.Printf("Deleting greeting %s", d.Id())
 
-	resp, err := proxy.deleteOrganizationGreeting(ctx, d.Id())
+	resp, err := proxy.deleteGreeting(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Greeting %s error: %s", d.Id(), err), resp)
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getOrganizationGreetingById(ctx, d.Id())
+		_, resp, err := proxy.getGreetingById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Greeting deleted

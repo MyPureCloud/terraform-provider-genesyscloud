@@ -1,4 +1,4 @@
-package greeting_organization
+package greeting
 
 import (
 	"context"
@@ -11,19 +11,19 @@ import (
 var internalProxy *greetingProxy
 
 type getAllGreetingsFunc func(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error)
-type getOrganizationGreetingByIdFunc func(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
-type updateOrganizationGreetingFunc func(ctx context.Context, p *greetingProxy, greetingId string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
-type createOrganizationGreetingFunc func(ctx context.Context, p *greetingProxy, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
-type deleteOrganizationGreetingFunc func(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.APIResponse, error)
+type getGreetingByIdFunc func(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
+type updateGreetingFunc func(ctx context.Context, p *greetingProxy, greetingId string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
+type createGreetingFunc func(ctx context.Context, p *greetingProxy, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
+type deleteGreetingFunc func(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.APIResponse, error)
 
 type greetingProxy struct {
 	clientConfig        *platformclientv2.Configuration
 	greetingsApi        *platformclientv2.GreetingsApi
 	getAllGreetingsAttr getAllGreetingsFunc
-	createGreetingAttr  createOrganizationGreetingFunc
-	getGreetingByIdAttr getOrganizationGreetingByIdFunc
-	updateGreetingAttr  updateOrganizationGreetingFunc
-	deleteGreetingAttr  deleteOrganizationGreetingFunc
+	createGreetingAttr  createGreetingFunc
+	getGreetingByIdAttr getGreetingByIdFunc
+	updateGreetingAttr  updateGreetingFunc
+	deleteGreetingAttr  deleteGreetingFunc
 }
 
 func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
@@ -32,14 +32,14 @@ func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingPro
 		clientConfig:        clientConfig,
 		greetingsApi:        api,
 		getAllGreetingsAttr: getAllGreetingsFn,
-		createGreetingAttr:  createOrganizationGreetingFn,
-		getGreetingByIdAttr: getOrganizationGreetingByIdFn,
-		updateGreetingAttr:  updateOrganizationGreetingFn,
-		deleteGreetingAttr:  deleteOrganizationGreetingFn,
+		createGreetingAttr:  createGreetingFn,
+		getGreetingByIdAttr: getGreetingByIdFn,
+		updateGreetingAttr:  updateGreetingFn,
+		deleteGreetingAttr:  deleteGreetingFn,
 	}
 }
 
-func getGreeetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
+func getGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
 	if internalProxy == nil {
 		internalProxy = newGreetingProxy(clientConfig)
 	}
@@ -50,16 +50,16 @@ func getGreeetingProxy(clientConfig *platformclientv2.Configuration) *greetingPr
 func (p *greetingProxy) getAllGreetings(ctx context.Context) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error) {
 	return p.getAllGreetingsAttr(ctx, p)
 }
-func (p *greetingProxy) createOrganizationGreeting(ctx context.Context, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+func (p *greetingProxy) createGreeting(ctx context.Context, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	return p.createGreetingAttr(ctx, p, body)
 }
-func (p *greetingProxy) getOrganizationGreetingById(ctx context.Context, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+func (p *greetingProxy) getGreetingById(ctx context.Context, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	return p.getGreetingByIdAttr(ctx, p, id)
 }
-func (p *greetingProxy) updateOrganizationGreeting(ctx context.Context, greetingID string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+func (p *greetingProxy) updateGreeting(ctx context.Context, greetingID string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	return p.updateGreetingAttr(ctx, p, greetingID, body)
 }
-func (p *greetingProxy) deleteOrganizationGreeting(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+func (p *greetingProxy) deleteGreeting(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
 	return p.deleteGreetingAttr(ctx, p, id)
 }
 func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error) {
@@ -85,10 +85,10 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 	return &allGreetings, resp, nil
 }
 
-func createOrganizationGreetingFn(ctx context.Context, p *greetingProxy, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+func createGreetingFn(ctx context.Context, p *greetingProxy, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	return p.greetingsApi.PostGreetings(*body)
 }
-func getOrganizationGreetingByIdFn(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+func getGreetingByIdFn(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	found, resp, err := getGreetingFromOrganization(ctx, p, id)
 	if err != nil {
 		return nil, resp, err
@@ -98,10 +98,10 @@ func getOrganizationGreetingByIdFn(ctx context.Context, p *greetingProxy, id str
 	}
 	return p.greetingsApi.GetGreeting(id)
 }
-func updateOrganizationGreetingFn(ctx context.Context, p *greetingProxy, greetingId string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+func updateGreetingFn(ctx context.Context, p *greetingProxy, greetingId string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	return p.greetingsApi.PutGreeting(greetingId, *body)
 }
-func deleteOrganizationGreetingFn(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.APIResponse, error) {
+func deleteGreetingFn(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.greetingsApi.DeleteGreeting(id)
 }
 

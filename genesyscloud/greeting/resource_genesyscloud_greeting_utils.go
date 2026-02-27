@@ -1,4 +1,4 @@
-package greeting_organization
+package greeting
 
 import (
 	"fmt"
@@ -27,6 +27,10 @@ func getOrganizationGreetingFromResourceData(d *schema.ResourceData) platformcli
 	}
 
 	return greeting
+}
+
+func getGreetingFromResourceData(d *schema.ResourceData) platformclientv2.Greeting {
+	return getOrganizationGreetingFromResourceData(d)
 }
 
 func buildAudioFile(body []interface{}) *platformclientv2.Greetingaudiofile {
@@ -94,7 +98,7 @@ func extractDomainEntityName(entity *platformclientv2.Domainentityref) *string {
 	return entity.Name
 }
 
-func GenerateGreetingOrganization(
+func GenerateGreeting(
 	resourceLabel string,
 	name string,
 	greetingType string,
@@ -106,7 +110,7 @@ func GenerateGreetingOrganization(
 	if ownerID != "" {
 		ownerLine = fmt.Sprintf("  owner_id   = %s\n", ownerID)
 	}
-	return fmt.Sprintf(`resource "genesyscloud_greeting_organization" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_greeting" "%s" {
   name        = "%s"
   type        = "%s"
   owner_type  = "%s"
