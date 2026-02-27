@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -204,17 +205,6 @@ func getOutboundDnclistEntriesWithRetries(ctx context.Context, proxy *outboundDn
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
-
-	// Store original entries structure before normalization
-	originalEntries, _ := d.Get("entries").([]interface{})
-
-	// Normalize entries in state before creating consistency checker
-	// This ensures consistency checker captures normalized state for comparison
-	if len(originalEntries) > 0 {
-		normalizedEntries := normalizeEntries(originalEntries)
-		_ = d.Set("entries", normalizedEntries)
-	}
-
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceOutboundDncList(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading Outbound DNC list %s", d.Id())
@@ -238,30 +228,18 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
-		var apiEntries []interface{}
-		var entriesEquivalent bool
-		var normalizedOriginalEntries []interface{}
-		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
-			var diagErr diag.Diagnostics
-			apiEntries, diagErr = getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
-			if diagErr != nil {
-				return retry.NonRetryableError(fmt.Errorf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), diagErr))
-			}
+		entries := d.Get("entries").([]interface{})
+		normalizedEntries := normalizeEntries(entries)
 
-			// Normalize original entries for comparison (compute once, use multiple times)
-			normalizedOriginalEntries = normalizeEntries(originalEntries)
-			entriesEquivalent = areEntriesEquivalent(normalizedOriginalEntries, apiEntries)
-			log.Printf("Entries equivalent: %v", entriesEquivalent)
-			log.Printf("Normalized original entries: %v", normalizedOriginalEntries)
-			log.Printf("API entries: %v", apiEntries)
-			if entriesEquivalent {
-				// Entries are equivalent - preserve original structure to avoid perpetual diffs
-				// This ensures Terraform doesn't see a diff between config (3 blocks) and state (3 blocks)
-				_ = d.Set("entries", originalEntries)
-			} else {
-				// Entries differ - use API entries (which may have different data)
-				_ = d.Set("entries", apiEntries)
-			}
+		apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
+		}
+
+		if areEntriesEquivalent(normalizedEntries, apiEntries) {
+			_ = d.Set("entries", entries)
+		} else {
+			_ = d.Set("entries", apiEntries)
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
@@ -275,21 +253,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
 
-		// For consistency checker, temporarily set normalized entries
-		// The consistency checker captured normalized state, so we need normalized current state
-		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && entriesEquivalent {
-			_ = d.Set("entries", normalizedOriginalEntries)
-		}
-
-		checkErr := cc.CheckState(d)
-
-		// After consistency check, restore original structure if entries were equivalent
-		// This prevents Terraform from seeing a diff between config (3 blocks) and state (1 block)
-		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && entriesEquivalent {
-			_ = d.Set("entries", originalEntries)
-		}
-
-		return checkErr
+		return cc.CheckState(d)
 	})
 }
 
@@ -361,27 +325,59 @@ func groupEntriesByExpirationDate(entries []interface{}) map[string][]string {
 	return result
 }
 
-// normalizeEntries merges entries with the same expiration date, matching API behavior
+// Normalize entries to match API behavior
+// Groups entries by expiration_date, merges phone_numbers, removes duplicates, and sorts.
+// If a phone number appears in multiple expiration groups, it's kept only in the last expiration.
 func normalizeEntries(entries []interface{}) []interface{} {
-	grouped := groupEntriesByExpirationDate(entries)
-	log.Printf("Grouped entries: %v", grouped)
-	normalized := make([]interface{}, 0)
-	for expirationDate, phoneNumbers := range grouped {
-		// Remove duplicates from phone numbers using a map
-		seen := make(map[string]bool)
-		uniquePhones := make([]string, 0)
-		for _, phone := range phoneNumbers {
-			if !seen[phone] {
-				seen[phone] = true
-				uniquePhones = append(uniquePhones, phone)
-			}
-		}
-		normalized = append(normalized, map[string]interface{}{
-			"expiration_date": expirationDate,
-			"phone_numbers":   lists.StringListToInterfaceList(uniquePhones),
-		})
+	if len(entries) == 0 {
+		return entries
 	}
-	log.Printf("Normalized entries: %v", normalized)
+
+	// First pass: collect all phone numbers and their expiration dates
+	// Since we iterate through entries in order, we'll naturally get the last expiration
+	phoneToExpiration := make(map[string]string)
+
+	for _, entry := range entries {
+		expirationDate, phoneNumbers, ok := extractEntryData(entry)
+		if !ok {
+			continue
+		}
+
+		expDateKey := *expirationDate
+		for _, phone := range phoneNumbers {
+			// Always update to the current expiration (last one seen)
+			phoneToExpiration[phone] = expDateKey
+		}
+	}
+
+	// Second pass: group phones by their assigned expiration date
+	groupedPhones := make(map[string][]string)
+
+	for phone, expDate := range phoneToExpiration {
+		groupedPhones[expDate] = append(groupedPhones[expDate], phone)
+	}
+
+	// Convert grouped phones to normalized entries
+	normalized := make([]interface{}, 0)
+
+	for expDate, phones := range groupedPhones {
+		// Skip empty phone lists
+		if len(phones) == 0 {
+			continue
+		}
+
+		sort.Strings(phones)
+
+		// Create normalized entry
+		entry := make(map[string]interface{})
+		if expDate != "" {
+			entry["expiration_date"] = expDate
+		}
+		entry["phone_numbers"] = lists.StringListToInterfaceList(phones)
+
+		normalized = append(normalized, entry)
+	}
+
 	return normalized
 }
 

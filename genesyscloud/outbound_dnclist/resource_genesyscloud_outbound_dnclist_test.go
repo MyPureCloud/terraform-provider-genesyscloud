@@ -107,7 +107,6 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
 					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
-					// Expect two more to be added due to duplicate numbers
 					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 4),
 				),
 			},

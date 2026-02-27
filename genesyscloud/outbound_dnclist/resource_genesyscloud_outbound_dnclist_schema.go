@@ -95,7 +95,6 @@ func ResourceOutboundDncList() *schema.Resource {
 			`entries`: {
 				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,
 				Optional:    true,
-				Computed:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{

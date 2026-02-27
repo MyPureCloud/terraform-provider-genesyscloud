@@ -185,8 +185,6 @@ func uploadPhoneEntriesToDncListFn(p *outboundDnclistProxy, dncList *platformcli
 			}
 		}
 		log.Printf("Uploading phone numbers to DNC list %s", *dncList.Name)
-		log.Printf("XXPhone numbers: %v", phoneNumbers)
-		log.Printf("XXExpiration date: %v", entryMap["expiration_date"])
 		// POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers
 		response, err := p.outboundApi.PostOutboundDnclistPhonenumbers(*dncList.Id, phoneNumbers, entryMap["expiration_date"].(string))
 		if err != nil {
@@ -257,11 +255,6 @@ func getOutboundDnclistEntriesFn(ctx context.Context, p *outboundDnclistProxy, d
 	records, err := files.DownloadAndReadCSVFromURI(*data.Uri, p.clientConfig.AccessToken)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to download and read CSV for Outbound DNC list %s: %s", dncListId, err)
-	}
-
-	log.Printf("Downloaded records for Outbound DNC list %s: %d records", dncListId, len(records))
-	for i, record := range records {
-		log.Printf("  Record %d: %v", i, record)
 	}
 
 	// If only header row exists (no data), return empty list
