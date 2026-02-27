@@ -42,8 +42,6 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
 	rule := getCampaignruleFromResourceData(d)
-	// API requires create in "off" state; enable via update if desired
-	rule.Enabled = platformclientv2.Bool(false)
 
 	log.Printf("Creating Outbound Campaign Rule %s", *rule.Name)
 	outboundCampaignRule, resp, err := proxy.createOutboundCampaignrule(ctx, &rule)
@@ -54,8 +52,14 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	d.SetId(*outboundCampaignRule.Id)
 	log.Printf("Created Outbound Campaign Rule %s %s", *outboundCampaignRule.Name, *outboundCampaignRule.Id)
 
-	if d.Get("enabled").(bool) {
-		return updateOutboundCampaignRule(ctx, d, meta)
+	enabled := d.Get("enabled").(bool)
+	// Campaign rules can be enabled after creation
+	if enabled {
+		d.Set("enabled", enabled)
+		diag := updateOutboundCampaignRule(ctx, d, meta)
+		if diag != nil {
+			return diag
+		}
 	}
 	return readOutboundCampaignRule(ctx, d, meta)
 }
