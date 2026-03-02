@@ -1,0 +1,4 @@
+id,firstName,lastName,phone,email
+100,John,Doe,+13175555555,john.doe@example.com
+101,Jane,Smith,+13175555556,jane.smith@example.com
+102,Bob,Johnson,+13175555557,bob.johnson@example.com

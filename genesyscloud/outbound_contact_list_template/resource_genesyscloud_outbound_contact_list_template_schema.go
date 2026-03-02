@@ -5,6 +5,8 @@ package outbound_contact_list_template
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"fmt"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -12,6 +14,34 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+func hashOutboundContactListTemplatePhoneColumn(v interface{}) int {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return 0
+	}
+	columnName, _ := m["column_name"].(string)
+	colType, _ := m["type"].(string)
+	timeColName, _ := m["callable_time_column_name"].(string)
+	if timeColName == "" {
+		timeColName, _ = m["callable_time_column"].(string)
+	}
+	return schema.HashString(fmt.Sprintf("%s|%s|%s", columnName, colType, timeColName))
+}
+
+func hashOutboundContactListTemplateEmailColumn(v interface{}) int {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return 0
+	}
+	columnName, _ := m["column_name"].(string)
+	colType, _ := m["type"].(string)
+	timeColName, _ := m["contactable_time_column_name"].(string)
+	if timeColName == "" {
+		timeColName, _ = m["contactable_time_column"].(string)
+	}
+	return schema.HashString(fmt.Sprintf("%s|%s|%s", columnName, colType, timeColName))
+}
 
 /*
 resource_genesycloud_outbound_contact_list_template_schema.go holds three functions within it:
@@ -36,7 +66,14 @@ var (
 			},
 			`callable_time_column`: {
 				Description: `A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.`,
+				Deprecated:  "Use `callable_time_column_name` instead.",
 				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`callable_time_column_name`: {
+				Description: `A column name that indicates the timezone to use for a given contact when checking callable times.`,
+				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -56,7 +93,14 @@ var (
 			},
 			`contactable_time_column`: {
 				Description: `A column that indicates the timezone to use for a given contact when checking contactable times.`,
+				Deprecated:  "Use `contactable_time_column_name` instead.",
 				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`contactable_time_column_name`: {
+				Description: `A column name that indicates the timezone to use for a given contact when checking contactable times.`,
+				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -125,6 +169,7 @@ func ResourceOutboundContactListTemplate() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
+				Set:         hashOutboundContactListTemplatePhoneColumn,
 				Elem:        outboundContactListTemplateContactPhoneNumberColumnResource,
 			},
 			`email_columns`: {
@@ -132,6 +177,7 @@ func ResourceOutboundContactListTemplate() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
+				Set:         hashOutboundContactListTemplateEmailColumn,
 				Elem:        outboundContactListTemplateEmailColumnResource,
 			},
 			`preview_mode_column_name`: {
