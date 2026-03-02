@@ -592,11 +592,21 @@ func phoneNumberHash(val interface{}) int {
 			phoneMap[k] = v
 		}
 	}
-	if num, ok := phoneMap["number"]; ok {
-		// Attempt to format phone numbers before hashing
-		number, err := phonenumbers.Parse(num.(string), "US")
-		if err == nil {
-			phoneMap["number"] = phonenumbers.Format(number, phonenumbers.E164)
+
+	// If an extension is present, treat that as the identity.
+	// The Genesys Cloud API may populate/derive a "number" field even when only an
+	// extension is configured, which would otherwise cause perpetual diffs in a TypeSet.
+	if ext, ok := phoneMap["extension"].(string); ok && ext != "" {
+		delete(phoneMap, "number")
+	} else if num, ok := phoneMap["number"].(string); ok {
+		if num == "" {
+			delete(phoneMap, "number")
+		} else {
+			// Attempt to format phone numbers before hashing
+			number, err := phonenumbers.Parse(num, "US")
+			if err == nil {
+				phoneMap["number"] = phonenumbers.Format(number, phonenumbers.E164)
+			}
 		}
 	}
 	return schema.HashResource(phoneNumberResource)(phoneMap)
@@ -725,7 +735,6 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
-				phoneNumber["extension_pool_id"] = ""
 
 				// PHONE and SMS Addresses have four different ways they can return in the API
 				// We need to be able to handle them all, and strip off any parentheses that can surround
@@ -743,7 +752,9 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 						if *address.Extension == *address.Display {
 							extensionNum := strings.Trim(*address.Extension, "()")
 							phoneNumber["extension"] = extensionNum
-							phoneNumber["extension_pool_id"] = fetchExtensionPoolId(ctx, extensionNum, proxy)
+							if poolID := fetchExtensionPoolId(ctx, extensionNum, proxy); poolID != "" {
+								phoneNumber["extension_pool_id"] = poolID
+							}
 						}
 					}
 				}
@@ -1055,7 +1066,6 @@ func waitForExtensionPoolActivation(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	return
 }
 
 // GenerateBasicUserResource generates a basic user resource with minimum required fields
