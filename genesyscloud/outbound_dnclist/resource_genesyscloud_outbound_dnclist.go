@@ -151,22 +151,22 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
-		if *sdkDncList.DncSourceType == "rds" {
-			if d.HasChange("entries") {
-				resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
-				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
-				}
+		if d.HasChange("entries") {
+			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
+			}
 
+			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
 					resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 					if err != nil {
 						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
 					}
 				}
+			} else {
+				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 			}
-		} else {
-			return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists", fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
 		}
 		return nil, nil
 	})
