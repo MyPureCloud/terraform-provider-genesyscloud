@@ -143,6 +143,11 @@ func deleteRoutingQueueConditionalGroupActivation(ctx context.Context, d *schema
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove conditional group activation rules from queue %s: %s", queueId, err), resp)
 	}
 
+	log.Printf("Reading queue '%s' CGA rules to verify that they have been removed", queueId)
+	if cga, resp, err := proxy.getRoutingQueueConditionActivation(ctx, queueId); cga != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failuer: conditional group activation rules still exist for queue %s: %s", queueId, err), resp)
+	}
+
 	log.Printf("Successfully removed conditional group activation rules from queue %s", queueId)
 	return nil
 }
