@@ -29,11 +29,11 @@ func dataSourceConversationsMessagingIntegrationsAppleRead(ctx context.Context, 
 		appleIntegrationId, resp, retryable, err := proxy.getConversationsMessagingIntegrationsAppleIdByName(ctx, name)
 
 		if err != nil && !retryable {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error searching apple integration %s", name), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching apple integration %s", name), resp))
 		}
 
 		if retryable {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("No apple integration found with name %s", name), resp))
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No apple integration found with name %s", name), resp))
 		}
 
 		d.SetId(appleIntegrationId)

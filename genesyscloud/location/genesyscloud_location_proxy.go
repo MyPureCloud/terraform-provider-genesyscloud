@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 var internalProxy *locationProxy
@@ -82,6 +83,9 @@ func (p *locationProxy) deleteLocation(ctx context.Context, id string) (*platfor
 }
 
 func getAllLocationFn(ctx context.Context, p *locationProxy) (*[]platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allLocations []platformclientv2.Locationdefinition
 	const pageSize = 100
 
@@ -115,10 +119,16 @@ func getAllLocationFn(ctx context.Context, p *locationProxy) (*[]platformclientv
 }
 
 func createLocationFn(ctx context.Context, p *locationProxy, location *platformclientv2.Locationcreatedefinition) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.locationsApi.PostLocations(*location)
 }
 
 func getLocationByIdFn(ctx context.Context, p *locationProxy, id string, expand []string) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if location := rc.GetCacheItem(p.locationCache, id); location != nil {
 		return location, nil, nil
 	}
@@ -126,6 +136,9 @@ func getLocationByIdFn(ctx context.Context, p *locationProxy, id string, expand 
 }
 
 func getLocationBySearchFn(ctx context.Context, p *locationProxy, body *platformclientv2.Locationsearchrequest) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	locations, resp, err := p.locationsApi.PostLocationsSearch(*body)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get location %s", err)
@@ -141,10 +154,16 @@ func getLocationBySearchFn(ctx context.Context, p *locationProxy, body *platform
 }
 
 func updateLocationFn(ctx context.Context, p *locationProxy, id string, updateReq *platformclientv2.Locationupdatedefinition) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.locationsApi.PatchLocation(id, *updateReq)
 }
 
 func deleteLocationFn(ctx context.Context, p *locationProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.locationsApi.DeleteLocation(id)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete location %s", err)

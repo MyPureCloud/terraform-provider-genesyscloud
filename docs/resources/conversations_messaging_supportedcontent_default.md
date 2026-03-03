@@ -15,6 +15,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-supportedcontent-default)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `messaging:supportedContent:edit`
+* `messaging:supportedContent:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `messaging`
+* `messaging:readonly`
+
 
 ## Example Usage
 

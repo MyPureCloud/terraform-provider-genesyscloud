@@ -1,5 +1,9 @@
 package team
 
+// @team: Workforce Management
+// @chat: #gc-wfm
+// @description: Team management for organizing users into groups for workforce management, scheduling, and collaboration. Teams are used for agent grouping, performance tracking, and resource allocation across the contact center.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

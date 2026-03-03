@@ -21,6 +21,21 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
 - [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:queue:add`
+* `routing:queue:delete`
+* `routing:queue:edit`
+* `routing:queue:readonly`
+* `routing:queue:view`
+* `routing:queueMember:manage`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
 ## Schema Migration: Routing Queue V1 to V2
 
 ### Migration Details

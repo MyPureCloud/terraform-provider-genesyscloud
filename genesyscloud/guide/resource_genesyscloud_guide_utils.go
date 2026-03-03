@@ -1,12 +1,18 @@
 package guide
 
 import (
+<<<<<<< HEAD
+=======
+	"bytes"
+	"context"
+	"encoding/json"
+>>>>>>> 591d1b88cccf59ba3a57e0cbfbf13ab9041bb07e
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 // GenerateGuideResource generates terraform for a guide resource
@@ -40,7 +46,8 @@ func GuideFtIsEnabled() bool {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
 
-	resp, err := client.Do(req)
+	ctx := context.Background()
+	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		log.Printf("Error sending request: %v", err)
 		return false

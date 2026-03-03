@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-segments--segmentId-)
 * [PATCH /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-segments--segmentId-)
 * [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-segments--segmentId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:segment:add`
+* `journey:segment:delete`
+* `journey:segment:edit`
+* `journey:segment:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

@@ -1,5 +1,9 @@
 package conversations_messaging_integrations_apple
 
+// @team: AAPL
+// @chat: AAPL-DEV
+// @description: Messaging Connector for Apple Messages for Business. Allows Apple Messages to send inbound and receive outbound messages through the Messaging Platform.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -17,13 +21,13 @@ resource_genesycloud_apple_integration_schema.go holds four functions within it:
 3.  The datasource schema definitions for the apple_integration datasource.
 4.  The resource exporter configuration for the apple_integration exporter.
 */
-const resourceName = "genesyscloud_conversations_messaging_integrations_apple"
+const ResourceType = "genesyscloud_conversations_messaging_integrations_apple"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(resourceName, ResourceConversationsMessagingIntegrationsApple())
-	regInstance.RegisterDataSource(resourceName, DataSourceConversationsMessagingIntegrationsApple())
-	regInstance.RegisterExporter(resourceName, ConversationsMessagingIntegrationsAppleExporter())
+	regInstance.RegisterResource(ResourceType, ResourceConversationsMessagingIntegrationsApple())
+	regInstance.RegisterDataSource(ResourceType, DataSourceConversationsMessagingIntegrationsApple())
+	regInstance.RegisterExporter(ResourceType, ConversationsMessagingIntegrationsAppleExporter())
 }
 
 // ResourceAppleIntegration registers the genesyscloud_apple_integration resource with Terraform

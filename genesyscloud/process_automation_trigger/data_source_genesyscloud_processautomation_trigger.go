@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 type ProcessAutomationTriggers struct {
@@ -48,7 +48,7 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 		for pageNum := 1; ; pageNum++ {
-			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
+			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(ctx, path, integrationAPI)
 
 			if getErr != nil {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
@@ -74,7 +74,9 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 	})
 }
 
-func getAllProcessAutomationTriggers(path string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
+func getAllProcessAutomationTriggers(ctx context.Context, path string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+
 	apiClient := &api.Configuration.APIClient
 
 	headerParams := make(map[string]string)

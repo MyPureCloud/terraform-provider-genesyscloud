@@ -1,5 +1,9 @@
 package architect_user_prompt
 
+// @team: Architect Team
+// @chat: #Genesys Cloud Architect support
+// @description: manages user and system data for Genesys Cloud Architect. This includes Architect flows, user and system prompts as well as flow outcomes.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

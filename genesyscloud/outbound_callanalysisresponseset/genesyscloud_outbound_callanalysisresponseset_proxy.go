@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -93,6 +95,9 @@ func (p *outboundCallanalysisresponsesetProxy) deleteOutboundCallanalysisrespons
 
 // createOutboundCallanalysisresponsesetFn is an implementation function for creating a Genesys Cloud outbound callanalysisresponseset
 func createOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, outboundCallanalysisresponseset *platformclientv2.Responseset) (*platformclientv2.Responseset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	responseSet, resp, err := p.outboundApi.PostOutboundCallanalysisresponsesets(*outboundCallanalysisresponseset)
 	if err != nil {
 		return nil, resp, err
@@ -102,6 +107,9 @@ func createOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 
 // getAllOutboundCallanalysisresponsesetFn is the implementation for retrieving all outbound callanalysisresponseset in Genesys Cloud
 func getAllOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, name string) (*[]platformclientv2.Responseset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allResponseSets []platformclientv2.Responseset
 	const pageSize = 100
 
@@ -135,6 +143,9 @@ func getAllOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 
 // getOutboundCallanalysisresponsesetIdByNameFn is an implementation of the function to get a Genesys Cloud outbound callanalysisresponseset by name
 func getOutboundCallanalysisresponsesetIdByNameFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	responseSets, resp, err := getAllOutboundCallanalysisresponsesetFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, err
@@ -155,6 +166,9 @@ func getOutboundCallanalysisresponsesetIdByNameFn(ctx context.Context, p *outbou
 
 // getOutboundCallanalysisresponsesetByIdFn is an implementation of the function to get a Genesys Cloud outbound callanalysisresponseset by Id
 func getOutboundCallanalysisresponsesetByIdFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, id string) (outboundCallanalysisresponseset *platformclientv2.Responseset, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	responseSet, resp, err := p.outboundApi.GetOutboundCallanalysisresponseset(id)
 	if err != nil {
 		return nil, resp, err
@@ -164,6 +178,9 @@ func getOutboundCallanalysisresponsesetByIdFn(ctx context.Context, p *outboundCa
 
 // updateOutboundCallanalysisresponsesetFn is an implementation of the function to update a Genesys Cloud outbound callanalysisresponseset
 func updateOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, id string, outboundCallanalysisresponseset *platformclientv2.Responseset) (*platformclientv2.Responseset, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	responseSet, resp, err := getOutboundCallanalysisresponsesetByIdFn(ctx, p, id)
 	if err != nil {
 		return nil, resp, err
@@ -179,5 +196,8 @@ func updateOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCal
 
 // deleteOutboundCallanalysisresponsesetFn is an implementation function for deleting a Genesys Cloud outbound callanalysisresponseset
 func deleteOutboundCallanalysisresponsesetFn(ctx context.Context, p *outboundCallanalysisresponsesetProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.outboundApi.DeleteOutboundCallanalysisresponseset(id)
 }

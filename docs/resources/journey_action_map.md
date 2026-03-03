@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-actionmaps--actionMapId-)
 * [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-actionmaps--actionMapId-)
 * [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-actionmaps--actionMapId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:actionmap:add`
+* `journey:actionmap:delete`
+* `journey:actionmap:edit`
+* `journey:actionmap:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

@@ -19,6 +19,19 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/routing/routing/#patch-api-v2-routing-settings-contactcenter)
 * [GET /api/v2/routing/settings/transcription](https://developer.genesys.cloud/routing/routing/#get-api-v2-routing-settings-transcription)
 * [PUT /api/v2/routing/settings/transcription](https://developer.genesys.cloud/routing/routing/#put-api-v2-routing-settings-transcription)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:settings:edit`
+* `routing:transcriptionSettings:edit`
+* `routing:transcriptionSettings:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 

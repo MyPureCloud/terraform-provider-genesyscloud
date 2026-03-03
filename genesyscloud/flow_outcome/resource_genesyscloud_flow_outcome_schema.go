@@ -1,5 +1,9 @@
 package flow_outcome
 
+// @team: Architect Team
+// @chat: #Genesys Cloud Architect support
+// @description: manages user and system data for Genesys Cloud Architect. This includes Architect flows, user and system prompts as well as flow outcomes.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

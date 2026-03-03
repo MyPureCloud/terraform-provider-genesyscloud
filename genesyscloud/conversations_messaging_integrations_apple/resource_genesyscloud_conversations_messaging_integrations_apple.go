@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -31,7 +31,7 @@ func getAllConversationsMessagingIntegrationsApple(ctx context.Context, clientCo
 
 	appleIntegrations, resp, err := proxy.getAllConversationsMessagingIntegrationsApple(ctx)
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to get apple integration: %s", err), resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get apple integration: %s", err), resp)
 	}
 
 	for _, appleIntegration := range *appleIntegrations {
@@ -51,7 +51,7 @@ func createConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 	log.Printf("Creating apple integration %s", *request.Name)
 	createdAppleIntegration, resp, err := proxy.createConversationsMessagingIntegrationsApple(ctx, &request)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to create apple integration %s", *request.Name), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create apple integration %s", *request.Name), resp)
 	}
 
 	d.SetId(*createdAppleIntegration.Id)
@@ -63,7 +63,7 @@ func createConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 func readConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsApple(), 5, resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsApple(), 5, ResourceType)
 
 	log.Printf("Reading apple integration %s", d.Id())
 
@@ -71,9 +71,9 @@ func readConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.
 		appleIntegration, resp, getErr := proxy.getConversationsMessagingIntegrationsAppleById(ctx, d.Id())
 		if getErr != nil {
 			if resp != nil && resp.StatusCode == 404 {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read apple integration %s", d.Id()), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read apple integration %s", d.Id()), resp))
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Failed to read apple integration %s", d.Id()), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read apple integration %s", d.Id()), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", appleIntegration.Name)
@@ -105,7 +105,7 @@ func updateConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 	log.Printf("Updating apple integration %s", *request.Name)
 	updatedAppleIntegration, resp, updateErr := proxy.updateConversationsMessagingIntegrationsApple(ctx, d.Id(), &request)
 	if updateErr != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to update apple integration %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update apple integration %s", d.Id()), resp)
 	}
 
 	log.Printf("Updated apple integration %s", *updatedAppleIntegration.Id)
@@ -119,7 +119,7 @@ func deleteConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsApple(ctx, d.Id())
 	if err != nil {
-		return util.BuildAPIDiagnosticError(resourceName, fmt.Sprintf("Failed to delete apple integration %s", d.Id()), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete apple integration %s", d.Id()), resp)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
@@ -130,9 +130,9 @@ func deleteConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 				log.Printf("Deleted apple integration %s", d.Id())
 				return nil
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Error deleting apple integration %s", d.Id()), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting apple integration %s", d.Id()), resp))
 		}
 
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(resourceName, fmt.Sprintf("Apple integration %s still exists", d.Id()), resp))
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Apple integration %s still exists", d.Id()), resp))
 	})
 }

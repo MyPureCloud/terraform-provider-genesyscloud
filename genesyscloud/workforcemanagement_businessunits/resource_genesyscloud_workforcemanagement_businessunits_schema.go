@@ -1,5 +1,9 @@
 package workforcemanagement_businessunits
 
+// @team: Workforce Management
+// @chat: #genesys-cloud-wfm-dev
+// @description: A service to help our customer manage their workforce spanning disciplines such as forecasting, scheduling, and time off management.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

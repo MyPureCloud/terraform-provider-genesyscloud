@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -54,7 +54,11 @@ func CreateClientConfig(creds Credentials) (_ *platformclientv2.Configuration, e
 	}
 
 	config := platformclientv2.GetDefaultConfiguration()
-	config.BasePath = provider.GetRegionBasePath(creds.Region)
+	if creds.BasePathOverride != "" {
+		config.BasePath = creds.BasePathOverride
+	} else {
+		config.BasePath = provider.GetRegionBasePath(creds.Region)
+	}
 
 	err = config.AuthorizeClientCredentials(creds.ClientId, creds.ClientSecret)
 	return config, err

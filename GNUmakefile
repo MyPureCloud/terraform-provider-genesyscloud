@@ -41,7 +41,7 @@ testexamples-specific:
 
 # Generate docs
 docs:
-	go test ./examples -run TestUnitExampleResourcesPlanOnly -v || exit 1
+	TF_UNIT=1 go test ./examples -run TestUnitExampleResourcesPlanOnly -v || exit 1
 	go generate
 
 coverageacc:

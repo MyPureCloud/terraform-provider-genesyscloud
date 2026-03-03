@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/authorization/divisions/{divisionId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-divisions--divisionId-)
 * [DELETE /api/v2/authorization/divisions/{divisionId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-divisions--divisionId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `authorization:division:add`
+* `authorization:division:delete`
+* `authorization:division:edit`
+* `authorization:grant:add`
+
+The following OAuth scopes are required to use this resource:
+
+* `authorization`
+* `authorization:readonly`
+
 
 ## Example Usage
 

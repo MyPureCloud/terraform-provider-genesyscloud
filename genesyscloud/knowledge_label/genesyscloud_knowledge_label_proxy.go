@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 var internalProxy *knowledgeLabelProxy
@@ -80,6 +81,9 @@ func (p *knowledgeLabelProxy) GetAllKnowledgeLabelEntities(ctx context.Context, 
 }
 
 func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeLabelProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		after                 string
 		err                   error
@@ -117,6 +121,8 @@ func GetAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgeLabelProxy, 
 }
 
 func GetAllKnowledgeLabelEntitiesFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var (
 		after    string
@@ -160,6 +166,9 @@ func GetAllKnowledgeLabelEntitiesFn(ctx context.Context, p *knowledgeLabelProxy,
 }
 
 func getKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	id := fmt.Sprintf("%s,%s", knowledgeBaseId, labelId)
 	if knowledgeLabel := rc.GetCacheItem(p.knowledgeLabelCache, id); knowledgeLabel != nil {
 		return knowledgeLabel, nil, nil
@@ -168,10 +177,16 @@ func getKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeB
 }
 
 func createKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, body *platformclientv2.Labelcreaterequest) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.KnowledgeApi.PostKnowledgeKnowledgebaseLabels(knowledgeBaseId, *body)
 }
 
 func deleteKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, knowledgeLabelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	data, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId)
 	if err != nil {
 		return nil, resp, err
@@ -182,5 +197,8 @@ func deleteKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowled
 }
 
 func updateKnowledgeLabelFn(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, knowledgeLabelId string, body *platformclientv2.Labelupdaterequest) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.KnowledgeApi.PatchKnowledgeKnowledgebaseLabel(knowledgeBaseId, knowledgeLabelId, *body)
 }
