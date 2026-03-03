@@ -5,11 +5,10 @@ import (
 	"log"
 
 	contactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var contactCache = rc.NewResourceCache[platformclientv2.Dialercontact]()
@@ -76,17 +75,11 @@ func (p *contactProxy) getAllContacts(ctx context.Context) ([]ContactEntry, *pla
 	return p.getAllContactsAttr(ctx, p)
 }
 
-func createContactFn(ctx context.Context, p *contactProxy, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func createContactFn(_ context.Context, p *contactProxy, contactListId string, contact platformclientv2.Writabledialercontact, priority, clearSystemData, doNotQueue bool) ([]platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	return p.outboundApi.PostOutboundContactlistContacts(contactListId, []platformclientv2.Writabledialercontact{contact}, priority, clearSystemData, doNotQueue)
 }
 
-func readContactByIdFn(ctx context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func readContactByIdFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	if contact := rc.GetCacheItem(p.contactCache, buildComplexContactId(contactListId, contactId)); contact != nil {
 		return contact, nil, nil
 	}
@@ -96,17 +89,11 @@ func readContactByIdFn(ctx context.Context, p *contactProxy, contactListId, cont
 	return p.outboundApi.GetOutboundContactlistContact(contactListId, contactId)
 }
 
-func updateContactFn(ctx context.Context, p *contactProxy, contactListId, contactId string, contact platformclientv2.Dialercontact) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func updateContactFn(_ context.Context, p *contactProxy, contactListId, contactId string, contact platformclientv2.Dialercontact) (*platformclientv2.Dialercontact, *platformclientv2.APIResponse, error) {
 	return p.outboundApi.PutOutboundContactlistContact(contactListId, contactId, contact)
 }
 
-func deleteContactFn(ctx context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func deleteContactFn(_ context.Context, p *contactProxy, contactListId, contactId string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.outboundApi.DeleteOutboundContactlistContact(contactListId, contactId)
 	if err != nil {
 		return resp, err
@@ -116,9 +103,6 @@ func deleteContactFn(ctx context.Context, p *contactProxy, contactListId, contac
 }
 
 func getAllContactsFn(ctx context.Context, p *contactProxy) ([]ContactEntry, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var allContacts []ContactEntry
 
 	contactLists, resp, err := p.contactListProxy.GetAllOutboundContactlist(ctx)

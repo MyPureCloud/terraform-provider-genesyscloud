@@ -1,9 +1,5 @@
 package outbound_contact_list
 
-// @team: Outbound Digital
-// @chat: #genesys-cloud-digital-campaigns
-// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
-
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

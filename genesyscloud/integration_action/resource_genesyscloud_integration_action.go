@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -78,9 +78,6 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	log.Printf("Creating integration action %s", name)
-
-	// Set resource context for SDK debug logging before entering retry loop
-	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	actionContract, diagErr := BuildSdkActionContract(d)
 	if diagErr != nil {
@@ -429,9 +426,6 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 
 	log.Printf("Reading integration action function %s", d.Id())
 
-	// Set resource context for SDK debug logging before entering retry loop
-	ctx = util.SetResourceContext(ctx, d, ResourceType)
-
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var action *platformclientv2.Action
 		var resp *platformclientv2.APIResponse
@@ -539,9 +533,6 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
-	// Set resource context for SDK debug logging before entering retry loop
-	ctx = util.SetResourceContext(ctx, d, ResourceType)
-
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
@@ -648,9 +639,6 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updating integration action %s", name)
 
-	// Set resource context for SDK debug logging before entering retry loop
-	ctx = util.SetResourceContext(ctx, d, ResourceType)
-
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationActionById(ctx, id)
@@ -698,9 +686,6 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Integration action %s error: %s", d.Id(), err), resp)
 	}
-
-	// Set resource context for SDK debug logging before entering retry loop
-	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := iap.getIntegrationActionById(ctx, d.Id())

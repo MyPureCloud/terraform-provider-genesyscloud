@@ -11,10 +11,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
 /*
@@ -192,9 +191,6 @@ func (p *integrationActionsProxy) getIntegrationActionTemplate(ctx context.Conte
 
 // getAllIntegrationActionsFn is the implementation for retrieving all integration actions in Genesys Cloud
 func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	actions := []platformclientv2.Action{}
 	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
@@ -214,10 +210,7 @@ func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy)
 
 // createIntegrationActionDraftFn is the implementation for retrieving all integration actions in Genesys Cloud
 func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	action, resp, err := sdkPostIntegrationActionDraft(ctx, actionInput, p.integrationsApi)
+	action, resp, err := sdkPostIntegrationActionDraft(actionInput, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -226,9 +219,6 @@ func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 
 // uploadIntegrationActionDraftFunctionFn is the implementation for uploading a function file to an integration action draft
 func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string, filePath string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	log.Printf("DEBUG: Starting upload for actionId: %s, filePath: %s", actionId, filePath)
 
 	// Step 1: Get the signed URL for upload
@@ -244,9 +234,6 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	uploadUrl := p.clientConfig.BasePath + "/api/v2/integrations/actions/" + actionId + "/draft/function/upload"
 	log.Printf("DEBUG: Upload URL: %s", uploadUrl)
 
-	// Set resource context for SDK debug logging before creating HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	// Create HTTP client and request
 	client := &http.Client{}
 	jsonData, err := json.Marshal(uploadRequest)
@@ -254,7 +241,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", uploadUrl, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", uploadUrl, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -327,8 +314,8 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 		log.Printf("DEBUG: File opened successfully (no file handle)")
 	}
 
-	// Create upload request to signed URL with context
-	uploadReq, err := http.NewRequestWithContext(ctx, "PUT", uploadResponse.URL, fileReader)
+	// Create upload request to signed URL
+	uploadReq, err := http.NewRequest("PUT", uploadResponse.URL, fileReader)
 	if err != nil {
 		return nil, err
 	}
@@ -408,9 +395,6 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 
 // getIntegrationActionDraftFunctionFn is the implementation for getting function details of an integration action draft
 func getIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	// Use the SDK method to get function details
 	functionData, resp, err := p.integrationsApi.GetIntegrationsActionDraftFunction(actionId)
 	if err != nil {
@@ -430,10 +414,6 @@ func getIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActi
 
 // getIntegrationActionFunctionFn is the implementation for getting function details of an integration action
 func getIntegrationActionFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	log.Printf("JCC ---The resource type on getIntegrationActioFunctionFn is: %s", ResourceType)
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	functionData, resp, err := p.integrationsApi.GetIntegrationsActionFunction(actionId)
 	if err != nil {
 		return nil, resp, err
@@ -443,9 +423,6 @@ func getIntegrationActionFunctionFn(ctx context.Context, p *integrationActionsPr
 
 // updateIntegrationActionDraftWithFunctionFn is the implementation for updating an integration action draft with function settings
 func updateIntegrationActionDraftWithFunctionFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateData *platformclientv2.Function) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	// Use the SDK method to update the draft
 	action, resp, err := p.integrationsApi.PutIntegrationsActionDraftFunction(actionId, *updateData)
 	if err != nil {
@@ -457,9 +434,6 @@ func updateIntegrationActionDraftWithFunctionFn(ctx context.Context, p *integrat
 
 // publishIntegrationActionDraftFn is the implementation for publishing an integration action draft
 func publishIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string, version int) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	_, resp, err := p.integrationsApi.PostIntegrationsActionDraftPublish(actionId, platformclientv2.Publishdraftinput{
 		Version: &version,
 	})
@@ -471,10 +445,7 @@ func publishIntegrationActionDraftFn(ctx context.Context, p *integrationActionsP
 
 // createIntegrationActionFn is the implementation for creating an integration action in Genesys Cloud
 func createIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	action, resp, err := sdkPostIntegrationAction(ctx, actionInput, p.integrationsApi)
+	action, resp, err := sdkPostIntegrationAction(actionInput, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -483,9 +454,6 @@ func createIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 
 // getIntegrationActionDraftByIdFn is the implementation for getting an integration action draft by id in Genesys Cloud
 func getIntegrationActionDraftByIdFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	action, resp, err := p.integrationsApi.GetIntegrationsActionDraft(actionId, "contract", true, true)
 	if err != nil {
 		return nil, resp, err
@@ -495,10 +463,7 @@ func getIntegrationActionDraftByIdFn(ctx context.Context, p *integrationActionsP
 
 // getIntegrationActionByIdFn is the implementation for getting an integration action by id in Genesys Cloud
 func getIntegrationActionByIdFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	action, resp, err := sdkGetIntegrationAction(ctx, actionId, p.integrationsApi)
+	action, resp, err := sdkGetIntegrationAction(actionId, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -507,9 +472,6 @@ func getIntegrationActionByIdFn(ctx context.Context, p *integrationActionsProxy,
 
 // getIntegrationActionsByNameFn is the implementation for getting an integration action by name in Genesys Cloud
 func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsProxy, actionName string) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var actions []platformclientv2.Action
 	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
@@ -534,9 +496,6 @@ func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsPro
 
 // updateIntegrationActionFn is the implementation for updating an integration action in Genesys Cloud
 func updateIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateAction *platformclientv2.Updateactioninput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	action, resp, err := p.integrationsApi.PatchIntegrationsAction(actionId, *updateAction)
 	if err != nil {
 		return nil, resp, err
@@ -546,9 +505,6 @@ func updateIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 
 // deleteIntegrationActionFn is the implementation for deleting an integration action in Genesys Cloud
 func deleteIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	resp, err := p.integrationsApi.DeleteIntegrationsAction(actionId)
 	if err != nil {
 		return resp, err
@@ -558,10 +514,7 @@ func deleteIntegrationActionFn(ctx context.Context, p *integrationActionsProxy, 
 
 // getIntegrationActionTemplateFn is the implementation for getting the integration action template in Genesys Cloud
 func getIntegrationActionTemplateFn(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	template, resp, err := sdkGetIntegrationActionTemplate(ctx, actionId, fileName, p.integrationsApi)
+	template, resp, err := sdkGetIntegrationActionTemplate(actionId, fileName, p.integrationsApi)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -569,10 +522,7 @@ func getIntegrationActionTemplateFn(ctx context.Context, p *integrationActionsPr
 }
 
 // sdkPostIntegrationAction is the non-sdk helper method for creating an Integration Action
-func sdkPostIntegrationAction(ctx context.Context, body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func sdkPostIntegrationAction(body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
@@ -602,10 +552,7 @@ func sdkPostIntegrationAction(ctx context.Context, body *IntegrationAction, api 
 }
 
 // sdkGetIntegrationAction is the non-sdk helper method for getting an Integration Action
-func sdkGetIntegrationAction(ctx context.Context, actionId string, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func sdkGetIntegrationAction(actionId string, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
@@ -642,10 +589,7 @@ func sdkGetIntegrationAction(ctx context.Context, actionId string, api *platform
 }
 
 // sdkPostIntegrationActionDraft is the non-sdk helper method for creating an Integration Action
-func sdkPostIntegrationActionDraft(ctx context.Context, body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func sdkPostIntegrationActionDraft(body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables
@@ -675,10 +619,7 @@ func sdkPostIntegrationActionDraft(ctx context.Context, body *IntegrationAction,
 }
 
 // sdkGetIntegrationActionTemplate is the non-sdk helper method for getting an Integration Action Template
-func sdkGetIntegrationActionTemplate(ctx context.Context, actionId, templateName string, api *platformclientv2.IntegrationsApi) (*string, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func sdkGetIntegrationActionTemplate(actionId, templateName string, api *platformclientv2.IntegrationsApi) (*string, *platformclientv2.APIResponse, error) {
 	apiClient := &api.Configuration.APIClient
 
 	// create path and map variables

@@ -1,9 +1,5 @@
 package external_contacts
 
-// @team: External Contacts
-// @chat: #Genesys Cloud Single Customer View
-// @description: Home of record for external contacts, identifiers, and external orgs.
-
 import (
 	externalContactsOrganization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_organization"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"

@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -95,9 +93,6 @@ func (p *flowMilestoneProxy) deleteFlowMilestone(ctx context.Context, id string)
 
 // createFlowMilestoneFn is an implementation function for creating a Genesys Cloud flow milestone
 func createFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy, flowMilestone *platformclientv2.Flowmilestone) (*platformclientv2.Flowmilestone, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	flowMilestone, resp, err := p.architectApi.PostFlowsMilestones(*flowMilestone)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create flow milestone: %s ", err)
@@ -107,9 +102,6 @@ func createFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy, flowMiles
 
 // getAllFlowMilestoneFn is the implementation for retrieving all flow milestone in Genesys Cloud
 func getAllFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy) (*[]platformclientv2.Flowmilestone, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var allFlowMilestones []platformclientv2.Flowmilestone
 	const pageSize = 100
 
@@ -143,9 +135,6 @@ func getAllFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy) (*[]platf
 
 // getFlowMilestoneIdByNameFn is an implementation of the function to get a Genesys Cloud flow milestone by name
 func getFlowMilestoneIdByNameFn(ctx context.Context, p *flowMilestoneProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	flowMilestones, resp, err := p.architectApi.GetFlowsMilestones(1, 100, "", "", nil, name, "", "", nil)
 	if err != nil {
 		return "", false, resp, err
@@ -166,9 +155,6 @@ func getFlowMilestoneIdByNameFn(ctx context.Context, p *flowMilestoneProxy, name
 
 // getFlowMilestoneByIdFn is an implementation of the function to get a Genesys Cloud flow milestone by Id
 func getFlowMilestoneByIdFn(ctx context.Context, p *flowMilestoneProxy, id string) (flowMilestone *platformclientv2.Flowmilestone, response *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	flowMilestone, resp, err := p.architectApi.GetFlowsMilestone(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve flow milestone by id %s: %s", id, err)
@@ -178,9 +164,6 @@ func getFlowMilestoneByIdFn(ctx context.Context, p *flowMilestoneProxy, id strin
 
 // updateFlowMilestoneFn is an implementation of the function to update a Genesys Cloud flow milestone
 func updateFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy, id string, flowMilestone *platformclientv2.Flowmilestone) (*platformclientv2.Flowmilestone, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	flowMilestone, resp, err := p.architectApi.PutFlowsMilestone(id, *flowMilestone)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to update flow milestone: %s", err)
@@ -190,9 +173,6 @@ func updateFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy, id string
 
 // deleteFlowMilestoneFn is an implementation function for deleting a Genesys Cloud flow milestone
 func deleteFlowMilestoneFn(ctx context.Context, p *flowMilestoneProxy, id string) (response *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	_, resp, err := p.architectApi.DeleteFlowsMilestone(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete flow milestone: %s", err)

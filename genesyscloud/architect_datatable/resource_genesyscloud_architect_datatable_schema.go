@@ -1,12 +1,5 @@
 package architect_datatable
 
-<<<<<<< HEAD
-=======
-// @team: Architect Team
-// @chat: #Genesys Cloud Architect support
-// @description: manages user and system data for Genesys Cloud Architect. This includes Architect flows, user and system prompts as well as flow outcomes.
-
->>>>>>> 591d1b88cccf59ba3a57e0cbfbf13ab9041bb07e
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

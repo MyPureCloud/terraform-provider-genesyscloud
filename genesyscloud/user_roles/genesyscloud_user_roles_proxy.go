@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var internalProxy *userRolesProxy
@@ -49,8 +48,7 @@ func (p *userRolesProxy) updateUserRoles(ctx context.Context, roleID string, rol
 	return p.updateUserRolesAttr(ctx, p, roleID, rolesConfig, subjectType)
 }
 
-func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+func getUserRolesByIdFn(_ context.Context, p *userRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 
@@ -72,8 +70,7 @@ func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (
 	return &grants, resp, nil
 }
 
-func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+func updateUserRolesFn(_ context.Context, p *userRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 

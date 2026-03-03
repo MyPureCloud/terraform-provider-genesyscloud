@@ -7,11 +7,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mitchellh/mapstructure"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mitchellh/mapstructure"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // Type definitions for each func on our proxy so we can easily mock them out later
@@ -91,10 +90,7 @@ func (p *architectDatatableRowProxy) deleteArchitectDatatableRow(ctx context.Con
 	return p.deleteArchitectDatatableRowAttr(ctx, p, tableId, rowId)
 }
 
-func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getAllArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
 	var totalRecords []platformclientv2.Datatable
 
 	const pageSize = 100
@@ -140,9 +136,7 @@ func ConvertDatatable(master platformclientv2.Datatable) *Datatable {
 	return &datatable
 }
 
-func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+func getArchitectDatatableFn(_ context.Context, p *architectDatatableRowProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
 
 	eg := rc.GetCacheItem(p.dataTableCache, datatableId)
 	if eg != nil {
@@ -183,10 +177,7 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy,
 	return successPayload, response, err
 }
 
-func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getAllArchitectDatatableRowsFn(_ context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
 	var resources []map[string]interface{}
 	const pageSize = 100
 
@@ -227,10 +218,7 @@ func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRo
 	return &resources, apiResponse, nil
 }
 
-func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getArchitectDataTableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, key string) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	eg := rc.GetCacheItem(p.dataTableRowCache, tableId+"_"+key)
 	if eg != nil {
 		return eg, nil, nil
@@ -238,24 +226,15 @@ func getArchitectDataTableRowFn(ctx context.Context, p *architectDatatableRowPro
 	return p.architectApi.GetFlowsDatatableRow(tableId, key, false)
 }
 
-func createArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func createArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PostFlowsDatatableRows(tableId, *row)
 }
 
-func updateArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func updateArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, key string, row *map[string]interface{}) (*map[string]interface{}, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PutFlowsDatatableRow(tableId, key, *row)
 }
 
-func deleteArchitectDatatableRowFn(ctx context.Context, p *architectDatatableRowProxy, tableId string, rowId string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func deleteArchitectDatatableRowFn(_ context.Context, p *architectDatatableRowProxy, tableId string, rowId string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.architectApi.DeleteFlowsDatatableRow(tableId, rowId)
 	if err != nil {
 		return resp, err

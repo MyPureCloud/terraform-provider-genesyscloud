@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -43,11 +43,11 @@ func TestAccDataSourceAppleIntegration(t *testing.T) {
 					businessId,
 				) + generateAppleIntegrationDataSource(
 					dataSourceLabel,
-					ResourceType+"."+resourceLabel+".name",
-					ResourceType+"."+resourceLabel,
+					resourceName+"."+resourceLabel+".name",
+					resourceName+"."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id", ResourceType+"."+resourceLabel, "id"),
+					resource.TestCheckResourceAttrPair("data."+resourceName+"."+dataSourceLabel, "id", resourceName+"."+resourceLabel, "id"),
 				),
 			},
 		},
@@ -60,7 +60,7 @@ func generateBasicAppleIntegrationResource(resourceLabel, name, businessId strin
 		name = "%s"
 		messages_for_business_id = "%s"
 	}
-	`, ResourceType, resourceLabel, name, businessId)
+	`, resourceName, resourceLabel, name, businessId)
 }
 
 func generateAppleIntegrationDataSource(resourceLabel, name, dependsOnResource string) string {
@@ -68,7 +68,7 @@ func generateAppleIntegrationDataSource(resourceLabel, name, dependsOnResource s
 		name = %s
 		depends_on = [%s]
 	}
-	`, ResourceType, resourceLabel, name, dependsOnResource)
+	`, resourceName, resourceLabel, name, dependsOnResource)
 }
 
 // getTestBusinessId returns business ID for testing:

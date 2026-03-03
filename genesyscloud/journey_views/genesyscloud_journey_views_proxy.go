@@ -6,10 +6,9 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var internalProxy *journeyViewsProxy
@@ -85,10 +84,7 @@ func (p *journeyViewsProxy) deleteJourneyView(ctx context.Context, viewId string
 	return resp, nil
 }
 
-func getJourneyViewByViewIdFn(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getJourneyViewByViewIdFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
 	// Check the cache first
 	journeyView := rc.GetCacheItem(p.journeyViewCache, viewId)
 	if journeyView != nil {
@@ -98,9 +94,6 @@ func getJourneyViewByViewIdFn(ctx context.Context, p *journeyViewsProxy, viewId 
 }
 
 func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName string) (string, *platformclientv2.APIResponse, error, bool) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	journeys, resp, err := p.getAllJourneyViews(ctx, viewName)
 	if err != nil {
 		return "", resp, err, false
@@ -119,25 +112,16 @@ func getJourneyViewByNameFn(ctx context.Context, p *journeyViewsProxy, viewName 
 	return "", resp, fmt.Errorf("unable to find journey view with name %s", viewName), true
 }
 
-func createJourneyViewFn(ctx context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func createJourneyViewFn(_ context.Context, p *journeyViewsProxy, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
 	return p.journeyViewsApi.PostJourneyViews(*journeyView)
 }
 
-func updateJourneyViewFn(ctx context.Context, p *journeyViewsProxy, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func updateJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string, versionId int, journeyView *platformclientv2.Journeyview) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
 	versionIdToString := strconv.Itoa(versionId)
 	return p.journeyViewsApi.PutJourneyViewVersion(viewId, versionIdToString, *journeyView)
 }
 
-func deleteJourneyViewFn(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func deleteJourneyViewFn(_ context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.journeyViewsApi.DeleteJourneyView(viewId)
 	if err != nil {
 		return resp, err
@@ -148,9 +132,6 @@ func deleteJourneyViewFn(ctx context.Context, p *journeyViewsProxy, viewId strin
 
 // GetAllJourneyViewsFn is the implementation for retrieving all journey views in Genesys Cloud
 func getAllJourneyViewsFn(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var allJourneys []platformclientv2.Journeyview
 	const pageSize = 100
 

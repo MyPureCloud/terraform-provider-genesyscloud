@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	files "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -22,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -167,34 +166,22 @@ func (p *architectUserPromptProxy) uploadPromptFile(ctx context.Context, uploadU
 	return p.uploadPromptFileAttr(ctx, p, uploadUri, filename)
 }
 
-func createArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func createArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PostArchitectPrompts(body)
 }
 
-func getArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris, includeResources bool, languages []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func getArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, id string, includeMediaUris, includeResources bool, languages []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	if prompt := rc.GetCacheItem(p.promptCache, id); prompt != nil && checkCache {
 		return prompt, nil, nil
 	}
 	return p.architectApi.GetArchitectPrompt(id, includeMediaUris, includeResources, languages)
 }
 
-func updateArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func updateArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, id string, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PutArchitectPrompt(id, body)
 }
 
-func deleteArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func deleteArchitectUserPromptFn(_ context.Context, p *architectUserPromptProxy, id string, allResources bool) (*platformclientv2.APIResponse, error) {
 	resp, err := p.architectApi.DeleteArchitectPrompt(id, allResources)
 	if err != nil {
 		return resp, err
@@ -203,10 +190,7 @@ func deleteArchitectUserPromptFn(ctx context.Context, p *architectUserPromptProx
 	return nil, nil
 }
 
-func getAllArchitectUserPromptsFilterByNameFn(ctx context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, exportNameFilter string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func getAllArchitectUserPromptsFilterByNameFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, exportNameFilter string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allPrompts []platformclientv2.Prompt
 	var response *platformclientv2.APIResponse
@@ -243,10 +227,7 @@ func getAllArchitectUserPromptsFilterByNameFn(ctx context.Context, p *architectU
 	return &allPrompts, response, nil
 }
 
-func getArchitectUserPromptPageCountFn(ctx context.Context, p *architectUserPromptProxy, name string) (int, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func getArchitectUserPromptPageCountFn(_ context.Context, p *architectUserPromptProxy, name string) (int, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	userPrompts, resp, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", false, false, nil)
 	if err != nil {
@@ -255,10 +236,7 @@ func getArchitectUserPromptPageCountFn(ctx context.Context, p *architectUserProm
 	return *userPrompts.PageCount, nil, nil
 }
 
-func getAllArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func getAllArchitectUserPromptsFn(_ context.Context, p *architectUserPromptProxy, includeMediaUris, includeResources bool, name string) (*[]platformclientv2.Prompt, *platformclientv2.APIResponse, error) {
 	const pageSize = 100
 	var allPrompts []platformclientv2.Prompt
 
@@ -292,31 +270,19 @@ func getAllArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptPro
 	return &allPrompts, response, nil
 }
 
-func createArchitectUserPromptResourceFn(ctx context.Context, p *architectUserPromptProxy, id string, promptResource platformclientv2.Promptassetcreate) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func createArchitectUserPromptResourceFn(_ context.Context, p *architectUserPromptProxy, id string, promptResource platformclientv2.Promptassetcreate) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PostArchitectPromptResources(id, promptResource)
 }
 
-func updateArchitectUserPromptResourceFn(ctx context.Context, p *architectUserPromptProxy, id, languageCode string, body platformclientv2.Promptasset) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func updateArchitectUserPromptResourceFn(_ context.Context, p *architectUserPromptProxy, id, languageCode string, body platformclientv2.Promptasset) (*platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
 	return p.architectApi.PutArchitectPromptResource(id, languageCode, body)
 }
 
-func deleteArchitectUserPromptResourceFn(ctx context.Context, p *architectUserPromptProxy, id, languageCode string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
+func deleteArchitectUserPromptResourceFn(_ context.Context, p *architectUserPromptProxy, id, languageCode string) (*platformclientv2.APIResponse, error) {
 	return p.architectApi.DeleteArchitectPromptResource(id, languageCode)
 }
 
 func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *architectUserPromptProxy, d *schema.ResourceData, promptId string, create bool) (_ *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("in createOrUpdateArchitectUserPromptResourcesFn: %w", err)
@@ -389,9 +355,6 @@ func removeByValue(slice []string, value string) []string {
 }
 
 func getArchitectUserPromptResourcesFn(ctx context.Context, p *architectUserPromptProxy, promptId string) (*[]platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
 	const pageSize = 100
 	var allResources []platformclientv2.Promptasset
 
@@ -596,9 +559,6 @@ func checkEmptyResource(resources *schema.Set) bool {
 
 // getArchitectUserPromptIdByNameFn will query user prompt by name and retry if search has not yet indexed the user prompt.
 func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromptProxy, name string) (string, *platformclientv2.APIResponse, error, bool) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
 	prompts, response, err := p.getAllArchitectUserPrompts(ctx, true, true, name)
 	if err != nil {
 		return "", response, err, false
@@ -616,13 +576,7 @@ func getArchitectUserPromptIdByNameFn(ctx context.Context, p *architectUserPromp
 }
 
 func uploadPromptFileFn(ctx context.Context, p *architectUserPromptProxy, uploadUri, filename string) error {
-<<<<<<< HEAD
 	// Get the prompt asset audio file.
-=======
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
-
->>>>>>> 591d1b88cccf59ba3a57e0cbfbf13ab9041bb07e
 	reader, file, err := files.DownloadOrOpenFile(ctx, filename, S3Enabled)
 	if err != nil {
 		return err

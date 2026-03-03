@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -99,17 +98,11 @@ func (p *taskManagementWorkitemProxy) deleteTaskManagementWorkitem(ctx context.C
 
 // createTaskManagementWorkitemFn is an implementation function for creating a Genesys Cloud task management workitem
 func createTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, taskManagementWorkitem *platformclientv2.Workitemcreate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	return p.taskManagementApi.PostTaskmanagementWorkitems(*taskManagementWorkitem)
 }
 
 // getAllTaskManagementWorkitemFn is the implementation for retrieving all task management workitem in Genesys Cloud
 func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy) (*[]platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	// Workitem query requires one of workbin, assignee, or worktype filter. We'll use workbins.
 
 	// Get all workbins
@@ -185,9 +178,6 @@ func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 
 // getTaskManagementWorkitemIdByNameFn is an implementation of the function to get a Genesys Cloud task management workitem by name
 func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementWorkitemProxy, name string, workbinId string, worktypeId string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	pageSize := 100
 
 	// Filter for the workitem name
@@ -240,9 +230,6 @@ func getTaskManagementWorkitemIdByNameFn(ctx context.Context, p *taskManagementW
 
 // getTaskManagementWorkitemByIdFn is an implementation of the function to get a Genesys Cloud task management workitem by Id
 func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (taskManagementWorkitem *platformclientv2.Workitem, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	workitem := rc.GetCacheItem(p.workitemCache, id)
 	if workitem != nil {
 		return workitem, nil, nil
@@ -253,17 +240,11 @@ func getTaskManagementWorkitemByIdFn(ctx context.Context, p *taskManagementWorki
 
 // updateTaskManagementWorkitemFn is an implementation of the function to update a Genesys Cloud task management workitem
 func updateTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, id string, taskManagementWorkitem *platformclientv2.Workitemupdate) (*platformclientv2.Workitem, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	return p.taskManagementApi.PatchTaskmanagementWorkitem(id, *taskManagementWorkitem)
 }
 
 // deleteTaskManagementWorkitemFn is an implementation function for deleting a Genesys Cloud task management workitem
 func deleteTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkitemProxy, id string) (resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkitem(id)
 	if err != nil {
 		return resp, err

@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -70,9 +69,6 @@ func (p *routingQueueConditionalGroupRoutingProxy) updateRoutingQueueConditionRo
 
 // getRoutingQueueConditionRoutingFn is an implementation function for getting the conditional group routing rules for a queue
 func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var (
 		queue *platformclientv2.Queue
 		resp  *platformclientv2.APIResponse
@@ -96,9 +92,6 @@ func getRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCondi
 
 // updateRoutingQueueConditionRoutingFn is an implementation function for updating the conditional group routing rules for a queue
 func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, queueId string, rules *[]platformclientv2.Conditionalgrouproutingrule) (*[]platformclientv2.Conditionalgrouproutingrule, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	// Get the routing queue the rules belong to
 	queue, resp, err := p.getRoutingQueueById(ctx, queueId)
 	if err != nil {
@@ -160,9 +153,6 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 }
 
 // getRoutingQueueByIdFn is an implementation function for getting a queue by ID
-func getRoutingQueueByIdFn(ctx context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getRoutingQueueByIdFn(_ context.Context, p *routingQueueConditionalGroupRoutingProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	return p.routingApi.GetRoutingQueue(id, nil)
 }

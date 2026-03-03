@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 /*
@@ -120,9 +119,6 @@ func (p *teamProxy) deleteMembers(ctx context.Context, teamId string, memberId s
 
 // createTeamFn is an implementation function for creating a Genesys Cloud team
 func createTeamFn(ctx context.Context, p *teamProxy, team *platformclientv2.Team) (*platformclientv2.Team, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	team, resp, err := p.teamsApi.PostTeams(*team)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create team: %s", err)
@@ -132,9 +128,6 @@ func createTeamFn(ctx context.Context, p *teamProxy, team *platformclientv2.Team
 
 // getAllTeamFn is the implementation for retrieving all team in Genesys Cloud
 func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformclientv2.Team, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var (
 		after    string
 		err      error
@@ -175,9 +168,6 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 
 // getTeamIdByNameFn is an implementation of the function to get a Genesys Cloud team by name
 func getTeamIdByNameFn(ctx context.Context, p *teamProxy, name string) (id string, retryable bool, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	teams, resp, err := getAllTeamFn(ctx, p, name)
 	if err != nil {
 		return "", false, resp, err
@@ -198,9 +188,6 @@ func getTeamIdByNameFn(ctx context.Context, p *teamProxy, name string) (id strin
 
 // getTeamByIdFn is an implementation of the function to get a Genesys Cloud team by Id
 func getTeamByIdFn(ctx context.Context, p *teamProxy, id string) (team *platformclientv2.Team, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	team, resp, err = p.teamsApi.GetTeam(id, "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve team by id %s: %s", id, err)
@@ -211,9 +198,6 @@ func getTeamByIdFn(ctx context.Context, p *teamProxy, id string) (team *platform
 
 // updateTeamFn is an implementation of the function to update a Genesys Cloud team
 func updateTeamFn(ctx context.Context, p *teamProxy, id string, team *platformclientv2.Team) (*platformclientv2.Team, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	team, resp, err := p.teamsApi.PatchTeam(id, *team)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to update team: %s", err)
@@ -223,9 +207,6 @@ func updateTeamFn(ctx context.Context, p *teamProxy, id string, team *platformcl
 
 // deleteTeamFn is an implementation function for deleting a Genesys Cloud team
 func deleteTeamFn(ctx context.Context, p *teamProxy, id string) (resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	resp, err = p.teamsApi.DeleteTeam(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete team: %s", err)
@@ -235,9 +216,6 @@ func deleteTeamFn(ctx context.Context, p *teamProxy, id string) (resp *platformc
 
 // createMembersFn is an implementation function for creating a Genesys Cloud members
 func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members platformclientv2.Teammembers) (*platformclientv2.Teammemberaddlistingresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	teamListingResponse, resp, err := p.teamsApi.PostTeamMembers(teamId, members)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create members: %s", err)
@@ -246,10 +224,7 @@ func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members p
 }
 
 // getMembersByIdFn is an implementation of the function to get a Genesys Cloud members by Id
-func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (*[]platformclientv2.Userreferencewithname, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getMembersByIdFn(_ context.Context, p *teamProxy, teamId string) (*[]platformclientv2.Userreferencewithname, *platformclientv2.APIResponse, error) {
 	var (
 		after      string
 		err        error
@@ -285,9 +260,6 @@ func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (*[]plat
 
 // deleteMembersFn is an implementation function for deleting a Genesys Cloud members
 func deleteMembersFn(ctx context.Context, p *teamProxy, teamId string, memberIds string) (resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	resp, err = p.teamsApi.DeleteTeamMembers(teamId, memberIds)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete members: %s", err)

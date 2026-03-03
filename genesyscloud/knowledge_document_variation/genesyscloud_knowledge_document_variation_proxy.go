@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+
+	"time"
 )
 
 var internalProxy *variationRequestProxy
@@ -121,9 +121,6 @@ func (p *variationRequestProxy) getLatestPublishedOrDraftVariation(ctx context.C
 }
 
 func getLatestPublishedOrDraftVariationFn(ctx context.Context, p *variationRequestProxy, ids *resourceIDs) (_ *platformclientv2.Documentvariationresponse, resp *platformclientv2.APIResponse, err error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("getLatestPublishedOrDraftVariationFn: %w", err)
@@ -167,17 +164,11 @@ func getLatestPublishedOrDraftVariationFn(ctx context.Context, p *variationReque
 
 // createVariationFn is an implementation function for creating a Genesys Cloud variation request
 func createVariationFn(ctx context.Context, p *variationRequestProxy, variationRequest *platformclientv2.Documentvariationrequest, knowledgeDocumentId, knowledgeBaseId string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocumentVariations(knowledgeBaseId, knowledgeDocumentId, *variationRequest)
 }
 
 // getAllVariationsFn is the implementation for retrieving all variation request in Genesys Cloud
-func getAllVariationsFn(ctx context.Context, p *variationRequestProxy, knowledgeBaseId, documentId, documentState string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getAllVariationsFn(_ context.Context, p *variationRequestProxy, knowledgeBaseId, documentId, documentState string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
 	var (
 		allVariations []platformclientv2.Documentvariationresponse
 		after         string
@@ -219,10 +210,7 @@ func getAllVariationsFn(ctx context.Context, p *variationRequestProxy, knowledge
 }
 
 // getVariationRequestByIdFn is an implementation of the function to get a Genesys Cloud variation request by Id
-func getVariationRequestByIdFn(ctx context.Context, p *variationRequestProxy, documentVariationId string, documentId string, knowledgeBaseId string, documentState string, expand []string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func getVariationRequestByIdFn(_ context.Context, p *variationRequestProxy, documentVariationId string, documentId string, knowledgeBaseId string, documentState string, expand []string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
 	variation := rc.GetCacheItem(p.variationCache, documentVariationId)
 	if variation != nil {
 		return variation, nil, nil
@@ -232,9 +220,6 @@ func getVariationRequestByIdFn(ctx context.Context, p *variationRequestProxy, do
 
 // getVariationRequestIdByNameFn is an implementation of the function to get a Genesys Cloud variation request by name
 func getVariationRequestIdByNameFn(ctx context.Context, p *variationRequestProxy, name, knowledgeBaseID, knowledgeDocumentID string) (string, *platformclientv2.APIResponse, bool, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var allVariations []platformclientv2.Documentvariationresponse
 
 	// API throws a 404 if no variations of particular documentState are found
@@ -271,18 +256,12 @@ func getVariationRequestIdByNameFn(ctx context.Context, p *variationRequestProxy
 }
 
 // updateVariationRequestFn is an implementation of the function to update a Genesys Cloud variation request
-func updateVariationRequestFn(ctx context.Context, p *variationRequestProxy, documentVariationId string, documentId string, knowledgeBaseId string, body platformclientv2.Documentvariationrequest) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func updateVariationRequestFn(_ context.Context, p *variationRequestProxy, documentVariationId string, documentId string, knowledgeBaseId string, body platformclientv2.Documentvariationrequest) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error) {
 	return p.knowledgeApi.PatchKnowledgeKnowledgebaseDocumentVariation(documentVariationId, documentId, knowledgeBaseId, body)
 }
 
 // deleteVariationRequestFn is an implementation function for deleting a Genesys Cloud variation request
-func deleteVariationRequestFn(ctx context.Context, p *variationRequestProxy, variationId, documentId, baseId string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func deleteVariationRequestFn(_ context.Context, p *variationRequestProxy, variationId, documentId, baseId string) (*platformclientv2.APIResponse, error) {
 	resp, err := p.knowledgeApi.DeleteKnowledgeKnowledgebaseDocumentVariation(variationId, documentId, baseId)
 	if err != nil {
 		return resp, err
@@ -292,16 +271,10 @@ func deleteVariationRequestFn(ctx context.Context, p *variationRequestProxy, var
 }
 
 func createKnowledgeKnowledgebaseDocumentVersionsFn(ctx context.Context, p *variationRequestProxy, knowledgeDocumentId, knowledgeBaseId string, version *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	return p.knowledgeApi.PostKnowledgeKnowledgebaseDocumentVersions(knowledgeBaseId, knowledgeDocumentId, *version)
 }
 
 func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *variationRequestProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	var (
 		after                 string
 		err                   error

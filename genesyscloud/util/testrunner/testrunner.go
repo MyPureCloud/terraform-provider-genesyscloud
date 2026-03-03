@@ -35,10 +35,6 @@ func isRunningTests() bool {
 		return true
 	}
 
-	if os.Getenv("TF_UNIT") != "" {
-		return true
-	}
-
 	return false
 }
 
