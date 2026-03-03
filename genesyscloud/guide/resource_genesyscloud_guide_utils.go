@@ -1,11 +1,7 @@
 package guide
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -44,8 +40,7 @@ func GuideFtIsEnabled() bool {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
 
-	ctx := context.Background()
-	resp, err := client.Do(req.WithContext(ctx))
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error sending request: %v", err)
 		return false
@@ -56,41 +51,12 @@ func GuideFtIsEnabled() bool {
 	return resp.StatusCode < 500
 }
 
-// setRequestHeader sets the request header for the guide proxy
-func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
+// setGuideRequestHeader sets the request header for the guide proxy
+func setGuideRequestHeader(r *http.Request, p *guideProxy) (*http.Request, error) {
 	r.Header.Set("Content-Type", "application/json")
 	r.Header.Set("Accept", "application/json")
 	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
-	return r
-}
-
-// createHTTPRequest creates a new HTTP request with proper headers
-func createHTTPRequest(ctx context.Context, method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
-	// Set resource context for SDK debug logging before creating HTTP request
-
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
-	}
-	req = setRequestHeader(req, p)
-	return req, nil
-}
-
-// marshalAndCreateRequest marshals a body to JSON and creates an HTTP request
-func marshalAndCreateRequest(ctx context.Context, method, url string, body interface{}, p *guideProxy) (*http.Request, error) {
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling request body: %v", err)
-	}
-	return createHTTPRequest(ctx, method, url, bytes.NewBuffer(jsonBody), p)
-}
-
-// unmarshalResponse unmarshals a JSON response into the target struct
-func unmarshalResponse(respBody []byte, target interface{}) error {
-	if err := json.Unmarshal(respBody, target); err != nil {
-		return fmt.Errorf("error unmarshaling response: %v", err)
-	}
-	return nil
+	return r, nil
 }
 
 // Structs
