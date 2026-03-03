@@ -240,13 +240,14 @@ func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDe
 		}
 
 		// Extract the 'after' parameter from NextUri for the next iteration
-		after, err = util.GetQueryParamValueFromUri(*tables.NextUri, "after")
+		newAfter, err := util.GetQueryParamValueFromUri(*tables.NextUri, "after")
 		if err != nil {
 			return nil, resp, fmt.Errorf("unable to parse after cursor from decision tables next uri: %v", err)
 		}
-		if after == "" {
+		if newAfter == "" || newAfter == after {
 			break
 		}
+		after = newAfter
 	}
 
 	// Cache all decision tables for later use in data source lookups and export
