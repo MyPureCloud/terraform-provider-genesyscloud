@@ -228,17 +228,22 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
-		apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
-		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
-		}
+		// Only get entries for rds type - entries are only supported for rds type
+		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
+			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
+			if err != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
+			}
 
-		entries := d.Get("entries").([]interface{})
-		normalizedEntries := normalizeEntries(entries)
-		if areEntriesEquivalent(normalizedEntries, apiEntries) {
-			_ = d.Set("entries", entries)
+			entries := d.Get("entries").([]interface{})
+			normalizedEntries := normalizeEntries(entries)
+			if areEntriesEquivalent(normalizedEntries, apiEntries) {
+				_ = d.Set("entries", entries)
+			} else {
+				_ = d.Set("entries", apiEntries)
+			}
 		} else {
-			_ = d.Set("entries", apiEntries)
+			_ = d.Set("entries", []interface{}{})
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)

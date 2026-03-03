@@ -372,7 +372,7 @@ func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded 
 		outboundAPI := platformclientv2.NewOutboundApi()
 		dncListDivisionViews, _, err := outboundAPI.GetOutboundDnclistsDivisionview(r.Primary.ID, true, true)
 		if err != nil {
-			return fmt.Errorf("error received when quering DNC list division view from API: %v", err)
+			return fmt.Errorf("error received when querying DNC list division view from API: %v", err)
 		}
 		if numberOfPhoneNumbersAdded != *dncListDivisionViews.Size {
 			return fmt.Errorf("expected dnc list size to be: %v, got: %v", numberOfPhoneNumbersAdded, *dncListDivisionViews.Size)
