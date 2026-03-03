@@ -187,7 +187,7 @@ func getOutboundDnclistEntriesWithRetries(ctx context.Context, proxy *outboundDn
 	entries := make([]interface{}, 0)
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		entriesList, resp, err := proxy.getOutboundDnclistEntries(ctx, dncListId)
-		if util.IsStatus400(resp) {
+		if util.IsStatus400(resp) || util.IsStatus404(resp) {
 			return retry.RetryableError(err)
 		}
 		if err != nil {
@@ -232,15 +232,16 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
 			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
 			if err != nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
 			}
 
 			entries := d.Get("entries").([]interface{})
-			normalizedEntries := normalizeEntries(entries)
-			if areEntriesEquivalent(normalizedEntries, apiEntries) {
+			normalizedSchemaEntries := normalizeEntries(entries)
+			normalizedApiEntries := normalizeEntries(apiEntries)
+			if areEntriesEquivalent(normalizedSchemaEntries, normalizedApiEntries) {
 				_ = d.Set("entries", entries)
 			} else {
-				_ = d.Set("entries", apiEntries)
+				_ = d.Set("entries", normalizedApiEntries)
 			}
 		} else {
 			_ = d.Set("entries", []interface{}{})
@@ -372,11 +373,9 @@ func normalizeEntries(entries []interface{}) []interface{} {
 
 		sort.Strings(phones)
 
-		// Create normalized entry
+		// Create normalized entry - always include expiration_date, even if empty
 		entry := make(map[string]interface{})
-		if expDate != "" {
-			entry["expiration_date"] = expDate
-		}
+		entry["expiration_date"] = expDate
 		entry["phone_numbers"] = lists.StringListToInterfaceList(phones)
 
 		normalized = append(normalized, entry)
