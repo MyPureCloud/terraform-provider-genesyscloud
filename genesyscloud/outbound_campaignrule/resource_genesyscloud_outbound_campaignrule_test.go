@@ -350,6 +350,194 @@ data "genesyscloud_auth_division_home" "home" {}
 	})
 }
 
+func TestAccResourceOutboundCampaignRuleConditionGroups(t *testing.T) {
+	var (
+		resourceLabel = "campaign_rule"
+		ruleName      = "TF CR CG " + uuid.NewString()
+		ruleNameUpd   = "TF CR CG upd " + uuid.NewString()
+
+		campaign1ResourceLabel = "campaign1"
+		campaign1Name          = "TF Test Campaign " + uuid.NewString()
+		outboundFlowFilePath   = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
+		campaign1FlowName      = "test flow " + uuid.NewString()
+		campaign1Resource      = generateCampaignResourceForCampaignRuleTests(
+			campaign1ResourceLabel,
+			campaign1Name,
+			"off",
+			"contact-list",
+			"test contact list"+uuid.NewString(),
+			"location",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131783%v", 10000+rand.Intn(99999-10000)),
+			"site",
+			"test site "+uuid.NewString(),
+			"wrapupcode",
+			"test wrapup code "+uuid.NewString(),
+			"campaignrule-test-flow",
+			outboundFlowFilePath,
+			campaign1FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"car",
+			"test car"+uuid.NewString(),
+		)
+
+		campaign2ResourceLabel = "campaign2"
+		campaign2Name          = "TF Test Campaign " + uuid.NewString()
+		campaign2FlowName      = "test flow " + uuid.NewString()
+		campaign2Resource      = generateCampaignResourceForCampaignRuleTests(
+			campaign2ResourceLabel,
+			campaign2Name,
+			"off",
+			"contact-list-2",
+			"test contact list"+uuid.NewString(),
+			"location-2",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131782%v", 10000+rand.Intn(99999-10000)),
+			"site-2",
+			"test site "+uuid.NewString(),
+			"wrapupcode-2",
+			"test wrapup code "+uuid.NewString(),
+			"campaignrule-test-flow-2",
+			outboundFlowFilePath,
+			campaign2FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"car-2",
+			"test car"+uuid.NewString(),
+		)
+
+		sequenceResourceLabel = "sequence"
+		sequenceName          = "TF Test Sequence " + uuid.NewString()
+		sequenceResource      = outboundSequence.GenerateOutboundSequence(
+			sequenceResourceLabel,
+			sequenceName,
+			[]string{"genesyscloud_outbound_campaign." + campaign1ResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+		)
+
+		entityCampaignIds  = []string{"genesyscloud_outbound_campaign." + campaign1ResourceLabel + ".id"}
+		entitySequenceIds = []string{"genesyscloud_outbound_sequence." + sequenceResourceLabel + ".id"}
+
+		actionType                = "turnOnCampaign"
+		actionCampaignIds         = []string{"genesyscloud_outbound_campaign." + campaign2ResourceLabel + ".id"}
+		actionSequenceIds         = []string{"genesyscloud_outbound_sequence." + sequenceResourceLabel + ".id"}
+		actionUseTriggeringEntity = util.FalseValue
+
+		// Condition group 1: match any — campaignProgress, campaignAgents
+		condProgressOp, condProgressVal   = "lessThan", "0.5"
+		condAgentsOp, condAgentsVal       = "greaterThan", "0"
+		group1Cond1 = generateConditionGroupConditionBlock("campaignProgress", generateCampaignRuleParameters(condProgressOp, condProgressVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		group1Cond2 = generateConditionGroupConditionBlock("campaignAgents", generateCampaignRuleParameters(condAgentsOp, condAgentsVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+
+		// Condition group 2: match all — campaignRecordsAttempted, campaignValidAttempts
+		condAttemptedOp, condAttemptedVal = "greaterThanEqualTo", "10"
+		condValidOp, condValidVal          = "lessThan", "1.0"
+		group2Cond1 = generateConditionGroupConditionBlock("campaignRecordsAttempted", generateCampaignRuleParameters(condAttemptedOp, condAttemptedVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		group2Cond2 = generateConditionGroupConditionBlock("campaignValidAttempts", generateCampaignRuleParameters(condValidOp, condValidVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+
+		// Update: different condition types and execution_settings
+		condRightPartyOp, condRightPartyVal = "greaterThan", "5"
+		condBusinessOp, condBusinessVal     = "equals", "0"
+		group1Cond1Upd = generateConditionGroupConditionBlock("campaignRightPartyContacts", generateCampaignRuleParameters(condRightPartyOp, condRightPartyVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		group1Cond2Upd = generateConditionGroupConditionBlock("campaignBusinessSuccess", generateCampaignRuleParameters(condBusinessOp, condBusinessVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		execFrequency                        = "onEachTrigger"
+		execFrequencyUpd                     = "oncePerDay"
+		execTimeZoneUpd                      = "Africa/Abidjan"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			// Create: v2 processing, condition groups, execution_settings, legacy conditions empty
+			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) +
+					sequenceResource +
+					campaign1Resource +
+					campaign2Resource +
+					generateOutboundCampaignRule(
+						resourceLabel,
+						ruleName,
+						util.FalseValue,
+						util.FalseValue,
+						generateCampaignRuleEntity(entityCampaignIds, entitySequenceIds, []string{}, []string{}),
+						generateCampaignRuleProcessingV2(),
+						generateConditionGroup(true, group1Cond1, group1Cond2),
+						generateConditionGroup(false, group2Cond1, group2Cond2),
+						generateExecutionSettings(execFrequency, ""),
+						generateCampaignRuleActions("", actionType, actionCampaignIds, actionSequenceIds, []string{}, []string{}, actionUseTriggeringEntity, ""),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_processing", "v2"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "enabled", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.match_any_conditions", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.condition_type", "campaignProgress"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.parameters.0.operator", condProgressOp),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.parameters.0.value", condProgressVal),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.condition_type", "campaignAgents"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.parameters.0.operator", condAgentsOp),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.parameters.0.value", condAgentsVal),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.match_any_conditions", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.0.condition_type", "campaignRecordsAttempted"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.0.parameters.0.operator", condAttemptedOp),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.0.parameters.0.value", condAttemptedVal),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.1.condition_type", "campaignValidAttempts"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.1.parameters.0.operator", condValidOp),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.1.parameters.0.value", condValidVal),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "execution_settings.0.frequency", execFrequency),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.action_type", actionType),
+					resource.TestCheckNoResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_conditions.0.condition_type"),
+				),
+			},
+			// Update: change name, condition types in first group, execution_settings to oncePerDay with time_zone_id
+			{
+				Config: fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+`) +
+					sequenceResource +
+					campaign1Resource +
+					campaign2Resource +
+					generateOutboundCampaignRule(
+						resourceLabel,
+						ruleNameUpd,
+						util.FalseValue,
+						util.FalseValue,
+						generateCampaignRuleEntity(entityCampaignIds, entitySequenceIds, []string{}, []string{}),
+						generateCampaignRuleProcessingV2(),
+						generateConditionGroup(true, group1Cond1Upd, group1Cond2Upd),
+						generateConditionGroup(false, group2Cond1, group2Cond2),
+						generateExecutionSettings(execFrequencyUpd, execTimeZoneUpd),
+						generateCampaignRuleActions("", actionType, actionCampaignIds, actionSequenceIds, []string{}, []string{}, actionUseTriggeringEntity, ""),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "name", ruleNameUpd),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_processing", "v2"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.condition_type", "campaignRightPartyContacts"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.parameters.0.operator", condRightPartyOp),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.parameters.0.value", condRightPartyVal),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.condition_type", "campaignBusinessSuccess"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.parameters.0.operator", condBusinessOp),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.parameters.0.value", condBusinessVal),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.0.condition_type", "campaignRecordsAttempted"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.1.conditions.1.condition_type", "campaignValidAttempts"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "execution_settings.0.frequency", execFrequencyUpd),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "execution_settings.0.time_zone_id", execTimeZoneUpd),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_actions.0.action_type", actionType),
+				),
+			},
+			{
+				ResourceName:      "genesyscloud_outbound_campaignrule." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyCampaignRuleDestroyed,
+	})
+}
+
 func TestAccResourceOutboundCampaignRuleEnabledAtCreation(t *testing.T) {
 	var (
 		resourceLabel   = "campaign_rule"
@@ -1574,6 +1762,52 @@ func generateCampaignRuleConditions(id string, conditionType string, parametersB
 		%s
 	}
 `, id, conditionType, parametersBlock)
+}
+
+// generateConditionGroupConditionBlock generates a single "conditions" block for use inside condition_groups.
+func generateConditionGroupConditionBlock(conditionType string, parametersBlock string) string {
+	return fmt.Sprintf(`
+		conditions {
+			condition_type = "%s"
+			%s
+		}
+`, conditionType, parametersBlock)
+}
+
+// generateConditionGroup generates a condition_groups block (v2 processing).
+func generateConditionGroup(matchAnyConditions bool, conditionBlocks ...string) string {
+	matchAnyStr := util.FalseValue
+	if matchAnyConditions {
+		matchAnyStr = util.TrueValue
+	}
+	return fmt.Sprintf(`
+	condition_groups {
+		match_any_conditions = %s
+		%s
+	}
+`, matchAnyStr, strings.Join(conditionBlocks, "\n"))
+}
+
+// generateExecutionSettings generates execution_settings block.
+func generateExecutionSettings(frequency string, timeZoneId string) string {
+	if timeZoneId != "" {
+		return fmt.Sprintf(`
+	execution_settings {
+		frequency     = "%s"
+		time_zone_id  = "%s"
+	}
+`, frequency, timeZoneId)
+	}
+	return fmt.Sprintf(`
+	execution_settings {
+		frequency = "%s"
+	}
+`, frequency)
+}
+
+// generateCampaignRuleProcessingV2 returns the campaign_rule_processing = "v2" block.
+func generateCampaignRuleProcessingV2() string {
+	return `campaign_rule_processing = "v2"`
 }
 
 func generateCampaignRuleParameters(operator string,

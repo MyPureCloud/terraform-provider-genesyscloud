@@ -14,14 +14,36 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 	matchAnyConditions := d.Get("match_any_conditions").(bool)
 
 	campaignRule := platformclientv2.Campaignrule{
-		Name:                   platformclientv2.String(d.Get("name").(string)),
-		Enabled:                platformclientv2.Bool(false), // All campaign rules have to be created in an "off" state to start out with
-		CampaignRuleEntities:   buildCampaignRuleEntities(d.Get("campaign_rule_entities").(*schema.Set)),
-		CampaignRuleConditions: buildCampaignRuleConditions(d.Get("campaign_rule_conditions").([]interface{})),
-		CampaignRuleActions:    buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
-		MatchAnyConditions:     &matchAnyConditions,
+		Name:                 platformclientv2.String(d.Get("name").(string)),
+		Enabled:              platformclientv2.Bool(false), // All campaign rules have to be created in an "off" state to start out with
+		CampaignRuleEntities: buildCampaignRuleEntities(d.Get("campaign_rule_entities").(*schema.Set)),
+		CampaignRuleActions:  buildCampaignRuleAction(d.Get("campaign_rule_actions").([]interface{})),
+		MatchAnyConditions:   &matchAnyConditions,
 	}
+
+	if v, ok := d.GetOk("campaign_rule_processing"); ok && v.(string) != "" {
+		campaignRule.CampaignRuleProcessing = platformclientv2.String(v.(string))
+	}
+	if v, ok := d.GetOk("condition_groups"); ok && len(v.([]interface{})) > 0 {
+		campaignRule.ConditionGroups = buildCampaignRuleConditionGroups(v.([]interface{}))
+	}
+	if v, ok := d.GetOk("campaign_rule_conditions"); ok && len(v.([]interface{})) > 0 {
+		campaignRule.CampaignRuleConditions = buildCampaignRuleConditions(v.([]interface{}))
+	}
+	if v, ok := d.GetOk("execution_settings"); ok && len(v.([]interface{})) > 0 {
+		campaignRule.ExecutionSettings = buildExecutionSettings(v.([]interface{})[0].(map[string]interface{}))
+	}
+
 	return campaignRule
+}
+
+func buildExecutionSettings(m map[string]interface{}) *platformclientv2.Campaignruleexecutionsettings {
+	sdk := &platformclientv2.Campaignruleexecutionsettings{}
+	if v, ok := m["frequency"].(string); ok && v != "" {
+		sdk.Frequency = platformclientv2.String(v)
+	}
+	resourcedata.BuildSDKStringValueIfNotNil(&sdk.TimeZoneId, m, "time_zone_id")
+	return sdk
 }
 
 func buildCampaignRuleEntities(entities *schema.Set) *platformclientv2.Campaignruleentities {
@@ -67,6 +89,24 @@ func buildCampaignRuleConditions(campaignRuleConditions []interface{}) *[]platfo
 	}
 
 	return &campaignRuleConditionSlice
+}
+
+func buildCampaignRuleConditionGroups(conditionGroups []interface{}) *[]platformclientv2.Campaignruleconditiongroup {
+	if len(conditionGroups) == 0 {
+		return nil
+	}
+	var sdkGroups []platformclientv2.Campaignruleconditiongroup
+	for _, g := range conditionGroups {
+		groupMap := g.(map[string]interface{})
+		matchAny := groupMap["match_any_conditions"].(bool)
+		conditionsRaw := groupMap["conditions"].([]interface{})
+		sdkConditions := buildCampaignRuleConditions(conditionsRaw)
+		sdkGroups = append(sdkGroups, platformclientv2.Campaignruleconditiongroup{
+			MatchAnyConditions: &matchAny,
+			Conditions:         sdkConditions,
+		})
+	}
+	return &sdkGroups
 }
 
 func buildCampaignRuleAction(campaignRuleActions []interface{}) *[]platformclientv2.Campaignruleaction {
@@ -251,6 +291,30 @@ func flattenCampaignRuleConditions(campaignRuleConditions *[]platformclientv2.Ca
 		ruleConditionList = append(ruleConditionList, campaignRuleConditionsMap)
 	}
 	return ruleConditionList
+}
+
+func flattenCampaignRuleConditionGroups(conditionGroups *[]platformclientv2.Campaignruleconditiongroup) []interface{} {
+	if conditionGroups == nil || len(*conditionGroups) == 0 {
+		return nil
+	}
+	var result []interface{}
+	for _, g := range *conditionGroups {
+		groupMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(groupMap, "match_any_conditions", g.MatchAnyConditions)
+		groupMap["conditions"] = flattenCampaignRuleConditions(g.Conditions)
+		result = append(result, groupMap)
+	}
+	return result
+}
+
+func flattenExecutionSettings(sdk *platformclientv2.Campaignruleexecutionsettings) []interface{} {
+	if sdk == nil {
+		return nil
+	}
+	m := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(m, "frequency", sdk.Frequency)
+	resourcedata.SetMapValueIfNotNil(m, "time_zone_id", sdk.TimeZoneId)
+	return []interface{}{m}
 }
 
 func flattenCampaignRuleAction[T any](campaignRuleActions *[]platformclientv2.Campaignruleaction, actionEntitiesFunc func(*platformclientv2.Campaignruleactionentities) T) []interface{} {
