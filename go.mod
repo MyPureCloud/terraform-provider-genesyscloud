@@ -1,6 +1,6 @@
 module github.com/mypurecloud/terraform-provider-genesyscloud
 
-go 1.24.2
+go 1.25
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
@@ -19,7 +19,7 @@ require (
 	github.com/nyaruka/phonenumbers v1.6.10
 	github.com/rjNemo/underscore v0.10.0
 	github.com/shirou/gopsutil/v4 v4.26.1
-	github.com/zclconf/go-cty v1.17.0
+	github.com/zclconf/go-cty v1.18.0
 	gonum.org/v1/gonum v0.17.0
 )
 
