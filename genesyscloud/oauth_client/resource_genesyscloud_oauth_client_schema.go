@@ -2,6 +2,7 @@ package oauth_client
 
 // @team: GC IAM (Auth/Donut)
 // @chat: #gc-iam-auth-donut
+// @jira: IAM
 // @description: Manages OAuth 2.0 clients for API authentication and authorization. Configures OAuth grant types, access tokens, scopes, and permissions for applications and integrations accessing Genesys Cloud APIs.
 
 import (

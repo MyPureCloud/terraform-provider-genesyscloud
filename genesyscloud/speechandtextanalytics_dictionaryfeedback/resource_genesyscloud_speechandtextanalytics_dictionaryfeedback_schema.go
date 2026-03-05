@@ -2,6 +2,8 @@ package speechandtextanalytics_dictionaryfeedback
 
 // @team: PureCloud Speech & Text Analytics
 // @chat: #dictionary-feedback-ui-dev
+// @jira: GIA
+// @pm: Leor Grebler
 // @description: The Dictionary Feedback service allows customers to add terms to the dictionary that should be recognized by the transcription service with higher likelihood.
 
 import (
