@@ -114,6 +114,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func containsFunctionDataAction(s string) bool {
 	normalized := strings.ToLower(s)
 	normalized = strings.ReplaceAll(normalized, "_", " ")
+	normalized = strings.ReplaceAll(normalized, "-", " ")
 	return strings.Contains(normalized, "function data action")
 }
 
@@ -245,7 +246,8 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("DEBUG: Updating Published draft with version: %d", version)
 		resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
+			log.Printf("DEBUG: Publish failed with status %d", resp.StatusCode)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -391,7 +393,8 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("DEBUG: Publishing draft with version: %d", version)
 		resp, err := iap.publishIntegrationActionDraft(ctx, id, version)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
+			log.Printf("DEBUG: Publish failed with status %d", resp.StatusCode)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
 		}
 		log.Printf("DEBUG: resp is not null and err is null...")
 		return resp, nil
