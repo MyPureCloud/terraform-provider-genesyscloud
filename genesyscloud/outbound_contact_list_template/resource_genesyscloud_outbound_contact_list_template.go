@@ -145,6 +145,8 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List Template %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		phoneTzIdx, emailTzIdx := parseOutboundContactListTemplateRaw(resp.RawBody)
+
 		if sdkContactListTemplate.Name != nil {
 			_ = d.Set("name", *sdkContactListTemplate.Name)
 		}
@@ -156,10 +158,10 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 			_ = d.Set("column_names", columnNames)
 		}
 		if sdkContactListTemplate.PhoneColumns != nil {
-			_ = d.Set("phone_columns", flattenSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(*sdkContactListTemplate.PhoneColumns))
+			_ = d.Set("phone_columns", flattenSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(*sdkContactListTemplate.PhoneColumns, phoneTzIdx))
 		}
 		if sdkContactListTemplate.EmailColumns != nil {
-			_ = d.Set("email_columns", flattenSdkOutboundContactListTemplateContactEmailAddressColumnSlice(*sdkContactListTemplate.EmailColumns))
+			_ = d.Set("email_columns", flattenSdkOutboundContactListTemplateContactEmailAddressColumnSlice(*sdkContactListTemplate.EmailColumns, emailTzIdx))
 		}
 		if sdkContactListTemplate.PreviewModeColumnName != nil {
 			_ = d.Set("preview_mode_column_name", *sdkContactListTemplate.PreviewModeColumnName)
