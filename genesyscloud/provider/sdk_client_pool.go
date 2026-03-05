@@ -1000,6 +1000,10 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 		clientConfig, err := mrmo.GetClientConfig()
 		if err != nil {
 			log.Printf("[WARN] Error getting client config: %s", err.Error())
+			log.Printf("[DEBUG] Returning error from GetAllWithPooledClient")
+			return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+				return nil, diag.FromErr(err)
+			}
 		}
 		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 			return method(ctx, clientConfig)
