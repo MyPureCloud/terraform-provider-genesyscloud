@@ -30,12 +30,12 @@ func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, reso
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys, totalFlowResources)
 }
 
-func (p *DependentConsumerProxy) GetAllWithPooledClient(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-	return p.GetPooledClientAttr(method)
+func (p *DependentConsumerProxy) GetAllWithPooledClient(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+	return p.GetPooledClientAttr(ctx, method)
 }
 
 type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error)
-type retrievePooledClientFunc func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
+type retrievePooledClientFunc func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
 
 var InternalProxy *DependentConsumerProxy
 
@@ -61,10 +61,9 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 	return InternalProxy
 }
 
-func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+func retrievePooledClientFn(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 	resourceFunc := provider.GetAllWithPooledClientCustom(method)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Pass the context through - don't replace it
 	resources, dependsMap, totalFlowResources, err := resourceFunc(ctx)
 	if err != nil {
 		return nil, nil, totalFlowResources, err
