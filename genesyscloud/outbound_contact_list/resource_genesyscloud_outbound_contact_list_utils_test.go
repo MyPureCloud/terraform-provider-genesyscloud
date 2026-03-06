@@ -272,7 +272,7 @@ func TestContactListBuildSdkOutboundContactListContactEmailAddressColumnSliceEdg
 
 func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(t *testing.T) {
 	// Test case 1: Empty input
-	emptyResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice([]platformclientv2.Emailcolumn{})
+	emptyResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice([]platformclientv2.Emailcolumn{}, nil)
 	if emptyResult != nil {
 		t.Errorf("Expected nil for empty input, got %v", emptyResult)
 	}
@@ -291,7 +291,7 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 		},
 	}
 
-	result := flattenSdkOutboundContactListContactEmailAddressColumnSlice(singleColumn)
+	result := flattenSdkOutboundContactListContactEmailAddressColumnSlice(singleColumn, nil)
 
 	if result == nil {
 		t.Fatal("Expected non-nil result for single column")
@@ -334,7 +334,7 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 		},
 	}
 
-	multiResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice(multipleColumns)
+	multiResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice(multipleColumns, nil)
 
 	if multiResult == nil {
 		t.Fatal("Expected non-nil result for multiple columns")
@@ -547,6 +547,61 @@ func TestContactListFlattenSdkOutboundContactListColumnDataTypeSpecifications(t 
 		}
 	} else {
 		t.Error("Failed to type assert result to map[string]interface{}")
+	}
+}
+
+func TestFlattenPhoneColumnsFallsBackToCallableTimeColumnName(t *testing.T) {
+	colName := "Phone"
+	colType := "Home"
+	callable := "Timezone"
+
+	// SDK model missing CallableTimeColumn (nil), but raw JSON provides CallableTimeColumnName.
+	sdkCols := []platformclientv2.Contactphonenumbercolumn{
+		{
+			ColumnName: &colName,
+			VarType:    &colType,
+		},
+	}
+
+	lookup := map[string]string{
+		contactListColumnKey(colName, colType): callable,
+	}
+
+	set := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(sdkCols, lookup)
+	if set == nil || set.Len() != 1 {
+		t.Fatalf("expected 1 phone column in set; got %v", set)
+	}
+
+	m := set.List()[0].(map[string]interface{})
+	if v, ok := m["callable_time_column"].(string); !ok || v != callable {
+		t.Fatalf("expected callable_time_column=%q; got %#v", callable, m["callable_time_column"])
+	}
+}
+
+func TestFlattenEmailColumnsFallsBackToContactableTimeColumnName(t *testing.T) {
+	colName := "Email"
+	colType := "work"
+	contactable := "Timezone"
+
+	sdkCols := []platformclientv2.Emailcolumn{
+		{
+			ColumnName: &colName,
+			VarType:    &colType,
+		},
+	}
+
+	lookup := map[string]string{
+		contactListColumnKey(colName, colType): contactable,
+	}
+
+	set := flattenSdkOutboundContactListContactEmailAddressColumnSlice(sdkCols, lookup)
+	if set == nil || set.Len() != 1 {
+		t.Fatalf("expected 1 email column in set; got %v", set)
+	}
+
+	m := set.List()[0].(map[string]interface{})
+	if v, ok := m["contactable_time_column"].(string); !ok || v != contactable {
+		t.Fatalf("expected contactable_time_column=%q; got %#v", contactable, m["contactable_time_column"])
 	}
 }
 

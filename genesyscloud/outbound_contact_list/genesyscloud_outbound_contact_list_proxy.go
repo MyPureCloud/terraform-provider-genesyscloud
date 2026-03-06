@@ -2,6 +2,7 @@ package outbound_contact_list
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -31,6 +32,7 @@ type createOutboundContactlistFunc func(ctx context.Context, p *OutboundContactl
 type getAllOutboundContactlistFunc func(ctx context.Context, p *OutboundContactlistProxy, name string) (*[]platformclientv2.Contactlist, *platformclientv2.APIResponse, error)
 type getOutboundContactlistIdByNameFunc func(ctx context.Context, p *OutboundContactlistProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 type getOutboundContactlistByIdFunc func(ctx context.Context, p *OutboundContactlistProxy, id string) (contactList *platformclientv2.Contactlist, response *platformclientv2.APIResponse, err error)
+type getOutboundContactlistRawByIdFunc func(ctx context.Context, p *OutboundContactlistProxy, id string) (contactList *ContactlistRaw, response *platformclientv2.APIResponse, err error)
 type getOutboundContactlistContactRecordLengthFunc func(ctx context.Context, p *OutboundContactlistProxy, contactListId string) (int, *platformclientv2.APIResponse, error)
 type updateOutboundContactlistFunc func(ctx context.Context, p *OutboundContactlistProxy, id string, contactList *platformclientv2.Contactlist) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error)
 type deleteOutboundContactlistFunc func(ctx context.Context, p *OutboundContactlistProxy, id string) (response *platformclientv2.APIResponse, err error)
@@ -48,6 +50,7 @@ type OutboundContactlistProxy struct {
 	getAllOutboundContactlistAttr                 getAllOutboundContactlistFunc
 	getOutboundContactlistIdByNameAttr            getOutboundContactlistIdByNameFunc
 	getOutboundContactlistByIdAttr                getOutboundContactlistByIdFunc
+	getOutboundContactlistRawByIdAttr             getOutboundContactlistRawByIdFunc
 	getOutboundContactlistContactRecordLengthAttr getOutboundContactlistContactRecordLengthFunc
 	updateOutboundContactlistAttr                 updateOutboundContactlistFunc
 	deleteOutboundContactlistAttr                 deleteOutboundContactlistFunc
@@ -71,6 +74,7 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 		getAllOutboundContactlistAttr:                 getAllOutboundContactlistFn,
 		getOutboundContactlistIdByNameAttr:            getOutboundContactlistIdByNameFn,
 		getOutboundContactlistByIdAttr:                getOutboundContactlistByIdFn,
+		getOutboundContactlistRawByIdAttr:             getOutboundContactlistRawByIdFn,
 		getOutboundContactlistContactRecordLengthAttr: getOutboundContactlistContactRecordLengthFn,
 		updateOutboundContactlistAttr:                 updateOutboundContactlistFn,
 		deleteOutboundContactlistAttr:                 deleteOutboundContactlistFn,
@@ -129,6 +133,11 @@ func (p *OutboundContactlistProxy) getOutboundContactlistIdByName(ctx context.Co
 // GetOutboundContactlistById returns a single Genesys Cloud outbound contactlist by Id
 func (p *OutboundContactlistProxy) GetOutboundContactlistById(ctx context.Context, id string) (outboundContactlist *platformclientv2.Contactlist, response *platformclientv2.APIResponse, err error) {
 	return p.getOutboundContactlistByIdAttr(ctx, p, id)
+}
+
+// GetOutboundContactlistRawById reads the outbound contact list as raw JSON to capture fields the Go SDK model may omit.
+func (p *OutboundContactlistProxy) GetOutboundContactlistRawById(ctx context.Context, id string) (outboundContactlist *ContactlistRaw, response *platformclientv2.APIResponse, err error) {
+	return p.getOutboundContactlistRawByIdAttr(ctx, p, id)
 }
 
 // getOutboundContactlistContactRecordLength returns the total record count of contacts on a contact list
@@ -250,6 +259,58 @@ func getOutboundContactlistByIdFn(ctx context.Context, p *OutboundContactlistPro
 		log.Printf("Could not read contact list '%s' from cache. Reading from the API...", id)
 	}
 	return p.outboundApi.GetOutboundContactlist(id, false, false)
+}
+
+type ContactlistRaw struct {
+	PhoneColumns []ContactPhoneNumberColumnRaw `json:"phoneColumns,omitempty"`
+	EmailColumns []EmailColumnRaw              `json:"emailColumns,omitempty"`
+}
+
+type ContactPhoneNumberColumnRaw struct {
+	ColumnName             *string `json:"columnName,omitempty"`
+	VarType                *string `json:"type,omitempty"`
+	CallableTimeColumn     *string `json:"callableTimeColumn,omitempty"`
+	CallableTimeColumnName *string `json:"callableTimeColumnName,omitempty"`
+}
+
+type EmailColumnRaw struct {
+	ColumnName                *string `json:"columnName,omitempty"`
+	VarType                   *string `json:"type,omitempty"`
+	ContactableTimeColumn     *string `json:"contactableTimeColumn,omitempty"`
+	ContactableTimeColumnName *string `json:"contactableTimeColumnName,omitempty"`
+}
+
+func getOutboundContactlistRawByIdFn(ctx context.Context, p *OutboundContactlistProxy, id string) (*ContactlistRaw, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Always hit the API (do not use cache) so UI-side changes are visible.
+	// Use the SDK's APIClient so we inherit its HTTP client settings (timeouts/retries/proxies).
+	headerParams := map[string]string{
+		"Authorization": "Bearer " + p.clientConfig.AccessToken,
+	}
+	queryParams := map[string]string{
+		"includeImportStatus": "false",
+		"includeSize":         "false",
+	}
+
+	// Set Accept header
+	httpHeaderAccept := p.clientConfig.APIClient.SelectHeaderAccept([]string{"application/json"})
+	if httpHeaderAccept != "" {
+		headerParams["Accept"] = httpHeaderAccept
+	}
+
+	path := fmt.Sprintf("%s/api/v2/outbound/contactlists/%s", p.clientConfig.BasePath, id)
+	resp, err := p.clientConfig.APIClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var raw ContactlistRaw
+	if err := json.Unmarshal(resp.RawBody, &raw); err != nil {
+		return nil, resp, fmt.Errorf("error unmarshaling response: %v", err)
+	}
+
+	return &raw, resp, nil
 }
 
 // getOutboundContactlistContactRecordLengthFn is an implementation of the function to return a total count of contacts in a contact list

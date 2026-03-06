@@ -22,6 +22,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
+func contactListColumnKey(columnName, columnType string) string {
+	return strings.ToLower(columnName) + "|" + strings.ToLower(columnType)
+}
+
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
 	if contactPhoneNumberColumn == nil {
 		return nil
@@ -46,7 +50,7 @@ func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumber
 	return &sdkContactPhoneNumberColumnSlice
 }
 
-func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []platformclientv2.Contactphonenumbercolumn) *schema.Set {
+func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []platformclientv2.Contactphonenumbercolumn, callableTimeColumnByKey map[string]string) *schema.Set {
 	if len(contactPhoneNumberColumns) == 0 {
 		return nil
 	}
@@ -54,15 +58,23 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 	contactPhoneNumberColumnSet := schema.NewSet(schema.HashResource(outboundContactListContactPhoneNumberColumnResource), []interface{}{})
 	for _, contactPhoneNumberColumn := range contactPhoneNumberColumns {
 		contactPhoneNumberColumnMap := make(map[string]interface{})
+		var key string
 
 		if contactPhoneNumberColumn.ColumnName != nil {
 			contactPhoneNumberColumnMap["column_name"] = *contactPhoneNumberColumn.ColumnName
 		}
 		if contactPhoneNumberColumn.VarType != nil {
 			contactPhoneNumberColumnMap["type"] = *contactPhoneNumberColumn.VarType
+			if contactPhoneNumberColumn.ColumnName != nil {
+				key = contactListColumnKey(*contactPhoneNumberColumn.ColumnName, *contactPhoneNumberColumn.VarType)
+			}
 		}
 		if contactPhoneNumberColumn.CallableTimeColumn != nil {
 			contactPhoneNumberColumnMap["callable_time_column"] = *contactPhoneNumberColumn.CallableTimeColumn
+		} else if key != "" && callableTimeColumnByKey != nil {
+			if v, ok := callableTimeColumnByKey[key]; ok && v != "" {
+				contactPhoneNumberColumnMap["callable_time_column"] = v
+			}
 		}
 
 		contactPhoneNumberColumnSet.Add(contactPhoneNumberColumnMap)
@@ -105,7 +117,7 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 	return &sdkContactEmailAddressColumnSlice
 }
 
-func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumns []platformclientv2.Emailcolumn) *schema.Set {
+func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumns []platformclientv2.Emailcolumn, contactableTimeColumnByKey map[string]string) *schema.Set {
 	if len(contactEmailAddressColumns) == 0 {
 		return nil
 	}
@@ -113,15 +125,23 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 	contactEmailAddressColumnSet := schema.NewSet(schema.HashResource(outboundContactListEmailColumnResource), []interface{}{})
 	for _, contactEmailAddressColumn := range contactEmailAddressColumns {
 		contactEmailAddressColumnMap := make(map[string]interface{})
+		var key string
 
 		if contactEmailAddressColumn.ColumnName != nil {
 			contactEmailAddressColumnMap["column_name"] = *contactEmailAddressColumn.ColumnName
 		}
 		if contactEmailAddressColumn.VarType != nil {
 			contactEmailAddressColumnMap["type"] = *contactEmailAddressColumn.VarType
+			if contactEmailAddressColumn.ColumnName != nil {
+				key = contactListColumnKey(*contactEmailAddressColumn.ColumnName, *contactEmailAddressColumn.VarType)
+			}
 		}
 		if contactEmailAddressColumn.ContactableTimeColumn != nil {
 			contactEmailAddressColumnMap["contactable_time_column"] = *contactEmailAddressColumn.ContactableTimeColumn
+		} else if key != "" && contactableTimeColumnByKey != nil {
+			if v, ok := contactableTimeColumnByKey[key]; ok && v != "" {
+				contactEmailAddressColumnMap["contactable_time_column"] = v
+			}
 		}
 
 		contactEmailAddressColumnSet.Add(contactEmailAddressColumnMap)

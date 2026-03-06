@@ -9,6 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	resourcedata "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -23,6 +24,44 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
+
+func outboundContactListHasCallableTimeColumn(phoneColumns *schema.Set) bool {
+	if phoneColumns == nil {
+		return false
+	}
+
+	for _, raw := range phoneColumns.List() {
+		colMap, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if callable, ok := colMap["callable_time_column"].(string); ok && callable != "" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// outboundContactListAutomaticTimeZoneMappingForRequest controls what value (if any) we send to the API.
+func outboundContactListAutomaticTimeZoneMappingForRequest(d *schema.ResourceData, isUpdate bool, phoneColumns *schema.Set) *bool {
+	if outboundContactListHasCallableTimeColumn(phoneColumns) {
+		v := false
+		return &v
+	}
+
+	if isUpdate {
+		return nil
+	}
+
+	// Preserve current behavior: if the field is unset, d.Get returns false and we send false.
+	v := d.Get("automatic_time_zone_mapping").(bool)
+	// Use GetOkExists semantics so explicit 'false' stays explicit when set.
+	if ptr := resourcedata.GetNillableBool(d, "automatic_time_zone_mapping"); ptr != nil {
+		return ptr
+	}
+	return &v
+}
 
 func getAllOutboundContactLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -45,9 +84,10 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	columnNames := lists.InterfaceListToStrings(d.Get("column_names").([]interface{}))
 	previewModeColumnName := d.Get("preview_mode_column_name").(string)
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
-	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 	trimWhitespace := d.Get("trim_whitespace").(bool)
+	phoneColumnsSet := d.Get("phone_columns").(*schema.Set)
+	automaticTimeZoneMapping := outboundContactListAutomaticTimeZoneMappingForRequest(d, false, phoneColumnsSet)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetOutboundContactlistProxy(sdkConfig)
@@ -55,11 +95,11 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
-		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneColumnsSet),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
 		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
-		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
+		AutomaticTimeZoneMapping:     automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 		TrimWhitespace:               &trimWhitespace,
 	}
@@ -70,7 +110,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	if previewModeColumnName != "" {
 		sdkContactList.PreviewModeColumnName = &previewModeColumnName
 	}
-	if zipCodeColumnName != "" {
+	if zipCodeColumnName != "" && automaticTimeZoneMapping != nil && *automaticTimeZoneMapping {
 		sdkContactList.ZipCodeColumnName = &zipCodeColumnName
 	}
 
@@ -100,9 +140,10 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	columnNames := lists.InterfaceListToStrings(d.Get("column_names").([]interface{}))
 	previewModeColumnName := d.Get("preview_mode_column_name").(string)
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
-	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 	trimWhitespace := d.Get("trim_whitespace").(bool)
+	phoneColumnsSet := d.Get("phone_columns").(*schema.Set)
+	automaticTimeZoneMapping := outboundContactListAutomaticTimeZoneMappingForRequest(d, true, phoneColumnsSet)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetOutboundContactlistProxy(sdkConfig)
@@ -110,11 +151,11 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
-		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneColumnsSet),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
 		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
-		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
+		AutomaticTimeZoneMapping:     automaticTimeZoneMapping,
 		ColumnDataTypeSpecifications: buildSdkOutboundContactListColumnDataTypeSpecifications(d.Get("column_data_type_specifications").([]interface{})),
 		TrimWhitespace:               &trimWhitespace,
 	}
@@ -125,7 +166,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	if previewModeColumnName != "" {
 		sdkContactList.PreviewModeColumnName = &previewModeColumnName
 	}
-	if zipCodeColumnName != "" {
+	if zipCodeColumnName != "" && automaticTimeZoneMapping != nil && *automaticTimeZoneMapping {
 		sdkContactList.ZipCodeColumnName = &zipCodeColumnName
 	}
 
@@ -170,6 +211,60 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		// Raw read to capture timezone column name fields the Go SDK structs omit
+		// Only do this extra call if we detect missing timezone fields in the SDK response.
+		needsRawPhone := false
+		if sdkContactList.PhoneColumns != nil {
+			for _, pc := range *sdkContactList.PhoneColumns {
+				if pc.CallableTimeColumn == nil {
+					needsRawPhone = true
+					break
+				}
+			}
+		}
+		needsRawEmail := false
+		if sdkContactList.EmailColumns != nil {
+			for _, ec := range *sdkContactList.EmailColumns {
+				if ec.ContactableTimeColumn == nil {
+					needsRawEmail = true
+					break
+				}
+			}
+		}
+
+		phoneCallableTimeByKey := map[string]string{}
+		emailContactableTimeByKey := map[string]string{}
+		if (needsRawPhone || needsRawEmail) && (sdkContactList.PhoneColumns != nil || sdkContactList.EmailColumns != nil) {
+			raw, _, err := proxy.GetOutboundContactlistRawById(ctx, d.Id())
+			if err == nil && raw != nil {
+				for _, pc := range raw.PhoneColumns {
+					if pc.ColumnName == nil || pc.VarType == nil {
+						continue
+					}
+					key := contactListColumnKey(*pc.ColumnName, *pc.VarType)
+					if pc.CallableTimeColumn != nil && *pc.CallableTimeColumn != "" {
+						phoneCallableTimeByKey[key] = *pc.CallableTimeColumn
+					} else if pc.CallableTimeColumnName != nil && *pc.CallableTimeColumnName != "" {
+						phoneCallableTimeByKey[key] = *pc.CallableTimeColumnName
+					}
+				}
+				for _, ec := range raw.EmailColumns {
+					if ec.ColumnName == nil || ec.VarType == nil {
+						continue
+					}
+					key := contactListColumnKey(*ec.ColumnName, *ec.VarType)
+					if ec.ContactableTimeColumn != nil && *ec.ContactableTimeColumn != "" {
+						emailContactableTimeByKey[key] = *ec.ContactableTimeColumn
+					} else if ec.ContactableTimeColumnName != nil && *ec.ContactableTimeColumnName != "" {
+						emailContactableTimeByKey[key] = *ec.ContactableTimeColumnName
+					}
+				}
+			} else if err != nil {
+				// Don't fail read if the raw call fails; fallback to SDK fields only.
+				log.Printf("Warning: failed raw read for outbound contact list %s: %v", d.Id(), err)
+			}
+		}
+
 		if sdkContactList.Name != nil {
 			_ = d.Set("name", *sdkContactList.Name)
 		}
@@ -180,10 +275,10 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("column_names", *sdkContactList.ColumnNames)
 		}
 		if sdkContactList.PhoneColumns != nil {
-			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns))
+			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneCallableTimeByKey))
 		}
 		if sdkContactList.EmailColumns != nil {
-			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns))
+			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns, emailContactableTimeByKey))
 		}
 		if sdkContactList.PreviewModeColumnName != nil {
 			_ = d.Set("preview_mode_column_name", *sdkContactList.PreviewModeColumnName)
@@ -309,7 +404,7 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 
 			// Check import status
 			diags := util.WithRetries(ctx, 300*time.Second, func() *retry.RetryError {
-				// Check Import Status for any status update
+
 				status, resp, err := cp.getOutboundContactListImportStatus(ctx, contactListId)
 				tflog.Debug(ctx, fmt.Sprintf("Outbound contact list (%s) import status: %v", contactListId, status))
 				if err != nil {
@@ -340,7 +435,6 @@ func uploadOutboundContactListBulkContacts(ctx context.Context, d *schema.Resour
 					return nil
 				}
 
-				// Otherwise lets retry and continue checking the import status
 				return retry.RetryableError(fmt.Errorf("Outbound contact list (%s) import contacts attempt has not completed yet: %v", contactListId, status))
 			})
 			if diags.HasError() {
