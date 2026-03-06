@@ -57,7 +57,8 @@ var (
 	// Attrs which can be exported in jsonencode objects are populated with a UID
 	// The same UID is stored as the key in attributesDecoded, with the value being the jsonencode representation of the json string.
 	// When the bytes are being written to the file, the UID is found and replaced with the unquoted jsonencode object
-	attributesDecoded = make(map[string]string)
+	attributesDecoded      = make(map[string]string)
+	attributesDecodedMutex sync.Mutex // Global mutex to protect concurrent access to attributesDecoded
 
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
@@ -2319,9 +2320,9 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 					configMap[attributeConfigKey] = vStr
 				} else {
 					uid := uuid.NewString()
-					g.attributesDecodedMutex.Lock()
+					attributesDecodedMutex.Lock()
 					attributesDecoded[uid] = decodedData
-					g.attributesDecodedMutex.Unlock()
+					attributesDecodedMutex.Unlock()
 					configMap[attributeConfigKey] = uid
 				}
 			}

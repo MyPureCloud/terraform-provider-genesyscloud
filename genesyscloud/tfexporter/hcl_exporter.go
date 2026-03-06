@@ -2,11 +2,12 @@ package tfexporter
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -215,7 +216,17 @@ func createHCLVariablesBlock(unresolvedAttrs []unresolvableAttributeInfo) []byte
 
 func postProcessHclBytes(resource []byte) []byte {
 	resourceStr := string(resource)
-	for placeholderId, val := range attributesDecoded {
+
+	// Create a copy of attributesDecoded map with mutex protection to avoid concurrent map iteration and map write
+	attributesDecodedMutex.Lock()
+	attributesDecodedCopy := make(map[string]string, len(attributesDecoded))
+	for k, v := range attributesDecoded {
+		attributesDecodedCopy[k] = v
+	}
+	attributesDecodedMutex.Unlock()
+
+	// Iterate over the copy instead of the original map
+	for placeholderId, val := range attributesDecodedCopy {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
 
