@@ -59,18 +59,12 @@ func getPooledClientFn(ctx context.Context, method provider.GetCustomConfigFunc)
 }
 
 func getFlowDependenciesFn(ctx context.Context, p *BcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
-	// Don't use pooled client - the pooled client's HTTP client has a canceled context
-	// Create a completely fresh API instance with the same auth token
-	dependentconsumers.InternalProxy = nil
-	
-	// Create fresh config and copy only the essential auth settings
+	// Create fresh config to avoid pooled client's canceled context issue
+	// Only copy essential auth settings for efficiency
 	freshConfig := platformclientv2.NewConfiguration()
 	freshConfig.BasePath = p.ClientConfig.BasePath
 	freshConfig.AccessToken = p.ClientConfig.AccessToken
-	freshConfig.DefaultHeader = make(map[string]string)
-	for k, v := range p.ClientConfig.DefaultHeader {
-		freshConfig.DefaultHeader[k] = v
-	}
+	freshConfig.DefaultHeader = p.ClientConfig.DefaultHeader // Direct assignment is safe for read-only use
 	
 	depConsumerProxy := dependentconsumers.GetDependentConsumerProxy(freshConfig)
 	resources, dependsMap, _, err := depConsumerProxy.GetDependentConsumers(ctx, resourceInfo, []string{})

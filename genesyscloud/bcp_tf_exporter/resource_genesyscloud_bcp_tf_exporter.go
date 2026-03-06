@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -124,7 +125,7 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 
 			name := getResourceName(instanceState, resMeta)
-			deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, filteredExporters, meta, instanceState)
+			deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, meta, instanceState)
 
 			resources = append(resources, BcpResource{
 				ID:           id,
@@ -134,6 +135,10 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if len(resources) > 0 {
+			// Sort resources by ID for deterministic output
+			sort.Slice(resources, func(i, j int) bool {
+				return resources[i].ID < resources[j].ID
+			})
 			exportData[resourceType] = resources
 			tflog.Debug(ctx, "Added resources to export", map[string]interface{}{
 				"resource_type":  resourceType,
@@ -149,7 +154,21 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	// Paths have already been validated and sanitized
 	// amazonq-ignore-next-line
 	filePath := filepath.Join(validatedDir, validatedFilename)
-	jsonData, err := json.MarshalIndent(exportData, "", "  ")
+	
+	// Sort resource types for deterministic output
+	resourceTypes := make([]string, 0, len(exportData))
+	for resourceType := range exportData {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+	sort.Strings(resourceTypes)
+	
+	// Build sorted export data
+	sortedExportData := make(map[string][]BcpResource)
+	for _, resourceType := range resourceTypes {
+		sortedExportData[resourceType] = exportData[resourceType]
+	}
+	
+	jsonData, err := json.MarshalIndent(sortedExportData, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -282,7 +301,6 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		BlockLabel: resMeta.BlockLabel,
 	}
 
-	// Use the EXACT same pattern as the regular exporter
 	proxy := GetBcpExporterProxy(nil)
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
@@ -313,10 +331,16 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 	}
 
 	// Extract dependencies for this specific flow
-	var depsAsProviderList []string
-	depsAsObjectMap := make(map[string][]string)
 	if flowDeps, ok := dependsStruct.DependsMap[flowID]; ok {
-		for _, dep := range flowDeps {
+		// Sort dependencies for deterministic output
+		sortedFlowDeps := make([]string, len(flowDeps))
+		copy(sortedFlowDeps, flowDeps)
+		sort.Strings(sortedFlowDeps)
+		
+		depsAsProviderList := make([]string, 0, len(sortedFlowDeps))
+		depsAsObjectMap := make(map[string][]string)
+		
+		for _, dep := range sortedFlowDeps {
 			parts := strings.SplitN(dep, ".", 2)
 			if len(parts) == 2 {
 				depsAsProviderList = append(depsAsProviderList, fmt.Sprintf("%s::%s", parts[0], parts[1]))
@@ -326,10 +350,15 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 				depsAsObjectMap[parts[0]] = append(depsAsObjectMap[parts[0]], parts[1])
 			}
 		}
+		
+		// Sort each object map array for deterministic output
+		for key := range depsAsObjectMap {
+			sort.Strings(depsAsObjectMap[key])
+		}
+		
+		bcpResourceDependencies.AsProviderResourceList = depsAsProviderList
+		bcpResourceDependencies.AsObjectMap = depsAsObjectMap
 	}
-
-	bcpResourceDependencies.AsProviderResourceList = depsAsProviderList
-	bcpResourceDependencies.AsObjectMap = depsAsObjectMap
 
 	tflog.Debug(ctx, "Flow dependencies resolved", map[string]interface{}{
 		"flow_id":            flowID,
@@ -338,7 +367,7 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 	return bcpResourceDependencies
 }
 
-func getResourceDependencies(ctx context.Context, providerResources map[string]*schema.Resource, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}, instanceState *terraform.InstanceState) BcpResourceDependency {
+func getResourceDependencies(ctx context.Context, providerResources map[string]*schema.Resource, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, meta interface{}, instanceState *terraform.InstanceState) BcpResourceDependency {
 	tflog.Debug(ctx, "Getting resource dependencies", map[string]interface{}{
 		"resource_type": resourceType,
 		"resource_id":   resourceID,
@@ -396,9 +425,13 @@ func extractSpecificDependencies(ctx context.Context, providerResources map[stri
 
 	for refType, guids := range depSet {
 		guidList := make([]string, 0, len(guids))
-		resourceDepList := make([]string, 0, len(guids))
 		for guid := range guids {
 			guidList = append(guidList, guid)
+		}
+		sort.Strings(guidList)
+		
+		resourceDepList := make([]string, 0, len(guidList))
+		for _, guid := range guidList {
 			resourceDepList = append(resourceDepList, fmt.Sprintf("%s::%s", refType, guid))
 		}
 		bcpResourceDependencies.AsObjectMap[refType] = guidList
