@@ -5,11 +5,12 @@ import "sync"
 var (
 	dependentConsumerMap map[string]string
 	flowTypeObjectMap    map[string]string
-	initOnce             sync.Once
+	dependentOnce        sync.Once
+	flowTypeOnce         sync.Once
 )
 
 func SetDependentObjectMaps() map[string]string {
-	initOnce.Do(func() {
+	dependentOnce.Do(func() {
 		dependentConsumerMap = make(map[string]string)
 		dependentConsumerMap["ACDLANGUAGE"] = "genesyscloud_routing_language"
 		dependentConsumerMap["ACDSKILL"] = "genesyscloud_routing_skill"
@@ -57,7 +58,7 @@ func SetDependentObjectMaps() map[string]string {
 }
 
 func SetFlowTypeObjectMaps() map[string]string {
-	initOnce.Do(func() {
+	flowTypeOnce.Do(func() {
 		flowTypeObjectMap = make(map[string]string)
 		flowTypeObjectMap["BOT"] = "BOTFLOW"
 		flowTypeObjectMap["COMMONMODULE"] = "COMMONMODULEFLOW"

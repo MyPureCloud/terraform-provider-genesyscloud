@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
@@ -290,6 +291,15 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 
 	if meta == nil {
 		tflog.Warn(ctx, "No meta provided for flow", map[string]interface{}{
+			"flow_id": flowID,
+		})
+		return bcpResourceDependencies
+	}
+	
+	// Type assert meta to ProviderMeta
+	providerMeta, ok := meta.(*provider.ProviderMeta)
+	if !ok || providerMeta == nil || providerMeta.ClientConfig == nil {
+		tflog.Warn(ctx, "Invalid or nil provider meta for flow", map[string]interface{}{
 			"flow_id": flowID,
 		})
 		return bcpResourceDependencies
