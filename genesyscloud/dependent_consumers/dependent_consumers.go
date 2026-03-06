@@ -1,10 +1,15 @@
 package dependent_consumers
 
-var dependentConsumerMap map[string]string
-var flowTypeObjectMap map[string]string
+import "sync"
+
+var (
+	dependentConsumerMap map[string]string
+	flowTypeObjectMap    map[string]string
+	initOnce             sync.Once
+)
 
 func SetDependentObjectMaps() map[string]string {
-	if len(dependentConsumerMap) < 1 {
+	initOnce.Do(func() {
 		dependentConsumerMap = make(map[string]string)
 		dependentConsumerMap["ACDLANGUAGE"] = "genesyscloud_routing_language"
 		dependentConsumerMap["ACDSKILL"] = "genesyscloud_routing_skill"
@@ -47,12 +52,12 @@ func SetDependentObjectMaps() map[string]string {
 		dependentConsumerMap["VOICEMAILFLOW"] = "genesyscloud_flow"
 		dependentConsumerMap["WORKFLOW"] = "genesyscloud_flow"
 		dependentConsumerMap["WORKITEMFLOW"] = "genesyscloud_flow"
-	}
+	})
 	return dependentConsumerMap
 }
 
 func SetFlowTypeObjectMaps() map[string]string {
-	if len(flowTypeObjectMap) < 1 {
+	initOnce.Do(func() {
 		flowTypeObjectMap = make(map[string]string)
 		flowTypeObjectMap["BOT"] = "BOTFLOW"
 		flowTypeObjectMap["COMMONMODULE"] = "COMMONMODULEFLOW"
@@ -62,7 +67,7 @@ func SetFlowTypeObjectMaps() map[string]string {
 		flowTypeObjectMap["INBOUNDEMAIL"] = "INBOUNDEMAILFLOW"
 		flowTypeObjectMap["INBOUNDSHORTMESSAGE"] = "INBOUNDSHORTMESSAGEFLOW"
 		flowTypeObjectMap["INQUEUECALL"] = "INQUEUECALLFLOW"
-		flowTypeObjectMap["INQUEUEEMAIL"] = "INBOUNDEMAILFLOW"
+		flowTypeObjectMap["INQUEUEEMAIL"] = "INQUEUEEMAILFLOW"
 		flowTypeObjectMap["INQUEUESHORTMESSAGE"] = "INQUEUESHORTMESSAGEFLOW"
 		flowTypeObjectMap["OUTBOUNDCALL"] = "OUTBOUNDCALLFLOW"
 		flowTypeObjectMap["SECURECALL"] = "SECURECALLFLOW"
@@ -71,6 +76,6 @@ func SetFlowTypeObjectMaps() map[string]string {
 		flowTypeObjectMap["VOICEMAIL"] = "VOICEMAILFLOW"
 		flowTypeObjectMap["WORKFLOW"] = "WORKFLOW"
 		flowTypeObjectMap["WORKITEM"] = "WORKITEMFLOW"
-	}
+	})
 	return flowTypeObjectMap
 }

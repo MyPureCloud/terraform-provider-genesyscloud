@@ -3,6 +3,8 @@ package dependent_consumers
 import (
 	"context"
 	"fmt"
+	"sort"
+	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -37,7 +39,10 @@ func (p *DependentConsumerProxy) GetAllWithPooledClient(ctx context.Context, met
 type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error)
 type retrievePooledClientFunc func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
 
-var InternalProxy *DependentConsumerProxy
+var (
+	InternalProxy *DependentConsumerProxy
+	proxyOnce     sync.Once
+)
 
 // GetDependentConsumerProxy acts as a singleton to for the InternalProxy.
 func GetDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *DependentConsumerProxy {
@@ -46,11 +51,11 @@ func GetDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 
 // newDependentConsumerProxy initializes the ruleset proxy with all of the data needed to communicate with Genesys Cloud
 func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *DependentConsumerProxy {
-	if InternalProxy == nil {
+	proxyOnce.Do(func() {
 		InternalProxy = &DependentConsumerProxy{
 			GetPooledClientAttr: retrievePooledClientFn,
 		}
-	}
+	})
 
 	if ClientConfig != nil {
 		api := platformclientv2.NewArchitectApiWithConfig(ClientConfig)
@@ -171,13 +176,23 @@ func fetchDepConsumers(ctx context.Context,
 }
 
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
-	dependsList := make([]string, 0)
-	for depId, meta := range resources {
-		resource := strings.Split(meta.BlockLabel, "::::")
+	dependsList := make([]string, 0, len(resources))
+
+	// Collect and sort for deterministic output
+	var depIds []string
+	for depId := range resources {
 		if id != depId {
-			dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
+			depIds = append(depIds, depId)
 		}
 	}
+	sort.Strings(depIds)
+
+	for _, depId := range depIds {
+		meta := resources[depId]
+		resource := strings.Split(meta.BlockLabel, "::::")
+		dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
+	}
+
 	dependsMap[id] = dependsList
 	return dependsMap
 }
