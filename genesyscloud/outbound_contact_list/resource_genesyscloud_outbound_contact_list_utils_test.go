@@ -313,6 +313,7 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 		"column_name":             "email_col",
 		"type":                    "email",
 		"contactable_time_column_name": "time_col",
+		"contactable_time_column":      "time_col",
 	}
 
 	for key, expectedVal := range expectedValues {

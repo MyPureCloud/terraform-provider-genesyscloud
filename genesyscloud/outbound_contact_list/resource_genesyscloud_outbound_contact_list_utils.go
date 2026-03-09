@@ -119,7 +119,7 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 		return nil
 	}
 
-	contactPhoneNumberColumnSet := schema.NewSet(schema.HashResource(outboundContactListContactPhoneNumberColumnResource), []interface{}{})
+	contactPhoneNumberColumnSet := schema.NewSet(hashOutboundContactListPhoneColumn, []interface{}{})
 	for _, contactPhoneNumberColumn := range contactPhoneNumberColumns {
 		contactPhoneNumberColumnMap := make(map[string]interface{})
 
@@ -134,10 +134,13 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 			contactPhoneNumberColumnMap["type"] = *contactPhoneNumberColumn.VarType
 		}
 		if contactPhoneNumberColumn.CallableTimeColumn != nil {
+			// Keep legacy + new fields in sync while users migrate.
 			contactPhoneNumberColumnMap["callable_time_column_name"] = *contactPhoneNumberColumn.CallableTimeColumn
+			contactPhoneNumberColumnMap["callable_time_column"] = *contactPhoneNumberColumn.CallableTimeColumn
 		} else if callableTimeColumnNameIndex != nil && key != "" {
 			if v, ok := callableTimeColumnNameIndex[key]; ok && v != "" {
 				contactPhoneNumberColumnMap["callable_time_column_name"] = v
+				contactPhoneNumberColumnMap["callable_time_column"] = v
 			}
 		}
 
@@ -188,7 +191,7 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 		return nil
 	}
 
-	contactEmailAddressColumnSet := schema.NewSet(schema.HashResource(outboundContactListEmailColumnResource), []interface{}{})
+	contactEmailAddressColumnSet := schema.NewSet(hashOutboundContactListEmailColumn, []interface{}{})
 	for _, contactEmailAddressColumn := range contactEmailAddressColumns {
 		contactEmailAddressColumnMap := make(map[string]interface{})
 
@@ -203,10 +206,13 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 			contactEmailAddressColumnMap["type"] = *contactEmailAddressColumn.VarType
 		}
 		if contactEmailAddressColumn.ContactableTimeColumn != nil {
+			// Keep legacy + new fields in sync while users migrate.
 			contactEmailAddressColumnMap["contactable_time_column_name"] = *contactEmailAddressColumn.ContactableTimeColumn
+			contactEmailAddressColumnMap["contactable_time_column"] = *contactEmailAddressColumn.ContactableTimeColumn
 		} else if contactableTimeColumnNameIndex != nil && key != "" {
 			if v, ok := contactableTimeColumnNameIndex[key]; ok && v != "" {
 				contactEmailAddressColumnMap["contactable_time_column_name"] = v
+				contactEmailAddressColumnMap["contactable_time_column"] = v
 			}
 		}
 
