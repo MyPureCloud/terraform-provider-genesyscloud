@@ -1,11 +1,15 @@
 package util
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -144,5 +148,181 @@ func TestUnitGetRetryAfterDelay_NegativeSeconds(t *testing.T) {
 	}
 	if delay != 0 {
 		t.Errorf("Expected delay 0 for negative seconds, got %v", delay)
+	}
+}
+
+func TestUnitWithRetriesForReadCustomTimeout_ZeroTimeout_404Error(t *testing.T) {
+	// Test that zero timeout with 404 error immediately removes resource from state
+	resourceSchema := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{})
+	d.SetId("test-resource-id")
+
+	callCount := 0
+	method := func() *retry.RetryError {
+		callCount++
+		return retry.RetryableError(fmt.Errorf("API Error: 404 - Resource not found"))
+	}
+
+	ctx := context.Background()
+	diags := WithRetriesForReadCustomTimeout(ctx, 0, d, method)
+
+	// Should have called the method exactly once
+	if callCount != 1 {
+		t.Errorf("Expected method to be called once, got %d calls", callCount)
+	}
+
+	// Should have cleared the ID (removed from state)
+	if d.Id() != "" {
+		t.Errorf("Expected resource ID to be cleared, got %s", d.Id())
+	}
+
+	// Should not return an error for 404
+	if diags != nil {
+		t.Errorf("Expected no diagnostics for 404 error, got %v", diags)
+	}
+}
+
+func TestUnitWithRetriesForReadCustomTimeout_ZeroTimeout_NonRetryableError(t *testing.T) {
+	// Test that zero timeout with non-404 error returns the error immediately
+	resourceSchema := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{})
+	d.SetId("test-resource-id")
+
+	callCount := 0
+	method := func() *retry.RetryError {
+		callCount++
+		return retry.NonRetryableError(fmt.Errorf("API Error: 403 - Permission denied"))
+	}
+
+	ctx := context.Background()
+	diags := WithRetriesForReadCustomTimeout(ctx, 0, d, method)
+
+	// Should have called the method exactly once
+	if callCount != 1 {
+		t.Errorf("Expected method to be called once, got %d calls", callCount)
+	}
+
+	// Should NOT have cleared the ID (not a 404)
+	if d.Id() == "" {
+		t.Errorf("Expected resource ID to remain set for non-404 error")
+	}
+
+	// Should return an error
+	if diags == nil {
+		t.Errorf("Expected diagnostics for non-404 error, got nil")
+	}
+}
+
+func TestUnitWithRetriesForReadCustomTimeout_ZeroTimeout_Success(t *testing.T) {
+	// Test that zero timeout with success returns nil
+	resourceSchema := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{})
+	d.SetId("test-resource-id")
+
+	callCount := 0
+	method := func() *retry.RetryError {
+		callCount++
+		return nil // Success
+	}
+
+	ctx := context.Background()
+	diags := WithRetriesForReadCustomTimeout(ctx, 0, d, method)
+
+	// Should have called the method exactly once
+	if callCount != 1 {
+		t.Errorf("Expected method to be called once, got %d calls", callCount)
+	}
+
+	// Should NOT have cleared the ID
+	if d.Id() != "test-resource-id" {
+		t.Errorf("Expected resource ID to remain set, got %s", d.Id())
+	}
+
+	// Should not return an error
+	if diags != nil {
+		t.Errorf("Expected no diagnostics for success, got %v", diags)
+	}
+}
+
+func TestUnitWithRetriesForReadCustomTimeout_ZeroTimeout_RetryableNon404Error(t *testing.T) {
+	// Test that zero timeout with retryable non-404 error returns error immediately (no retry)
+	resourceSchema := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{})
+	d.SetId("test-resource-id")
+
+	callCount := 0
+	method := func() *retry.RetryError {
+		callCount++
+		return retry.RetryableError(fmt.Errorf("API Error: 500 - Internal server error"))
+	}
+
+	ctx := context.Background()
+	diags := WithRetriesForReadCustomTimeout(ctx, 0, d, method)
+
+	// Should have called the method exactly once (no retries with zero timeout)
+	if callCount != 1 {
+		t.Errorf("Expected method to be called once with zero timeout, got %d calls", callCount)
+	}
+
+	// Should return an error
+	if diags == nil {
+		t.Errorf("Expected diagnostics for 500 error, got nil")
+	}
+}
+
+func TestUnitWithRetriesForReadCustomTimeout_NormalTimeout_404Error(t *testing.T) {
+	// Test that normal timeout with consistent 404 errors eventually removes resource from state
+	resourceSchema := map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{})
+	d.SetId("test-resource-id")
+
+	callCount := 0
+	method := func() *retry.RetryError {
+		callCount++
+		return retry.RetryableError(fmt.Errorf("API Error: 404 - Resource not found"))
+	}
+
+	ctx := context.Background()
+	// Use a short timeout for testing
+	diags := WithRetriesForReadCustomTimeout(ctx, 2*time.Second, d, method)
+
+	// Should have called the method multiple times due to retries
+	if callCount < 2 {
+		t.Errorf("Expected method to be called multiple times with retries, got %d calls", callCount)
+	}
+
+	// Should have cleared the ID (removed from state after timeout)
+	if d.Id() != "" {
+		t.Errorf("Expected resource ID to be cleared after timeout, got %s", d.Id())
+	}
+
+	// Should not return an error for 404 (handled gracefully)
+	if diags != nil {
+		t.Errorf("Expected no diagnostics for 404 error after timeout, got %v", diags)
 	}
 }
