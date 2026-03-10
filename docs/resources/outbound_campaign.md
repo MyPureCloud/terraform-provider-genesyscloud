@@ -117,7 +117,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 - `campaign_status` (String) The current status of the Campaign. A Campaign may be turned 'on' or 'off' (default). If this value is changed alongside other changes to the resource, a subsequent update will occur immediately afterwards to set the campaign status. This is due to behavioral requirements in the Genesys Cloud API.
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
-- `diagnostics_settings` (Block List, Max: 1) Campaign diagnostics settings. (see [below for nested schema](#nestedblock--diagnostics_settings))
+- `diagnostics_settings` (Block List, Max: 1) Campaign diagnostics settings. Only applicable to Power and Predictive dialing modes. (see [below for nested schema](#nestedblock--diagnostics_settings))
 - `division_id` (String) The division this campaign belongs to.
 - `dnc_list_ids` (Set of String) DncLists for this Campaign to check before placing a call.
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
@@ -165,7 +165,7 @@ Optional:
 
 Optional:
 
-- `report_low_max_calls_per_agent_alert` (Boolean) Enables or disables campaign Health Alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to true. Defaults to `true`.
+- `report_low_max_calls_per_agent_alert` (Boolean) Enables or disables campaign Health Alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to `true`.
 
 
 <a id="nestedblock--dynamic_contact_queueing_settings"></a>

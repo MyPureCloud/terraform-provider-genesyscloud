@@ -5,6 +5,9 @@ package outbound_campaign
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -22,6 +25,26 @@ resource_genesycloud_outbound_campaign_schema.go holds four functions within it:
 */
 
 const ResourceType = "genesyscloud_outbound_campaign"
+
+// supportedDiagnosticsSettingsDialingModes defines the dialing modes that support diagnostics_settings
+var supportedDiagnosticsSettingsDialingModes = []string{"power", "predictive"}
+
+// validateDiagnosticsSettingsDialingMode validates that diagnostics_settings is only used with power or predictive dialing modes
+func validateDiagnosticsSettingsDialingMode(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	diagnosticsSettings := diff.Get("diagnostics_settings").([]interface{})
+	if len(diagnosticsSettings) == 0 {
+		return nil
+	}
+
+	dialingMode := diff.Get("dialing_mode").(string)
+	for _, supportedMode := range supportedDiagnosticsSettingsDialingModes {
+		if dialingMode == supportedMode {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("diagnostics_settings is only applicable to Power and Predictive dialing modes, but dialing_mode is set to '%s'", dialingMode)
+}
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -53,6 +76,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: validateDiagnosticsSettingsDialingMode,
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the Campaign.`,
@@ -285,7 +309,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				},
 			},
 			`diagnostics_settings`: {
-				Description: `Campaign diagnostics settings.`,
+				Description: `Campaign diagnostics settings. Only applicable to Power and Predictive dialing modes.`,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -293,7 +317,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"report_low_max_calls_per_agent_alert": {
-							Description: "Enables or disables campaign Health Alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to true.",
+							Description: "Enables or disables campaign Health Alert when Max Calls Per Agent is set below the value in Outbound Settings.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     true,
