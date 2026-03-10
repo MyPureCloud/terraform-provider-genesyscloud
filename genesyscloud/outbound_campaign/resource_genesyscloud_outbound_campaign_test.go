@@ -1129,6 +1129,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.FalseValue, "0"),
+						generateDiagnosticsSettingsBlock(util.TrueValue),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", name),
@@ -1146,6 +1147,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						"dynamic_line_balancing_settings.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.relative_weight", "0"),
+					resource.TestCheckResourceAttr(resourcePath,
+						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "true"),
 				),
 			},
 			{
@@ -1180,6 +1183,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.TrueValue, "15"),
+						generateDiagnosticsSettingsBlock(util.FalseValue),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", name),
@@ -1198,6 +1202,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						"dynamic_line_balancing_settings.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.relative_weight", "15"),
+					resource.TestCheckResourceAttr(resourcePath,
+						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "false"),
 				),
 			},
 			{
@@ -1347,6 +1353,14 @@ func generateDynamicLineBalancingSettingsBlock(enabled, weight string) string {
 		relative_weight = %s
 	}
 	`, enabled, weight)
+}
+
+func generateDiagnosticsSettingsBlock(reportLowMaxCallsPerAgentAlert string) string {
+	return fmt.Sprintf(`
+	diagnostics_settings {
+		report_low_max_calls_per_agent_alert = %s
+	}
+	`, reportLowMaxCallsPerAgentAlert)
 }
 
 func getPublishedScriptId() (string, error) {

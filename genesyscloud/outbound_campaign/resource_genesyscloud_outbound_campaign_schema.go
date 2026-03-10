@@ -284,6 +284,23 @@ func ResourceOutboundCampaign() *schema.Resource {
 					},
 				},
 			},
+			`diagnostics_settings`: {
+				Description: `Campaign diagnostics settings.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"report_low_max_calls_per_agent_alert": {
+							Description: "Enables or disables campaign Health Alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to true.",
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
