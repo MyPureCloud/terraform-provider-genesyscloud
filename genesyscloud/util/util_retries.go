@@ -20,12 +20,21 @@ import (
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
+	return withRetriesInternal(ctx, timeout, method, 0)
+}
+
+const maxWithRetriesAttempts = 2
+
+func withRetriesInternal(ctx context.Context, timeout time.Duration, method func() *retry.RetryError, attempt int) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+		if attempt >= maxWithRetriesAttempts {
+			return err // Stop after max attempts to prevent infinite recursion
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		return WithRetries(ctx, timeout, method)
+		return withRetriesInternal(ctx, timeout, method, attempt+1)
 	}
 	return err
 }
