@@ -12,7 +12,7 @@ import (
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	platformUtils "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/platform"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*

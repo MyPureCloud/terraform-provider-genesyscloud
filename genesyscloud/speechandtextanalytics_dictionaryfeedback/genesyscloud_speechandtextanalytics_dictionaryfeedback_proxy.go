@@ -7,7 +7,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -118,7 +118,7 @@ func getAllDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy)
 	const pageSize = 100
 
 	for {
-		dictionaryFeedbacks, resp, getErr := p.speechTextAnalyticsApi.GetSpeechandtextanalyticsDictionaryfeedback("", nextPage, pageSize)
+		dictionaryFeedbacks, resp, getErr := p.speechTextAnalyticsApi.GetSpeechandtextanalyticsDictionaryfeedback("", "", nextPage, pageSize)
 
 		if getErr != nil {
 			return nil, resp, getErr

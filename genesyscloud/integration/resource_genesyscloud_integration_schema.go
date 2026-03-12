@@ -1,5 +1,9 @@
 package integration
 
+// @team: Integration Services Indy
+// @chat: #genesys-cloud-integrations
+// @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -20,7 +24,7 @@ resource_genesyscloud_integration_schema.go should hold four types of functions 
 4.  The resource exporter configuration for the integration exporter.
 */
 const ResourceType = "genesyscloud_integration"
-const WebhookResourceType = "genesyscloud_integration_webhookmake si"
+const WebhookResourceType = "genesyscloud_integration_webhook"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
