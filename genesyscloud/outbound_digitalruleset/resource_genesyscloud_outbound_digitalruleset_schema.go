@@ -513,7 +513,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			},
 			`rules`: {
 				Description: `The list of rules.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        digitalRuleResource,
 			},
