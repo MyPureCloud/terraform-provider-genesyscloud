@@ -79,6 +79,7 @@ type DataSourceResolver struct {
 type RefAttrCustomResolver struct {
 	ResolverFunc            func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error
 	ResolveToDataSourceFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
+	ResolveRefTypeFunc      func(configMap map[string]interface{}) (string, error)
 }
 
 type CustomFileWriterSettings struct {

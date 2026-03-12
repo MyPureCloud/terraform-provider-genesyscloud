@@ -2253,6 +2253,19 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
+			// Dynamic ref type resolution for custom attribute resolvers
+			if refSettings == nil {
+				if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+					if resolveRefTypeFunc := refAttrCustomResolver.ResolveRefTypeFunc; resolveRefTypeFunc != nil {
+						if refType, err := resolveRefTypeFunc(configMap); err != nil {
+							tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a ref type resolver for attribute %s: %v", fullAttributePath, err))
+						} else if refType != "" {
+							refSettings = &resourceExporter.RefAttrSettings{RefType: refType}
+						}
+					}
+				}
+			}
+
 			if refSettings != nil {
 				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
