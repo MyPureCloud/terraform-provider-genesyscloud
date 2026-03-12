@@ -28,6 +28,8 @@ The following permissions are required to use this resource:
 * `directory:group:add`
 * `directory:group:delete`
 * `directory:group:edit`
+* `voicemail:groupPolicy:edit`
+* `voicemail:groupPolicy:view`
 
 The following OAuth scopes are required to use this resource:
 
