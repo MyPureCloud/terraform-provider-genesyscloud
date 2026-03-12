@@ -154,23 +154,14 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
+		d.Set("members", schema.NewSet(schema.HashString, []interface{}{}))
 		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
+
+		d.Set("members", schema.NewSet(schema.HashString, []interface{}{}))
 		return diagErr
 	}
 
@@ -539,23 +530,15 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
+
+		d.Set("members", schema.NewSet(schema.HashString, []interface{}{}))
 		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
+
+		d.Set("members", schema.NewSet(schema.HashString, []interface{}{}))
 		return diagErr
 	}
 
