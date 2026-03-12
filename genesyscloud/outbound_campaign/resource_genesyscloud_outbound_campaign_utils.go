@@ -99,7 +99,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	if priority != 0 {
 		campaign.Priority = &priority
 	}
-	if maxCallsPerAgent != 0 {
+	if maxCallsPerAgent >= 1 {
 		campaign.MaxCallsPerAgentDecimal = &maxCallsPerAgent
 	}
 	return campaign
