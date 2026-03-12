@@ -1091,6 +1091,14 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
+		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
+		// Data source flows are just referenced and not managed, so we don't need their dependencies
+		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+			skippedCount++
+			continue
+		}
+
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
 		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
 
