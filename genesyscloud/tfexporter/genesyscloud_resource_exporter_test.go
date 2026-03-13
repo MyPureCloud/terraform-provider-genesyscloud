@@ -376,12 +376,12 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 
 	dependentconsumers.InternalProxy = dependencyProxy
 	defer func() { dependentconsumers.InternalProxy = nil }()
-	
+
 	ctx := context.Background()
 
 	gre := &GenesysCloudResourceExporter{
-		ctx:          ctx,
-		dependsList:  make(map[string][]string),
+		ctx:               ctx,
+		dependsList:       make(map[string][]string),
 		flowResourcesList: []string{},
 	}
 

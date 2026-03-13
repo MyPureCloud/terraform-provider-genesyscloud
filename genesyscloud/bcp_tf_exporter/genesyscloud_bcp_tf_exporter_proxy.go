@@ -65,7 +65,7 @@ func getFlowDependenciesFn(ctx context.Context, p *BcpExporterProxy, resourceInf
 	freshConfig.BasePath = p.ClientConfig.BasePath
 	freshConfig.AccessToken = p.ClientConfig.AccessToken
 	freshConfig.DefaultHeader = p.ClientConfig.DefaultHeader // Direct assignment is safe for read-only use
-	
+
 	depConsumerProxy := dependentconsumers.GetDependentConsumerProxy(freshConfig)
 	resources, dependsMap, _, err := depConsumerProxy.GetDependentConsumers(ctx, resourceInfo, []string{})
 	if err != nil {
