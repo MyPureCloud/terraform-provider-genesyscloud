@@ -21,7 +21,7 @@ import (
 
 func getAllGreetings(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	proxy := getGreeetingProxy(clientConfig)
+	proxy := getGreetingProxy(clientConfig)
 
 	greetings, resp, getErr := proxy.getAllGreetings(ctx)
 	if getErr != nil {
@@ -39,7 +39,7 @@ func getAllGreetings(ctx context.Context, clientConfig *platformclientv2.Configu
 
 func createGroupGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 
 	greetingReq := getGroupGreetingFromResourceData(d)
 	log.Printf("Creating greeting")
@@ -56,7 +56,7 @@ func createGroupGreeting(ctx context.Context, d *schema.ResourceData, meta inter
 
 func readGroupGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGroupGreeting(), constants.ConsistencyChecks(), ResourceType)
 	groupID := ""
 	if groupValue, ok := d.GetOk("group_id"); ok {
@@ -87,7 +87,7 @@ func readGroupGreeting(ctx context.Context, d *schema.ResourceData, meta interfa
 
 func updateGroupGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 
 	greetingReq := getGroupGreetingFromResourceData(d)
 	log.Printf("Updating greeting")
@@ -104,7 +104,7 @@ func updateGroupGreeting(ctx context.Context, d *schema.ResourceData, meta inter
 
 func deleteGroupGreeting(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getGreeetingProxy(sdkConfig)
+	proxy := getGreetingProxy(sdkConfig)
 	groupID := ""
 	if groupValue, ok := d.GetOk("group_id"); ok {
 		groupID = groupValue.(string)

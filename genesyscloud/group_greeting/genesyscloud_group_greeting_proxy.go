@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var internalProxy *greetingProxy
+var internalProxyOnce sync.Once
 
 type getAllGreetingsFunc func(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Greeting, *platformclientv2.APIResponse, error)
 type getGroupGreetingByIdFunc func(ctx context.Context, p *greetingProxy, groupId string, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
@@ -42,11 +44,10 @@ func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingPro
 	}
 }
 
-func getGreeetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
-	if internalProxy == nil {
+func getGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
+	internalProxyOnce.Do(func() {
 		internalProxy = newGreetingProxy(clientConfig)
-	}
-
+	})
 	return internalProxy
 }
 
@@ -74,6 +75,9 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 	}
 
 	for _, group := range *allGroups {
+		if group.Id == nil {
+			continue
+		}
 		groupGreetings, resp, err := p.greetingsApi.GetGroupGreetings(*group.Id, pageSize, 1)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get greetings for group %s: %s", *group.Id, err)
@@ -81,7 +85,12 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 		if groupGreetings.Entities != nil {
 			allGreetings = append(allGreetings, *groupGreetings.Entities...)
 		}
-		for pageNum := 2; pageNum <= *groupGreetings.PageCount; pageNum++ {
+
+		pageCount := 1
+		if groupGreetings != nil && groupGreetings.PageCount != nil {
+			pageCount = *groupGreetings.PageCount
+		}
+		for pageNum := 2; pageNum <= pageCount; pageNum++ {
 			groupGreetings, resp, err := p.greetingsApi.GetGroupGreetings(*group.Id, pageSize, pageNum)
 			if err != nil {
 				return nil, resp, fmt.Errorf("failed to get greetings for group %s: %s", *group.Id, err)
@@ -113,7 +122,11 @@ func getGreetingFromGroup(ctx context.Context, p *greetingProxy, groupId string,
 		return greeting, resp, nil
 	}
 
-	for pageNum := 2; pageNum <= *groupGreetings.PageCount; pageNum++ {
+	pageCount := 1
+	if groupGreetings != nil && groupGreetings.PageCount != nil {
+		pageCount = *groupGreetings.PageCount
+	}
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		groupGreetings, resp, err = p.greetingsApi.GetGroupGreetings(groupId, pageSize, pageNum)
 		if err != nil {
 			return nil, resp, err
@@ -157,7 +170,11 @@ func getAllGroupsFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.
 	}
 	allGroups = append(allGroups, *groups.Entities...)
 
-	for pageNum := 2; pageNum <= *groups.PageCount; pageNum++ {
+	pageCount := 1
+	if groups != nil && groups.PageCount != nil {
+		pageCount = *groups.PageCount
+	}
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		groups, resp, err := p.groupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get groups %s", err)

@@ -83,7 +83,7 @@ func TestAccResourceGroupGreeting(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"group_id"},
 			},
 		},
-		//CheckDestroy: testVerifyGreetingDestroyed,
+		CheckDestroy: testVerifyGreetingDestroyed,
 	})
 }
 
