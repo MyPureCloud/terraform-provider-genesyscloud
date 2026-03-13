@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
@@ -38,7 +39,10 @@ type BcpResourceDependency struct {
 
 type BcpExportData map[string][]BcpResource
 
-var providerResources map[string]*schema.Resource
+var (
+	providerResources     map[string]*schema.Resource
+	providerResourcesOnce sync.Once
+)
 
 func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	directory := d.Get("directory").(string)
@@ -98,7 +102,9 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		var resources []BcpResource
 
 		if providerResources == nil {
-			providerResources, _ = registrar.GetResources()
+			providerResourcesOnce.Do(func() {
+				providerResources, _ = registrar.GetResources()
+			})
 		}
 
 		for id, resMeta := range resourceMap {
@@ -155,20 +161,20 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	// Paths have already been validated and sanitized
 	// amazonq-ignore-next-line
 	filePath := filepath.Join(validatedDir, validatedFilename)
-	
+
 	// Sort resource types for deterministic output
 	resourceTypes := make([]string, 0, len(exportData))
 	for resourceType := range exportData {
 		resourceTypes = append(resourceTypes, resourceType)
 	}
 	sort.Strings(resourceTypes)
-	
+
 	// Build sorted export data
 	sortedExportData := make(map[string][]BcpResource)
 	for _, resourceType := range resourceTypes {
 		sortedExportData[resourceType] = exportData[resourceType]
 	}
-	
+
 	jsonData, err := json.MarshalIndent(sortedExportData, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
@@ -295,7 +301,7 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		})
 		return bcpResourceDependencies
 	}
-	
+
 	// Type assert meta to ProviderMeta
 	providerMeta, ok := meta.(*provider.ProviderMeta)
 	if !ok || providerMeta == nil || providerMeta.ClientConfig == nil {
@@ -346,10 +352,10 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		sortedFlowDeps := make([]string, len(flowDeps))
 		copy(sortedFlowDeps, flowDeps)
 		sort.Strings(sortedFlowDeps)
-		
+
 		depsAsProviderList := make([]string, 0, len(sortedFlowDeps))
 		depsAsObjectMap := make(map[string][]string)
-		
+
 		for _, dep := range sortedFlowDeps {
 			parts := strings.SplitN(dep, ".", 2)
 			if len(parts) == 2 {
@@ -360,12 +366,12 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 				depsAsObjectMap[parts[0]] = append(depsAsObjectMap[parts[0]], parts[1])
 			}
 		}
-		
+
 		// Sort each object map array for deterministic output
 		for key := range depsAsObjectMap {
 			sort.Strings(depsAsObjectMap[key])
 		}
-		
+
 		bcpResourceDependencies.AsProviderResourceList = depsAsProviderList
 		bcpResourceDependencies.AsObjectMap = depsAsObjectMap
 	}
@@ -439,7 +445,7 @@ func extractSpecificDependencies(ctx context.Context, providerResources map[stri
 			guidList = append(guidList, guid)
 		}
 		sort.Strings(guidList)
-		
+
 		resourceDepList := make([]string, 0, len(guidList))
 		for _, guid := range guidList {
 			resourceDepList = append(resourceDepList, fmt.Sprintf("%s::%s", refType, guid))
