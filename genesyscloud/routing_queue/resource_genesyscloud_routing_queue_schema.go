@@ -23,6 +23,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
+	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 )
 
@@ -268,8 +269,13 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntBetween(60, 86400),
 			},
+			"edge_group_id": {
+				Description: "The identifier of the edge group that will place the calls. Can be set to specify a custom edge group instead of the default one.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"site_id": {
-				Description: "The identifier of the site to be used for dialing; can be set in place of an edge group.",
+				Description: "The identifier of the site to be used for dialing. If omitted, the default telephony site for the organization is used.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
@@ -886,6 +892,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
 			"media_settings_callback.site_id":                   {RefType: telephonyProvidersEdgesSite.ResourceType},
+			"media_settings_callback.edge_group_id":              {RefType: edgeGroup.ResourceType},
 			"media_settings_message.inactivity_timeout_settings.flow_id":                {RefType: architectFlow.ResourceType},
 			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
 			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},

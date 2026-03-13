@@ -1398,6 +1398,80 @@ func TestAccResourceRoutingQueueCallbackCustomerFirst(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingQueueCallbackSiteId(t *testing.T) {
+	var (
+		queueResourceLabel = "test-queue-callback-site"
+		queueName          = "Terraform Test Queue Callback Site-" + uuid.NewString()
+		alertTimeout       = "7"
+		slPercent          = "0.5"
+		slDuration         = "1000"
+		callbackMode       = "CustomerFirst"
+	)
+
+	// Get managed site ID - skip test if no site available
+	siteID, err := getManagedSiteId()
+	if err != nil {
+		t.Skipf("Skipping test: could not find a managed site: %v", err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create with site_id
+				Config: GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+					GenerateMediaSettingsCallBack(
+						"media_settings_callback",
+						alertTimeout,
+						util.FalseValue,
+						slPercent,
+						slDuration,
+						util.FalseValue,
+						"0",
+						"0",
+						"mode = "+strconv.Quote(callbackMode),
+						"live_voice_reaction_type = "+strconv.Quote("TransferToQueue"),
+						"answering_machine_reaction_type = "+strconv.Quote("HangUp"),
+						"site_id = "+strconv.Quote(siteID),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "name", queueName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.mode", callbackMode),
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.site_id", siteID),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyQueuesDestroyed,
+	})
+}
+
+// getManagedSiteId returns the ID of a managed site (e.g., "PureCloud Voice - AWS")
+func getManagedSiteId() (string, error) {
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		return "", fmt.Errorf("error authorizing SDK: %v", err)
+	}
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
+	data, _, err := api.GetTelephonyProvidersEdgesSites(1, 1, "", "", "PureCloud Voice - AWS", "", true, nil)
+	if err != nil {
+		return "", fmt.Errorf("error querying sites: %v", err)
+	}
+	if data.Entities == nil || len(*data.Entities) == 0 {
+		return "", fmt.Errorf("no managed site found")
+	}
+	return *(*data.Entities)[0].Id, nil
+}
+
 func TestAccResourceRoutingQueueCannedResponseLibraryIds(t *testing.T) {
 	t.Parallel()
 	var (
