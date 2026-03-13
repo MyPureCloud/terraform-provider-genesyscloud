@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
 )
 
 var internalProxy *greetingProxy
+var internalProxyOnce sync.Once
 
 type getAllGreetingsFunc func(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error)
 type getGreetingByIdFunc func(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
@@ -40,10 +42,9 @@ func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingPro
 }
 
 func getGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
-	if internalProxy == nil {
+	internalProxyOnce.Do(func() {
 		internalProxy = newGreetingProxy(clientConfig)
-	}
-
+	})
 	return internalProxy
 }
 
@@ -73,7 +74,12 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 	if orgGreetings.Entities != nil {
 		allGreetings = append(allGreetings, *orgGreetings.Entities...)
 	}
-	for pageNum := 2; pageNum <= *orgGreetings.PageCount; pageNum++ {
+
+	pageCount := 1
+	if orgGreetings != nil && orgGreetings.PageCount != nil {
+		pageCount = *orgGreetings.PageCount
+	}
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		orgGreetings, resp, err := p.greetingsApi.GetGreetings(pageSize, pageNum)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get greetings %s", err)
@@ -115,7 +121,11 @@ func getGreetingFromOrganization(ctx context.Context, p *greetingProxy, id strin
 		return true, resp, nil
 	}
 
-	for pageNum := 2; pageNum <= *orgGreetings.PageCount; pageNum++ {
+	pageCount := 1
+	if orgGreetings != nil && orgGreetings.PageCount != nil {
+		pageCount = *orgGreetings.PageCount
+	}
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		orgGreetings, resp, err = p.greetingsApi.GetGreetings(pageSize, pageNum)
 		if err != nil {
 			return false, resp, err
