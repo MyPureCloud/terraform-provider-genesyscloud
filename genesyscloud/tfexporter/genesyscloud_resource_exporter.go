@@ -1100,7 +1100,7 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 		}
 
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
-		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(g.ctx, retrieveDependentConsumers(resourceKeys))
 
 		// Thread-safe write of flowResourcesList
 		g.flowResourcesListMutex.Lock()
