@@ -125,10 +125,10 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
-	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/net v0.50.0
-	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/net v0.52.0
+	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
