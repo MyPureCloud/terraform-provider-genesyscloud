@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -451,33 +452,61 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId, flowVersion string) (d
 	if flowVersion != "" {
 		logVersion = fmt.Sprintf("version %s", flowVersion)
 	}
-	log.Printf("Creating export job for flow %s with %s", flowId, logVersion)
-	exportJob, resp, err := a.createExportJob(flowId, flowVersion)
-	if err != nil {
-		if resp != nil {
-			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
-		}
-		return "", err
-	}
 
-	if exportJob == nil || exportJob.Id == nil {
-		return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
-	}
-
-	log.Printf("Successfully created export job '%s' for flow '%s'", *exportJob.Id, flowId)
-
-	log.Printf("Polling job '%s' for download url", *exportJob.Id)
+	const maxJobAttempts = 5
 	const pollTimeoutInSeconds float64 = 90
-	downloadUrl, err = a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
-	if err != nil {
-		return "", err
-	}
-	log.Printf("Successfully read download URL. Export job: %s", *exportJob.Id)
 
-	return downloadUrl, err
+	for attempt := 1; attempt <= maxJobAttempts; attempt++ {
+		log.Printf("Creating export job for flow %s with %s (attempt %d/%d)", flowId, logVersion, attempt, maxJobAttempts)
+		exportJob, resp, createErr := a.createExportJob(flowId, flowVersion)
+		if createErr != nil {
+			if resp != nil {
+				createErr = fmt.Errorf("%w. API Response: %s", createErr, resp.String())
+			}
+			return "", createErr
+		}
+
+		if exportJob == nil || exportJob.Id == nil {
+			return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
+		}
+
+		log.Printf("Successfully created export job '%s' for flow '%s'", *exportJob.Id, flowId)
+
+		log.Printf("Polling job '%s' for download url", *exportJob.Id)
+		downloadUrl, pollErr := a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
+		if pollErr != nil {
+			if isRetryableJobFailure(pollErr) && attempt < maxJobAttempts {
+				backoff := time.Duration(attempt*15) * time.Second
+				log.Printf("Export job for flow %s failed with retryable error. Retrying in %v (attempt %d/%d): %v", flowId, backoff, attempt, maxJobAttempts, pollErr)
+				time.Sleep(backoff)
+				continue
+			}
+			return "", pollErr
+		}
+
+		log.Printf("Successfully read download URL. Export job: %s", *exportJob.Id)
+		return downloadUrl, nil
+	}
+
+	return "", fmt.Errorf("exhausted %d export job attempts for flow %s", maxJobAttempts, flowId)
 }
 
-// createExportJobFn is the implementation function for the createExportJob method
+// isRetryableJobFailure checks if a job failure error is likely caused by backend
+// rate limiting (429) rather than a genuine "flow not found" condition.
+// The Archy backend surfaces 429-induced failures as "could not find the flow with id"
+// or with exit code 107.
+func isRetryableJobFailure(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return (strings.Contains(msg, "could not find the flow with id") && strings.Contains(msg, "exit code: 107")) ||
+		(strings.Contains(msg, "could not find the flow with id") && strings.Contains(msg, "Archy failed"))
+}
+
+// createExportJobFn is the implementation function for the createExportJob method.
+// Includes retry logic that respects Retry-After headers from 429 responses,
+// since the SDK's RetryWaitMax (30s) may be lower than the backend's Retry-After values.
 func createExportJobFn(a *architectFlowProxy, flowId, flowVersion string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 	flowReference := &platformclientv2.Architectflowreference{
 		Id: &flowId,
@@ -492,7 +521,27 @@ func createExportJobFn(a *architectFlowProxy, flowId, flowVersion string) (*plat
 			},
 		},
 	}
-	return a.api.PostFlowsExportJobs(body)
+
+	const maxAttempts = 5
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		result, resp, err := a.api.PostFlowsExportJobs(body)
+		if err == nil {
+			return result, resp, nil
+		}
+		if resp != nil && resp.StatusCode == http.StatusTooManyRequests && attempt < maxAttempts {
+			delay := time.Duration(30) * time.Second // default fallback
+			if resp.Response != nil {
+				if d := getRetryAfterDuration(resp.Response); d > 0 {
+					delay = d
+				}
+			}
+			log.Printf("Rate limited (429) creating export job for flow %s. Retrying in %v (attempt %d/%d)", flowId, delay, attempt, maxAttempts)
+			time.Sleep(delay)
+			continue
+		}
+		return result, resp, err
+	}
+	return nil, nil, fmt.Errorf("exhausted %d attempts creating export job for flow %s due to rate limiting", maxAttempts, flowId)
 }
 
 // getExportJobStatusByIdFn is the implementation function for getExportJobStatusById
