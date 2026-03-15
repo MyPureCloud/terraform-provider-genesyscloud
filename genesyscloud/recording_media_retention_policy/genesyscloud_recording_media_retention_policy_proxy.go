@@ -2,13 +2,11 @@ package recording_media_retention_policy
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -291,42 +289,10 @@ func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyNa
 
 // We need to call /api/v2/recording/mediaretentionpolicies manually to avoid setting optional boolean and integer parameters than filter results
 func callGetAllPoliciesApi(pageSize, pageNumber int, config *platformclientv2.Configuration) (*platformclientv2.Policyentitylisting, *platformclientv2.APIResponse, error) {
-	apiClient := &config.APIClient
-
-	// create path and map variables
-	path := config.BasePath + "/api/v2/recording/mediaretentionpolicies"
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-	formParams := url.Values{}
-	var postBody interface{}
-	var postFileName string
-	var postFilePath string
-	var fileBytes []byte
-
-	// oauth required
-	if config.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + config.AccessToken
-	}
-	// add default headers if any
-	for key := range config.DefaultHeader {
-		headerParams[key] = config.DefaultHeader[key]
-	}
-
-	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
-	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *platformclientv2.Policyentitylisting
-	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes, postFilePath)
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal(response.RawBody, &successPayload)
-	}
-	return successPayload, response, err
+	c := customapi.NewClient(config, ResourceType)
+	queryParams := customapi.NewQueryParams(map[string]string{
+		"pageSize":   fmt.Sprintf("%d", pageSize),
+		"pageNumber": fmt.Sprintf("%d", pageNumber),
+	})
+	return customapi.Do[platformclientv2.Policyentitylisting](context.Background(), c, customapi.MethodGet, "/api/v2/recording/mediaretentionpolicies", nil, queryParams)
 }

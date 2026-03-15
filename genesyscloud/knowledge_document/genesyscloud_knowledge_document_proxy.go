@@ -11,6 +11,8 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
@@ -33,6 +35,7 @@ type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
 	KnowledgeApi                             *platformclientv2.KnowledgeApi
+	customApiClient                          *customapi.Client
 	getKnowledgeKnowledgebaseCategoryAttr    getKnowledgeKnowledgebaseCategoryFunc
 	getKnowledgeKnowledgebaseCategoriesAttr  getKnowledgeKnowledgebaseCategoriesFunc
 	getKnowledgeKnowledgebaseLabelsAttr      getKnowledgeKnowledgebaseLabelsFunc
@@ -59,6 +62,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 	return &knowledgeDocumentProxy{
 		clientConfig:                             clientConfig,
 		KnowledgeApi:                             api,
+		customApiClient:                          customapi.NewClient(clientConfig, ResourceType),
 		getKnowledgeKnowledgebaseCategoryAttr:    getKnowledgeKnowledgebaseCategoryFn,
 		getKnowledgeKnowledgebaseCategoriesAttr:  getKnowledgeKnowledgebaseCategoriesFn,
 		getKnowledgeKnowledgebaseLabelsAttr:      getKnowledgeKnowledgebaseLabelsFn,
@@ -260,32 +264,26 @@ func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocument
 	const pageSize = 100
 	// prepare base url
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
-	listDocumentsBaseUrl := fmt.Sprintf("%s%s", p.KnowledgeApi.Configuration.BasePath, resourcePath)
 
 	for {
 		// prepare query params
-		queryParams := make(map[string]string, 0)
-		queryParams["after"] = after
-		queryParams["pageSize"] = fmt.Sprintf("%v", pageSize)
-		queryParams["includeDrafts"] = "true"
-
-		// prepare headers
-		headers := make(map[string]string)
-		headers["Authorization"] = fmt.Sprintf("Bearer %s", p.clientConfig.AccessToken)
-		headers["Content-Type"] = "application/json"
-		headers["Accept"] = "application/json"
+		queryParams := customapi.NewQueryParams(map[string]string{
+			"after":         after,
+			"pageSize":      fmt.Sprintf("%v", pageSize),
+			"includeDrafts": "true",
+		})
 
 		// execute request
-		response, err := p.clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil, "")
+		rawBody, resp, err := customapi.DoRaw(ctx, p.customApiClient, customapi.MethodGet, resourcePath, nil, queryParams)
 		if err != nil {
-			return nil, response, fmt.Errorf("failed to read knowledge document list response error: %s", err)
+			return nil, resp, fmt.Errorf("failed to read knowledge document list response error: %s", err)
 		}
 
 		// process response
 		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
-		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
+		unmarshalErr := json.Unmarshal(rawBody, &knowledgeDocuments)
 		if unmarshalErr != nil {
-			return nil, response, fmt.Errorf("failed to unmarshal knowledge document list response: %s", unmarshalErr)
+			return nil, resp, fmt.Errorf("failed to unmarshal knowledge document list response: %s", unmarshalErr)
 		}
 
 		/**
