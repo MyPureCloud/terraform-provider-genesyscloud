@@ -221,9 +221,11 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
-	// Set max concurrent operations based on provider configuration if available
-	if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
-		gre.maxConcurrentOps = providerMeta.MaxClients
+	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
+	if gre.maxConcurrentOps <= 0 {
+		if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
+			gre.maxConcurrentOps = providerMeta.MaxClients
+		}
 	}
 
 	err := gre.setUpExportDirPath()
