@@ -851,9 +851,9 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 			return
 		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s: %v", resource.Type, resource.State.ID, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
-				Severity: diag.Warning,
+				Severity: diag.Error,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
 				Detail:   err.Error(),
 			})
