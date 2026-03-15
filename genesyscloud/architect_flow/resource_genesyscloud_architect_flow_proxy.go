@@ -8,12 +8,12 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -403,9 +403,9 @@ func makeFlowRequest(ctx context.Context, client *http.Client, reqURL string, p 
 			Response:   resp,
 		}
 
-		if resp.StatusCode == http.StatusTooManyRequests && attempt < maxRetries {
-			delay := getRetryAfterDuration(resp)
-			if delay == 0 {
+		if util.IsStatus429(apiResp) && attempt < maxRetries {
+			delay, doRetry := util.GetRetryAfterDelay(apiResp)
+			if !doRetry {
 				delay = min(time.Duration(1<<attempt)*time.Second, 30*time.Second)
 			}
 			log.Printf("Rate limited (429) on GET %s. Retrying in %v (attempt %d/%d)", reqURL, delay, attempt+1, maxRetries)
@@ -426,17 +426,6 @@ func makeFlowRequest(ctx context.Context, client *http.Client, reqURL string, p 
 	}
 
 	return nil, nil, fmt.Errorf("exhausted %d retries on GET %s due to rate limiting", maxRetries, reqURL)
-}
-
-// getRetryAfterDuration parses the Retry-After header from an HTTP response.
-// Returns the delay duration if the header is present and valid, otherwise 0.
-func getRetryAfterDuration(resp *http.Response) time.Duration {
-	if v := resp.Header.Get("Retry-After"); v != "" {
-		if seconds, err := strconv.Atoi(v); err == nil && seconds > 0 {
-			return time.Duration(seconds) * time.Second
-		}
-	}
-	return 0
 }
 
 // generateDownloadUrlFn is the implementation function for the generateDownloadUrl method.
@@ -528,10 +517,10 @@ func createExportJobFn(a *architectFlowProxy, flowId, flowVersion string) (*plat
 		if err == nil {
 			return result, resp, nil
 		}
-		if resp != nil && resp.StatusCode == http.StatusTooManyRequests && attempt < maxAttempts {
+		if util.IsStatus429(resp) && attempt < maxAttempts {
 			delay := time.Duration(30) * time.Second // default fallback
 			if resp.Response != nil {
-				if d := getRetryAfterDuration(resp.Response); d > 0 {
+				if d, doRetry := util.GetRetryAfterDelay(resp); doRetry {
 					delay = d
 				}
 			}
