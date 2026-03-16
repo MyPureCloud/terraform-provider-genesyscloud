@@ -27,8 +27,8 @@ type getArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, string)
 type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string, []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
 type getFlowIdByNameAndTypeFunc func(ctx context.Context, a *architectFlowProxy, name string, varType string) (id string, resp *platformclientv2.APIResponse, retryable bool, err error)
 
-type generateDownloadUrlFunc func(a *architectFlowProxy, flowId string) (string, error)
-type createExportJobFunc func(a *architectFlowProxy, flowId string) (_ *platformclientv2.Registerarchitectexportjobresponse, _ *platformclientv2.APIResponse, _ error)
+type generateDownloadUrlFunc func(a *architectFlowProxy, flowId string, publishedVersionId string) (string, error)
+type createExportJobFunc func(a *architectFlowProxy, flowId string, publishedVersionId string) (_ *platformclientv2.Registerarchitectexportjobresponse, _ *platformclientv2.APIResponse, _ error)
 type getExportJobStatusByIdFunc func(a *architectFlowProxy, jobId string) (*platformclientv2.Architectexportjobstateresponse, *platformclientv2.APIResponse, error)
 type pollExportJobForDownloadUrlFunc func(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (downloadUrl string, err error)
 
@@ -171,8 +171,8 @@ func (a *architectFlowProxy) getFlowIdByNameAndType(ctx context.Context, name, v
 //   - The export job creation fails
 //   - The job polling times out
 //   - The job fails to generate a download URL
-func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) {
-	return a.generateDownloadUrlAttr(a, flowId)
+func (a *architectFlowProxy) generateDownloadUrl(flowId string, publishedVersionId string) (string, error) {
+	return a.generateDownloadUrlAttr(a, flowId, publishedVersionId)
 }
 
 // createExportJob creates an export job for a specified architect flow.
@@ -180,6 +180,7 @@ func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) 
 // Parameters:
 //   - a: *architectFlowProxy - The architect flow proxy instance
 //   - flowId: string - The ID of the flow to be exported
+//   - publishedVersionId: string - The published version ID to export
 //
 // Returns:
 //   - *platformclientv2.Registerarchitectexportjobresponse: The response body from the POST request
@@ -191,8 +192,8 @@ func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) 
 //   - The API call fails
 //   - The created job response is nil
 //   - The job ID in the response is nil
-func (a *architectFlowProxy) createExportJob(flowId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
-	return a.createExportJobAttr(a, flowId)
+func (a *architectFlowProxy) createExportJob(flowId string, publishedVersionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+	return a.createExportJobAttr(a, flowId, publishedVersionId)
 }
 
 // getExportJobStatusById retrieves the status of an architect flow export job.
@@ -418,7 +419,7 @@ func makeFlowRequest(ctx context.Context, client *http.Client, url string, p *ar
 }
 
 // generateDownloadUrlFn is the implementation function for the generateDownloadUrl method
-func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl string, err error) {
+func generateDownloadUrlFn(a *architectFlowProxy, flowId string, publishedVersionId string) (downloadUrl string, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error in generateDownloadUrlFn: %w", err)
@@ -432,8 +433,8 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 
 	// Retry logic for creating export job (handles 429 rate limits)
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		log.Printf("Creating export job for flow %s (attempt %d/%d)", flowId, attempt+1, maxRetries)
-		exportJob, resp, err = a.createExportJob(flowId)
+		log.Printf("Creating export job for flow %s with published version %s (attempt %d/%d)", flowId, publishedVersionId, attempt+1, maxRetries)
+		exportJob, resp, err = a.createExportJob(flowId, publishedVersionId)
 
 		if err == nil {
 			break // Success
@@ -478,7 +479,7 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 		return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
 	}
 
-	log.Printf("Successfully created export job '%s' for flow '%s'", *exportJob.Id, flowId)
+	log.Printf("Successfully created export job '%s' for flow '%s' (published version: %s)", *exportJob.Id, flowId, publishedVersionId)
 
 	log.Printf("Polling job '%s' for download url", *exportJob.Id)
 	const pollTimeoutInSeconds float64 = 90
@@ -492,13 +493,24 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 }
 
 // createExportJobFn is the implementation function for the createExportJob method
-func createExportJobFn(a *architectFlowProxy, flowId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+func createExportJobFn(a *architectFlowProxy, flowId string, publishedVersionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+	// Create flow reference with published version ID
+	// This ensures we export the published version, not the draft
+	// Similar to script export behavior (see DEVTOOLING-777)
+	flowRef := platformclientv2.Architectflowreference{
+		Id: &flowId,
+	}
+
+	// Only set version if we have a published version ID
+	// Empty string means no published version (defensive check)
+	if publishedVersionId != "" {
+		flowRef.Version = &publishedVersionId
+	}
+
 	body := platformclientv2.Registerarchitectexportjob{
 		Flows: &[]platformclientv2.Exportdetails{
 			{
-				Flow: &platformclientv2.Architectflowreference{
-					Id: &flowId,
-				},
+				Flow: &flowRef,
 			},
 		},
 	}

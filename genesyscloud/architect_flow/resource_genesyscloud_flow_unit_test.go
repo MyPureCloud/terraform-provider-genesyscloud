@@ -10,31 +10,32 @@ import (
 
 func TestUnitGenerateDownloadUrlFn(t *testing.T) {
 	const mockFlowId = "mock-id"
+	const mockPublishedVersionId = "mock-version-id"
 
 	tests := []struct {
 		name                string
-		createJobFunc       func(*architectFlowProxy, string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error)
+		createJobFunc       func(*architectFlowProxy, string, string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error)
 		pollDownloadUrlFunc func(*architectFlowProxy, string, float64) (string, error)
 		expectedError       string
 		expectedUrl         string
 	}{
 		{
 			name: "Should fail when createExportJob returns error",
-			createJobFunc: func(proxy *architectFlowProxy, id string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+			createJobFunc: func(proxy *architectFlowProxy, id string, versionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 				return nil, nil, fmt.Errorf("mock create error")
 			},
 			expectedError: "mock create error",
 		},
 		{
 			name: "Should fail when export job response is nil",
-			createJobFunc: func(proxy *architectFlowProxy, id string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+			createJobFunc: func(proxy *architectFlowProxy, id string, versionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 				return nil, nil, nil
 			},
 			expectedError: "no export job flow ID returned for flow " + mockFlowId,
 		},
 		{
 			name: "Should fail when export job ID is nil",
-			createJobFunc: func(proxy *architectFlowProxy, id string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+			createJobFunc: func(proxy *architectFlowProxy, id string, versionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 				return &platformclientv2.Registerarchitectexportjobresponse{
 					Id: nil,
 				}, nil, nil
@@ -43,7 +44,7 @@ func TestUnitGenerateDownloadUrlFn(t *testing.T) {
 		},
 		{
 			name: "Should fail when polling for download URL fails",
-			createJobFunc: func(proxy *architectFlowProxy, id string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+			createJobFunc: func(proxy *architectFlowProxy, id string, versionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 				return &platformclientv2.Registerarchitectexportjobresponse{
 					Id: platformclientv2.String("mock-id"),
 				}, nil, nil
@@ -55,7 +56,7 @@ func TestUnitGenerateDownloadUrlFn(t *testing.T) {
 		},
 		{
 			name: "Should succeed with valid download URL",
-			createJobFunc: func(proxy *architectFlowProxy, id string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+			createJobFunc: func(proxy *architectFlowProxy, id string, versionId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
 				return &platformclientv2.Registerarchitectexportjobresponse{
 					Id: platformclientv2.String(mockFlowId),
 				}, nil, nil
@@ -79,8 +80,8 @@ func TestUnitGenerateDownloadUrlFn(t *testing.T) {
 				proxyInstance.pollExportJobForDownloadUrlAttr = tt.pollDownloadUrlFunc
 			}
 
-			// Execute function being tested
-			url, err := generateDownloadUrlFn(proxyInstance, mockFlowId)
+			// Execute function being tested with published version ID
+			url, err := generateDownloadUrlFn(proxyInstance, mockFlowId, mockPublishedVersionId)
 
 			// Assert results
 			if tt.expectedError != "" {
