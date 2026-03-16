@@ -294,6 +294,9 @@ func computeDependsOn(d *schema.ResourceData) bool {
 		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
 			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
 			addDependsOn = len(filter) > 0
+		} else if exportableResourceTypes, ok := d.GetOk("include_filter_resources_by_id"); ok {
+			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
+			addDependsOn = len(filter) > 0
 		} else {
 			addDependsOn = false
 		}

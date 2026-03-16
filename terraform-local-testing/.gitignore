@@ -1,0 +1,14 @@
+# Terraform-generated files
+**/export/
+**/export-*/
+**/*.tfstate
+**/*.tfstate.backup
+**/.terraform/
+**/.terraform.lock.hcl
+
+# Generated test outputs
+**/*.tf.json
+test-report-*.json
+
+# Only commit the test configurations and scripts
+# main.tf, README.md, and Run-Tests.ps1 should be tracked
