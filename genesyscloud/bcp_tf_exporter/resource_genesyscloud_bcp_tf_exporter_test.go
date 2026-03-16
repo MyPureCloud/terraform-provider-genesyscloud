@@ -9,12 +9,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupMockExporters() (map[string]*resourceExporter.ResourceExporter, func()) {
+
 	mockExporters := map[string]*resourceExporter.ResourceExporter{
 		"genesyscloud_user": {
 			GetResourcesFunc: func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -47,7 +49,7 @@ func setupMockExporters() (map[string]*resourceExporter.ResourceExporter, func()
 	return mockExporters, func() { resourceExporter.SetRegisterExporter(original) }
 }
 
-func TestBcpTfExporter_Basic(t *testing.T) {
+func TestUnitBcpTfExporter_Basic(t *testing.T) {
 	_, cleanup := setupMockExporters()
 	defer cleanup()
 	tempDir := t.TempDir()
@@ -58,7 +60,7 @@ func TestBcpTfExporter_Basic(t *testing.T) {
 		"filename":  filename,
 	})
 
-	diags := createBcpTfExporter(context.Background(), d, &provider.ProviderMeta{})
+	diags := createBcpTfExporter(context.Background(), d, nil)
 	assert.False(t, diags.HasError())
 
 	filePath := filepath.Join(tempDir, filename)
@@ -66,7 +68,7 @@ func TestBcpTfExporter_Basic(t *testing.T) {
 	assert.Equal(t, filePath, d.Id())
 }
 
-func TestBcpTfExporter_WithIncludeFilter(t *testing.T) {
+func TestUnitBcpTfExporter_WithIncludeFilter(t *testing.T) {
 	_, cleanup := setupMockExporters()
 	defer cleanup()
 
@@ -79,7 +81,7 @@ func TestBcpTfExporter_WithIncludeFilter(t *testing.T) {
 		"include_filter_resources": []interface{}{"genesyscloud_user", "genesyscloud_group"},
 	})
 
-	diags := createBcpTfExporter(context.Background(), d, &provider.ProviderMeta{})
+	diags := createBcpTfExporter(context.Background(), d, nil)
 	assert.False(t, diags.HasError())
 
 	filePath := filepath.Join(tempDir, filename)
@@ -98,7 +100,7 @@ func TestBcpTfExporter_WithIncludeFilter(t *testing.T) {
 	}
 }
 
-func TestBcpTfExporter_WithExcludeFilter(t *testing.T) {
+func TestUnitBcpTfExporter_WithExcludeFilter(t *testing.T) {
 	_, cleanup := setupMockExporters()
 	defer cleanup()
 
@@ -111,7 +113,7 @@ func TestBcpTfExporter_WithExcludeFilter(t *testing.T) {
 		"exclude_filter_resources": []interface{}{"genesyscloud_flow", "genesyscloud_architect_datatable"},
 	})
 
-	diags := createBcpTfExporter(context.Background(), d, &provider.ProviderMeta{})
+	diags := createBcpTfExporter(context.Background(), d, nil)
 	assert.False(t, diags.HasError())
 
 	filePath := filepath.Join(tempDir, filename)
@@ -129,7 +131,7 @@ func TestBcpTfExporter_WithExcludeFilter(t *testing.T) {
 	assert.NotContains(t, exportData, "genesyscloud_architect_datatable")
 }
 
-func TestBcpTfExporter_NoFilters(t *testing.T) {
+func TestUnitBcpTfExporter_NoFilters(t *testing.T) {
 	_, cleanup := setupMockExporters()
 	defer cleanup()
 
@@ -141,7 +143,7 @@ func TestBcpTfExporter_NoFilters(t *testing.T) {
 		"filename":  filename,
 	})
 
-	diags := createBcpTfExporter(context.Background(), d, &provider.ProviderMeta{})
+	diags := createBcpTfExporter(context.Background(), d, nil)
 	assert.False(t, diags.HasError())
 
 	filePath := filepath.Join(tempDir, filename)
@@ -161,7 +163,7 @@ func TestBcpTfExporter_NoFilters(t *testing.T) {
 	assert.Contains(t, exportData, "genesyscloud_flow")
 }
 
-func TestBcpTfExporter_JSONStructure(t *testing.T) {
+func TestUnitBcpTfExporter_JSONStructure(t *testing.T) {
 	// This test validates the basic structure with empty dependencies
 	// since full resource reading is complex to mock in unit tests
 	mockExporters := map[string]*resourceExporter.ResourceExporter{
@@ -197,7 +199,7 @@ func TestBcpTfExporter_JSONStructure(t *testing.T) {
 		"include_filter_resources": []interface{}{"genesyscloud_user", "genesyscloud_group"},
 	})
 
-	diags := createBcpTfExporter(context.Background(), d, &provider.ProviderMeta{})
+	diags := createBcpTfExporter(context.Background(), d, nil)
 	assert.False(t, diags.HasError())
 
 	filePath := filepath.Join(tempDir, filename)
@@ -218,7 +220,7 @@ func TestBcpTfExporter_JSONStructure(t *testing.T) {
 	assert.Len(t, userResources, 1)
 	user := userResources[0]
 	assert.Equal(t, "user1", user.ID)
-	assert.Equal(t, "test_user", user.Name)
+	assert.Equal(t, "Test User", user.Name)
 	assert.Equal(t, user.Dependencies, BcpResourceDependency{
 		AsProviderResourceList: []string{},
 		AsObjectMap:            map[string][]string{},
@@ -229,7 +231,7 @@ func TestBcpTfExporter_JSONStructure(t *testing.T) {
 	assert.Len(t, groupResources, 1)
 	group := groupResources[0]
 	assert.Equal(t, "group1", group.ID)
-	assert.Equal(t, "test_group", group.Name)
+	assert.Equal(t, "Test Group", group.Name)
 	// Should have empty dependencies since resource reading fails in test
 	assert.Equal(t, group.Dependencies, BcpResourceDependency{
 		AsProviderResourceList: []string{},
@@ -237,7 +239,7 @@ func TestBcpTfExporter_JSONStructure(t *testing.T) {
 	})
 }
 
-func TestBcpTfExporter_Read(t *testing.T) {
+func TestUnitBcpTfExporter_Read(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := "read_test.json"
 	filePath := filepath.Join(tempDir, filename)
@@ -265,7 +267,7 @@ func TestBcpTfExporter_Read(t *testing.T) {
 	assert.Equal(t, filePath, d.Id())
 }
 
-func TestBcpTfExporter_ReadMissingFile(t *testing.T) {
+func TestUnitBcpTfExporter_ReadMissingFile(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, ResourceBcpTfExporter().Schema, map[string]interface{}{})
 	d.SetId("/nonexistent/file.json")
 
@@ -274,7 +276,7 @@ func TestBcpTfExporter_ReadMissingFile(t *testing.T) {
 	assert.Empty(t, d.Id())
 }
 
-func TestBcpTfExporter_Delete(t *testing.T) {
+func TestUnitBcpTfExporter_Delete(t *testing.T) {
 	tempDir := t.TempDir()
 	filename := "delete_test.json"
 	filePath := filepath.Join(tempDir, filename)
@@ -293,7 +295,7 @@ func TestBcpTfExporter_Delete(t *testing.T) {
 	assert.NoFileExists(t, filePath)
 }
 
-func TestBcpTfExporter_FilterExporters_IncludeOnly(t *testing.T) {
+func TestUnitBcpTfExporter_FilterExporters_IncludeOnly(t *testing.T) {
 	mockExporters := map[string]*resourceExporter.ResourceExporter{
 		"genesyscloud_user":  {},
 		"genesyscloud_group": {},
@@ -312,7 +314,7 @@ func TestBcpTfExporter_FilterExporters_IncludeOnly(t *testing.T) {
 	assert.NotContains(t, filtered, "genesyscloud_flow")
 }
 
-func TestBcpTfExporter_FilterExporters_ExcludeOnly(t *testing.T) {
+func TestUnitBcpTfExporter_FilterExporters_ExcludeOnly(t *testing.T) {
 	mockExporters := map[string]*resourceExporter.ResourceExporter{
 		"genesyscloud_user":  {},
 		"genesyscloud_group": {},
@@ -331,7 +333,7 @@ func TestBcpTfExporter_FilterExporters_ExcludeOnly(t *testing.T) {
 	assert.NotContains(t, filtered, "genesyscloud_flow")
 }
 
-func TestBcpTfExporter_FilterExporters_NoFilters(t *testing.T) {
+func TestUnitBcpTfExporter_FilterExporters_NoFilters(t *testing.T) {
 	mockExporters := map[string]*resourceExporter.ResourceExporter{
 		"genesyscloud_user":  {},
 		"genesyscloud_group": {},
@@ -348,7 +350,7 @@ func TestBcpTfExporter_FilterExporters_NoFilters(t *testing.T) {
 	assert.Contains(t, filtered, "genesyscloud_flow")
 }
 
-func TestBcpTfExporter_ExtractGUIDsFromValue(t *testing.T) {
+func TestUnitBcpTfExporter_ExtractGUIDsFromValue(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    interface{}
@@ -384,7 +386,7 @@ func TestBcpTfExporter_ExtractGUIDsFromValue(t *testing.T) {
 	}
 }
 
-func TestBcpTfExporter_IsValidGUID(t *testing.T) {
+func TestUnitBcpTfExporter_IsValidGUID(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -423,4 +425,180 @@ func TestBcpTfExporter_IsValidGUID(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestUnitBcpTfExporter_GetResourceName(t *testing.T) {
+	tests := []struct {
+		name          string
+		instanceState *terraform.InstanceState
+		resMeta       *resourceExporter.ResourceMeta
+		expected      string
+	}{
+		{
+			name: "uses name attribute from instance state",
+			instanceState: &terraform.InstanceState{
+				Attributes: map[string]string{"name": "Instance Name"},
+			},
+			resMeta:  &resourceExporter.ResourceMeta{OriginalLabel: "Original", BlockLabel: "Block"},
+			expected: "Instance Name",
+		},
+		{
+			name:          "uses original label when no instance state",
+			instanceState: nil,
+			resMeta:       &resourceExporter.ResourceMeta{OriginalLabel: "Original Label", BlockLabel: "Block"},
+			expected:      "Original Label",
+		},
+		{
+			name: "uses original label when name is empty",
+			instanceState: &terraform.InstanceState{
+				Attributes: map[string]string{"name": ""},
+			},
+			resMeta:  &resourceExporter.ResourceMeta{OriginalLabel: "Original Label", BlockLabel: "Block"},
+			expected: "Original Label",
+		},
+		{
+			name: "uses block label when original label is empty",
+			instanceState: &terraform.InstanceState{
+				Attributes: map[string]string{},
+			},
+			resMeta:  &resourceExporter.ResourceMeta{OriginalLabel: "", BlockLabel: "Block Label"},
+			expected: "Block Label",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getResourceName(tt.instanceState, tt.resMeta)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestUnitBcpTfExporter_WarningScenarios(t *testing.T) {
+	t.Run("warns when resource not registered", func(t *testing.T) {
+		mockExporters := map[string]*resourceExporter.ResourceExporter{
+			"genesyscloud_user": {
+				GetResourcesFunc: func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+					return resourceExporter.ResourceIDMetaMap{
+						"user1": {BlockLabel: "test_user", OriginalLabel: "Test User"},
+					}, nil
+				},
+			},
+		}
+
+		original := resourceExporter.GetResourceExporters()
+		resourceExporter.SetRegisterExporter(mockExporters)
+		defer resourceExporter.SetRegisterExporter(original)
+
+		tempDir := t.TempDir()
+		filename := "warning_test.json"
+
+		d := schema.TestResourceDataRaw(t, ResourceBcpTfExporter().Schema, map[string]interface{}{
+			"directory": tempDir,
+			"filename":  filename,
+		})
+
+		// Set providerResources to nil to simulate unregistered resource
+		providerResources = nil
+
+		diags := createBcpTfExporter(context.Background(), d, nil)
+		assert.False(t, diags.HasError())
+
+		// File should still be created but with no resources
+		filePath := filepath.Join(tempDir, filename)
+		assert.FileExists(t, filePath)
+	})
+
+	t.Run("continues when resource state retrieval skipped", func(t *testing.T) {
+		mockExporters := map[string]*resourceExporter.ResourceExporter{
+			"genesyscloud_user": {
+				GetResourcesFunc: func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+					return resourceExporter.ResourceIDMetaMap{
+						"user1": {BlockLabel: "test_user", OriginalLabel: "Test User"},
+					}, nil
+				},
+			},
+		}
+
+		original := resourceExporter.GetResourceExporters()
+		resourceExporter.SetRegisterExporter(mockExporters)
+		defer resourceExporter.SetRegisterExporter(original)
+
+		tempDir := t.TempDir()
+		filename := "state_skip_test.json"
+
+		d := schema.TestResourceDataRaw(t, ResourceBcpTfExporter().Schema, map[string]interface{}{
+			"directory": tempDir,
+			"filename":  filename,
+		})
+
+		// With nil meta, getResourceState will be skipped
+		diags := createBcpTfExporter(context.Background(), d, nil)
+		assert.False(t, diags.HasError())
+
+		// File should be created successfully
+		filePath := filepath.Join(tempDir, filename)
+		assert.FileExists(t, filePath)
+	})
+}
+
+func TestUnitBcpTfExporter_GetFlowDependencies(t *testing.T) {
+	ctx := context.Background()
+	flowID := "flow-123"
+	resMeta := &resourceExporter.ResourceMeta{BlockLabel: "test_flow"}
+
+	t.Run("returns empty when meta is nil", func(t *testing.T) {
+		result := getFlowDependencies(ctx, flowID, resMeta, nil)
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
+
+	t.Run("returns empty when meta is wrong type", func(t *testing.T) {
+		wrongMeta := "not a provider meta"
+		result := getFlowDependencies(ctx, flowID, resMeta, wrongMeta)
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
+
+	t.Run("returns empty when client config is nil", func(t *testing.T) {
+		providerMeta := &provider.ProviderMeta{
+			ClientConfig: nil,
+		}
+		result := getFlowDependencies(ctx, flowID, resMeta, providerMeta)
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
+}
+
+func TestUnitBcpTfExporter_GetResourceDependencies(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("calls getFlowDependencies for flow resources", func(t *testing.T) {
+		flowID := "flow-123"
+		resMeta := &resourceExporter.ResourceMeta{BlockLabel: "test_flow"}
+
+		result := getResourceDependencies(ctx, nil, "genesyscloud_flow", flowID, resMeta, nil, nil, nil)
+
+		// Should return empty dependencies when meta is nil
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
+
+	t.Run("calls extractSpecificDependencies for non-flow resources", func(t *testing.T) {
+		result := getResourceDependencies(ctx, nil, "genesyscloud_user", "user-123", nil, &resourceExporter.ResourceExporter{}, nil, nil)
+
+		// Should return empty dependencies when no RefAttrs or instanceState
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
 }

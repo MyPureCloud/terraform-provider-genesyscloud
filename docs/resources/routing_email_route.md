@@ -21,6 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 The following permissions are required to use this resource:
 
 * `routing:email:manage`
+* `routing:email:view`
 
 The following OAuth scopes are required to use this resource:
 

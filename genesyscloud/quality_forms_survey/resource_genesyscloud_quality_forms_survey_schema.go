@@ -2,6 +2,8 @@ package quality_forms_survey
 
 // @team: PureCloud QM
 // @chat: #genesys-cloud-qm-dev
+// @pm: Jose Ruiz
+// @jira: QM
 // @description: Quality Management service for agent performance evaluation and customer feedback. Manages evaluation forms for supervisor assessments and survey forms for customer satisfaction measurement.
 
 import (

@@ -1091,8 +1091,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
+		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
+		// Data source flows are just referenced and not managed, so we don't need their dependencies
+		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+			skippedCount++
+			continue
+		}
+
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
-		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(g.ctx, retrieveDependentConsumers(resourceKeys))
 
 		// Thread-safe write of flowResourcesList
 		g.flowResourcesListMutex.Lock()
@@ -2251,6 +2259,19 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			if refSettings == nil {
 				// Check for wildcard attribute indicating all attributes in the map
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
+			}
+
+			// Dynamic ref type resolution for custom attribute resolvers
+			if refSettings == nil {
+				if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+					if resolveRefTypeFunc := refAttrCustomResolver.ResolveRefTypeFunc; resolveRefTypeFunc != nil {
+						if refType, err := resolveRefTypeFunc(configMap); err != nil {
+							tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a ref type resolver for attribute %s: %v", fullAttributePath, err))
+						} else if refType != "" {
+							refSettings = &resourceExporter.RefAttrSettings{RefType: refType}
+						}
+					}
+				}
 			}
 
 			if refSettings != nil {
