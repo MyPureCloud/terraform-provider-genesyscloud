@@ -112,13 +112,11 @@ resource "genesyscloud_integration_action" "example_action" {
 }
 
 # Example with function configuration
-# Note: function_config is only required for function data actions.
-# A function data action is detected when the category contains "function data action" (case-insensitive, underscores and hyphens treated as spaces).
-# Examples: "Genesys Cloud Function Data Action", "function_data_action", "function-data-action", "Custom Function Data Action"
+# Note: function_config is only required for function data actions (when category = "Genesys Cloud Data Action")
 # For regular integration actions, this section can be omitted
 resource "genesyscloud_integration_action" "example_function_action" {
   name                   = "Example Function Action"
-  category               = "Genesys Cloud Function Data Action"
+  category               = "Genesys Cloud Data Action"
   integration_id         = genesyscloud_integration.example_gc_data_integration.id
   secure                 = true
   config_timeout_seconds = 20
