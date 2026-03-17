@@ -91,6 +91,16 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 		inputDeployment.Flow = flow
 	}
 
+	// Add supported content if provided
+	if supportedContent := buildSupportedContentReference(d); supportedContent != nil {
+		inputDeployment.SupportedContent = supportedContent
+	}
+
+	// Add push integrations if provided
+	if pushIntegrations := buildPushIntegrations(d); pushIntegrations != nil {
+		inputDeployment.PushIntegrations = pushIntegrations
+	}
+
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		deployment, resp, err := wd.createWebDeployment(ctx, inputDeployment)
 		if err != nil {
@@ -170,6 +180,12 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		if deployment.Status != nil {
 			_ = d.Set("status", *deployment.Status)
 		}
+		if deployment.SupportedContent != nil && deployment.SupportedContent.Id != nil {
+			_ = d.Set("supported_content_id", *deployment.SupportedContent.Id)
+		}
+		if deployment.PushIntegrations != nil {
+			_ = d.Set("push_integrations", flattenPushIntegrations(deployment.PushIntegrations))
+		}
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
 		return cc.CheckState(d)
@@ -219,6 +235,16 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	if flow != nil {
 		inputDeployment.Flow = flow
+	}
+
+	// Add supported content if provided
+	if supportedContent := buildSupportedContentReference(d); supportedContent != nil {
+		inputDeployment.SupportedContent = supportedContent
+	}
+
+	// Add push integrations if provided
+	if pushIntegrations := buildPushIntegrations(d); pushIntegrations != nil {
+		inputDeployment.PushIntegrations = pushIntegrations
 	}
 
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
