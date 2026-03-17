@@ -233,6 +233,13 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 	return false
 }
 
+func IsStatus429(resp *platformclientv2.APIResponse) bool {
+	if resp != nil {
+		return resp.StatusCode == http.StatusTooManyRequests
+	}
+	return false
+}
+
 func IsTimeoutError(errDiag error) bool {
 	errStringLower := strings.ToLower(fmt.Sprintf("%v", errDiag))
 	return strings.Contains(errStringLower, "timeout") ||
