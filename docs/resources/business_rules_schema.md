@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/businessrules/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-schemas--schemaId-)
 * [DELETE /api/v2/businessrules/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-schemas--schemaId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `businessrules:businessRulesSchema:add`
+* `businessrules:businessRulesSchema:delete`
+* `businessrules:businessRulesSchema:edit`
+* `businessrules:businessRulesSchema:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `business-rules`
+* `business-rules:readonly`
+
 
 ## Example Usage
 

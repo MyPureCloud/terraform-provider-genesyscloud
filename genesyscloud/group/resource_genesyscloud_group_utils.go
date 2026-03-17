@@ -12,14 +12,18 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func updateGroupVoicemailPolicy(ctx context.Context, d *schema.ResourceData, gp *groupProxy) diag.Diagnostics {
 	voicemailPolicy := buildSdkGroupVoicemailPolicy(d)
 	_, resp, err := gp.updateGroupVoicemailPolicy(ctx, d.Id(), voicemailPolicy)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update group voucemail policy %s: %s", d.Id(), err), resp)
+		errMsg := fmt.Sprintf("Failed to update group voicemail policy %s: %s", d.Id(), err)
+		if resp != nil && (resp.StatusCode == 401 || resp.StatusCode == 403) {
+			errMsg = fmt.Sprintf("%s. This may be due to missing permissions: export -> [voicemail:groupPolicy:view], import -> [voicemail:groupPolicy:edit]", errMsg)
+		}
+		return util.BuildAPIDiagnosticError(ResourceType, errMsg, resp)
 	}
 	return nil
 }

@@ -32,6 +32,37 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [PATCH /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-voicemail-userpolicies--userId-)
 - [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools)
 - [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `admin`
+* `directory:organization:admin`
+* `directory:user:add`
+* `directory:user:delete`
+* `directory:user:edit`
+* `directory:user:setPassword`
+* `directory:user:view`
+* `directory:userProfile:edit`
+* `routing:language:assign`
+* `routing:skill:assign`
+* `routing:utilization:manage`
+* `routing:utilization:view`
+* `telephony:extensionPool:view`
+* `telephony:plugin:all`
+* `voicemail:userPolicy:viewOther`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+* `telephony`
+* `telephony:readonly`
+* `users`
+* `users:readonly`
+* `voicemail`
+* `voicemail:readonly`
+
 
 ## Example Usage
 

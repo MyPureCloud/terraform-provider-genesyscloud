@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:status:add`
+* `workitems:status:delete`
+* `workitems:status:edit`
+* `workitems:status:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 

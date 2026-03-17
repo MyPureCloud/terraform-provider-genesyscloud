@@ -17,6 +17,16 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 - [PUT /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `telephony:plugin:all`
+
+The following OAuth scopes are required to use this resource:
+
+* `telephony`
+* `telephony:readonly`
 #### Compatibility Note
 
 In versions 1.39.0 to 1.48.0 of the provider, this resource was constructed with a different structure. The current version introduces structural changes that are not backwards compatible with those earlier versions.

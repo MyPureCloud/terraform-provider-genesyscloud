@@ -1,5 +1,11 @@
 package outbound_messagingcampaign
 
+// @team: Outbound Digital
+// @chat: #genesys-cloud-digital-campaigns
+// @pm: Marudhu Panidan
+// @jira: OD
+// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"

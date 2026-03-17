@@ -16,6 +16,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainId-)
 * [DELETE /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-email-domains--domainId-)
 * [PATCH /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-email-domains--domainId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:email:manage`
+* `routing:email:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 

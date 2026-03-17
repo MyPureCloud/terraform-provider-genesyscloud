@@ -1,5 +1,11 @@
 package integration_action
 
+// @team: Integration Services Indy
+// @chat: #genesys-cloud-integrations
+// @pm: Richard Schott
+// @jira: INTINDY
+// @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -142,7 +148,7 @@ func ResourceIntegrationAction() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"category": {
-				Description:  "Category of action. Can be up to 256 characters long.",
+				Description:  "Category of action. Can be up to 256 characters long. If the category contains 'function data action' (case-insensitive, underscores and hyphens treated as spaces), the action will be treated as a function data action and requires function_config to be set.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringLenBetween(1, 256),

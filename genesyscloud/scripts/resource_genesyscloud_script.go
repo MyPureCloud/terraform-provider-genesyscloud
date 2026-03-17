@@ -14,7 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -24,7 +24,6 @@ import (
 func getAllScripts(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getScriptsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-
 	scripts, resp, err := proxy.getAllPublishedScripts(ctx)
 	if err != nil {
 		return resources, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of scripts error: %s", err), resp)
@@ -127,6 +126,12 @@ func readScript(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 				return retry.RetryableError(diagErr)
 			}
 			return retry.NonRetryableError(diagErr)
+		}
+
+		// Check if script is nil (resource was deleted outside Terraform)
+		if script == nil {
+			d.SetId("") // Remove from state
+			return nil
 		}
 
 		resourcedata.SetNillableValue(d, "script_name", script.Name)

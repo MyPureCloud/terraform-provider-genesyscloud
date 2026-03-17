@@ -8,11 +8,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
@@ -158,7 +159,8 @@ func deleteProcessAutomationTrigger(triggerId string, api *platformclientv2.Inte
 	return response, err
 }
 
-func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllProcessAutomationTriggersResourceMap(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
@@ -166,7 +168,7 @@ func getAllProcessAutomationTriggersResourceMap(_ context.Context, clientConfig 
 	path := integAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
 
 	for pageNum := 1; ; pageNum++ {
-		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integAPI)
+		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(ctx, path, integAPI)
 
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)

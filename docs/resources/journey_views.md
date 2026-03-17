@@ -15,6 +15,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/journey/views/{viewId}/versions](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-journey-views--viewId--versions)
 * [GET /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-journey-views--viewId-)
 * [DELETE /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-journey-views--viewId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:views:add`
+* `journey:views:delete`
+* `journey:views:edit`
+* `journey:views:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

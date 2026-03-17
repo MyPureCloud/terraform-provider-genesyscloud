@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-worktypes--worktypeId--flows-oncreate-rules--ruleId-)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:flowRuleOnCreate:add`
+* `workitems:flowRuleOnCreate:delete`
+* `workitems:flowRuleOnCreate:edit`
+* `workitems:flowRuleOnCreate:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 

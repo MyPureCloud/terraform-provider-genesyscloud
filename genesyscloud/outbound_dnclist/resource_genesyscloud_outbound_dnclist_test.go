@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
@@ -75,7 +75,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
 					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
-					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 3),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 2),
 				),
 			},
 			{
@@ -107,8 +107,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "dnc_source_type", dncSourceType),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_dnclist."+resourceLabel, "contact_method", contactMethod),
 					provider.TestDefaultHomeDivision("genesyscloud_outbound_dnclist."+resourceLabel),
-					// Expect two more to be added due to duplicate numbers
-					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 5),
+					checkPhoneNumbersAddedToDncList("genesyscloud_outbound_dnclist."+resourceLabel, 4),
 				),
 			},
 			{
@@ -373,7 +372,7 @@ func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded 
 		outboundAPI := platformclientv2.NewOutboundApi()
 		dncListDivisionViews, _, err := outboundAPI.GetOutboundDnclistsDivisionview(r.Primary.ID, true, true)
 		if err != nil {
-			return fmt.Errorf("error received when quering DNC list division view from API: %v", err)
+			return fmt.Errorf("error received when querying DNC list division view from API: %v", err)
 		}
 		if numberOfPhoneNumbersAdded != *dncListDivisionViews.Size {
 			return fmt.Errorf("expected dnc list size to be: %v, got: %v", numberOfPhoneNumbersAdded, *dncListDivisionViews.Size)

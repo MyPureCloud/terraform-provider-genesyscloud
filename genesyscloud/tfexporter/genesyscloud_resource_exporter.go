@@ -26,6 +26,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	rRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -40,7 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -1090,8 +1091,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
+		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
+		// Data source flows are just referenced and not managed, so we don't need their dependencies
+		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+			skippedCount++
+			continue
+		}
+
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
-		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(g.ctx, retrieveDependentConsumers(resourceKeys))
 
 		// Thread-safe write of flowResourcesList
 		g.flowResourcesListMutex.Lock()
@@ -1594,7 +1603,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			if mockError != nil {
 				err = mockError
 			}
-			if containsPermissionsErrorOnly(err) && logErrors {
+			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
@@ -1679,19 +1688,6 @@ func retrieveExportResources(existingResources []resourceExporter.ResourceInfo, 
 	}
 
 	return resourcesTobeExported
-}
-
-func containsPermissionsErrorOnly(err diag.Diagnostics) bool {
-	foundPermissionsError := false
-	for _, v := range err {
-		if strings.Contains(v.Summary, "403") ||
-			strings.Contains(v.Summary, "501") {
-			foundPermissionsError = true
-		} else {
-			return false
-		}
-	}
-	return foundPermissionsError
 }
 
 var logAttrInfo = "\nTo continue exporting other resources in spite of this error, set the 'log_permission_errors' attribute to 'true'"
@@ -2265,6 +2261,19 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
+			// Dynamic ref type resolution for custom attribute resolvers
+			if refSettings == nil {
+				if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+					if resolveRefTypeFunc := refAttrCustomResolver.ResolveRefTypeFunc; resolveRefTypeFunc != nil {
+						if refType, err := resolveRefTypeFunc(configMap); err != nil {
+							tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a ref type resolver for attribute %s: %v", fullAttributePath, err))
+						} else if refType != "" {
+							refSettings = &resourceExporter.RefAttrSettings{RefType: refType}
+						}
+					}
+				}
+			}
+
 			if refSettings != nil {
 				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
@@ -2614,12 +2623,7 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		g.buildSecondDeps[refSettings.RefType] = []string{refID}
 	}
 
-	if exportingState {
-		// Don't remove unmatched IDs when exporting state. This will keep existing config in an org
-		return refID
-	}
-	// No match found. Remove the value from the config since we do not have a reference to use
-	return ""
+	return refID
 }
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {

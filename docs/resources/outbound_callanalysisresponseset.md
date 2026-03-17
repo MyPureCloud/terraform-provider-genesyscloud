@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [GET /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
 - [PUT /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
 - [DELETE /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:responseSet:add`
+* `outbound:responseSet:delete`
+* `outbound:responseSet:edit`
+* `outbound:responseSet:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

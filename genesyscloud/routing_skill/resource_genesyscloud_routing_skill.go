@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -45,7 +45,7 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 	name := d.Get("name").(string)
 
 	log.Printf("Creating skill %s", name)
-	skill, resp, err := proxy.createRoutingSkill(ctx, &platformclientv2.Routingskill{
+	skill, resp, err := proxy.createRoutingSkill(ctx, &platformclientv2.Createroutingskill{
 		Name: &name,
 	})
 	if err != nil {

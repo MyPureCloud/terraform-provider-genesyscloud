@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -143,7 +143,11 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 
 		voicemailPolicy, vmResp, vmErr := gp.getGroupVoicemailPolicy(ctx, d.Id())
 		if vmErr != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read group voicemail policy %s | error: %s", d.Id(), vmErr), vmResp))
+			errMsg := fmt.Sprintf("Failed to read group voicemail policy %s | error: %s", d.Id(), vmErr)
+			if vmResp != nil && (vmResp.StatusCode == 401 || vmResp.StatusCode == 403) {
+				errMsg = fmt.Sprintf("%s. This may be due to missing permissions: export -> [voicemail:groupPolicy:view], import -> [voicemail:groupPolicy:edit]", errMsg)
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, errMsg, vmResp))
 		}
 		if voicemailPolicy.Enabled != nil && *voicemailPolicy.Enabled {
 			_ = d.Set("voicemail_policy", flattenGroupVoicemailPolicy(voicemailPolicy))
