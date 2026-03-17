@@ -1599,16 +1599,41 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			tflog.Info(g.ctx, fmt.Sprintf("Getting all resources for type %s", resourceType))
 			exporter.FilterResource = g.resourceFilter
 
-			err := exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
+			// Retry the GetAll functions at least three times (in case of transient errors)
+			maxRetries := 3
+			var err diag.Diagnostics
+			for attempt := 0; attempt < maxRetries; attempt++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+				err := exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
 
-			// Used in tests
-			if mockError != nil {
-				err = mockError
-			}
-			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
-				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
-				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
-				return
+				// Used in tests
+				if mockError != nil {
+					err = mockError
+				}
+				// Don't retry permissions errors
+				if errors.ContainsPermissionsErrorOnly(err) && logErrors {
+					tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
+					tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
+					return
+				}
+				if err == nil {
+					break
+				}
+
+				if attempt < maxRetries-1 {
+					backoff := time.Duration(1<<attempt) * time.Second
+					tflog.Warn(g.ctx, fmt.Sprintf("Failed to load resources for %s (attempt %d/%d). Retrying in %v. Error: %v",
+						resourceType, attempt+1, maxRetries, backoff, err))
+					select {
+					case <-time.After(backoff):
+					case <-ctx.Done():
+						return
+					}
+				}
 			}
 			if err != nil {
 				if !logErrors {
