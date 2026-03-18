@@ -26,24 +26,24 @@ var (
 	customI18nLabel = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"language": {
-				Description: "Language of localized labels in homescreen app (eg. en-us, de-de) and push notification",
+				Description: "Language of localized labels in messenger homescreen or push notification (eg. en-us, de-de)",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"localized_labels": {
-				Description: "Contains localized labels used in messenger apps and push notification. PushNotificationTitle and PushNotificationBody are required when notifications are enabled.",
+				Description: "Contains localized labels used in messenger homescreen or push notification. PushNotificationTitle and PushNotificationBody are required when notifications are enabled.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"key": {
-							Description:  "Contains localized label key used in messenger homescreen and push notification. PushNotificationTitle and PushNotificationBody keys are required when notifications are enabled.",
+							Description:  "Contains localized label key used in messenger homescreen or push notification.",
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle", "PushNotificationTitle", "PushNotificationBody"}, false),
 						},
 						"value": {
-							Description: "Contains localized label value used in messenger homescreen and push notification",
+							Description: "Contains localized label value used in messenger homescreen or push notification",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
