@@ -1608,7 +1608,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 					return
 				default:
 				}
-				err := exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
+				err = exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
 
 				// Used in tests
 				if mockError != nil {
