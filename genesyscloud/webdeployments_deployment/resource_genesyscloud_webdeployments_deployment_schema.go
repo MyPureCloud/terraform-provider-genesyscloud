@@ -131,9 +131,9 @@ func WebDeploymentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllWebDeployments),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"flow_id":               {RefType: "genesyscloud_flow"},
-			"configuration.id":      {RefType: "genesyscloud_webdeployments_configuration"},
-			"supported_content_id":  {RefType: "genesyscloud_webdeployments_supportedcontent"},
+			"flow_id":              {RefType: "genesyscloud_flow"},
+			"configuration.id":     {RefType: "genesyscloud_webdeployments_configuration"},
+			"supported_content_id": {RefType: "genesyscloud_webdeployments_supportedcontent"},
 			"push_integrations.id": {RefType: "genesyscloud_integration"},
 		},
 		ExcludedAttributes: []string{"configuration.version"},
