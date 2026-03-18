@@ -3,12 +3,16 @@ package greeting_user
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
 
 var internalProxy *greetingProxy
+var greetingCache = rc.NewResourceCache[platformclientv2.Greeting]()
 
 type getAllGreetingsFunc func(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error)
 type getUserGreetingByIdFunc func(ctx context.Context, p *greetingProxy, userId string, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
@@ -25,6 +29,7 @@ type greetingProxy struct {
 	getGreetingByIdAttr getUserGreetingByIdFunc
 	updateGreetingAttr  updateUserGreetingFunc
 	deleteGreetingAttr  deleteUserGreetingFunc
+	greetingCache       rc.CacheInterface[platformclientv2.Greeting]
 }
 
 func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
@@ -39,6 +44,7 @@ func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingPro
 		getGreetingByIdAttr: getUserGreetingByIdFn,
 		updateGreetingAttr:  updateUserGreetingFn,
 		deleteGreetingAttr:  deleteUserGreetingFn,
+		greetingCache:       greetingCache,
 	}
 }
 
@@ -57,12 +63,16 @@ func (p *greetingProxy) createUserGreeting(ctx context.Context, body *platformcl
 	return p.createGreetingAttr(ctx, p, body)
 }
 func (p *greetingProxy) getUserGreetingById(ctx context.Context, userId string, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+	if greeting := rc.GetCacheItem(p.greetingCache, id); greeting != nil {
+		return greeting, nil, nil
+	}
 	return p.getGreetingByIdAttr(ctx, p, userId, id)
 }
 func (p *greetingProxy) updateUserGreeting(ctx context.Context, greetingID string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
 	return p.updateGreetingAttr(ctx, p, greetingID, body)
 }
 func (p *greetingProxy) deleteUserGreeting(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+	rc.DeleteCacheItem(p.greetingCache, id)
 	return p.deleteGreetingAttr(ctx, p, id)
 }
 func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error) {
@@ -80,6 +90,21 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 		}
 		if userGreetings.Entities != nil {
 			allGreetings = append(allGreetings, *userGreetings.Entities...)
+			if tfexporter_state.IsExporterActive() {
+				for _, entity := range *userGreetings.Entities {
+					if entity.Id == nil {
+						continue
+					}
+					g, _, gErr := p.greetingsApi.GetGreeting(*entity.Id)
+					if gErr != nil {
+						log.Printf("failed to cache greeting %s: %v", *entity.Id, gErr)
+						continue
+					}
+					if g != nil && g.Id != nil {
+						rc.SetCache(p.greetingCache, *g.Id, *g)
+					}
+				}
+			}
 		}
 		for pageNum := 2; pageNum <= *userGreetings.PageCount; pageNum++ {
 			userGreetings, resp, err := p.greetingsApi.GetUserGreetings(*user.Id, pageSize, pageNum)
@@ -88,6 +113,21 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 			}
 			if userGreetings.Entities != nil {
 				allGreetings = append(allGreetings, *userGreetings.Entities...)
+				if tfexporter_state.IsExporterActive() {
+					for _, entity := range *userGreetings.Entities {
+						if entity.Id == nil {
+							continue
+						}
+						g, _, gErr := p.greetingsApi.GetGreeting(*entity.Id)
+						if gErr != nil {
+							log.Printf("failed to cache greeting %s: %v", *entity.Id, gErr)
+							continue
+						}
+						if g != nil && g.Id != nil {
+							rc.SetCache(p.greetingCache, *g.Id, *g)
+						}
+					}
+				}
 			}
 		}
 	}
@@ -95,9 +135,27 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 }
 
 func createUserGreetingFn(ctx context.Context, p *greetingProxy, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
-	return p.greetingsApi.PostUserGreetings(*body.Owner.Id, *body)
+	g, resp, err := p.greetingsApi.PostUserGreetings(*body.Owner.Id, *body)
+	if err != nil {
+		return g, resp, err
+	}
+	if g != nil && g.Id != nil {
+		rc.SetCache(p.greetingCache, *g.Id, *g)
+	}
+	return g, resp, nil
 }
 func getUserGreetingByIdFn(ctx context.Context, p *greetingProxy, userId string, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
+	if tfexporter_state.IsExporterActive() {
+		log.Printf("Could not read greeting '%s' from cache. Reading from the API...", id)
+		g, resp, err := p.greetingsApi.GetGreeting(id)
+		if err != nil {
+			return g, resp, err
+		}
+		if g != nil && g.Id != nil {
+			rc.SetCache(p.greetingCache, *g.Id, *g)
+		}
+		return g, resp, nil
+	}
 	if userId == "" {
 		return p.greetingsApi.GetGreeting(id)
 	}
@@ -147,7 +205,14 @@ func findGreetingInEntities(entities *[]platformclientv2.Domainentity, userId st
 	return nil
 }
 func updateUserGreetingFn(ctx context.Context, p *greetingProxy, greetingId string, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
-	return p.greetingsApi.PutGreeting(greetingId, *body)
+	g, resp, err := p.greetingsApi.PutGreeting(greetingId, *body)
+	if err != nil {
+		return g, resp, err
+	}
+	if g != nil && g.Id != nil {
+		rc.SetCache(p.greetingCache, *g.Id, *g)
+	}
+	return g, resp, nil
 }
 func deleteUserGreetingFn(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.greetingsApi.DeleteGreeting(id)

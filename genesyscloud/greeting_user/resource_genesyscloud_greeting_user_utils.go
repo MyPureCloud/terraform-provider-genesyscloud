@@ -100,11 +100,11 @@ func GenerateGreetingUser(
 	user string,
 	audioTts string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_greeting_user" "%s" {
+	return fmt.Sprintf(`resource "%s" "%s" {
   name        = "%s"
   type        = "%s"
   owner_type  = "%s"
   user_id    = %s
   audio_tts   = "%s"
-}`, resourceLabel, name, greetingType, ownerType, user, audioTts)
+}`, ResourceType, resourceLabel, name, greetingType, ownerType, user, audioTts)
 }

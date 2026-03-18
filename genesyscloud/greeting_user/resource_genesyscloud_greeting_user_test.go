@@ -51,11 +51,11 @@ func TestAccResourceUserGreeting(t *testing.T) {
 					audioTts1,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_greeting_user."+resourceLabel, "name", name1),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_user."+resourceLabel, "type", type1),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_user."+resourceLabel, "owner_type"),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_user."+resourceLabel, "audio_tts", audioTts1),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_user."+resourceLabel, "user_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name1),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "type", type1),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "owner_type"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "audio_tts", audioTts1),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "user_id"),
 				),
 			},
 			{
@@ -72,28 +72,28 @@ func TestAccResourceUserGreeting(t *testing.T) {
 					audioTts2,
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_greeting_user."+resourceLabel, "name", name2),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_user."+resourceLabel, "type", type2),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_user."+resourceLabel, "owner_type"),
-					resource.TestCheckResourceAttr("genesyscloud_greeting_user."+resourceLabel, "audio_tts", audioTts2),
-					resource.TestCheckResourceAttrSet("genesyscloud_greeting_user."+resourceLabel, "user_id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name2),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "type", type2),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "owner_type"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "audio_tts", audioTts2),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "user_id"),
 				),
 			},
 			{
-				ResourceName:            "genesyscloud_greeting_user." + resourceLabel,
+				ResourceName:            ResourceType + "." + resourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"user_id"},
 			},
 		},
-		//CheckDestroy: testVerifyGreetingDestroyed,
+		CheckDestroy: testVerifyGreetingDestroyed,
 	})
 }
 
 func testVerifyGreetingDestroyed(state *terraform.State) error {
 	greetingAPI := platformclientv2.NewGreetingsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_greeting_user" {
+		if rs.Type != ResourceType {
 			continue
 		}
 		greeting, resp, err := greetingAPI.GetGreeting(rs.Primary.ID)
