@@ -143,6 +143,12 @@ var (
 
 	fileUploadSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"enable_attachments": {
+				Description: "Whether or not file attachments are enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"mode": {
 				Description: "The list of supported file upload modes",
 				Type:        schema.TypeList,
@@ -187,6 +193,13 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        fileUploadSettings,
+			},
+			"session_persistence_type": {
+				Description:  "The session persistence type for messenger. Valid values: AcrossSubdomains, DomainOrSubdomainOnly",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AcrossSubdomains", "DomainOrSubdomainOnly"}, false),
 			},
 			"apps": {
 				Description: "The apps embedded in the messenger",
@@ -258,6 +271,33 @@ var (
 									"conversation_clear_enabled": {
 										Description: "The conversation clear settings for the messenger app",
 										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"notifications": {
+										Description: "The notification settings for messenger conversations",
+										Type:        schema.TypeList,
+										MaxItems:    1,
+										Optional:    true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Description: "Whether or not notifications are enabled",
+													Type:        schema.TypeBool,
+													Optional:    true,
+												},
+												"notification_content_type": {
+													Description:  "The notification content type. Valid values: IncludeMessagesContent, ExcludeMessagesContent",
+													Type:         schema.TypeString,
+													Optional:     true,
+													ValidateFunc: validation.StringInSlice([]string{"IncludeMessagesContent", "ExcludeMessagesContent"}, false),
+												},
+											},
+										},
+									},
+									"session_duration_seconds": {
+										Description: "The guest session duration in seconds for messenger conversations",
+										Type:        schema.TypeInt,
 										Optional:    true,
 										Computed:    true,
 									},
@@ -902,6 +942,22 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        styleSetting,
+			},
+			"label_filter": {
+				Description: "Document label filter for knowledge portal. If set, only documents having at least one of the specified labels will be returned.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"label_ids": {
+							Description: "List of knowledge label IDs to filter by",
+							Type:        schema.TypeList,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
 			},
 			"feedback_enabled": {
 				Description: "Whether or not requesting customer feedback on article content and article search results is enabled",
