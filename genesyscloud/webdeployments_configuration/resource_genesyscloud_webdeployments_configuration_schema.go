@@ -4,7 +4,7 @@ package webdeployments_configuration
 // @chat: #Squonk
 // @pm: Angelo Cicchitto
 // @jira: SQUONK
-// @description: Manages versioned configuration settings for Genesys Cloud web deployments. Provides control over messenger, cobrowse, video, journey events, knowledge portal and authentication settings that are served to end users through deployments.
+// @description: Manages versioned configuration settings for Genesys Cloud web deployments. Provides control over messenger, cobrowse, video, journey events, knowledge portal and knowledge channels that are served to end users through deployments.
 
 import (
 	"strings"
