@@ -2,7 +2,9 @@ package telephony_providers_edges_site
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
@@ -288,10 +290,19 @@ func createSiteFn(ctx context.Context, p *SiteProxy, siteReq *platformclientv2.S
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
+	// Log the POST request payload
+	createReqJSON, _ := json.Marshal(siteReq)
+	log.Printf("[DEBUG] Create Site POST request payload (size: %d bytes): %s", len(createReqJSON), string(createReqJSON))
+
 	site, resp, err := p.edgesApi.PostTelephonyProvidersEdgesSites(*siteReq)
 	if err != nil {
 		return nil, resp, err
 	}
+
+	// Log the POST response payload
+	createRespJSON, _ := json.Marshal(site)
+	log.Printf("[DEBUG] Create Site POST response payload (size: %d bytes): %s", len(createRespJSON), string(createRespJSON))
+
 	return site, resp, nil
 }
 
@@ -331,6 +342,10 @@ func getSiteByIdFn(ctx context.Context, p *SiteProxy, siteId string) (*platformc
 	if err != nil {
 		return nil, resp, err
 	}
+
+	// Log the GET response payload
+	getRespJSON, _ := json.Marshal(site)
+	log.Printf("[DEBUG] Get Site GET response payload for site %s (size: %d bytes): %s", siteId, len(getRespJSON), string(getRespJSON))
 
 	return site, resp, nil
 }
@@ -373,10 +388,27 @@ func updateSiteFn(ctx context.Context, p *SiteProxy, siteId string, site *platfo
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
+	// Nil out read-only/computed fields that the API returns in GET responses
+	// but should not be sent in PUT requests. These fields can be very large
+	// in orgs with many edges/sites (e.g. primaryEdges contains full Edge
+	// objects each embedding all sites), causing the PUT payload to exceed
+	// the API's 512KB request size limit and resulting in a 413 error.
+	site.PrimaryEdges = nil
+	site.SecondaryEdges = nil
+	site.Edges = nil
+
+	// Log the PUT request payload
+	updateReqJSON, _ := json.Marshal(site)
+	log.Printf("[DEBUG] Update Site PUT request payload for site %s (size: %d bytes): %s", siteId, len(updateReqJSON), string(updateReqJSON))
+
 	updatedSite, resp, err := p.edgesApi.PutTelephonyProvidersEdgesSite(siteId, *site)
 	if err != nil {
 		return nil, resp, err
 	}
+
+	// Log the PUT response payload
+	updateRespJSON, _ := json.Marshal(updatedSite)
+	log.Printf("[DEBUG] Update Site PUT response payload for site %s (size: %d bytes): %s", siteId, len(updateRespJSON), string(updateRespJSON))
 
 	return updatedSite, resp, nil
 }
