@@ -168,9 +168,6 @@ func testVerifyUsersRulesDestroyed(state *terraform.State) error {
 		}
 
 		usersRule, resp, err := usersRulesApi.GetUsersRule(rs.Primary.ID)
-		if usersRule != nil {
-			continue
-		}
 
 		if usersRule != nil {
 			return fmt.Errorf("Users rule (%s) still exists", rs.Primary.ID)

@@ -110,36 +110,19 @@ func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm stri
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allUsersRules []platformclientv2.Usersrulesrule
-	types := []string{"Learning"}
 	const pageSize = 100
 	const pageNumber = 1
 	const sortOrder = ""
 	expand := []string{}
 	const enabled = true
 
-	usersRules, resp, err := p.usersRulesApi.GetUsersRules(
-		types,
-		pageNumber,
-		pageSize,
-		expand,
-		enabled,
-		searchTerm,
-		sortOrder,
-	)
-	if err != nil {
-		return nil, resp, fmt.Errorf("Failed to get users rules: %v", err)
-	}
-	if usersRules.Entities == nil || len(*usersRules.Entities) == 0 {
-		return &allUsersRules, resp, nil
-	}
-	for _, usersRule := range *usersRules.Entities {
-		allUsersRules = append(allUsersRules, usersRule)
-	}
+	ruleTypes := []string{"Learning", "ActivityPlan"}
+	for _, ruleType := range ruleTypes {
+		types := []string{ruleType}
 
-	for pageNum := 2; pageNum <= *usersRules.PageCount; pageNum++ {
 		usersRules, resp, err := p.usersRulesApi.GetUsersRules(
 			types,
-			pageNum,
+			pageNumber,
 			pageSize,
 			expand,
 			enabled,
@@ -149,17 +132,38 @@ func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm stri
 		if err != nil {
 			return nil, resp, fmt.Errorf("Failed to get users rules: %v", err)
 		}
-
 		if usersRules.Entities == nil || len(*usersRules.Entities) == 0 {
-			break
+			return &allUsersRules, resp, nil
 		}
-
 		for _, usersRule := range *usersRules.Entities {
 			allUsersRules = append(allUsersRules, usersRule)
 		}
+
+		for pageNum := 2; pageNum <= *usersRules.PageCount; pageNum++ {
+			usersRules, resp, err := p.usersRulesApi.GetUsersRules(
+				types,
+				pageNum,
+				pageSize,
+				expand,
+				enabled,
+				searchTerm,
+				sortOrder,
+			)
+			if err != nil {
+				return nil, resp, fmt.Errorf("Failed to get users rules: %v", err)
+			}
+
+			if usersRules.Entities == nil || len(*usersRules.Entities) == 0 {
+				break
+			}
+
+			for _, usersRule := range *usersRules.Entities {
+				allUsersRules = append(allUsersRules, usersRule)
+			}
+		}
 	}
 
-	return &allUsersRules, resp, nil
+	return &allUsersRules, nil, nil
 }
 
 // getUsersRulesIdByNameFn is an implementation of the function to get a Genesys Cloud users rule by name

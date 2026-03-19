@@ -56,7 +56,7 @@ func createUsersRules(ctx context.Context, d *schema.ResourceData, meta interfac
 	log.Printf("Creating users rule %s", *usersRuleRequest.Name)
 	usersRule, resp, err := proxy.createUsersRules(ctx, &usersRuleRequest)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create users rule %s error: %s", *usersRule.Name, err), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create users rule %s error: %s", *usersRuleRequest.Name, err), resp)
 	}
 
 	d.SetId(*usersRule.Id)

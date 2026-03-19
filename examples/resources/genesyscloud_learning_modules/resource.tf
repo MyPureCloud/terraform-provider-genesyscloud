@@ -3,10 +3,8 @@ resource "genesyscloud_learning_modules" "example_learning_module" {
   description             = "Example description"
   completion_time_in_days = 10
   type                    = "Native"
-  cover_art_id            = ""
   length_in_minutes       = 15
   excluded_from_catalog   = false
-  external_id             = ""
   enforce_content_order   = false
   is_published            = false
   inform_steps {
@@ -18,7 +16,7 @@ resource "genesyscloud_learning_modules" "example_learning_module" {
     description  = "Example description"
   }
   inform_steps {
-    type         = "Richtext"
+    type         = "RichText"
     name         = "Example name"
     value        = "<b>Example</b>"
     order        = 2

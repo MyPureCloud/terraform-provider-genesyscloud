@@ -221,9 +221,6 @@ func testVerifyLearningModuleDestroyed(state *terraform.State) error {
 		}
 
 		learningModule, resp, err := learningApi.GetLearningModule(rs.Primary.ID, []string{})
-		if learningModule != nil {
-			continue
-		}
 
 		if learningModule != nil {
 			return fmt.Errorf("Learning module (%s) still exists", rs.Primary.ID)

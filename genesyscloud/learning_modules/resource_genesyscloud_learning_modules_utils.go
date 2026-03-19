@@ -80,7 +80,7 @@ func buildSdkInformSteps(resourceInformStepList []interface{}) *[]platformclient
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkInformStep.Name, informStepMap, "name")
 		sdkInformStep.Value = platformclientv2.String(informStepMap["value"].(string))
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkInformStep.SharingUri, informStepMap, "sharing_uri")
-		sdkInformStep.ContentType = platformclientv2.String(informStepMap["content_type"].(string))
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkInformStep.ContentType, informStepMap, "content_type")
 		sdkInformStep.Order = platformclientv2.Int(informStepMap["order"].(int))
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkInformStep.DisplayName, informStepMap, "display_name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkInformStep.Description, informStepMap, "description")
@@ -212,7 +212,7 @@ func buildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAnswerOption.Id, answerOptionsMap, "id")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkAnswerOption.Text, answerOptionsMap, "text")
 		answerValue := answerOptionsMap["value"].(int)
-		if answerValue > 0 {
+		if answerValue >= 0 {
 			sdkAnswerOption.Value = platformclientv2.Int(answerValue)
 		}
 
