@@ -1,5 +1,11 @@
 package webdeployments_deployment
 
+// @team: Squonk
+// @chat: #Squonk
+// @pm: Angelo Cicchitto
+// @jira: SQUONK
+// @description: Manages Genesys Cloud web deployments that serve as the integration point between configuration settings and end-user websites. Supports multiple deployments per organization for different brands, each pointing to a specific published configuration version. Provides control over allowed domains, associated flows, supported content, and push integrations.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
