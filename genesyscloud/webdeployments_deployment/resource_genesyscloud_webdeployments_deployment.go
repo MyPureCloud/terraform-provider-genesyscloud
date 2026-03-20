@@ -180,6 +180,9 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		if deployment.Status != nil {
 			_ = d.Set("status", *deployment.Status)
 		}
+		if deployment.Snippet != nil {
+			_ = d.Set("snippet", *deployment.Snippet)
+		}
 		if deployment.SupportedContent != nil && deployment.SupportedContent.Id != nil {
 			_ = d.Set("supported_content_id", *deployment.SupportedContent.Id)
 		}

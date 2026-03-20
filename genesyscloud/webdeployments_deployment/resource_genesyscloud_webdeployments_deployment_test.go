@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -177,6 +178,162 @@ func basicDeploymentResource(name, description string) string {
 		}
 	}
 	`, minimalConfigName, name, description)
+}
+
+func TestAccResourceWebDeploymentsDeployment_SupportedContent(t *testing.T) {
+	t.Parallel()
+	var (
+		deploymentName     = "Test Deployment " + util.RandString(8)
+		resourcePath       = "genesyscloud_webdeployments_deployment.withSupportedContent"
+		scResourceLabel    = "testSupportedContent"
+		scName             = "TestTfDeploySC-" + uuid.NewString()
+		scUpdatedName      = "TestTfDeploySCUpdated-" + uuid.NewString()
+		scResourcePath     = "genesyscloud_conversations_messaging_supportedcontent." + scResourceLabel
+		scUpdatedLabel     = "testSupportedContentUpdated"
+		scUpdatedPath      = "genesyscloud_conversations_messaging_supportedcontent." + scUpdatedLabel
+	)
+
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			// Create deployment with supported content
+			{
+				Config: deploymentResourceWithSupportedContent(deploymentName, scResourceLabel, scName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttrPair(resourcePath, "supported_content_id", scResourcePath, "id"),
+				),
+			},
+			// Update to a different supported content profile
+			{
+				Config: deploymentResourceWithUpdatedSupportedContent(deploymentName, scResourceLabel, scName, scUpdatedLabel, scUpdatedName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttrPair(resourcePath, "supported_content_id", scUpdatedPath, "id"),
+				),
+			},
+			{
+				ResourceName:            resourcePath,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"status"},
+			},
+		},
+		CheckDestroy: verifyDeploymentDestroyed,
+	})
+}
+
+func TestAccResourceWebDeploymentsDeployment_Snippet(t *testing.T) {
+	t.Parallel()
+	var (
+		deploymentName = "Test Deployment " + util.RandString(8)
+		resourcePath   = "genesyscloud_webdeployments_deployment.snippetTest"
+	)
+
+	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: snippetTestDeploymentResource(deploymentName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", deploymentName),
+					resource.TestCheckResourceAttrSet(resourcePath, "snippet"),
+				),
+			},
+		},
+		CheckDestroy: verifyDeploymentDestroyed,
+	})
+}
+
+func deploymentResourceWithSupportedContent(deploymentName, scLabel, scName string) string {
+	minimalConfigName := "Minimal Config " + uuid.NewString()
+	return fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name             = "%s"
+		languages        = ["en-us"]
+		default_language = "en-us"
+	}
+	`, minimalConfigName) +
+		conversations_messaging_supportedcontent.GenerateSupportedContentResource(
+			"genesyscloud_conversations_messaging_supportedcontent",
+			scLabel,
+			scName,
+			conversations_messaging_supportedcontent.GenerateInboundTypeBlock("*/*"),
+			conversations_messaging_supportedcontent.GenerateOutboundTypeBlock("*/*"),
+		) +
+		fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_deployment" "withSupportedContent" {
+		name              = "%s"
+		allow_all_domains = true
+		supported_content_id = genesyscloud_conversations_messaging_supportedcontent.%s.id
+		configuration {
+			id      = genesyscloud_webdeployments_configuration.minimal.id
+			version = genesyscloud_webdeployments_configuration.minimal.version
+		}
+	}
+	`, deploymentName, scLabel)
+}
+
+func deploymentResourceWithUpdatedSupportedContent(deploymentName, scLabel, scName, scUpdatedLabel, scUpdatedName string) string {
+	minimalConfigName := "Minimal Config " + uuid.NewString()
+	return fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name             = "%s"
+		languages        = ["en-us"]
+		default_language = "en-us"
+	}
+	`, minimalConfigName) +
+		conversations_messaging_supportedcontent.GenerateSupportedContentResource(
+			"genesyscloud_conversations_messaging_supportedcontent",
+			scLabel,
+			scName,
+			conversations_messaging_supportedcontent.GenerateInboundTypeBlock("*/*"),
+			conversations_messaging_supportedcontent.GenerateOutboundTypeBlock("*/*"),
+		) +
+		conversations_messaging_supportedcontent.GenerateSupportedContentResource(
+			"genesyscloud_conversations_messaging_supportedcontent",
+			scUpdatedLabel,
+			scUpdatedName,
+			conversations_messaging_supportedcontent.GenerateInboundTypeBlock("image/*"),
+			conversations_messaging_supportedcontent.GenerateOutboundTypeBlock("*/*"),
+		) +
+		fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_deployment" "withSupportedContent" {
+		name              = "%s"
+		allow_all_domains = true
+		supported_content_id = genesyscloud_conversations_messaging_supportedcontent.%s.id
+		configuration {
+			id      = genesyscloud_webdeployments_configuration.minimal.id
+			version = genesyscloud_webdeployments_configuration.minimal.version
+		}
+	}
+	`, deploymentName, scUpdatedLabel)
+}
+
+func snippetTestDeploymentResource(name string) string {
+	minimalConfigName := "Minimal Config " + uuid.NewString()
+	return fmt.Sprintf(`
+	resource "genesyscloud_webdeployments_configuration" "minimal" {
+		name             = "%s"
+		languages        = ["en-us"]
+		default_language = "en-us"
+	}
+
+	resource "genesyscloud_webdeployments_deployment" "snippetTest" {
+		name              = "%s"
+		allow_all_domains = true
+		configuration {
+			id      = genesyscloud_webdeployments_configuration.minimal.id
+			version = genesyscloud_webdeployments_configuration.minimal.version
+		}
+	}
+	`, minimalConfigName, name)
 }
 
 func deploymentResourceWithAllowedDomains(t *testing.T, name string, allowedDomains ...string) string {

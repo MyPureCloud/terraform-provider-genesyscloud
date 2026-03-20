@@ -1142,9 +1142,10 @@ func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 			"authentication_settings": {"integration_id"},
 		},
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"authentication_settings.integration_id": {RefType: "genesyscloud_integration"},
-			"enabled_categories.category_id":         {RefType: "genesyscloud_knowledge_category"},
-			"apps.knowledge.knowlege_base_id":        {RefType: "genesyscloud_knowledge_knowledgebase"},
+			"authentication_settings.integration_id":    {RefType: "genesyscloud_integration"},
+			"enabled_categories.category_id":             {RefType: "genesyscloud_knowledge_category"},
+			"apps.knowledge.knowlege_base_id":            {RefType: "genesyscloud_knowledge_knowledgebase"},
+			"support_center.label_filter.label_ids":      {RefType: "genesyscloud_knowledge_label"},
 		},
 	}
 }
