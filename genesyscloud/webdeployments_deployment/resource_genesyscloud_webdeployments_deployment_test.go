@@ -183,14 +183,14 @@ func basicDeploymentResource(name, description string) string {
 func TestAccResourceWebDeploymentsDeployment_SupportedContent(t *testing.T) {
 	t.Parallel()
 	var (
-		deploymentName     = "Test Deployment " + util.RandString(8)
-		resourcePath       = "genesyscloud_webdeployments_deployment.withSupportedContent"
-		scResourceLabel    = "testSupportedContent"
-		scName             = "TestTfDeploySC-" + uuid.NewString()
-		scUpdatedName      = "TestTfDeploySCUpdated-" + uuid.NewString()
-		scResourcePath     = "genesyscloud_conversations_messaging_supportedcontent." + scResourceLabel
-		scUpdatedLabel     = "testSupportedContentUpdated"
-		scUpdatedPath      = "genesyscloud_conversations_messaging_supportedcontent." + scUpdatedLabel
+		deploymentName  = "Test Deployment " + util.RandString(8)
+		resourcePath    = "genesyscloud_webdeployments_deployment.withSupportedContent"
+		scResourceLabel = "testSupportedContent"
+		scName          = "TestTfDeploySC-" + uuid.NewString()
+		scUpdatedName   = "TestTfDeploySCUpdated-" + uuid.NewString()
+		scResourcePath  = "genesyscloud_conversations_messaging_supportedcontent." + scResourceLabel
+		scUpdatedLabel  = "testSupportedContentUpdated"
+		scUpdatedPath   = "genesyscloud_conversations_messaging_supportedcontent." + scUpdatedLabel
 	)
 
 	cleanupWebDeploymentsDeployment(t, "Test Deployment ")
