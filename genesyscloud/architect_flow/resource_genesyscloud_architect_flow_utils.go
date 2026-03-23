@@ -95,9 +95,10 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		publishedVersionId = *flow.PublishedVersion.Id
 		log.Printf("Flow '%s' has published version '%s' - will export published version", flowId, publishedVersionId)
 	} else {
-		// This should not happen since getAllFlows() now filters unpublished flows
-		// But we handle it defensively
-		log.Printf("WARNING: Flow '%s' has no published version - export may fail or return draft", flowId)
+		// This should not happen since getAllFlows() now filters unpublished flows.
+		// However, a flow could be unpublished between the getAllFlows call and the GetFlow call,
+		// so we return a hard error to prevent silently exporting a draft.
+		return fmt.Errorf("flow '%s' has no published version and cannot be exported", flowId)
 	}
 
 	downloadUrl, err := proxy.generateDownloadUrl(flowId, publishedVersionId)

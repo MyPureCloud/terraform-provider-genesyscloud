@@ -21,6 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#delete-api-v2-groups--groupId--members)
 * [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#get-api-v2-voicemail-groups--groupId--policy)
 * [PATCH /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#patch-api-v2-voicemail-groups--groupId--policy)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -28,6 +29,8 @@ The following permissions are required to use this resource:
 * `directory:group:add`
 * `directory:group:delete`
 * `directory:group:edit`
+* `voicemail:groupPolicy:edit`
+* `voicemail:groupPolicy:view`
 
 The following OAuth scopes are required to use this resource:
 
