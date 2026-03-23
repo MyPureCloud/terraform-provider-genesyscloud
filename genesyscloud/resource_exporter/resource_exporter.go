@@ -123,6 +123,13 @@ type ResourceExporter struct {
 	// Label will be sanitized with part of the ID appended, so it is not required that they be unique
 	GetResourcesFunc GetAllResourcesFunc
 
+	// IsSingleton indicates the exporter manages a single org-wide resource instance.
+	// ExportId is required when IsSingleton is true
+	IsSingleton bool
+
+	// ExportId is the singleton key used in the ResourceIDMetaMap returned by GetAllResourcesFunc.
+	ExportId string
+
 	// A map of resource attributes to types that they reference
 	// Attributes in nested objects can be defined with a '.' separator
 	RefAttrs map[string]*RefAttrSettings
@@ -193,6 +200,11 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 		return err
 	}
 
+	result, err = r.normalizeSingletonResourceMap(resourceType, result)
+	if err != nil {
+		return err
+	}
+
 	if r.FilterResource != nil {
 		result = r.FilterResource(result, resourceType, filter)
 	}
@@ -206,6 +218,36 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
 
 	return nil
+}
+
+func (r *ResourceExporter) normalizeSingletonResourceMap(resourceType string, result ResourceIDMetaMap) (ResourceIDMetaMap, diag.Diagnostics) {
+	if !r.IsSingleton {
+		return result, nil
+	}
+
+	if r.ExportId == "" {
+		return nil, diag.Errorf("singleton exporter %s is missing ExportId", resourceType)
+	}
+
+	if len(result) == 0 {
+		return result, nil
+	}
+
+	if len(result) > 1 {
+		return nil, diag.Errorf("singleton exporter %s returned %d resources; expected at most 1", resourceType, len(result))
+	}
+
+	if _, ok := result[r.ExportId]; ok {
+		return result, nil
+	}
+
+	normalized := make(ResourceIDMetaMap, 1)
+	for _, meta := range result {
+		normalized[r.ExportId] = meta
+		break
+	}
+
+	return normalized, nil
 }
 
 // Thread-safe methods for accessing SanitizedResourceMap

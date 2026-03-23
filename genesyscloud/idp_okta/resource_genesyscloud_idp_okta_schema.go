@@ -25,7 +25,10 @@ resource_genesycloud_idp_okta_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_okta datasource.
 4.  The resource exporter configuration for the idp_okta exporter.
 */
-const ResourceType = "genesyscloud_idp_okta"
+const (
+	ResourceType       = "genesyscloud_idp_okta"
+	singletonExportKey = ResourceType
+)
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -110,6 +113,8 @@ func ResourceIdpOkta() *schema.Resource {
 func IdpOktaExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpOktas),
+		IsSingleton:      true,
+		ExportId:         singletonExportKey,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

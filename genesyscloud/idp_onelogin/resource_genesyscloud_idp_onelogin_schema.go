@@ -25,7 +25,10 @@ resource_genesycloud_idp_onelogin_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_onelogin datasource.
 4.  The resource exporter configuration for the idp_onelogin exporter.
 */
-const ResourceType = "genesyscloud_idp_onelogin"
+const (
+	ResourceType       = "genesyscloud_idp_onelogin"
+	singletonExportKey = ResourceType
+)
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -110,6 +113,8 @@ func ResourceIdpOnelogin() *schema.Resource {
 func IdpOneloginExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpOnelogins),
+		IsSingleton:      true,
+		ExportId:         singletonExportKey,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

@@ -17,7 +17,10 @@ resource_genesycloud_conversations_messaging_supportedcontent_default_schema.go 
 4.  The resource exporter configuration for the conversations_messaging_supportedcontent_default exporter.
 */
 
-const ResourceType = "genesyscloud_conversations_messaging_supportedcontent_default"
+const (
+	ResourceType       = "genesyscloud_conversations_messaging_supportedcontent_default"
+	singletonExportKey = ResourceType
+)
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -52,6 +55,8 @@ func ResourceConversationsMessagingSupportedcontentDefault() *schema.Resource {
 func ConversationsMessagingSupportedcontentDefaultExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAuthConversationsMessagingSupportedcontentDefaults),
+		IsSingleton:      true,
+		ExportId:         singletonExportKey,
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"content_id": {
 				RefType: "genesyscloud_conversations_messaging_supportedcontent",

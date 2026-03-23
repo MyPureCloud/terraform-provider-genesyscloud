@@ -8,7 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const ResourceType = "genesyscloud_conversations_settings"
+const (
+	ResourceType       = "genesyscloud_conversations_settings"
+	singletonExportKey = ResourceType
+)
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -74,5 +77,7 @@ func ResourceConversationsSettings() *schema.Resource {
 func ConversationsSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllConversationsSettings),
+		IsSingleton:      true,
+		ExportId:         singletonExportKey,
 	}
 }

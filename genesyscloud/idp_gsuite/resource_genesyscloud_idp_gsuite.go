@@ -45,7 +45,7 @@ func getAllAuthIdpGsuites(ctx context.Context, clientConfig *platformclientv2.Co
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP GSuite error: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "gsuite"}
+	resources[singletonExportKey] = &resourceExporter.ResourceMeta{BlockLabel: "gsuite"}
 	return resources, nil
 }
 
