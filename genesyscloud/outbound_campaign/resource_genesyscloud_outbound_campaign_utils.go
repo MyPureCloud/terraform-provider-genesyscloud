@@ -259,6 +259,9 @@ func buildDiagnosticsSettings(settings []interface{}) *platformclientv2.Diagnost
 }
 
 func flattenDiagnosticsSettings(settings *platformclientv2.Diagnosticssettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
 	settingsMap := make(map[string]interface{}, 0)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "report_low_max_calls_per_agent_alert", settings.ReportLowMaxCallsPerAgentAlert)
 	return []interface{}{settingsMap}
