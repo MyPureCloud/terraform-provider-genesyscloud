@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -236,8 +237,17 @@ func ResourceQualityFormsSurvey() *schema.Resource {
 func QualityFormsSurveyExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSurveyForms),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
-		AllowZeroValues:  []string{"question_groups.questions.answer_options.value"},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"question_groups.questions.answer_options.assistance_conditions.topic_ids": {
+				RefType: sttTopic.ResourceType,
+			},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"question_groups.questions.answer_options.assistance_conditions.topic_ids": {
+				ResolveToDataSourceFunc: resourceExporter.SpeechAndTextAnalyticsTopicIdResolver,
+			},
+		},
+		AllowZeroValues: []string{"question_groups.questions.answer_options.value"},
 		ExcludedAttributes: []string{
 			"question_groups.id",
 			"question_groups.questions.id",
