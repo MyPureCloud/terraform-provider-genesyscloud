@@ -1218,6 +1218,108 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 	})
 }
 
+// TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings tests diagnostics_settings with predictive dialing mode
+func TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel            = "campaign_predictive_diag"
+		name                     = "Test Predictive Diag Campaign " + uuid.NewString()
+		dialingMode              = "predictive"
+		callerName               = "Test Name Predictive"
+		callerAddress            = "+353371111115"
+		contactListResourceLabel = "contact_list"
+		queueResourceLabel       = "queue"
+		locationResourceLabel    = "location"
+		siteId                   = "site"
+		carResourceLabel         = "car"
+
+		resourcePath = ResourceType + "." + resourceLabel
+	)
+
+	emergencyNumber := "+13178793438"
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
+	}
+
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
+		contactListResourceLabel,
+		"",
+		queueResourceLabel,
+		carResourceLabel,
+		"",
+		"",
+		"",
+		"",
+		siteId,
+		emergencyNumber,
+		"",
+		"",
+		"",
+		locationResourceLabel,
+		"",
+		"",
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: referencedResources +
+					generateOutboundCampaign(
+						resourceLabel,
+						name,
+						dialingMode,
+						strconv.Quote(callerName),
+						strconv.Quote(callerAddress),
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
+						"genesyscloud_telephony_providers_edges_site."+siteId+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel+".id",
+						"1",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						[]string{},
+						util.FalseValue,
+						generatePhoneColumnNoTypeBlock("Cell"),
+						generateDiagnosticsSettingsBlock(util.TrueValue),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
+						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
+					resource.TestCheckResourceAttr(resourcePath,
+						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "true"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyOutboundCampaignDestroyed,
+	})
+}
+
 // TestAccResourceOutboundCampaignDiagnosticsSettingsInvalidDialingMode tests that diagnostics_settings fails validation for unsupported dialing modes
 func TestAccResourceOutboundCampaignDiagnosticsSettingsInvalidDialingMode(t *testing.T) {
 	t.Parallel()
