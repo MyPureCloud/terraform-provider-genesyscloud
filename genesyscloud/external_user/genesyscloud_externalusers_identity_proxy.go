@@ -2,12 +2,10 @@ package external_user
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
@@ -133,59 +131,7 @@ func deleteExternalUserIdentityFn(ctx context.Context, p *externalUserIdentityPr
 }
 
 func callExternalUserAPI(userApi *platformclientv2.UsersApi, userId string, externalUser platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
-	var httpMethod = "POST"
-	path := userApi.Configuration.BasePath + "/api/v2/users/{userId}/externalid"
-	path = strings.Replace(path, "{userId}", url.PathEscape(fmt.Sprintf("%v", userId)), -1)
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-	formParams := url.Values{}
-	var postBody interface{}
-	var postFileName string
-	var fileBytes []byte
-
-	if userApi.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + userApi.Configuration.AccessToken
-	}
-	for key := range userApi.Configuration.DefaultHeader {
-		headerParams[key] = userApi.Configuration.DefaultHeader[key]
-	}
-
-	correctedQueryParams := make(map[string]string)
-	for k, v := range queryParams {
-		if k == "varType" {
-			correctedQueryParams["type"] = v
-			continue
-		}
-		correctedQueryParams[k] = v
-	}
-	queryParams = correctedQueryParams
-
-	localVarHttpContentTypes := []string{"application/json"}
-
-	localVarHttpContentType := userApi.Configuration.APIClient.SelectHeaderContentType(localVarHttpContentTypes)
-	if localVarHttpContentType != "" {
-		headerParams["Content-Type"] = localVarHttpContentType
-	}
-	localVarHttpHeaderAccepts := []string{
-		"application/json",
-	}
-
-	localVarHttpHeaderAccept := userApi.Configuration.APIClient.SelectHeaderAccept(localVarHttpHeaderAccepts)
-	if localVarHttpHeaderAccept != "" {
-		headerParams["Accept"] = localVarHttpHeaderAccept
-	}
-	postBody = &externalUser
-
-	var successPayload *platformclientv2.Userexternalidentifier
-	response, err := userApi.Configuration.APIClient.CallAPI(path, httpMethod, postBody, headerParams, queryParams, formParams, postFileName, fileBytes, "other")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if err == nil && response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else if response.HasBody {
-		json.Unmarshal(response.RawBody, &successPayload)
-
-	}
-	return successPayload, response, err
+	c := customapi.NewClient(userApi.Configuration, ResourceType)
+	path := "/api/v2/users/" + url.PathEscape(userId) + "/externalid"
+	return customapi.Do[platformclientv2.Userexternalidentifier](context.Background(), c, customapi.MethodPost, path, &externalUser, nil)
 }

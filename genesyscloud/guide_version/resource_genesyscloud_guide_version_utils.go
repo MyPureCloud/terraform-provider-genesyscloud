@@ -3,7 +3,6 @@ package guide_version
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -23,12 +22,6 @@ func parseId(id string) (string, string, error) {
 	versionId := ids[1]
 
 	return guideId, versionId, nil
-}
-
-func buildRequestHeader(r *http.Request, p *guideVersionProxy) *http.Request {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
-	return r
 }
 
 func buildGuideVersionFromResourceData(d *schema.ResourceData) *CreateGuideVersionRequest {

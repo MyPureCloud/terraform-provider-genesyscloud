@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +12,8 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -72,6 +73,7 @@ type publishIntegrationActionDraftFunc func(ctx context.Context, p *integrationA
 type integrationActionsProxy struct {
 	clientConfig                                 *platformclientv2.Configuration
 	integrationsApi                              *platformclientv2.IntegrationsApi
+	customApiClient                              *customapi.Client
 	getAllIntegrationActionsAttr                 getAllIntegrationActionsFunc
 	createIntegrationActionAttr                  createIntegrationActionFunc
 	getIntegrationActionByIdAttr                 getIntegrationActionByIdFunc
@@ -94,6 +96,7 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 	return &integrationActionsProxy{
 		clientConfig:                                 clientConfig,
 		integrationsApi:                              api,
+		customApiClient:                              customapi.NewClient(clientConfig, ResourceType),
 		getAllIntegrationActionsAttr:                 getAllIntegrationActionsFn,
 		createIntegrationActionAttr:                  createIntegrationActionFn,
 		createIntegrationActionDraftAttr:             createIntegrationActionDraftFn,
@@ -570,144 +573,34 @@ func getIntegrationActionTemplateFn(ctx context.Context, p *integrationActionsPr
 
 // sdkPostIntegrationAction is the non-sdk helper method for creating an Integration Action
 func sdkPostIntegrationAction(ctx context.Context, body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/integrations/actions"
-
-	headerParams := make(map[string]string)
-
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
-	return successPayload, response, err
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	return customapi.Do[IntegrationAction](ctx, c, customapi.MethodPost, "/api/v2/integrations/actions", body, nil)
 }
 
 // sdkGetIntegrationAction is the non-sdk helper method for getting an Integration Action
 func sdkGetIntegrationAction(ctx context.Context, actionId string, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/integrations/actions/" + actionId
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	queryParams["expand"] = "contract"
-	queryParams["includeConfig"] = "true"
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
-	return successPayload, response, err
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	queryParams := customapi.NewQueryParams(map[string]string{"expand": "contract", "includeConfig": "true"})
+	return customapi.Do[IntegrationAction](ctx, c, customapi.MethodGet, "/api/v2/integrations/actions/"+actionId, nil, queryParams)
 }
 
 // sdkPostIntegrationActionDraft is the non-sdk helper method for creating an Integration Action
 func sdkPostIntegrationActionDraft(ctx context.Context, body *IntegrationAction, api *platformclientv2.IntegrationsApi) (*IntegrationAction, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/integrations/actions/drafts"
-
-	headerParams := make(map[string]string)
-
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *IntegrationAction
-	response, err := apiClient.CallAPI(path, http.MethodPost, body, headerParams, nil, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
-	return successPayload, response, err
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	return customapi.Do[IntegrationAction](ctx, c, customapi.MethodPost, "/api/v2/integrations/actions/drafts", body, nil)
 }
 
 // sdkGetIntegrationActionTemplate is the non-sdk helper method for getting an Integration Action Template
 func sdkGetIntegrationActionTemplate(ctx context.Context, actionId, templateName string, api *platformclientv2.IntegrationsApi) (*string, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging before making HTTP request
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/integrations/actions/" + actionId + "/templates/" + templateName
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "*/*"
-
-	var successPayload *string
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	rawBody, resp, err := customapi.DoWithAcceptHeader(ctx, c, customapi.MethodGet, "/api/v2/integrations/actions/"+actionId+"/templates/"+templateName, nil, nil, "*/*")
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		templateStr := string(response.RawBody)
-		successPayload = &templateStr
+		return nil, resp, err
 	}
-	return successPayload, response, err
+	templateStr := string(rawBody)
+	return &templateStr, resp, nil
 }

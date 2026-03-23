@@ -12,6 +12,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
@@ -39,6 +40,7 @@ type getScriptByIdFunc func(ctx context.Context, p *scriptsProxy, scriptId strin
 type scriptsProxy struct {
 	clientConfig                      *platformclientv2.Configuration
 	scriptsApi                        *platformclientv2.ScriptsApi
+	customApiClient                   *customapi.Client
 	basePath                          string
 	accessToken                       string
 	createScriptAttr                  createScriptFunc
@@ -70,6 +72,7 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 	return &scriptsProxy{
 		clientConfig:                      clientConfig,
 		scriptsApi:                        scriptsAPI,
+		customApiClient:                   customapi.NewClient(clientConfig, ResourceType),
 		basePath:                          strings.Replace(scriptsAPI.Configuration.BasePath, "api", "apps", -1),
 		accessToken:                       scriptsAPI.Configuration.AccessToken,
 		createScriptAttr:                  createScriptFn,
@@ -391,31 +394,16 @@ func getScriptExportUrlFn(ctx context.Context, p *scriptsProxy, scriptId string)
 
 // deleteScriptFn deletes a script from Genesys Cloud
 func deleteScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + scriptId
-	r, _ := http.NewRequestWithContext(ctx, http.MethodDelete, fullPath, nil)
-	r.Header.Set("Authorization", "Bearer "+p.scriptsApi.Configuration.AccessToken)
-	r.Header.Set("Content-Type", "application/json")
-
 	log.Printf("Deleting script %s", scriptId)
-	client := &http.Client{}
-	resp, err := client.Do(r)
-
-	if resp.StatusCode == http.StatusNotFound {
+	resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/scripts/"+scriptId, nil, nil)
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
 		log.Printf("Failed to delete script '%s' because it does not exist", scriptId)
 		return nil
 	}
-
-	if err != nil || (resp != nil && resp.StatusCode != http.StatusOK) {
-		response := "nil"
-		if resp != nil {
-			response = resp.Status
-		}
-		return fmt.Errorf("failed to delete script %s. API response: %s. Error: %v", scriptId, response, err)
+	if err != nil {
+		return fmt.Errorf("failed to delete script %s: %v", scriptId, err)
 	}
-
 	rc.DeleteCacheItem(p.scriptCache, scriptId)
 	log.Printf("Successfully deleted script %s", scriptId)
 	return nil
@@ -516,29 +504,18 @@ func setScriptDivision(scriptId, divisionId string, p *scriptsProxy) error {
 	if divisionId == "" {
 		return nil
 	}
-	// Set resource context for SDK debug logging
-	_ = provider.EnsureResourceContext(context.Background(), ResourceType)
-
-	apiClient := &p.scriptsApi.Configuration.APIClient
-	action := http.MethodPost
-	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/authorization/divisions/" + divisionId + "/objects/SCRIPT"
+	ctx := context.Background()
 	body := []string{scriptId}
-
-	headerParams := make(map[string]string)
-
-	for key := range p.scriptsApi.Configuration.DefaultHeader {
-		headerParams[key] = p.scriptsApi.Configuration.DefaultHeader[key]
+	resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodPost, "/api/v2/authorization/divisions/"+divisionId+"/objects/SCRIPT", body, nil)
+	if err != nil || (resp != nil && resp.StatusCode != http.StatusNoContent) {
+		statusCode := 0
+		errorMessage := ""
+		if resp != nil {
+			statusCode = resp.StatusCode
+			errorMessage = resp.ErrorMessage
+		}
+		return fmt.Errorf("failed to set divisionId script %s: status code %d due to %s", scriptId, statusCode, errorMessage)
 	}
-	headerParams["Authorization"] = "Bearer " + p.scriptsApi.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	response, err := apiClient.CallAPI(fullPath, action, body, headerParams, nil, nil, "", nil, "")
-
-	if err != nil || response.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to set divisionId script %s: status code %d due to %s", scriptId, response.StatusCode, response.ErrorMessage)
-	}
-
 	log.Printf("successfully set divisionId for script %s", scriptId)
 	return nil
 }

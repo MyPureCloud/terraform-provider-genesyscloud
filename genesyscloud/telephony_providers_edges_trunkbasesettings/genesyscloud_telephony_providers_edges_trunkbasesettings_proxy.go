@@ -2,12 +2,12 @@ package telephony_providers_edges_trunkbasesettings
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"net/http"
+	"fmt"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -26,6 +26,7 @@ type trunkbaseSettingProxy struct {
 	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 
+	customApiClient            *customapi.Client
 	getTrunkBaseSettingByIdAttr getTrunkBaseSettingByIdFunc
 	getAllTrunkBaseSettingsAttr getAllTrunkBaseSettingsFunc
 	createTrunkBaseSettingAttr  createTrunkBaseSettingFunc
@@ -40,6 +41,7 @@ func newTrunkBaseSettingProxy(clientConfig *platformclientv2.Configuration) *tru
 	return &trunkbaseSettingProxy{
 		clientConfig:                clientConfig,
 		edgesApi:                    edgesApi,
+		customApiClient:             customapi.NewClient(clientConfig, ResourceType),
 		getTrunkBaseSettingByIdAttr: getTrunkBaseSettingByIdFn,
 		createTrunkBaseSettingAttr:  createTrunkBaseSettingFn,
 		updateTrunkBaseSettingAttr:  updateTrunkBaseSettingFn,
@@ -136,52 +138,15 @@ func getAllTrunkBaseSettingsFn(ctx context.Context, p *trunkbaseSettingProxy, na
 // The SDK function is too cumbersome because of the various boolean query parameters.
 // This function was written in order to leave them out and make a single API call
 func getTelephonyProvidersEdgesTrunkbasesettings(p *trunkbaseSettingProxy, pageNumber int, pageSize int, name string) (*platformclientv2.Trunkbaseentitylisting, *platformclientv2.APIResponse, error) {
-	headerParams := make(map[string]string)
-	if p.clientConfig.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + p.clientConfig.AccessToken
+	qp := map[string]string{
+		"pageNumber": fmt.Sprintf("%d", pageNumber),
+		"pageSize":   fmt.Sprintf("%d", pageSize),
 	}
-	// add default headers if any
-	for key := range p.clientConfig.DefaultHeader {
-		headerParams[key] = p.clientConfig.DefaultHeader[key]
-	}
-
-	queryParams := make(map[string]string)
-	queryParams["pageNumber"] = p.clientConfig.APIClient.ParameterToString(pageNumber, "")
-	queryParams["pageSize"] = p.clientConfig.APIClient.ParameterToString(pageSize, "")
 	if name != "" {
-		queryParams["name"] = p.clientConfig.APIClient.ParameterToString(name, "")
+		qp["name"] = name
 	}
-
-	// to determine the Content-Type header
-	httpContentTypes := []string{"application/json"}
-
-	// set Content-Type header
-	httpContentType := p.clientConfig.APIClient.SelectHeaderContentType(httpContentTypes)
-	if httpContentType != "" {
-		headerParams["Content-Type"] = httpContentType
-	}
-
-	// set Accept header
-	httpHeaderAccept := p.clientConfig.APIClient.SelectHeaderAccept([]string{
-		"application/json",
-	})
-	if httpHeaderAccept != "" {
-		headerParams["Accept"] = httpHeaderAccept
-	}
-	var successPayload *platformclientv2.Trunkbaseentitylisting
-	path := p.clientConfig.BasePath + "/api/v2/telephony/providers/edges/trunkbasesettings"
-	response, err := p.clientConfig.APIClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal(response.RawBody, &successPayload)
-	}
-
-	return successPayload, response, err
+	queryParams := customapi.NewQueryParams(qp)
+	return customapi.Do[platformclientv2.Trunkbaseentitylisting](context.Background(), p.customApiClient, customapi.MethodGet, "/api/v2/telephony/providers/edges/trunkbasesettings", nil, queryParams)
 }
 
 func createTrunkBaseSettingFn(ctx context.Context, p *trunkbaseSettingProxy, trunkBaseSetting platformclientv2.Trunkbase) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {

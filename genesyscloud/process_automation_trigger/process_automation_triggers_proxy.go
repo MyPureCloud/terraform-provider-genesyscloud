@@ -3,11 +3,10 @@ package process_automation_trigger
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"net/http"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -17,158 +16,69 @@ import (
 )
 
 func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
-	apiClient := &api.Configuration.APIClient
-	jsonStr, err := pat.toJSONString()
+	body, err := pat.toJSONBody()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var jsonMap map[string]interface{}
-	json.Unmarshal([]byte(jsonStr), &jsonMap)
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/processAutomation/triggers"
-
-	// add default headers if any
-	headerParams := make(map[string]string)
-
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *ProcessAutomationTrigger
-	response, err := apiClient.CallAPI(path, http.MethodPost, jsonMap, headerParams, nil, nil, "", nil, "")
-
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	result, resp, err := customapi.Do[ProcessAutomationTrigger](context.Background(), c, customapi.MethodPost, "/api/v2/processAutomation/triggers", body, nil)
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-		log.Printf("Process automation trigger created with Id %s and correlationId: %s", *successPayload.Id, response.CorrelationID)
+		return nil, resp, err
 	}
-
-	return successPayload, response, err
+	log.Printf("Process automation trigger created with Id %s and correlationId: %s", *result.Id, resp.CorrelationID)
+	return result, resp, nil
 }
 
 func getProcessAutomationTrigger(triggerId string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/processAutomation/triggers/" + triggerId
-
-	headerParams := make(map[string]string)
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil, "")
-	if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-		return nil, nil, err
-	}
-
-	successPayload, err := NewProcessAutomationFromPayload(response)
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	rawBody, resp, err := customapi.DoRaw(context.Background(), c, customapi.MethodGet, "/api/v2/processAutomation/triggers/"+triggerId, nil, nil)
 	if err != nil {
-		return nil, response, err
+		return nil, resp, err
 	}
 
-	return successPayload, response, err
+	// Custom unmarshaling needed to preserve matchCriteria as raw JSON
+	apiResp := &platformclientv2.APIResponse{
+		RawBody:       rawBody,
+		StatusCode:    resp.StatusCode,
+		CorrelationID: resp.CorrelationID,
+		Response:      resp.Response,
+	}
+	result, err := NewProcessAutomationFromPayload(apiResp)
+	if err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 func putProcessAutomationTrigger(triggerId string, pat *ProcessAutomationTrigger, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
-	apiClient := &api.Configuration.APIClient
-	jsonStr, err := pat.toJSONString()
+	body, err := pat.toJSONBody()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var jsonMap map[string]interface{}
-	json.Unmarshal([]byte(jsonStr), &jsonMap)
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/processAutomation/triggers/" + triggerId
-	headerParams := make(map[string]string)
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *ProcessAutomationTrigger
-	response, err := apiClient.CallAPI(path, http.MethodPut, jsonMap, headerParams, nil, nil, "", nil, "")
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	result, resp, err := customapi.Do[ProcessAutomationTrigger](context.Background(), c, customapi.MethodPut, "/api/v2/processAutomation/triggers/"+triggerId, body, nil)
 	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-		log.Printf("Process automation trigger updated with Id %s and correlationId: %s", *successPayload.Id, response.CorrelationID)
+		return nil, resp, err
 	}
-	return successPayload, response, err
+	log.Printf("Process automation trigger updated with Id %s and correlationId: %s", *result.Id, resp.CorrelationID)
+	return result, resp, nil
 }
 
 func deleteProcessAutomationTrigger(triggerId string, api *platformclientv2.IntegrationsApi) (*platformclientv2.APIResponse, error) {
-	apiClient := &api.Configuration.APIClient
-
-	// create path and map variables
-	path := api.Configuration.BasePath + "/api/v2/processAutomation/triggers/" + triggerId
-
-	headerParams := make(map[string]string)
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	response, err := apiClient.CallAPI(path, http.MethodDelete, nil, headerParams, nil, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	}
-
-	return response, err
+	c := customapi.NewClient(api.Configuration, ResourceType)
+	return customapi.DoNoResponse(context.Background(), c, customapi.MethodDelete, "/api/v2/processAutomation/triggers/"+triggerId, nil, nil)
 }
 
 func getAllProcessAutomationTriggersResourceMap(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	integAPI := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 
-	// create path and map variables
-	path := integAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
+	relativePath := "/api/v2/processAutomation/triggers"
 
-	for pageNum := 1; ; pageNum++ {
-		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(ctx, path, integAPI)
+	for {
+		processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(ctx, clientConfig, relativePath)
 
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %v", getErr), resp)
@@ -186,8 +96,19 @@ func getAllProcessAutomationTriggersResourceMap(ctx context.Context, clientConfi
 			break
 		}
 
-		path = integAPI.Configuration.BasePath + *processAutomationTriggers.NextUri
+		relativePath = *processAutomationTriggers.NextUri
 	}
 
 	return resources, nil
+}
+
+// toJSONBody converts a ProcessAutomationTrigger to a map suitable for CallAPI's postBody.
+func (p *ProcessAutomationTrigger) toJSONBody() (map[string]interface{}, error) {
+	jsonStr, err := p.toJSONString()
+	if err != nil {
+		return nil, err
+	}
+	var jsonMap map[string]interface{}
+	err = json.Unmarshal([]byte(jsonStr), &jsonMap)
+	return jsonMap, err
 }

@@ -3,10 +3,8 @@ package guide
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
@@ -25,6 +23,7 @@ type getDeleteJobStatusByIdFunc func(ctx context.Context, p *guideProxy, id stri
 
 type guideProxy struct {
 	clientConfig               *platformclientv2.Configuration
+	customApiClient            *customapi.Client
 	getAllGuidesAttr           getAllGuidesFunc
 	createGuideAttr            createGuideFunc
 	getGuideByIdAttr           getGuideByIdFunc
@@ -38,6 +37,7 @@ func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
 	guideCache := rc.NewResourceCache[Guide]()
 	return &guideProxy{
 		clientConfig:               clientConfig,
+		customApiClient:            customapi.NewClient(clientConfig, ResourceType),
 		getAllGuidesAttr:           getAllGuidesFn,
 		createGuideAttr:            createGuideFn,
 		getGuideByIdAttr:           getGuideByIdFn,
@@ -83,92 +83,51 @@ func getAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guide, 
 }
 
 func sdkGetAllGuidesFn(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	client := &http.Client{}
-	action := http.MethodGet
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
 	var allGuides []Guide
-
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing URL: %v", err)
-	}
-
-	q := u.Query()
+	queryParams := customapi.NewQueryParams(map[string]string{"pageSize": "100", "pageNumber": "1"})
 	if name != "" {
-		q.Add("name", name)
-	}
-	q.Add("pageSize", "100")
-	q.Add("pageNumber", "1")
-
-	u.RawQuery = q.Encode()
-
-	req, err := createHTTPRequest(ctx, action, u.String(), nil, p)
-	if err != nil {
-		return nil, nil, err
+		queryParams.Set("name", name)
 	}
 
-	body, resp, err := callAPI(ctx, client, req)
+	guides, resp, err := customapi.Do[GuideEntityListing](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/guides", nil, queryParams)
 	if err != nil {
 		return nil, resp, err
 	}
-
-	var guides GuideEntityListing
-	if err := unmarshalResponse(body, &guides); err != nil {
-		return nil, resp, err
-	}
-
 	if guides.Entities == nil {
 		return &allGuides, resp, nil
 	}
-
 	allGuides = append(allGuides, *guides.Entities...)
 
 	for pageNum := 2; pageNum <= *guides.PageCount; pageNum++ {
-		q.Set("pageNumber", fmt.Sprintf("%v", pageNum))
-		req.URL.RawQuery = q.Encode()
-
-		body, resp, err = callAPI(ctx, client, req)
+		queryParams.Set("pageNumber", fmt.Sprintf("%v", pageNum))
+		pageGuides, resp, err := customapi.Do[GuideEntityListing](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/guides", nil, queryParams)
 		if err != nil {
 			return nil, resp, err
 		}
-
-		var respBody GuideEntityListing
-		if err := unmarshalResponse(body, &respBody); err != nil {
-			return nil, resp, err
-		}
-
-		if respBody.Entities != nil {
-			allGuides = append(allGuides, *respBody.Entities...)
+		if pageGuides.Entities != nil {
+			allGuides = append(allGuides, *pageGuides.Entities...)
 		}
 	}
 
 	for _, guide := range allGuides {
 		rc.SetCache(p.guideCache, *guide.Id, guide)
 	}
-
 	return &allGuides, resp, nil
 }
 
 func createGuideFn(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides"
-	return makeAPIRequest[Guide](ctx, http.MethodPost, baseURL, guide, p)
+	return customapi.Do[Guide](ctx, p.customApiClient, customapi.MethodPost, "/api/v2/guides", guide, nil)
 }
 
 func getGuideByIdFn(ctx context.Context, p *guideProxy, id string) (*Guide, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
 	if guide := rc.GetCacheItem(p.guideCache, id); guide != nil {
 		return guide, nil, nil
 	}
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id
-	return makeAPIRequest[Guide](ctx, http.MethodGet, baseURL, nil, p)
+	return customapi.Do[Guide](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/guides/"+id, nil, nil)
 }
 
 func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
@@ -197,11 +156,8 @@ func getGuideByNameFn(ctx context.Context, p *guideProxy, name string) (string, 
 }
 
 func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + id + "/jobs"
-	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodDelete, baseURL, nil, p)
+	jobResponse, resp, err := customapi.Do[DeleteObjectJob](ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/guides/"+id+"/jobs", nil, nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -210,79 +166,14 @@ func deleteGuideFn(ctx context.Context, p *guideProxy, id string) (*DeleteObject
 }
 
 func getDeleteJobStatusByIdFn(ctx context.Context, p *guideProxy, jobId string, guideId string) (*DeleteObjectJob, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	baseURL := p.clientConfig.BasePath + "/api/v2/guides/" + guideId + "/jobs/" + jobId
-	jobResponse, resp, err := makeAPIRequest[DeleteObjectJob](ctx, http.MethodGet, baseURL, nil, p)
+	jobResponse, resp, err := customapi.Do[DeleteObjectJob](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/guides/"+guideId+"/jobs/"+jobId, nil, nil)
 	if err != nil {
 		return nil, resp, err
 	}
 	jobResponse.GuideId = guideId
-
 	if jobResponse.Status == "Succeeded" {
 		rc.DeleteCacheItem(p.guideCache, guideId)
 	}
-
 	return jobResponse, resp, nil
-}
-
-// makeAPIRequest performs a complete API request for any of the guide endpoints
-func makeAPIRequest[T any](ctx context.Context, method, url string, requestBody interface{}, p *guideProxy) (*T, *platformclientv2.APIResponse, error) {
-	var req *http.Request
-	var err error
-
-	// Set resource context for SDK debug logging before creating HTTP request
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	if requestBody != nil {
-		req, err = marshalAndCreateRequest(ctx, method, url, requestBody, p)
-	} else {
-		req, err = createHTTPRequest(ctx, method, url, nil, p)
-	}
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	client := &http.Client{}
-	respBody, resp, err := callAPI(ctx, client, req)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	var result T
-	if err := unmarshalResponse(respBody, &result); err != nil {
-		return nil, resp, err
-	}
-
-	return &result, resp, nil
-}
-
-// callAPI is a helper function which will be removed when the endpoints are public
-func callAPI(ctx context.Context, client *http.Client, req *http.Request) ([]byte, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	req = req.WithContext(ctx)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error making request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading response: %v", err)
-	}
-
-	response := &platformclientv2.APIResponse{
-		StatusCode: resp.StatusCode,
-		Response:   resp,
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, response, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	return respBody, response, nil
 }

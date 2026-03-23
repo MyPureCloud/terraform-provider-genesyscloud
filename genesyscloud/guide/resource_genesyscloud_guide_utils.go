@@ -1,14 +1,11 @@
 package guide
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"net/url"
+
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -25,72 +22,16 @@ func GenerateGuideResource(resourceID string, name string) string {
 // Achieved by a GET request to the guides endpoint, checking if the status code is 5xx
 func GuideFtIsEnabled() bool {
 	clientConfig := platformclientv2.GetDefaultConfiguration()
-	client := &http.Client{}
-	baseURL := clientConfig.BasePath + "/api/v2/guides"
-
-	u, err := url.Parse(baseURL)
+	c := customapi.NewClient(clientConfig, ResourceType)
+	_, resp, err := customapi.DoRaw(context.Background(), c, customapi.MethodGet, "/api/v2/guides", nil, nil)
 	if err != nil {
-		log.Printf("Error parsing URL: %v", err)
+		if resp != nil && resp.StatusCode < 500 {
+			return true
+		}
+		log.Printf("Error checking guide feature toggle: %v", err)
 		return false
 	}
-
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
-	if err != nil {
-		log.Printf("Error creating request: %v", err)
-		return false
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Bearer "+clientConfig.AccessToken)
-
-	ctx := context.Background()
-	resp, err := client.Do(req.WithContext(ctx))
-	if err != nil {
-		log.Printf("Error sending request: %v", err)
-		return false
-	}
-
-	defer resp.Body.Close()
-
-	return resp.StatusCode < 500
-}
-
-// setRequestHeader sets the request header for the guide proxy
-func setRequestHeader(r *http.Request, p *guideProxy) *http.Request {
-	r.Header.Set("Content-Type", "application/json")
-	r.Header.Set("Accept", "application/json")
-	r.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
-	return r
-}
-
-// createHTTPRequest creates a new HTTP request with proper headers
-func createHTTPRequest(ctx context.Context, method, url string, body io.Reader, p *guideProxy) (*http.Request, error) {
-	// Set resource context for SDK debug logging before creating HTTP request
-
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
-	}
-	req = setRequestHeader(req, p)
-	return req, nil
-}
-
-// marshalAndCreateRequest marshals a body to JSON and creates an HTTP request
-func marshalAndCreateRequest(ctx context.Context, method, url string, body interface{}, p *guideProxy) (*http.Request, error) {
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling request body: %v", err)
-	}
-	return createHTTPRequest(ctx, method, url, bytes.NewBuffer(jsonBody), p)
-}
-
-// unmarshalResponse unmarshals a JSON response into the target struct
-func unmarshalResponse(respBody []byte, target interface{}) error {
-	if err := json.Unmarshal(respBody, target); err != nil {
-		return fmt.Errorf("error unmarshaling response: %v", err)
-	}
-	return nil
+	return true
 }
 
 // Structs
