@@ -55,4 +55,3 @@ resource "genesyscloud_conversations_settings" "example" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
