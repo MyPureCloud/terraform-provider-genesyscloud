@@ -1,13 +1,89 @@
 package outbound_contact_list_template
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
+
+func normalizeOutboundContactListTemplateTimeColumnFields(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	// Normalize plan-time values so the deprecated `*_time_column` and new `*_time_column_name`
+	// attributes don't cause TypeSet element mismatches/diffs during migration.
+	if v := diff.Get("phone_columns"); v != nil {
+		if s, ok := v.(*schema.Set); ok && s.Len() > 0 {
+			newSet := schema.NewSet(hashOutboundContactListTemplatePhoneColumn, []interface{}{})
+			for _, item := range s.List() {
+				m, ok := item.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if newName, _ := m["callable_time_column_name"].(string); newName == "" {
+					if oldName, _ := m["callable_time_column"].(string); oldName != "" {
+						m["callable_time_column_name"] = oldName
+					}
+				}
+				newSet.Add(m)
+			}
+			_ = diff.SetNew("phone_columns", newSet)
+		}
+	}
+
+	if v := diff.Get("email_columns"); v != nil {
+		if s, ok := v.(*schema.Set); ok && s.Len() > 0 {
+			newSet := schema.NewSet(hashOutboundContactListTemplateEmailColumn, []interface{}{})
+			for _, item := range s.List() {
+				m, ok := item.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if newName, _ := m["contactable_time_column_name"].(string); newName == "" {
+					if oldName, _ := m["contactable_time_column"].(string); oldName != "" {
+						m["contactable_time_column_name"] = oldName
+					}
+				}
+				newSet.Add(m)
+			}
+			_ = diff.SetNew("email_columns", newSet)
+		}
+	}
+
+	return nil
+}
+
+func hashOutboundContactListTemplatePhoneColumn(v interface{}) int {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return 0
+	}
+	columnName, _ := m["column_name"].(string)
+	colType, _ := m["type"].(string)
+	timeColName, _ := m["callable_time_column_name"].(string)
+	if timeColName == "" {
+		timeColName, _ = m["callable_time_column"].(string)
+	}
+	return schema.HashString(fmt.Sprintf("%s|%s|%s", columnName, colType, timeColName))
+}
+
+func hashOutboundContactListTemplateEmailColumn(v interface{}) int {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return 0
+	}
+	columnName, _ := m["column_name"].(string)
+	colType, _ := m["type"].(string)
+	timeColName, _ := m["contactable_time_column_name"].(string)
+	if timeColName == "" {
+		timeColName, _ = m["contactable_time_column"].(string)
+	}
+	return schema.HashString(fmt.Sprintf("%s|%s|%s", columnName, colType, timeColName))
+}
 
 /*
 resource_genesycloud_outbound_contact_list_template_schema.go holds three functions within it:
@@ -32,8 +108,23 @@ var (
 			},
 			`callable_time_column`: {
 				Description: `A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.`,
+				Deprecated:  "Use `callable_time_column_name` instead.",
 				Optional:    true,
 				Type:        schema.TypeString,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// When automatic timezone mapping is enabled, the API may drop callable time columns.
+					// Suppress diffs to prevent perpetual drift.
+					return d.Get("automatic_time_zone_mapping").(bool)
+				},
+			},
+			`callable_time_column_name`: {
+				Description: `A column name that indicates the timezone to use for a given contact when checking callable times.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return d.Get("automatic_time_zone_mapping").(bool)
+				},
 			},
 		},
 	}
@@ -52,7 +143,14 @@ var (
 			},
 			`contactable_time_column`: {
 				Description: `A column that indicates the timezone to use for a given contact when checking contactable times.`,
+				Deprecated:  "Use `contactable_time_column_name` instead.",
 				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`contactable_time_column_name`: {
+				Description: `A column name that indicates the timezone to use for a given contact when checking contactable times.`,
+				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -99,10 +197,18 @@ func ResourceOutboundContactListTemplate() *schema.Resource {
 		ReadContext:   provider.ReadWithPooledClient(readOutboundContactListTemplate),
 		UpdateContext: provider.UpdateWithPooledClient(updateOutboundContactListTemplate),
 		DeleteContext: provider.DeleteWithPooledClient(deleteOutboundContactListTemplate),
+		CustomizeDiff: customdiff.Sequence(normalizeOutboundContactListTemplateTimeColumnFields),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Version: 1,
+				Type:    resourceOutboundContactListTemplateV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: stateUpgraderOutboundContactListTemplateV1ToV2,
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name for the contact list template.`,
@@ -121,6 +227,7 @@ func ResourceOutboundContactListTemplate() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
+				Set:         hashOutboundContactListTemplatePhoneColumn,
 				Elem:        outboundContactListTemplateContactPhoneNumberColumnResource,
 			},
 			`email_columns`: {
@@ -128,6 +235,7 @@ func ResourceOutboundContactListTemplate() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
+				Set:         hashOutboundContactListTemplateEmailColumn,
 				Elem:        outboundContactListTemplateEmailColumnResource,
 			},
 			`preview_mode_column_name`: {
@@ -191,4 +299,129 @@ func DataSourceOutboundContactListTemplate() *schema.Resource {
 			},
 		},
 	}
+}
+
+func resourceOutboundContactListTemplateV1() *schema.Resource {
+	outboundContactListTemplateContactPhoneNumberColumnResourceV1 := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`column_name`: {
+				Required: true,
+				Type:     schema.TypeString,
+			},
+			`type`: {
+				Required: true,
+				Type:     schema.TypeString,
+			},
+			`callable_time_column`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+		},
+	}
+
+	outboundContactListTemplateEmailColumnResourceV1 := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`column_name`: {
+				Required: true,
+				Type:     schema.TypeString,
+			},
+			`type`: {
+				Required: true,
+				Type:     schema.TypeString,
+			},
+			`contactable_time_column`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+		},
+	}
+
+	return &schema.Resource{
+		SchemaVersion: 1,
+		Schema: map[string]*schema.Schema{
+			`name`: {
+				Required: true,
+				Type:     schema.TypeString,
+			},
+			`column_names`: {
+				Required: true,
+				ForceNew: true,
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			`phone_columns`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeSet,
+				Elem:     outboundContactListTemplateContactPhoneNumberColumnResourceV1,
+			},
+			`email_columns`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeSet,
+				Elem:     outboundContactListTemplateEmailColumnResourceV1,
+			},
+			`preview_mode_column_name`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+			`preview_mode_accepted_values`: {
+				Optional: true,
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			`attempt_limit_id`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+			`automatic_time_zone_mapping`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeBool,
+			},
+			`zip_code_column_name`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeString,
+			},
+			`column_data_type_specifications`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeList,
+				Elem:     outboundContactListTemplateColumnDataTypeSpecification,
+			},
+		},
+	}
+}
+
+func stateUpgraderOutboundContactListTemplateV1ToV2(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	migrateSet := func(v interface{}, legacyKey, nameKey string) {
+		list, ok := v.([]interface{})
+		if !ok {
+			return
+		}
+		for _, item := range list {
+			m, ok := item.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			legacy, _ := m[legacyKey].(string)
+			name, _ := m[nameKey].(string)
+			if name == "" && legacy != "" {
+				m[nameKey] = legacy
+			}
+			if legacy == "" && name != "" {
+				m[legacyKey] = name
+			}
+		}
+	}
+
+	if v, ok := rawState["phone_columns"]; ok {
+		migrateSet(v, "callable_time_column", "callable_time_column_name")
+	}
+	if v, ok := rawState["email_columns"]; ok {
+		migrateSet(v, "contactable_time_column", "contactable_time_column_name")
+	}
+
+	return rawState, nil
 }
