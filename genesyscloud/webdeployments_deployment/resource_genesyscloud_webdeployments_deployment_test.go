@@ -251,6 +251,9 @@ func TestAccResourceWebDeploymentsDeployment_Snippet(t *testing.T) {
 	})
 }
 
+// Note: An acceptance test for push_integrations is intentionally omitted. Configuring APNS or FCM push
+// integrations in a test org requires embedding platform-specific private keys (e.g., Apple APNs certificates,
+// Firebase service account credentials) directly in test code, which violates security best practices.
 func deploymentResourceWithSupportedContent(deploymentName, scLabel, scName string) string {
 	minimalConfigName := "Minimal Config " + uuid.NewString()
 	return fmt.Sprintf(`
