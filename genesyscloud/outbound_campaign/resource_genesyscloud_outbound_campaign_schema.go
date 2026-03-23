@@ -317,7 +317,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"report_low_max_calls_per_agent_alert": {
-							Description: "Enables the campaign health alert triggered when Max Calls Per Agent is lower than the value in Outbound Settings.",
+							Description: "Enables or disables the campaign health alert when Max Calls Per Agent is set below the value in Outbound Settings.",
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     true,

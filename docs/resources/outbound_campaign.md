@@ -61,7 +61,7 @@ resource "genesyscloud_outbound_campaign" "power_campaign" {
   caller_address                = "+15559876543"
   outbound_line_count           = 5
   abandon_rate                  = 5.0
-  max_calls_per_agent           = 2.0
+  max_calls_per_agent           = 2
   campaign_status               = "off"
   contact_list_id               = genesyscloud_outbound_contact_list.contact_list.id
   queue_id                      = genesyscloud_routing_queue.queue.id
@@ -165,7 +165,7 @@ Optional:
 
 Optional:
 
-- `report_low_max_calls_per_agent_alert` (Boolean) Enables or disables campaign Health Alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to `true`.
+- `report_low_max_calls_per_agent_alert` (Boolean) Enables or disables the campaign health alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to `true`.
 
 
 <a id="nestedblock--dynamic_contact_queueing_settings"></a>
