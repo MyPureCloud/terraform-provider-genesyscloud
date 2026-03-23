@@ -41,7 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -221,9 +221,11 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
-	// Set max concurrent operations based on provider configuration if available
-	if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
-		gre.maxConcurrentOps = providerMeta.MaxClients
+	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
+	if gre.maxConcurrentOps <= 0 {
+		if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
+			gre.maxConcurrentOps = providerMeta.MaxClients
+		}
 	}
 
 	err := gre.setUpExportDirPath()
@@ -1091,8 +1093,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
+		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
+		// Data source flows are just referenced and not managed, so we don't need their dependencies
+		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+			skippedCount++
+			continue
+		}
+
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
-		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(g.ctx, retrieveDependentConsumers(resourceKeys))
 
 		// Thread-safe write of flowResourcesList
 		g.flowResourcesListMutex.Lock()
@@ -2253,6 +2263,19 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
+			// Dynamic ref type resolution for custom attribute resolvers
+			if refSettings == nil {
+				if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+					if resolveRefTypeFunc := refAttrCustomResolver.ResolveRefTypeFunc; resolveRefTypeFunc != nil {
+						if refType, err := resolveRefTypeFunc(configMap); err != nil {
+							tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a ref type resolver for attribute %s: %v", fullAttributePath, err))
+						} else if refType != "" {
+							refSettings = &resourceExporter.RefAttrSettings{RefType: refType}
+						}
+					}
+				}
+			}
+
 			if refSettings != nil {
 				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
@@ -2602,12 +2625,7 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		g.buildSecondDeps[refSettings.RefType] = []string{refID}
 	}
 
-	if exportingState {
-		// Don't remove unmatched IDs when exporting state. This will keep existing config in an org
-		return refID
-	}
-	// No match found. Remove the value from the config since we do not have a reference to use
-	return ""
+	return refID
 }
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {

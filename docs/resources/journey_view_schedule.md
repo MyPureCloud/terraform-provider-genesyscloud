@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/journey/views/{viewId}/schedules](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-journey-views--viewId--schedules)
 * [DELETE /api/v2/journey/views/{viewId}/schedules](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-views--viewId--schedules)
 * [GET /api/v2/journey/views/schedules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-views-schedules)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:viewsSchedule:add`
+* `journey:viewsSchedule:delete`
+* `journey:viewsSchedule:edit`
+* `journey:viewsSchedule:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

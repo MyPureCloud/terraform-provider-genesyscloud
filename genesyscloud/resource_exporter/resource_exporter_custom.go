@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -68,45 +68,32 @@ func isValidGuid(id string) bool {
 	return matched
 }
 
-/*
-MemberGroupsResolver
-The resource_genesyscloud_routing_queue object has the concept of bullseye ring with a member_groups attribute.
-The routing team has overloaded the meaning of the member_groups so you can id and then define what "type" of id this is.
-This causes problems with the exporter because our export process expects id to map to a specific resource.
+// MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.
+// This allows the exporter to use the standard reference resolution pipeline (including data source replacement).
+//
+// Note: This should be used as a ResolveRefTypeFunc. Avoid hard-setting member_group_id to a reference string in a ResolverFunc,
+// because that can bypass or overwrite the standard reference resolution behavior.
+func MemberGroupsResolver(configMap map[string]interface{}) (string, error) {
+	memberGroupTypeRaw, ok := configMap["member_group_type"]
+	if !ok {
+		return "", fmt.Errorf("member_group_type is missing from the config map")
+	}
 
-This customer custom router will look at the member_group_type and resolve whether it is SKILLGROUP, GROUP type.  It will then
-find the appropriate resource out of the exporters and build a reference appropriately.
-*/
-func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, _ string) error {
-	var (
-		resourceType    string
-		memberGroupType = configMap["member_group_type"].(string)
-		memberGroupID   = configMap["member_group_id"].(string)
-	)
+	memberGroupType, ok := memberGroupTypeRaw.(string)
+	if !ok {
+		return "", fmt.Errorf("member_group_type is not a string")
+	}
 
 	switch memberGroupType {
 	case "SKILLGROUP":
-		resourceType = "genesyscloud_routing_skill_group"
+		return "genesyscloud_routing_skill_group", nil
 	case "GROUP":
-		resourceType = "genesyscloud_group"
+		return "genesyscloud_group", nil
 	case "TEAM":
-		resourceType = "genesyscloud_team"
+		return "genesyscloud_team", nil
 	default:
-		return fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
+		return "", fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
 	}
-
-	if exporter, ok := exporters[resourceType]; ok {
-		memberGroupExport, ok := exporter.SanitizedResourceMap[memberGroupID]
-		if !ok || memberGroupExport == nil {
-			return fmt.Errorf("could not resolve member group %s to a resource of type %s", memberGroupID, resourceType)
-		}
-		exportId := memberGroupExport.BlockLabel
-		configMap["member_group_id"] = fmt.Sprintf("${%s.%s.id}", resourceType, exportId)
-	} else {
-		return fmt.Errorf("unable to locate %s in the exporters array. Unable to resolve the ID for the member group resource", resourceType)
-	}
-
-	return nil
 }
 
 /*
@@ -242,7 +229,10 @@ func KnowledgeDocumentLabelNamesResolver(configMap map[string]interface{}, expor
 		}
 
 		for _, labelResource := range exporter.SanitizedResourceMap {
-			if strings.HasSuffix(labelResource.BlockLabel, "_"+name) {
+
+			// OriginalLabel preserves the original format (with spaces) which matches the labelName format
+			// whereas BlockLabel is sanitized
+			if strings.HasSuffix(labelResource.OriginalLabel, "_"+name) {
 				resolvedNames = append(resolvedNames, fmt.Sprintf("${genesyscloud_knowledge_label.%s.knowledge_label[0].name}", labelResource.BlockLabel))
 				break
 			}

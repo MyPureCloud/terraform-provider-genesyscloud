@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-worktypes--worktypeId-)
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-worktypes--worktypeId-)
 * [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-worktypes-query)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:worktype:add`
+* `workitems:worktype:delete`
+* `workitems:worktype:edit`
+* `workitems:worktype:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 

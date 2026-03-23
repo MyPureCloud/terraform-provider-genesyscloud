@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/outbound/rulesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-rulesets)
 * [DELETE /api/v2/outbound/rulesets/{ruleSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-rulesets--ruleSetId-)
 * [PUT /api/v2/outbound/rulesets/{ruleSetId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-rulesets--ruleSetId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:ruleSet:add`
+* `outbound:ruleSet:delete`
+* `outbound:ruleSet:edit`
+* `outbound:ruleSet:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

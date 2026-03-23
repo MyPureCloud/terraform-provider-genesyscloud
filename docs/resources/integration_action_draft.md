@@ -17,6 +17,21 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/integrations/actions/{actionId}/draft/templates/{fileName}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft-templates--fileName-)
 * [PATCH /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-integrations-actions--actionId--draft)
 * [DELETE /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-integrations-actions--actionId--draft)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `bridge:actions:view`
+* `integrations:action:add`
+* `integrations:action:delete`
+* `integrations:action:edit`
+* `integrations:action:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `integrations`
+* `integrations:readonly`
+
 
 ## Example Usage
 

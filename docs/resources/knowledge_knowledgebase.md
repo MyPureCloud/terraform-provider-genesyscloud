@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/knowledge/knowledgebases](https://developer.mypurecloud.com/api/rest/v2/knowledge/#get-api-v2-knowledge-knowledgebases)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `knowledge:knowledgebase:add`
+* `knowledge:knowledgebase:delete`
+* `knowledge:knowledgebase:edit`
+* `knowledge:knowledgebase:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `knowledge`
+* `knowledge:readonly`
+
 
 ## Example Usage
 

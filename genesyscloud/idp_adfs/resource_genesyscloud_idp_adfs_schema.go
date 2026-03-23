@@ -1,5 +1,10 @@
 package idp_adfs
 
+// @team: GC IAM (Auth/Donut)
+// @chat: #gc-iam-auth-donut
+// @jira: IAM
+// @description: Manages Single Sign-On (SSO) identity provider integrations for Genesys Cloud. Configures SAML-based authentication with external identity providers to enable federated login.
+
 import (
 	"time"
 

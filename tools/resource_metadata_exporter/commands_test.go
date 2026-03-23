@@ -24,6 +24,8 @@ func TestDiscoverCommand(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -80,6 +82,8 @@ func TestExportCommand_Markdown(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -101,7 +105,7 @@ func ResourceTest() *schema.Resource {
 	os.Stdout = w
 
 	// Run export command
-	exportCmd.SetArgs([]string{"--format", "markdown"})
+	exportCmd.SetArgs([]string{"--format", "markdown", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stdout
@@ -117,16 +121,15 @@ func ResourceTest() *schema.Resource {
 		t.Errorf("Export command failed: %v", err)
 	}
 
-	// Check markdown output
-	if !strings.Contains(output, "# Genesys Cloud Terraform Provider - Resource Metadata") {
+	if !strings.Contains(output, "# CX as Code - Resource Support Directory") {
 		t.Error("Expected markdown header")
 	}
 
-	if !strings.Contains(output, "| Resource Type | Package | Team | Chat Room | Description |") {
+	if !strings.Contains(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |") {
 		t.Error("Expected markdown table header")
 	}
 
-	if !strings.Contains(output, "genesyscloud_test") {
+	if !strings.Contains(output, `genesyscloud\_test`) {
 		t.Error("Expected resource type in output")
 	}
 }
@@ -145,6 +148,8 @@ func TestExportCommand_JSON(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -166,7 +171,7 @@ func ResourceTest() *schema.Resource {
 	os.Stdout = w
 
 	// Run export command
-	exportCmd.SetArgs([]string{"--format", "json"})
+	exportCmd.SetArgs([]string{"--format", "json", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stdout
@@ -212,6 +217,8 @@ func TestExportCommand_CSV(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -233,7 +240,7 @@ func ResourceTest() *schema.Resource {
 	os.Stdout = w
 
 	// Run export command
-	exportCmd.SetArgs([]string{"--format", "csv"})
+	exportCmd.SetArgs([]string{"--format", "csv", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stdout
@@ -256,7 +263,7 @@ func ResourceTest() *schema.Resource {
 	}
 
 	// Check header
-	if !strings.Contains(lines[0], "Resource Type,Package,Team,Chat Room,Description") {
+	if !strings.Contains(lines[0], "Resource Type,Package,Team,Chat Room,Product Manager,Jira Project,Description") {
 		t.Error("Expected CSV header")
 	}
 
@@ -280,6 +287,8 @@ func TestExportCommand_InvalidFormat(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -301,7 +310,7 @@ func ResourceTest() *schema.Resource {
 	os.Stderr = w
 
 	// Run export command with invalid format
-	exportCmd.SetArgs([]string{"--format", "invalid"})
+	exportCmd.SetArgs([]string{"--format", "invalid", "--path", testDataDir})
 	err := exportCmd.Execute()
 
 	// Restore stderr
@@ -336,6 +345,8 @@ func TestValidateCommand(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -471,11 +482,13 @@ func TestTemplateCommand_MissingRequiredFlags(t *testing.T) {
 func TestExportFunctions(t *testing.T) {
 	metadata := []ResourceMetadata{
 		{
-			ResourceType: "genesyscloud_test",
-			PackageName:  "test_package",
-			TeamName:     "Test Team",
-			TeamChatRoom: "#test-team",
-			Description:  "Test resource",
+			ResourceType:   "genesyscloud_test",
+			PackageName:    "test_package",
+			TeamName:       "Test Team",
+			TeamChatRoom:   "#test-team",
+			Description:    "Test resource",
+			ProductManager: "Test PM",
+			JiraProject:    "TESTPROJECT",
 		},
 	}
 
@@ -487,11 +500,11 @@ func TestExportFunctions(t *testing.T) {
 	}
 
 	output := buf.String()
-	if !strings.Contains(output, "# Genesys Cloud Terraform Provider - Resource Metadata") {
+	if !strings.Contains(output, "# CX as Code - Resource Support Directory") {
 		t.Error("Expected markdown header")
 	}
 
-	if !strings.Contains(output, "genesyscloud_test") {
+	if !strings.Contains(output, `genesyscloud\_test`) {
 		t.Error("Expected resource type in markdown")
 	}
 
@@ -519,7 +532,7 @@ func TestExportFunctions(t *testing.T) {
 	}
 
 	output = buf.String()
-	if !strings.Contains(output, "Resource Type,Package,Team,Chat Room,Description") {
+	if !strings.Contains(output, "Resource Type,Package,Team,Chat Room,Product Manager,Jira Project,Description") {
 		t.Error("Expected CSV header")
 	}
 

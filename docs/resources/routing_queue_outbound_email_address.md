@@ -13,6 +13,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 * [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId-)
 * [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-queues--queueId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:queue:edit`
+* `routing:queue:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 

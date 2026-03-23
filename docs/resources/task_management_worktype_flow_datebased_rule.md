@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:flowRuleDateBased:add`
+* `workitems:flowRuleDateBased:delete`
+* `workitems:flowRuleDateBased:edit`
+* `workitems:flowRuleDateBased:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 

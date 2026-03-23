@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -79,6 +79,9 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Creating integration action %s", name)
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	actionContract, diagErr := BuildSdkActionContract(d)
 	if diagErr != nil {
 		return diagErr
@@ -111,6 +114,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 func containsFunctionDataAction(s string) bool {
 	normalized := strings.ToLower(s)
 	normalized = strings.ReplaceAll(normalized, "_", " ")
+	normalized = strings.ReplaceAll(normalized, "-", " ")
 	return strings.Contains(normalized, "function data action")
 }
 
@@ -242,7 +246,10 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("DEBUG: Updating Published draft with version: %d", version)
 		resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
+			if resp != nil {
+				log.Printf("DEBUG: Publish failed with status %d", resp.StatusCode)
+			}
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
 		}
 		return resp, nil
 	})
@@ -388,7 +395,10 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("DEBUG: Publishing draft with version: %d", version)
 		resp, err := iap.publishIntegrationActionDraft(ctx, id, version)
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
+			if resp != nil {
+				log.Printf("DEBUG: Publish failed with status %d", resp.StatusCode)
+			}
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish integration action %s error: %s", name, err), resp)
 		}
 		log.Printf("DEBUG: resp is not null and err is null...")
 		return resp, nil
@@ -425,6 +435,9 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 	iap := getIntegrationActionsProxy(sdkConfig)
 
 	log.Printf("Reading integration action function %s", d.Id())
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		var action *platformclientv2.Action
@@ -533,6 +546,9 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading integration action %s", d.Id())
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, err := iap.getIntegrationActionById(ctx, d.Id())
 		if err != nil {
@@ -639,6 +655,9 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 
 	log.Printf("Updating integration action %s", name)
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
 		action, resp, err := iap.getIntegrationActionById(ctx, id)
@@ -686,6 +705,9 @@ func deleteIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Integration action %s error: %s", d.Id(), err), resp)
 	}
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		_, resp, err := iap.getIntegrationActionById(ctx, d.Id())

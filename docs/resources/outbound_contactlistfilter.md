@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/outbound/contactlistfilters/{contactListFilterId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlistfilters--contactListFilterId-)
 * [PUT /api/v2/outbound/contactlistfilters/{contactListFilterId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlistfilters--contactListFilterId-)
 * [DELETE /api/v2/outbound/contactlistfilters/{contactListFilterId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlistfilters--contactListFilterId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:contactListFilter:add`
+* `outbound:contactListFilter:delete`
+* `outbound:contactListFilter:edit`
+* `outbound:contactListFilter:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

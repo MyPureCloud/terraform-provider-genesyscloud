@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/flows/datatables/{datatableId}](https://developer.mypurecloud.com/api/rest/v2/architect/#get-api-v2-flows-datatables--datatableId-)
 * [PUT /api/v2/flows/datatables/{datatableId}](https://developer.mypurecloud.com/api/rest/v2/architect/#put-api-v2-flows-datatables--datatableId-)
 * [DELETE /api/v2/flows/datatables/{datatableId}](https://developer.mypurecloud.com/api/rest/v2/architect/#delete-api-v2-flows-datatables--datatableId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `architect:datatable:add`
+* `architect:datatable:delete`
+* `architect:datatable:edit`
+* `architect:datatable:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

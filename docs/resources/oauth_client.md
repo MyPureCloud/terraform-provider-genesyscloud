@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#post-api-v2-oauth-clients)
 * [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#put-api-v2-oauth-clients--clientId-)
 * [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#delete-api-v2-oauth-clients--clientId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `oauth:client:add`
+* `oauth:client:delete`
+* `oauth:client:edit`
+* `oauth:client:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `oauth`
+* `oauth:readonly`
+
 
 ## Example Usage
 

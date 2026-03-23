@@ -16,6 +16,28 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-messagingcampaigns)
 * [DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-messagingcampaigns--messagingCampaignId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:emailCampaign:add`
+* `outbound:emailCampaign:delete`
+* `outbound:emailCampaign:edit`
+* `outbound:emailCampaign:view`
+* `outbound:messagingCampaign:add`
+* `outbound:messagingCampaign:delete`
+* `outbound:messagingCampaign:edit`
+* `outbound:messagingCampaign:view`
+* `outbound:whatsAppCampaign:add`
+* `outbound:whatsAppCampaign:delete`
+* `outbound:whatsAppCampaign:edit`
+* `outbound:whatsAppCampaign:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

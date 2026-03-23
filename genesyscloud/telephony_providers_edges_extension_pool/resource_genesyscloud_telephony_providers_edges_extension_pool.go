@@ -1,5 +1,9 @@
 package telephony_providers_edges_extension_pool
 
+// @team: Genesys Cloud Media
+// @chat: #media-infrastructure-team
+// @description: Telephony infrastructure and configuration management for Genesys Cloud Edge devices. Manages sites, phones, trunks, DIDs, and base settings for voice connectivity and call routing.
+
 import (
 	"context"
 	"fmt"
@@ -18,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -133,11 +137,20 @@ func deleteExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 	startNumber := d.Get("start_number").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	extensionPoolProxy := getExtensionPoolProxy(sdkConfig)
-	log.Printf("Deleting Extension pool with starting number %s", startNumber)
 
-	if resp, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id()); err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete extension pool %s error: %s", startNumber, err), resp)
+	// DEVTOOLING-1592: deletion can conflict (409) while extensions still reference the pool.
+	diagErr := util.RetryWhen(util.IsStatus409, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		log.Printf("Deleting Extension pool with starting number %s", startNumber)
+		resp, err := extensionPoolProxy.deleteExtensionPool(ctx, d.Id())
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete extension pool %s error: %s", startNumber, err), resp)
+		}
+		return resp, nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
+
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		extensionPool, resp, err := extensionPoolProxy.getExtensionPool(ctx, d.Id())
 		if err != nil {

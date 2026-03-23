@@ -36,6 +36,7 @@ Examples:
 	rootCmd.AddCommand(exportCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(templateCmd)
+	rootCmd.AddCommand(reportCmd)
 
 	// Execute the command
 	if err := rootCmd.Execute(); err != nil {

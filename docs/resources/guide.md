@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/guides/{guideId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId-)
 * [DELETE /api/v2/guides/{guideId}/jobs](https://apicentral.genesys.cloud/api-explorer-standalone#delete-api-v2-guides--guideId--jobs)
 * [GET /api/v2/guides/{guideId}/jobs/{jobId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId--jobs--jobId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `aiStudio:guide:add`
+* `aiStudio:guide:view`
+* `aiStudio:guideJob:add`
+* `aiStudio:guideJob:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `ai-studio`
+* `ai-studio:readonly`
+
 
 ## Example Usage
 

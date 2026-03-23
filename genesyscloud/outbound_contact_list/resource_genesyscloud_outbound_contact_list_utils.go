@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
@@ -128,6 +128,57 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 	}
 
 	return contactEmailAddressColumnSet
+}
+
+func buildSdkOutboundContactListContactWhatsAppColumnSlice(contactWhatsAppColumn *schema.Set) *[]platformclientv2.Whatsappcolumn {
+	if contactWhatsAppColumn == nil {
+		return nil
+	}
+	sdkContactWhatsAppColumnSlice := make([]platformclientv2.Whatsappcolumn, 0)
+	contactWhatsAppColumnList := contactWhatsAppColumn.List()
+	for _, configWhatsAppColumn := range contactWhatsAppColumnList {
+		var sdkContactWhatsAppColumn platformclientv2.Whatsappcolumn
+
+		contactWhatsAppColumnMap, ok := configWhatsAppColumn.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Safely handle column_name
+		if columnName, ok := contactWhatsAppColumnMap["column_name"].(string); ok && columnName != "" {
+			sdkContactWhatsAppColumn.ColumnName = &columnName
+		}
+
+		// Safely handle type
+		if varType, ok := contactWhatsAppColumnMap["type"].(string); ok && varType != "" {
+			sdkContactWhatsAppColumn.VarType = &varType
+		}
+
+		sdkContactWhatsAppColumnSlice = append(sdkContactWhatsAppColumnSlice, sdkContactWhatsAppColumn)
+	}
+	return &sdkContactWhatsAppColumnSlice
+}
+
+func flattenSdkOutboundContactListContactWhatsAppColumnSlice(contactWhatsAppColumns []platformclientv2.Whatsappcolumn) *schema.Set {
+	if len(contactWhatsAppColumns) == 0 {
+		return nil
+	}
+
+	contactWhatsAppColumnSet := schema.NewSet(schema.HashResource(outboundContactListWhatsAppColumnResource), []interface{}{})
+	for _, contactWhatsAppColumn := range contactWhatsAppColumns {
+		contactWhatsAppColumnMap := make(map[string]interface{})
+
+		if contactWhatsAppColumn.ColumnName != nil {
+			contactWhatsAppColumnMap["column_name"] = *contactWhatsAppColumn.ColumnName
+		}
+		if contactWhatsAppColumn.VarType != nil {
+			contactWhatsAppColumnMap["type"] = *contactWhatsAppColumn.VarType
+		}
+
+		contactWhatsAppColumnSet.Add(contactWhatsAppColumnMap)
+	}
+
+	return contactWhatsAppColumnSet
 }
 
 func buildSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []interface{}) *[]platformclientv2.Columndatatypespecification {
@@ -354,4 +405,13 @@ func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn str
 		contactable_time_column = %s
 	}
 `, columnName, columnType, contactableTimeColumn)
+}
+
+func GenerateWhatsAppColumnsBlock(columnName, columnType string) string {
+	return fmt.Sprintf(`
+	whats_app_columns {
+		column_name             = "%s"
+		type                    = "%s"
+	}
+`, columnName, columnType)
 }

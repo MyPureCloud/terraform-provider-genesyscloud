@@ -14,6 +14,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/routing/utilization](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
 * [PUT /api/v2/routing/utilization](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-utilization)
 * [DELETE /api/v2/routing/utilization](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-utilization)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:utilization:manage`
+* `routing:utilization:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -344,6 +344,9 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 }
 
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
+	// Reset singleton and trigger proxyOnce.Do first
+	dependentconsumers.InternalProxy = nil
+	_ = dependentconsumers.GetDependentConsumerProxy(nil) // Trigger proxyOnce.Do
 
 	meta := &resourceExporter.ResourceMeta{
 		BlockLabel: "example::::resource",
@@ -356,28 +359,30 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 	}
 
 	dependencyStruct := &resourceExporter.DependencyResource{
-		DependsMap:        nil,
+		DependsMap:        map[string][]string{"1": {"example.resource"}},
 		CyclicDependsList: nil,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
-		return resources, dependencyStruct, nil, nil
-	}
-
-	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+	// Mock the GetAllWithPooledClient to return directly without calling SDK pool
+	getAllPooledFn := func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		// Return mock data directly without calling the method
 		return resources, dependencyStruct, nil, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{
-		RetrieveDependentConsumersAttr: retrievePooledClientFn,
-		GetPooledClientAttr:            getAllPooledFn,
+		GetPooledClientAttr: getAllPooledFn,
+		ClientConfig:        &platformclientv2.Configuration{},
 	}
 
 	dependentconsumers.InternalProxy = dependencyProxy
+	defer func() { dependentconsumers.InternalProxy = nil }()
+
 	ctx := context.Background()
 
 	gre := &GenesysCloudResourceExporter{
-		ctx: ctx,
+		ctx:               ctx,
+		dependsList:       make(map[string][]string),
+		flowResourcesList: []string{},
 	}
 
 	state := &terraform.InstanceState{}

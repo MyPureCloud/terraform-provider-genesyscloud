@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-sequences--sequenceId-)
 - [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-sequences--sequenceId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:campaignSequence:add`
+* `outbound:campaignSequence:delete`
+* `outbound:campaignSequence:edit`
+* `outbound:campaignSequence:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

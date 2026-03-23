@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-workbins--workbinId-)
 * [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins-query)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:workbin:add`
+* `workitems:workbin:delete`
+* `workitems:workbin:edit`
+* `workitems:workbin:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 
