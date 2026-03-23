@@ -289,6 +289,30 @@ func flattenGlobalStyle(style *platformclientv2.Supportcenterglobalstyle) []inte
 	}}
 }
 
+func buildLabelFilter(labelFilter []interface{}) *platformclientv2.Supportcenterlabelfilter {
+	if labelFilter == nil || len(labelFilter) < 1 || labelFilter[0] == nil {
+		return nil
+	}
+
+	filterMap := labelFilter[0].(map[string]interface{})
+	labelIds := filterMap["label_ids"].([]interface{})
+	if len(labelIds) < 1 {
+		return nil
+	}
+
+	labels := make([]platformclientv2.Addressableentityref, len(labelIds))
+	for i, id := range labelIds {
+		labelId := id.(string)
+		labels[i] = platformclientv2.Addressableentityref{
+			Id: &labelId,
+		}
+	}
+
+	return &platformclientv2.Supportcenterlabelfilter{
+		Labels: &labels,
+	}
+}
+
 func buildSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Supportcentersettings {
 	value, ok := d.GetOk("support_center")
 	if !ok {
@@ -317,6 +341,10 @@ func buildSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Suppor
 		}
 	}
 
+	if labelFilter := buildLabelFilter(cfg["label_filter"].([]interface{})); labelFilter != nil {
+		supportCenterSettings.LabelFilter = labelFilter
+	}
+
 	if customMessages := buildCustomMessages(cfg["custom_messages"].([]interface{})); customMessages != nil {
 		supportCenterSettings.CustomMessages = customMessages
 	}
@@ -326,6 +354,27 @@ func buildSupportCenterSettings(d *schema.ResourceData) *platformclientv2.Suppor
 	}
 
 	return supportCenterSettings
+}
+
+func flattenLabelFilter(labelFilter *platformclientv2.Supportcenterlabelfilter) []interface{} {
+	if labelFilter == nil || labelFilter.Labels == nil || len(*labelFilter.Labels) < 1 {
+		return nil
+	}
+
+	labelIds := make([]interface{}, 0)
+	for _, label := range *labelFilter.Labels {
+		if label.Id != nil {
+			labelIds = append(labelIds, *label.Id)
+		}
+	}
+
+	if len(labelIds) == 0 {
+		return nil
+	}
+
+	return []interface{}{map[string]interface{}{
+		"label_ids": labelIds,
+	}}
 }
 
 func FlattenSupportCenterSettings(supportCenterSettings *platformclientv2.Supportcentersettings) []interface{} {
@@ -343,6 +392,10 @@ func FlattenSupportCenterSettings(supportCenterSettings *platformclientv2.Suppor
 
 	if supportCenterSettings.KnowledgeBase != nil {
 		settingsMap["knowledge_base_id"] = supportCenterSettings.KnowledgeBase.Id
+	}
+
+	if supportCenterSettings.LabelFilter != nil {
+		settingsMap["label_filter"] = flattenLabelFilter(supportCenterSettings.LabelFilter)
 	}
 
 	if supportCenterSettings.Feedback != nil {

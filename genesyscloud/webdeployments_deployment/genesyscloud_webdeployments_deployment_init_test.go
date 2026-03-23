@@ -1,6 +1,7 @@
 package webdeployments_deployment
 
 import (
+	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	"sync"
 	"testing"
@@ -26,6 +27,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceWebDeployment()
 	providerResources[webDeployConfig.ResourceType] = webDeployConfig.ResourceWebDeploymentConfiguration()
+	providerResources[supportedContent.ResourceType] = supportedContent.ResourceSupportedContent()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
