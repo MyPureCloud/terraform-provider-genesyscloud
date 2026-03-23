@@ -2,7 +2,7 @@
 page_title: "genesyscloud_greeting Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Greeting
+Genesys Cloud Greeting
 ---
 # genesyscloud_greeting (Resource)
 
@@ -16,13 +16,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings)
 * [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
 * [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)
-## Permissions and Scopes
-
-The following OAuth scopes are required to use this resource:
-
-* `greetings`
-* `greetings:readonly`
-
 
 ## Example Usage
 
@@ -62,4 +55,3 @@ Optional:
 - `duration_milliseconds` (Number) Greeting audio file duration in milliseconds.
 - `self_uri` (String) Greeting audio file self URI.
 - `size_bytes` (Number) Greeting audio file size in bytes.
-
