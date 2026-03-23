@@ -21,6 +21,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/remove]()
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `externalContacts:customerIntentTaxonomy:add`
+* `externalContacts:customerIntentTaxonomy:delete`
+* `externalContacts:customerIntentTaxonomy:edit`
+* `externalContacts:customerIntentTaxonomy:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `external-contacts`
+* `external-contacts:readonly`
+
 
 ## Example Usage
 

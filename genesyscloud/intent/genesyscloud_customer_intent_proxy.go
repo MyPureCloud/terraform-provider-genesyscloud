@@ -3,7 +3,7 @@ package customer_intent
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v178/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"log"
 )
 

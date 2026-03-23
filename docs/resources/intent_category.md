@@ -18,6 +18,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/intents/categories]()
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `externalContacts:customerIntentTaxonomy:add`
+* `externalContacts:customerIntentTaxonomy:delete`
+* `externalContacts:customerIntentTaxonomy:edit`
+* `externalContacts:customerIntentTaxonomy:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `external-contacts`
+* `external-contacts:readonly`
+
 
 ## Example Usage
 
