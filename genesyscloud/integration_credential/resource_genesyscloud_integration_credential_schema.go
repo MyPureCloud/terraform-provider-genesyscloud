@@ -7,6 +7,8 @@ package integration_credential
 // @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
 
 import (
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -71,7 +73,21 @@ func ResourceIntegrationCredential() *schema.Resource {
 func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllCredentials),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"name": {
+				RefType: "genesyscloud_integration",
+				// The integration credential name is prefixed with 'Integration-' followed by a GUID reference to the
+				// parent integration resource. This function allows us to resolve this value so that it is exported as
+				//     "genesyscloud_integration_credential": {
+				//	     "Integration-Genesys_Cloud_Data_Actions": {
+				//         "name": "Integration-${genesyscloud_integration.Genesys_Cloud_Data_Actions.id}"
+				//       },
+				GetIdFunc: func(value string) string {
+					s, _ := strings.CutPrefix(value, "Integration-")
+					return s
+				},
+			},
+		},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceIntegrationCredential().Schema["fields"],
 		},

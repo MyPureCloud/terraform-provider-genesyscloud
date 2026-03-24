@@ -2277,7 +2277,21 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 
 			if refSettings != nil {
-				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				refIdValue := val.(string)
+				var resolvedRefIdValue string
+
+				if refSettings.GetIdFunc != nil {
+					originalValue := val.(string)
+					refIdValue = refSettings.GetIdFunc(refIdValue)
+					resolvedRefIdValue = g.resolveReference(refSettings, refIdValue, exporters, exportingState)
+
+					// After resolving the reference (so it is not a GUID but is now a ${genesyscloud...id} ref)
+					// we need to replace the original value with the resolved reference
+					resolvedRefIdValue = strings.Replace(originalValue, refIdValue, resolvedRefIdValue, 1)
+				} else {
+					resolvedRefIdValue = g.resolveReference(refSettings, refIdValue, exporters, exportingState)
+				}
+				configMap[attributeConfigKey] = resolvedRefIdValue
 			} else {
 				configMap[attributeConfigKey] = escapeString(val.(string))
 			}
