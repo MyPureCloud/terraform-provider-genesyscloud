@@ -204,7 +204,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	tfExporterState.ActivateExporterState()
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources, AllowDependencyResolution)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr
@@ -215,7 +215,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, ok := d.GetOk("include_filter_resources_by_id"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResourcesById)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResourcesById, AllowDependencyResolution)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr
@@ -226,7 +226,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, ok := d.GetOk("exclude_filter_resources"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources, DisallowDependencyResolution)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr
@@ -237,7 +237,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	//Dealing with the traditional resource
-	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
+	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude, DisallowDependencyResolution)
 	diagErr := gre.Export()
 	if diagErr.HasError() {
 		return diagErr
