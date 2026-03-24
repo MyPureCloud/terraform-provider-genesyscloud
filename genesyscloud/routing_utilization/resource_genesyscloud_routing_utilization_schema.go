@@ -19,10 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-const (
-	ResourceType       = "genesyscloud_routing_utilization"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_routing_utilization"
 
 // SetRegistrar registers all the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -159,6 +156,6 @@ func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilization),
 		AllowZeroValues:  []string{"maximum_capacity"},
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 	}
 }

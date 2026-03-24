@@ -25,10 +25,7 @@ resource_genesycloud_idp_salesforce_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_salesforce datasource.
 4.  The resource exporter configuration for the idp_salesforce exporter.
 */
-const (
-	ResourceType       = "genesyscloud_idp_salesforce"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_idp_salesforce"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -111,7 +108,7 @@ func IdpSalesforceExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpSalesforce),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

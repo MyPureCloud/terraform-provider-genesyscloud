@@ -45,7 +45,7 @@ func getAllAuthIdpPings(ctx context.Context, clientConfig *platformclientv2.Conf
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP Ping error: %s", err), resp)
 	}
 
-	resources[singletonExportKey] = &resourceExporter.ResourceMeta{BlockLabel: "ping"}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: "ping"}
 	return resources, nil
 }
 

@@ -18,10 +18,7 @@ resource_genesycloud_organization_authentication_settings_schema.go holds four f
 3.  The datasource schema definitions for the organization_authentication_settings datasource.
 4.  The resource exporter configuration for the organization_authentication_settings exporter.
 */
-const (
-	ResourceType       = "genesyscloud_organization_authentication_settings"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_organization_authentication_settings"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
@@ -160,7 +157,7 @@ func OrganizationAuthenticationSettingsExporter() *resourceExporter.ResourceExpo
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOrganizationAuthenticationSettings),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		AllowZeroValues: []string{
 			"timeout_settings.idle_token_timeout_seconds",

@@ -24,10 +24,7 @@ resource_genesycloud_idp_adfs_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_adfs datasource.
 4.  The resource exporter configuration for the idp_adfs exporter.
 */
-const (
-	ResourceType       = "genesyscloud_idp_adfs"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_idp_adfs"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -111,7 +108,7 @@ func IdpAdfsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpAdfss),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

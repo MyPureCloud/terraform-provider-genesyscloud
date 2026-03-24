@@ -17,10 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	ResourceType       = "genesyscloud_outbound_wrapupcodemappings"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_outbound_wrapupcodemappings"
 
 var (
 	flagsSchema = &schema.Schema{
@@ -56,7 +53,7 @@ func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getOutboundWrapupCodeMappings),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`mappings.wrapup_code_id`: {
 				RefType: `genesyscloud_routing_wrapupcode`,

@@ -14,10 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-const (
-	ResourceType       = "genesyscloud_routing_settings"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_routing_settings"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceRoutingSettings())
@@ -108,6 +105,6 @@ func RoutingSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSettings),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 	}
 }

@@ -25,10 +25,7 @@ resource_genesycloud_idp_gsuite_schema.go holds four functions within it:
 3.  The datasource schema definitions for the idp_gsuite datasource.
 4.  The resource exporter configuration for the idp_gsuite exporter.
 */
-const (
-	ResourceType       = "genesyscloud_idp_gsuite"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_idp_gsuite"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -114,7 +111,7 @@ func IdpGsuiteExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpGsuites),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

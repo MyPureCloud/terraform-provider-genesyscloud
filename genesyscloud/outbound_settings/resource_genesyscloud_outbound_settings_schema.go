@@ -24,10 +24,7 @@ resource_genesycloud_outbound_settings_schema.go holds four functions within it:
 3.  The datasource schema definitions for the outbound_settings datasource.
 4.  The resource exporter configuration for the outbound_settings exporter.
 */
-const (
-	ResourceType       = "genesyscloud_outbound_settings"
-	singletonExportKey = ResourceType
-)
+const ResourceType = "genesyscloud_outbound_settings"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
@@ -166,7 +163,7 @@ func OutboundSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundSettings),
 		IsSingleton:      true,
-		ExportId:         singletonExportKey,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }
