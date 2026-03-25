@@ -59,6 +59,12 @@ type RefAttrSettings struct {
 
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
+
+	// Function that retrieves the resource ID from the attribute value
+	// If nil, the attribute value is used as the ID. You can reference
+	// the genesyscloud_integration_credential resource to understand how
+	// it is used.
+	GetIdFunc func(value string) string
 }
 
 type ResourceInfo struct {
