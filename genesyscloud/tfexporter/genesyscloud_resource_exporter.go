@@ -199,7 +199,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 	if providerResources == nil {
 		providerResources, providerDataSources = rRegistrar.GetResources()
 	}
@@ -208,7 +208,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
-		addDependsOn:         computeDependsOn(d),
+		addDependsOn:         computeDependsOn(d.Get("enable_dependency_resolution").(bool), exporterDependencyResolutionDecision),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
@@ -290,17 +290,9 @@ func identifyExportFormat(d *schema.ResourceData) string {
 	}
 	return strings.ToLower(d.Get("export_format").(string))
 }
-func computeDependsOn(d *schema.ResourceData) bool {
-	addDependsOn := d.Get("enable_dependency_resolution").(bool)
-	if addDependsOn {
-		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-			addDependsOn = len(filter) > 0
-		} else {
-			addDependsOn = false
-		}
-	}
-	return addDependsOn
+
+func computeDependsOn(enableDependencyResolution bool, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) bool {
+	return enableDependencyResolution && bool(exporterDependencyResolutionDecision)
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
