@@ -270,7 +270,7 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	// errors when importing into another org. The Genesys Cloud export API includes system metadata
 	// columns (e.g. CallRecordLastAttempt, Callable, AutomaticTimeZone) that are not part of the
 	// user-defined column_names and can cause the column limit to be exceeded.
-	columnsToKeep := getColumnNamesFromState(resource.State.Attributes)
+	columnsToKeep := getListAttributeFromState(resource.State.Attributes, "column_names")
 	if len(columnsToKeep) > 0 {
 		columnsToKeep = append([]string{"inin-outbound-id"}, columnsToKeep...)
 		if err := stripSystemColumnsFromCSV(fullCurrentPath, columnsToKeep); err != nil {
@@ -371,10 +371,10 @@ func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn str
 `, columnName, columnType, contactableTimeColumn)
 }
 
-// getColumnNamesFromState reads the column_names list attribute from Terraform's flat state format.
-// In InstanceState, list attributes are stored as: column_names.# = "3", column_names.0 = "col1", etc.
-func getColumnNamesFromState(attrs map[string]string) []string {
-	countStr, ok := attrs["column_names.#"]
+// getListAttributeFromState reads a list attribute from Terraform's flat InstanceState format.
+// In InstanceState, list attributes are stored as: attrName.# = "3", attrName.0 = "val1", etc.
+func getListAttributeFromState(attrs map[string]string, attrName string) []string {
+	countStr, ok := attrs[attrName+".#"]
 	if !ok {
 		return nil
 	}
@@ -382,13 +382,13 @@ func getColumnNamesFromState(attrs map[string]string) []string {
 	if err != nil || count == 0 {
 		return nil
 	}
-	columns := make([]string, 0, count)
+	values := make([]string, 0, count)
 	for i := 0; i < count; i++ {
-		if val, ok := attrs[fmt.Sprintf("column_names.%d", i)]; ok {
-			columns = append(columns, val)
+		if val, ok := attrs[fmt.Sprintf("%s.%d", attrName, i)]; ok {
+			values = append(values, val)
 		}
 	}
-	return columns
+	return values
 }
 
 // stripSystemColumnsFromCSV reads a CSV file and rewrites it keeping only the columns specified in columnsToKeep.
