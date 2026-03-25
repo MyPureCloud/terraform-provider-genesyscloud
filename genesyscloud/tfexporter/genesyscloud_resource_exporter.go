@@ -306,6 +306,8 @@ func computeDependsOn(d *schema.ResourceData) bool {
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
 	tflog.Info(g.ctx, "Retrieving exporters")
+	g.resourceErrors = make(map[string][]ResourceErrorInfo)
+
 	diagErr = append(diagErr, g.retrieveExporters()...)
 	if diagErr.HasError() {
 		tflog.Error(g.ctx, fmt.Sprintf("Failed to retrieve exporters: %v", diagErr))
@@ -853,9 +855,9 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 			return
 		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s: %v", resource.Type, resource.State.ID, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
-				Severity: diag.Warning,
+				Severity: diag.Error,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
 				Detail:   err.Error(),
 			})
@@ -1606,6 +1608,16 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				err = mockError
 			}
 			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
+				// Bubble up GetAll* function errors to be reported at the end of the run
+				var resourceError = ResourceErrorInfo{
+					ErrorMessage:  err[0].Summary,
+					ResourceType:  resourceType,
+					ResourceID:    "*",
+					ResourceLabel: "GetAllFunction",
+				}
+				g.resourceErrorsMutex.Unlock()
+				g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
+				g.resourceErrorsMutex.Lock()
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
@@ -2028,9 +2040,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	// Store errored resources in the exporter for later reporting
 	if len(erroredResources) > 0 {
 		g.resourceErrorsMutex.Lock()
-		if g.resourceErrors == nil {
-			g.resourceErrors = make(map[string][]ResourceErrorInfo)
-		}
 		g.resourceErrors[resType] = erroredResources
 		g.resourceErrorsMutex.Unlock()
 		tflog.Warn(g.ctx, fmt.Sprintf("Export completed for %s with %d errors out of %d resources", resType, len(erroredResources), lenResources))
