@@ -288,6 +288,7 @@ func identifyExportFormat(d *schema.ResourceData) string {
 	}
 	return strings.ToLower(d.Get("export_format").(string))
 }
+
 func computeDependsOn(enableDependencyResolution bool, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) bool {
 	return enableDependencyResolution && bool(exporterDependencyResolutionDecision)
 }
