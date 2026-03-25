@@ -88,7 +88,14 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		filename = BuildExportFileName(*flow.Name, *flow.VarType, flowId)
 	}
 
-	downloadUrl, err := proxy.generateDownloadUrl(flowId)
+	flowVersion := ""
+	if flow.PublishedVersion != nil {
+		if flow.PublishedVersion.Id != nil {
+			flowVersion = *flow.PublishedVersion.Id
+		}
+	}
+
+	downloadUrl, err := proxy.generateDownloadUrl(flowId, flowVersion)
 	if err != nil {
 		return err
 	}

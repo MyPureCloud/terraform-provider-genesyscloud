@@ -90,6 +90,21 @@ var (
 			},
 		},
 	}
+
+	outboundContactListWhatsAppColumnResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`column_name`: {
+				Description: `The name of the email column.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`type`: {
+				Description: `Indicates the type of the email column. For example, 'work' or 'personal'.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
 )
 
 func ResourceOutboundContactList() *schema.Resource {
@@ -128,18 +143,25 @@ func ResourceOutboundContactList() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`phone_columns`: {
-				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns is empty`,
+				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns or whats_app_columns is empty`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
 				Elem:        outboundContactListContactPhoneNumberColumnResource,
 			},
 			`email_columns`: {
-				Description: `Indicates which columns are email addresses. Changing the email_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if phone_columns is empty`,
+				Description: `Indicates which columns are email addresses. Changing the email_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if phone_columns or whats_app_columns is empty`,
 				Optional:    true,
 				ForceNew:    true,
 				Type:        schema.TypeSet,
 				Elem:        outboundContactListEmailColumnResource,
+			},
+			`whats_app_columns`: {
+				Description: `Indicates which columns are whatsApp contacts. Changing the email_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns or phone_columns is empty`,
+				Optional:    true,
+				ForceNew:    true,
+				Type:        schema.TypeSet,
+				Elem:        outboundContactListWhatsAppColumnResource,
 			},
 			`preview_mode_column_name`: {
 				Description: `A column to check if a contact should always be dialed in preview mode.`,

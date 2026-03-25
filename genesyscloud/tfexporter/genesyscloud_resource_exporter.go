@@ -199,7 +199,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 	if providerResources == nil {
 		providerResources, providerDataSources = rRegistrar.GetResources()
 	}
@@ -208,7 +208,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
-		addDependsOn:         computeDependsOn(d),
+		addDependsOn:         computeDependsOn(d.Get("enable_dependency_resolution").(bool), exporterDependencyResolutionDecision),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
@@ -221,9 +221,11 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
-	// Set max concurrent operations based on provider configuration if available
-	if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
-		gre.maxConcurrentOps = providerMeta.MaxClients
+	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
+	if gre.maxConcurrentOps <= 0 {
+		if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
+			gre.maxConcurrentOps = providerMeta.MaxClients
+		}
 	}
 
 	err := gre.setUpExportDirPath()
@@ -288,22 +290,16 @@ func identifyExportFormat(d *schema.ResourceData) string {
 	}
 	return strings.ToLower(d.Get("export_format").(string))
 }
-func computeDependsOn(d *schema.ResourceData) bool {
-	addDependsOn := d.Get("enable_dependency_resolution").(bool)
-	if addDependsOn {
-		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-			addDependsOn = len(filter) > 0
-		} else {
-			addDependsOn = false
-		}
-	}
-	return addDependsOn
+
+func computeDependsOn(enableDependencyResolution bool, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) bool {
+	return enableDependencyResolution && bool(exporterDependencyResolutionDecision)
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
 	tflog.Info(g.ctx, "Retrieving exporters")
+	g.resourceErrors = make(map[string][]ResourceErrorInfo)
+
 	diagErr = append(diagErr, g.retrieveExporters()...)
 	if diagErr.HasError() {
 		tflog.Error(g.ctx, fmt.Sprintf("Failed to retrieve exporters: %v", diagErr))
@@ -851,9 +847,9 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 			return
 		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s: %v", resource.Type, resource.State.ID, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
-				Severity: diag.Warning,
+				Severity: diag.Error,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
 				Detail:   err.Error(),
 			})
@@ -1604,6 +1600,16 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				err = mockError
 			}
 			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
+				// Bubble up GetAll* function errors to be reported at the end of the run
+				var resourceError = ResourceErrorInfo{
+					ErrorMessage:  err[0].Summary,
+					ResourceType:  resourceType,
+					ResourceID:    "*",
+					ResourceLabel: "GetAllFunction",
+				}
+				g.resourceErrorsMutex.Unlock()
+				g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
+				g.resourceErrorsMutex.Lock()
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
@@ -2026,9 +2032,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	// Store errored resources in the exporter for later reporting
 	if len(erroredResources) > 0 {
 		g.resourceErrorsMutex.Lock()
-		if g.resourceErrors == nil {
-			g.resourceErrors = make(map[string][]ResourceErrorInfo)
-		}
 		g.resourceErrors[resType] = erroredResources
 		g.resourceErrorsMutex.Unlock()
 		tflog.Warn(g.ctx, fmt.Sprintf("Export completed for %s with %d errors out of %d resources", resType, len(erroredResources), lenResources))
@@ -2275,7 +2278,21 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 
 			if refSettings != nil {
-				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				refIdValue := val.(string)
+				var resolvedRefIdValue string
+
+				if refSettings.GetIdFunc != nil {
+					originalValue := val.(string)
+					refIdValue = refSettings.GetIdFunc(refIdValue)
+					resolvedRefIdValue = g.resolveReference(refSettings, refIdValue, exporters, exportingState)
+
+					// After resolving the reference (so it is not a GUID but is now a ${genesyscloud...id} ref)
+					// we need to replace the original value with the resolved reference
+					resolvedRefIdValue = strings.Replace(originalValue, refIdValue, resolvedRefIdValue, 1)
+				} else {
+					resolvedRefIdValue = g.resolveReference(refSettings, refIdValue, exporters, exportingState)
+				}
+				configMap[attributeConfigKey] = resolvedRefIdValue
 			} else {
 				configMap[attributeConfigKey] = escapeString(val.(string))
 			}
