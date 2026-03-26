@@ -482,6 +482,22 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_conversations_settings",
+      "resource_name": "conversations_settings",
+      "permissions": [
+        "conversation:settings:edit",
+        "conversation:settings:view"
+      ],
+      "scopes": [
+        "conversations",
+        "conversations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/settings",
+        "PATCH /api/v2/conversations/settings"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_employeeperformance_externalmetrics_definitions",
       "resource_name": "employeeperformance_externalmetrics_definitions",
       "permissions": [
@@ -659,12 +675,30 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_greeting",
+      "resource_name": "greeting",
+      "permissions": [],
+      "scopes": [
+        "greetings",
+        "greetings:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/greetings",
+        "GET /api/v2/greetings/{greetingId}",
+        "GET /api/v2/greetings",
+        "PUT /api/v2/greetings/{greetingId}",
+        "DELETE /api/v2/greetings/{greetingId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_group",
       "resource_name": "group",
       "permissions": [
         "directory:group:add",
         "directory:group:delete",
-        "directory:group:edit"
+        "directory:group:edit",
+        "voicemail:groupPolicy:edit",
+        "voicemail:groupPolicy:view"
       ],
       "scopes": [
         "groups",
@@ -1881,7 +1915,8 @@
       "resource_type": "genesyscloud_routing_email_route",
       "resource_name": "routing_email_route",
       "permissions": [
-        "routing:email:manage"
+        "routing:email:manage",
+        "routing:email:view"
       ],
       "scopes": [
         "routing",
