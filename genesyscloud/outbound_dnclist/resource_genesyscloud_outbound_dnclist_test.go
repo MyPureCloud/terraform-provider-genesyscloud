@@ -17,6 +17,7 @@ import (
 )
 
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
+	t.Parallel()
 	var (
 		resourceLabel = "dnc_list"
 		name          = "Test DNC List " + uuid.NewString()
@@ -121,6 +122,7 @@ func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
 }
 
 func TestAccResourceOutboundDncListDncListType(t *testing.T) {
+	t.Parallel()
 	dncLoginId, present := os.LookupEnv("TEST_DNCCOM_LICENSE_KEY")
 	if !present {
 		t.Skip("Skipping because TEST_DNCCOM_LICENSE_KEY env variable is not set.")
