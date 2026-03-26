@@ -11,7 +11,7 @@
 #>
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ZipPath
 )
 
@@ -48,7 +48,8 @@ if ($zipSizeMB -lt 50) {
 try {
     $null = wsl --version 2>&1
     $hasWSL = $LASTEXITCODE -eq 0
-} catch {
+}
+catch {
     $hasWSL = $false
 }
 
@@ -130,7 +131,8 @@ if ($exitCode -eq 0) {
     Write-Host ""
     Write-Host "The zip file has proper Unix executable permissions." -ForegroundColor White
     Write-Host "It will work correctly on Linux systems." -ForegroundColor White
-} else {
+}
+else {
     Write-Host "  ❌ VERIFICATION FAILED" -ForegroundColor Red
     Write-Host "=====================================================================" -ForegroundColor Cyan
     Write-Host ""

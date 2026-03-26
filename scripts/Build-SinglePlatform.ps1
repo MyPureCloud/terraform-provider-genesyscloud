@@ -113,7 +113,8 @@ terraform {
     Write-Host $tfConfig -ForegroundColor Gray
     Write-Host ""
     
-} else {
+}
+else {
     Write-Host "`n✗ Build failed!" -ForegroundColor Red
     exit 1
 }
