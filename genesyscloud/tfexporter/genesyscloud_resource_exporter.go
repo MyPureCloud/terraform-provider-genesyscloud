@@ -199,7 +199,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 	if providerResources == nil {
 		providerResources, providerDataSources = rRegistrar.GetResources()
 	}
@@ -208,7 +208,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
-		addDependsOn:         computeDependsOn(d),
+		addDependsOn:         computeDependsOn(d.Get("enable_dependency_resolution").(bool), exporterDependencyResolutionDecision),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
@@ -221,9 +221,11 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
-	// Set max concurrent operations based on provider configuration if available
-	if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
-		gre.maxConcurrentOps = providerMeta.MaxClients
+	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
+	if gre.maxConcurrentOps <= 0 {
+		if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
+			gre.maxConcurrentOps = providerMeta.MaxClients
+		}
 	}
 
 	err := gre.setUpExportDirPath()
@@ -288,17 +290,9 @@ func identifyExportFormat(d *schema.ResourceData) string {
 	}
 	return strings.ToLower(d.Get("export_format").(string))
 }
-func computeDependsOn(d *schema.ResourceData) bool {
-	addDependsOn := d.Get("enable_dependency_resolution").(bool)
-	if addDependsOn {
-		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-			addDependsOn = len(filter) > 0
-		} else {
-			addDependsOn = false
-		}
-	}
-	return addDependsOn
+
+func computeDependsOn(enableDependencyResolution bool, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) bool {
+	return enableDependencyResolution && bool(exporterDependencyResolutionDecision)
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
@@ -2284,7 +2278,21 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			}
 
 			if refSettings != nil {
-				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				refIdValue := val.(string)
+				var resolvedRefIdValue string
+
+				if refSettings.GetIdFunc != nil {
+					originalValue := val.(string)
+					refIdValue = refSettings.GetIdFunc(refIdValue)
+					resolvedRefIdValue = g.resolveReference(refSettings, refIdValue, exporters, exportingState)
+
+					// After resolving the reference (so it is not a GUID but is now a ${genesyscloud...id} ref)
+					// we need to replace the original value with the resolved reference
+					resolvedRefIdValue = strings.Replace(originalValue, refIdValue, resolvedRefIdValue, 1)
+				} else {
+					resolvedRefIdValue = g.resolveReference(refSettings, refIdValue, exporters, exportingState)
+				}
+				configMap[attributeConfigKey] = resolvedRefIdValue
 			} else {
 				configMap[attributeConfigKey] = escapeString(val.(string))
 			}
