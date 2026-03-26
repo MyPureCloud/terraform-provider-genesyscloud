@@ -27,6 +27,21 @@ $arch = $parts[1]
 Write-Host "OS: $os" -ForegroundColor Yellow
 Write-Host "Architecture: $arch`n" -ForegroundColor Yellow
 
+# Warning for Linux builds on Windows
+if ($os -eq "linux" -and $env:OS -eq "Windows_NT") {
+    Write-Host "⚠️  WARNING: Building Linux binary on Windows" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Linux binaries built on Windows do NOT have executable permissions!" -ForegroundColor Yellow
+    Write-Host "This will cause 'Permission denied' errors on Linux systems." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "RECOMMENDED: Use the WSL build script instead:" -ForegroundColor Cyan
+    Write-Host "  .\scripts\Build-LinuxProviderWSL.ps1 -Version '$Version'" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Or press Ctrl+C to cancel, otherwise continuing in 5 seconds..." -ForegroundColor Gray
+    Start-Sleep -Seconds 5
+    Write-Host ""
+}
+
 # Clean and create output directory
 if (Test-Path $OutputDir) {
     Remove-Item "$OutputDir\*" -Recurse -Force
@@ -58,6 +73,15 @@ if ($LASTEXITCODE -eq 0) {
     $hash = (Get-FileHash $outputPath -Algorithm SHA256).Hash.ToLower()
     "$hash  $binaryName" | Out-File -FilePath "$OutputDir\SHA256SUM" -Encoding ASCII
     Write-Host "✓ Checksum generated: $OutputDir\SHA256SUM" -ForegroundColor Green
+    
+    # Warning for Linux builds
+    if ($os -eq "linux") {
+        Write-Host ""
+        Write-Host "⚠️  IMPORTANT: This binary does NOT have Unix executable permissions!" -ForegroundColor Yellow
+        Write-Host "   It will fail on Linux with 'Permission denied'" -ForegroundColor Yellow
+        Write-Host "   Use .\scripts\Build-LinuxProviderWSL.ps1 for Linux builds" -ForegroundColor Cyan
+        Write-Host ""
+    }
     
     Write-Host "`n" ("=" * 70) -ForegroundColor Cyan
     Write-Host "  NEXT STEPS FOR CONTAINER DEPLOYMENT" -ForegroundColor White
