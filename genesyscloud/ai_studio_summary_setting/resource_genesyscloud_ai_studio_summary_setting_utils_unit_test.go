@@ -19,4 +19,3 @@ func TestBuildSummarySettingPIIs_PreservesFalse(t *testing.T) {
 		t.Fatalf("expected All=false, got %v", *out.All)
 	}
 }
-
