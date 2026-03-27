@@ -18,6 +18,7 @@ import (
 
 var internalProxy *knowledgeDocumentProxy
 
+type getKnowledgeDocumentByTitleFunc func(ctx context.Context, p *knowledgeDocumentProxy, title string, knowledgeBaseName string, categoryName string) (string, bool, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseCategoryFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseCategoriesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryName string) (*platformclientv2.Categoryresponselisting, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseLabelsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelName string) (*platformclientv2.Labellisting, *platformclientv2.APIResponse, error)
@@ -33,6 +34,7 @@ type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
 	KnowledgeApi                             *platformclientv2.KnowledgeApi
+	getKnowledgeDocumentByTitleAttr           getKnowledgeDocumentByTitleFunc
 	getKnowledgeKnowledgebaseCategoryAttr    getKnowledgeKnowledgebaseCategoryFunc
 	getKnowledgeKnowledgebaseCategoriesAttr  getKnowledgeKnowledgebaseCategoriesFunc
 	getKnowledgeKnowledgebaseLabelsAttr      getKnowledgeKnowledgebaseLabelsFunc
@@ -59,6 +61,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 	return &knowledgeDocumentProxy{
 		clientConfig:                             clientConfig,
 		KnowledgeApi:                             api,
+		getKnowledgeDocumentByTitleAttr:          getKnowledgeDocumentByTitleFn,
 		getKnowledgeKnowledgebaseCategoryAttr:    getKnowledgeKnowledgebaseCategoryFn,
 		getKnowledgeKnowledgebaseCategoriesAttr:  getKnowledgeKnowledgebaseCategoriesFn,
 		getKnowledgeKnowledgebaseLabelsAttr:      getKnowledgeKnowledgebaseLabelsFn,
@@ -83,6 +86,10 @@ func GetKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 	}
 
 	return internalProxy
+}
+
+func (p *knowledgeDocumentProxy) getKnowledgeDocumentByTitle(ctx context.Context, title string, knowledgeBaseName string, categoryName string) (string, bool, *platformclientv2.APIResponse, error) {
+	return p.getKnowledgeDocumentByTitleAttr(ctx, p, title, knowledgeBaseName, categoryName)
 }
 
 func (p *knowledgeDocumentProxy) getKnowledgeKnowledgebaseCategory(ctx context.Context, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error) {
@@ -526,4 +533,95 @@ func updateKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDoc
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.KnowledgeApi.PatchKnowledgeKnowledgebaseDocument(knowledgeBaseId, documentId, *body)
+}
+
+func getKnowledgeDocumentByTitleFn(ctx context.Context, p *knowledgeDocumentProxy, title string, knowledgeBaseName string, categoryName string) (string, bool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	const pageSize = 100
+
+	publishedKnowledgeBases, publishedResp, getPublishedErr := p.KnowledgeApi.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", true, "", "")
+	unpublishedKnowledgeBases, unpublishedResp, getUnpublishedErr := p.KnowledgeApi.GetKnowledgeKnowledgebases("", "", "", fmt.Sprintf("%v", pageSize), knowledgeBaseName, "", false, "", "")
+
+	if getPublishedErr != nil {
+		return "", false, publishedResp, getPublishedErr
+	}
+	if getUnpublishedErr != nil {
+		return "", false, unpublishedResp, getUnpublishedErr
+	}
+
+	noPublishedEntities := publishedKnowledgeBases.Entities == nil || len(*publishedKnowledgeBases.Entities) == 0
+	noUnpublishedEntities := unpublishedKnowledgeBases.Entities == nil || len(*unpublishedKnowledgeBases.Entities) == 0
+	if noPublishedEntities && noUnpublishedEntities {
+		return "", true, publishedResp, fmt.Errorf("no knowledge base found with name %s", knowledgeBaseName)
+	}
+
+	// Search published knowledge bases first, then unpublished
+	for _, knowledgeBase := range *publishedKnowledgeBases.Entities {
+		if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
+			documentId, resp, err := findDocumentByTitle(ctx, p, &knowledgeBase, title, categoryName)
+			if err != nil {
+				return "", false, resp, err
+			}
+			if documentId != "" {
+				return documentId, false, resp, nil
+			}
+		}
+	}
+
+	for _, knowledgeBase := range *unpublishedKnowledgeBases.Entities {
+		if knowledgeBase.Name != nil && *knowledgeBase.Name == knowledgeBaseName {
+			documentId, resp, err := findDocumentByTitle(ctx, p, &knowledgeBase, title, categoryName)
+			if err != nil {
+				return "", false, resp, err
+			}
+			if documentId != "" {
+				return documentId, false, resp, nil
+			}
+		}
+	}
+
+	return "", true, publishedResp, fmt.Errorf("no knowledge document found with title %s in knowledge base %s", title, knowledgeBaseName)
+}
+
+func findDocumentByTitle(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase, title string, categoryName string) (string, *platformclientv2.APIResponse, error) {
+	// Resolve category name to ID if provided
+	var categoryId string
+	if categoryName != "" {
+		categories, resp, err := p.getKnowledgeKnowledgebaseCategories(ctx, *knowledgeBase.Id, categoryName)
+		if err != nil {
+			return "", resp, fmt.Errorf("failed to look up category %s: %s", categoryName, err)
+		}
+		if categories.Entities != nil {
+			for _, cat := range *categories.Entities {
+				if cat.Name != nil && *cat.Name == categoryName {
+					categoryId = *cat.Id
+					break
+				}
+			}
+		}
+		if categoryId == "" {
+			return "", resp, fmt.Errorf("no knowledge category found with name %s in knowledge base %s", categoryName, *knowledgeBase.Id)
+		}
+	}
+
+	documents, resp, err := p.GetAllKnowledgeDocumentEntities(ctx, knowledgeBase)
+	if err != nil {
+		return "", resp, err
+	}
+
+	for _, document := range *documents {
+		if document.Title == nil || *document.Title != title {
+			continue
+		}
+		if categoryId != "" {
+			if document.Category == nil || document.Category.Id == nil || *document.Category.Id != categoryId {
+				continue
+			}
+		}
+		id := BuildDocumentResourceDataID(*document.Id, *knowledgeBase.Id)
+		return id, resp, nil
+	}
+
+	return "", resp, nil
 }
