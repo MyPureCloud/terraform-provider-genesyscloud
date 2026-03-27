@@ -216,11 +216,17 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 			`library_ids`: {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
+			`library_id`: {
+				RefType: "genesyscloud_responsemanagement_library",
+			},
 			`asset_ids`: {
 				RefType: "responsemanagement_responseasset",
 			},
 		},
 		JsonEncodeAttributes: []string{"substitutions_schema_id"},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "library_id"}: {Attr: "library_ids\\.\\d+"},
+		},
 	}
 }
 
