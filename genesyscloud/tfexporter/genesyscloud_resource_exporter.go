@@ -2333,6 +2333,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", fullAttributePath, err))
 				}
 			}
+			if resolverWithClientConfigFunc := refAttrCustomResolver.ResolverWithClientConfigFunc; resolverWithClientConfigFunc != nil {
+				sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+				if err := resolverWithClientConfigFunc(configMap, val, sdkConfig); err != nil {
+					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver with client config for attribute %s: %v", fullAttributePath, err))
+				}
+			}
 		}
 
 		if g.matchesExportFormat("/.*"+formatHCL+".*/") && exporter.IsJsonEncodable(fullAttributePath) {

@@ -53,6 +53,15 @@ func KnowledgeCategoryExporter() *resourceExporter.ResourceExporter {
 			"knowledge_base_id":            {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_category.parent_id": {RefType: "genesyscloud_knowledge_category"},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"knowledge_base_name": {
+				ResolverWithClientConfigFunc: resourceExporter.KnowledgeBaseNameResolver,
+			},
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}:                {Attr: "knowledge_category\\.\\d+\\.name"},
+			{Attr: "knowledge_base_name"}: {Attr: "knowledge_base_id"},
+		},
 	}
 }
 
