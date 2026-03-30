@@ -2,6 +2,7 @@ package outbound_dnclist
 
 // @team: List Management
 // @chat: #Genesys Cloud Dialer
+// @pm: Mason Mansfield
 // @jira: LM
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
