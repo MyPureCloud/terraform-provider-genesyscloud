@@ -211,23 +211,30 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
-	// Convert and add each row individually using column order mapping
+	sdkRows := make([]platformclientv2.Createdecisiontablerowrequest, 0, len(terraformRows))
 	for i, row := range terraformRows {
 		rowMap := row.(map[string]interface{})
 
-		// Convert row from Terraform to SDK format using column order mapping
 		sdkRow, err := convertDecisionTableRowFromProviderToSDK(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d (table %s, version %d): %s", i+1, tableId, version, err)
 		}
+		// Bulk add does not support rowIndex; rows are appended in request order.
+		sdkRow.RowIndex = nil
+		sdkRows = append(sdkRows, sdkRow)
+	}
 
-		// Add the row to the version
-		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
-		if err != nil {
-			return fmt.Errorf("failed to add row %d: %s", i+1, err)
+	for i := 0; i < len(sdkRows); i += maxBulkDecisionTableRowsAdd {
+		end := i + maxBulkDecisionTableRowsAdd
+		if end > len(sdkRows) {
+			end = len(sdkRows)
 		}
-
-		log.Printf("Successfully added row %d to decision table %s version %d", i+1, tableId, version)
+		chunk := sdkRows[i:end]
+		_, err := proxy.bulkAddDecisionTableRows(ctx, tableId, version, chunk)
+		if err != nil {
+			return fmt.Errorf("failed to bulk add rows [%d:%d]: %s", i, end, err)
+		}
+		log.Printf("Successfully bulk added %d rows to decision table %s version %d", len(chunk), tableId, version)
 	}
 
 	return nil

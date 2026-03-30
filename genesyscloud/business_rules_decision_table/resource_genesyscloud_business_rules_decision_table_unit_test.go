@@ -301,8 +301,8 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 		return tableVersion, apiResponse, nil
 	}
 
-	// Mock for adding rows
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	// Mock for bulk adding rows
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 1, version)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -1040,8 +1040,18 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRows(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	// Mock for creating rows (needed for row updates)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	// Mock bulk row operations (needed for row updates)
+	decisionTableProxy.bulkRemoveDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowIds []string) (*platformclientv2.APIResponse, error) {
+		assert.Equal(t, tId, tableId)
+		assert.Equal(t, 2, version)
+		return &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}, nil
+	}
+	decisionTableProxy.bulkUpdateDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []bulkUpdateDecisionTableRowBody) (*platformclientv2.APIResponse, error) {
+		assert.Equal(t, tId, tableId)
+		assert.Equal(t, 2, version)
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 2, version)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -1658,11 +1668,20 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRowFailureRollback(t *testi
 		return version, apiResponse, nil
 	}
 
-	// Mock row creation (should fail to trigger rollback)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	decisionTableProxy.bulkRemoveDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowIds []string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 2, version)
-		// Simulate row creation failure
+		return &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}, nil
+	}
+	decisionTableProxy.bulkUpdateDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []bulkUpdateDecisionTableRowBody) (*platformclientv2.APIResponse, error) {
+		assert.Equal(t, tId, tableId)
+		assert.Equal(t, 2, version)
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	// Mock bulk add (should fail to trigger rollback)
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+		assert.Equal(t, tId, tableId)
+		assert.Equal(t, 2, version)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusInternalServerError}
 		return apiResponse, fmt.Errorf("row creation failed")
 	}
@@ -1882,11 +1901,10 @@ func TestUnitResourceBusinessRulesDecisionTableCreateFailureRollback(t *testing.
 		return tableVersion, apiResponse, nil
 	}
 
-	// Mock the create row function (should fail to trigger rollback)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	// Mock bulk add (should fail to trigger rollback)
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 1, version)
-		// Simulate row creation failure
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusInternalServerError}
 		return apiResponse, fmt.Errorf("row creation failed")
 	}
@@ -2038,8 +2056,8 @@ func TestUnitResourceBusinessRulesDecisionTableCreatePublishFailureRollback(t *t
 		return tableVersion, apiResponse, nil
 	}
 
-	// Mock the create row function (should succeed)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	// Mock bulk add (should succeed)
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 1, version)
 		rowsAdded = true

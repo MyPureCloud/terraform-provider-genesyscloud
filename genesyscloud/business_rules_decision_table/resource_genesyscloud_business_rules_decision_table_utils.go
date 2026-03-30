@@ -347,23 +347,6 @@ func buildUpdateRequest(d *schema.ResourceData) *platformclientv2.Updatedecision
 	return updateRequest
 }
 
-// convertSDKRowToUpdateRequest converts an SDK row to update request format
-func convertSDKRowToUpdateRequest(sdkRow platformclientv2.Createdecisiontablerowrequest) *platformclientv2.Putdecisiontablerowrequest {
-	updateRequest := &platformclientv2.Putdecisiontablerowrequest{}
-
-	// Copy inputs if they exist
-	if sdkRow.Inputs != nil {
-		updateRequest.Inputs = sdkRow.Inputs
-	}
-
-	// Copy outputs if they exist
-	if sdkRow.Outputs != nil {
-		updateRequest.Outputs = sdkRow.Outputs
-	}
-
-	return updateRequest
-}
-
 // flattenColumns flattens the SDK columns response to provider format
 func flattenColumns(sdkColumns *platformclientv2.Decisiontablecolumns) map[string]interface{} {
 	if sdkColumns == nil {
@@ -979,75 +962,91 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
-	// Track successfully added rows for potential rollback
-	var addedRows []string
-
-	// Delete rows first
-	for _, rowId := range changes.deletes {
-		log.Printf("Deleting row %s", rowId)
-		_, err := proxy.deleteDecisionTableRow(ctx, tableId, version, rowId)
-		if err != nil {
-			return fmt.Errorf("failed to delete row %s: %s", rowId, err)
+	// Delete rows first (bulk)
+	for i := 0; i < len(changes.deletes); i += maxBulkDecisionTableRowsRemove {
+		end := i + maxBulkDecisionTableRowsRemove
+		if end > len(changes.deletes) {
+			end = len(changes.deletes)
 		}
-		log.Printf("Successfully deleted row %s", rowId)
+		chunk := changes.deletes[i:end]
+		log.Printf("Bulk deleting %d rows", len(chunk))
+		_, err := proxy.bulkRemoveDecisionTableRows(ctx, tableId, version, chunk)
+		if err != nil {
+			return fmt.Errorf("failed to bulk delete rows: %s", err)
+		}
+		if len(chunk) > 0 {
+			log.Printf("Successfully bulk deleted %d rows", len(chunk))
+		}
 	}
 
-	// Update existing rows
+	// Update existing rows (bulk)
+	updatePayloads := make([]bulkUpdateDecisionTableRowBody, 0, len(changes.updates))
 	for _, row := range changes.updates {
-		rowId := row["row_id"].(string)
-		log.Printf("Updating row %s", rowId)
-
-		// Convert to SDK format using column order mapping (same as creation)
-		sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
+		body, err := buildBulkUpdateRowFromProviderMap(row, inputColumnIds, outputColumnIds)
 		if err != nil {
-			return fmt.Errorf("failed to convert row for update: %s", err)
+			return fmt.Errorf("failed to build bulk update row: %s", err)
 		}
-
-		// Convert SDK row to update request format
-		updateRequest := convertSDKRowToUpdateRequest(sdkRow)
-
-		// Update the row
-		updatedRow, _, err := proxy.updateDecisionTableRow(ctx, tableId, version, rowId, updateRequest)
+		updatePayloads = append(updatePayloads, body)
+	}
+	for i := 0; i < len(updatePayloads); i += maxBulkDecisionTableRowsUpdate {
+		end := i + maxBulkDecisionTableRowsUpdate
+		if end > len(updatePayloads) {
+			end = len(updatePayloads)
+		}
+		chunk := updatePayloads[i:end]
+		log.Printf("Bulk updating %d rows", len(chunk))
+		_, err := proxy.bulkUpdateDecisionTableRows(ctx, tableId, version, chunk)
 		if err != nil {
-			return fmt.Errorf("failed to update row %s: %s", rowId, err)
+			return fmt.Errorf("failed to bulk update rows: %s", err)
 		}
-
-		// Log the returned row data for debugging
-		if updatedRow != nil {
-			rowIdStr := "unknown"
-			rowIndexStr := "unknown"
-			if updatedRow.Id != nil {
-				rowIdStr = *updatedRow.Id
-			}
-			if updatedRow.RowIndex != nil {
-				rowIndexStr = fmt.Sprintf("%d", *updatedRow.RowIndex)
-			}
-			log.Printf("Successfully updated row %s: returned row_id=%s, row_index=%s",
-				rowId, rowIdStr, rowIndexStr)
-		} else {
-			log.Printf("Successfully updated row %s (no row data returned)", rowId)
+		if len(chunk) > 0 {
+			log.Printf("Successfully bulk updated %d rows", len(chunk))
 		}
 	}
 
-	// Add new rows using column order mapping
+	// Add new rows (bulk)
+	addRows := make([]platformclientv2.Createdecisiontablerowrequest, 0, len(changes.adds))
 	for i, row := range changes.adds {
-		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
 		sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}
-		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
-		if err != nil {
-			// If adding a row fails, we can't easily rollback individual rows
-			// The version cleanup will handle the overall rollback
-			return fmt.Errorf("failed to add new row %d/%d: %s", i+1, len(changes.adds), err)
+		sdkRow.RowIndex = nil
+		addRows = append(addRows, sdkRow)
+	}
+	for i := 0; i < len(addRows); i += maxBulkDecisionTableRowsAdd {
+		end := i + maxBulkDecisionTableRowsAdd
+		if end > len(addRows) {
+			end = len(addRows)
 		}
-
-		// Track successfully added rows (if we had row IDs, we'd store them here)
-		addedRows = append(addedRows, fmt.Sprintf("row_%d", i+1))
-		log.Printf("Successfully added row %d/%d", i+1, len(changes.adds))
+		chunk := addRows[i:end]
+		log.Printf("Bulk adding %d new rows", len(chunk))
+		_, err := proxy.bulkAddDecisionTableRows(ctx, tableId, version, chunk)
+		if err != nil {
+			return fmt.Errorf("failed to bulk add rows: %s", err)
+		}
+		if len(chunk) > 0 {
+			log.Printf("Successfully bulk added %d rows", len(chunk))
+		}
 	}
 
-	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(addedRows))
+	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(changes.adds))
 	return nil
+}
+
+// buildBulkUpdateRowFromProviderMap builds a bulk update row payload (rowId + inputs + outputs).
+func buildBulkUpdateRowFromProviderMap(row map[string]interface{}, inputColumnIds, outputColumnIds []string) (bulkUpdateDecisionTableRowBody, error) {
+	sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
+	if err != nil {
+		return bulkUpdateDecisionTableRowBody{}, err
+	}
+	rowID, ok := row["row_id"].(string)
+	if !ok || rowID == "" {
+		return bulkUpdateDecisionTableRowBody{}, fmt.Errorf("row_id is required for row update")
+	}
+	return bulkUpdateDecisionTableRowBody{
+		RowId:   rowID,
+		Inputs:  sdkRow.Inputs,
+		Outputs: sdkRow.Outputs,
+	}, nil
 }
