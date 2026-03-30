@@ -35,7 +35,7 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 	exportResourceConfig := createExportResourceData(tfexporter.ResourceTfExport().Schema, input)
 
 	log.Println("Creating the genesyscloud resource exporter")
-	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources)
+	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources, tfexporter.AllowDependencyResolution)
 	if newExporterDiags != nil {
 		diags = append(diags, newExporterDiags...)
 	}

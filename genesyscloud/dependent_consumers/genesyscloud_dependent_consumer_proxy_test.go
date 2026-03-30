@@ -206,9 +206,6 @@ func TestGetDependentConsumerProxy_Singleton(t *testing.T) {
 }
 
 func TestNewDependentConsumerProxy_ThreadSafe(t *testing.T) {
-	// Reset singleton for test
-	InternalProxy = nil
-
 	config := &platformclientv2.Configuration{}
 	done := make(chan *DependentConsumerProxy, 10)
 
@@ -233,9 +230,6 @@ func TestNewDependentConsumerProxy_ThreadSafe(t *testing.T) {
 }
 
 func TestGetDependentConsumerProxy_NilConfig(t *testing.T) {
-	// Reset singleton
-	InternalProxy = nil
-
 	proxy := GetDependentConsumerProxy(nil)
 
 	assert.NotNil(t, proxy)

@@ -167,6 +167,63 @@ func TestContactListBuildSdkOutboundContactListContactEmailAddressColumnSlice(t 
 		}
 	}
 }
+
+func TestContactListBuildSdkOutboundContactListContactWhatsAppColumnSlice(t *testing.T) {
+	// Create test data with two email columns
+	whatsAppColumns := []interface{}{
+		map[string]interface{}{
+			"column_name": "name1",
+			"type":        "name",
+		},
+		map[string]interface{}{
+			"column_name": "address1",
+			"type":        "address",
+		},
+	}
+
+	// Create a new schema set with the test data
+	whatsAppColumnSet := schema.NewSet(schema.HashResource(&schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"column_name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+	}), whatsAppColumns)
+
+	// Call the function being tested
+	result := buildSdkOutboundContactListContactWhatsAppColumnSlice(whatsAppColumnSet)
+
+	// Verify the result
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+
+	if len(*result) != 2 {
+		t.Errorf("Expected slice with 2 elements, got %d", len(*result))
+	}
+
+	// Verify the contents of each element
+	for i, expected := range whatsAppColumns {
+		expectedMap := expected.(map[string]interface{})
+		actual := (*result)[i]
+
+		if *actual.ColumnName != expectedMap["column_name"] {
+			t.Errorf("Element %d: expected column_name %v, got %v",
+				i, expectedMap["column_name"], *actual.ColumnName)
+		}
+
+		if *actual.VarType != expectedMap["type"] {
+			t.Errorf("Element %d: expected type %v, got %v",
+				i, expectedMap["type"], *actual.VarType)
+		}
+	}
+}
+
 func TestContactListBuildSdkOutboundContactListContactEmailAddressColumnSliceEdgeCases(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -271,6 +328,81 @@ func TestContactListBuildSdkOutboundContactListContactEmailAddressColumnSliceEdg
 	}
 }
 
+func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t *testing.T) {
+	// Test case 1: Empty input
+	emptyResult := flattenSdkOutboundContactListContactPhoneNumberColumnSlice([]platformclientv2.Contactphonenumbercolumn{})
+	if emptyResult != nil {
+		t.Errorf("Expected nil for empty input, got %v", emptyResult)
+	}
+
+	// Helper function to create string pointer
+	strPtr := func(s string) *string {
+		return &s
+	}
+
+	// Test case 2: Single phone column with all fields
+	singleColumn := []platformclientv2.Contactphonenumbercolumn{
+		{
+			ColumnName:         strPtr("email_col"),
+			VarType:            strPtr("email"),
+			CallableTimeColumn: strPtr("time_col"),
+		},
+	}
+
+	result := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(singleColumn)
+
+	if result == nil {
+		t.Fatal("Expected non-nil result for single column")
+	}
+
+	if result.Len() != 1 {
+		t.Errorf("Expected 1 item in set, got %d", result.Len())
+	}
+
+	// Convert set to slice to check values
+	resultList := result.List()
+	if len(resultList) != 1 {
+		t.Fatal("Expected 1 item in result list")
+	}
+
+	resultMap := resultList[0].(map[string]interface{})
+
+	expectedValues := map[string]string{
+		"column_name":          "email_col",
+		"type":                 "email",
+		"callable_time_column": "time_col",
+	}
+
+	for key, expectedVal := range expectedValues {
+		if val, ok := resultMap[key]; !ok || val != expectedVal {
+			t.Errorf("Expected %s to be %s, got %v", key, expectedVal, val)
+		}
+	}
+
+	// Test case 3: Multiple columns with partial fields
+	multipleColumns := []platformclientv2.Contactphonenumbercolumn{
+		{
+			ColumnName: strPtr("email1"),
+			VarType:    strPtr("email"),
+		},
+		{
+			ColumnName:         strPtr("email2"),
+			VarType:            strPtr("email"),
+			CallableTimeColumn: strPtr("time2"),
+		},
+	}
+
+	multiResult := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(multipleColumns)
+
+	if multiResult == nil {
+		t.Fatal("Expected non-nil result for multiple columns")
+	}
+
+	if multiResult.Len() != 2 {
+		t.Errorf("Expected 2 items in set, got %d", multiResult.Len())
+	}
+}
+
 func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(t *testing.T) {
 	// Test case 1: Empty input
 	emptyResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice([]platformclientv2.Emailcolumn{})
@@ -336,6 +468,78 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 	}
 
 	multiResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice(multipleColumns)
+
+	if multiResult == nil {
+		t.Fatal("Expected non-nil result for multiple columns")
+	}
+
+	if multiResult.Len() != 2 {
+		t.Errorf("Expected 2 items in set, got %d", multiResult.Len())
+	}
+}
+
+func TestContactListFlattenSdkOutboundContactListContactWhatsAppColumnSlice(t *testing.T) {
+	// Test case 1: Empty input
+	emptyResult := flattenSdkOutboundContactListContactWhatsAppColumnSlice([]platformclientv2.Whatsappcolumn{})
+	if emptyResult != nil {
+		t.Errorf("Expected nil for empty input, got %v", emptyResult)
+	}
+
+	// Helper function to create string pointer
+	strPtr := func(s string) *string {
+		return &s
+	}
+
+	// Test case 2: Single email column with all fields
+	singleColumn := []platformclientv2.Whatsappcolumn{
+		{
+			ColumnName: strPtr("email_col"),
+			VarType:    strPtr("email"),
+		},
+	}
+
+	result := flattenSdkOutboundContactListContactWhatsAppColumnSlice(singleColumn)
+
+	if result == nil {
+		t.Fatal("Expected non-nil result for single column")
+	}
+
+	if result.Len() != 1 {
+		t.Errorf("Expected 1 item in set, got %d", result.Len())
+	}
+
+	// Convert set to slice to check values
+	resultList := result.List()
+	if len(resultList) != 1 {
+		t.Fatal("Expected 1 item in result list")
+	}
+
+	resultMap := resultList[0].(map[string]interface{})
+
+	expectedValues := map[string]string{
+		"column_name": "email_col",
+		"type":        "email",
+	}
+
+	for key, expectedVal := range expectedValues {
+		if val, ok := resultMap[key]; !ok || val != expectedVal {
+			t.Errorf("Expected %s to be %s, got %v", key, expectedVal, val)
+		}
+	}
+
+	// Test case 3: Multiple columns
+	multipleColumns := []platformclientv2.Whatsappcolumn{
+		{
+			ColumnName: strPtr("email1"),
+			VarType:    strPtr("email"),
+		},
+		{
+			ColumnName: strPtr("email2"),
+			VarType:    strPtr("email"),
+		},
+	}
+
+	multiResult := flattenSdkOutboundContactListContactWhatsAppColumnSlice(multipleColumns)
 
 	if multiResult == nil {
 		t.Fatal("Expected non-nil result for multiple columns")
