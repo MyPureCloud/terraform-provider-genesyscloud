@@ -511,13 +511,6 @@ func stripSystemColumnsFromCSV(filePath string, columnsToKeep []string) error {
 	}
 
 	return nil
-func GenerateWhatsAppColumnsBlock(columnName, columnType string) string {
-	return fmt.Sprintf(`
-	whats_app_columns {
-		column_name             = "%s"
-		type                    = "%s"
-	}
-`, columnName, columnType)
 }
 
 func GenerateWhatsAppColumnsBlock(columnName, columnType string) string {
