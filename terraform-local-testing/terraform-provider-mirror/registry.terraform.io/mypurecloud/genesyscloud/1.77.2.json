@@ -1,0 +1,10 @@
+{
+  "archives": {
+    "linux_amd64": {
+      "hashes": [
+        "h1:c7QN/iFDMg+8kTiXnwpP54eACjmhZVFIVPtTr+PCc20="
+      ],
+      "url": "terraform-provider-genesyscloud_1.77.2_linux_amd64.zip"
+    }
+  }
+}

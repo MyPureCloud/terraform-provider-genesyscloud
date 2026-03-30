@@ -17,6 +17,14 @@ website/node_modules
 ./*.tfstate
 ./*.tf.json
 .terraform/
+
+# Terraform local testing - generated files
+terraform-local-testing/**/export/
+terraform-local-testing/**/export-*/
+terraform-local-testing/**/*.tfstate
+terraform-local-testing/**/*.tfstate.backup
+terraform-local-testing/**/*.tf.json
+terraform-local-testing/**/test-report-*.json
 *.log
 *.bak
 *~

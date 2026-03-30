@@ -181,7 +181,7 @@ func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 // TestUnitComputeDependsOn will test computeDependsOn function
 func TestUnitComputeDependsOn(t *testing.T) {
 
-	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}) *schema.ResourceData {
+	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}, includeFilterResourcesById []interface{}) *schema.ResourceData {
 
 		resourceSchema := map[string]*schema.Schema{
 			"enable_dependency_resolution": {
@@ -194,32 +194,46 @@ func TestUnitComputeDependsOn(t *testing.T) {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 			},
+			"include_filter_resources_by_id": {
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Optional: true,
+			},
 		}
 
 		data := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
-			"enable_dependency_resolution": enableDependencyResolution,
-			"include_filter_resources":     includeFilterResources,
+			"enable_dependency_resolution":   enableDependencyResolution,
+			"include_filter_resources":       includeFilterResources,
+			"include_filter_resources_by_id": includeFilterResourcesById,
 		})
 		return data
 	}
 
 	tests := []struct {
+		name                       string
 		enableDependencyResolution bool
 		includeFilterResources     []interface{}
+		includeFilterResourcesById []interface{}
 		expected                   bool
 	}{
-		{true, []interface{}{"resource1", "resource2"}, true},
-		{true, []interface{}{}, false},
-		{false, []interface{}{"resource1"}, false},
-		{false, []interface{}{}, false},
+		{"regex filter with resources", true, []interface{}{"resource1", "resource2"}, nil, true},
+		{"regex filter empty", true, []interface{}{}, nil, false},
+		{"dependency disabled with regex", false, []interface{}{"resource1"}, nil, false},
+		{"no filters", false, []interface{}{}, nil, false},
+		{"id filter with resources", true, nil, []interface{}{"genesyscloud_flow::12345"}, true},
+		{"id filter empty", true, nil, []interface{}{}, false},
+		{"dependency disabled with id", false, nil, []interface{}{"genesyscloud_flow::12345"}, false},
 	}
 
 	for _, test := range tests {
-		data := createResourceData(test.enableDependencyResolution, test.includeFilterResources)
-		result := computeDependsOn(data)
-		if result != test.expected {
-			t.Errorf("computeDependsOn(%v, %v) = %v; want %v", test.enableDependencyResolution, test.includeFilterResources, result, test.expected)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			data := createResourceData(test.enableDependencyResolution, test.includeFilterResources, test.includeFilterResourcesById)
+			result := computeDependsOn(data)
+			if result != test.expected {
+				t.Errorf("computeDependsOn(%v, regex=%v, byId=%v) = %v; want %v",
+					test.enableDependencyResolution, test.includeFilterResources, test.includeFilterResourcesById, result, test.expected)
+			}
+		})
 	}
 }
 

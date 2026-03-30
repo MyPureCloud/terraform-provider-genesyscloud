@@ -15,6 +15,25 @@
 2. Enter the repository directory
 3. Build the provider by running `make build`
 
+### Building for Linux (Production)
+
+**⚠️ Important**: When building Linux binaries on Windows, you **must** use WSL to preserve Unix executable permissions!
+
+```powershell
+# Build for Linux with proper permissions (Windows)
+.\scripts\Build-LinuxProviderWSL.ps1 -Version "1.77.2"
+
+# Verify the build
+.\scripts\Verify-LinuxZip.ps1 -ZipPath "dist/terraform-provider-genesyscloud_1.77.2_linux_amd64.zip"
+```
+
+**Why This Matters**:
+- Linux binaries built on Windows without WSL lack the executable permission bit (`+x`)
+- This causes "Permission denied" errors when Terraform tries to run the provider
+- WSL properly handles Unix file permissions and creates correct zip archives
+
+See [scripts/README-LINUX-BUILD.md](./scripts/README-LINUX-BUILD.md) for detailed documentation.
+
 ## Using the provider
 
 When using the Terraform CLI, you can run [`terraform init`](https://www.terraform.io/docs/commands/init.html) in the directory containing your provider configuration and Terraform will automatically install the required provider. The Genesys Cloud provider must be configured with an authorized OAuth client ID and secret to call the SDK.
