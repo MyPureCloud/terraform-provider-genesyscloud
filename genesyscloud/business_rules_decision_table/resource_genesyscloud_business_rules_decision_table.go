@@ -224,8 +224,9 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 		sdkRows = append(sdkRows, sdkRow)
 	}
 
-	for i := 0; i < len(sdkRows); i += maxBulkDecisionTableRowsAdd {
-		end := i + maxBulkDecisionTableRowsAdd
+	limAdd, _, _ := getBulkChunkLimits()
+	for i := 0; i < len(sdkRows); i += limAdd {
+		end := i + limAdd
 		if end > len(sdkRows) {
 			end = len(sdkRows)
 		}

@@ -962,9 +962,11 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
+	limAdd, limUpd, limRem := getBulkChunkLimits()
+
 	// Delete rows first (bulk)
-	for i := 0; i < len(changes.deletes); i += maxBulkDecisionTableRowsRemove {
-		end := i + maxBulkDecisionTableRowsRemove
+	for i := 0; i < len(changes.deletes); i += limRem {
+		end := i + limRem
 		if end > len(changes.deletes) {
 			end = len(changes.deletes)
 		}
@@ -988,8 +990,8 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		}
 		updatePayloads = append(updatePayloads, body)
 	}
-	for i := 0; i < len(updatePayloads); i += maxBulkDecisionTableRowsUpdate {
-		end := i + maxBulkDecisionTableRowsUpdate
+	for i := 0; i < len(updatePayloads); i += limUpd {
+		end := i + limUpd
 		if end > len(updatePayloads) {
 			end = len(updatePayloads)
 		}
@@ -1014,8 +1016,8 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		sdkRow.RowIndex = nil
 		addRows = append(addRows, sdkRow)
 	}
-	for i := 0; i < len(addRows); i += maxBulkDecisionTableRowsAdd {
-		end := i + maxBulkDecisionTableRowsAdd
+	for i := 0; i < len(addRows); i += limAdd {
+		end := i + limAdd
 		if end > len(addRows) {
 			end = len(addRows)
 		}

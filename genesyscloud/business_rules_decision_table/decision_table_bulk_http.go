@@ -19,6 +19,20 @@ const (
 	maxBulkDecisionTableRowsRemove = 49
 )
 
+// bulkChunkLimitsOverride is set only in unit tests so multi-chunk bulk behavior can be
+// exercised with small sizes (see util/chunks tests using chunkSize 3–4). Production
+// always leaves this nil and uses the constants above.
+var bulkChunkLimitsOverride *struct {
+	Add, Update, Remove int
+}
+
+func getBulkChunkLimits() (add, update, remove int) {
+	if bulkChunkLimitsOverride != nil {
+		return bulkChunkLimitsOverride.Add, bulkChunkLimitsOverride.Update, bulkChunkLimitsOverride.Remove
+	}
+	return maxBulkDecisionTableRowsAdd, maxBulkDecisionTableRowsUpdate, maxBulkDecisionTableRowsRemove
+}
+
 type bulkAddDecisionTableRowsBody struct {
 	Rows []platformclientv2.Createdecisiontablerowrequest `json:"rows"`
 }
