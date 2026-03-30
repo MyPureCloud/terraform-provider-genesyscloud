@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -587,22 +588,29 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 			ClientConfig: &platformclientv2.Configuration{},
 		}
 
-		// Mock resource info
+		// Mock resource info with column_names in state so the stripping path is exercised
 		mockResource := resourceExporter.ResourceInfo{
 			BlockLabel: "contacts_test-contact-list",
 			State: &terraform.InstanceState{
-				Attributes: make(map[string]string),
+				Attributes: map[string]string{
+					"column_names.#": "2",
+					"column_names.0": "acct_numb",
+					"column_names.1": "phone1",
+				},
 			},
 		}
 
-		// Mock the file download function
+		// Mock the file download function - write a CSV with user columns + system columns
 		origDownloadFile := files.DownloadExportFileWithAccessToken
 		files.DownloadExportFileWithAccessToken = func(directory, filename, url, accessToken string) (*platformclientv2.APIResponse, error) {
 			fullPath := filepath.Join(directory, filename)
 			if err := os.MkdirAll(directory, os.ModePerm); err != nil {
 				return nil, err
 			}
-			os.WriteFile(fullPath, []byte("test content"), 0644)
+			// Simulate exported CSV with system-generated columns
+			csvContent := "inin-outbound-id,acct_numb,phone1,ContactCallable,CallRecordLastAttempt-phone1\n" +
+				"id1,123,555-0100,true,2024-01-01\n"
+			os.WriteFile(fullPath, []byte(csvContent), 0644)
 			return nil, nil
 		}
 		defer func() { files.DownloadExportFileWithAccessToken = origDownloadFile }()
@@ -643,6 +651,25 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 		}
 		if mockResource.State.Attributes["contacts_id_name"] == "" {
 			t.Error("Expected contacts_id_name to be set")
+		}
+
+		// Verify system columns were stripped from the CSV
+		csvPath := filepath.Join(tempDir, subDir, "contacts_test-contact-list.csv")
+		csvData, readErr := os.ReadFile(csvPath)
+		if readErr != nil {
+			t.Fatalf("Failed to read exported CSV: %v", readErr)
+		}
+		csvLines := strings.Split(strings.TrimSpace(string(csvData)), "\n")
+		if len(csvLines) != 2 {
+			t.Fatalf("Expected 2 lines (header + 1 row), got %d", len(csvLines))
+		}
+		expectedHeader := "inin-outbound-id,acct_numb,phone1"
+		if csvLines[0] != expectedHeader {
+			t.Errorf("Expected stripped header '%s', got '%s'", expectedHeader, csvLines[0])
+		}
+		expectedRow := "id1,123,555-0100"
+		if csvLines[1] != expectedRow {
+			t.Errorf("Expected stripped row '%s', got '%s'", expectedRow, csvLines[1])
 		}
 
 	})
@@ -755,4 +782,157 @@ func TestContactListContactsExporterResolver(t *testing.T) {
 
 	// Clean up after all tests
 	internalProxy = nil
+}
+
+func TestGetListAttributeFromState(t *testing.T) {
+	t.Run("reads list attribute correctly", func(t *testing.T) {
+		attrs := map[string]string{
+			"column_names.#": "3",
+			"column_names.0": "acct_numb",
+			"column_names.1": "phone1",
+			"column_names.2": "email1",
+		}
+		result := getListAttributeFromState(attrs, "column_names")
+		expected := []string{"acct_numb", "phone1", "email1"}
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("Expected %v, got %v", expected, result)
+		}
+	})
+
+	t.Run("returns nil when attribute missing", func(t *testing.T) {
+		attrs := map[string]string{}
+		result := getListAttributeFromState(attrs, "column_names")
+		if result != nil {
+			t.Errorf("Expected nil, got %v", result)
+		}
+	})
+
+	t.Run("returns nil when count is zero", func(t *testing.T) {
+		attrs := map[string]string{
+			"column_names.#": "0",
+		}
+		result := getListAttributeFromState(attrs, "column_names")
+		if result != nil {
+			t.Errorf("Expected nil, got %v", result)
+		}
+	})
+
+	t.Run("returns nil when count is not a number", func(t *testing.T) {
+		attrs := map[string]string{
+			"column_names.#": "abc",
+		}
+		result := getListAttributeFromState(attrs, "column_names")
+		if result != nil {
+			t.Errorf("Expected nil, got %v", result)
+		}
+	})
+
+	t.Run("works with different attribute names", func(t *testing.T) {
+		attrs := map[string]string{
+			"phone_columns.#": "2",
+			"phone_columns.0": "home_phone",
+			"phone_columns.1": "mobile_phone",
+		}
+		result := getListAttributeFromState(attrs, "phone_columns")
+		expected := []string{"home_phone", "mobile_phone"}
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("Expected %v, got %v", expected, result)
+		}
+	})
+}
+
+func TestStripSystemColumnsFromCSV(t *testing.T) {
+	t.Run("strips system columns keeping only specified columns", func(t *testing.T) {
+		tempDir := t.TempDir()
+		csvPath := filepath.Join(tempDir, "test.csv")
+
+		// CSV with user columns + system columns (like a real export)
+		csvContent := "inin-outbound-id,acct_numb,phone1,email1,ContactCallable,CallRecordLastAttempt-phone1\n" +
+			"id1,123,555-0100,a@b.com,true,2024-01-01\n" +
+			"id2,456,555-0200,c@d.com,false,2024-01-02\n"
+		os.WriteFile(csvPath, []byte(csvContent), 0644)
+
+		columnsToKeep := []string{"inin-outbound-id", "acct_numb", "phone1", "email1"}
+		err := stripSystemColumnsFromCSV(csvPath, columnsToKeep)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		// Read back and verify
+		data, _ := os.ReadFile(csvPath)
+		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+		if len(lines) != 3 {
+			t.Fatalf("Expected 3 lines (header + 2 rows), got %d", len(lines))
+		}
+		if lines[0] != "inin-outbound-id,acct_numb,phone1,email1" {
+			t.Errorf("Expected header 'inin-outbound-id,acct_numb,phone1,email1', got '%s'", lines[0])
+		}
+		if lines[1] != "id1,123,555-0100,a@b.com" {
+			t.Errorf("Expected row 'id1,123,555-0100,a@b.com', got '%s'", lines[1])
+		}
+	})
+
+	t.Run("no-op when all columns match", func(t *testing.T) {
+		tempDir := t.TempDir()
+		csvPath := filepath.Join(tempDir, "test.csv")
+
+		csvContent := "inin-outbound-id,acct_numb,phone1\nid1,123,555-0100\n"
+		os.WriteFile(csvPath, []byte(csvContent), 0644)
+
+		columnsToKeep := []string{"inin-outbound-id", "acct_numb", "phone1"}
+		err := stripSystemColumnsFromCSV(csvPath, columnsToKeep)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		// File should be unchanged
+		data, _ := os.ReadFile(csvPath)
+		if string(data) != csvContent {
+			t.Errorf("File should be unchanged, got '%s'", string(data))
+		}
+	})
+
+	t.Run("handles empty CSV file", func(t *testing.T) {
+		tempDir := t.TempDir()
+		csvPath := filepath.Join(tempDir, "test.csv")
+		os.WriteFile(csvPath, []byte(""), 0644)
+
+		err := stripSystemColumnsFromCSV(csvPath, []string{"col1"})
+		if err != nil {
+			t.Fatalf("Expected no error for empty file, got %v", err)
+		}
+	})
+
+	t.Run("returns error for nonexistent file", func(t *testing.T) {
+		err := stripSystemColumnsFromCSV("/nonexistent/path/test.csv", []string{"col1"})
+		if err == nil {
+			t.Error("Expected error for nonexistent file, got nil")
+		}
+	})
+
+	t.Run("strips many system columns like real export scenario", func(t *testing.T) {
+		tempDir := t.TempDir()
+		csvPath := filepath.Join(tempDir, "test.csv")
+
+		// Simulate a real export: 3 user columns + 5 system columns
+		header := "inin-outbound-id,acct_numb,phone1,ContactCallable,AutomaticTimeZone-phone1,Callable-phone1,CallRecordLastAttempt-phone1,CallRecordLastResult-phone1"
+		row := "id1,123,555-0100,true,US/Eastern,true,2024-01-01,BUSY"
+		csvContent := header + "\n" + row + "\n"
+		os.WriteFile(csvPath, []byte(csvContent), 0644)
+
+		columnsToKeep := []string{"inin-outbound-id", "acct_numb", "phone1"}
+		err := stripSystemColumnsFromCSV(csvPath, columnsToKeep)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		data, _ := os.ReadFile(csvPath)
+		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+		if lines[0] != "inin-outbound-id,acct_numb,phone1" {
+			t.Errorf("Expected stripped header, got '%s'", lines[0])
+		}
+		if lines[1] != "id1,123,555-0100" {
+			t.Errorf("Expected stripped row, got '%s'", lines[1])
+		}
+	})
 }
