@@ -16,7 +16,7 @@ func getAllTopics(ctx context.Context, clientConfig *platformclientv2.Configurat
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	const pageSize = 100
-	for pageNum := 1; pageNum <= 50; pageNum++ {
+	for pageNum := 1; ; pageNum++ {
 		topics, resp, err := proxy.listTopics(ctx, pageSize, pageNum)
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of topics: %s", err), resp)

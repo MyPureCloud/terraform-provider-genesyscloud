@@ -18,7 +18,7 @@ func dataSourceSpeechAndTextAnalyticsTopicRead(ctx context.Context, d *schema.Re
 	proxy := getSttTopicProxy(sdkConfig)
 
 	const pageSize = 100
-	for pageNum := 1; pageNum <= 50; pageNum++ {
+	for pageNum := 1; ; pageNum++ {
 		topics, resp, err := proxy.listTopics(ctx, pageSize, pageNum)
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to list topics: %s", err), resp)
