@@ -169,6 +169,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   enable_audio_monitoring  = true
   enable_manual_assignment = true
   calling_party_name       = "Example Inc."
+  last_agent_routing_mode  = "QueueMembersOnly" # Valid values: Disabled, QueueMembersOnly, AnyAgent
   groups                   = [genesyscloud_group.example_group.id, genesyscloud_group.example_group2.id]
 
   media_settings_call {
