@@ -53,6 +53,7 @@ func ResourceConversationsMessagingIntegrationsOpen() *schema.Resource {
 			},
 			`supported_content_id`: {
 				Description: `Reference to supported content profile associated with the integration`,
+				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
