@@ -1,5 +1,11 @@
 package customer_intent
 
+// @team: Sirona
+// @chat: #AIP Sirona
+// @pm: Cillian Day
+// @jira: CPR-2341
+// @description: Customer Intents are used for understanding the intent of a contact across sessions and conversations
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

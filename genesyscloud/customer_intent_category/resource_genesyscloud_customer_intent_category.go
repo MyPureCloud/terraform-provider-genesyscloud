@@ -26,7 +26,7 @@ The resource_genesyscloud_intent_category.go contains all of the methods that pe
 
 // getAllAuthIntentCategory retrieves all of the intent category via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthIntentCategories(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newIntentCategoryProxy(clientConfig)
+	proxy := getIntentCategoryProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	intentsCategories, resp, err := proxy.getAllIntentCategory(ctx)

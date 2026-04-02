@@ -1,5 +1,11 @@
 package intent_category
 
+// @team: Sirona
+// @chat: #AIP Sirona
+// @pm: Cillian Day
+// @jira: CPR-2341
+// @description: Customer Intent Categories are high level groupings of similar customer intents
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 

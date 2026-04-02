@@ -26,7 +26,7 @@ The resource_genesyscloud_customer_intent.go contains all of the methods that pe
 
 // getAllAuthCustomerIntent retrieves all of the customer intent via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthCustomerIntents(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newCustomerIntentProxy(clientConfig)
+	proxy := getCustomerIntentProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	customerIntentResponses, resp, err := proxy.getAllCustomerIntent(ctx)
