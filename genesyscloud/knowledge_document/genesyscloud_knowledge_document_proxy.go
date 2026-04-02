@@ -34,7 +34,7 @@ type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
 	KnowledgeApi                             *platformclientv2.KnowledgeApi
-	getKnowledgeDocumentByTitleAttr           getKnowledgeDocumentByTitleFunc
+	getKnowledgeDocumentByTitleAttr          getKnowledgeDocumentByTitleFunc
 	getKnowledgeKnowledgebaseCategoryAttr    getKnowledgeKnowledgebaseCategoryFunc
 	getKnowledgeKnowledgebaseCategoriesAttr  getKnowledgeKnowledgebaseCategoriesFunc
 	getKnowledgeKnowledgebaseLabelsAttr      getKnowledgeKnowledgebaseLabelsFunc
