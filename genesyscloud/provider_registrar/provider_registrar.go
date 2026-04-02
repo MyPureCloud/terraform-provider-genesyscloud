@@ -293,8 +293,8 @@ func registerResources() {
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
-	customerIntent.SetRegistrar(regInstance)                                       //Registering customer intent
-	customerIntentCategory.SetRegistrar(regInstance)                               //Registering intent category
+	customerIntent.SetRegistrar(regInstance)                               //Registering customer intent
+	customerIntentCategory.SetRegistrar(regInstance)                       //Registering intent category
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
