@@ -3,6 +3,7 @@ package customer_intent
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -104,8 +105,8 @@ func ResourceCustomerIntent() *schema.Resource {
 func CustomerIntentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthCustomerIntents),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"category_id": {RefType: intentCategory.ResourceType},
 		},
 	}
 }

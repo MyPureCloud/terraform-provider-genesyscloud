@@ -29,12 +29,12 @@ func getAllAuthIntentCategories(ctx context.Context, clientConfig *platformclien
 	proxy := newIntentCategoryProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	intentsCategorys, resp, err := proxy.getAllIntentCategory(ctx)
+	intentsCategories, resp, err := proxy.getAllIntentCategory(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get intent category: %v", err), resp)
 	}
 
-	for _, intentsCategory := range *intentsCategorys {
+	for _, intentsCategory := range *intentsCategories {
 		resources[*intentsCategory.Id] = &resourceExporter.ResourceMeta{BlockLabel: *intentsCategory.Name}
 	}
 

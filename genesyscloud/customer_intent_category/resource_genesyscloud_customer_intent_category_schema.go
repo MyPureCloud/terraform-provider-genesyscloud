@@ -57,9 +57,7 @@ func ResourceIntentCategory() *schema.Resource {
 func IntentCategoryExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIntentCategories),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
-		},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }
 

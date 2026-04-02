@@ -21,7 +21,7 @@ import (
 // dataSourceCustomerIntentRead retrieves by name the id in question
 func dataSourceCustomerIntentRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := newCustomerIntentProxy(sdkConfig)
+	proxy := getCustomerIntentProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

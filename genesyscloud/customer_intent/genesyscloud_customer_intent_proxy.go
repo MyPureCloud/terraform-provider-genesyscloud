@@ -3,8 +3,10 @@ package customer_intent
 import (
 	"context"
 	"fmt"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"log"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 /*
@@ -102,6 +104,7 @@ func (p *customerIntentProxy) deleteCustomerIntent(ctx context.Context, id strin
 
 // createCustomerIntentFn is an implementation function for creating a Genesys Cloud customer intent
 func createCustomerIntentFn(ctx context.Context, p *customerIntentProxy, customerIntent *platformclientv2.Customerintentresponse) (*platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Convert Customerintentresponse to Customerintent for the API call
 	body := platformclientv2.Customerintent{
 		Name:        customerIntent.Name,
@@ -117,6 +120,7 @@ func createCustomerIntentFn(ctx context.Context, p *customerIntentProxy, custome
 
 // getAllCustomerIntentFn is the implementation for retrieving all customer intent in Genesys Cloud
 func getAllCustomerIntentFn(ctx context.Context, p *customerIntentProxy) (*[]platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allCustomerIntentResponses []platformclientv2.Customerintentresponse
 	const pageSize = 100
 
@@ -151,13 +155,16 @@ func getAllCustomerIntentFn(ctx context.Context, p *customerIntentProxy) (*[]pla
 
 // getCustomerIntentIdByNameFn is an implementation of the function to get a Genesys Cloud customer intent by name
 func getCustomerIntentIdByNameFn(ctx context.Context, p *customerIntentProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-	customerIntentResponses, resp, err := p.intentsApi.GetIntentsCustomerintents(100, 1, name, "")
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	const pageSize = 100
+
+	customerIntentResponses, resp, err := p.intentsApi.GetIntentsCustomerintents(pageSize, 1, name, "")
 	if err != nil {
 		return "", resp, false, err
 	}
 
 	if customerIntentResponses.Entities == nil || len(*customerIntentResponses.Entities) == 0 {
-		return "", resp, true, err
+		return "", resp, true, fmt.Errorf("Unable to find customer intent with name %s", name)
 	}
 
 	for _, customerIntentResponse := range *customerIntentResponses.Entities {
@@ -167,16 +174,36 @@ func getCustomerIntentIdByNameFn(ctx context.Context, p *customerIntentProxy, na
 		}
 	}
 
+	for pageNum := 2; pageNum <= *customerIntentResponses.PageCount; pageNum++ {
+		customerIntentResponses, resp, err = p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, name, "")
+		if err != nil {
+			return "", resp, false, err
+		}
+
+		if customerIntentResponses.Entities == nil || len(*customerIntentResponses.Entities) == 0 {
+			break
+		}
+
+		for _, customerIntentResponse := range *customerIntentResponses.Entities {
+			if *customerIntentResponse.Name == name {
+				log.Printf("Retrieved the customer intent id %s by name %s", *customerIntentResponse.Id, name)
+				return *customerIntentResponse.Id, resp, false, nil
+			}
+		}
+	}
+
 	return "", resp, true, fmt.Errorf("Unable to find customer intent with name %s", name)
 }
 
 // getCustomerIntentByIdFn is an implementation of the function to get a Genesys Cloud customer intent by Id
 func getCustomerIntentByIdFn(ctx context.Context, p *customerIntentProxy, id string) (*platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.intentsApi.GetIntentsCustomerintent(id)
 }
 
 // updateCustomerIntentFn is an implementation of the function to update a Genesys Cloud customer intent
 func updateCustomerIntentFn(ctx context.Context, p *customerIntentProxy, id string, customerIntent *platformclientv2.Customerintentresponse) (*platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Convert Customerintentresponse to Customerintentpatch for the API call
 	body := platformclientv2.Customerintentpatch{
 		Name:        customerIntent.Name,
@@ -192,6 +219,7 @@ func updateCustomerIntentFn(ctx context.Context, p *customerIntentProxy, id stri
 
 // deleteCustomerIntentFn is an implementation function for deleting a Genesys Cloud customer intent
 func deleteCustomerIntentFn(ctx context.Context, p *customerIntentProxy, id string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.intentsApi.DeleteIntentsCustomerintent(id)
 }
 
@@ -212,6 +240,7 @@ func (p *customerIntentProxy) bulkRemoveSourceIntents(ctx context.Context, custo
 
 // getSourceIntentsFn is the implementation for retrieving source intents mapped to a customer intent
 func getSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerIntentId string) (*[]platformclientv2.Customersourceintent, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allSourceIntents []platformclientv2.Customersourceintent
 	const pageSize = 100
 
@@ -251,6 +280,7 @@ func getSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerInt
 
 // bulkAddSourceIntentsFn is the implementation for adding source intents to a customer intent
 func bulkAddSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	body := platformclientv2.Bulkaddsourceintentsrequest{
 		Items: &sourceIntents,
 	}
@@ -259,6 +289,7 @@ func bulkAddSourceIntentsFn(ctx context.Context, p *customerIntentProxy, custome
 
 // bulkRemoveSourceIntentsFn is the implementation for removing source intents from a customer intent
 func bulkRemoveSourceIntentsFn(ctx context.Context, p *customerIntentProxy, customerIntentId string, sourceIntents []platformclientv2.Sourceintent) (*platformclientv2.Bulksourceintentsresponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Extract IDs from source intents for removal
 	ids := make([]string, 0, len(sourceIntents))
 	for _, si := range sourceIntents {

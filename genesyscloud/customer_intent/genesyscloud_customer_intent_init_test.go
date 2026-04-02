@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intent_category"
+	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )

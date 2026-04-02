@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -87,6 +88,21 @@ func TestAccResourceCustomerIntent(t *testing.T) {
 }
 
 func testVerifyCustomerIntentDestroyed(state *terraform.State) error {
+	intentsApi := platformclientv2.NewIntentsApi()
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_customer_intent" {
+			continue
+		}
+
+		customerIntent, resp, err := intentsApi.GetIntentsCustomerintent(rs.Primary.ID)
+		if customerIntent != nil {
+			return fmt.Errorf("Customer intent (%s) still exists", rs.Primary.ID)
+		} else if util.IsStatus404(resp) {
+			continue
+		} else {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
 	return nil
 }
 
