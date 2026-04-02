@@ -117,7 +117,7 @@ func getAllIntentCategoryFn(ctx context.Context, p *intentCategoryProxy) (*[]pla
 	}
 
 	for pageNum := 2; pageNum <= *intentCategories.PageCount; pageNum++ {
-		intentCategories, _, err := p.intentsApi.GetIntentsCategories(pageSize, pageNum, "")
+		intentCategories, _, err = p.intentsApi.GetIntentsCategories(pageSize, pageNum, "")
 		if err != nil {
 			return nil, resp, err
 		}

@@ -76,7 +76,7 @@ func TestAccDataSourceCustomerIntentNotFound(t *testing.T) {
 				Config: generateCustomerIntentDataSource(
 					dataSourceLabel,
 					intentName,
-					"", // No dependency
+					"",
 				),
 				ExpectError: regexp.MustCompile(fmt.Sprintf("No customer intent found with name %s", regexp.QuoteMeta(intentName))),
 			},
@@ -84,14 +84,7 @@ func TestAccDataSourceCustomerIntentNotFound(t *testing.T) {
 	})
 }
 
-// generateCustomerIntentDataSource generates a Terraform config string for a customer intent data source
-func generateCustomerIntentDataSource(
-	dataSourceLabel string,
-	name string,
-	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
-	dependsOn string,
-) string {
+func generateCustomerIntentDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	if dependsOn != "" {
 		return fmt.Sprintf(`data "genesyscloud_customer_intent" "%s" {
 		name       = "%s"

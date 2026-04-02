@@ -136,7 +136,7 @@ func getAllCustomerIntentFn(ctx context.Context, p *customerIntentProxy) (*[]pla
 	}
 
 	for pageNum := 2; pageNum <= *customerIntentResponses.PageCount; pageNum++ {
-		customerIntentResponses, _, err := p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, "", "")
+		customerIntentResponses, _, err = p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, "", "")
 		if err != nil {
 			return nil, resp, err
 		}
