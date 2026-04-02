@@ -5,12 +5,14 @@ package outbound_campaignrule
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"strconv"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -122,6 +124,30 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceOutboundCampaignrule())
 	regInstance.RegisterDataSource(ResourceType, DataSourceOutboundCampaignrule())
 	regInstance.RegisterExporter(ResourceType, OutboundCampaignruleExporter())
+}
+
+// validateCampaignRuleConditions validates the relationship between campaign_rule_processing and condition fields
+func validateCampaignRuleConditions(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	processing := d.Get("campaign_rule_processing").(string)
+	hasConditionGroups := len(d.Get("condition_groups").([]interface{})) > 0
+	hasRuleConditions := len(d.Get("campaign_rule_conditions").([]interface{})) > 0
+
+	if processing == "v2" {
+		if hasRuleConditions {
+			return fmt.Errorf("when campaign_rule_processing is set to 'v2', use 'condition_groups' instead of 'campaign_rule_conditions'")
+		}
+		if !hasConditionGroups {
+			return fmt.Errorf("when campaign_rule_processing is set to 'v2', 'condition_groups' is required")
+		}
+	} else {
+		if hasConditionGroups {
+			return fmt.Errorf("'condition_groups' can only be used when campaign_rule_processing is set to 'v2'")
+		}
+		if !hasRuleConditions {
+			return fmt.Errorf("'campaign_rule_conditions' is required when not using campaign_rule_processing 'v2'")
+		}
+	}
+	return nil
 }
 
 // ResourceOutboundCampaignrule registers the genesyscloud_outbound_campaignrule resource with Terraform
@@ -355,6 +381,7 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: validateCampaignRuleConditions,
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the campaign rule.`,
@@ -369,10 +396,11 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Elem:        outboundCampaignRuleEntities,
 			},
 			`campaign_rule_conditions`: {
-				Description: `The list of conditions that are evaluated on the entities. Required when not using condition_groups (campaign_rule_processing "v2").`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        outboundCampaignRuleCondition,
+				Description:   `The list of conditions that are evaluated on the entities. Required when not using condition_groups (campaign_rule_processing "v2").`,
+				Optional:      true,
+				Type:          schema.TypeList,
+				Elem:          outboundCampaignRuleCondition,
+				ConflictsWith: []string{`condition_groups`},
 			},
 			`campaign_rule_actions`: {
 				Description: `The list of actions that are executed if the conditions are satisfied.`,
@@ -390,13 +418,14 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Description:  `Campaign rule processing algorithm. Use "v2" to enable condition groups.`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"", "v2"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"v2"}, true),
 			},
 			`condition_groups`: {
-				Description: `List of condition groups that are evaluated, used only with campaignRuleProcessing="v2".`,
-				Optional:    true,
-				Type:        schema.TypeList,
-				Elem:        outboundCampaignRuleConditionGroup,
+				Description:   `List of condition groups that are evaluated, used only with campaignRuleProcessing="v2".`,
+				Optional:      true,
+				Type:          schema.TypeList,
+				Elem:          outboundCampaignRuleConditionGroup,
+				ConflictsWith: []string{`campaign_rule_conditions`},
 			},
 			`execution_settings`: {
 				Description: `Campaign rule execution settings.`,

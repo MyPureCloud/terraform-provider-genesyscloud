@@ -31,7 +31,9 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		campaignRule.CampaignRuleConditions = buildCampaignRuleConditions(v.([]interface{}))
 	}
 	if v, ok := d.GetOk("execution_settings"); ok && len(v.([]interface{})) > 0 {
-		campaignRule.ExecutionSettings = buildExecutionSettings(v.([]interface{})[0].(map[string]interface{}))
+		if firstElement := v.([]interface{})[0]; firstElement != nil {
+			campaignRule.ExecutionSettings = buildExecutionSettings(firstElement.(map[string]interface{}))
+		}
 	}
 
 	return campaignRule
