@@ -312,6 +312,16 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 			p.logDebug("Error pre-filling client pool - %s", p.formatMetrics())
 			return resultErr
 		}
+		// Check if context was cancelled even though errDone fired first.
+		// When both channels are ready, Go's select picks randomly, so we
+		// must check ctx.Err() explicitly to reliably detect timeouts.
+		if ctx.Err() != nil {
+			p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
+			if p.config.DebugLogging {
+				log.Printf("Timed out pre-filling client pool - %s", p.formatMetrics())
+			}
+			return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
+		}
 		p.logDebug("Successfully pre-filled client pool - %s", p.formatMetrics())
 		// Also log to standard logger for test capture when debug is enabled
 		if p.config.DebugLogging {
@@ -659,6 +669,10 @@ func (p *SDKClientPool) AddClientsToPool(ctx context.Context, providerConfig *sc
 		if resultErr != nil {
 			p.logDebug("Error adding clients to pool - %s", p.formatMetrics())
 			return resultErr
+		}
+		if ctx.Err() != nil {
+			p.logDebug("Timed out adding clients to pool - %s", p.formatMetrics())
+			return diag.Errorf("Timed out adding clients to pool: %v", ctx.Err())
 		}
 		p.logDebug("Successfully added %d clients to pool - %s", numClients, p.formatMetrics())
 		return nil
