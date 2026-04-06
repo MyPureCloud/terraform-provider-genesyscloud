@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -725,8 +726,17 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 	if subType == nil {
 		return nil
 	}
-	subTypeList := make([]interface{}, 0)
-	for key, value := range subType {
+
+	// Sort keys to ensure deterministic ordering and avoid phantom diffs
+	keys := make([]string, 0, len(subType))
+	for key := range subType {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	subTypeList := make([]interface{}, 0, len(subType))
+	for _, key := range keys {
+		value := subType[key]
 		subTypeMap := make(map[string]interface{})
 		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
 		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
