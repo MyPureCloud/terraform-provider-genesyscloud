@@ -50,6 +50,20 @@ func buildAppConversations(conversations []interface{}) *platformclientv2.Conver
 		}
 	}
 
+	if notificationsArr, ok := conversation["notifications"].([]interface{}); ok && len(notificationsArr) > 0 && notificationsArr[0] != nil {
+		notification := notificationsArr[0].(map[string]interface{})
+		ret.Notifications = &platformclientv2.Notificationssettings{
+			Enabled: platformclientv2.Bool(notification["enabled"].(bool)),
+		}
+		if contentType, ok := notification["notification_content_type"].(string); ok && contentType != "" {
+			ret.Notifications.NotificationContentType = &contentType
+		}
+	}
+
+	if sessionDuration, ok := conversation["session_duration_seconds"].(int); ok && sessionDuration > 0 {
+		ret.SessionDurationSeconds = &sessionDuration
+	}
+
 	return ret
 }
 
@@ -161,6 +175,16 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 			}
 		}
 
+		if enableAttachments, ok := fileUpload["enable_attachments"].(bool); ok {
+			if messengerSettings.FileUpload == nil {
+				messengerSettings.FileUpload = &platformclientv2.Fileuploadsettings{}
+			}
+			messengerSettings.FileUpload.EnableAttachments = &enableAttachments
+		}
+	}
+
+	if sessionPersistenceType, ok := cfg["session_persistence_type"].(string); ok && sessionPersistenceType != "" {
+		messengerSettings.SessionPersistenceType = &sessionPersistenceType
 	}
 
 	return messengerSettings
@@ -198,20 +222,25 @@ func flattenHomeScreen(settings *platformclientv2.Messengerhomescreen) []interfa
 }
 
 func flattenFileUpload(settings *platformclientv2.Fileuploadsettings) []interface{} {
-	if settings == nil || settings.Modes == nil || len(*settings.Modes) < 1 {
+	if settings == nil {
 		return nil
 	}
 
-	modes := make([]map[string]interface{}, len(*settings.Modes))
-	for i, mode := range *settings.Modes {
-		modes[i] = map[string]interface{}{
-			"file_types":       *mode.FileTypes,
-			"max_file_size_kb": *mode.MaxFileSizeKB,
-		}
+	ret := map[string]interface{}{}
+
+	if settings.EnableAttachments != nil {
+		ret["enable_attachments"] = *settings.EnableAttachments
 	}
 
-	ret := map[string]interface{}{
-		"mode": modes,
+	if settings.Modes != nil && len(*settings.Modes) > 0 {
+		modes := make([]map[string]interface{}, len(*settings.Modes))
+		for i, mode := range *settings.Modes {
+			modes[i] = map[string]interface{}{
+				"file_types":       *mode.FileTypes,
+				"max_file_size_kb": *mode.MaxFileSizeKB,
+			}
+		}
+		ret["mode"] = modes
 	}
 
 	return []interface{}{ret}
@@ -244,6 +273,20 @@ func flattenAppConversations(conversations *platformclientv2.Conversationappsett
 
 	if conversations.ConversationClear != nil {
 		retMap["conversation_clear_enabled"] = conversations.ConversationClear.Enabled
+	}
+
+	if conversations.Notifications != nil {
+		notifMap := map[string]interface{}{
+			"enabled": conversations.Notifications.Enabled,
+		}
+		if conversations.Notifications.NotificationContentType != nil {
+			notifMap["notification_content_type"] = *conversations.Notifications.NotificationContentType
+		}
+		retMap["notifications"] = []interface{}{notifMap}
+	}
+
+	if conversations.SessionDurationSeconds != nil {
+		retMap["session_duration_seconds"] = *conversations.SessionDurationSeconds
 	}
 
 	if conversations.Humanize != nil {
@@ -297,12 +340,18 @@ func FlattenMessengerSettings(messengerSettings *platformclientv2.Messengersetti
 		return nil
 	}
 
-	return []interface{}{map[string]interface{}{
+	ret := map[string]interface{}{
 		"enabled":         messengerSettings.Enabled,
 		"styles":          flattenStyles(messengerSettings.Styles),
 		"launcher_button": flattenLauncherButton(messengerSettings.LauncherButton),
 		"home_screen":     flattenHomeScreen(messengerSettings.HomeScreen),
 		"file_upload":     flattenFileUpload(messengerSettings.FileUpload),
 		"apps":            flattenMessengerApps(messengerSettings.Apps),
-	}}
+	}
+
+	if messengerSettings.SessionPersistenceType != nil {
+		ret["session_persistence_type"] = *messengerSettings.SessionPersistenceType
+	}
+
+	return []interface{}{ret}
 }

@@ -180,45 +180,22 @@ func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
 
 // TestUnitComputeDependsOn will test computeDependsOn function
 func TestUnitComputeDependsOn(t *testing.T) {
-
-	createResourceData := func(enableDependencyResolution bool, includeFilterResources []interface{}) *schema.ResourceData {
-
-		resourceSchema := map[string]*schema.Schema{
-			"enable_dependency_resolution": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
-			"include_filter_resources": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-			},
-		}
-
-		data := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
-			"enable_dependency_resolution": enableDependencyResolution,
-			"include_filter_resources":     includeFilterResources,
-		})
-		return data
-	}
-
 	tests := []struct {
 		enableDependencyResolution bool
-		includeFilterResources     []interface{}
+		allowDependencyResolution  ExporterDependencyResolutionDecision
 		expected                   bool
 	}{
-		{true, []interface{}{"resource1", "resource2"}, true},
-		{true, []interface{}{}, false},
-		{false, []interface{}{"resource1"}, false},
-		{false, []interface{}{}, false},
+		{true, ExporterDependencyResolutionDecision(true), true},
+		{true, ExporterDependencyResolutionDecision(false), false},
+		{false, ExporterDependencyResolutionDecision(true), false},
+		{false, ExporterDependencyResolutionDecision(false), false},
 	}
 
 	for _, test := range tests {
-		data := createResourceData(test.enableDependencyResolution, test.includeFilterResources)
-		result := computeDependsOn(data)
+		result := computeDependsOn(test.enableDependencyResolution, test.allowDependencyResolution)
 		if result != test.expected {
-			t.Errorf("computeDependsOn(%v, %v) = %v; want %v", test.enableDependencyResolution, test.includeFilterResources, result, test.expected)
+			t.Errorf("computeDependsOn(%v, %v) = %v; want %v",
+				test.enableDependencyResolution, test.allowDependencyResolution, result, test.expected)
 		}
 	}
 }
@@ -344,6 +321,9 @@ func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 }
 
 func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
+	// Reset singleton and trigger proxyOnce.Do first
+	dependentconsumers.InternalProxy = nil
+	_ = dependentconsumers.GetDependentConsumerProxy(nil) // Trigger proxyOnce.Do
 
 	meta := &resourceExporter.ResourceMeta{
 		BlockLabel: "example::::resource",
@@ -356,28 +336,30 @@ func TestUnitTfExportBuildDependsOnResources(t *testing.T) {
 	}
 
 	dependencyStruct := &resourceExporter.DependencyResource{
-		DependsMap:        nil,
+		DependsMap:        map[string][]string{"1": {"example.resource"}},
 		CyclicDependsList: nil,
 	}
 
-	retrievePooledClientFn := func(ctx context.Context, a *dependentconsumers.DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
-		return resources, dependencyStruct, nil, nil
-	}
-
-	getAllPooledFn := func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+	// Mock the GetAllWithPooledClient to return directly without calling SDK pool
+	getAllPooledFn := func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		// Return mock data directly without calling the method
 		return resources, dependencyStruct, nil, nil
 	}
 
 	dependencyProxy := &dependentconsumers.DependentConsumerProxy{
-		RetrieveDependentConsumersAttr: retrievePooledClientFn,
-		GetPooledClientAttr:            getAllPooledFn,
+		GetPooledClientAttr: getAllPooledFn,
+		ClientConfig:        &platformclientv2.Configuration{},
 	}
 
 	dependentconsumers.InternalProxy = dependencyProxy
+	defer func() { dependentconsumers.InternalProxy = nil }()
+
 	ctx := context.Background()
 
 	gre := &GenesysCloudResourceExporter{
-		ctx: ctx,
+		ctx:               ctx,
+		dependsList:       make(map[string][]string),
+		flowResourcesList: []string{},
 	}
 
 	state := &terraform.InstanceState{}
@@ -589,7 +571,7 @@ func setupGenesysCloudResourceExporter(t *testing.T) *GenesysCloudResourceExport
 		ClientConfig: platformclientv2.GetDefaultConfiguration(),
 		Domain:       "mypurecloud.com",
 	}
-	g, diagErr := NewGenesysCloudResourceExporter(context.TODO(), resourceData, providerMeta, IncludeResources)
+	g, diagErr := NewGenesysCloudResourceExporter(context.TODO(), resourceData, providerMeta, IncludeResources, AllowDependencyResolution)
 	if diagErr != nil {
 		t.Errorf("%v", diagErr)
 	}

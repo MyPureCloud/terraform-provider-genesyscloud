@@ -134,7 +134,11 @@ func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllModifiedCustomAuthActions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"integration_id": {RefType: "genesyscloud_integration"},
+			"integration_id":        {RefType: "genesyscloud_integration"},
+			"parent_integration_id": {RefType: "genesyscloud_integration"},
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "parent_integration_id"}: {Attr: "integration_id"},
 		},
 	}
 }

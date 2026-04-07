@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -150,22 +151,22 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
-		if *sdkDncList.DncSourceType == "rds" {
-			if d.HasChange("entries") {
-				resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
-				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
-				}
+		if d.HasChange("entries") {
+			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
+			}
 
+			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
 					resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 					if err != nil {
 						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
 					}
 				}
+			} else {
+				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 			}
-		} else {
-			return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists", fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
 		}
 		return nil, nil
 	})
@@ -186,7 +187,7 @@ func getOutboundDnclistEntriesWithRetries(ctx context.Context, proxy *outboundDn
 	entries := make([]interface{}, 0)
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
 		entriesList, resp, err := proxy.getOutboundDnclistEntries(ctx, dncListId)
-		if util.IsStatus400(resp) {
+		if util.IsStatus400(resp) || util.IsStatus404(resp) {
 			return retry.RetryableError(err)
 		}
 		if err != nil {
@@ -227,19 +228,23 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
+		// Only get entries for rds type - entries are only supported for rds type
 		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
-			entries := d.Get("entries").([]interface{})
 			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
 			if err != nil {
-				return retry.NonRetryableError(fmt.Errorf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err))
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
 			}
 
-			// preserve ordering and avoid a plan not empty error
-			if areEntriesEquivalent(apiEntries, entries) {
+			entries := d.Get("entries").([]interface{})
+			normalizedSchemaEntries := normalizeEntries(entries)
+			normalizedApiEntries := normalizeEntries(apiEntries)
+			if areEntriesEquivalent(normalizedSchemaEntries, normalizedApiEntries) {
 				_ = d.Set("entries", entries)
 			} else {
-				_ = d.Set("entries", apiEntries)
+				_ = d.Set("entries", normalizedApiEntries)
 			}
+		} else {
+			_ = d.Set("entries", []interface{}{})
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
@@ -252,6 +257,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "custom_exclusion_column", sdkDncList.CustomExclusionColumn)
 
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
+
 		return cc.CheckState(d)
 	})
 }
@@ -322,6 +328,60 @@ func groupEntriesByExpirationDate(entries []interface{}) map[string][]string {
 		result[*expirationDate] = append(result[*expirationDate], phoneNumbers...)
 	}
 	return result
+}
+
+// Normalize entries to match API behavior
+// Groups entries by expiration_date, merges phone_numbers, removes duplicates, and sorts.
+// If a phone number appears in multiple expiration groups, it's kept only in the last expiration.
+func normalizeEntries(entries []interface{}) []interface{} {
+	if len(entries) == 0 {
+		return entries
+	}
+
+	// First pass: collect all phone numbers and their expiration dates
+	// Since we iterate through entries in order, we'll naturally get the last expiration
+	phoneToExpiration := make(map[string]string)
+
+	for _, entry := range entries {
+		expirationDate, phoneNumbers, ok := extractEntryData(entry)
+		if !ok {
+			continue
+		}
+
+		expDateKey := *expirationDate
+		for _, phone := range phoneNumbers {
+			// Always update to the current expiration (last one seen)
+			phoneToExpiration[phone] = expDateKey
+		}
+	}
+
+	// Second pass: group phones by their assigned expiration date
+	groupedPhones := make(map[string][]string)
+
+	for phone, expDate := range phoneToExpiration {
+		groupedPhones[expDate] = append(groupedPhones[expDate], phone)
+	}
+
+	// Convert grouped phones to normalized entries
+	normalized := make([]interface{}, 0)
+
+	for expDate, phones := range groupedPhones {
+		// Skip empty phone lists
+		if len(phones) == 0 {
+			continue
+		}
+
+		sort.Strings(phones)
+
+		// Create normalized entry - always include expiration_date, even if empty
+		entry := make(map[string]interface{})
+		entry["expiration_date"] = expDate
+		entry["phone_numbers"] = lists.StringListToInterfaceList(phones)
+
+		normalized = append(normalized, entry)
+	}
+
+	return normalized
 }
 
 func areEntriesEquivalent(a, b []interface{}) bool {

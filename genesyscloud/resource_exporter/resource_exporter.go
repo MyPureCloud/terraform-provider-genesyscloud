@@ -59,6 +59,12 @@ type RefAttrSettings struct {
 
 	// Values that may be set that should not be treated as IDs
 	AltValues []string
+
+	// Function that retrieves the resource ID from the attribute value
+	// If nil, the attribute value is used as the ID. You can reference
+	// the genesyscloud_integration_credential resource to understand how
+	// it is used.
+	GetIdFunc func(value string) string
 }
 
 type ResourceInfo struct {
@@ -79,6 +85,7 @@ type DataSourceResolver struct {
 type RefAttrCustomResolver struct {
 	ResolverFunc            func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error
 	ResolveToDataSourceFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
+	ResolveRefTypeFunc      func(configMap map[string]interface{}) (string, error)
 }
 
 type CustomFileWriterSettings struct {
