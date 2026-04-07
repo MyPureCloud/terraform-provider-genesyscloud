@@ -281,6 +281,13 @@ func (r *ResourceExporter) DataResolver(instanceState *terraform.InstanceState, 
 }
 
 func (r *ResourceExporter) fetchFromInstanceState(instanceState *terraform.InstanceState, pattern string) string {
+	// Some data sources accept the Terraform instance ID as their lookup input.
+	// The instance ID is not always present in the attributes map, so allow exporters
+	// to request it explicitly via pattern "id" / "^id$".
+	if instanceState != nil && (pattern == "id" || pattern == "^id$") && instanceState.ID != "" {
+		return instanceState.ID
+	}
+
 	re := regexp.MustCompile(pattern)
 	for key, val := range instanceState.Attributes {
 		if re.MatchString(key) {
