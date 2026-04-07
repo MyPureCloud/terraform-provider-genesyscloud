@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
-func TestRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *testing.T) {
+func TestUnitRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *testing.T) {
 	instanceID := "delltechnologies.mypurecloud.com"
 	state := &terraform.InstanceState{
 		ID: instanceID,
@@ -29,7 +29,7 @@ func TestRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *testing
 	}
 }
 
-func TestGetRoutingEmailDomainIdByName_CaseInsensitive(t *testing.T) {
+func TestUnitGetRoutingEmailDomainIdByName_CaseInsensitive(t *testing.T) {
 	lowerID := "delltechnologies.mypurecloud.com"
 	proxy := &routingEmailDomainProxy{
 		getAllRoutingEmailDomainsAttr: func(_ context.Context, _ *routingEmailDomainProxy) (*[]platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
@@ -52,7 +52,7 @@ func TestGetRoutingEmailDomainIdByName_CaseInsensitive(t *testing.T) {
 	}
 }
 
-func TestGetRoutingEmailDomainIdByName_SubdomainPrefixMatch(t *testing.T) {
+func TestUnitGetRoutingEmailDomainIdByName_SubdomainPrefixMatch(t *testing.T) {
 	fullID := "delltechnologies.mypurecloud.com"
 	subdomain := true
 	proxy := &routingEmailDomainProxy{
