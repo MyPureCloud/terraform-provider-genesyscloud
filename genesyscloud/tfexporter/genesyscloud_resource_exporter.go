@@ -1607,9 +1607,9 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 					ResourceID:    "*",
 					ResourceLabel: "GetAllFunction",
 				}
-				g.resourceErrorsMutex.Unlock()
-				g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
 				g.resourceErrorsMutex.Lock()
+				g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
+				g.resourceErrorsMutex.Unlock()
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
