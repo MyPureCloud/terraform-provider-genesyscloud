@@ -352,7 +352,7 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// (enable_dependency_resolution=true), resource types may be discovered
 	// after the initial populateConfigExcluded call, meaning their exclusions
 	// were never applied to the exporter instances used during sanitization.
-	g.removeUserDefinedExcludedAttributesFromConfigMaps()
+	diagErr = append(diagErr, g.removeUserDefinedExcludedAttributesFromConfigMaps()...)
 
 	// Step #7 Write the terraform state file along with either the HCL or JSON
 	diagErr = append(diagErr, g.generateOutputFiles()...)
@@ -2551,18 +2551,19 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 // This ensures exclusions work regardless of when a resource type was discovered
 // during dependency resolution. Hardcoded ExcludedAttributes defined in resource
 // schemas are handled separately by IsAttributeExcluded during sanitizeConfigMap.
-func (g *GenesysCloudResourceExporter) removeUserDefinedExcludedAttributesFromConfigMaps() {
+func (g *GenesysCloudResourceExporter) removeUserDefinedExcludedAttributesFromConfigMaps() (diags diag.Diagnostics) {
 	excludedAttrs, ok := g.d.GetOk("exclude_attributes")
 	if !ok {
-		return
+		return diag.Errorf("Error retrieving \"exclude_attributes\" value: %v", ok)
 	}
 
 	// Parse exclude_attributes into a map of resourceType -> []attributes
-	exclusionsByType := make(map[string][]string) // exact type -> attrs
+	exclusionsByType := make(map[string][]string)  // exact type -> attrs
 	exclusionPatterns := make(map[string][]string) // regex pattern -> attrs
 	for _, excluded := range lists.InterfaceListToStrings(excludedAttrs.([]interface{})) {
 		resourceIdx := strings.Index(excluded, ".")
 		if resourceIdx == -1 || len(excluded) == resourceIdx {
+			tflog.Warn(g.ctx, fmt.Sprintf("Skipping invalid exclude_attributes entry (missing attribute path): %s", excluded))
 			continue
 		}
 		resourceTypePattern := excluded[:resourceIdx]
@@ -2578,7 +2579,10 @@ func (g *GenesysCloudResourceExporter) removeUserDefinedExcludedAttributesFromCo
 	// Apply to resourceTypesMaps
 	g.resourceTypesMapsMutex.Lock()
 	for resourceType, blockMaps := range g.resourceTypesMaps {
-		attrsToExclude := g.getExcludedAttrsForType(resourceType, exclusionsByType, exclusionPatterns)
+		attrsToExclude, diagErr := g.getExcludedAttrsForType(resourceType, exclusionsByType, exclusionPatterns)
+		if diagErr != nil {
+			return diagErr
+		}
 		if len(attrsToExclude) == 0 {
 			continue
 		}
@@ -2587,17 +2591,21 @@ func (g *GenesysCloudResourceExporter) removeUserDefinedExcludedAttributesFromCo
 		}
 	}
 	g.resourceTypesMapsMutex.Unlock()
+	return nil
 }
 
 // getExcludedAttrsForType returns the list of attribute paths to exclude for a given resource type.
-func (g *GenesysCloudResourceExporter) getExcludedAttrsForType(resourceType string, exactMap map[string][]string, patternMap map[string][]string) []string {
+func (g *GenesysCloudResourceExporter) getExcludedAttrsForType(resourceType string, exactMap map[string][]string, patternMap map[string][]string) ([]string, diag.Diagnostics) {
 	attrs := exactMap[resourceType]
 	for pattern, patternAttrs := range patternMap {
-		if match, _ := regexp.MatchString(pattern, resourceType); match {
+		if match, err := regexp.MatchString(pattern, resourceType); match {
+			if err != nil {
+				return nil, diag.Errorf("Error compiling regexp pattern %s for excluded attributes", pattern)
+			}
 			attrs = append(attrs, patternAttrs...)
 		}
 	}
-	return attrs
+	return attrs, nil
 }
 
 // removeExcludedAttrsFromMap nils out excluded attributes from a config map, supporting nested paths.
