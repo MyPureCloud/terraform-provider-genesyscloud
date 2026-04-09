@@ -135,7 +135,10 @@ func LoadJsonFileToMap(filename string) (map[string]interface{}, error) {
 		_ = jsonFile.Close()
 	}(jsonFile)
 
-	byteValue, _ := io.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read export file at path %s: %v", filename, err)
+	}
 	if err := json.Unmarshal(byteValue, &data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
 	}
