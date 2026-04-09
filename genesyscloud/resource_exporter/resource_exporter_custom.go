@@ -12,6 +12,41 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
+// SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
+// It queries GET /api/v2/speechandtextanalytics/topics/{topicId} to retrieve name + dialect and emits:
+//
+//	data "genesyscloud_speechandtextanalytics_topic" "<name>_<dialect>" { name = "...", dialect = "..." }
+//
+// and updates the referencing field to use data source ID.
+func SpeechAndTextAnalyticsTopicIdResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
+	topicId, _ := value.(string)
+	if !isValidGuid(topicId) {
+		return "", "", nil, false
+	}
+
+	api := platformclientv2.NewSpeechTextAnalyticsApiWithConfig(sdkConfig)
+	topic, _, err := api.GetSpeechandtextanalyticsTopic(topicId)
+	if err != nil || topic == nil || topic.Name == nil || topic.Dialect == nil {
+		// If we can't resolve, keep the raw GUID instead of failing export.
+		log.Printf("failed to resolve speech and text analytics topic %s: %v", topicId, err)
+		return "", "", nil, false
+	}
+
+	name := strings.TrimSpace(*topic.Name)
+	dialect := strings.TrimSpace(*topic.Dialect)
+	if name == "" || dialect == "" {
+		return "", "", nil, false
+	}
+
+	label := strings.ReplaceAll(fmt.Sprintf("%s_%s", name, dialect), " ", "_")
+	ds := map[string]interface{}{
+		"name":    name,
+		"dialect": dialect,
+	}
+
+	return "genesyscloud_speechandtextanalytics_topic", label, ds, true
+}
+
 /*
 OutboundCampaignAgentScriptResolver
 Forces script_id to reference a data source for the Default Outbound Script
