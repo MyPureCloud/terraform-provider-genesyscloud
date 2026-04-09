@@ -19,6 +19,11 @@ import (
 var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
 
+// InstanceStateIDToken is a special lookup token that exporters can use when they need the Terraform
+// instance ID (InstanceState.ID) instead of a value from InstanceState.Attributes. This avoids
+// collisions with real state attributes like "id".
+const InstanceStateIDToken = "__terraform_instance_id__"
+
 type ResourceMeta struct {
 	// BlockLabel of the resource to be used in exports
 	BlockLabel string
@@ -323,6 +328,13 @@ func (r *ResourceExporter) DataResolver(instanceState *terraform.InstanceState, 
 }
 
 func (r *ResourceExporter) fetchFromInstanceState(instanceState *terraform.InstanceState, pattern string) string {
+	// Some data sources accept the Terraform instance ID as their lookup input.
+	// The instance ID is not always present in the attributes map, so allow exporters
+	// to request it explicitly via a collision-proof token.
+	if instanceState != nil && pattern == InstanceStateIDToken && instanceState.ID != "" {
+		return instanceState.ID
+	}
+
 	re := regexp.MustCompile(pattern)
 	for key, val := range instanceState.Attributes {
 		if re.MatchString(key) {
