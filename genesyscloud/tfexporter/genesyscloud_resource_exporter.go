@@ -2609,10 +2609,15 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 		if idMetaMap := exporters[refSettings.RefType].SanitizedResourceMap; idMetaMap != nil {
 			meta := idMetaMap[refID]
 			if meta != nil && meta.BlockLabel != "" {
-				if g.isDataSource(refSettings.RefType, meta.BlockLabel, meta.OriginalLabel) && g.resourceIdExists(refID, nil) {
-					return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.BlockLabel)
-				}
+				// Prefer the actual exported block type when available. This prevents cases where
+				// a resource is exported as a data source but references are still emitted as managed resources.
+				//
+				// Fall back to the replace_with_datasource matching logic when the exported block type
+				// isn't available (e.g. in some dependency-resolution flows).
 				if g.resourceIdExists(refID, nil) {
+					if g.isExportedAsDataSourceByID(refSettings.RefType, refID) || g.isDataSource(refSettings.RefType, meta.BlockLabel, meta.OriginalLabel) {
+						return fmt.Sprintf("${%s.%s.%s.id}", "data", refSettings.RefType, meta.BlockLabel)
+					}
 					return fmt.Sprintf("${%s.%s.id}", refSettings.RefType, meta.BlockLabel)
 				}
 			}
@@ -2641,6 +2646,25 @@ func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExp
 	}
 
 	return refID
+}
+
+func (g *GenesysCloudResourceExporter) isExportedAsDataSourceByID(resType, resID string) bool {
+	// Best-effort check based on the actual resources collected for export.
+	// This is more reliable than pattern matching when replace_with_datasource isn't
+	// populated for a given flow, or when references are resolved in nested blocks.
+	resources := g.getResources()
+	for _, r := range resources {
+		if r.Type != resType {
+			continue
+		}
+		if r.State == nil {
+			continue
+		}
+		if r.State.ID == resID && r.BlockType == "data" {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *GenesysCloudResourceExporter) resourceIdExists(refID string, existingResources []resourceExporter.ResourceInfo) bool {
