@@ -88,11 +88,17 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		filename = BuildExportFileName(*flow.Name, *flow.VarType, flowId)
 	}
 
-	flowVersion := ""
-	if flow.PublishedVersion != nil {
-		if flow.PublishedVersion.Id != nil {
-			flowVersion = *flow.PublishedVersion.Id
-		}
+	// Retrieve the published version ID to ensure we export the published version, not the draft
+	// This matches the behavior of script exports (see DEVTOOLING-777)
+	var flowVersion string
+	if flow != nil && flow.PublishedVersion != nil && flow.PublishedVersion.Id != nil {
+		flowVersion = *flow.PublishedVersion.Id
+		log.Printf("Flow '%s' has published version '%s' - will export published version", flowId, flowVersion)
+	} else {
+		// This should not happen since getAllFlows() now filters unpublished flows.
+		// However, a flow could be unpublished between the getAllFlows call and the GetFlow call,
+		// so we return a hard error to prevent silently exporting a draft.
+		return fmt.Errorf("flow '%s' has no published version and cannot be exported", flowId)
 	}
 
 	downloadUrl, err := proxy.generateDownloadUrl(flowId, flowVersion)
