@@ -15,7 +15,7 @@ func TestUnitRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *tes
 		Attributes: map[string]string{
 			"domain_id":        "delltechnologies", // subdomain prefix in state
 			"subdomain":        "true",
-			"id":               "", // not guaranteed to exist in attributes
+			"id":               "attribute-id-should-not-win",
 			"mail_from_domain": "",
 		},
 	}

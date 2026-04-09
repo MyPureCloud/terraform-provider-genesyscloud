@@ -82,7 +82,7 @@ func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 			// Data source expects the domain's full ID (e.g. "subdomain.mypurecloud.com").
 			// For subdomains, the resource attribute "domain_id" is intentionally stripped to the short label,
 			// so use the instance ID instead.
-			{Attr: "name"}: {Attr: "id"},
+			{Attr: "name"}: {Attr: resourceExporter.InstanceStateIDToken},
 		},
 	}
 }
