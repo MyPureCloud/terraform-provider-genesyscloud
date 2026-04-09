@@ -152,18 +152,24 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	d.SetId(*queue.Id)
 
+	var allDiags diag.Diagnostics
+
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
-		return diagErr
+		allDiags = append(allDiags, diagErr...)
 	}
 
-	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
+	diagErr = updateQueueWrapupCodes(d, sdkConfig)
 	if diagErr.HasError() {
-		return diagErr
+		allDiags = append(allDiags, diagErr...)
 	}
 
 	log.Printf("Created Routing Queue %s", d.Id())
-	return readRoutingQueue(ctx, d, meta)
+	readDiags := readRoutingQueue(ctx, d, meta)
+	if allDiags.HasError() {
+		return append(allDiags, readDiags...)
+	}
+	return readDiags
 }
 
 func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -384,23 +390,29 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
+	var allDiags diag.Diagnostics
+
 	diagErr = append(diagErr, util.UpdateObjectDivision(d, "QUEUE", sdkConfig)...)
 	if diagErr.HasError() {
-		return diagErr
+		allDiags = append(allDiags, diagErr...)
 	}
 
-	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
-	if diagErr.HasError() {
-		return diagErr
+	memberDiags := updateQueueMembers(d, sdkConfig)
+	if memberDiags.HasError() {
+		allDiags = append(allDiags, memberDiags...)
 	}
 
-	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
-	if diagErr.HasError() {
-		return diagErr
+	wrapupDiags := updateQueueWrapupCodes(d, sdkConfig)
+	if wrapupDiags.HasError() {
+		allDiags = append(allDiags, wrapupDiags...)
 	}
 
 	log.Printf("Updated queue %s", *updateQueue.Name)
-	return readRoutingQueue(ctx, d, meta)
+	readDiags := readRoutingQueue(ctx, d, meta)
+	if allDiags.HasError() {
+		return append(allDiags, readDiags...)
+	}
+	return readDiags
 }
 
 /*
