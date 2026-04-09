@@ -44,7 +44,7 @@ func buildSummarySettingPIIs(summarySettingPIIs []interface{}) *platformclientv2
 	}
 
 	return &platformclientv2.Summarysettingpii{
-		All: resourcedata.GetNillableValueFromMap[bool](summarySettingPIIsMap, "all", false),
+		All: resourcedata.GetNillableValueFromMap[bool](summarySettingPIIsMap, "all", true),
 	}
 }
 
