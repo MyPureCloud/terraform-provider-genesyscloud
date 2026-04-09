@@ -33,6 +33,12 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	}
 
 	for _, flow := range *flows {
+		// Skip flows that have never been published
+		// Only export flows with a published version to ensure consistency
+		if flow.PublishedVersion == nil || flow.PublishedVersion.Id == nil {
+			log.Printf("Skipping flow %s (%s) - no published version available", *flow.Id, *flow.Name)
+			continue
+		}
 
 		blockHash, err := util.QuickHashFields(flow.VarType)
 		if err != nil {
