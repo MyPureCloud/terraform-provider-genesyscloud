@@ -108,6 +108,8 @@ func ResourceIdpSalesforce() *schema.Resource {
 func IdpSalesforceExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpSalesforce),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

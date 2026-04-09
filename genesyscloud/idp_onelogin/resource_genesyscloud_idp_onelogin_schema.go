@@ -111,6 +111,8 @@ func ResourceIdpOnelogin() *schema.Resource {
 func IdpOneloginExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpOnelogins),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

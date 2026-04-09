@@ -162,6 +162,8 @@ func ResourceOutboundSettings() *schema.Resource {
 func OutboundSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundSettings),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

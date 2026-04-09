@@ -111,6 +111,8 @@ func ResourceIdpOkta() *schema.Resource {
 func IdpOktaExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpOktas),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},
