@@ -25,9 +25,10 @@ func createTopic(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create speech and text analytics topic: %s\n(input: %+v)", err, input), resp)
 	}
 
-	if topic != nil && topic.Id != nil {
-		d.SetId(*topic.Id)
+	if topic == nil || topic.Id == nil {
+		return diag.Errorf("API returned success but no topic ID for %s", d.Get("name").(string))
 	}
+	d.SetId(*topic.Id)
 
 	desiredPublished := d.Get("published").(bool)
 	if desiredPublished {
@@ -36,8 +37,8 @@ func createTopic(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish speech and text analytics topic %s: %s", d.Id(), err), resp)
 		}
 		if job != nil && job.Id != nil {
-			if err := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); err != nil {
-				return diag.Errorf("%s", err)
+			if diagErr := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); diagErr != nil {
+				return diagErr
 			}
 		}
 	}
@@ -76,9 +77,10 @@ func updateTopic(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		input, _ := util.InterfaceToJson(*req)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update speech and text analytics topic %s: %s\n(input: %+v)", d.Id(), err, input), resp)
 	}
-	if topic != nil && topic.Id != nil {
-		d.SetId(*topic.Id)
+	if topic == nil || topic.Id == nil {
+		return diag.Errorf("API returned success but no topic ID for %s", d.Get("name").(string))
 	}
+	d.SetId(*topic.Id)
 
 	desiredPublished := d.Get("published").(bool)
 	if desiredPublished {
@@ -93,8 +95,8 @@ func updateTopic(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish speech and text analytics topic %s: %s", d.Id(), err), resp)
 			}
 			if job != nil && job.Id != nil {
-				if err := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); err != nil {
-					return diag.Errorf("%s", err)
+				if diagErr := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); diagErr != nil {
+					return diagErr
 				}
 			}
 		}
@@ -116,5 +118,15 @@ func deleteTopic(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete speech and text analytics topic %s: %s", d.Id(), err), resp)
 	}
 
-	return nil
+	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+		_, resp, err := proxy.getTopic(ctx, d.Id())
+		if err != nil {
+			if util.IsStatus404(resp) {
+				log.Printf("Deleted speech and text analytics topic %s", d.Id())
+				return nil
+			}
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error verifying deletion of topic %s: %s", d.Id(), err), resp))
+		}
+		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("speech and text analytics topic %s still exists", d.Id()), resp))
+	})
 }

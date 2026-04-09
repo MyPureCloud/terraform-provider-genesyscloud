@@ -44,12 +44,6 @@ func SpeechAndTextAnalyticsTopicIdResolver(configMap map[string]interface{}, val
 		"dialect": dialect,
 	}
 
-	// If a map is provided, set a conventional key for callers that want to use it.
-	// (Some resolvers mutate a specific attribute key; array handlers will build the reference string directly.)
-	if configMap != nil {
-		configMap["_resolved_topic_datasource"] = fmt.Sprintf("${data.%s.%s.id}", "genesyscloud_speechandtextanalytics_topic", label)
-	}
-
 	return "genesyscloud_speechandtextanalytics_topic", label, ds, true
 }
 

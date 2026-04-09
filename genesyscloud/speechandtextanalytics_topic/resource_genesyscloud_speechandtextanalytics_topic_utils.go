@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func buildTopicRequest(d *schema.ResourceData) *platformclientv2.Topicrequest {
@@ -119,30 +122,24 @@ func flattenTopicToResourceData(d *schema.ResourceData, topic *platformclientv2.
 	return nil
 }
 
-func waitForPublishJob(ctx context.Context, proxy *sttTopicProxy, jobId string, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	wait := 2 * time.Second
-	for time.Now().Before(deadline) {
-		job, _, err := proxy.getPublishJob(ctx, jobId)
+func waitForPublishJob(ctx context.Context, proxy *sttTopicProxy, jobId string, timeout time.Duration) diag.Diagnostics {
+	return util.WithRetries(ctx, timeout, func() *retry.RetryError {
+		job, resp, err := proxy.getPublishJob(ctx, jobId)
 		if err != nil {
-			return err
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get topics publish job %s: %s", jobId, err), resp))
 		}
-		if job != nil && job.State != nil {
-			switch *job.State {
-			case "Completed":
-				return nil
-			case "Failed":
-				return fmt.Errorf("topics publish job %s failed", jobId)
-			}
+
+		if job == nil || job.State == nil {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Topics publish job %s state not available yet", jobId), resp))
 		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(wait):
+
+		switch *job.State {
+		case "Completed":
+			return nil
+		case "Failed":
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Topics publish job %s failed", jobId), resp))
+		default:
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Topics publish job %s not completed yet (state: %s)", jobId, *job.State), resp))
 		}
-		if wait < 10*time.Second {
-			wait += 2 * time.Second
-		}
-	}
-	return fmt.Errorf("timed out waiting for topics publish job %s", jobId)
+	})
 }
