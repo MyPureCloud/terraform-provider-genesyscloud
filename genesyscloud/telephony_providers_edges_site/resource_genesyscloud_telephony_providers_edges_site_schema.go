@@ -1,9 +1,8 @@
 package telephony_providers_edges_site
 
-// @team: Media Resources
-// @chat: #media-infrastructure-team
+// @team: Telephony Configuration
 // @pm: Alan Lanteigne
-// @jira: MR
+// @jira: TC
 // @description: Telephony infrastructure and configuration management for Genesys Cloud Edge devices. Manages sites, phones, trunks, DIDs, and base settings for voice connectivity and call routing.
 
 import (

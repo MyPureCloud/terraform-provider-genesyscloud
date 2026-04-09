@@ -2,6 +2,7 @@ package outbound_contact_list
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"math"
@@ -315,6 +316,20 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	fullCurrentPath := filepath.Join(fullDirectoryPath, exportFileName)
 	fullRelativePath := filepath.Join(subDirectory, exportFileName)
 	log.Printf("Saving exported contact list %s to file %s and updating state", contactListName, fullRelativePath)
+
+	// Strip system-generated columns from the exported CSV to prevent CONTACT_COLUMNS_LIMIT_EXCEEDED
+	// errors when importing into another org. The Genesys Cloud export API includes system metadata
+	// columns (e.g. CallRecordLastAttempt, Callable, AutomaticTimeZone) that are not part of the
+	// user-defined column_names and can cause the column limit to be exceeded.
+	columnsToKeep := getListAttributeFromState(resource.State.Attributes, "column_names")
+	if len(columnsToKeep) > 0 {
+		columnsToKeep = append([]string{"inin-outbound-id"}, columnsToKeep...)
+		if err := stripSystemColumnsFromCSV(fullCurrentPath, columnsToKeep); err != nil {
+			return fmt.Errorf("failed to strip system columns from exported contact list CSV: %w", err)
+		}
+		log.Printf("Stripped system-generated columns from exported contact list %s CSV", contactListName)
+	}
+
 	configMap["contacts_filepath"] = fullRelativePath
 	configMap["contacts_id_name"] = "inin-outbound-id"
 
@@ -405,6 +420,97 @@ func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn str
 		contactable_time_column = %s
 	}
 `, columnName, columnType, contactableTimeColumn)
+}
+
+// getListAttributeFromState reads a list attribute from Terraform's flat InstanceState format.
+// In InstanceState, list attributes are stored as: attrName.# = "3", attrName.0 = "val1", etc.
+func getListAttributeFromState(attrs map[string]string, attrName string) []string {
+	countStr, ok := attrs[attrName+".#"]
+	if !ok {
+		return nil
+	}
+	count, err := strconv.Atoi(countStr)
+	if err != nil || count == 0 {
+		return nil
+	}
+	values := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		if val, ok := attrs[fmt.Sprintf("%s.%d", attrName, i)]; ok {
+			values = append(values, val)
+		}
+	}
+	return values
+}
+
+// stripSystemColumnsFromCSV reads a CSV file and rewrites it keeping only the columns specified in columnsToKeep.
+func stripSystemColumnsFromCSV(filePath string, columnsToKeep []string) error {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open CSV file: %w", err)
+	}
+
+	reader := csv.NewReader(f)
+	reader.LazyQuotes = true
+	reader.TrimLeadingSpace = true
+
+	allRecords, err := reader.ReadAll()
+	f.Close()
+	if err != nil {
+		return fmt.Errorf("failed to read CSV file: %w", err)
+	}
+
+	if len(allRecords) == 0 {
+		return nil
+	}
+
+	headers := allRecords[0]
+
+	// Build a set of columns to keep for fast lookup
+	keepSet := make(map[string]bool, len(columnsToKeep))
+	for _, col := range columnsToKeep {
+		keepSet[col] = true
+	}
+
+	// Find the indexes of columns to keep, preserving CSV column order
+	var keepIndexes []int
+	for i, header := range headers {
+		if keepSet[header] {
+			keepIndexes = append(keepIndexes, i)
+		}
+	}
+
+	// If no columns were stripped, no need to rewrite
+	if len(keepIndexes) == len(headers) {
+		return nil
+	}
+
+	log.Printf("Stripping %d system-generated columns from CSV (keeping %d of %d)", len(headers)-len(keepIndexes), len(keepIndexes), len(headers))
+
+	// Build filtered records
+	filteredRecords := make([][]string, len(allRecords))
+	for i, record := range allRecords {
+		filteredRow := make([]string, len(keepIndexes))
+		for j, idx := range keepIndexes {
+			if idx < len(record) {
+				filteredRow[j] = record[idx]
+			}
+		}
+		filteredRecords[i] = filteredRow
+	}
+
+	// Write back to the same file
+	out, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create CSV file: %w", err)
+	}
+	defer out.Close()
+
+	writer := csv.NewWriter(out)
+	if err := writer.WriteAll(filteredRecords); err != nil {
+		return fmt.Errorf("failed to write CSV file: %w", err)
+	}
+
+	return nil
 }
 
 func GenerateWhatsAppColumnsBlock(columnName, columnType string) string {
