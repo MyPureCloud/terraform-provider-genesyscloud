@@ -853,8 +853,8 @@ func TestUnitGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				return
 			}
 
-			if resources == nil {
-				t.Fatal("Expected resources but got nil")
+			if len(resources) == 0 {
+				t.Fatal("Expected resources but got empty slice")
 			}
 
 			// Verify the state attributes
@@ -1451,4 +1451,126 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateEr
 	assert.NotNil(t, dataSourceMaps)
 	assert.Len(t, resourceMaps, 0)
 	assert.Len(t, dataSourceMaps, 0)
+}
+
+func TestResolveReference_UsesDataPrefixForNestedMemberGroupID_WhenExportedAsDataSource(t *testing.T) {
+	ctx := context.Background()
+	d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
+		"export_format": {
+			Type: schema.TypeString,
+		},
+		"split_files_by_resource": {
+			Type: schema.TypeBool,
+		},
+		"log_permission_errors": {
+			Type: schema.TypeBool,
+		},
+		"add_depends_on": {
+			Type: schema.TypeBool,
+		},
+		"include_state_file": {
+			Type: schema.TypeBool,
+		},
+		"version": {
+			Type: schema.TypeString,
+		},
+		"provider_registry": {
+			Type: schema.TypeString,
+		},
+		"export_dir_path": {
+			Type: schema.TypeString,
+		},
+		"ignore_cyclic_dependencies": {
+			Type: schema.TypeBool,
+		},
+		"export_computed": {
+			Type: schema.TypeBool,
+		},
+		"use_legacy_architect_flow_exporter": {
+			Type: schema.TypeBool,
+		},
+	}, map[string]interface{}{
+		"export_format":                      "hcl",
+		"split_files_by_resource":            false,
+		"log_permission_errors":              false,
+		"add_depends_on":                     true,
+		"include_state_file":                 false,
+		"version":                            "1.0.0",
+		"provider_registry":                  "test-registry",
+		"export_dir_path":                    "/tmp/test",
+		"ignore_cyclic_dependencies":         false,
+		"export_computed":                    false,
+		"use_legacy_architect_flow_exporter": false,
+	})
+
+	groupID := "11111111-1111-1111-1111-111111111111"
+	queueID := "22222222-2222-2222-2222-222222222222"
+
+	exporters := make(map[string]*resourceExporter.ResourceExporter)
+	exporters["genesyscloud_group"] = &resourceExporter.ResourceExporter{
+		SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+			groupID: {BlockLabel: "CGAGroup", OriginalLabel: "CGAGroup"},
+		},
+	}
+	exporters["genesyscloud_routing_queue"] = &resourceExporter.ResourceExporter{
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"conditional_group_activation.rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
+		},
+	}
+
+	exporter := NewThreadSafeGenesysCloudResourceExporter(d, ctx, nil, &schema.Provider{}, &exporters)
+
+	// Simulate that the group is being exported as a data source (e.g. via replace_with_datasource)
+	exporter.addResources([]resourceExporter.ResourceInfo{
+		{
+			State: &terraform.InstanceState{
+				ID: groupID,
+				Attributes: map[string]string{
+					"name": "CGAGroup",
+				},
+			},
+			BlockLabel:    "CGAGroup",
+			OriginalLabel: "CGAGroup",
+			Type:          "genesyscloud_group",
+			CtyType:       cty.EmptyObject,
+			BlockType:     "data",
+		},
+	})
+
+	queueResource := resourceExporter.ResourceInfo{
+		State: &terraform.InstanceState{
+			ID: queueID,
+		},
+		BlockLabel:    "CGATest",
+		OriginalLabel: "CGATest",
+		Type:          "genesyscloud_routing_queue",
+		CtyType:       cty.EmptyObject,
+	}
+
+	configMap := map[string]interface{}{
+		"conditional_group_activation": []interface{}{
+			map[string]interface{}{
+				"rules": []interface{}{
+					map[string]interface{}{
+						"groups": []interface{}{
+							map[string]interface{}{
+								"member_group_type": "GROUP",
+								"member_group_id":   groupID,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, ok := exporter.sanitizeConfigMap(queueResource, configMap, "", exporters, false, "hcl", false)
+	require.True(t, ok)
+
+	cgaArr := configMap["conditional_group_activation"].([]interface{})
+	rulesArr := cgaArr[0].(map[string]interface{})["rules"].([]interface{})
+	groupsArr := rulesArr[0].(map[string]interface{})["groups"].([]interface{})
+	memberGroup := groupsArr[0].(map[string]interface{})
+
+	assert.Equal(t, "${data.genesyscloud_group.CGAGroup.id}", memberGroup["member_group_id"])
 }
