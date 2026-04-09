@@ -602,6 +602,22 @@ func TestUnitContainsElement(t *testing.T) {
 		expectedResult bool
 	}{
 		{
+			name:           "Type-only match",
+			elements:       []string{"resourceType"},
+			resType:        "resourceType",
+			resLabel:       "anyLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+		{
+			name:           "Type-only does not match other types",
+			elements:       []string{"resourceType"},
+			resType:        "otherResourceType",
+			resLabel:       "anyLabel",
+			originalLabel:  "",
+			expectedResult: false,
+		},
+		{
 			name:           "Exact match",
 			elements:       []string{"resourceType::resourceLabel"},
 			resType:        "resourceType",
