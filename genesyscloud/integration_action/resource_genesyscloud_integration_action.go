@@ -59,7 +59,7 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name, BlockHash: blockHash}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Category + "_" + *action.Name, BlockHash: blockHash}
 	}
 	return resources, nil
 }

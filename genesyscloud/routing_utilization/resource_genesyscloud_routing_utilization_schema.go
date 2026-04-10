@@ -8,11 +8,12 @@ package routing_utilization
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -154,5 +155,7 @@ func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilization),
 		AllowZeroValues:  []string{"maximum_capacity"},
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 	}
 }

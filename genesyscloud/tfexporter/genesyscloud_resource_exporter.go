@@ -2667,6 +2667,10 @@ func (g *GenesysCloudResourceExporter) isDataSource(resType string, resLabel, or
 // containsElementUnsafe is not thread-safe and should only be called with proper locking
 func (g *GenesysCloudResourceExporter) containsElementUnsafe(elements []string, resType, resLabel, originalLabel string) bool {
 	for _, element := range elements {
+		// Allow type-only match (equivalent to "type::")
+		if element == resType {
+			return true
+		}
 		if element == resType+"::"+resLabel || fetchByRegex(element, resType, resLabel, originalLabel) {
 			return true
 		}
