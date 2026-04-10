@@ -21,9 +21,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/add](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-add)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/remove](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-remove)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/update](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-update)
 
 ## Permissions and Scopes
 
@@ -36,9 +36,6 @@ The following permissions are required to use this resource:
 * `businessrules:decisionTable:publish`
 * `businessrules:decisionTable:search`
 * `businessrules:decisionTable:view`
-* `businessrules:decisionTableRow:add`
-* `businessrules:decisionTableRow:delete`
-* `businessrules:decisionTableRow:edit`
 * `businessrules:decisionTableRow:view`
 * `routing:queue:view`
 
