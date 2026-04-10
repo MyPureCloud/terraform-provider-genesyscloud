@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
@@ -244,4 +245,57 @@ func KnowledgeDocumentLabelNamesResolver(configMap map[string]interface{}, expor
 	}
 
 	return nil
+}
+
+var knowledgeBaseNameCache = struct {
+	sync.RWMutex
+	names map[string]string
+}{names: make(map[string]string)}
+
+// KnowledgeBaseNameResolver resolves the knowledge_base_name attribute from a knowledge base GUID
+// to the human-readable knowledge base name. This is used when exporting knowledge_document,
+// knowledge_category, and knowledge_label resources as data sources, where the data source schema
+// requires knowledge_base_name (a name) instead of knowledge_base_id (a GUID).
+func KnowledgeBaseNameResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) error {
+	knowledgeBaseId, ok := value.(string)
+	if !ok || knowledgeBaseId == "" {
+		return nil
+	}
+
+	if strings.HasPrefix(knowledgeBaseId, "${") {
+		return nil
+	}
+
+	knowledgeBaseName, err := getKnowledgeBaseName(knowledgeBaseId, sdkConfig)
+	if err != nil {
+		return fmt.Errorf("failed to resolve knowledge base ID %s to name: %s", knowledgeBaseId, err)
+	}
+
+	configMap["knowledge_base_name"] = knowledgeBaseName
+	return nil
+}
+
+func getKnowledgeBaseName(knowledgeBaseId string, sdkConfig *platformclientv2.Configuration) (string, error) {
+	knowledgeBaseNameCache.RLock()
+	if name, ok := knowledgeBaseNameCache.names[knowledgeBaseId]; ok {
+		knowledgeBaseNameCache.RUnlock()
+		return name, nil
+	}
+	knowledgeBaseNameCache.RUnlock()
+
+	knowledgeApi := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	knowledgeBase, _, err := knowledgeApi.GetKnowledgeKnowledgebase(knowledgeBaseId)
+	if err != nil {
+		return "", err
+	}
+
+	if knowledgeBase.Name == nil || *knowledgeBase.Name == "" {
+		return "", fmt.Errorf("knowledge base %s has no name", knowledgeBaseId)
+	}
+
+	knowledgeBaseNameCache.Lock()
+	knowledgeBaseNameCache.names[knowledgeBaseId] = *knowledgeBase.Name
+	knowledgeBaseNameCache.Unlock()
+
+	return *knowledgeBase.Name, nil
 }

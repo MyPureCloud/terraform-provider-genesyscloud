@@ -71,6 +71,7 @@ func ResourceIntegrationCredential() *schema.Resource {
 func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllCredentials),
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceIntegrationCredential().Schema["fields"],
 		},
