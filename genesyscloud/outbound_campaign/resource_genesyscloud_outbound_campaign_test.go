@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -1129,6 +1130,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.FalseValue, "0"),
+						generateDiagnosticsSettingsBlock(util.TrueValue),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", name),
@@ -1146,6 +1148,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						"dynamic_line_balancing_settings.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.relative_weight", "0"),
+					resource.TestCheckResourceAttr(resourcePath,
+						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "true"),
 				),
 			},
 			{
@@ -1180,6 +1184,7 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						strconv.Quote("true"),
 						generatePhoneColumnNoTypeBlock("Cell"),
 						generateDynamicLineBalancingSettingsBlock(util.TrueValue, "15"),
+						generateDiagnosticsSettingsBlock(util.FalseValue),
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", name),
@@ -1198,6 +1203,8 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 						"dynamic_line_balancing_settings.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath,
 						"dynamic_line_balancing_settings.0.relative_weight", "15"),
+					resource.TestCheckResourceAttr(resourcePath,
+						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "false"),
 				),
 			},
 			{
@@ -1208,6 +1215,189 @@ func TestAccResourceOutboundCampaignPower(t *testing.T) {
 			},
 		},
 		CheckDestroy: testVerifyOutboundCampaignDestroyed,
+	})
+}
+
+// TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings tests diagnostics_settings with predictive dialing mode
+func TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel            = "campaign_predictive_diag"
+		name                     = "Test Predictive Diag Campaign " + uuid.NewString()
+		dialingMode              = "predictive"
+		callerName               = "Test Name Predictive"
+		callerAddress            = "+353371111115"
+		contactListResourceLabel = "contact_list"
+		queueResourceLabel       = "queue"
+		locationResourceLabel    = "location"
+		siteId                   = "site"
+		carResourceLabel         = "car"
+
+		resourcePath = ResourceType + "." + resourceLabel
+	)
+
+	emergencyNumber := "+13178793438"
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
+	}
+
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
+		contactListResourceLabel,
+		"",
+		queueResourceLabel,
+		carResourceLabel,
+		"",
+		"",
+		"",
+		"",
+		siteId,
+		emergencyNumber,
+		"",
+		"",
+		"",
+		locationResourceLabel,
+		"",
+		"",
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: referencedResources +
+					generateOutboundCampaign(
+						resourceLabel,
+						name,
+						dialingMode,
+						strconv.Quote(callerName),
+						strconv.Quote(callerAddress),
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
+						"genesyscloud_telephony_providers_edges_site."+siteId+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel+".id",
+						"1",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						[]string{},
+						util.FalseValue,
+						generatePhoneColumnNoTypeBlock("Cell"),
+						generateDiagnosticsSettingsBlock(util.TrueValue),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "caller_name", callerName),
+					resource.TestCheckResourceAttr(resourcePath, "caller_address", callerAddress),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
+						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
+					resource.TestCheckResourceAttr(resourcePath,
+						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "true"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyOutboundCampaignDestroyed,
+	})
+}
+
+// TestAccResourceOutboundCampaignDiagnosticsSettingsInvalidDialingMode tests that diagnostics_settings fails validation for unsupported dialing modes
+func TestAccResourceOutboundCampaignDiagnosticsSettingsInvalidDialingMode(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel            = "campaign_invalid_diag"
+		name                     = "Test Invalid Diag Campaign " + uuid.NewString()
+		callerName               = "Test Name"
+		callerAddress            = "+353371111114"
+		contactListResourceLabel = "contact_list"
+		locationResourceLabel    = "location"
+		siteId                   = "site"
+		carResourceLabel         = "car"
+	)
+
+	emergencyNumber := "+13178793437"
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
+	}
+
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
+		contactListResourceLabel,
+		"",
+		"",
+		carResourceLabel,
+		"",
+		"",
+		"",
+		"",
+		siteId,
+		emergencyNumber,
+		"",
+		"",
+		"",
+		locationResourceLabel,
+		"",
+		"",
+	)
+
+	// Test agentless mode with diagnostics_settings - should fail
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: referencedResources +
+					generateOutboundCampaign(
+						resourceLabel,
+						name,
+						"agentless", // unsupported dialing mode for diagnostics_settings
+						strconv.Quote(callerName),
+						strconv.Quote(callerAddress),
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"genesyscloud_telephony_providers_edges_site."+siteId+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"genesyscloud_outbound_callanalysisresponseset."+carResourceLabel+".id",
+						"2",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						[]string{},
+						util.FalseValue,
+						generatePhoneColumnNoTypeBlock("Cell"),
+						generateDiagnosticsSettingsBlock(util.TrueValue), // This should fail validation
+					),
+				ExpectError: regexp.MustCompile("diagnostics_settings is only applicable to Power and Predictive dialing modes"),
+			},
+		},
 	})
 }
 
@@ -1347,6 +1537,14 @@ func generateDynamicLineBalancingSettingsBlock(enabled, weight string) string {
 		relative_weight = %s
 	}
 	`, enabled, weight)
+}
+
+func generateDiagnosticsSettingsBlock(reportLowMaxCallsPerAgentAlert string) string {
+	return fmt.Sprintf(`
+	diagnostics_settings {
+		report_low_max_calls_per_agent_alert = %s
+	}
+	`, reportLowMaxCallsPerAgentAlert)
 }
 
 func getPublishedScriptId() (string, error) {
