@@ -82,6 +82,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -143,6 +144,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabels(t *t
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -216,6 +218,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -342,11 +345,13 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			filepath.Join(exportTestDir, "genesyscloud_user.tf.json"),
 			filepath.Join(exportTestDir, "genesyscloud_routing_wrapupcode.tf.json"),
 			filepath.Join(exportTestDir, "provider.tf.json"),
+			filepath.Join(exportTestDir, "data_genesyscloud_auth_division.tf.json"),
+			filepath.Join(exportTestDir, "data_genesyscloud_routing_queue.tf.json"),
 		}
 
 		queueResources = []QueueExport{
 			{OriginalResourceLabel: "test-queue-1", ExportedLabel: "test-queue-1-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue", AcwTimeoutMs: 200000},
-			{OriginalResourceLabel: "test-queue-2", ExportedLabel: "test-queue-1-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue too", AcwTimeoutMs: 200000},
+			{OriginalResourceLabel: "test-queue-2", ExportedLabel: "test-queue-2-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue too", AcwTimeoutMs: 200000},
 		}
 
 		userResources = []UserExport{
@@ -377,9 +382,16 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			strconv.Quote("genesyscloud_routing_queue::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
+			strconv.Quote(fmt.Sprintf("%s::^%s$", authDivision.ResourceType, divName)),
 		},
 		strconv.Quote("json"),
 		util.TrueValue,
+		// Replace With Data Source
+		[]string{
+			strconv.Quote("genesyscloud_routing_queue::" + queueResources[0].ExportedLabel + "$"),
+			strconv.Quote(fmt.Sprintf("%s::^%s$", authDivision.ResourceType, divName)),
+		},
+		// Depends On
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -400,10 +412,31 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			{
 				Config: configWithExporter,
 				Check: resource.ComposeTestCheckFunc(
+					// Routing Queue Resource
 					validateFileCreated(expectedFilesPath[0]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[0], "resource.genesyscloud_routing_queue."+queueResources[1].ExportedLabel, "name", queueResources[1].ExportedLabel),
+
+					// User Resource
 					validateFileCreated(expectedFilesPath[1]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[1], "resource.genesyscloud_user."+resourceExporter.NewSanitizerProvider().S.SanitizeResourceBlockLabel(userResources[0].Email), "name", userResources[0].ExportedLabel),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[1], "resource.genesyscloud_user."+resourceExporter.NewSanitizerProvider().S.SanitizeResourceBlockLabel(userResources[1].Email), "name", userResources[1].ExportedLabel),
+
+					// Routing Wrapupcode Resource
 					validateFileCreated(expectedFilesPath[2]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[2], "resource.genesyscloud_routing_wrapupcode."+wrapupCodeResources[0].Name, "name", wrapupCodeResources[0].Name),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[2], "resource.genesyscloud_routing_wrapupcode."+wrapupCodeResources[1].Name, "name", wrapupCodeResources[1].Name),
+
+					// Provider
 					validateFileCreated(expectedFilesPath[3]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[3], "terraform.required_providers.genesyscloud", "source", "genesys.com/mypurecloud/genesyscloud"),
+
+					// Auth Division Data Resource
+					validateFileCreated(expectedFilesPath[4]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[4], "data.genesyscloud_auth_division."+divName, "name", divName),
+
+					// Routing Queue Data Resource
+					validateFileCreated(expectedFilesPath[5]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[5], "data.genesyscloud_routing_queue."+queueResources[0].ExportedLabel, "name", queueResources[0].ExportedLabel),
 				),
 			},
 		},
@@ -882,6 +915,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -1472,6 +1506,7 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 					strconv.Quote("json"), // export_as_hcl
 					util.FalseValue,
 					[]string{},
+					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
 					validatePublishedAndUnpublishedExported(configPath),
@@ -1523,6 +1558,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 					},
 					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
+					[]string{},
 					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -1586,6 +1622,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		},
 		strconv.Quote("hcl"),
 		util.TrueValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -1692,6 +1729,7 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 					},
 					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
+					[]string{},
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceLabel),
 						strconv.Quote("genesyscloud_architect_user_prompt." + hPromptResourceLabel),
@@ -2042,7 +2080,7 @@ func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 
 		exportedFlowResourceLabel               = systemFlowType + "_" + systemFlowNameSanitized
 		pathToExportedTerraformConfig           = filepath.Join(exportTestDir, defaultTfJSONFile)
-		exportedFlowResourceFullPath            = architectFlow.ResourceType + "." + exportedFlowResourceLabel
+		exportedFlowResourceFullPath            = "resource." + architectFlow.ResourceType + "." + exportedFlowResourceLabel
 		expectedFilepathValueWithLegacyExporter = fmt.Sprintf("${var.genesyscloud_flow_%s_%s_filepath}", systemFlowType, systemFlowNameSanitized)
 		expectedFilepathValueWithNewExporter    = filepath.Join(architectFlow.ExportSubDirectoryName, fmt.Sprintf("%s-%s-%s.yaml", systemFlowNameSanitized, systemFlowType, systemFlowId))
 	)
@@ -2072,7 +2110,7 @@ func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
 					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
 					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
-					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithLegacyExporter),
+					util.ValidateJSONFileKeyValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithLegacyExporter),
 				),
 			},
 			{
@@ -2091,7 +2129,7 @@ func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 					validateFileNotCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
 					validateFileCreated(pathToFolderHoldingExportedFlows),
 					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
-					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithNewExporter),
+					util.ValidateJSONFileKeyValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithNewExporter),
 				),
 			},
 		},
