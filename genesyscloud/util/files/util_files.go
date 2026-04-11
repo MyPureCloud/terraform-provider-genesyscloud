@@ -252,8 +252,11 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 		}
 		apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
 
-		if util.IsStatus429(apiResp) && attempt < maxRetries {
+		if util.IsStatus429(apiResp) {
 			resp.Body.Close()
+			if attempt >= maxRetries {
+				return apiResp, fmt.Errorf("exhausted %d retries downloading export file %s due to rate limiting", maxRetries, fileName)
+			}
 			delay, doRetry := util.GetRetryAfterDelay(apiResp)
 			if !doRetry {
 				delay = min(time.Duration(1<<attempt)*time.Second, 30*time.Second)
@@ -287,7 +290,8 @@ func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken str
 		return apiResp, copyErr
 	}
 
-	return nil, fmt.Errorf("exhausted %d retries downloading export file %s due to rate limiting", maxRetries, fileName)
+	// Unreachable: loop always returns on every path, but required by compiler
+	return nil, fmt.Errorf("how did you get here? this code path to download %s should be unreachable!", fileName)
 }
 
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes
