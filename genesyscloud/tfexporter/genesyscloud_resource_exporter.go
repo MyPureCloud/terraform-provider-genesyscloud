@@ -2546,7 +2546,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 func (g *GenesysCloudResourceExporter) removeUserDefinedExcludedAttributesFromConfigMaps() (diags diag.Diagnostics) {
 	excludedAttrs, ok := g.d.GetOk("exclude_attributes")
 	if !ok {
-		return diag.Errorf("Error retrieving \"exclude_attributes\" value: %v", ok)
+		return nil
 	}
 
 	// Parse exclude_attributes into a map of resourceType -> []attributes
