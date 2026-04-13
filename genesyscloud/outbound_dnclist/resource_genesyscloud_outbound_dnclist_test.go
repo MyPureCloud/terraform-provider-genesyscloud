@@ -17,7 +17,6 @@ import (
 )
 
 func TestAccResourceOutboundDncListRdsListType(t *testing.T) {
-
 	t.Parallel()
 	var (
 		resourceLabel = "dnc_list"
