@@ -305,6 +305,20 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 
 func postProcessJsonBytes(resource []byte) []byte {
 	resourceStr := string(resource)
+
+	// Create a copy of attributesDecoded map with mutex protection to avoid concurrent map iteration and map write
+	attributesDecodedMutex.Lock()
+	attributesDecodedCopy := make(map[string]string, len(attributesDecoded))
+	for k, v := range attributesDecoded {
+		attributesDecodedCopy[k] = v
+	}
+	attributesDecodedMutex.Unlock()
+
+	// Iterate over the copy instead of the original map
+	for placeholderId, val := range attributesDecodedCopy {
+		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
+	}
+
 	resourceStr = correctDependsOn(resourceStr, false)
 	return []byte(resourceStr)
 }
