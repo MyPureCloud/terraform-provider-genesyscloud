@@ -2522,14 +2522,27 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 			}
 		case string:
 			// Check if we are on a reference attribute and update value in array
-
+			strVal := val.(string)
 			if refSettings := exporter.GetRefAttrSettings(currAttr); refSettings != nil {
-				referenceVal := g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				referenceVal := g.resolveReference(refSettings, strVal, exporters, exportingState)
+
+				// If unresolved, allow a custom resolver to map this GUID to a data source reference
+				if referenceVal == strVal {
+					if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok && refAttrCustomResolver.ResolveToDataSourceFunc != nil {
+						sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+						dsType, dsLabel, dsConfig, resolve := refAttrCustomResolver.ResolveToDataSourceFunc(nil, strVal, sdkConfig)
+						if resolve {
+							g.addToDataSourceMaps(dsType, dsLabel, dsConfig)
+							referenceVal = fmt.Sprintf("${data.%s.%s.id}", dsType, dsLabel)
+						}
+					}
+				}
+
 				if referenceVal != "" {
 					result = append(result, referenceVal)
 				}
 			} else {
-				result = append(result, escapeString(val.(string)))
+				result = append(result, escapeString(strVal))
 			}
 		default:
 			result = append(result, val)
