@@ -373,10 +373,12 @@ func (r *registerTestInstance) registerTestExporters() {
 
 func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerDataSources[authDivision.ResourceType] = authDivision.DataSourceAuthDivision()
 	providerDataSources[scripts.ResourceType] = scripts.DataSourceScript()
 	providerDataSources[edgeSite.ResourceType] = edgeSite.DataSourceSite()
 	providerDataSources[cMessagingSettings.ResourceType] = cMessagingSettings.DataSourceConversationsMessagingSettings()
 	providerDataSources[tbs.ResourceType] = tbs.DataSourceTrunkBaseSettings()
+	providerDataSources[routingQueue.ResourceType] = routingQueue.DataSourceRoutingQueue()
 	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
 	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 	providerDataSources[guide.ResourceType] = guide.DataSourceGuide()

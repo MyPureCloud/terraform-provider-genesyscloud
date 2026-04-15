@@ -3,6 +3,7 @@ package idp_salesforce
 // @team: GC IAM (Auth/Donut)
 // @chat: #gc-iam-auth-donut
 // @jira: IAM
+// @pm: David Murray
 // @description: Manages Single Sign-On (SSO) identity provider integrations for Genesys Cloud. Configures SAML-based authentication with external identity providers to enable federated login.
 
 import (
@@ -107,6 +108,8 @@ func ResourceIdpSalesforce() *schema.Resource {
 func IdpSalesforceExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIdpSalesforce),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
 	}
 }

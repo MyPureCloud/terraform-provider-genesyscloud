@@ -156,6 +156,8 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 func OrganizationAuthenticationSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOrganizationAuthenticationSettings),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		AllowZeroValues: []string{
 			"timeout_settings.idle_token_timeout_seconds",

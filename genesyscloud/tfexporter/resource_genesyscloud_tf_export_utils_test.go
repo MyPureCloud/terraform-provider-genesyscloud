@@ -534,6 +534,7 @@ func generateTfExportByIncludeFilterResources(
 	includeFilterResources []string,
 	exportFormat string,
 	splitByResource string,
+	replaceWithDatasource []string,
 	dependencies []string,
 ) string {
 	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
@@ -542,9 +543,10 @@ func generateTfExportByIncludeFilterResources(
 		include_filter_resources = [%s]
 		export_format = %s
 		split_files_by_resource = %s
+		replace_with_datasource = [%s]
 		depends_on = [%s]
 	}
-	`, resourceLabel, directory, includeState, strings.Join(includeFilterResources, ","), exportFormat, splitByResource, strings.Join(dependencies, ","))
+	`, resourceLabel, directory, includeState, strings.Join(includeFilterResources, ","), exportFormat, splitByResource, strings.Join(replaceWithDatasource, ","), strings.Join(dependencies, ","))
 }
 
 func generateTfExportByFlowDependsOnResources(
@@ -763,7 +765,7 @@ func validateCompressedConfigFiles(dirName string, file *zip.File) error {
 
 func validateConfigFile(path string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		result, err := loadJsonFileToMap(path)
+		result, err := util.LoadJsonFileToMap(path)
 		if err != nil {
 			return err
 		}
@@ -1013,7 +1015,7 @@ func validateStateFileHasPublishedAndUnpublished(filename string) resource.TestC
 			return fmt.Errorf("failed to find file %s", filename)
 		}
 
-		stateData, err := loadJsonFileToMap(filename)
+		stateData, err := util.LoadJsonFileToMap(filename)
 		if err != nil {
 			return err
 		}
@@ -1093,7 +1095,7 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 			return fmt.Errorf("failed to find file %s", filename)
 		}
 
-		stateData, err := loadJsonFileToMap(filename)
+		stateData, err := util.LoadJsonFileToMap(filename)
 		if err != nil {
 			return err
 		}
@@ -1148,7 +1150,7 @@ func validatePublishedAndUnpublishedExported(configFile string) resource.TestChe
 
 		// Load the JSON content of the export file
 		log.Println("Loading export config into map variable")
-		exportData, err := loadJsonFileToMap(configFile)
+		exportData, err := util.LoadJsonFileToMap(configFile)
 		if err != nil {
 			return err
 		}
@@ -1178,51 +1180,6 @@ func validatePublishedAndUnpublishedExported(configFile string) resource.TestChe
 	}
 }
 
-func validateExportedResourceAttributeValue[T comparable](configFile, resourcePath, attr string, value T) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-		items := strings.Split(resourcePath, ".")
-		resourceType := items[0]
-		resourceLabel := items[1]
-
-		_, err := os.ReadFile(configFile)
-		if err != nil {
-			return fmt.Errorf("failed to read file %s: %v", configFile, err)
-		}
-
-		// Load the JSON content of the export file
-		log.Println("Loading export config into map variable")
-		exportData, err := loadJsonFileToMap(configFile)
-		if err != nil {
-			return err
-		}
-
-		resourceMap, ok := exportData["resource"].(map[string]any)
-		if !ok {
-			return fmt.Errorf("could not find resource block in exported file %s", configFile)
-		}
-
-		resources, ok := resourceMap[resourceType].(map[string]any)
-		if !ok {
-			return fmt.Errorf("no %s resources exported", resourceType)
-		}
-
-		exportedResource, ok := resources[resourceLabel].(map[string]any)
-		if !ok {
-			return fmt.Errorf("no resource %s exported", resourcePath)
-		}
-
-		exportedValue, ok := exportedResource[attr].(T)
-		if !ok {
-			return fmt.Errorf("field %s not exported in resource %s config", attr, resourcePath)
-		}
-
-		if exportedValue != value {
-			return fmt.Errorf("expected %s to equal %v, got %v", attr, value, exportedValue)
-		}
-		return nil
-	}
-}
-
 // validateExportManagedSitesAsData verifies that the default managed site 'PureCloud Voice - AWS' is exported as a data source
 func validateExportManagedSitesAsData(filename, siteName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
@@ -1234,7 +1191,7 @@ func validateExportManagedSitesAsData(filename, siteName string) resource.TestCh
 
 		// Load the JSON content of the export file
 		log.Println("Loading export config into map variable")
-		exportData, err := loadJsonFileToMap(filename)
+		exportData, err := util.LoadJsonFileToMap(filename)
 		if err != nil {
 			return err
 		}
@@ -1277,7 +1234,7 @@ func validatePromptsExported(filename string, expectedPrompts []string) resource
 		}
 
 		log.Println("Loading export config into map variable")
-		exportData, err := loadJsonFileToMap(filename + "/genesyscloud.tf.json")
+		exportData, err := util.LoadJsonFileToMap(filename + "/genesyscloud.tf.json")
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal JSON from file %s: %s", filename, err)
 		}
@@ -1336,7 +1293,7 @@ func validateExportedCampaignScriptIds(
 		}
 
 		log.Println("Loading export config into map variable")
-		exportData, err := loadJsonFileToMap(filename)
+		exportData, err := util.LoadJsonFileToMap(filename)
 		if err != nil {
 			return err
 		}
@@ -1404,25 +1361,6 @@ func validateNumberOfExportedDataSources(filename string) resource.TestCheckFunc
 	}
 }
 
-func loadJsonFileToMap(filename string) (map[string]interface{}, error) {
-	var data map[string]interface{}
-
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open export file at path %s: %v", filename, err)
-	}
-	defer func(jsonFile *os.File) {
-		_ = jsonFile.Close()
-	}(jsonFile)
-
-	byteValue, _ := io.ReadAll(jsonFile)
-	if err := json.Unmarshal(byteValue, &data); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
-	}
-
-	return data, nil
-}
-
 func testUserPromptAudioFileExport(filePath, resourceType, resourceLabel, exportDir, nameAttrRef string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		raw, err := getResourceDefinition(filePath, resourceType)
@@ -1473,7 +1411,7 @@ func verifyLabelsExistInExportedStateFile(filename, relevantResourceType string,
 			return fmt.Errorf("failed to find file %s", filename)
 		}
 
-		stateData, err := loadJsonFileToMap(filename)
+		stateData, err := util.LoadJsonFileToMap(filename)
 		if err != nil {
 			return err
 		}
@@ -1496,7 +1434,7 @@ func verifyLabelsExistInExportedTfConfig(filename, relevantResourceType string, 
 			return fmt.Errorf("failed to find file %s", filename)
 		}
 
-		stateData, err := loadJsonFileToMap(filename)
+		stateData, err := util.LoadJsonFileToMap(filename)
 		if err != nil {
 			return err
 		}
