@@ -98,6 +98,7 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkAsset.Name)
+		resourcedata.SetNillableValue(d, "content_location", sdkAsset.ContentLocation)
 
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
 
