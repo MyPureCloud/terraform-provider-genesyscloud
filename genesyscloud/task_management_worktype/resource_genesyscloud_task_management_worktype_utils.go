@@ -39,12 +39,7 @@ type worktypeConfig struct {
 
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
 func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.Worktypecreate {
-	DisableDefaultStatusCreation := platformclientv2.Bool(func() bool {
-		if v, ok := d.GetOk("disable_default_status_creation"); ok {
-			return v.(bool)
-		}
-		return false
-	}())
+	DisableDefaultStatusCreation := platformclientv2.Bool(d.Get("disable_default_status_creation").(bool))
 
 	worktype := platformclientv2.Worktypecreate{
 		Name:                         platformclientv2.String(d.Get("name").(string)),

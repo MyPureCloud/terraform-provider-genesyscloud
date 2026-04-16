@@ -34,11 +34,12 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		defaultPriority:     100,
 		defaultTtlS:         86400,
 
-		defaultLanguageId: uuid.NewString(),
-		defaultQueueId:    uuid.NewString(),
-		defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
-		defaultScriptId:   uuid.NewString(),
-		assignmentEnabled: false,
+		defaultLanguageId:            uuid.NewString(),
+		defaultQueueId:               uuid.NewString(),
+		defaultSkillIds:              []string{uuid.NewString(), uuid.NewString()},
+		defaultScriptId:              uuid.NewString(),
+		assignmentEnabled:            false,
+		disableDefaultStatusCreation: true,
 
 		schemaId:      uuid.NewString(),
 		schemaVersion: 1,
@@ -63,6 +64,8 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 		assert.Equal(t, wt.schemaId, *create.SchemaId, "wt.schemaId check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.schemaVersion, *create.SchemaVersion, "wt.schemaVersion check failed in create createTaskManagementWorktypeAttr")
 		assert.Equal(t, wt.defaultScriptId, *create.DefaultScriptId, "wt.defaultScriptId check failed in create createTaskManagementWorktypeAttr")
+		assert.NotNil(t, create.DisableDefaultStatusCreation, "wt.disableDefaultStatusCreation should be set in create payload")
+		assert.Equal(t, wt.disableDefaultStatusCreation, *create.DisableDefaultStatusCreation, "wt.disableDefaultStatusCreation check failed in create createTaskManagementWorktypeAttr")
 
 		return &platformclientv2.Worktype{
 			Id:          &tId,
@@ -157,6 +160,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 	//Found this gem TestResourceDataRaw here: https://github.com/hashicorp/terraform/issues/890
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
+	_ = d.Set("disable_default_status_creation", wt.disableDefaultStatusCreation)
 
 	diag := createTaskManagementWorktype(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError(), diag)
@@ -460,23 +464,24 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 
 func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
-		"id":                           tId,
-		"name":                         wt.name,
-		"description":                  wt.description,
-		"division_id":                  wt.divisionId,
-		"default_workbin_id":           wt.defaultWorkbinId,
-		"default_duration_seconds":     wt.defaultDurationS,
-		"default_expiration_seconds":   wt.defaultExpirationS,
-		"default_due_duration_seconds": wt.defaultDueDurationS,
-		"default_priority":             wt.defaultPriority,
-		"default_ttl_seconds":          wt.defaultTtlS,
-		"default_language_id":          wt.defaultLanguageId,
-		"default_queue_id":             wt.defaultQueueId,
-		"default_skills_ids":           lists.StringListToInterfaceList(wt.defaultSkillIds),
-		"assignment_enabled":           wt.assignmentEnabled,
-		"schema_id":                    wt.schemaId,
-		"schema_version":               wt.schemaVersion,
-		"default_script_id":            wt.defaultScriptId,
+		"id":                              tId,
+		"name":                            wt.name,
+		"description":                     wt.description,
+		"division_id":                     wt.divisionId,
+		"default_workbin_id":              wt.defaultWorkbinId,
+		"disable_default_status_creation": wt.disableDefaultStatusCreation,
+		"default_duration_seconds":        wt.defaultDurationS,
+		"default_expiration_seconds":      wt.defaultExpirationS,
+		"default_due_duration_seconds":    wt.defaultDueDurationS,
+		"default_priority":                wt.defaultPriority,
+		"default_ttl_seconds":             wt.defaultTtlS,
+		"default_language_id":             wt.defaultLanguageId,
+		"default_queue_id":                wt.defaultQueueId,
+		"default_skills_ids":              lists.StringListToInterfaceList(wt.defaultSkillIds),
+		"assignment_enabled":              wt.assignmentEnabled,
+		"schema_id":                       wt.schemaId,
+		"schema_version":                  wt.schemaVersion,
+		"default_script_id":               wt.defaultScriptId,
 	}
 
 	return resourceDataMap
