@@ -120,11 +120,6 @@ func testQueueExportEqual(filePath, resourceType, resourceLabel string, expected
 			return err
 		}
 
-		// Check if exportedQueue is nil
-		if exportedQueue == nil {
-			return fmt.Errorf("exportedQueue is nil after unmarshaling")
-		}
-
 		if *exportedQueue != expectedQueue {
 			return fmt.Errorf("objects are not equal. Expected: %v. Got: %v", expectedQueue, *exportedQueue)
 		}
@@ -176,7 +171,7 @@ func testQueueExportMatchesRegEx(filePath, resourceType, regEx string) resource.
 		}
 
 		var resources map[string]interface{}
-		if json.Unmarshal(*resourceRaw[resourceType], &resources); err != nil {
+		if err := json.Unmarshal(*resourceRaw[resourceType], &resources); err != nil {
 			return err
 		}
 
@@ -226,11 +221,6 @@ func testWrapupcodeExportEqual(filePath, resourceType, resourceLabel string, exp
 			return err
 		}
 
-		// Check if exportedWrapupcode is nil
-		if exportedWrapupcode == nil {
-			return fmt.Errorf("exportedWrapupcode is nil after unmarshaling")
-		}
-
 		if *exportedWrapupcode != expectedWrapupcode {
 			return fmt.Errorf("objects are not equal. Expected: %v. Got: %v", expectedWrapupcode, *exportedWrapupcode)
 		}
@@ -257,7 +247,7 @@ func testQueueExportExcludesRegEx(filePath, resourceType, regEx string) resource
 		}
 
 		var resources map[string]interface{}
-		if json.Unmarshal(*resourceRaw[resourceType], &resources); err != nil {
+		if err := json.Unmarshal(*resourceRaw[resourceType], &resources); err != nil {
 			return err
 		}
 
@@ -387,6 +377,11 @@ func isIgnoredReferenceCycle(cycle []string) bool {
 		// Email routes contain a ref to an inbound queue ID, and queues contain a ref to an outbound email route
 		{"genesyscloud_routing_queue", "genesyscloud_routing_email_route", "genesyscloud_routing_queue"},
 		{"genesyscloud_routing_email_route", "genesyscloud_routing_queue", "genesyscloud_routing_email_route"},
+
+		// Integrations can reference credentials, while credential names are derived from the parent integration ID.
+		// This creates an unavoidable cycle during export that must be handled in config ordering.
+		{"genesyscloud_integration", "genesyscloud_integration_credential", "genesyscloud_integration"},
+		{"genesyscloud_integration_credential", "genesyscloud_integration", "genesyscloud_integration_credential"},
 	}
 
 	for _, ignored := range ignoredCycles {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -102,9 +103,11 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get routing email domains error: %s", err)
 	}
+	// Ensure we return a non-nil response even for single-page results.
+	response = resp
 
 	if domains.Entities == nil || len(*domains.Entities) == 0 {
-		return &allDomains, resp, nil
+		return &allDomains, response, nil
 	}
 	allDomains = append(allDomains, *domains.Entities...)
 
@@ -116,7 +119,7 @@ func getAllRoutingEmailDomainsFn(ctx context.Context, p *routingEmailDomainProxy
 
 		response = resp
 		if domains.Entities == nil || len(*domains.Entities) == 0 {
-			return &allDomains, resp, nil
+			return &allDomains, response, nil
 		}
 		allDomains = append(allDomains, *domains.Entities...)
 	}
@@ -148,7 +151,7 @@ func getRoutingEmailDomainIdByNameFn(ctx context.Context, p *routingEmailDomainP
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	domains, resp, err := getAllRoutingEmailDomainsFn(ctx, p)
+	domains, resp, err := p.getAllRoutingEmailDomains(ctx)
 	if err != nil {
 		return "", resp, false, err
 	}
@@ -157,11 +160,36 @@ func getRoutingEmailDomainIdByNameFn(ctx context.Context, p *routingEmailDomainP
 		return "", resp, true, fmt.Errorf("no routing email domain found with name %s", name)
 	}
 
+	// Normalize for consistent matching. Genesys Cloud typically stores domains as lowercase.
+	normalized := strings.ToLower(strings.TrimSpace(name))
+	var prefixMatchID *string
+
 	for _, domain := range *domains {
-		if *domain.Id == name {
+		if domain.Id == nil {
+			continue
+		}
+
+		domainID := strings.ToLower(strings.TrimSpace(*domain.Id))
+
+		// Exact match against full domain ID (e.g. "delltechnologies.mypurecloud.com")
+		if domainID == normalized {
 			log.Printf("retrieved the routing email domain id %s by name %s", *domain.Id, name)
 			return *domain.Id, resp, false, nil
 		}
+
+		// Subdomain convenience match: allow "delltechnologies" to resolve "delltechnologies.<region-domain>"
+		if domain.SubDomain != nil && *domain.SubDomain && strings.HasPrefix(domainID, normalized+".") {
+			if prefixMatchID != nil && *prefixMatchID != *domain.Id {
+				// Ambiguous prefix match; ask caller to use the full domain id.
+				return "", resp, false, fmt.Errorf("multiple routing email domains matched prefix %s; please use full domain id", name)
+			}
+			prefixMatchID = domain.Id
+		}
+	}
+
+	if prefixMatchID != nil {
+		log.Printf("retrieved the routing email domain id %s by prefix %s", *prefixMatchID, name)
+		return *prefixMatchID, resp, false, nil
 	}
 
 	return "", resp, true, fmt.Errorf("unable to find routing email domain with name %s", name)
