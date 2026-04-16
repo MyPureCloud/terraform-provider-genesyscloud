@@ -313,7 +313,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 
 		if variations != nil && len(*variations) > 0 {
-			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeBaseID, ids.knowledgeDocumentID, &platformclientv2.Knowledgedocumentversion{})
+			_, resp, versionErr := variationProxy.createKnowledgeKnowledgebaseDocumentVersions(ctx, ids.knowledgeDocumentID, ids.knowledgeBaseID, &platformclientv2.Knowledgedocumentversion{})
 			if versionErr != nil {
 				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish knowledge document error: %s", versionErr.Error()), resp)
 			}
