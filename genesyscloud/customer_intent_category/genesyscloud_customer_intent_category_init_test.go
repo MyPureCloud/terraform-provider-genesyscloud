@@ -1,4 +1,4 @@
-package intent_category
+package customer_intent_category
 
 import (
 	"sync"

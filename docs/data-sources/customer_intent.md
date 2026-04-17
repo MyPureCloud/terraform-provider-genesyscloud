@@ -3,12 +3,12 @@
 page_title: "genesyscloud_customer_intent Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud customer intent data source. Select an customer intent by name
+  Genesys Cloud customer intent data source. Select a customer intent by name
 ---
 
 # genesyscloud_customer_intent (Data Source)
 
-Genesys Cloud customer intent data source. Select an customer intent by name
+Genesys Cloud customer intent data source. Select a customer intent by name
 
 ## Example Usage
 

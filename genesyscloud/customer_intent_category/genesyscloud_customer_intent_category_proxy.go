@@ -1,4 +1,4 @@
-package intent_category
+package customer_intent_category
 
 import (
 	"context"
@@ -116,18 +116,20 @@ func getAllIntentCategoryFn(ctx context.Context, p *intentCategoryProxy) (*[]pla
 		allIntentCategories = append(allIntentCategories, intentCategory)
 	}
 
-	for pageNum := 2; pageNum <= *intentCategories.PageCount; pageNum++ {
-		intentCategories, _, err = p.intentsApi.GetIntentsCategories(pageSize, pageNum, "")
-		if err != nil {
-			return nil, resp, err
-		}
+	if intentCategories.PageCount != nil && *intentCategories.PageCount > 1 {
+		for pageNum := 2; pageNum <= *intentCategories.PageCount; pageNum++ {
+			intentCategories, _, err = p.intentsApi.GetIntentsCategories(pageSize, pageNum, "")
+			if err != nil {
+				return nil, resp, err
+			}
 
-		if intentCategories.Entities == nil || len(*intentCategories.Entities) == 0 {
-			break
-		}
+			if intentCategories.Entities == nil || len(*intentCategories.Entities) == 0 {
+				break
+			}
 
-		for _, intentCategory := range *intentCategories.Entities {
-			allIntentCategories = append(allIntentCategories, intentCategory)
+			for _, intentCategory := range *intentCategories.Entities {
+				allIntentCategories = append(allIntentCategories, intentCategory)
+			}
 		}
 	}
 
@@ -155,20 +157,22 @@ func getIntentCategoryIdByNameFn(ctx context.Context, p *intentCategoryProxy, na
 		}
 	}
 
-	for pageNum := 2; pageNum <= *intentCategories.PageCount; pageNum++ {
-		intentCategories, resp, err = p.intentsApi.GetIntentsCategories(pageSize, pageNum, name)
-		if err != nil {
-			return "", resp, false, err
-		}
+	if intentCategories.PageCount != nil && *intentCategories.PageCount > 1 {
+		for pageNum := 2; pageNum <= *intentCategories.PageCount; pageNum++ {
+			intentCategories, resp, err = p.intentsApi.GetIntentsCategories(pageSize, pageNum, name)
+			if err != nil {
+				return "", resp, false, err
+			}
 
-		if intentCategories.Entities == nil || len(*intentCategories.Entities) == 0 {
-			break
-		}
+			if intentCategories.Entities == nil || len(*intentCategories.Entities) == 0 {
+				break
+			}
 
-		for _, intentCategory := range *intentCategories.Entities {
-			if *intentCategory.Name == name {
-				log.Printf("Retrieved the intent category id %s by name %s", *intentCategory.Id, name)
-				return *intentCategory.Id, resp, false, nil
+			for _, intentCategory := range *intentCategories.Entities {
+				if *intentCategory.Name == name {
+					log.Printf("Retrieved the intent category id %s by name %s", *intentCategory.Id, name)
+					return *intentCategory.Id, resp, false, nil
+				}
 			}
 		}
 	}

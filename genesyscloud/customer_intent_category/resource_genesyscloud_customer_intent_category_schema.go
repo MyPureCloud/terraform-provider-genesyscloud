@@ -1,4 +1,4 @@
-package intent_category
+package customer_intent_category
 
 // @team: Sirona
 // @chat: #AIP Sirona

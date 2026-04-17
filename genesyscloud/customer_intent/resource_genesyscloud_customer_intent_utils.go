@@ -1,6 +1,8 @@
 package customer_intent
 
 import (
+	"log"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
@@ -78,6 +80,7 @@ func flattenSourceIntents(sourceIntents []platformclientv2.Customersourceintent)
 
 	for _, customerSourceIntent := range sourceIntents {
 		if customerSourceIntent.SourceIntent == nil {
+			log.Printf("Warning: customer source intent has nil SourceIntent, skipping")
 			continue
 		}
 		sourceIntent := customerSourceIntent.SourceIntent
@@ -85,12 +88,18 @@ func flattenSourceIntents(sourceIntents []platformclientv2.Customersourceintent)
 
 		if sourceIntent.SourceIntentId != nil {
 			sourceIntentMap["source_intent_id"] = *sourceIntent.SourceIntentId
+		} else {
+			log.Printf("Warning: source intent has nil SourceIntentId")
 		}
 		if sourceIntent.SourceIntentName != nil {
 			sourceIntentMap["source_intent_name"] = *sourceIntent.SourceIntentName
+		} else {
+			log.Printf("Warning: source intent has nil SourceIntentName")
 		}
 		if sourceIntent.SourceType != nil {
 			sourceIntentMap["source_type"] = *sourceIntent.SourceType
+		} else {
+			log.Printf("Warning: source intent has nil SourceType")
 		}
 		if sourceIntent.SourceId != nil {
 			sourceIntentMap["source_id"] = *sourceIntent.SourceId

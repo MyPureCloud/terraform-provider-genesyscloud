@@ -135,18 +135,20 @@ func getAllCustomerIntentFn(ctx context.Context, p *customerIntentProxy) (*[]pla
 		allCustomerIntentResponses = append(allCustomerIntentResponses, customerIntentResponse)
 	}
 
-	for pageNum := 2; pageNum <= *customerIntentResponses.PageCount; pageNum++ {
-		customerIntentResponses, _, err = p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, "", "")
-		if err != nil {
-			return nil, resp, err
-		}
+	if customerIntentResponses.PageCount != nil && *customerIntentResponses.PageCount > 1 {
+		for pageNum := 2; pageNum <= *customerIntentResponses.PageCount; pageNum++ {
+			customerIntentResponses, _, err = p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, "", "")
+			if err != nil {
+				return nil, resp, err
+			}
 
-		if customerIntentResponses.Entities == nil || len(*customerIntentResponses.Entities) == 0 {
-			break
-		}
+			if customerIntentResponses.Entities == nil || len(*customerIntentResponses.Entities) == 0 {
+				break
+			}
 
-		for _, customerIntentResponse := range *customerIntentResponses.Entities {
-			allCustomerIntentResponses = append(allCustomerIntentResponses, customerIntentResponse)
+			for _, customerIntentResponse := range *customerIntentResponses.Entities {
+				allCustomerIntentResponses = append(allCustomerIntentResponses, customerIntentResponse)
+			}
 		}
 	}
 
@@ -174,20 +176,22 @@ func getCustomerIntentIdByNameFn(ctx context.Context, p *customerIntentProxy, na
 		}
 	}
 
-	for pageNum := 2; pageNum <= *customerIntentResponses.PageCount; pageNum++ {
-		customerIntentResponses, resp, err = p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, name, "")
-		if err != nil {
-			return "", resp, false, err
-		}
+	if customerIntentResponses.PageCount != nil && *customerIntentResponses.PageCount > 1 {
+		for pageNum := 2; pageNum <= *customerIntentResponses.PageCount; pageNum++ {
+			customerIntentResponses, resp, err = p.intentsApi.GetIntentsCustomerintents(pageSize, pageNum, name, "")
+			if err != nil {
+				return "", resp, false, err
+			}
 
-		if customerIntentResponses.Entities == nil || len(*customerIntentResponses.Entities) == 0 {
-			break
-		}
+			if customerIntentResponses.Entities == nil || len(*customerIntentResponses.Entities) == 0 {
+				break
+			}
 
-		for _, customerIntentResponse := range *customerIntentResponses.Entities {
-			if *customerIntentResponse.Name == name {
-				log.Printf("Retrieved the customer intent id %s by name %s", *customerIntentResponse.Id, name)
-				return *customerIntentResponse.Id, resp, false, nil
+			for _, customerIntentResponse := range *customerIntentResponses.Entities {
+				if *customerIntentResponse.Name == name {
+					log.Printf("Retrieved the customer intent id %s by name %s", *customerIntentResponse.Id, name)
+					return *customerIntentResponse.Id, resp, false, nil
+				}
 			}
 		}
 	}

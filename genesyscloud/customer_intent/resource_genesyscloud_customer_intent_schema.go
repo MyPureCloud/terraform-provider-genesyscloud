@@ -8,6 +8,7 @@ package customer_intent
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -23,10 +24,8 @@ resource_genesycloud_customer_intent_schema.go holds four functions within it:
 3.  The datasource schema definitions for the customer_intent datasource.
 4.  The resource exporter configuration for the customer_intent exporter.
 */
-const resourceName = "genesyscloud_customer_intent"
 
-// ResourceType is the resource type for customer intent
-const ResourceType = resourceName
+const ResourceType = "genesyscloud_customer_intent"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -86,9 +85,10 @@ func ResourceCustomerIntent() *schema.Resource {
 							Type:        schema.TypeString,
 						},
 						`source_type`: {
-							Description: `Type of the source (e.g., Bot)`,
-							Required:    true,
-							Type:        schema.TypeString,
+							Description:  `Type of the source (e.g., Bot)`,
+							Required:     true,
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringInSlice([]string{"Segment", "Bot", "Digitalbot", "Copilot", "Topic"}, false),
 						},
 						`source_id`: {
 							Description: `ID of the source`,
@@ -120,7 +120,7 @@ func CustomerIntentExporter() *resourceExporter.ResourceExporter {
 // DataSourceCustomerIntent registers the genesyscloud_customer_intent data source
 func DataSourceCustomerIntent() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud customer intent data source. Select an customer intent by name`,
+		Description: `Genesys Cloud customer intent data source. Select a customer intent by name`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceCustomerIntentRead),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,

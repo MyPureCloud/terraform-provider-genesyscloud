@@ -33,7 +33,7 @@ terraform-provider-genesyscloud
 **/true
 website/vendor
 vendor/
-test-intent-category/ 
+test-intent-category/
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate

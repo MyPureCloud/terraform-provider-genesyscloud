@@ -62,6 +62,12 @@ func createCustomerIntent(ctx context.Context, d *schema.ResourceData, meta inte
 		log.Printf("Adding %d source intents to customer intent %s", len(sourceIntents), *customerIntentResponse.Id)
 		_, resp, err := proxy.bulkAddSourceIntents(ctx, *customerIntentResponse.Id, sourceIntents)
 		if err != nil {
+			// Rollback: delete the customer intent since sub-resource creation failed
+			log.Printf("Failed to add source intents, rolling back customer intent %s", d.Id())
+			if delResp, delErr := proxy.deleteCustomerIntent(ctx, d.Id()); delErr != nil {
+				log.Printf("Failed to rollback customer intent %s: %s (resp: %v)", d.Id(), delErr, delResp)
+			}
+			d.SetId("")
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add source intents: %s", err), resp)
 		}
 	}
@@ -73,7 +79,7 @@ func createCustomerIntent(ctx context.Context, d *schema.ResourceData, meta inte
 func readCustomerIntent(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCustomerIntentProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCustomerIntent(), constants.ConsistencyChecks(), resourceName)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCustomerIntent(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading customer intent %s", d.Id())
 
