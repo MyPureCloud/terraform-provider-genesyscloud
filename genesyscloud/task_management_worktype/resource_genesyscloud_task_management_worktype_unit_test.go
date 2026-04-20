@@ -19,152 +19,190 @@ import (
 
 /** Unit Test **/
 func TestUnitResourceWorktypeCreate(t *testing.T) {
-	tId := uuid.NewString()
+	for _, tc := range []struct {
+		name                          string
+		disableDefaultStatusCreation  *bool
+		assertCreateDisableDefaultSet func(t *testing.T, create *platformclientv2.Worktypecreate)
+	}{
+		{
+			name:                         "unset",
+			disableDefaultStatusCreation: nil,
+			assertCreateDisableDefaultSet: func(t *testing.T, create *platformclientv2.Worktypecreate) {
+				assert.Nil(t, create.DisableDefaultStatusCreation, "disable_default_status_creation should be omitted from create payload when unset")
+			},
+		},
+		{
+			name:                         "true",
+			disableDefaultStatusCreation: platformclientv2.Bool(true),
+			assertCreateDisableDefaultSet: func(t *testing.T, create *platformclientv2.Worktypecreate) {
+				assert.NotNil(t, create.DisableDefaultStatusCreation, "disable_default_status_creation should be set in create payload")
+				assert.True(t, *create.DisableDefaultStatusCreation)
+			},
+		},
+		{
+			name:                         "false",
+			disableDefaultStatusCreation: platformclientv2.Bool(false),
+			assertCreateDisableDefaultSet: func(t *testing.T, create *platformclientv2.Worktypecreate) {
+				assert.NotNil(t, create.DisableDefaultStatusCreation, "disable_default_status_creation should be set in create payload when explicitly configured")
+				assert.False(t, *create.DisableDefaultStatusCreation)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tId := uuid.NewString()
 
-	// The complete configuration for the worktype
-	wt := &worktypeConfig{
-		name:             "tf_worktype_" + uuid.NewString(),
-		description:      "worktype created for CX as Code test case",
-		divisionId:       uuid.NewString(),
-		defaultWorkbinId: uuid.NewString(),
+			// The complete configuration for the worktype
+			wt := &worktypeConfig{
+				name:             "tf_worktype_" + uuid.NewString(),
+				description:      "worktype created for CX as Code test case",
+				divisionId:       uuid.NewString(),
+				defaultWorkbinId: uuid.NewString(),
 
-		defaultDurationS:    86400,
-		defaultExpirationS:  86400,
-		defaultDueDurationS: 86400,
-		defaultPriority:     100,
-		defaultTtlS:         86400,
+				defaultDurationS:    86400,
+				defaultExpirationS:  86400,
+				defaultDueDurationS: 86400,
+				defaultPriority:     100,
+				defaultTtlS:         86400,
 
-		defaultLanguageId:            uuid.NewString(),
-		defaultQueueId:               uuid.NewString(),
-		defaultSkillIds:              []string{uuid.NewString(), uuid.NewString()},
-		defaultScriptId:              uuid.NewString(),
-		assignmentEnabled:            false,
-		disableDefaultStatusCreation: true,
+				defaultLanguageId: uuid.NewString(),
+				defaultQueueId:    uuid.NewString(),
+				defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
+				defaultScriptId:   uuid.NewString(),
+				assignmentEnabled: false,
 
-		schemaId:      uuid.NewString(),
-		schemaVersion: 1,
+				schemaId:      uuid.NewString(),
+				schemaVersion: 1,
+			}
+
+			taskProxy := &TaskManagementWorktypeProxy{}
+
+			taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+				assert.Equal(t, wt.name, *create.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.description, *create.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.divisionId, *create.DivisionId, "wt.divisionId check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultWorkbinId, *create.DefaultWorkbinId, "wt.defaultWorkbinId check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultDurationS, *create.DefaultDurationSeconds, "wt.defaultDurationS check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultExpirationS, *create.DefaultExpirationSeconds, "wt.defaultExpirationS check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultDueDurationS, *create.DefaultDueDurationSeconds, "wt.defaultDueDurationS check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultPriority, *create.DefaultPriority, "wt.defaultPriority check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultTtlS, *create.DefaultTtlSeconds, "wt.defaultTtlS check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultLanguageId, *create.DefaultLanguageId, "wt.defaultLanguageId check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultQueueId, *create.DefaultQueueId, "wt.defaultQueueId check failed in create createTaskManagementWorktypeAttr")
+				assert.ElementsMatch(t, wt.defaultSkillIds, *create.DefaultSkillIds, "wt.defaultSkillIds check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.assignmentEnabled, *create.AssignmentEnabled, "wt.assignmentEnabled check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.schemaId, *create.SchemaId, "wt.schemaId check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.schemaVersion, *create.SchemaVersion, "wt.schemaVersion check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.defaultScriptId, *create.DefaultScriptId, "wt.defaultScriptId check failed in create createTaskManagementWorktypeAttr")
+				tc.assertCreateDisableDefaultSet(t, create)
+
+				return &platformclientv2.Worktype{
+					Id:          &tId,
+					Name:        &wt.name,
+					Description: &wt.description,
+					Division: &platformclientv2.Division{
+						Id: &wt.divisionId,
+					},
+
+					DefaultDurationSeconds:    &wt.defaultDueDurationS,
+					DefaultExpirationSeconds:  &wt.defaultExpirationS,
+					DefaultDueDurationSeconds: &wt.defaultDueDurationS,
+					DefaultPriority:           &wt.defaultPriority,
+					DefaultTtlSeconds:         &wt.defaultTtlS,
+
+					DefaultLanguage: &platformclientv2.Languagereference{
+						Id: &wt.defaultLanguageId,
+					},
+					DefaultQueue: &platformclientv2.Workitemqueuereference{
+						Id: &wt.defaultQueueId,
+					},
+					AssignmentEnabled: &wt.assignmentEnabled,
+					Schema: &platformclientv2.Workitemschema{
+						Id:      &wt.schemaId,
+						Version: &wt.schemaVersion,
+					},
+					DefaultScript: &platformclientv2.Workitemscriptreference{
+						Id: &wt.defaultScriptId,
+					},
+				}, nil, nil
+			}
+
+			taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+				assert.Equal(t, tId, id)
+
+				// The expected final form of the worktype
+				wt := &platformclientv2.Worktype{
+					Id:          &tId,
+					Name:        &wt.name,
+					Description: &wt.description,
+					Division: &platformclientv2.Division{
+						Id: &wt.divisionId,
+					},
+
+					DefaultDurationSeconds:    &wt.defaultDueDurationS,
+					DefaultExpirationSeconds:  &wt.defaultExpirationS,
+					DefaultDueDurationSeconds: &wt.defaultDueDurationS,
+					DefaultPriority:           &wt.defaultPriority,
+					DefaultTtlSeconds:         &wt.defaultTtlS,
+
+					DefaultLanguage: &platformclientv2.Languagereference{
+						Id: &wt.defaultLanguageId,
+					},
+					DefaultQueue: &platformclientv2.Workitemqueuereference{
+						Id: &wt.defaultQueueId,
+					},
+					DefaultSkills: &[]platformclientv2.Routingskillreference{
+						{
+							Id: &wt.defaultSkillIds[0],
+						},
+						{
+							Id: &wt.defaultSkillIds[1],
+						},
+					},
+					AssignmentEnabled: &wt.assignmentEnabled,
+					Schema: &platformclientv2.Workitemschema{
+						Id:      &wt.schemaId,
+						Version: &wt.schemaVersion,
+					},
+					DefaultScript: &platformclientv2.Workitemscriptreference{
+						Id: &wt.defaultScriptId,
+					},
+				}
+
+				apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+
+				return wt, apiResponse, nil
+			}
+
+			internalProxy = taskProxy
+			defer func() { internalProxy = nil }()
+
+			ctx := context.Background()
+			gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+			// Grab our defined schema
+			resourceSchema := ResourceTaskManagementWorktype().Schema
+
+			// Setup a map of values
+			resourceDataMap := buildWorktypeResourceMap(tId, wt)
+
+			if tc.disableDefaultStatusCreation == nil {
+				delete(resourceDataMap, "disable_default_status_creation")
+			} else {
+				resourceDataMap["disable_default_status_creation"] = *tc.disableDefaultStatusCreation
+			}
+
+			// schema.TestResourceDataRaw can omit Optional TypeBool=false; explicitly set when we want to simulate "configured false".
+			d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+			d.SetId(tId)
+			if tc.disableDefaultStatusCreation != nil {
+				_ = d.Set("disable_default_status_creation", *tc.disableDefaultStatusCreation)
+			}
+
+			diag := createTaskManagementWorktype(ctx, d, gcloud)
+			assert.Equal(t, false, diag.HasError(), diag)
+			assert.Equal(t, tId, d.Id())
+		})
 	}
-
-	taskProxy := &TaskManagementWorktypeProxy{}
-
-	taskProxy.createTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, create *platformclientv2.Worktypecreate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
-		assert.Equal(t, wt.name, *create.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.description, *create.Description, "wt.Description check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.divisionId, *create.DivisionId, "wt.divisionId check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultWorkbinId, *create.DefaultWorkbinId, "wt.defaultWorkbinId check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultDurationS, *create.DefaultDurationSeconds, "wt.defaultDurationS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultExpirationS, *create.DefaultExpirationSeconds, "wt.defaultExpirationS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultDueDurationS, *create.DefaultDueDurationSeconds, "wt.defaultDueDurationS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultPriority, *create.DefaultPriority, "wt.defaultPriority check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultTtlS, *create.DefaultTtlSeconds, "wt.defaultTtlS check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultLanguageId, *create.DefaultLanguageId, "wt.defaultLanguageId check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultQueueId, *create.DefaultQueueId, "wt.defaultQueueId check failed in create createTaskManagementWorktypeAttr")
-		assert.ElementsMatch(t, wt.defaultSkillIds, *create.DefaultSkillIds, "wt.defaultSkillIds check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.assignmentEnabled, *create.AssignmentEnabled, "wt.assignmentEnabled check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.schemaId, *create.SchemaId, "wt.schemaId check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.schemaVersion, *create.SchemaVersion, "wt.schemaVersion check failed in create createTaskManagementWorktypeAttr")
-		assert.Equal(t, wt.defaultScriptId, *create.DefaultScriptId, "wt.defaultScriptId check failed in create createTaskManagementWorktypeAttr")
-		assert.NotNil(t, create.DisableDefaultStatusCreation, "wt.disableDefaultStatusCreation should be set in create payload")
-		assert.Equal(t, wt.disableDefaultStatusCreation, *create.DisableDefaultStatusCreation, "wt.disableDefaultStatusCreation check failed in create createTaskManagementWorktypeAttr")
-
-		return &platformclientv2.Worktype{
-			Id:          &tId,
-			Name:        &wt.name,
-			Description: &wt.description,
-			Division: &platformclientv2.Division{
-				Id: &wt.divisionId,
-			},
-
-			DefaultDurationSeconds:    &wt.defaultDueDurationS,
-			DefaultExpirationSeconds:  &wt.defaultExpirationS,
-			DefaultDueDurationSeconds: &wt.defaultDueDurationS,
-			DefaultPriority:           &wt.defaultPriority,
-			DefaultTtlSeconds:         &wt.defaultTtlS,
-
-			DefaultLanguage: &platformclientv2.Languagereference{
-				Id: &wt.defaultLanguageId,
-			},
-			DefaultQueue: &platformclientv2.Workitemqueuereference{
-				Id: &wt.defaultQueueId,
-			},
-			AssignmentEnabled: &wt.assignmentEnabled,
-			Schema: &platformclientv2.Workitemschema{
-				Id:      &wt.schemaId,
-				Version: &wt.schemaVersion,
-			},
-			DefaultScript: &platformclientv2.Workitemscriptreference{
-				Id: &wt.defaultScriptId,
-			},
-		}, nil, nil
-	}
-
-	taskProxy.getTaskManagementWorktypeByIdAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
-		assert.Equal(t, tId, id)
-
-		// The expected final form of the worktype
-		wt := &platformclientv2.Worktype{
-			Id:          &tId,
-			Name:        &wt.name,
-			Description: &wt.description,
-			Division: &platformclientv2.Division{
-				Id: &wt.divisionId,
-			},
-
-			DefaultDurationSeconds:    &wt.defaultDueDurationS,
-			DefaultExpirationSeconds:  &wt.defaultExpirationS,
-			DefaultDueDurationSeconds: &wt.defaultDueDurationS,
-			DefaultPriority:           &wt.defaultPriority,
-			DefaultTtlSeconds:         &wt.defaultTtlS,
-
-			DefaultLanguage: &platformclientv2.Languagereference{
-				Id: &wt.defaultLanguageId,
-			},
-			DefaultQueue: &platformclientv2.Workitemqueuereference{
-				Id: &wt.defaultQueueId,
-			},
-			DefaultSkills: &[]platformclientv2.Routingskillreference{
-				{
-					Id: &wt.defaultSkillIds[0],
-				},
-				{
-					Id: &wt.defaultSkillIds[1],
-				},
-			},
-			AssignmentEnabled: &wt.assignmentEnabled,
-			Schema: &platformclientv2.Workitemschema{
-				Id:      &wt.schemaId,
-				Version: &wt.schemaVersion,
-			},
-			DefaultScript: &platformclientv2.Workitemscriptreference{
-				Id: &wt.defaultScriptId,
-			},
-		}
-
-		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
-
-		return wt, apiResponse, nil
-	}
-
-	internalProxy = taskProxy
-	defer func() { internalProxy = nil }()
-
-	ctx := context.Background()
-	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
-
-	//Grab our defined schema
-	resourceSchema := ResourceTaskManagementWorktype().Schema
-
-	//Setup a map of values
-	resourceDataMap := buildWorktypeResourceMap(tId, wt)
-
-	//Found this gem TestResourceDataRaw here: https://github.com/hashicorp/terraform/issues/890
-	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
-	d.SetId(tId)
-	_ = d.Set("disable_default_status_creation", wt.disableDefaultStatusCreation)
-
-	diag := createTaskManagementWorktype(ctx, d, gcloud)
-	assert.Equal(t, false, diag.HasError(), diag)
-	assert.Equal(t, tId, d.Id())
 }
 
 func TestUnitResourceWorktypeRead(t *testing.T) {
@@ -188,6 +226,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 		defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
 		defaultScriptId:   uuid.NewString(),
 		assignmentEnabled: false,
+		disableDefaultStatusCreation: true,
 
 		schemaId:      uuid.NewString(),
 		schemaVersion: 1,
@@ -256,6 +295,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 	//Found this gem TestResourceDataRaw here: https://github.com/hashicorp/terraform/issues/890
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
+	_ = d.Set("disable_default_status_creation", wt.disableDefaultStatusCreation)
 
 	diag := readTaskManagementWorktype(ctx, d, gcloud)
 
@@ -277,6 +317,7 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 	assert.Equal(t, wt.schemaId, d.Get("schema_id").(string))
 	assert.Equal(t, wt.schemaVersion, d.Get("schema_version").(int))
 	assert.Equal(t, wt.defaultScriptId, d.Get("default_script_id").(string))
+	assert.Equal(t, wt.disableDefaultStatusCreation, d.Get("disable_default_status_creation").(bool))
 }
 
 func TestUnitResourceWorktypeUpdate(t *testing.T) {
@@ -300,6 +341,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 		defaultSkillIds:   []string{uuid.NewString(), uuid.NewString()},
 		defaultScriptId:   uuid.NewString(),
 		assignmentEnabled: false,
+		disableDefaultStatusCreation: true,
 
 		schemaId:      uuid.NewString(),
 		schemaVersion: 1,
@@ -310,6 +352,10 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 	taskProxy.updateTaskManagementWorktypeAttr = func(ctx context.Context, p *TaskManagementWorktypeProxy, id string, update *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		assert.Equal(t, wt.name, *update.Name, "wt.Name check failed in create createTaskManagementWorktypeAttr")
+		updateJson, err := update.MarshalJSON()
+		assert.NoError(t, err)
+		assert.NotContains(t, string(updateJson), "disableDefaultStatusCreation")
+		assert.NotContains(t, string(updateJson), "disable_default_status_creation")
 
 		return &platformclientv2.Worktype{
 			Id:          &tId,
@@ -405,6 +451,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 	//Found this gem TestResourceDataRaw here: https://github.com/hashicorp/terraform/issues/890
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
+	_ = d.Set("disable_default_status_creation", wt.disableDefaultStatusCreation)
 
 	diag := updateTaskManagementWorktype(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError(), diag)
@@ -469,7 +516,6 @@ func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interfa
 		"description":                     wt.description,
 		"division_id":                     wt.divisionId,
 		"default_workbin_id":              wt.defaultWorkbinId,
-		"disable_default_status_creation": wt.disableDefaultStatusCreation,
 		"default_duration_seconds":        wt.defaultDurationS,
 		"default_expiration_seconds":      wt.defaultExpirationS,
 		"default_due_duration_seconds":    wt.defaultDueDurationS,
@@ -484,5 +530,6 @@ func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interfa
 		"default_script_id":               wt.defaultScriptId,
 	}
 
+	resourceDataMap["disable_default_status_creation"] = wt.disableDefaultStatusCreation
 	return resourceDataMap
 }

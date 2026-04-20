@@ -125,10 +125,8 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 
 		// disable_default_status_creation is a write-only (create-time) flag in the API/SDK.
 		// Keep state aligned with config to avoid perpetual diffs/invalid plans on refresh.
-		if v, ok := d.GetOkExists("disable_default_status_creation"); ok {
-			_ = d.Set("disable_default_status_creation", v.(bool))
-		} else {
-			_ = d.Set("disable_default_status_creation", nil)
+		if v := resourcedata.GetNillableBool(d, "disable_default_status_creation"); v != nil {
+			_ = d.Set("disable_default_status_creation", *v)
 		}
 
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)

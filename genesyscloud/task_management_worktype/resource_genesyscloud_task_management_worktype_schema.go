@@ -134,10 +134,9 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Description: `Optionally set this flag to disable Default Status creation`,
 				Optional:    true,
 				Type:        schema.TypeBool,
-				ForceNew:    true,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// This attribute is write-only (create-time only) in the API/SDK, so suppress diffs to
-					// prevent perpetual updates from exported configs.
+					// This attribute is write-only (create-time only) in the API/SDK.
+					// Suppress diffs to prevent perpetual updates/replacements from exported configs.
 					return true
 				},
 			},
