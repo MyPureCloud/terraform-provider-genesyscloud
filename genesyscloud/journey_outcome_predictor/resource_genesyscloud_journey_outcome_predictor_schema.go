@@ -32,7 +32,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceJourneyOutcomePredictor registers the genesyscloud_journey_outcome_predictor resource with Terraform
 func ResourceJourneyOutcomePredictor() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud journey outcome predictor`,
+		Description:        "[DEPRECATED] Genesys Cloud journey outcome predictor",
+		DeprecationMessage: "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 
 		CreateContext: provider.CreateWithPooledClient(createJourneyOutcomePredictor),
 		ReadContext:   provider.ReadWithPooledClient(readJourneyOutcomePredictor),

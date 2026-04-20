@@ -1,12 +1,12 @@
 ---
 page_title: "genesyscloud_journey_outcome Resource - terraform-provider-genesyscloud"
-subcategory: ""
+subcategory: "Deprecated"
 description: |-
-  Genesys Cloud Journey Outcome
+  [DEPRECATED] Genesys Cloud Journey Outcome
 ---
 # genesyscloud_journey_outcome (Resource)
 
-Genesys Cloud Journey Outcome
+[DEPRECATED] Genesys Cloud Journey Outcome
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

@@ -1,12 +1,12 @@
 ---
 page_title: "genesyscloud_journey_outcome_predictor Resource - terraform-provider-genesyscloud"
-subcategory: ""
+subcategory: "Deprecated"
 description: |-
-  Genesys Cloud journey outcome predictor
+  [DEPRECATED] Genesys Cloud journey outcome predictor
 ---
 # genesyscloud_journey_outcome_predictor (Resource)
 
-Genesys Cloud journey outcome predictor
+[DEPRECATED] Genesys Cloud journey outcome predictor
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:

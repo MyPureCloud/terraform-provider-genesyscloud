@@ -245,11 +245,12 @@ func JourneyOutcomeExporter() *resourceExporter.ResourceExporter {
 
 func ResourceJourneyOutcome() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Genesys Cloud Journey Outcome",
-		CreateContext: provider.CreateWithPooledClient(createJourneyOutcome),
-		ReadContext:   provider.ReadWithPooledClient(readJourneyOutcome),
-		UpdateContext: provider.UpdateWithPooledClient(updateJourneyOutcome),
-		DeleteContext: provider.DeleteWithPooledClient(deleteJourneyOutcome),
+		Description:        "[DEPRECATED] Genesys Cloud Journey Outcome",
+		DeprecationMessage: "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		CreateContext:      provider.CreateWithPooledClient(createJourneyOutcome),
+		ReadContext:        provider.ReadWithPooledClient(readJourneyOutcome),
+		UpdateContext:      provider.UpdateWithPooledClient(updateJourneyOutcome),
+		DeleteContext:      provider.DeleteWithPooledClient(deleteJourneyOutcome),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -260,8 +261,9 @@ func ResourceJourneyOutcome() *schema.Resource {
 
 func DataSourceJourneyOutcome() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceJourneyOutcomeRead),
+		Description:        "[DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name",
+		DeprecationMessage: "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		ReadContext:        provider.ReadWithPooledClient(dataSourceJourneyOutcomeRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Journey Outcome name.",
