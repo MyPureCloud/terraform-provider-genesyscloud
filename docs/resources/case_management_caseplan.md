@@ -2,69 +2,80 @@
 page_title: "genesyscloud_case_management_caseplan Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud case management caseplan (template for cases). Managed via Case Management Public API. After create and update, the provider publishes the latest draft.
+  Genesys Cloud case management caseplan
 ---
 # genesyscloud_case_management_caseplan (Resource)
 
-Genesys Cloud case management caseplan (template for cases). Managed via Case Management Public API. After create and update, the provider publishes the latest draft.
+Genesys Cloud case management caseplan
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* POST /api/v2/casemanagement/caseplans
-* GET /api/v2/casemanagement/caseplans/{caseplanId}
-* PATCH /api/v2/casemanagement/caseplans/{caseplanId}
-* DELETE /api/v2/casemanagement/caseplans/{caseplanId}
-* POST /api/v2/casemanagement/caseplans/{caseplanId}/publish
-* POST /api/v2/casemanagement/caseplans/{caseplanId}/versions
-* GET /api/v2/casemanagement/caseplans
-
-The example also creates `genesyscloud_task_management_workitem_schema` (see the task management workitem schema resource), which supplies `data_schemas.id` for the caseplan.
+* [GET /api/v2/casemanagement/caseplans](https://apicentral.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans)
+* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/api-explorer#post-api-v2-casemanagement-caseplans)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-)
+* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/api-explorer#delete-api-v2-casemanagement-caseplans-caseplanid-)
 
 
 ## Example Usage
 
 ```terraform
-# Task Management workitem schema supplies the data schema binding required by caseplans.
-resource "genesyscloud_task_management_workitem_schema" "caseplan_data" {
+data "genesyscloud_auth_division_home" "home" {}
+
+resource "genesyscloud_intent_category" "example_caseplan_category" {
+  name        = "Example caseplan intent category"
+  description = "Category for caseplan documentation example"
+}
+
+resource "genesyscloud_customer_intent" "example_caseplan_intent" {
+  name        = "Example caseplan customer intent"
+  description = "Customer intent for caseplan example"
+  expiry_time = 24
+  category_id = genesyscloud_intent_category.example_caseplan_category.id
+}
+
+resource "genesyscloud_task_management_workitem_schema" "caseplan_example_schema" {
   name        = "caseplan_example_schema"
-  description = "Schema for caseplan example"
+  description = "Task management schema bound to caseplan data_schemas"
   enabled     = true
   properties = jsonencode({
-    customerName_text = {
-      allOf = [{
-        "$ref" = "#/definitions/text"
-      }]
-      title       = "customerName"
-      description = "Customer name"
+    note_text = {
+      allOf       = [{ "$ref" = "#/definitions/text" }]
+      title       = "Note"
+      description = "Example text"
+      minLength   = 0
+      maxLength   = 100
     }
   })
 }
 
-resource "genesyscloud_case_management_caseplan" "example" {
-  name                         = "Example caseplan"
-  description                  = "CX as Code example"
-  division_id                  = "*"
-  customer_intent_id           = var.customer_intent_id
-  reference_prefix             = "EXPL"
-  default_ttl_seconds          = 31536000
-  default_due_duration_seconds = 1296000
-
-  data_schemas {
-    id      = genesyscloud_task_management_workitem_schema.caseplan_data.id
-    version = 1
-  }
-
-  intake_settings {
-    property      = "customerName"
-    required      = true
-    display_order = 1
-  }
+resource "genesyscloud_user" "example_caseplan_owner" {
+  email       = "caseplan_doc_example_owner@example.com"
+  name        = "Example caseplan default owner"
+  password    = "TerraformDocExample1!"
+  division_id = data.genesyscloud_auth_division_home.home.id
 }
 
-variable "customer_intent_id" {
-  type        = string
-  description = "UUID of an existing customer intent"
+resource "genesyscloud_case_management_caseplan" "example" {
+  name                            = "Example caseplan"
+  description                     = "Example case management caseplan"
+  division_id                     = data.genesyscloud_auth_division_home.home.id
+  reference_prefix                = "EXPL"
+  default_due_duration_in_seconds = 1296000
+  default_ttl_seconds             = 31536000
+
+  customer_intent {
+    id = genesyscloud_customer_intent.example_caseplan_intent.id
+  }
+
+  default_case_owner {
+    id = genesyscloud_user.example_caseplan_owner.id
+  }
+
+  data_schema {
+    id      = genesyscloud_task_management_workitem_schema.caseplan_example_schema.id
+    version = floor(genesyscloud_task_management_workitem_schema.caseplan_example_schema.version)
+  }
 }
 ```
 
@@ -73,50 +84,49 @@ variable "customer_intent_id" {
 
 ### Required
 
-- `customer_intent_id` (String) UUID of the customer intent (must exist).
-- `data_schemas` (Block List, Min: 1) At least one task management workitem schema binding. Immutable after first publish. (see [below for nested schema](#nestedblock--data_schemas))
-- `division_id` (String) Division id or '*' for divisionless caseplans.
-- `name` (String) Name of the caseplan. Must be unique among published caseplans in the organization.
-- `reference_prefix` (String) 2-8 character alphanumeric prefix for case references. Immutable after first publish.
+- `data_schema` (Block List, Min: 1) Task management workitem schema(s) bound to case data for this caseplan (maps to API dataSchemas). IDs must be task-management workitem schemas. (see [below for nested schema](#nestedblock--data_schema))
 
 ### Optional
 
-- `default_case_owner_id` (String) Default owner user id for cases when not specified at case creation.
-- `default_due_duration_seconds` (Number) Default due duration in seconds for cases; must be <= TTL when both set.
-- `default_ttl_seconds` (Number) Default TTL in seconds for cases (86400-31536000).
-- `description` (String) Description of the caseplan.
-- `intake_settings` (Block List, Max: 10) Intake field definitions (max 10). Immutable after first publish. (see [below for nested schema](#nestedblock--intake_settings))
+- `auto_publish` (Boolean) When true, calls POST .../publish immediately after caseplan create, before any dependent resources (e.g. stageplan/stepplan) run. To publish after stage/step edits, use resource genesyscloud_case_management_caseplan_publish with depends_on instead (or increment that resource's revision). Defaults to false. Defaults to `false`.
+- `customer_intent` (Block List, Max: 1) The customer intent for the Cases created from the caseplan. (see [below for nested schema](#nestedblock--customer_intent))
+- `date_published` (String) The Caseplan publication date. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
+- `default_case_owner` (Block List, Max: 1) The default case owner for Cases created from the Caseplan. (see [below for nested schema](#nestedblock--default_case_owner))
+- `default_due_duration_in_seconds` (Number) The default due duration in seconds for Cases created from the Caseplan.
+- `default_ttl_seconds` (Number) The default TTL in seconds for Cases created from the Caseplan.
+- `description` (String) The description of the Caseplan.
+- `division_id` (String) The division to which this entity belongs.
+- `latest` (Number) The latest version of the Caseplan.
+- `name` (String) The name of the Caseplan.
+- `published` (Number) The published version of the Caseplan.
+- `reference_prefix` (String) The prefix used when creating the reference for Cases from the Caseplan.
+- `version_state` (String) The version state of the Caseplan.
 
 ### Read-Only
 
-- `date_created` (String) Creation timestamp from the API (RFC 3339).
-- `date_modified` (String) Last modification timestamp from the API (RFC 3339).
-- `date_published` (String) Last publish timestamp from the API (RFC 3339), if applicable.
 - `id` (String) The ID of this resource.
-- `latest_version` (Number) Latest (draft) version number from the API.
-- `modified_by` (String) User id of the last modifier, if returned by the API.
-- `published_version` (Number) Published version number from the API.
-- `self_uri` (String) Self URI for this caseplan from the API.
-- `version_state` (String) Version lifecycle state from the API (e.g. draft vs published), if returned.
 
-<a id="nestedblock--data_schemas"></a>
-### Nested Schema for `data_schemas`
+<a id="nestedblock--data_schema"></a>
+### Nested Schema for `data_schema`
 
 Required:
 
-- `id` (String)
+- `id` (String) Workitem schema id.
+- `version` (Number) Workitem schema version number.
+
+
+<a id="nestedblock--customer_intent"></a>
+### Nested Schema for `customer_intent`
 
 Optional:
 
-- `version` (Number)
+- `id` (String) Customer intent id (maps to customerIntentId on create).
 
 
-<a id="nestedblock--intake_settings"></a>
-### Nested Schema for `intake_settings`
+<a id="nestedblock--default_case_owner"></a>
+### Nested Schema for `default_case_owner`
 
-Required:
+Optional:
 
-- `display_order` (Number)
-- `property` (String)
-- `required` (Boolean)
+- `id` (String) User id for default case owner (maps to defaultCaseOwnerId on create).
 
