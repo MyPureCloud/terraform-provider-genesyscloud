@@ -3,54 +3,18 @@
 page_title: "genesyscloud_case_management_caseplan Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud case management caseplan data source.
+  Genesys Cloud case management caseplan data source. Select an case management caseplan by name
 ---
 
 # genesyscloud_case_management_caseplan (Data Source)
 
-Genesys Cloud case management caseplan data source.
+Genesys Cloud case management caseplan data source. Select an case management caseplan by name
 
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_task_management_workitem_schema" "caseplan_data" {
-  name        = "caseplan_ds_example_schema"
-  description = "Schema for caseplan data source example"
-  enabled     = true
-  properties = jsonencode({
-    customerName_text = {
-      allOf = [{
-        "$ref" = "#/definitions/text"
-      }]
-      title       = "customerName"
-      description = "Customer name"
-    }
-  })
-}
-
-resource "genesyscloud_case_management_caseplan" "example" {
-  name               = "Example caseplan for data source"
-  division_id        = "*"
-  customer_intent_id = var.customer_intent_id
-  reference_prefix   = "DSEX"
-
-  data_schemas {
-    id      = genesyscloud_task_management_workitem_schema.caseplan_data.id
-    version = 1
-  }
-}
-
-data "genesyscloud_case_management_caseplan" "example" {
-  id = genesyscloud_case_management_caseplan.example.id
-}
-
-variable "customer_intent_id" {
-  type        = string
-  description = "UUID of an existing customer intent"
-}
-
-output "caseplan_name" {
-  value = data.genesyscloud_case_management_caseplan.example.name
+data "genesyscloud_case_management_caseplan" "example_caseplan" {
+  name = "Example Caseplan Name"
 }
 ```
 
@@ -59,47 +23,8 @@ output "caseplan_name" {
 
 ### Required
 
-- `id` (String) Caseplan id.
-
-### Optional
-
-- `version` (String) Optional version: numeric string, or "latest", or "published" if supported by the API.
+- `name` (String) case management caseplan name
 
 ### Read-Only
 
-- `customer_intent_id` (String)
-- `data_schemas` (List of Object) (see [below for nested schema](#nestedatt--data_schemas))
-- `date_created` (String)
-- `date_modified` (String)
-- `date_published` (String)
-- `default_case_owner_id` (String)
-- `default_due_duration_seconds` (Number)
-- `default_ttl_seconds` (Number)
-- `description` (String)
-- `division_id` (String)
-- `intake_settings` (List of Object) (see [below for nested schema](#nestedatt--intake_settings))
-- `latest_version` (Number)
-- `modified_by` (String)
-- `name` (String)
-- `published_version` (Number)
-- `reference_prefix` (String)
-- `self_uri` (String)
-- `version_state` (String)
-
-<a id="nestedatt--data_schemas"></a>
-### Nested Schema for `data_schemas`
-
-Read-Only:
-
-- `id` (String)
-- `version` (Number)
-
-
-<a id="nestedatt--intake_settings"></a>
-### Nested Schema for `intake_settings`
-
-Read-Only:
-
-- `display_order` (Number)
-- `property` (String)
-- `required` (Boolean)
+- `id` (String) The ID of this resource.
