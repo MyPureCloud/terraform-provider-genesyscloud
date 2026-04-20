@@ -2,9 +2,10 @@ package architect_datatable
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"sort"
 	"strconv"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,10 +33,10 @@ func buildSdkDatatableSchema(d *schema.ResourceData) (*Jsonschemadocument, diag.
 	}, nil
 }
 
-func buildSdkDatatableProperties(d *schema.ResourceData) (*map[string]Datatableproperty, diag.Diagnostics) {
+func buildSdkDatatableProperties(d *schema.ResourceData) (*util.OrderedMap[Datatableproperty], diag.Diagnostics) {
 	const propIdPrefix = "/properties/"
 	if properties := d.Get("properties").([]interface{}); properties != nil {
-		sdkProps := map[string]Datatableproperty{}
+		sdkProps := util.NewOrderedMap[Datatableproperty]()
 		for i, property := range properties {
 			propMap := property.(map[string]interface{})
 
@@ -84,39 +85,48 @@ func buildSdkDatatableProperties(d *schema.ResourceData) (*map[string]Datatablep
 					sdkProp.Default = &defaultVal
 				}
 			}
-			sdkProps[propName] = sdkProp
+			sdkProps.Set(propName, sdkProp)
 		}
-		return &sdkProps, nil
+		return sdkProps, nil
 	}
 	return nil, nil
 }
 
-func flattenDatatableProperties(properties map[string]Datatableproperty) []interface{} {
-	configProps := []interface{}{}
-
+func flattenDatatableProperties(properties *util.OrderedMap[Datatableproperty]) []interface{} {
 	type kv struct {
 		Key   string
 		Value Datatableproperty
 	}
 
+	// Build list preserving the OrderedMap key order (API response order) as the default
 	var propList []kv
-	defaultOrder := 0
-	for k, v := range properties {
-		if v.DisplayOrder == nil {
-			// Set a default so the sort doesn't fail
-			v.DisplayOrder = &defaultOrder
+	hasDisplayOrder := false
+	for _, key := range properties.Keys() {
+		prop, _ := properties.Get(key)
+		if prop.DisplayOrder != nil {
+			hasDisplayOrder = true
 		}
-		propList = append(propList, kv{k, v})
+		propList = append(propList, kv{key, prop})
 	}
 
-	// Sort by display order
-	sort.SliceStable(propList, func(i, j int) bool {
-		return *propList[i].Value.DisplayOrder < *propList[j].Value.DisplayOrder
-	})
+	// If DisplayOrder is provided, sort by it; otherwise rely on the preserved JSON key order
+	if hasDisplayOrder {
+		sort.SliceStable(propList, func(i, j int) bool {
+			di := propList[i].Value.DisplayOrder
+			dj := propList[j].Value.DisplayOrder
+			if di == nil {
+				return false
+			}
+			if dj == nil {
+				return true
+			}
+			return *di < *dj
+		})
+	}
 
+	configProps := []interface{}{}
 	for _, propKV := range propList {
 		propMap := make(map[string]interface{})
-
 		propMap["name"] = propKV.Key
 		if propKV.Value.VarType != nil {
 			propMap["type"] = *propKV.Value.VarType
