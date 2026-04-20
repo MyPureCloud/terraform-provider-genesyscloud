@@ -37,6 +37,7 @@ func getOutboundMessagingcampaignFromResourceData(d *schema.ResourceData) platfo
 		DynamicContactQueueingSettings: buildDynamicContactQueueingSettingss(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		SmsConfig:                      buildSmsConfigs(d.Get("sms_config").(*schema.Set)),
 		EmailConfig:                    buildEmailConfigs(d.Get("email_config").(*schema.Set)),
+		WhatsAppConfig:                 buildWhatsAppConfigs(d.Get("whats_app_config").(*schema.Set)),
 	}
 }
 
@@ -324,6 +325,51 @@ func flattenSmsConfigs(smsconfig *platformclientv2.Smsconfig) *schema.Set {
 	smsconfigSet.Add(smsconfigMap)
 
 	return smsconfigSet
+}
+
+// buildWhatsAppConfigs maps a *schema.Set into a Genesys Cloud *platformclientv2.Whatsappconfig
+func buildWhatsAppConfigs(whatsAppConfigs *schema.Set) *platformclientv2.Whatsappconfig {
+	if whatsAppConfigs == nil || whatsAppConfigs.Len() < 1 {
+		return nil
+	}
+	whatsAppConfigList := whatsAppConfigs.List()
+	if len(whatsAppConfigList) == 0 {
+		return nil
+	}
+	var sdkWhatsAppConfig platformclientv2.Whatsappconfig
+	whatsAppConfigMap := whatsAppConfigList[0].(map[string]interface{})
+	resourcedata.BuildSDKStringArrayValueIfNotNil(&sdkWhatsAppConfig.WhatsAppColumns, whatsAppConfigMap, "whats_app_columns")
+	if integrationId := whatsAppConfigMap["whats_app_integration_id"].(string); integrationId != "" {
+		sdkWhatsAppConfig.WhatsAppIntegration = &platformclientv2.Addressableentityref{Id: &integrationId}
+	}
+	if contentTemplateId := whatsAppConfigMap["content_template_id"].(string); contentTemplateId != "" {
+		sdkWhatsAppConfig.ContentTemplate = &platformclientv2.Domainentityref{Id: &contentTemplateId}
+	}
+	return &sdkWhatsAppConfig
+}
+
+// flattenWhatsAppConfigs maps a Genesys Cloud *platformclientv2.Whatsappconfig into a *schema.Set
+func flattenWhatsAppConfigs(whatsAppConfig *platformclientv2.Whatsappconfig) *schema.Set {
+	if whatsAppConfig == nil {
+		return nil
+	}
+	whatsAppConfigSet := schema.NewSet(schema.HashResource(whatsAppConfigResource), []interface{}{})
+	whatsAppConfigMap := make(map[string]interface{})
+	if whatsAppConfig.WhatsAppColumns != nil {
+		columns := make([]interface{}, len(*whatsAppConfig.WhatsAppColumns))
+		for i, col := range *whatsAppConfig.WhatsAppColumns {
+			columns[i] = col
+		}
+		whatsAppConfigMap["whats_app_columns"] = columns
+	}
+	if whatsAppConfig.WhatsAppIntegration != nil && whatsAppConfig.WhatsAppIntegration.Id != nil {
+		whatsAppConfigMap["whats_app_integration_id"] = *whatsAppConfig.WhatsAppIntegration.Id
+	}
+	if whatsAppConfig.ContentTemplate != nil && whatsAppConfig.ContentTemplate.Id != nil {
+		whatsAppConfigMap["content_template_id"] = *whatsAppConfig.ContentTemplate.Id
+	}
+	whatsAppConfigSet.Add(whatsAppConfigMap)
+	return whatsAppConfigSet
 }
 
 func validateSmsconfig(smsconfig *schema.Set) error {

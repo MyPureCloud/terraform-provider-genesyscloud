@@ -1,10 +1,13 @@
 package location
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -77,6 +80,7 @@ func TestAccResourceLocationBasic(t *testing.T) {
 					),
 					GenerateLocationAddress(street1, city1, state1, country1, zip1),
 				) + GenerateLocationResourceBasic(locResourceLabel2, locName3),
+				PreConfig: func() { time.Sleep(10 * time.Second) },
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResourceLabel1, "name", locName2),
 					resource.TestCheckResourceAttr("genesyscloud_location."+locResourceLabel1, "notes", locNotes2),
@@ -156,19 +160,22 @@ func testVerifyLocationsDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		location, resp, err := locationsAPI.GetLocation(rs.Primary.ID, nil)
-		if location != nil {
-			if location.State != nil && *location.State == "deleted" {
-				// Location deleted
-				continue
+		if err := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
+			location, resp, err := locationsAPI.GetLocation(rs.Primary.ID, nil)
+			if location != nil {
+				if location.State != nil && *location.State == "deleted" {
+					// Location deleted
+					return nil
+				}
+				return retry.RetryableError(fmt.Errorf("Location (%s) still exists", rs.Primary.ID))
 			}
-			return fmt.Errorf("Location (%s) still exists", rs.Primary.ID)
-		} else if util.IsStatus404(resp) {
-			// Location not found as expected
-			continue
-		} else {
+			if util.IsStatus404(resp) {
+				return nil
+			}
 			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+			return retry.NonRetryableError(fmt.Errorf("Unexpected error: %s", err))
+		}); err != nil {
+			return fmt.Errorf("Unexpected error: %v", err)
 		}
 	}
 	// Success. All Locations destroyed

@@ -2,6 +2,7 @@ package conversations_messaging_integrations_open
 
 // @team: Messaging Platform
 // @chat: Messaging Platform
+// @jira: PLT
 // @description: Messaging Connector Open is the Open Messaging connector for Messaging Platform (Platypus).
 
 import (
@@ -52,6 +53,7 @@ func ResourceConversationsMessagingIntegrationsOpen() *schema.Resource {
 			},
 			`supported_content_id`: {
 				Description: `Reference to supported content profile associated with the integration`,
+				Computed:    true,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},

@@ -312,6 +312,16 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 			p.logDebug("Error pre-filling client pool - %s", p.formatMetrics())
 			return resultErr
 		}
+		// Check if context was cancelled even though errDone fired first.
+		// When both channels are ready, Go's select picks randomly, so we
+		// must check ctx.Err() explicitly to reliably detect timeouts.
+		if ctx.Err() != nil {
+			p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
+			if p.config.DebugLogging {
+				log.Printf("Timed out pre-filling client pool - %s", p.formatMetrics())
+			}
+			return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
+		}
 		p.logDebug("Successfully pre-filled client pool - %s", p.formatMetrics())
 		// Also log to standard logger for test capture when debug is enabled
 		if p.config.DebugLogging {
@@ -660,6 +670,10 @@ func (p *SDKClientPool) AddClientsToPool(ctx context.Context, providerConfig *sc
 			p.logDebug("Error adding clients to pool - %s", p.formatMetrics())
 			return resultErr
 		}
+		if ctx.Err() != nil {
+			p.logDebug("Timed out adding clients to pool - %s", p.formatMetrics())
+			return diag.Errorf("Timed out adding clients to pool: %v", ctx.Err())
+		}
 		p.logDebug("Successfully added %d clients to pool - %s", numClients, p.formatMetrics())
 		return nil
 	case <-ctx.Done():
@@ -1000,6 +1014,10 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 		clientConfig, err := mrmo.GetClientConfig()
 		if err != nil {
 			log.Printf("[WARN] Error getting client config: %s", err.Error())
+			log.Printf("[DEBUG] Returning error from GetAllWithPooledClient")
+			return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+				return nil, diag.FromErr(err)
+			}
 		}
 		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 			return method(ctx, clientConfig)

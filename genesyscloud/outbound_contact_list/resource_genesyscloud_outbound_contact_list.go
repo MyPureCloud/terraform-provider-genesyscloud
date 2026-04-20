@@ -57,6 +57,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		ColumnNames:                  &columnNames,
 		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
+		WhatsAppColumns:              buildSdkOutboundContactListContactWhatsAppColumnSlice(d.Get("whats_app_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
 		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
@@ -112,6 +113,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 		ColumnNames:                  &columnNames,
 		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
+		WhatsAppColumns:              buildSdkOutboundContactListContactWhatsAppColumnSlice(d.Get("whats_app_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
 		AttemptLimits:                util.BuildSdkDomainEntityRef(d, "attempt_limit_id"),
 		AutomaticTimeZoneMapping:     &automaticTimeZoneMapping,
@@ -190,6 +192,9 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		}
 		if sdkContactList.EmailColumns != nil {
 			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns, emailTzIdx))
+		}
+		if sdkContactList.WhatsAppColumns != nil {
+			_ = d.Set("whats_app_columns", flattenSdkOutboundContactListContactWhatsAppColumnSlice(*sdkContactList.WhatsAppColumns))
 		}
 		if sdkContactList.PreviewModeColumnName != nil {
 			_ = d.Set("preview_mode_column_name", *sdkContactList.PreviewModeColumnName)

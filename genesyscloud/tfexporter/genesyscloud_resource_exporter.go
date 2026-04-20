@@ -199,7 +199,7 @@ func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *Gen
 	}
 }
 
-func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType) (*GenesysCloudResourceExporter, diag.Diagnostics) {
+func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData, meta interface{}, filterType ExporterFilterType, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) (*GenesysCloudResourceExporter, diag.Diagnostics) {
 	if providerResources == nil {
 		providerResources, providerDataSources = rRegistrar.GetResources()
 	}
@@ -208,7 +208,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
-		addDependsOn:         computeDependsOn(d),
+		addDependsOn:         computeDependsOn(d.Get("enable_dependency_resolution").(bool), exporterDependencyResolutionDecision),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
 		ignoreCyclicDeps:     d.Get("ignore_cyclic_deps").(bool),
@@ -221,9 +221,11 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		maxConcurrentOps:     d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
 	}
 
-	// Set max concurrent operations based on provider configuration if available
-	if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
-		gre.maxConcurrentOps = providerMeta.MaxClients
+	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
+	if gre.maxConcurrentOps <= 0 {
+		if providerMeta, ok := meta.(*provider.ProviderMeta); ok && providerMeta.MaxClients > 0 {
+			gre.maxConcurrentOps = providerMeta.MaxClients
+		}
 	}
 
 	err := gre.setUpExportDirPath()
@@ -288,22 +290,16 @@ func identifyExportFormat(d *schema.ResourceData) string {
 	}
 	return strings.ToLower(d.Get("export_format").(string))
 }
-func computeDependsOn(d *schema.ResourceData) bool {
-	addDependsOn := d.Get("enable_dependency_resolution").(bool)
-	if addDependsOn {
-		if exportableResourceTypes, ok := d.GetOk("include_filter_resources"); ok {
-			filter := lists.InterfaceListToStrings(exportableResourceTypes.([]interface{}))
-			addDependsOn = len(filter) > 0
-		} else {
-			addDependsOn = false
-		}
-	}
-	return addDependsOn
+
+func computeDependsOn(enableDependencyResolution bool, exporterDependencyResolutionDecision ExporterDependencyResolutionDecision) bool {
+	return enableDependencyResolution && bool(exporterDependencyResolutionDecision)
 }
 
 func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// Step #1 Retrieve the exporters we are have registered and have been requested by the user
 	tflog.Info(g.ctx, "Retrieving exporters")
+	g.resourceErrors = make(map[string][]ResourceErrorInfo)
+
 	diagErr = append(diagErr, g.retrieveExporters()...)
 	if diagErr.HasError() {
 		tflog.Error(g.ctx, fmt.Sprintf("Failed to retrieve exporters: %v", diagErr))
@@ -350,6 +346,13 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	if diagErr.HasError() {
 		return diagErr
 	}
+
+	// Step #6.5 Apply excluded attributes to the final config maps.
+	// This is done here as a final pass because during dependency resolution
+	// (enable_dependency_resolution=true), resource types may be discovered
+	// after the initial populateConfigExcluded call, meaning their exclusions
+	// were never applied to the exporter instances used during sanitization.
+	diagErr = append(diagErr, g.removeUserDefinedExcludedAttributesFromConfigMaps()...)
 
 	// Step #7 Write the terraform state file along with either the HCL or JSON
 	diagErr = append(diagErr, g.generateOutputFiles()...)
@@ -469,12 +472,6 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	g.exporters = &exports
 	g.exportersMutex.Unlock()
 
-	// Assign excluded attributes to the config Map
-	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
-		if diagErr := g.populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
-			return diagErr
-		}
-	}
 	return nil
 }
 
@@ -851,9 +848,9 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 			return
 		}
 		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s: %v", resource.Type, err))
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s: %v", resource.Type, resource.State.ID, err))
 			diagnostics = append(diagnostics, diag.Diagnostic{
-				Severity: diag.Warning,
+				Severity: diag.Error,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
 				Detail:   err.Error(),
 			})
@@ -1091,8 +1088,16 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
+		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
+		// Data source flows are just referenced and not managed, so we don't need their dependencies
+		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+			skippedCount++
+			continue
+		}
+
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Retrieving dependencies for resource %s", resourceKeys.State.ID))
-		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(retrieveDependentConsumers(resourceKeys))
+		resources, dependsStruct, flowResources, err := proxy.GetAllWithPooledClient(g.ctx, retrieveDependentConsumers(resourceKeys))
 
 		// Thread-safe write of flowResourcesList
 		g.flowResourcesListMutex.Lock()
@@ -1596,6 +1601,16 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 				err = mockError
 			}
 			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
+				// Bubble up GetAll* function errors to be reported at the end of the run
+				var resourceError = ResourceErrorInfo{
+					ErrorMessage:  err[0].Summary,
+					ResourceType:  resourceType,
+					ResourceID:    "*",
+					ResourceLabel: "GetAllFunction",
+				}
+				g.resourceErrorsMutex.Lock()
+				g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
+				g.resourceErrorsMutex.Unlock()
 				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
 				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
 				return
@@ -1648,14 +1663,7 @@ func mergeExporters(m1, m2 map[string]*resourceExporter.ResourceExporter) *map[s
 		if exists {
 			for id, value := range v.SanitizedResourceMap {
 				result[k].SanitizedResourceMap[id] = value
-
 			}
-			if result[k].ExcludedAttributes != nil {
-				result[k].ExcludedAttributes = append(result[k].ExcludedAttributes, v.ExcludedAttributes...)
-			} else {
-				result[k].ExcludedAttributes = v.ExcludedAttributes
-			}
-
 		} else {
 			result[k] = v
 		}
@@ -2018,9 +2026,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	// Store errored resources in the exporter for later reporting
 	if len(erroredResources) > 0 {
 		g.resourceErrorsMutex.Lock()
-		if g.resourceErrors == nil {
-			g.resourceErrors = make(map[string][]ResourceErrorInfo)
-		}
 		g.resourceErrors[resType] = erroredResources
 		g.resourceErrorsMutex.Unlock()
 		tflog.Warn(g.ctx, fmt.Sprintf("Export completed for %s with %d errors out of %d resources", resType, len(erroredResources), lenResources))
@@ -2253,6 +2258,19 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				refSettings = exporter.GetRefAttrSettings(wildcardAttr)
 			}
 
+			// Dynamic ref type resolution for custom attribute resolvers
+			if refSettings == nil {
+				if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[fullAttributePath]; ok {
+					if resolveRefTypeFunc := refAttrCustomResolver.ResolveRefTypeFunc; resolveRefTypeFunc != nil {
+						if refType, err := resolveRefTypeFunc(configMap); err != nil {
+							tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a ref type resolver for attribute %s: %v", fullAttributePath, err))
+						} else if refType != "" {
+							refSettings = &resourceExporter.RefAttrSettings{RefType: refType}
+						}
+					}
+				}
+			}
+
 			if refSettings != nil {
 				configMap[attributeConfigKey] = g.resolveReference(refSettings, val.(string), exporters, exportingState)
 			} else {
@@ -2307,6 +2325,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			if resolverFunc := refAttrCustomResolver.ResolverFunc; resolverFunc != nil {
 				if err := resolverFunc(configMap, exporters, resourceLabel); err != nil {
 					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver for attribute %s: %v", fullAttributePath, err))
+				}
+			}
+			if resolverWithClientConfigFunc := refAttrCustomResolver.ResolverWithClientConfigFunc; resolverWithClientConfigFunc != nil {
+				sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+				if err := resolverWithClientConfigFunc(configMap, val, sdkConfig); err != nil {
+					tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoke a custom resolver with client config for attribute %s: %v", fullAttributePath, err))
 				}
 			}
 		}
@@ -2498,14 +2522,27 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 			}
 		case string:
 			// Check if we are on a reference attribute and update value in array
-
+			strVal := val.(string)
 			if refSettings := exporter.GetRefAttrSettings(currAttr); refSettings != nil {
-				referenceVal := g.resolveReference(refSettings, val.(string), exporters, exportingState)
+				referenceVal := g.resolveReference(refSettings, strVal, exporters, exportingState)
+
+				// If unresolved, allow a custom resolver to map this GUID to a data source reference
+				if referenceVal == strVal {
+					if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok && refAttrCustomResolver.ResolveToDataSourceFunc != nil {
+						sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+						dsType, dsLabel, dsConfig, resolve := refAttrCustomResolver.ResolveToDataSourceFunc(nil, strVal, sdkConfig)
+						if resolve {
+							g.addToDataSourceMaps(dsType, dsLabel, dsConfig)
+							referenceVal = fmt.Sprintf("${data.%s.%s.id}", dsType, dsLabel)
+						}
+					}
+				}
+
 				if referenceVal != "" {
 					result = append(result, referenceVal)
 				}
 			} else {
-				result = append(result, escapeString(val.(string)))
+				result = append(result, escapeString(strVal))
 			}
 		default:
 			result = append(result, val)
@@ -2514,50 +2551,96 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	return result
 }
 
-func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
-	for _, excluded := range configExcluded {
-		matchFound := false
+// removeUserDefinedExcludedAttributesFromConfigMaps applies the user-configured
+// exclude_attributes directly to the final resourceTypesMaps before output.
+// This ensures exclusions work regardless of when a resource type was discovered
+// during dependency resolution. Hardcoded ExcludedAttributes defined in resource
+// schemas are handled separately by IsAttributeExcluded during sanitizeConfigMap.
+func (g *GenesysCloudResourceExporter) removeUserDefinedExcludedAttributesFromConfigMaps() (diags diag.Diagnostics) {
+	excludedAttrs, ok := g.d.GetOk("exclude_attributes")
+	if !ok {
+		return nil
+	}
+
+	// Parse exclude_attributes into a map of resourceType -> []attributes
+	exclusionsByType := make(map[string][]string)  // exact type -> attrs
+	exclusionPatterns := make(map[string][]string) // regex pattern -> attrs
+	for _, excluded := range lists.InterfaceListToStrings(excludedAttrs.([]interface{})) {
 		resourceIdx := strings.Index(excluded, ".")
-		if resourceIdx == -1 {
-			return diag.Errorf("Invalid excluded_attribute %s", excluded)
+		if resourceIdx == -1 || len(excluded) == resourceIdx {
+			tflog.Warn(g.ctx, fmt.Sprintf("Skipping invalid exclude_attributes entry (missing attribute path): %s", excluded))
+			continue
 		}
-
-		if len(excluded) == resourceIdx {
-			return diag.Errorf("excluded_attributes value %s does not contain an attribute", excluded)
-		}
-
 		resourceTypePattern := excluded[:resourceIdx]
-		// identify all the resource types which match the regex
-		exporter := exporters[resourceTypePattern]
-		if exporter == nil {
-			for resourceType, exporter1 := range exporters {
-				match, _ := regexp.MatchString(resourceTypePattern, resourceType)
-
-				if match {
-					excludedAttr := excluded[resourceIdx+1:]
-					exporter1.AddExcludedAttribute(excludedAttr)
-					tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
-					matchFound = true
-					continue
-				}
-			}
-
-			if !matchFound {
-				if g.addDependsOn {
-					excludedAttr := excluded[resourceIdx+1:]
-					tflog.Warn(g.ctx, fmt.Sprintf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceTypePattern))
-					continue
-				} else {
-					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceTypePattern)
-				}
-			}
+		attrPath := excluded[resourceIdx+1:]
+		// If the pattern is a literal resource type name (no regex metacharacters), use exact match
+		if regexp.QuoteMeta(resourceTypePattern) == resourceTypePattern {
+			exclusionsByType[resourceTypePattern] = append(exclusionsByType[resourceTypePattern], attrPath)
 		} else {
-			excludedAttr := excluded[resourceIdx+1:]
-			exporter.AddExcludedAttribute(excludedAttr)
-			tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
+			exclusionPatterns[resourceTypePattern] = append(exclusionPatterns[resourceTypePattern], attrPath)
 		}
 	}
+
+	// Apply to resourceTypesMaps
+	g.resourceTypesMapsMutex.Lock()
+	for resourceType, blockMaps := range g.resourceTypesMaps {
+		attrsToExclude, diagErr := g.getExcludedAttrsForType(resourceType, exclusionsByType, exclusionPatterns)
+		if diagErr != nil {
+			return diagErr
+		}
+		if len(attrsToExclude) == 0 {
+			continue
+		}
+		for _, configMap := range blockMaps {
+			removeExcludedAttrsFromMap(configMap, attrsToExclude, "")
+		}
+	}
+	g.resourceTypesMapsMutex.Unlock()
 	return nil
+}
+
+// getExcludedAttrsForType returns the list of attribute paths to exclude for a given resource type.
+func (g *GenesysCloudResourceExporter) getExcludedAttrsForType(resourceType string, exactMap map[string][]string, patternMap map[string][]string) ([]string, diag.Diagnostics) {
+	attrs := exactMap[resourceType]
+	for pattern, patternAttrs := range patternMap {
+		if match, err := regexp.MatchString(pattern, resourceType); match {
+			if err != nil {
+				return nil, diag.Errorf("Error compiling regexp pattern %s for excluded attributes", pattern)
+			}
+			attrs = append(attrs, patternAttrs...)
+		}
+	}
+	return attrs, nil
+}
+
+// removeExcludedAttrsFromMap nils out excluded attributes from a config map, supporting nested paths.
+func removeExcludedAttrsFromMap(configMap util.JsonMap, excludedAttrs []string, prefix string) {
+	for key, val := range configMap {
+		fullPath := key
+		if prefix != "" {
+			fullPath = prefix + "." + key
+		}
+
+		for _, excluded := range excludedAttrs {
+			if excluded == fullPath || strings.HasPrefix(fullPath, excluded+".") {
+				configMap[key] = nil
+				break
+			}
+		}
+
+		// Recurse into nested maps
+		if nestedMap, ok := val.(map[string]interface{}); ok {
+			removeExcludedAttrsFromMap(nestedMap, excludedAttrs, fullPath)
+		}
+		// Recurse into arrays of maps
+		if arr, ok := val.([]interface{}); ok {
+			for _, item := range arr {
+				if nestedMap, ok := item.(map[string]interface{}); ok {
+					removeExcludedAttrsFromMap(nestedMap, excludedAttrs, fullPath)
+				}
+			}
+		}
+	}
 }
 
 func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {
@@ -2637,6 +2720,10 @@ func (g *GenesysCloudResourceExporter) isDataSource(resType string, resLabel, or
 // containsElementUnsafe is not thread-safe and should only be called with proper locking
 func (g *GenesysCloudResourceExporter) containsElementUnsafe(elements []string, resType, resLabel, originalLabel string) bool {
 	for _, element := range elements {
+		// Allow type-only match (equivalent to "type::")
+		if element == resType {
+			return true
+		}
 		if element == resType+"::"+resLabel || fetchByRegex(element, resType, resLabel, originalLabel) {
 			return true
 		}

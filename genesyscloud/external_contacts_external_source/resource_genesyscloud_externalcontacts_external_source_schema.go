@@ -2,6 +2,8 @@ package external_contacts_external_source
 
 // @team: External Contacts
 // @chat: #Genesys Cloud Single Customer View
+// @pm: Cilian Day
+// @jira: RELATE
 // @description: Home of record for external contacts, identifiers, and external orgs.
 
 import (

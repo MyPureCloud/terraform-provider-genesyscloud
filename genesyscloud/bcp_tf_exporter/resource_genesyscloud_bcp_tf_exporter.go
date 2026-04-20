@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -35,6 +38,11 @@ type BcpResourceDependency struct {
 }
 
 type BcpExportData map[string][]BcpResource
+
+var (
+	providerResources     map[string]*schema.Resource
+	providerResourcesOnce sync.Once
+)
 
 func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	directory := d.Get("directory").(string)
@@ -93,14 +101,38 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		resourceMap := exporter.GetSanitizedResourceMap()
 		var resources []BcpResource
 
+		if providerResources == nil {
+			providerResourcesOnce.Do(func() {
+				providerResources, _ = registrar.GetResources()
+			})
+		}
+
 		for id, resMeta := range resourceMap {
-			name := resMeta.BlockLabel
-			if name == "" {
-				name = resMeta.OriginalLabel
+			resource, exists := providerResources[resourceType]
+			if !exists {
+				tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
+					"resource_type": resourceType,
+					"id":            id,
+				})
+				continue
 			}
 
-			// Get dependencies using the dependent consumers proxy for flows, RefAttrs for others
-			deps := getResourceDependencies(ctx, resourceType, id, resMeta, exporter, filteredExporters, meta)
+			var instanceState *terraform.InstanceState
+			if meta != nil {
+				var err error
+				instanceState, err = getResourceState(ctx, resource, id, resMeta, meta)
+				if err != nil {
+					tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
+						"resource_type": resourceType,
+						"id":            id,
+						"error":         err.Error(),
+					})
+					continue
+				}
+			}
+
+			name := getResourceName(instanceState, resMeta)
+			deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, meta, instanceState)
 
 			resources = append(resources, BcpResource{
 				ID:           id,
@@ -110,6 +142,10 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		if len(resources) > 0 {
+			// Sort resources by ID for deterministic output
+			sort.Slice(resources, func(i, j int) bool {
+				return resources[i].ID < resources[j].ID
+			})
 			exportData[resourceType] = resources
 			tflog.Debug(ctx, "Added resources to export", map[string]interface{}{
 				"resource_type":  resourceType,
@@ -125,7 +161,21 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	// Paths have already been validated and sanitized
 	// amazonq-ignore-next-line
 	filePath := filepath.Join(validatedDir, validatedFilename)
-	jsonData, err := json.MarshalIndent(exportData, "", "  ")
+
+	// Sort resource types for deterministic output
+	resourceTypes := make([]string, 0, len(exportData))
+	for resourceType := range exportData {
+		resourceTypes = append(resourceTypes, resourceType)
+	}
+	sort.Strings(resourceTypes)
+
+	// Build sorted export data
+	sortedExportData := make(map[string][]BcpResource)
+	for _, resourceType := range resourceTypes {
+		sortedExportData[resourceType] = exportData[resourceType]
+	}
+
+	jsonData, err := json.MarshalIndent(sortedExportData, "", "  ")
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -222,39 +272,69 @@ func filterExporters(ctx context.Context, exporters map[string]*resourceExporter
 	return filtered
 }
 
+func getResourceName(instanceState *terraform.InstanceState, resMeta *resourceExporter.ResourceMeta) string {
+	// Use name attribute if available
+	if instanceState != nil {
+		if name, ok := instanceState.Attributes["name"]; ok && name != "" {
+			return name
+		}
+	}
+
+	// Original Label is the Exporter's original attempt to put together a distinguishing identifier
+	if resMeta.OriginalLabel != "" {
+		return resMeta.OriginalLabel
+	}
+
+	// Fallback to sanitized Block Label
+	return resMeta.BlockLabel
+}
+
 func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) BcpResourceDependency {
-	bcpResourceDependencies := BcpResourceDependency{}
+	bcpResourceDependencies := BcpResourceDependency{
+		AsProviderResourceList: []string{},
+		AsObjectMap:            make(map[string][]string),
+	}
 
-	// Check if we have proper provider meta for flow dependencies
+	if meta == nil {
+		tflog.Warn(ctx, "No meta provided for flow", map[string]interface{}{
+			"flow_id": flowID,
+		})
+		return bcpResourceDependencies
+	}
+
+	// Type assert meta to ProviderMeta
 	providerMeta, ok := meta.(*provider.ProviderMeta)
-	if !ok || providerMeta.ClientConfig == nil {
-		tflog.Warn(ctx, "No valid client config for flow, skipping dependency resolution", map[string]interface{}{
+	if !ok || providerMeta == nil || providerMeta.ClientConfig == nil {
+		tflog.Warn(ctx, "Invalid or nil provider meta for flow", map[string]interface{}{
 			"flow_id": flowID,
 		})
 		return bcpResourceDependencies
 	}
 
-	proxy := dependentconsumers.GetDependentConsumerProxy(providerMeta.ClientConfig)
-	if proxy == nil {
-		tflog.Error(ctx, "Failed to get dependent consumer proxy for flow", map[string]interface{}{
-			"flow_id": flowID,
-		})
-		return bcpResourceDependencies
-	}
-
-	// Create a ResourceInfo for the flow
 	resourceInfo := resourceExporter.ResourceInfo{
 		State:      &terraform.InstanceState{ID: flowID},
-		Type:       "genesyscloud_flow",
+		Type:       architectFlow.ResourceType,
 		BlockLabel: resMeta.BlockLabel,
 	}
 
-	// Get dependencies using the proxy
-	_, dependsStruct, _, err := proxy.GetDependentConsumers(ctx, resourceInfo, []string{})
+	proxy := GetBcpExporterProxy(nil)
+
+	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+			proxy = GetBcpExporterProxy(clientConfig)
+			resources, dependsMap, err := proxy.GetFlowDependencies(ctx, resourceKeys)
+			if err != nil {
+				return nil, nil, []string{}, diag.Errorf("Failed to retrieve dependencies for flow %s: %s", resourceKeys.State.ID, err)
+			}
+			return resources, dependsMap, []string{}, nil
+		}
+	}
+
+	_, dependsStruct, _, err := proxy.GetAllWithPooledClient(ctx, retrieveDependentConsumers(resourceInfo))
 	if err != nil {
 		tflog.Error(ctx, "Error getting dependencies for flow", map[string]interface{}{
 			"flow_id": flowID,
-			"error":   err.Error(),
+			"error":   fmt.Sprintf("%v", err),
 		})
 		return bcpResourceDependencies
 	}
@@ -267,11 +347,16 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 	}
 
 	// Extract dependencies for this specific flow
-	var depsAsProviderList []string
-	depsAsObjectMap := make(map[string][]string)
 	if flowDeps, ok := dependsStruct.DependsMap[flowID]; ok {
-		for _, dep := range flowDeps {
-			// Convert from "resourceType.resourceID" to "resourceType::resourceID"
+		// Sort dependencies for deterministic output
+		sortedFlowDeps := make([]string, len(flowDeps))
+		copy(sortedFlowDeps, flowDeps)
+		sort.Strings(sortedFlowDeps)
+
+		depsAsProviderList := make([]string, 0, len(sortedFlowDeps))
+		depsAsObjectMap := make(map[string][]string)
+
+		for _, dep := range sortedFlowDeps {
 			parts := strings.SplitN(dep, ".", 2)
 			if len(parts) == 2 {
 				depsAsProviderList = append(depsAsProviderList, fmt.Sprintf("%s::%s", parts[0], parts[1]))
@@ -281,55 +366,65 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 				depsAsObjectMap[parts[0]] = append(depsAsObjectMap[parts[0]], parts[1])
 			}
 		}
-	}
 
-	deps := BcpResourceDependency{
-		AsProviderResourceList: depsAsProviderList,
-		AsObjectMap:            depsAsObjectMap,
+		// Sort each object map array for deterministic output
+		for key := range depsAsObjectMap {
+			sort.Strings(depsAsObjectMap[key])
+		}
+
+		bcpResourceDependencies.AsProviderResourceList = depsAsProviderList
+		bcpResourceDependencies.AsObjectMap = depsAsObjectMap
 	}
 
 	tflog.Debug(ctx, "Flow dependencies resolved", map[string]interface{}{
 		"flow_id":            flowID,
-		"dependencies":       deps,
-		"dependencies_count": len(deps.AsProviderResourceList),
+		"dependencies_count": len(bcpResourceDependencies.AsProviderResourceList),
+	})
+	return bcpResourceDependencies
+}
+
+func getResourceDependencies(ctx context.Context, providerResources map[string]*schema.Resource, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, meta interface{}, instanceState *terraform.InstanceState) BcpResourceDependency {
+	tflog.Debug(ctx, "Getting resource dependencies", map[string]interface{}{
+		"resource_type": resourceType,
+		"resource_id":   resourceID,
+		"is_flow":       resourceType == "genesyscloud_flow",
+		"has_meta":      meta != nil,
+	})
+
+	if resourceType == "genesyscloud_flow" {
+		deps := getFlowDependencies(ctx, resourceID, resMeta, meta)
+		tflog.Debug(ctx, "Flow dependencies result", map[string]interface{}{
+			"resource_id":  resourceID,
+			"dep_count":    len(deps.AsProviderResourceList),
+			"dependencies": deps.AsProviderResourceList,
+		})
+		return deps
+	}
+
+	deps := extractSpecificDependencies(ctx, providerResources, resourceType, instanceState, exporter)
+	tflog.Debug(ctx, "Non-flow dependencies result", map[string]interface{}{
+		"resource_type": resourceType,
+		"resource_id":   resourceID,
+		"dep_count":     len(deps.AsProviderResourceList),
 	})
 	return deps
 }
 
-func getResourceDependencies(ctx context.Context, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}) BcpResourceDependency {
-	// For flows, use the dependent consumers proxy
-	if resourceType == "genesyscloud_flow" {
-		return getFlowDependencies(ctx, resourceID, resMeta, meta)
-	}
-
-	// For other resources, extract specific dependencies from resource data
-	return extractSpecificDependencies(ctx, resourceType, resourceID, resMeta, exporter, allExporters, meta)
-}
-
-func extractSpecificDependencies(ctx context.Context, resourceType, resourceID string, resMeta *resourceExporter.ResourceMeta, exporter *resourceExporter.ResourceExporter, allExporters map[string]*resourceExporter.ResourceExporter, meta interface{}) BcpResourceDependency {
+func extractSpecificDependencies(ctx context.Context, providerResources map[string]*schema.Resource, resourceType string, instanceState *terraform.InstanceState, exporter *resourceExporter.ResourceExporter) BcpResourceDependency {
 	bcpResourceDependencies := BcpResourceDependency{
 		AsProviderResourceList: []string{},
 		AsObjectMap:            make(map[string][]string),
 	}
 
-	if exporter.RefAttrs == nil || len(exporter.RefAttrs) == 0 {
+	if len(exporter.RefAttrs) == 0 || instanceState == nil {
 		return bcpResourceDependencies
 	}
 
-	// Get the resource schema and read the actual resource data
-	providerResources, _ := registrar.GetResources()
 	resource, exists := providerResources[resourceType]
 	if !exists {
 		return bcpResourceDependencies
 	}
 
-	// Read the resource state
-	instanceState, err := getResourceState(ctx, resource, resourceID, resMeta, meta)
-	if err != nil || instanceState == nil {
-		return bcpResourceDependencies
-	}
-
-	// Convert instance state to JSON map
 	ctyType := resource.CoreConfigSchema().ImpliedType()
 	stateVal, err := schema.StateValueFromInstanceState(instanceState, ctyType)
 	if err != nil {
@@ -341,15 +436,18 @@ func extractSpecificDependencies(ctx context.Context, resourceType, resourceID s
 		return bcpResourceDependencies
 	}
 
-	// Extract specific dependencies using RefAttrs
 	depSet := make(map[string]map[string]bool)
 	depSet = extractDepsFromMap(resourceData, "", exporter, depSet, 1)
 
 	for refType, guids := range depSet {
 		guidList := make([]string, 0, len(guids))
-		resourceDepList := make([]string, 0, len(guids))
 		for guid := range guids {
 			guidList = append(guidList, guid)
+		}
+		sort.Strings(guidList)
+
+		resourceDepList := make([]string, 0, len(guidList))
+		for _, guid := range guidList {
 			resourceDepList = append(resourceDepList, fmt.Sprintf("%s::%s", refType, guid))
 		}
 		bcpResourceDependencies.AsObjectMap[refType] = guidList
