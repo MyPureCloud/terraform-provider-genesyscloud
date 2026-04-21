@@ -343,7 +343,7 @@ func validateScriptPublished(scriptResourcePath string) resource.TestCheckFunc {
 		script, resp, err := scriptsAPI.GetScriptsPublishedScriptId(scriptID, "")
 
 		if err != nil {
-			return fmt.Errorf("Unexpected error: %s", err)
+			return fmt.Errorf("error retrieving published script %s: %s", scriptID, err)
 		}
 
 		//if response == 200

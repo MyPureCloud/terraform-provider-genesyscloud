@@ -441,12 +441,12 @@ func CreateRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclient
 	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
 	if err != nil {
 		if resp == nil {
-			return fmt.Errorf("error retrieving SMS phone number %s: %v", inputSmsPhoneNumber, err)
+			return fmt.Errorf("error retrieving SMS phone number %s (nil response): %v", inputSmsPhoneNumber, err)
 		}
 		if resp.StatusCode != http.StatusNotFound {
-			return fmt.Errorf("error retrieving SMS phone number %s: %v", inputSmsPhoneNumber, err)
+			return fmt.Errorf("error retrieving SMS phone number %s (status code %d): %v", inputSmsPhoneNumber, resp.StatusCode, err)
 		}
-	} else if resp != nil && resp.StatusCode == 200 {
+	} else if resp != nil && resp.StatusCode == http.StatusOK {
 		// Number already exists
 		return nil
 	}
@@ -502,7 +502,7 @@ func CheckOutboundDomainExists(id string) error {
 		return nil
 	}
 
-	if resp.StatusCode == 404 {
+	if resp.StatusCode == http.StatusNotFound {
 		// outbound domain for test does not exist so create it
 		log.Printf("Outbound domain (%s) does not exist. Creating...", id)
 		_, _, postErr := routingApi.PostRoutingEmailOutboundDomains(platformclientv2.Outbounddomaincreaterequest{
