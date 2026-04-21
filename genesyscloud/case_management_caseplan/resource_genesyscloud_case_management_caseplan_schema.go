@@ -25,6 +25,7 @@ const ResourceType = "genesyscloud_case_management_caseplan"
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceCaseManagementCaseplan())
 	regInstance.RegisterResource(PublishResourceType, ResourceCaseManagementCaseplanPublish())
+	regInstance.RegisterResource(CreateVersionResourceType, ResourceCaseManagementCaseplanCreateVersion())
 	regInstance.RegisterDataSource(ResourceType, DataSourceCaseManagementCaseplan())
 	regInstance.RegisterExporter(ResourceType, CaseManagementCaseplanExporter())
 }
@@ -69,7 +70,7 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`division_id`: {
-				Description: `The division to which this entity belongs.`,
+				Description: `The division to which this entity belongs. Cannot be changed after the caseplan has been published at least once.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -79,7 +80,7 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`reference_prefix`: {
-				Description: `The prefix used when creating the reference for Cases from the Caseplan.`,
+				Description: `The prefix used when creating the reference for Cases from the Caseplan. Cannot be changed after the caseplan has been published at least once.`,
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
@@ -100,33 +101,19 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 				MaxItems:    1,
 				Elem:        userReferenceResource,
 			},
-			`latest`: {
-				Description: `The latest version of the Caseplan.`,
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
-			`published`: {
-				Description: `The published version of the Caseplan.`,
-				Optional:    true,
-				Type:        schema.TypeInt,
-			},
-			`date_published`: {
-				Description: `The Caseplan publication date. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z`,
-				Optional:    true,
-				Type:        schema.TypeString,
-			},
 			`customer_intent`: {
-				Description: `The customer intent for the Cases created from the caseplan.`,
+				Description: `The customer intent for the Cases created from the caseplan. Cannot be changed after the caseplan has been published at least once.`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Elem:        customerIntentReferenceResource,
 			},
 			`data_schema`: {
-				Description: `Task management workitem schema(s) bound to case data for this caseplan (maps to API dataSchemas). IDs must be task-management workitem schemas.`,
+				Description: `Task management workitem schema bound to case data for this caseplan. Updates use PUT /caseplans/{id}/dataschemas/default (only key "default" exists today). IDs must be task-management workitem schemas. Cannot be changed after the caseplan has been published at least once.`,
 				Required:    true,
 				Type:        schema.TypeList,
 				MinItems:    1,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						`id`: {
@@ -142,16 +129,32 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 					},
 				},
 			},
-			`version_state`: {
-				Description: `The version state of the Caseplan.`,
+			`intake_settings`: {
+				Description: `Intake field configuration when collecting case data (maps to API intakeSettings). Up to 10 entries. Read uses GET .../caseplans/{id}/versions/{version}/intakesettings because the caseplan GET response does not include this field. Cannot be changed after the caseplan has been published at least once.`,
 				Optional:    true,
-				Type:        schema.TypeString,
-			},
-			`auto_publish`: {
-				Description: `When true, calls POST .../publish immediately after caseplan create, before any dependent resources (e.g. stageplan/stepplan) run. To publish after stage/step edits, use resource genesyscloud_case_management_caseplan_publish with depends_on instead (or increment that resource's revision). Defaults to false.`,
-				Optional:    true,
-				Default:     false,
-				Type:        schema.TypeBool,
+				Type:        schema.TypeList,
+				MaxItems:    10,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						`property`: {
+							Description: `Property name from the bound workitem schema (data schema).`,
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						`required`: {
+							Description: `Whether this property is required at intake.`,
+							Optional:    true,
+							Default:     false,
+							Type:        schema.TypeBool,
+						},
+						`display_order`: {
+							Description: `Display order for this property in the intake UI.`,
+							Optional:    true,
+							Default:     0,
+							Type:        schema.TypeInt,
+						},
+					},
+				},
 			},
 		},
 	}

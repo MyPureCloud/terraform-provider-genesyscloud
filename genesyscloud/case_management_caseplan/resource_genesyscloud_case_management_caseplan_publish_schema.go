@@ -38,21 +38,6 @@ func ResourceCaseManagementCaseplanPublish() *schema.Resource {
 				Default:     0,
 				Type:        schema.TypeInt,
 			},
-			"published": {
-				Description: `Published version from the API after read.`,
-				Computed:    true,
-				Type:        schema.TypeInt,
-			},
-			"latest": {
-				Description: `Latest version from the API after read.`,
-				Computed:    true,
-				Type:        schema.TypeInt,
-			},
-			"version_state": {
-				Description: `Version state from the API after read.`,
-				Computed:    true,
-				Type:        schema.TypeString,
-			},
 		},
 	}
 }

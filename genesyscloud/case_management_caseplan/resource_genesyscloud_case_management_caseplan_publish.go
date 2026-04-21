@@ -10,7 +10,6 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 func createCaseManagementCaseplanPublish(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -40,7 +39,7 @@ func readCaseManagementCaseplanPublish(ctx context.Context, d *schema.ResourceDa
 		return diag.Errorf("caseplan_id is required")
 	}
 
-	caseplan, resp, err := proxy.getCaseManagementCaseplanById(ctx, caseplanID)
+	_, resp, err := proxy.getCaseManagementCaseplanById(ctx, caseplanID)
 	if err != nil {
 		if util.IsStatus404(resp) {
 			return diag.Errorf("caseplan %s not found", caseplanID)
@@ -49,9 +48,6 @@ func readCaseManagementCaseplanPublish(ctx context.Context, d *schema.ResourceDa
 	}
 
 	_ = d.Set("caseplan_id", caseplanID)
-	resourcedata.SetNillableValue(d, "published", caseplan.Published)
-	resourcedata.SetNillableValue(d, "latest", caseplan.Latest)
-	resourcedata.SetNillableValue(d, "version_state", caseplan.VersionState)
 	return nil
 }
 

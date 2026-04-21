@@ -29,6 +29,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceCaseManagementStageplan()
 	providerResources[caseplanpkg.ResourceType] = caseplanpkg.ResourceCaseManagementCaseplan()
 	providerResources[caseplanpkg.PublishResourceType] = caseplanpkg.ResourceCaseManagementCaseplanPublish()
+	providerResources[caseplanpkg.CreateVersionResourceType] = caseplanpkg.ResourceCaseManagementCaseplanCreateVersion()
 	providerResources[customerIntent.ResourceType] = customerIntent.ResourceCustomerIntent()
 	providerResources[intentCategory.ResourceType] = intentCategory.ResourceIntentCategory()
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()

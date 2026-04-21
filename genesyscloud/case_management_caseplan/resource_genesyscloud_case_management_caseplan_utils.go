@@ -43,14 +43,157 @@ func getCaseManagementCaseplanCreateFromResourceData(d *schema.ResourceData) pla
 	if schemas := expandCaseplanDataSchemas(d); schemas != nil {
 		c.DataSchemas = schemas
 	}
+	if intake := expandCaseplanIntakeSettingsForCreate(d); intake != nil {
+		c.IntakeSettings = intake
+	}
 	return c
+}
+
+// buildCaseplanPatchFromResourceData builds Caseplanupdate for PATCH /caseplans/{id}. Only fields with HasChange are set (SDK JSON uses SetFieldNames).
+func buildCaseplanPatchFromResourceData(d *schema.ResourceData) (*platformclientv2.Caseplanupdate, bool) {
+	patch := &platformclientv2.Caseplanupdate{}
+	has := false
+
+	if d.HasChange("name") {
+		patch.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+		has = true
+	}
+	if d.HasChange("division_id") {
+		div := d.Get("division_id").(string)
+		if div == "" {
+			patch.SetField("DivisionId", platformclientv2.String("*"))
+		} else {
+			patch.SetField("DivisionId", platformclientv2.String(div))
+		}
+		has = true
+	}
+	if d.HasChange("description") {
+		patch.SetField("Description", platformclientv2.String(d.Get("description").(string)))
+		has = true
+	}
+	if d.HasChange("reference_prefix") {
+		patch.SetField("ReferencePrefix", platformclientv2.String(d.Get("reference_prefix").(string)))
+		has = true
+	}
+	if d.HasChange("default_due_duration_in_seconds") {
+		patch.SetField("DefaultDueDurationInSeconds", platformclientv2.Int(d.Get("default_due_duration_in_seconds").(int)))
+		has = true
+	}
+	if d.HasChange("default_ttl_seconds") {
+		patch.SetField("DefaultTtlSeconds", platformclientv2.Int(d.Get("default_ttl_seconds").(int)))
+		has = true
+	}
+	if d.HasChange("default_case_owner") {
+		uid := firstMapString(d.Get("default_case_owner").([]interface{}), "id")
+		if uid != "" {
+			patch.SetField("DefaultCaseOwnerId", platformclientv2.String(uid))
+		} else {
+			patch.SetField("DefaultCaseOwnerId", nil)
+		}
+		has = true
+	}
+	if d.HasChange("customer_intent") {
+		cid := firstMapString(d.Get("customer_intent").([]interface{}), "id")
+		if cid != "" {
+			patch.SetField("CustomerIntentId", platformclientv2.String(cid))
+		} else {
+			patch.SetField("CustomerIntentId", nil)
+		}
+		has = true
+	}
+
+	if !has {
+		return nil, false
+	}
+	return patch, true
+}
+
+func expandCaseplanIntakeSettingsForCreate(d *schema.ResourceData) *[]platformclientv2.Intakesetting {
+	raw := d.Get("intake_settings").([]interface{})
+	if len(raw) == 0 {
+		return nil
+	}
+	out := expandCaseplanIntakeSettingsSlice(raw)
+	return &out
+}
+
+// expandCaseplanIntakeSettingsForPut builds the slice for PUT .../intakesettings (empty list clears settings).
+func expandCaseplanIntakeSettingsForPut(d *schema.ResourceData) *[]platformclientv2.Intakesetting {
+	raw := d.Get("intake_settings").([]interface{})
+	out := expandCaseplanIntakeSettingsSlice(raw)
+	return &out
+}
+
+func expandCaseplanIntakeSettingsSlice(raw []interface{}) []platformclientv2.Intakesetting {
+	out := make([]platformclientv2.Intakesetting, 0, len(raw))
+	for _, item := range raw {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		var row platformclientv2.Intakesetting
+		if prop, ok := m["property"].(string); ok && prop != "" {
+			row.Property = platformclientv2.String(prop)
+		}
+		if v, ok := m["required"].(bool); ok {
+			row.Required = platformclientv2.Bool(v)
+		}
+		if v, ok := m["display_order"].(int); ok {
+			row.DisplayOrder = platformclientv2.Int(v)
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+func flattenCaseplanIntakeSettings(entities *[]platformclientv2.Intakesetting) []interface{} {
+	if entities == nil || len(*entities) == 0 {
+		return []interface{}{}
+	}
+	out := make([]interface{}, 0, len(*entities))
+	for i := range *entities {
+		s := &(*entities)[i]
+		m := make(map[string]interface{})
+		if s.Property != nil {
+			m["property"] = *s.Property
+		}
+		// Always set required/display_order so state matches config and the consistency checker
+		// does not see schema defaults (false/0) when the API omits nil pointers.
+		required := false
+		if s.Required != nil {
+			required = *s.Required
+		}
+		m["required"] = required
+		displayOrder := 0
+		if s.DisplayOrder != nil {
+			displayOrder = *s.DisplayOrder
+		}
+		m["display_order"] = displayOrder
+		out = append(out, m)
+	}
+	return out
 }
 
 func expandCaseplanDataSchemas(d *schema.ResourceData) *[]platformclientv2.Caseplandataschema {
 	raw := d.Get("data_schema").([]interface{})
-	if len(raw) == 0 {
+	out := caseplanDataSchemasFromResourceList(raw)
+	if len(out) == 0 {
 		return nil
 	}
+	return &out
+}
+
+func caseplanDataSchemaIDSetFromRaw(raw []interface{}) map[string]struct{} {
+	out := make(map[string]struct{})
+	for _, row := range caseplanDataSchemasFromResourceList(raw) {
+		if row.Id != nil && *row.Id != "" {
+			out[*row.Id] = struct{}{}
+		}
+	}
+	return out
+}
+
+func caseplanDataSchemasFromResourceList(raw []interface{}) []platformclientv2.Caseplandataschema {
 	out := make([]platformclientv2.Caseplandataschema, 0, len(raw))
 	for _, item := range raw {
 		m, ok := item.(map[string]interface{})
@@ -61,12 +204,58 @@ func expandCaseplanDataSchemas(d *schema.ResourceData) *[]platformclientv2.Casep
 		if id, ok := m["id"].(string); ok && id != "" {
 			row.Id = platformclientv2.String(id)
 		}
-		if v, ok := m["version"].(int); ok {
-			row.Version = platformclientv2.Int(v)
-		}
+		v := schemaMapInt(m["version"])
+		row.Version = platformclientv2.Int(v)
 		out = append(out, row)
 	}
-	return &out
+	return out
+}
+
+func schemaMapInt(v interface{}) int {
+	switch t := v.(type) {
+	case int:
+		return t
+	case int32:
+		return int(t)
+	case int64:
+		return int(t)
+	case float64:
+		return int(t)
+	default:
+		return 0
+	}
+}
+
+// caseplanDataSchemaSyncPlanFromState returns workitem schema ids no longer in config (deleteIDs) and rows that need a write (new id or version change).
+// execCaseplanDataSchemaSync maps these to DELETE on .../dataschemas/default when needed, then POST /dataschemas for new ids or PUT .../default for same-id updates.
+func caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw []interface{}) (deleteIDs []string, puts []platformclientv2.Caseplandataschema) {
+	oldByID := make(map[string]int)
+	for _, row := range caseplanDataSchemasFromResourceList(oldRaw) {
+		if row.Id != nil && *row.Id != "" && row.Version != nil {
+			oldByID[*row.Id] = *row.Version
+		}
+	}
+	newByID := make(map[string]int)
+	for _, row := range caseplanDataSchemasFromResourceList(newRaw) {
+		if row.Id != nil && *row.Id != "" && row.Version != nil {
+			newByID[*row.Id] = *row.Version
+		}
+	}
+	for id := range oldByID {
+		if _, ok := newByID[id]; !ok {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+	for id, nv := range newByID {
+		ov, had := oldByID[id]
+		if !had || ov != nv {
+			puts = append(puts, platformclientv2.Caseplandataschema{
+				Id:      platformclientv2.String(id),
+				Version: platformclientv2.Int(nv),
+			})
+		}
+	}
+	return deleteIDs, puts
 }
 
 func flattenCaseplanDataSchemas(schemas *[]platformclientv2.Caseplandataschema) []interface{} {
@@ -77,8 +266,14 @@ func flattenCaseplanDataSchemas(schemas *[]platformclientv2.Caseplandataschema) 
 	for i := range *schemas {
 		s := &(*schemas)[i]
 		m := make(map[string]interface{})
-		resourcedata.SetMapValueIfNotNil(m, "id", s.Id)
-		resourcedata.SetMapValueIfNotNil(m, "version", s.Version)
+		if s.Id != nil {
+			m["id"] = *s.Id
+		}
+		ver := 0
+		if s.Version != nil {
+			ver = *s.Version
+		}
+		m["version"] = ver
 		out = append(out, m)
 	}
 	return out

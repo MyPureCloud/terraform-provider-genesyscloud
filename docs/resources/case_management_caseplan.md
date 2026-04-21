@@ -84,23 +84,19 @@ resource "genesyscloud_case_management_caseplan" "example" {
 
 ### Required
 
-- `data_schema` (Block List, Min: 1) Task management workitem schema(s) bound to case data for this caseplan (maps to API dataSchemas). IDs must be task-management workitem schemas. (see [below for nested schema](#nestedblock--data_schema))
+- `data_schema` (Block List, Min: 1, Max: 1) Task management workitem schema bound to case data for this caseplan. Updates use PUT /caseplans/{id}/dataschemas/default (only key "default" exists today). IDs must be task-management workitem schemas. Cannot be changed after the caseplan has been published at least once. (see [below for nested schema](#nestedblock--data_schema))
 
 ### Optional
 
-- `auto_publish` (Boolean) When true, calls POST .../publish immediately after caseplan create, before any dependent resources (e.g. stageplan/stepplan) run. To publish after stage/step edits, use resource genesyscloud_case_management_caseplan_publish with depends_on instead (or increment that resource's revision). Defaults to false. Defaults to `false`.
-- `customer_intent` (Block List, Max: 1) The customer intent for the Cases created from the caseplan. (see [below for nested schema](#nestedblock--customer_intent))
-- `date_published` (String) The Caseplan publication date. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
+- `customer_intent` (Block List, Max: 1) The customer intent for the Cases created from the caseplan. Cannot be changed after the caseplan has been published at least once. (see [below for nested schema](#nestedblock--customer_intent))
 - `default_case_owner` (Block List, Max: 1) The default case owner for Cases created from the Caseplan. (see [below for nested schema](#nestedblock--default_case_owner))
 - `default_due_duration_in_seconds` (Number) The default due duration in seconds for Cases created from the Caseplan.
 - `default_ttl_seconds` (Number) The default TTL in seconds for Cases created from the Caseplan.
 - `description` (String) The description of the Caseplan.
-- `division_id` (String) The division to which this entity belongs.
-- `latest` (Number) The latest version of the Caseplan.
+- `division_id` (String) The division to which this entity belongs. Cannot be changed after the caseplan has been published at least once.
+- `intake_settings` (Block List, Max: 10) Intake field configuration when collecting case data (maps to API intakeSettings). Up to 10 entries. Read uses GET .../caseplans/{id}/versions/{version}/intakesettings because the caseplan GET response does not include this field. Cannot be changed after the caseplan has been published at least once. (see [below for nested schema](#nestedblock--intake_settings))
 - `name` (String) The name of the Caseplan.
-- `published` (Number) The published version of the Caseplan.
-- `reference_prefix` (String) The prefix used when creating the reference for Cases from the Caseplan.
-- `version_state` (String) The version state of the Caseplan.
+- `reference_prefix` (String) The prefix used when creating the reference for Cases from the Caseplan. Cannot be changed after the caseplan has been published at least once.
 
 ### Read-Only
 
@@ -129,4 +125,17 @@ Optional:
 Optional:
 
 - `id` (String) User id for default case owner (maps to defaultCaseOwnerId on create).
+
+
+<a id="nestedblock--intake_settings"></a>
+### Nested Schema for `intake_settings`
+
+Required:
+
+- `property` (String) Property name from the bound workitem schema (data schema).
+
+Optional:
+
+- `display_order` (Number) Display order for this property in the intake UI. Defaults to `0`.
+- `required` (Boolean) Whether this property is required at intake. Defaults to `false`.
 

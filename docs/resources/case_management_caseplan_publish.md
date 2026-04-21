@@ -38,7 +38,4 @@ resource "genesyscloud_case_management_caseplan_publish" "example" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `latest` (Number) Latest version from the API after read.
-- `published` (Number) Published version from the API after read.
-- `version_state` (String) Version state from the API after read.
 
