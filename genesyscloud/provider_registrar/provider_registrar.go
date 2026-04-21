@@ -33,6 +33,9 @@ import (
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	cmSupportedContentDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	conversationsSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_settings"
+	caseManagementCaseplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
+	caseManagementStageplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
+	caseManagementStepplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stepplan"
 	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
 	customerIntentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
@@ -297,6 +300,9 @@ func registerResources() {
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
 	customerIntent.SetRegistrar(regInstance)                               //Registering customer intent
 	customerIntentCategory.SetRegistrar(regInstance)                       //Registering intent category
+	caseManagementCaseplan.SetRegistrar(regInstance)                     //Registering case management caseplan
+	caseManagementStageplan.SetRegistrar(regInstance)                    //Registering case management stageplan
+	caseManagementStepplan.SetRegistrar(regInstance)                     //Registering case management stepplan
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
