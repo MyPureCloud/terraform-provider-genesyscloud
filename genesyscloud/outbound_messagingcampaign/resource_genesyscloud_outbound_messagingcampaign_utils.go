@@ -439,10 +439,19 @@ func CreateRoutingSmsPhoneNumber(inputSmsPhoneNumber string, api *platformclient
 		maxRetries      = 10
 	)
 	_, resp, err := api.GetRoutingSmsPhonenumber(inputSmsPhoneNumber, "compliance")
-	if resp.StatusCode == 200 {
+	if err != nil {
+		if resp == nil {
+			return fmt.Errorf("error retrieving SMS phone number %s: %v", inputSmsPhoneNumber, err)
+		}
+		if resp.StatusCode != http.StatusNotFound {
+			return fmt.Errorf("error retrieving SMS phone number %s: %v", inputSmsPhoneNumber, err)
+		}
+	} else if resp != nil && resp.StatusCode == 200 {
 		// Number already exists
 		return nil
-	} else if resp.StatusCode == http.StatusNotFound {
+	}
+
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
 		body := platformclientv2.Smsphonenumberprovision{
 			PhoneNumber:     &inputSmsPhoneNumber,
 			PhoneNumberType: &phoneNumberType,
