@@ -10,7 +10,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 /*
@@ -200,7 +200,7 @@ func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.userApi.GetUser(id, expand, "", state)
+	return p.userApi.GetUser(id, expand, "", nil, state)
 }
 
 // hydrateUserCacheFn
@@ -208,7 +208,7 @@ func hydrateUserCacheFn(ctx context.Context, p *userProxy, pageSize int, pageNum
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
+	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", nil, "")
 }
 
 // getUserByNameFn
@@ -264,14 +264,14 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 			"certifications",
 			"employerInfo",
 		}
-		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", userStatus)
+		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", nil, userStatus)
 		if err != nil {
 			return nil, apiResponse, err
 		}
 		users = append(users, *usersList.Entities...)
 
 		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
-			usersList, apiResponse, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", userStatus)
+			usersList, apiResponse, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", nil, userStatus)
 
 			//DEVTOOLING-862 - This is a blocker for the BCP team as before this if check was put in the code would fail when it hit 10K of inactive users.
 			//The BCP team (Cesar Branco has asked to write a warning to the log) and just return what we currently have.

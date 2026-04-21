@@ -14,7 +14,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 /*
@@ -199,7 +199,7 @@ func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy)
 	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		actionsList, response, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "")
+		actionsList, response, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "", false)
 		if err != nil {
 			return nil, resp, err
 		}
@@ -514,7 +514,7 @@ func getIntegrationActionsByNameFn(ctx context.Context, p *integrationActionsPro
 	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		integrationAction, response, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "")
+		integrationAction, response, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", actionName, "", "", "", false)
 		if err != nil {
 			return nil, response, err
 		}

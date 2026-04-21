@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -20,7 +20,7 @@ type getTerraformUserFunc func(context.Context, *oauthClientProxy) (*platformcli
 type getTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
 type updateTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string, []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
 type getIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error)
-type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error)
+type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclient, *platformclientv2.APIResponse, error)
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type updateIntegrationClientFunc func(context.Context, *oauthClientProxy, string, platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
@@ -166,7 +166,7 @@ func (o *oauthClientProxy) updateOAuthClient(ctx context.Context, id string, cli
 	return o.updateOAuthClientAttr(ctx, o, id, client)
 }
 
-func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
+func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 	return o.getAllOauthClientsAttr(ctx, o)
 }
 
@@ -177,24 +177,28 @@ func (o *oauthClientProxy) getHomeDivisionInfo(ctx context.Context) (*platformcl
 func getOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 	return o.oAuthApi.GetOauthClient(id)
 }
-func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
-	var clients []platformclientv2.Oauthclientlisting
+func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
+	var clients []platformclientv2.Oauthclient
 	firstPage, resp, err := o.oAuthApi.GetOauthClients()
 
 	if err != nil {
 		return nil, resp, err
 	}
 
-	clients = append(clients, *firstPage.Entities...)
+	if firstPage.Entities != nil {
+		clients = append(clients, *firstPage.Entities...)
+	}
 
-	for pageNum := 2; pageNum <= *firstPage.PageCount; pageNum++ {
+	for pageNum := 2; firstPage.PageCount != nil && pageNum <= *firstPage.PageCount; pageNum++ {
 		page, resp, err := o.oAuthApi.GetOauthClients()
 
 		if err != nil {
 			return nil, resp, err
 		}
 
-		clients = append(clients, *page.Entities...)
+		if page.Entities != nil {
+			clients = append(clients, *page.Entities...)
+		}
 	}
 
 	return &clients, resp, nil
@@ -240,7 +244,7 @@ func getParentOAuthClientTokenFn(ctx context.Context, o *oauthClientProxy) (*pla
 }
 
 func getTerraformUserFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Userme, *platformclientv2.APIResponse, error) {
-	return o.usersApi.GetUsersMe(nil, "")
+	return o.usersApi.GetUsersMe(nil, "", nil)
 }
 
 func getTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {
