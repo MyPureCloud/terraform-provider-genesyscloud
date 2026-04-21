@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -96,46 +98,30 @@ resource "genesyscloud_case_management_caseplan_publish" "pub" {
 }
 
 func testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal string) string {
-	return fmt.Sprintf(`
-data "genesyscloud_auth_division_home" "home" {}
-
-resource "genesyscloud_intent_category" "cat" {
-  name        = "%[1]s_cat"
-  description = "acc caseplan deps"
-}
-
-resource "genesyscloud_customer_intent" "intent" {
-  name        = "%[1]s_intent"
-  description = "acc"
-  expiry_time = 24
-  category_id = genesyscloud_intent_category.cat.id
-}
-
-resource "genesyscloud_task_management_workitem_schema" "schema" {
-  name        = "%[2]s"
-  description = "acc caseplan schema"
-  enabled     = true
-  properties = jsonencode({
+	props := `jsonencode({
     acc_note_text = {
       allOf     = [{ "$ref" = "#/definitions/text" }]
       title     = "n"
       maxLength = 100
     }
-  })
-}
+  })`
 
+	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
+		generateAccCustomerIntentDeps(caseplanName) +
+		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
+		fmt.Sprintf(`
 resource "genesyscloud_user" "owner" {
-  email       = "%[3]s@exampleuser.com"
-  name        = "%[1]s owner"
+  email       = "%[1]s@exampleuser.com"
+  name        = "%[2]s owner"
   password    = "TfAccCaseplan1!"
   division_id = data.genesyscloud_auth_division_home.home.id
 }
 
 resource "genesyscloud_case_management_caseplan" "cp" {
-  name                            = "%[4]s"
+  name                            = "%[2]s"
   division_id                     = data.genesyscloud_auth_division_home.home.id
   description                     = "acc caseplan"
-  reference_prefix                = "%[5]s"
+  reference_prefix                = "%[3]s"
   default_due_duration_in_seconds = 86400
   default_ttl_seconds             = 604800
 
@@ -152,7 +138,23 @@ resource "genesyscloud_case_management_caseplan" "cp" {
     version = floor(genesyscloud_task_management_workitem_schema.schema.version)
   }
 }
-`, caseplanName, schemaName, emailLocal, caseplanName, refPrefix)
+`, emailLocal, caseplanName, refPrefix)
+}
+
+func generateAccCustomerIntentDeps(namePrefix string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_intent_category" "cat" {
+  name        = "%[1]s_cat"
+  description = "acc caseplan deps"
+}
+
+resource "genesyscloud_customer_intent" "intent" {
+  name        = "%[1]s_intent"
+  description = "acc"
+  expiry_time = 24
+  category_id = genesyscloud_intent_category.cat.id
+}
+`, namePrefix)
 }
 
 func substrForSchema(s string) string {

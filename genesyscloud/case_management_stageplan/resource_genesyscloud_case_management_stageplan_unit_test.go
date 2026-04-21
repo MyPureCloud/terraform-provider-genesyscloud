@@ -29,12 +29,12 @@ func TestUnitBuildStageplanUpdate(t *testing.T) {
 	t.Parallel()
 	sch := ResourceCaseManagementStageplan().Schema
 	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
-		"caseplan_id":   "cp-1",
-		"stage_number":  1,
-		"name":          "Patched stage",
-		"description":   "d",
-		"stageplan_id":  "st-1",
-		"caseplan":      []interface{}{},
+		"caseplan_id":  "cp-1",
+		"stage_number": 1,
+		"name":         "Patched stage",
+		"description":  "d",
+		"stageplan_id": "st-1",
+		"caseplan":     []interface{}{},
 	})
 	u := buildStageplanUpdate(d)
 	assert.Equal(t, "Patched stage", *u.Name)
