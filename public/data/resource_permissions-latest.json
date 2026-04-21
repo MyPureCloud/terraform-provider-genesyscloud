@@ -2165,27 +2165,6 @@
       ]
     },
     {
-      "resource_type": "genesyscloud_speechandtextanalytics_topic",
-      "resource_name": "speechandtextanalytics_topic",
-      "permissions": [
-        "speechAndTextAnalytics:topic:add",
-        "speechAndTextAnalytics:topic:delete",
-        "speechAndTextAnalytics:topic:edit",
-        "speechAndTextAnalytics:topic:view"
-      ],
-      "scopes": [
-        "speech-and-text-analytics",
-        "speech-and-text-analytics:readonly"
-      ],
-      "endpoints": [
-        "GET /api/v2/speechandtextanalytics/topics",
-        "POST /api/v2/speechandtextanalytics/topics",
-        "GET /api/v2/speechandtextanalytics/topics/{topicId}",
-        "PUT /api/v2/speechandtextanalytics/topics/{topicId}",
-        "DELETE /api/v2/speechandtextanalytics/topics/{topicId}"
-      ]
-    },
-    {
       "resource_type": "genesyscloud_task_management_workbin",
       "resource_name": "task_management_workbin",
       "permissions": [

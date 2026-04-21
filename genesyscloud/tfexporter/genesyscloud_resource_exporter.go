@@ -472,13 +472,6 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	g.exporters = &exports
 	g.exportersMutex.Unlock()
 
-	// Assign excluded attributes to the config Map
-	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
-		if diagErr := g.populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
-			return diagErr
-		}
-	}
-
 	return nil
 }
 
@@ -2556,52 +2549,6 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 		}
 	}
 	return result
-}
-
-func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
-	for _, excluded := range configExcluded {
-		matchFound := false
-		resourceIdx := strings.Index(excluded, ".")
-		if resourceIdx == -1 {
-			return diag.Errorf("Invalid excluded_attribute %s", excluded)
-		}
-
-		if len(excluded) == resourceIdx {
-			return diag.Errorf("excluded_attributes value %s does not contain an attribute", excluded)
-		}
-
-		resourceTypePattern := excluded[:resourceIdx]
-		// identify all the resource types which match the regex
-		exporter := exporters[resourceTypePattern]
-		if exporter == nil {
-			for resourceType, exporter1 := range exporters {
-				match, _ := regexp.MatchString(resourceTypePattern, resourceType)
-
-				if match {
-					excludedAttr := excluded[resourceIdx+1:]
-					exporter1.AddExcludedAttribute(excludedAttr)
-					tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
-					matchFound = true
-					continue
-				}
-			}
-
-			if !matchFound {
-				if g.addDependsOn {
-					excludedAttr := excluded[resourceIdx+1:]
-					tflog.Warn(g.ctx, fmt.Sprintf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceTypePattern))
-					continue
-				} else {
-					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceTypePattern)
-				}
-			}
-		} else {
-			excludedAttr := excluded[resourceIdx+1:]
-			exporter.AddExcludedAttribute(excludedAttr)
-			tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
-		}
-	}
-	return nil
 }
 
 // removeUserDefinedExcludedAttributesFromConfigMaps applies the user-configured
