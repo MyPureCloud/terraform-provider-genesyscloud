@@ -145,6 +145,16 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List Template %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		// The SDK model for phone/email columns does not include the API-returned `*TimeColumnName` fields.
+		// Parse the raw response to preserve timezone column names and prevent UI-save drift.
+		// TODO: Remove once the Go SDK models include callableTimeColumnName/contactableTimeColumnName:
+		// https://github.com/MyPureCloud/platform-client-sdk-go
+		phoneTzIdx, emailTzIdx := parseOutboundContactListTemplateRaw(resp.RawBody)
+		phoneExistingSet := d.Get("phone_columns").(*schema.Set)
+		emailExistingSet := d.Get("email_columns").(*schema.Set)
+		phoneFallbackIdx := buildOutboundContactListTemplateTimeColumnIndexFromSet(phoneExistingSet, "callable_time_column_name", "callable_time_column")
+		emailFallbackIdx := buildOutboundContactListTemplateTimeColumnIndexFromSet(emailExistingSet, "contactable_time_column_name", "contactable_time_column")
+
 		if sdkContactListTemplate.Name != nil {
 			_ = d.Set("name", *sdkContactListTemplate.Name)
 		}
@@ -156,10 +166,49 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 			_ = d.Set("column_names", columnNames)
 		}
 		if sdkContactListTemplate.PhoneColumns != nil {
-			_ = d.Set("phone_columns", flattenSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(*sdkContactListTemplate.PhoneColumns))
+			_ = d.Set("phone_columns", flattenSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(*sdkContactListTemplate.PhoneColumns, phoneTzIdx, phoneFallbackIdx))
+		} else if phoneExistingSet != nil && phoneExistingSet.Len() > 0 {
+			// Some API responses omit phone/email columns; keep prior state in that case.
+			synced := schema.NewSet(hashOutboundContactListTemplatePhoneColumn, []interface{}{})
+			for _, v := range phoneExistingSet.List() {
+				m, ok := v.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				out := make(map[string]interface{}, len(m)+1)
+				for k, val := range m {
+					out[k] = val
+				}
+				if name, _ := out["callable_time_column_name"].(string); name != "" {
+					out["callable_time_column"] = name
+				} else if legacy, _ := out["callable_time_column"].(string); legacy != "" {
+					out["callable_time_column_name"] = legacy
+				}
+				synced.Add(out)
+			}
+			_ = d.Set("phone_columns", synced)
 		}
 		if sdkContactListTemplate.EmailColumns != nil {
-			_ = d.Set("email_columns", flattenSdkOutboundContactListTemplateContactEmailAddressColumnSlice(*sdkContactListTemplate.EmailColumns))
+			_ = d.Set("email_columns", flattenSdkOutboundContactListTemplateContactEmailAddressColumnSlice(*sdkContactListTemplate.EmailColumns, emailTzIdx, emailFallbackIdx))
+		} else if emailExistingSet != nil && emailExistingSet.Len() > 0 {
+			synced := schema.NewSet(hashOutboundContactListTemplateEmailColumn, []interface{}{})
+			for _, v := range emailExistingSet.List() {
+				m, ok := v.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				out := make(map[string]interface{}, len(m)+1)
+				for k, val := range m {
+					out[k] = val
+				}
+				if name, _ := out["contactable_time_column_name"].(string); name != "" {
+					out["contactable_time_column"] = name
+				} else if legacy, _ := out["contactable_time_column"].(string); legacy != "" {
+					out["contactable_time_column_name"] = legacy
+				}
+				synced.Add(out)
+			}
+			_ = d.Set("email_columns", synced)
 		}
 		if sdkContactListTemplate.PreviewModeColumnName != nil {
 			_ = d.Set("preview_mode_column_name", *sdkContactListTemplate.PreviewModeColumnName)

@@ -172,6 +172,12 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read Outbound Contact List %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		// The SDK model for phone/email columns does not include the API-returned `*TimeColumnName` fields.
+		// Parse the raw response to preserve timezone column names and prevent UI-save drift.
+		// TODO: Remove once the Go SDK models include callableTimeColumnName/contactableTimeColumnName:
+		// https://github.com/MyPureCloud/platform-client-sdk-go
+		phoneTzIdx, emailTzIdx := parseOutboundContactListRaw(resp.RawBody)
+
 		if sdkContactList.Name != nil {
 			_ = d.Set("name", *sdkContactList.Name)
 		}
@@ -182,10 +188,10 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("column_names", *sdkContactList.ColumnNames)
 		}
 		if sdkContactList.PhoneColumns != nil {
-			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns))
+			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneTzIdx))
 		}
 		if sdkContactList.EmailColumns != nil {
-			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns))
+			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns, emailTzIdx))
 		}
 		if sdkContactList.WhatsAppColumns != nil {
 			_ = d.Set("whats_app_columns", flattenSdkOutboundContactListContactWhatsAppColumnSlice(*sdkContactList.WhatsAppColumns))
