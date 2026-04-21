@@ -10,11 +10,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -66,7 +63,6 @@ func createCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, m
 func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCaseManagementCaseplanProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCaseManagementCaseplan(), constants.ConsistencyChecks(), resourceName)
 
 	log.Printf("Reading case management caseplan %s", d.Id())
 
@@ -90,11 +86,7 @@ func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "default_due_duration_in_seconds", caseplan.DefaultDueDurationInSeconds)
 		resourcedata.SetNillableValue(d, "default_ttl_seconds", caseplan.DefaultTtlSeconds)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "default_case_owner", caseplan.DefaultCaseOwner, flattenUserReference)
-		resourcedata.SetNillableValue(d, "latest", caseplan.Latest)
-		resourcedata.SetNillableValue(d, "published", caseplan.Published)
-		resourcedata.SetNillableTime(d, "date_published", caseplan.DatePublished)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "customer_intent", caseplan.CustomerIntent, flattenCustomerIntentReference)
-		resourcedata.SetNillableValue(d, "version_state", caseplan.VersionState)
 
 		ver := caseplanVersionForDataschemaRead(caseplan)
 		if ver != "" {
@@ -116,14 +108,156 @@ func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, met
 			_ = d.Set("data_schema", nil)
 		}
 
+		if ver != "" {
+			intakeListing, inResp, inErr := proxy.getCaseManagementCaseplanVersionIntakesettings(ctx, d.Id(), ver)
+			if inErr != nil {
+				if util.IsStatus404(inResp) {
+					_ = d.Set("intake_settings", []interface{}{})
+				} else {
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s intake settings: %s", d.Id(), inErr), inResp))
+				}
+			} else {
+				var entities *[]platformclientv2.Intakesetting
+				if intakeListing != nil {
+					entities = intakeListing.Entities
+				}
+				_ = d.Set("intake_settings", flattenCaseplanIntakeSettings(entities))
+			}
+		} else {
+			_ = d.Set("intake_settings", []interface{}{})
+		}
+
 		log.Printf("Read case management caseplan %s %s", d.Id(), *caseplan.Name)
-		return cc.CheckState(d)
+		return nil
 	})
+}
+
+func caseplanApplyPatchIfChanged(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
+	if patch, ok := buildCaseplanPatchFromResourceData(d); ok {
+		_, resp, err := proxy.patchCaseManagementCaseplan(ctx, id, *patch)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to patch case management caseplan %s: %s", id, err), resp)
+		}
+	}
+	return nil
+}
+
+func caseplanDiagsIfImmutableFieldsChangeAfterPublish(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
+	cp, resp, err := proxy.getCaseManagementCaseplanById(ctx, id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s before update: %s", id, err), resp)
+	}
+	if cp.Published == nil || *cp.Published == 0 {
+		return nil
+	}
+	var diags diag.Diagnostics
+	add := func(attr, detail string) {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("%s cannot change after the caseplan has been published", attr),
+			Detail:   detail,
+		})
+	}
+	if d.HasChange("division_id") {
+		add("division_id", "divisionId is immutable after first publish.")
+	}
+	if d.HasChange("customer_intent") {
+		add("customer_intent", "customerIntentId is immutable after first publish.")
+	}
+	if d.HasChange("reference_prefix") {
+		add("reference_prefix", "referencePrefix is immutable after first publish.")
+	}
+	if d.HasChange("data_schema") {
+		add("data_schema", "dataSchemas are immutable after first publish.")
+	}
+	if d.HasChange("intake_settings") {
+		add("intake_settings", "intakeSettings are immutable after first publish.")
+	}
+	return diags
+}
+
+func caseplanApplyIntakePutIfChanged(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
+	if !d.HasChange("intake_settings") {
+		return nil
+	}
+	body := platformclientv2.Intakesettingsupdate{}
+	body.IntakeSettings = expandCaseplanIntakeSettingsForPut(d)
+	_, resp, err := proxy.putCaseManagementCaseplanIntakesettings(ctx, id, body)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update caseplan %s intake settings: %s", id, err), resp)
+	}
+	return nil
+}
+
+// execCaseplanDataSchemaSync uses DELETE on .../dataschemas/default when bindings are removed, then for each desired row:
+// POST /dataschemas {"id"} for a workitem schema id that was not in the prior config (draft add), or
+// PUT .../dataschemas/default with id+version when the id was already present (e.g. version bump).
+func execCaseplanDataSchemaSync(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID string, oldRaw, newRaw []interface{}) diag.Diagnostics {
+	if len(newRaw) > 1 {
+		return diag.Errorf("%s: only one data_schema block is supported (API uses .../dataschemas/default); found %d blocks", ResourceType, len(newRaw))
+	}
+	deleteIDs, puts := caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw)
+	if len(deleteIDs) == 0 && len(puts) == 0 {
+		return nil
+	}
+	key := caseplanDataschemaKeyDefault
+	oldIDSet := caseplanDataSchemaIDSetFromRaw(oldRaw)
+	if len(deleteIDs) > 0 {
+		resp, err := proxy.deleteCaseManagementCaseplanDataschema(ctx, caseplanID, key)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete caseplan %s data schema key %q: %s", caseplanID, key, err), resp)
+		}
+	}
+	toPut := puts
+	if len(deleteIDs) > 0 && len(toPut) == 0 && len(newRaw) > 0 {
+		toPut = caseplanDataSchemasFromResourceList(newRaw)
+	}
+	for _, row := range toPut {
+		if row.Id == nil || *row.Id == "" {
+			continue
+		}
+		sid := *row.Id
+		if _, existed := oldIDSet[sid]; existed {
+			_, resp, err := proxy.putCaseManagementCaseplanDataschema(ctx, caseplanID, key, row)
+			if err != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to put caseplan %s data schema %s (key %q): %s", caseplanID, sid, key, err), resp)
+			}
+			continue
+		}
+		_, resp, err := proxy.postCaseManagementCaseplanDataschema(ctx, caseplanID, caseplanDataschemaPostBody{Id: sid})
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to post caseplan %s data schema id %s: %s", caseplanID, sid, err), resp)
+		}
+	}
+	return nil
 }
 
 // updateCaseManagementCaseplan is used by the case_management_caseplan resource to update an case management caseplan in Genesys Cloud
 func updateCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return nil
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getCaseManagementCaseplanProxy(sdkConfig)
+	id := d.Id()
+
+	if diags := caseplanDiagsIfImmutableFieldsChangeAfterPublish(ctx, proxy, d, id); diags != nil {
+		return diags
+	}
+
+	if diags := caseplanApplyPatchIfChanged(ctx, proxy, d, id); diags != nil {
+		return diags
+	}
+
+	if d.HasChange("data_schema") {
+		oldRaw, newRaw := d.GetChange("data_schema")
+		if diags := execCaseplanDataSchemaSync(ctx, proxy, id, oldRaw.([]interface{}), newRaw.([]interface{})); diags != nil {
+			return diags
+		}
+	}
+
+	if diags := caseplanApplyIntakePutIfChanged(ctx, proxy, d, id); diags != nil {
+		return diags
+	}
+
+	return readCaseManagementCaseplan(ctx, d, meta)
 }
 
 // deleteCaseManagementCaseplan is used by the case_management_caseplan resource to delete an case management caseplan from Genesys cloud

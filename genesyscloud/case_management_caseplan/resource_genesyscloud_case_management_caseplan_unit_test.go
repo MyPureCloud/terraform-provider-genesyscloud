@@ -6,7 +6,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestUnit_caseplanDataSchemasFromResourceList_coercesFloatVersion(t *testing.T) {
+	t.Parallel()
+	raw := []interface{}{
+		map[string]interface{}{"id": "11111111-1111-1111-1111-111111111111", "version": float64(3)},
+	}
+	out := caseplanDataSchemasFromResourceList(raw)
+	require.Len(t, out, 1)
+	assert.Equal(t, 3, *out[0].Version)
+}
 
 func TestUnitFlattenExpandCaseplanDataSchemas(t *testing.T) {
 	t.Parallel()
@@ -53,6 +64,9 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 		"data_schema": []interface{}{
 			map[string]interface{}{"id": "schema-1", "version": 7},
 		},
+		"intake_settings": []interface{}{
+			map[string]interface{}{"property": "case_note_text", "required": true, "display_order": 1},
+		},
 	})
 
 	body := getCaseManagementCaseplanCreateFromResourceData(d)
@@ -69,6 +83,46 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 	assert.Len(t, *ds, 1)
 	assert.Equal(t, "schema-1", *(*ds)[0].Id)
 	assert.Equal(t, 7, *(*ds)[0].Version)
+	isettings := body.IntakeSettings
+	assert.NotNil(t, isettings)
+	assert.Len(t, *isettings, 1)
+	assert.Equal(t, "case_note_text", *(*isettings)[0].Property)
+	assert.True(t, *(*isettings)[0].Required)
+	assert.Equal(t, 1, *(*isettings)[0].DisplayOrder)
+}
+
+func TestUnitFlattenExpandCaseplanIntakeSettings(t *testing.T) {
+	t.Parallel()
+	prop := "p1"
+	req := true
+	ord := 2
+	flat := flattenCaseplanIntakeSettings(&[]platformclientv2.Intakesetting{
+		{Property: &prop, Required: &req, DisplayOrder: &ord},
+	})
+	assert.Len(t, flat, 1)
+	m := flat[0].(map[string]interface{})
+	assert.Equal(t, "p1", m["property"])
+	assert.Equal(t, true, m["required"])
+	assert.Equal(t, 2, m["display_order"])
+
+	assert.Len(t, flattenCaseplanIntakeSettings(nil), 0)
+	empty := []platformclientv2.Intakesetting{}
+	assert.Len(t, flattenCaseplanIntakeSettings(&empty), 0)
+
+	sch := ResourceCaseManagementCaseplan().Schema
+	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
+		"data_schema": []interface{}{
+			map[string]interface{}{"id": "schema-1", "version": 1},
+		},
+		"intake_settings": []interface{}{
+			map[string]interface{}{"property": "a", "required": false, "display_order": 0},
+		},
+	})
+	put := expandCaseplanIntakeSettingsForPut(d)
+	assert.Len(t, *put, 1)
+	assert.Equal(t, "a", *(*put)[0].Property)
+	assert.False(t, *(*put)[0].Required)
+	assert.Equal(t, 0, *(*put)[0].DisplayOrder)
 }
 
 func TestUnitFlattenUserAndIntentRefs(t *testing.T) {

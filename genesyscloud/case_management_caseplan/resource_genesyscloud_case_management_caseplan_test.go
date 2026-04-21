@@ -97,6 +97,163 @@ resource "genesyscloud_case_management_caseplan_publish" "pub" {
 	})
 }
 
+func TestAccResourceCaseManagementCaseplanPublish_revisionBump(t *testing.T) {
+	t.Parallel()
+	suffix := uuid.NewString()
+	caseplanName := "tf_acc_cppubr_" + suffix
+	refPrefix := strings.ReplaceAll(suffix, "-", "")
+	if len(refPrefix) > 8 {
+		refPrefix = refPrefix[:8]
+	}
+	schemaName := substrForSchema("tf_cppr_" + suffix)
+	emailLocal := "tf_acc_cppr_" + strings.ReplaceAll(suffix, "-", "")
+
+	resourcePath := "genesyscloud_case_management_caseplan.cp"
+	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
+	base := testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: base + `
+resource "genesyscloud_case_management_caseplan_publish" "pub" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  revision    = 0
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(publishPath, "revision", "0"),
+					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
+				),
+			},
+			{
+				Config: base + `
+resource "genesyscloud_case_management_caseplan_publish" "pub" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  revision    = 1
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(publishPath, "revision", "1"),
+					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+	})
+}
+
+func TestAccResourceCaseManagementCaseplanCreateVersion(t *testing.T) {
+	t.Parallel()
+	suffix := uuid.NewString()
+	caseplanName := "tf_acc_cpver_" + suffix
+	refPrefix := strings.ReplaceAll(suffix, "-", "")
+	if len(refPrefix) > 8 {
+		refPrefix = refPrefix[:8]
+	}
+	schemaName := substrForSchema("tf_cpv_" + suffix)
+	emailLocal := "tf_acc_cpv_" + strings.ReplaceAll(suffix, "-", "")
+
+	resourcePath := "genesyscloud_case_management_caseplan.cp"
+	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
+	versionPath := "genesyscloud_case_management_caseplan_create_version.new_draft"
+	base := testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: base + `
+resource "genesyscloud_case_management_caseplan_publish" "pub" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+}
+
+resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
+					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
+				),
+			},
+			{
+				ResourceName:      versionPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+	})
+}
+
+func TestAccResourceCaseManagementCaseplanCreateVersion_revisionAfterRepublish(t *testing.T) {
+	t.Parallel()
+	suffix := uuid.NewString()
+	caseplanName := "tf_acc_cpverr_" + suffix
+	refPrefix := strings.ReplaceAll(suffix, "-", "")
+	if len(refPrefix) > 8 {
+		refPrefix = refPrefix[:8]
+	}
+	schemaName := substrForSchema("tf_cpvr_" + suffix)
+	emailLocal := "tf_acc_cpvr_" + strings.ReplaceAll(suffix, "-", "")
+
+	resourcePath := "genesyscloud_case_management_caseplan.cp"
+	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
+	versionPath := "genesyscloud_case_management_caseplan_create_version.new_draft"
+	base := testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: base + `
+resource "genesyscloud_case_management_caseplan_publish" "pub" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  revision    = 0
+}
+
+resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  revision    = 0
+  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(publishPath, "revision", "0"),
+					resource.TestCheckResourceAttr(versionPath, "revision", "0"),
+					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
+				),
+			},
+			{
+				Config: base + `
+resource "genesyscloud_case_management_caseplan_publish" "pub" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  revision    = 1
+}
+
+resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
+  caseplan_id = genesyscloud_case_management_caseplan.cp.id
+  revision    = 1
+  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(publishPath, "revision", "1"),
+					resource.TestCheckResourceAttr(versionPath, "revision", "1"),
+					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+	})
+}
+
 func testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal string) string {
 	props := `jsonencode({
     acc_note_text = {
