@@ -29,15 +29,15 @@ func TestUnitBuildStepplanUpdate(t *testing.T) {
 	t.Parallel()
 	sch := ResourceCaseManagementStepplan().Schema
 	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
-		"caseplan_id":      "cp-1",
-		"stage_number":     1,
-		"stepplan_id":      "stp-1",
-		"stageplan_id":     "stg-1",
-		"name":             "Step n",
-		"description":      "d",
-		"activity_type":    "Workitem",
-		"caseplan":         []interface{}{},
-		"stageplan":        []interface{}{},
+		"caseplan_id":   "cp-1",
+		"stage_number":  1,
+		"stepplan_id":   "stp-1",
+		"stageplan_id":  "stg-1",
+		"name":          "Step n",
+		"description":   "d",
+		"activity_type": "Workitem",
+		"caseplan":      []interface{}{},
+		"stageplan":     []interface{}{},
 		"workitem_settings": []interface{}{
 			map[string]interface{}{"worktype_id": "wt-1"},
 		},
