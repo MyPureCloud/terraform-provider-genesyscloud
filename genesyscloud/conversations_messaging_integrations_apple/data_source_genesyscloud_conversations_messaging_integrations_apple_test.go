@@ -50,6 +50,20 @@ func TestAccDataSourceAppleIntegration(t *testing.T) {
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id", ResourceType+"."+resourceLabel, "id"),
 				),
 			},
+			{
+				// Wait for integration provisioning to complete before destroy
+				Config: generateBasicAppleIntegrationResource(
+					resourceLabel,
+					integrationName,
+					businessId,
+				) + generateAppleIntegrationDataSource(
+					dataSourceLabel,
+					ResourceType+"."+resourceLabel+".name",
+					ResourceType+"."+resourceLabel,
+				),
+				PreConfig: func() { time.Sleep(30 * time.Second) },
+				Check:     resource.ComposeTestCheckFunc(),
+			},
 		},
 		CheckDestroy: testVerifyAppleIntegrationDeleted,
 	})

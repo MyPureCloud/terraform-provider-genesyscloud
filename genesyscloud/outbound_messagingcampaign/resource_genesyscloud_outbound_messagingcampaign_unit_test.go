@@ -103,15 +103,15 @@ func TestUnitBuildAndFlattenWhatsAppConfigsRoundTrip(t *testing.T) {
 
 func TestUnitMessagingCampaignWhatsAppCreate(t *testing.T) {
 	var (
-		campaignId       = uuid.NewString()
-		campaignName     = "Test WhatsApp Campaign"
-		contactListId    = uuid.NewString()
-		integrationId    = uuid.NewString()
-		templateId       = uuid.NewString()
-		messagesPerMin   = 10
-		campaignStatus   = "off"
-		whatsAppColumns  = []string{"whatsappCol"}
-		version          = 1
+		campaignId      = uuid.NewString()
+		campaignName    = "Test WhatsApp Campaign"
+		contactListId   = uuid.NewString()
+		integrationId   = uuid.NewString()
+		templateId      = uuid.NewString()
+		messagesPerMin  = 10
+		campaignStatus  = "off"
+		whatsAppColumns = []string{"whatsappCol"}
+		version         = 1
 	)
 
 	proxy := &outboundMessagingcampaignProxy{}
@@ -216,15 +216,15 @@ func TestUnitMessagingCampaignWhatsAppRead(t *testing.T) {
 
 func TestUnitMessagingCampaignWhatsAppUpdate(t *testing.T) {
 	var (
-		campaignId         = uuid.NewString()
-		campaignName       = "Updated WhatsApp Campaign"
-		contactListId      = uuid.NewString()
-		integrationId      = uuid.NewString()
-		templateId         = uuid.NewString()
-		messagesPerMin     = 20
-		campaignStatus     = "off"
-		whatsAppColumns    = []string{"whatsappCol"}
-		version            = 2
+		campaignId      = uuid.NewString()
+		campaignName    = "Updated WhatsApp Campaign"
+		contactListId   = uuid.NewString()
+		integrationId   = uuid.NewString()
+		templateId      = uuid.NewString()
+		messagesPerMin  = 20
+		campaignStatus  = "off"
+		whatsAppColumns = []string{"whatsappCol"}
+		version         = 2
 	)
 
 	proxy := &outboundMessagingcampaignProxy{}

@@ -6,11 +6,47 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
+
+// SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
+// It queries GET /api/v2/speechandtextanalytics/topics/{topicId} to retrieve name + dialect and emits:
+//
+//	data "genesyscloud_speechandtextanalytics_topic" "<name>_<dialect>" { name = "...", dialect = "..." }
+//
+// and updates the referencing field to use data source ID.
+func SpeechAndTextAnalyticsTopicIdResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
+	topicId, _ := value.(string)
+	if !isValidGuid(topicId) {
+		return "", "", nil, false
+	}
+
+	api := platformclientv2.NewSpeechTextAnalyticsApiWithConfig(sdkConfig)
+	topic, _, err := api.GetSpeechandtextanalyticsTopic(topicId)
+	if err != nil || topic == nil || topic.Name == nil || topic.Dialect == nil {
+		// If we can't resolve, keep the raw GUID instead of failing export.
+		log.Printf("failed to resolve speech and text analytics topic %s: %v", topicId, err)
+		return "", "", nil, false
+	}
+
+	name := strings.TrimSpace(*topic.Name)
+	dialect := strings.TrimSpace(*topic.Dialect)
+	if name == "" || dialect == "" {
+		return "", "", nil, false
+	}
+
+	label := strings.ReplaceAll(fmt.Sprintf("%s_%s", name, dialect), " ", "_")
+	ds := map[string]interface{}{
+		"name":    name,
+		"dialect": dialect,
+	}
+
+	return "genesyscloud_speechandtextanalytics_topic", label, ds, true
+}
 
 /*
 OutboundCampaignAgentScriptResolver
@@ -244,4 +280,57 @@ func KnowledgeDocumentLabelNamesResolver(configMap map[string]interface{}, expor
 	}
 
 	return nil
+}
+
+var knowledgeBaseNameCache = struct {
+	sync.RWMutex
+	names map[string]string
+}{names: make(map[string]string)}
+
+// KnowledgeBaseNameResolver resolves the knowledge_base_name attribute from a knowledge base GUID
+// to the human-readable knowledge base name. This is used when exporting knowledge_document,
+// knowledge_category, and knowledge_label resources as data sources, where the data source schema
+// requires knowledge_base_name (a name) instead of knowledge_base_id (a GUID).
+func KnowledgeBaseNameResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) error {
+	knowledgeBaseId, ok := value.(string)
+	if !ok || knowledgeBaseId == "" {
+		return nil
+	}
+
+	if strings.HasPrefix(knowledgeBaseId, "${") {
+		return nil
+	}
+
+	knowledgeBaseName, err := getKnowledgeBaseName(knowledgeBaseId, sdkConfig)
+	if err != nil {
+		return fmt.Errorf("failed to resolve knowledge base ID %s to name: %s", knowledgeBaseId, err)
+	}
+
+	configMap["knowledge_base_name"] = knowledgeBaseName
+	return nil
+}
+
+func getKnowledgeBaseName(knowledgeBaseId string, sdkConfig *platformclientv2.Configuration) (string, error) {
+	knowledgeBaseNameCache.RLock()
+	if name, ok := knowledgeBaseNameCache.names[knowledgeBaseId]; ok {
+		knowledgeBaseNameCache.RUnlock()
+		return name, nil
+	}
+	knowledgeBaseNameCache.RUnlock()
+
+	knowledgeApi := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	knowledgeBase, _, err := knowledgeApi.GetKnowledgeKnowledgebase(knowledgeBaseId)
+	if err != nil {
+		return "", err
+	}
+
+	if knowledgeBase.Name == nil || *knowledgeBase.Name == "" {
+		return "", fmt.Errorf("knowledge base %s has no name", knowledgeBaseId)
+	}
+
+	knowledgeBaseNameCache.Lock()
+	knowledgeBaseNameCache.names[knowledgeBaseId] = *knowledgeBase.Name
+	knowledgeBaseNameCache.Unlock()
+
+	return *knowledgeBase.Name, nil
 }
