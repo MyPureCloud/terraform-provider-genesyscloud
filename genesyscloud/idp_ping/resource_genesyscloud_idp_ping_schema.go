@@ -3,6 +3,7 @@ package idp_ping
 // @team: GC IAM (Auth/Donut)
 // @chat: #gc-iam-auth-donut
 // @jira: IAM
+// @pm: David Murray
 // @description: Manages Single Sign-On (SSO) identity provider integrations for Genesys Cloud. Configures SAML-based authentication with external identity providers to enable federated login.
 
 import (
@@ -107,6 +108,8 @@ func ResourceIdpPing() *schema.Resource {
 func IdpPingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpPings),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

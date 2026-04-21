@@ -231,11 +231,15 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.language", "en-us"),
-					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "4"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.key", "MessengerHomeHeaderTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.value", "My Messenger Home Header Title"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.key", "MessengerHomeHeaderSubTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.value", "My Messenger Home Header SubTitle"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.key", "PushNotificationTitle"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.value", "New Message"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.key", "PushNotificationBody"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.value", "You have a new message"),
 
 					resource.TestCheckResourceAttr(resourcePath, "position.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "position.0.alignment", "Auto"),
@@ -271,7 +275,6 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.0.notification_content_type", "IncludeMessagesContent"),
-					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.session_duration_seconds", "3600"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.0.bot.#", "1"),
@@ -988,6 +991,14 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 				key = "MessengerHomeHeaderSubTitle"
 				value = "My Messenger Home Header SubTitle"
 			}
+			localized_labels {
+				key = "PushNotificationTitle"
+				value = "New Message"
+			}
+			localized_labels {
+				key = "PushNotificationBody"
+				value = "You have a new message"
+			}
 		}
 		position {
 			alignment = "Auto"
@@ -1034,7 +1045,6 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 						enabled = true
 						notification_content_type = "IncludeMessagesContent"
 					}
-					session_duration_seconds = 3600
 					humanize {
 						enabled = true
 						bot {

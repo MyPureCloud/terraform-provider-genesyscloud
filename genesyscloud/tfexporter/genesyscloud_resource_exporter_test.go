@@ -429,34 +429,31 @@ func TestUnitTfExportFilterResourceById(t *testing.T) {
 }
 
 func TestUnitTfExportTestExcludeAttributes(t *testing.T) {
-
-	gre := &GenesysCloudResourceExporter{
-		ctx:                  context.Background(),
-		exportFormat:         "json",
-		splitFilesByResource: true,
+	// Test that removeExcludedAttrsFromMap correctly nils out excluded attributes
+	configMap := util.JsonMap{
+		"name":        "test-resource",
+		"description": "a description",
+		"nested": map[string]interface{}{
+			"inner_attr": "value",
+			"keep_attr":  "keep",
+		},
 	}
 
-	m1 := map[string]*resourceExporter.ResourceExporter{
-		"exporter1": {AllowZeroValues: []string{"key1", "key2"}},
-		"exporter2": {AllowZeroValues: []string{"key3", "key4"}},
-		"exporter3": {AllowZeroValues: []string{"key3", "key4"}},
+	excludedAttrs := []string{"name", "nested.inner_attr"}
+	removeExcludedAttrsFromMap(configMap, excludedAttrs, "")
+
+	if configMap["name"] != nil {
+		t.Errorf("Expected 'name' to be nil, got %v", configMap["name"])
 	}
-
-	filter := []string{"e*.name"}
-
-	// Call the function
-	gre.populateConfigExcluded(m1, filter)
-	nameAttr := "name"
-	// Check if the exporters in the result have the expected keys
-	for _, exporter := range m1 {
-
-		attributes := exporter.ExcludedAttributes
-
-		for _, atribute := range attributes {
-			if atribute != nameAttr {
-				t.Errorf("Attribute %s not excluded in exporter", nameAttr)
-			}
-		}
+	if configMap["description"] != "a description" {
+		t.Errorf("Expected 'description' to be unchanged, got %v", configMap["description"])
+	}
+	nested := configMap["nested"].(map[string]interface{})
+	if nested["inner_attr"] != nil {
+		t.Errorf("Expected 'nested.inner_attr' to be nil, got %v", nested["inner_attr"])
+	}
+	if nested["keep_attr"] != "keep" {
+		t.Errorf("Expected 'nested.keep_attr' to be unchanged, got %v", nested["keep_attr"])
 	}
 }
 
@@ -601,6 +598,22 @@ func TestUnitContainsElement(t *testing.T) {
 		originalLabel  string
 		expectedResult bool
 	}{
+		{
+			name:           "Type-only match",
+			elements:       []string{"resourceType"},
+			resType:        "resourceType",
+			resLabel:       "anyLabel",
+			originalLabel:  "",
+			expectedResult: true,
+		},
+		{
+			name:           "Type-only does not match other types",
+			elements:       []string{"resourceType"},
+			resType:        "otherResourceType",
+			resLabel:       "anyLabel",
+			originalLabel:  "",
+			expectedResult: false,
+		},
 		{
 			name:           "Exact match",
 			elements:       []string{"resourceType::resourceLabel"},
