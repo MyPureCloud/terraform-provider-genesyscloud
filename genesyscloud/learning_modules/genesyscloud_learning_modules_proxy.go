@@ -133,7 +133,7 @@ func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searc
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allModules []platformclientv2.Learningmodule
-	const isArchived = true
+	const isArchived = false
 	types := []string{}
 	const pageSize = 100
 	const pageNumber = 1

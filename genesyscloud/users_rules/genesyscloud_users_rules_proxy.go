@@ -133,7 +133,7 @@ func getAllUsersRulesFn(ctx context.Context, p *usersRulesProxy, searchTerm stri
 			return nil, resp, fmt.Errorf("Failed to get users rules: %v", err)
 		}
 		if usersRules.Entities == nil || len(*usersRules.Entities) == 0 {
-			return &allUsersRules, resp, nil
+			break
 		}
 		for _, usersRule := range *usersRules.Entities {
 			allUsersRules = append(allUsersRules, usersRule)

@@ -125,7 +125,7 @@ func ResourceUsersRules() *schema.Resource {
 			"name": {
 				Description: "The name of the rule",
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 			},
 			"description": {
 				Description: "The description of the rule",
@@ -135,13 +135,14 @@ func ResourceUsersRules() *schema.Resource {
 			"type": {
 				Description:  "The type of the rule",
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"Learning", "ActivityPlan"}, false),
 			},
 			"criteria": {
 				Type:        schema.TypeList,
 				Description: "The criteria for the rule",
-				Optional:    true,
+				Required:    true,
 				Elem:        userRulesCriteriaResource,
 			},
 		},

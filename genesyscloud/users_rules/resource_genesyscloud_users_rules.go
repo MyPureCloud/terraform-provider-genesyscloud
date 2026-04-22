@@ -103,8 +103,8 @@ func updateUsersRules(ctx context.Context, d *schema.ResourceData, meta interfac
 	if name != "" {
 		usersRuleRequest.Name = &name
 	}
-	description := d.Get("description").(string)
-	if description != "" {
+	if d.HasChange("description") {
+		description := d.Get("description").(string)
 		usersRuleRequest.Description = &description
 	}
 	usersRuleRequest.Criteria = buildSdkUsersRulesCriteria(d.Get("criteria").([]interface{}))
