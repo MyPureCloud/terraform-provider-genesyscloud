@@ -140,7 +140,6 @@ type GenesysCloudResourceExporter struct {
 	resourceStateMutex         sync.Mutex
 	resourceTypesMapsMutex     sync.RWMutex
 	unresolvedAttrsMutex       sync.Mutex
-	attributesDecodedMutex     sync.Mutex
 
 	// .. Int
 	maxConcurrentOps int // New field to control concurrency

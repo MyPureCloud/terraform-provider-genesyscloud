@@ -217,16 +217,7 @@ func createHCLVariablesBlock(unresolvedAttrs []unresolvableAttributeInfo) []byte
 func postProcessHclBytes(resource []byte) []byte {
 	resourceStr := string(resource)
 
-	// Create a copy of attributesDecoded map with mutex protection to avoid concurrent map iteration and map write
-	attributesDecodedMutex.Lock()
-	attributesDecodedCopy := make(map[string]string, len(attributesDecoded))
-	for k, v := range attributesDecoded {
-		attributesDecodedCopy[k] = v
-	}
-	attributesDecodedMutex.Unlock()
-
-	// Iterate over the copy instead of the original map
-	for placeholderId, val := range attributesDecodedCopy {
+	for placeholderId, val := range attributesDecoded {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
 
