@@ -2,11 +2,12 @@ package tfexporter
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -215,6 +216,7 @@ func createHCLVariablesBlock(unresolvedAttrs []unresolvableAttributeInfo) []byte
 
 func postProcessHclBytes(resource []byte) []byte {
 	resourceStr := string(resource)
+
 	for placeholderId, val := range attributesDecoded {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
 	}
