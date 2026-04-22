@@ -2119,7 +2119,6 @@ resource "%s" "%s" {
 	exportedFlowResourceLabel := flowType + "_" + flowNameSanitized
 	exportedFlowResourceFullPath := "resource." + architectFlow.ResourceType + "." + exportedFlowResourceLabel
 
-
 	validateExportedFlowFile := func(flowResourcePath, exportFlowsDir string) resource.TestCheckFunc {
 		return func(state *terraform.State) error {
 			flowRes, ok := state.RootModule().Resources[flowResourcePath]

@@ -113,10 +113,10 @@ var (
 				Type:        schema.TypeString,
 			},
 			`callable_time_column`: {
-				Description:  `A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.`,
-				Deprecated:   "Use `callable_time_column_name` instead.",
-				Optional:     true,
-				Type:         schema.TypeString,
+				Description: `A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.`,
+				Deprecated:  "Use `callable_time_column_name` instead.",
+				Optional:    true,
+				Type:        schema.TypeString,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					// When automatic timezone mapping is enabled, the API may drop callable time columns.
 					// Suppress diffs to prevent perpetual drift.
@@ -124,10 +124,10 @@ var (
 				},
 			},
 			`callable_time_column_name`: {
-				Description:  `A column name that indicates the timezone to use for a given contact when checking callable times.`,
-				Optional:     true,
-				Computed:     true,
-				Type:         schema.TypeString,
+				Description: `A column name that indicates the timezone to use for a given contact when checking callable times.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return d.Get("automatic_time_zone_mapping").(bool)
 				},
@@ -148,16 +148,16 @@ var (
 				Type:        schema.TypeString,
 			},
 			`contactable_time_column`: {
-				Description:  `A column that indicates the timezone to use for a given contact when checking contactable times.`,
-				Deprecated:   "Use `contactable_time_column_name` instead.",
-				Optional:     true,
-				Type:         schema.TypeString,
+				Description: `A column that indicates the timezone to use for a given contact when checking contactable times.`,
+				Deprecated:  "Use `contactable_time_column_name` instead.",
+				Optional:    true,
+				Type:        schema.TypeString,
 			},
 			`contactable_time_column_name`: {
-				Description:  `A column name that indicates the timezone to use for a given contact when checking contactable times.`,
-				Optional:     true,
-				Computed:     true,
-				Type:         schema.TypeString,
+				Description: `A column name that indicates the timezone to use for a given contact when checking contactable times.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
 			},
 		},
 	}
