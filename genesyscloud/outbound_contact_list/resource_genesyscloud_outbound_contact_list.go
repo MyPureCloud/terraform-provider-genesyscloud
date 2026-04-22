@@ -176,7 +176,10 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		// Parse the raw response to preserve timezone column names and prevent UI-save drift.
 		// TODO: Remove once the Go SDK models include callableTimeColumnName/contactableTimeColumnName:
 		// https://github.com/MyPureCloud/platform-client-sdk-go
-		phoneTzIdx, emailTzIdx := parseOutboundContactListRaw(resp.RawBody)
+		var phoneTzIdx, emailTzIdx map[string]string
+		if resp != nil {
+			phoneTzIdx, emailTzIdx = parseOutboundContactListRaw(resp.RawBody)
+		}
 
 		if sdkContactList.Name != nil {
 			_ = d.Set("name", *sdkContactList.Name)
