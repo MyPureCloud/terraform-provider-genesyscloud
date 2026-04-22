@@ -2,6 +2,8 @@ package routing_settings
 
 // @team: Assignment
 // @chat: #genesys-cloud-acd-routing
+// @pm: Rob Blane
+// @jira: AS
 // @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
 
 import (
@@ -12,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-var ResourceType = "genesyscloud_routing_settings"
+const ResourceType = "genesyscloud_routing_settings"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceRoutingSettings())
@@ -102,5 +104,7 @@ func ResourceRoutingSettings() *schema.Resource {
 func RoutingSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingSettings),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 	}
 }

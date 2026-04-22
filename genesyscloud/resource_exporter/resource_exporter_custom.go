@@ -6,11 +6,47 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
+
+// SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
+// It queries GET /api/v2/speechandtextanalytics/topics/{topicId} to retrieve name + dialect and emits:
+//
+//	data "genesyscloud_speechandtextanalytics_topic" "<name>_<dialect>" { name = "...", dialect = "..." }
+//
+// and updates the referencing field to use data source ID.
+func SpeechAndTextAnalyticsTopicIdResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
+	topicId, _ := value.(string)
+	if !isValidGuid(topicId) {
+		return "", "", nil, false
+	}
+
+	api := platformclientv2.NewSpeechTextAnalyticsApiWithConfig(sdkConfig)
+	topic, _, err := api.GetSpeechandtextanalyticsTopic(topicId)
+	if err != nil || topic == nil || topic.Name == nil || topic.Dialect == nil {
+		// If we can't resolve, keep the raw GUID instead of failing export.
+		log.Printf("failed to resolve speech and text analytics topic %s: %v", topicId, err)
+		return "", "", nil, false
+	}
+
+	name := strings.TrimSpace(*topic.Name)
+	dialect := strings.TrimSpace(*topic.Dialect)
+	if name == "" || dialect == "" {
+		return "", "", nil, false
+	}
+
+	label := strings.ReplaceAll(fmt.Sprintf("%s_%s", name, dialect), " ", "_")
+	ds := map[string]interface{}{
+		"name":    name,
+		"dialect": dialect,
+	}
+
+	return "genesyscloud_speechandtextanalytics_topic", label, ds, true
+}
 
 /*
 OutboundCampaignAgentScriptResolver
@@ -68,45 +104,32 @@ func isValidGuid(id string) bool {
 	return matched
 }
 
-/*
-MemberGroupsResolver
-The resource_genesyscloud_routing_queue object has the concept of bullseye ring with a member_groups attribute.
-The routing team has overloaded the meaning of the member_groups so you can id and then define what "type" of id this is.
-This causes problems with the exporter because our export process expects id to map to a specific resource.
+// MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.
+// This allows the exporter to use the standard reference resolution pipeline (including data source replacement).
+//
+// Note: This should be used as a ResolveRefTypeFunc. Avoid hard-setting member_group_id to a reference string in a ResolverFunc,
+// because that can bypass or overwrite the standard reference resolution behavior.
+func MemberGroupsResolver(configMap map[string]interface{}) (string, error) {
+	memberGroupTypeRaw, ok := configMap["member_group_type"]
+	if !ok {
+		return "", fmt.Errorf("member_group_type is missing from the config map")
+	}
 
-This customer custom router will look at the member_group_type and resolve whether it is SKILLGROUP, GROUP type.  It will then
-find the appropriate resource out of the exporters and build a reference appropriately.
-*/
-func MemberGroupsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, _ string) error {
-	var (
-		resourceType    string
-		memberGroupType = configMap["member_group_type"].(string)
-		memberGroupID   = configMap["member_group_id"].(string)
-	)
+	memberGroupType, ok := memberGroupTypeRaw.(string)
+	if !ok {
+		return "", fmt.Errorf("member_group_type is not a string")
+	}
 
 	switch memberGroupType {
 	case "SKILLGROUP":
-		resourceType = "genesyscloud_routing_skill_group"
+		return "genesyscloud_routing_skill_group", nil
 	case "GROUP":
-		resourceType = "genesyscloud_group"
+		return "genesyscloud_group", nil
 	case "TEAM":
-		resourceType = "genesyscloud_team"
+		return "genesyscloud_team", nil
 	default:
-		return fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
+		return "", fmt.Errorf("the memberGroupType %s cannot be located. Can not resolve to a reference attribute", memberGroupType)
 	}
-
-	if exporter, ok := exporters[resourceType]; ok {
-		memberGroupExport, ok := exporter.SanitizedResourceMap[memberGroupID]
-		if !ok || memberGroupExport == nil {
-			return fmt.Errorf("could not resolve member group %s to a resource of type %s", memberGroupID, resourceType)
-		}
-		exportId := memberGroupExport.BlockLabel
-		configMap["member_group_id"] = fmt.Sprintf("${%s.%s.id}", resourceType, exportId)
-	} else {
-		return fmt.Errorf("unable to locate %s in the exporters array. Unable to resolve the ID for the member group resource", resourceType)
-	}
-
-	return nil
 }
 
 /*
@@ -242,7 +265,10 @@ func KnowledgeDocumentLabelNamesResolver(configMap map[string]interface{}, expor
 		}
 
 		for _, labelResource := range exporter.SanitizedResourceMap {
-			if strings.HasSuffix(labelResource.BlockLabel, "_"+name) {
+
+			// OriginalLabel preserves the original format (with spaces) which matches the labelName format
+			// whereas BlockLabel is sanitized
+			if strings.HasSuffix(labelResource.OriginalLabel, "_"+name) {
 				resolvedNames = append(resolvedNames, fmt.Sprintf("${genesyscloud_knowledge_label.%s.knowledge_label[0].name}", labelResource.BlockLabel))
 				break
 			}
@@ -254,4 +280,57 @@ func KnowledgeDocumentLabelNamesResolver(configMap map[string]interface{}, expor
 	}
 
 	return nil
+}
+
+var knowledgeBaseNameCache = struct {
+	sync.RWMutex
+	names map[string]string
+}{names: make(map[string]string)}
+
+// KnowledgeBaseNameResolver resolves the knowledge_base_name attribute from a knowledge base GUID
+// to the human-readable knowledge base name. This is used when exporting knowledge_document,
+// knowledge_category, and knowledge_label resources as data sources, where the data source schema
+// requires knowledge_base_name (a name) instead of knowledge_base_id (a GUID).
+func KnowledgeBaseNameResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) error {
+	knowledgeBaseId, ok := value.(string)
+	if !ok || knowledgeBaseId == "" {
+		return nil
+	}
+
+	if strings.HasPrefix(knowledgeBaseId, "${") {
+		return nil
+	}
+
+	knowledgeBaseName, err := getKnowledgeBaseName(knowledgeBaseId, sdkConfig)
+	if err != nil {
+		return fmt.Errorf("failed to resolve knowledge base ID %s to name: %s", knowledgeBaseId, err)
+	}
+
+	configMap["knowledge_base_name"] = knowledgeBaseName
+	return nil
+}
+
+func getKnowledgeBaseName(knowledgeBaseId string, sdkConfig *platformclientv2.Configuration) (string, error) {
+	knowledgeBaseNameCache.RLock()
+	if name, ok := knowledgeBaseNameCache.names[knowledgeBaseId]; ok {
+		knowledgeBaseNameCache.RUnlock()
+		return name, nil
+	}
+	knowledgeBaseNameCache.RUnlock()
+
+	knowledgeApi := platformclientv2.NewKnowledgeApiWithConfig(sdkConfig)
+	knowledgeBase, _, err := knowledgeApi.GetKnowledgeKnowledgebase(knowledgeBaseId)
+	if err != nil {
+		return "", err
+	}
+
+	if knowledgeBase.Name == nil || *knowledgeBase.Name == "" {
+		return "", fmt.Errorf("knowledge base %s has no name", knowledgeBaseId)
+	}
+
+	knowledgeBaseNameCache.Lock()
+	knowledgeBaseNameCache.names[knowledgeBaseId] = *knowledgeBase.Name
+	knowledgeBaseNameCache.Unlock()
+
+	return *knowledgeBase.Name, nil
 }

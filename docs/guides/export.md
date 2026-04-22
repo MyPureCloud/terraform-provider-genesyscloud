@@ -85,7 +85,9 @@ In the course of managing your Terraform configuration, circumstances may arise 
 resource "genesyscloud_tf_export" "export" {
   directory = "./genesyscloud/datasource"
   replace_with_datasource = [
-    "genesyscloud_group::Test_Group"
+    "genesyscloud_group",               # All groups (equivalent to "genesyscloud_group::")
+    "genesyscloud_group::Test_Group",   # A specific group by label
+    "genesyscloud_group::.*_readonly$", # Regex match
   ]
   include_state_file     = true
   export_format          = "hcl"

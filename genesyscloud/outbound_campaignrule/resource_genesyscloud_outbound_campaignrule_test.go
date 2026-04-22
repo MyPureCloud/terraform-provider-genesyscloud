@@ -1082,7 +1082,10 @@ data "genesyscloud_auth_division_home" "home" {}
 }
 
 func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
-
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "us-east-1" {
+		t.Skipf("verification will fail in org other than us-east-1 %s org", v)
+		return
+	}
 	var (
 		resourceLabel = "campaign_rule"
 		ruleName      = "Terraform test rule " + uuid.NewString()

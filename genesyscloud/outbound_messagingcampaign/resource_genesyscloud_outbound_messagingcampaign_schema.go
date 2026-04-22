@@ -2,6 +2,8 @@ package outbound_messagingcampaign
 
 // @team: Outbound Digital
 // @chat: #genesys-cloud-digital-campaigns
+// @pm: Marudhu Panidan
+// @jira: OD
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
@@ -116,6 +118,27 @@ var (
 			`content_template_id`: {
 				Description: `The content template used to formulate the message to send to the contact.`,
 				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	whatsAppConfigResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`whats_app_columns`: {
+				Description: `The contact list columns specifying the WhatsApp address(es) of the contact`,
+				Required:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			`whats_app_integration_id`: {
+				Description: `The WhatsApp integration used to send message to the contact.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`content_template_id`: {
+				Description: `The content template used to formulate the email to send to the contact.`,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -285,7 +308,7 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Type:         schema.TypeSet,
 				MaxItems:     1,
 				Elem:         emailConfigResource,
-				ExactlyOneOf: []string{"sms_config"},
+				ExactlyOneOf: []string{"email_config", "sms_config", "whats_app_config"},
 			},
 			`sms_config`: {
 				Description:  `Configuration for this messaging campaign to send SMS messages.`,
@@ -293,7 +316,15 @@ func ResourceOutboundMessagingcampaign() *schema.Resource {
 				Type:         schema.TypeSet,
 				MaxItems:     1,
 				Elem:         smsConfigResource,
-				ExactlyOneOf: []string{"email_config"},
+				ExactlyOneOf: []string{"email_config", "sms_config", "whats_app_config"},
+			},
+			`whats_app_config`: {
+				Description:  `Configuration for this messaging campaign to send WhatsApp messages.`,
+				Optional:     true,
+				Type:         schema.TypeSet,
+				MaxItems:     1,
+				Elem:         whatsAppConfigResource,
+				ExactlyOneOf: []string{"email_config", "sms_config", "whats_app_config"},
 			},
 		},
 	}
@@ -304,16 +335,18 @@ func OutboundMessagingcampaignExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundMessagingcampaigns),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			`division_id`:                             {RefType: "genesyscloud_auth_division"},
-			`contact_list_id`:                         {RefType: "genesyscloud_outbound_contact_list"},
-			`contact_list_filter_ids`:                 {RefType: "genesyscloud_outbound_contactlistfilter"},
-			`dnc_list_ids`:                            {RefType: "genesyscloud_outbound_dnclist"},
-			`callable_time_set_id`:                    {RefType: "genesyscloud_outbound_callabletimeset"},
-			`rule_set_ids`:                            {RefType: "genesyscloud_outbound_digitalruleset"},
-			`email_config.reply_to_address.route_id`:  {RefType: "genesyscloud_routing_email_route"},
-			`email_config.reply_to_address.domain_id`: {RefType: "genesyscloud_routing_email_domain"},
-			`sms_config.content_template_id`:          {RefType: "genesyscloud_responsemanagement_response"},
-			`email_config.content_template_id`:        {RefType: "genesyscloud_responsemanagement_response"},
+			`callable_time_set_id`:                      {RefType: "genesyscloud_outbound_callabletimeset"},
+			`contact_list_filter_ids`:                   {RefType: "genesyscloud_outbound_contactlistfilter"},
+			`contact_list_id`:                           {RefType: "genesyscloud_outbound_contact_list"},
+			`division_id`:                               {RefType: "genesyscloud_auth_division"},
+			`dnc_list_ids`:                              {RefType: "genesyscloud_outbound_dnclist"},
+			`email_config.content_template_id`:          {RefType: "genesyscloud_responsemanagement_response"},
+			`email_config.reply_to_address.domain_id`:   {RefType: "genesyscloud_routing_email_domain"},
+			`email_config.reply_to_address.route_id`:    {RefType: "genesyscloud_routing_email_route"},
+			`rule_set_ids`:                              {RefType: "genesyscloud_outbound_digitalruleset"},
+			`sms_config.content_template_id`:            {RefType: "genesyscloud_responsemanagement_response"},
+			`whats_app_config.content_template_id`:      {RefType: "genesyscloud_responsemanagement_response"},
+			`whats_app_config.whats_app_integration_id`: {RefType: "genesyscloud_conversations_messaging_integrations_whatsapp"},
 		},
 	}
 }

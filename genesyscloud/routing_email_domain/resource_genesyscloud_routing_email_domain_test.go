@@ -44,10 +44,6 @@ func TestAccResourceRoutingEmailDomainSub(t *testing.T) {
 					util.NullValue,
 				),
 				Check: resource.ComposeTestCheckFunc( //Wait for resource creatio
-					func(state *terraform.State) error {
-						time.Sleep(45 * time.Second)
-						return nil
-					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", util.TrueValue),
 				),

@@ -3,6 +3,8 @@ package dependent_consumers
 import (
 	"context"
 	"fmt"
+	"sort"
+	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -30,14 +32,17 @@ func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, reso
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys, totalFlowResources)
 }
 
-func (p *DependentConsumerProxy) GetAllWithPooledClient(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-	return p.GetPooledClientAttr(method)
+func (p *DependentConsumerProxy) GetAllWithPooledClient(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+	return p.GetPooledClientAttr(ctx, method)
 }
 
 type retrieveDependentConsumersFunc func(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error)
-type retrievePooledClientFunc func(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
+type retrievePooledClientFunc func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
 
-var InternalProxy *DependentConsumerProxy
+var (
+	InternalProxy *DependentConsumerProxy
+	proxyOnce     sync.Once
+)
 
 // GetDependentConsumerProxy acts as a singleton to for the InternalProxy.
 func GetDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *DependentConsumerProxy {
@@ -46,11 +51,11 @@ func GetDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 
 // newDependentConsumerProxy initializes the ruleset proxy with all of the data needed to communicate with Genesys Cloud
 func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *DependentConsumerProxy {
-	if InternalProxy == nil {
+	proxyOnce.Do(func() {
 		InternalProxy = &DependentConsumerProxy{
 			GetPooledClientAttr: retrievePooledClientFn,
 		}
-	}
+	})
 
 	if ClientConfig != nil {
 		api := platformclientv2.NewArchitectApiWithConfig(ClientConfig)
@@ -61,10 +66,9 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 	return InternalProxy
 }
 
-func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+func retrievePooledClientFn(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 	resourceFunc := provider.GetAllWithPooledClientCustom(method)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Pass the context through - don't replace it
 	resources, dependsMap, totalFlowResources, err := resourceFunc(ctx)
 	if err != nil {
 		return nil, nil, totalFlowResources, err
@@ -75,7 +79,6 @@ func retrievePooledClientFn(method provider.GetCustomConfigFunc) (resourceExport
 func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
 	resourceKey := resourceKeys.State.ID
 	resourceLabel := resourceKeys.BlockLabel
-	log.Printf("[DEBUG_ENTRY] retrieveDependentConsumersFn: START processing resourceKey=%s, resourceLabel=%s, resourceType=%s, totalFlowResourcesCount=%d", resourceKey, resourceLabel, resourceKeys.Type, len(totalFlowResources))
 	dependsMap := make(map[string][]string)
 	architectDependencies := make(map[string][]string)
 	dependentResources, dependsMap, cyclicDependsList, err, totalFlowResources := fetchDepConsumers(ctx, p, resourceKeys.Type, resourceKey, resourceLabel, make(resourceExporter.ResourceIDMetaMap), dependsMap, architectDependencies, make([]string, 0), totalFlowResources)
@@ -84,7 +87,6 @@ func retrieveDependentConsumersFn(ctx context.Context, p *DependentConsumerProxy
 		return nil, nil, totalFlowResources, err
 	}
 	finalDependsMap := buildDependsMap(dependentResources, dependsMap, resourceKey)
-	log.Printf("[DEBUG_ENTRY] retrieveDependentConsumersFn: END processing resourceKey=%s, resourceLabel=%s, dependentResourcesCount=%d, finalDependsMapForKey=%v, totalFlowResourcesCount=%d", resourceKey, resourceLabel, len(dependentResources), finalDependsMap[resourceKey], len(totalFlowResources))
 	return dependentResources, &resourceExporter.DependencyResource{
 		DependsMap:        finalDependsMap,
 		CyclicDependsList: cyclicDependsList,
@@ -115,14 +117,14 @@ func fetchDepConsumers(ctx context.Context,
 			log.Printf("Error calling GetFlow: %v\n", err)
 		}
 		// Fetch Dependent Consumed Resources only for Published Versions
-		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil {
+		// Require VarType as well, since it is used to look up the flow type.
+		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil && data.VarType != nil {
 			flowTypeObjectMaps := SetFlowTypeObjectMaps()
 			objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
 			log.Printf("[DEBUG_FLOW] Flow %s (%s): VarType=%s, flowTypeExists=%v, objectType=%s", resourceKey, resourceLabel, *data.VarType, flowTypeExists, objectType)
 			if flowTypeExists {
 				// Mark this flow as being processed EARLY to prevent re-entry during recursive calls
 				// Only add after confirming: flow exists, has published version, and has valid flow type
-				log.Printf("[DEBUG_FLOW] ADDING flow %s (%s) to totalFlowResources (before: %d items)", resourceKey, resourceLabel, len(totalFlowResources))
 				totalFlowResources = append(totalFlowResources, resourceKey)
 				pageCount := 1
 				const pageSize = 100
@@ -132,15 +134,17 @@ func fetchDepConsumers(ctx context.Context,
 				}
 				log.Printf("Retrieved dependencies for ID %s", resourceKey)
 
-				pageCount = *dependencies.PageCount
-
 				// return empty dependsMap and  resources
 				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
 					log.Printf("Retrieved dependencies for ID  noresult %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
 					return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
 				}
 
-				// iterate dependencies
+				if dependencies.PageCount != nil {
+					pageCount = *dependencies.PageCount
+				}
+
+				// iterate dependencies (already checked Entities is not nil above)
 				if pageCount < 2 {
 					resources, dependsMap, cyclicDependsList, totalFlowResources, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources)
 					if err != nil {
@@ -172,13 +176,23 @@ func fetchDepConsumers(ctx context.Context,
 }
 
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
-	dependsList := make([]string, 0)
-	for depId, meta := range resources {
-		resource := strings.Split(meta.BlockLabel, "::::")
+	dependsList := make([]string, 0, len(resources))
+
+	// Collect and sort for deterministic output
+	var depIds []string
+	for depId := range resources {
 		if id != depId {
-			dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
+			depIds = append(depIds, depId)
 		}
 	}
+	sort.Strings(depIds)
+
+	for _, depId := range depIds {
+		meta := resources[depId]
+		resource := strings.Split(meta.BlockLabel, "::::")
+		dependsList = append(dependsList, fmt.Sprintf("%s.%s", resource[0], depId))
+	}
+
 	dependsMap[id] = dependsList
 	return dependsMap
 }
@@ -197,8 +211,13 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 	totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, []string, error) {
 	var err error
 	dependentConsumerMap := SetDependentObjectMaps()
+
 	log.Printf("[DEBUG_DEPS] iterateDependencies for flow key=%s, label=%s, entityCount=%d", key, resourceLabel, len(*dependencies.Entities))
 	for _, consumer := range *dependencies.Entities {
+		if consumer.Id == nil || consumer.VarType == nil || consumer.Name == nil {
+			continue
+		}
+
 		resourceType, exists := getResourceType(consumer, dependentConsumerMap)
 		log.Printf("[DEBUG_DEPS] Processing consumer: Id=%s, Name=%s, VarType=%s, mappedResourceType=%s, exists=%v (parent flow: %s)",
 			*consumer.Id, *consumer.Name, *consumer.VarType, resourceType, exists, resourceLabel)
@@ -257,9 +276,7 @@ func fetchAndProcessDependentConsumers(ctx context.Context,
 	cyclicDependsList []string,
 	totalFlowResources []string,
 	resourceType string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, error) {
-	log.Printf("[DEBUG_RECURSIVE] fetchAndProcessDependentConsumers: Starting recursive call for consumer Id=%s, Name=%s, totalFlowResourcesCount=%d", *consumer.Id, *consumer.Name, len(totalFlowResources))
 	innerDependentResources, innerDependsMap, cyclicDependsList, err, totalFlowResources := fetchDepConsumers(ctx, p, resourceType, *consumer.Id, *consumer.Name, make(resourceExporter.ResourceIDMetaMap), make(map[string][]string), architectDependencies, cyclicDependsList, totalFlowResources)
-	log.Printf("[DEBUG_RECURSIVE] fetchAndProcessDependentConsumers: Completed for consumer Id=%s, Name=%s, innerResourcesCount=%d, totalFlowResourcesCount=%d", *consumer.Id, *consumer.Name, len(innerDependentResources), len(totalFlowResources))
 
 	// Merge inner resources back to parent's resources map so dependencies are properly propagated
 	for id, meta := range innerDependentResources {

@@ -2,6 +2,8 @@ package task_management_worktype
 
 // @team: Ashford
 // @chat: #workitem-development
+// @pm: Leslie Chau
+// @jira: WORKITEMS
 // @description: Task Management service for workitem orchestration and automation. Manages workitems, worktypes, workbins, status workflows, and automated rules for task assignment and lifecycle management.
 
 import (
@@ -132,7 +134,11 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Description: `Optionally set this flag to disable Default Status creation`,
 				Optional:    true,
 				Type:        schema.TypeBool,
-				Computed:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// This attribute is write-only (create-time only) in the API/SDK.
+					// Suppress diffs to prevent perpetual updates/replacements from exported configs.
+					return true
+				},
 			},
 			`default_script_id`: {
 				Description: `The default script for Workitems created from the Worktype.`,

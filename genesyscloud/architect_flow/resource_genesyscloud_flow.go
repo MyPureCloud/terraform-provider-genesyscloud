@@ -33,6 +33,12 @@ func getAllFlows(ctx context.Context, clientConfig *platformclientv2.Configurati
 	}
 
 	for _, flow := range *flows {
+		// Skip flows that have never been published
+		// Only export flows with a published version to ensure consistency
+		if flow.PublishedVersion == nil || flow.PublishedVersion.Id == nil {
+			log.Printf("Skipping flow %s (%s) - no published version available", *flow.Id, *flow.Name)
+			continue
+		}
 
 		blockHash, err := util.QuickHashFields(flow.VarType)
 		if err != nil {
@@ -279,7 +285,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diag
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
 			}
-			if resp.StatusCode == http.StatusConflict {
+			if resp != nil && resp.StatusCode == http.StatusConflict {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))

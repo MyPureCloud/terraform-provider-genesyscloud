@@ -8,36 +8,71 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	prl "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/panic_recovery_logger"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
+	return withRetriesInternal(ctx, timeout, method, 0)
+}
+
+const maxWithRetriesAttempts = 2
+
+func withRetriesInternal(ctx context.Context, timeout time.Duration, method func() *retry.RetryError, attempt int) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
 	if err != nil && strings.Contains(fmt.Sprintf("%v", err), "timeout while waiting for state to become") {
+		if attempt >= maxWithRetriesAttempts {
+			return err // Stop after max attempts to prevent infinite recursion
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		return WithRetries(ctx, timeout, method)
+		return withRetriesInternal(ctx, timeout, method, attempt+1)
 	}
 	return err
 }
 
+// WithRetriesForRead retries a read operation with the configured custom retry timeout.
+// The timeout is configurable via the provider's custom_retry_timeout attribute or the
+// GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT environment variable. Default is 5 minutes.
+// Setting timeout to 0 means no retries (immediate fail-fast behavior).
 func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
-	return WithRetriesForReadCustomTimeout(ctx, 5*time.Minute, d, method)
+	timeout := provider.GetCustomRetryTimeout()
+	return WithRetriesForReadCustomTimeout(ctx, timeout, d, method)
 }
 
+// WithRetriesForReadCustomTimeout retries a read operation with the specified timeout.
+// A timeout of 0 means no retries - the method is called once and if it returns a 404,
+// the resource is immediately removed from state (fail-fast behavior).
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
+
+	// Special handling for zero timeout: execute once without retry
+	if timeout <= 0 {
+		retryErr := method()
+		if retryErr == nil {
+			return nil
+		}
+		err := retryErr.Err
+		errStr := fmt.Sprintf("%v", err)
+		if strings.Contains(errStr, "API Error: 404") {
+			// Resource not found - remove from state immediately
+			d.SetId("")
+			return nil
+		}
+		if d.Id() != "" {
+			consistency_checker.DeleteConsistencyCheck(d.Id())
+		}
+		return diag.FromErr(err)
+	}
+
 	err := retry.RetryContext(ctx, timeout, method)
 	if err != nil {
 		if strings.Contains(fmt.Sprintf("%v", err), "API Error: 404") {
@@ -194,6 +229,13 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 			IsAdditionalCode(resp.StatusCode, additionalCodes...) {
 			return true
 		}
+	}
+	return false
+}
+
+func IsStatus429(resp *platformclientv2.APIResponse) bool {
+	if resp != nil {
+		return resp.StatusCode == http.StatusTooManyRequests
 	}
 	return false
 }

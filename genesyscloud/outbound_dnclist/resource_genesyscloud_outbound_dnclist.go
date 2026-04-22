@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -150,16 +151,21 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
-		if len(entries) > 0 {
+		if d.HasChange("entries") {
+			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
+			}
+
 			if *sdkDncList.DncSourceType == "rds" {
 				for _, entry := range entries {
-					response, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
+					resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 					if err != nil {
-						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), response)
+						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
 					}
 				}
 			} else {
-				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists", fmt.Errorf("phone numbers can only be uploaded to internal DNC lists"))
+				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 			}
 		}
 		return nil, nil
@@ -170,6 +176,30 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Updated Outbound DNC list %s", name)
 	return readOutboundDncList(ctx, d, meta)
+}
+
+func getOutboundDnclistEntriesWithRetries(ctx context.Context, proxy *outboundDnclistProxy, dncListId string) ([]interface{}, diag.Diagnostics) {
+	_, resp, err := proxy.initiateOutboundDnclistExport(ctx, dncListId)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to initiate export for Outbound DNC list %s: %s", dncListId, err), resp)
+	}
+
+	entries := make([]interface{}, 0)
+	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+		entriesList, resp, err := proxy.getOutboundDnclistEntries(ctx, dncListId)
+		if util.IsStatus400(resp) || util.IsStatus404(resp) {
+			return retry.RetryableError(err)
+		}
+		if err != nil {
+			return retry.NonRetryableError(err)
+		}
+		entries = entriesList
+		return nil
+	})
+	if diagErr != nil {
+		return nil, diagErr
+	}
+	return entries, nil
 }
 
 func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -198,6 +228,25 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
+		// Only get entries for rds type - entries are only supported for rds type
+		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
+			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
+			if err != nil {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
+			}
+
+			entries := d.Get("entries").([]interface{})
+			normalizedSchemaEntries := normalizeEntries(entries)
+			normalizedApiEntries := normalizeEntries(apiEntries)
+			if areEntriesEquivalent(normalizedSchemaEntries, normalizedApiEntries) {
+				_ = d.Set("entries", entries)
+			} else {
+				_ = d.Set("entries", normalizedApiEntries)
+			}
+		} else {
+			_ = d.Set("entries", []interface{}{})
+		}
+
 		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
 		resourcedata.SetNillableValue(d, "contact_method", sdkDncList.ContactMethod)
 		resourcedata.SetNillableValue(d, "login_id", sdkDncList.LoginId)
@@ -208,6 +257,7 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 		resourcedata.SetNillableValue(d, "custom_exclusion_column", sdkDncList.CustomExclusionColumn)
 
 		log.Printf("Read Outbound DNC list %s %s", d.Id(), *sdkDncList.Name)
+
 		return cc.CheckState(d)
 	})
 }
@@ -218,7 +268,13 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound DNC list")
-		resp, err := proxy.deleteOutboundDnclist(ctx, d.Id())
+
+		resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+		if err != nil {
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", d.Id(), err), resp)
+		}
+
+		resp, err = proxy.deleteOutboundDnclist(ctx, d.Id())
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Outbound DNC list %s error: %s", d.Id(), err), resp)
 		}
@@ -240,6 +296,121 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Outbound DNC list %s still exists", d.Id()), resp))
 	})
+}
+
+func extractEntryData(entry interface{}) (*string, []string, bool) {
+	entryMap, ok := entry.(map[string]interface{})
+	if !ok {
+		return nil, nil, false
+	}
+
+	expirationDate := ""
+	if expDate, ok := entryMap["expiration_date"].(string); ok {
+		expirationDate = expDate
+	}
+
+	phoneNumbersList, ok := entryMap["phone_numbers"].([]interface{})
+	if !ok || phoneNumbersList == nil {
+		return nil, nil, false
+	}
+
+	phoneNumbers := lists.InterfaceListToStrings(phoneNumbersList)
+	return &expirationDate, phoneNumbers, true
+}
+
+func groupEntriesByExpirationDate(entries []interface{}) map[string][]string {
+	result := make(map[string][]string)
+	for _, entry := range entries {
+		expirationDate, phoneNumbers, ok := extractEntryData(entry)
+		if !ok {
+			continue
+		}
+		result[*expirationDate] = append(result[*expirationDate], phoneNumbers...)
+	}
+	return result
+}
+
+// Normalize entries to match API behavior
+// Groups entries by expiration_date, merges phone_numbers, removes duplicates, and sorts.
+// If a phone number appears in multiple expiration groups, it's kept only in the last expiration.
+func normalizeEntries(entries []interface{}) []interface{} {
+	if len(entries) == 0 {
+		return entries
+	}
+
+	// First pass: collect all phone numbers and their expiration dates
+	// Since we iterate through entries in order, we'll naturally get the last expiration
+	phoneToExpiration := make(map[string]string)
+
+	for _, entry := range entries {
+		expirationDate, phoneNumbers, ok := extractEntryData(entry)
+		if !ok {
+			continue
+		}
+
+		expDateKey := *expirationDate
+		for _, phone := range phoneNumbers {
+			// Always update to the current expiration (last one seen)
+			phoneToExpiration[phone] = expDateKey
+		}
+	}
+
+	// Second pass: group phones by their assigned expiration date
+	groupedPhones := make(map[string][]string)
+
+	for phone, expDate := range phoneToExpiration {
+		groupedPhones[expDate] = append(groupedPhones[expDate], phone)
+	}
+
+	// Convert grouped phones to normalized entries
+	normalized := make([]interface{}, 0)
+
+	for expDate, phones := range groupedPhones {
+		// Skip empty phone lists
+		if len(phones) == 0 {
+			continue
+		}
+
+		sort.Strings(phones)
+
+		// Create normalized entry - always include expiration_date, even if empty
+		entry := make(map[string]interface{})
+		entry["expiration_date"] = expDate
+		entry["phone_numbers"] = lists.StringListToInterfaceList(phones)
+
+		normalized = append(normalized, entry)
+	}
+
+	return normalized
+}
+
+func areEntriesEquivalent(a, b []interface{}) bool {
+	mapA := groupEntriesByExpirationDate(a)
+	mapB := groupEntriesByExpirationDate(b)
+
+	if len(mapA) != len(mapB) {
+		return false
+	}
+
+	for expirationDateA, phonesA := range mapA {
+		phonesB, exists := mapB[expirationDateA]
+		if !exists {
+			return false
+		}
+
+		if !lists.AreEquivalent(phonesA, phonesB) {
+			return false
+		}
+	}
+
+	// Check if there are any expiration dates in b that don't exist in a
+	for expirationDateB := range mapB {
+		if _, exists := mapA[expirationDateB]; !exists {
+			return false
+		}
+	}
+
+	return true
 }
 
 func GenerateOutboundDncListBasic(resourceLabel string, name string) string {

@@ -758,6 +758,20 @@ func generateOutboundMessagingCampaignEmailConfig(
 `, strings.Join(emailColumns, ", "), contentTemplateId, fromAddressDomainId, fromAddressLocalPart, replyToAddressDomainId, replyToAddressRouteId)
 }
 
+func generateOutboundMessagingCampaignWhatsAppConfig(
+	whatsAppColumns []string,
+	whatsAppIntegrationId string,
+	contentTemplateId string,
+) string {
+	return fmt.Sprintf(`
+	whats_app_config {
+		whats_app_columns        = [%s]
+		whats_app_integration_id = %s
+		content_template_id      = %s
+	}
+`, strings.Join(whatsAppColumns, ", "), whatsAppIntegrationId, contentTemplateId)
+}
+
 func generateDynamicContactQueueingSettings(sort string, filter string) string {
 	return fmt.Sprintf(`
 	dynamic_contact_queueing_settings {

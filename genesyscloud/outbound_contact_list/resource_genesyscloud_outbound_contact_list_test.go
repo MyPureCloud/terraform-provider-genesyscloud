@@ -39,6 +39,8 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 			strconv.Quote("Home"),
 			strconv.Quote("Work"),
 			strconv.Quote("Personal"),
+			strconv.Quote("Address"),
+			strconv.Quote("Name"),
 		}
 		automaticTimeZoneMapping    = util.FalseValue
 		attemptLimitResourceLabel   = "attempt-limit"
@@ -88,25 +90,47 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 						"personal",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"Address",
+						"address",
+					),
+					GenerateWhatsAppColumnsBlock(
+						"Name",
+						"name",
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.#", "0"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "4"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Cell"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Home"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Work"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Personal"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Name"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Address"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "cell"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column", "Cell"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", "Home"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "personal"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "Address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.type", "address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.column_name", "Name"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.type", "name"),
+
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "automatic_time_zone_mapping", automaticTimeZoneMapping),
@@ -147,25 +171,47 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 						"personal",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"Address",
+						"address",
+					),
+					GenerateWhatsAppColumnsBlock(
+						"Name",
+						"name",
+					),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.#", "0"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "4"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Cell"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Home"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Work"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Personal"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Name"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Address"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "cell"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column", "Cell"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", "Home"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "personal"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "Address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.type", "address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.column_name", "Name"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.type", "name"),
+
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preview_mode_column_name", previewModeColumnName),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preview_mode_accepted_values.0", previewModeColumnName),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "preview_mode_accepted_values.1", previewModeColumnNameUpdated),
@@ -207,6 +253,14 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 						"personal",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"Address",
+						"address",
+					),
+					GenerateWhatsAppColumnsBlock(
+						"Name",
+						"name",
+					),
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
 						strconv.Quote("TEXT"), // columnDataType
@@ -224,24 +278,36 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", nameUpdated),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "4"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Cell"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Home"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Work"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Personal"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Name"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Address"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "cell"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column", "Cell"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", "Home"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "personal"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "Address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.type", "address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.column_name", "Name"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.type", "name"),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.#", "2"),
-
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.column_data_type", "TEXT"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.min", "2"),
@@ -303,6 +369,14 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 						"personal",
 						strconv.Quote(zipCodeColumnName),
 					),
+					GenerateWhatsAppColumnsBlock(
+						"Address",
+						"address",
+					),
+					GenerateWhatsAppColumnsBlock(
+						"Name",
+						"name",
+					),
 					GeneratePhoneColumnsDataTypeSpecBlock(
 						strconv.Quote("Cell"), // columnName
 						strconv.Quote("TEXT"), // columnDataType
@@ -313,25 +387,42 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", nameUpdated),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "7"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Cell"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Home"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Work"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Personal"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Name"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "Address"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", zipCodeColumnName),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "zip_code_column_name", zipCodeColumnName),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.column_name", "Cell"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "cell"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "personal"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.contactable_time_column", zipCodeColumnName),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column_name", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.callable_time_column", ""),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", ""),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", ""),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "personal"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.contactable_time_column_name", zipCodeColumnName),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.contactable_time_column", zipCodeColumnName),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.contactable_time_column_name", zipCodeColumnName),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.contactable_time_column", zipCodeColumnName),
 
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "Address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.type", "address"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.column_name", "Name"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.1.type", "name"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.#", "1"),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_data_type_specifications.0.column_name", "Cell"),
@@ -393,20 +484,21 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 			strconv.Quote("lastName"),
 			strconv.Quote("phone"),
 			strconv.Quote("email"),
+			strconv.Quote("whatsAppAddress"),
 		}
 		// Create mock CSV file contact data
-		testContactsContentWithTwoRecords = `id,firstName,lastName,phone,email
-100,John,Doe,+13175555555,john.doe@example.com
-101,Jane,Smith,+13175555556,jane.smith@example.com`
+		testContactsContentWithTwoRecords = `id,firstName,lastName,phone,email,whatsAppAddress
+100,John,Doe,+13175555555,john.doe@example.com,+13175552222
+101,Jane,Smith,+13175555556,jane.smith@example.com,+13175552223`
 
 		testContactsContentWithThreeRecords = testContactsContentWithTwoRecords + `
-102,Bob,Johnson,+13175555557,bob.johnson@example.com`
+102,Bob,Johnson,+13175555557,bob.johnson@example.com,+13175552224`
 
 		testContactsContentWithFourRecords = testContactsContentWithThreeRecords + `
-103,Charlie,Brown,000000000000,charlie.brown@example.com`
+103,Charlie,Brown,000000000000,charlie.brown@example.com,`
 
 		testContactsContentWithFiveRecords = testContactsContentWithFourRecords + `
-104,Jenny,Doe,+15558675309,jenny@jenny.com`
+104,Jenny,Doe,+15558675309,jenny@jenny.com,+13175552225`
 	)
 	// Create a temporary file for the contacts
 	tmpFile, err := os.CreateTemp(testrunner.GetTestDataPath(), "contacts*.csv")
@@ -478,6 +570,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile.Name(), // contacts_filepath
 						"id",           // contacts_id_name
@@ -485,16 +581,19 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "id"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "firstName"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "lastName"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "phone"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "email"),
+					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "whatsAppAddress"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.column_name", "phone"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "phone"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "email"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "email"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "whatsAppAddress"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.type", "whatsAppAddress"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "2"),
 				),
 			},
@@ -528,6 +627,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile.Name(), // Same file, but in real usage this could be a different file
 						"id",           // contacts_id_name
@@ -535,7 +638,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "3"),
 				),
 			},
@@ -564,6 +667,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile2.Name(), // Same file, but in real usage this could be a different file
 						"id",            // contacts_id_name
@@ -571,7 +678,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "4"),
 				),
 			},
@@ -605,6 +712,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile2.Name(), // Same file, but in real usage this could be a different file
 						"id",            // contacts_id_name
@@ -612,7 +723,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "0"),
 				),
 			},
@@ -641,6 +752,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile.Name(), // Same file, but in real usage this could be a different file
 						"id",           // contacts_id_name
@@ -648,7 +763,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "3"),
 				),
 			},
@@ -682,6 +797,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile.Name(), // Same file, but in real usage this could be a different file
 						"id",           // contacts_id_name
@@ -690,7 +809,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				ExpectError: regexp.MustCompile("could not open.*no such file"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "3"),
 				),
 			},
@@ -719,6 +838,10 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 						"email",
 						util.NullValue,
 					),
+					GenerateWhatsAppColumnsBlock(
+						"whatsAppAddress",
+						"whatsAppAddress",
+					),
 					GenerateContactsFile(
 						tmpFile3.Name(), // contacts_filepath
 						"id",            // contacts_id_name
@@ -726,7 +849,7 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "5"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "column_names.#", "6"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "id"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "firstName"),
 					util.ValidateStringInArray(ResourceType+"."+resourceLabel, "column_names", "lastName"),
@@ -736,6 +859,8 @@ func TestAccResourceOutboundContactListWithContacts(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.0.type", "phone"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "email"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "email"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "whatsAppAddress"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.type", "whatsAppAddress"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "contacts_record_count", "5"),
 				),
 			},

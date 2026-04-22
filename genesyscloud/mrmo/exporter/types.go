@@ -10,6 +10,9 @@ type Credentials struct {
 	ClientId     string
 	ClientSecret string
 	Region       string
+
+	// BasePathOverride can be used to override the basepath of the client configuration (useful for testing). If BasePathOverride is not specified/is empty string, the base path will be determined based on the value of Region.
+	BasePathOverride string
 }
 
 type ExportInput struct {
