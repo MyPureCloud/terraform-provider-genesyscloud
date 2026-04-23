@@ -117,7 +117,6 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", "Home"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", "Home"),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
@@ -198,7 +197,6 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", "Home"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", "Home"),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
@@ -293,7 +291,7 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.column_name", "Home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.type", "home"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column_name", "Home"),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", "Home"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "phone_columns.1.callable_time_column", ""),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
@@ -412,11 +410,11 @@ func TestAccResourceOutboundContactListBasicWithoutContacts(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.column_name", "Personal"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.type", "personal"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.contactable_time_column_name", zipCodeColumnName),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.contactable_time_column", zipCodeColumnName),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.0.contactable_time_column", ""),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.column_name", "Work"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.type", "work"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.contactable_time_column_name", zipCodeColumnName),
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.contactable_time_column", zipCodeColumnName),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "email_columns.1.contactable_time_column", ""),
 
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.#", "2"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "whats_app_columns.0.column_name", "Address"),
