@@ -80,8 +80,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 		(*phoneConfig.Properties)["phone_standalone"] = phoneStandalone
 	}
 
-	webRtcUserId := d.Get("web_rtc_user_id")
-	if webRtcUserId != "" {
+	if webRtcUserId := d.Get("web_rtc_user_id").(string); webRtcUserId != "" {
 		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
