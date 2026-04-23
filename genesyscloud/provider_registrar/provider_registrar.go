@@ -33,6 +33,8 @@ import (
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	cmSupportedContentDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	conversationsSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_settings"
+	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
+	customerIntentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	externalSource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
@@ -293,6 +295,8 @@ func registerResources() {
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
+	customerIntent.SetRegistrar(regInstance)                               //Registering customer intent
+	customerIntentCategory.SetRegistrar(regInstance)                       //Registering intent category
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
