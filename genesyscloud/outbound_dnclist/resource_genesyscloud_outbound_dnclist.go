@@ -152,20 +152,20 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
 		if d.HasChange("entries") {
+			if outboundDncList.DncSourceType == nil || *outboundDncList.DncSourceType != "rds" {
+				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
+			}
+
 			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
 			if err != nil {
 				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
 			}
 
-			if *sdkDncList.DncSourceType == "rds" {
-				for _, entry := range entries {
-					resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
-					if err != nil {
-						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
-					}
+			for _, entry := range entries {
+				resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
+				if err != nil {
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
 				}
-			} else {
-				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 			}
 		}
 		return nil, nil
@@ -266,15 +266,19 @@ func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundDnclistProxy(sdkConfig)
 
+	dncSourceType := d.Get("dnc_source_type").(string)
+
 	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("Deleting Outbound DNC list")
 
-		resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
-		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", d.Id(), err), resp)
+		if dncSourceType == "rds" {
+			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", d.Id(), err), resp)
+			}
 		}
 
-		resp, err = proxy.deleteOutboundDnclist(ctx, d.Id())
+		resp, err := proxy.deleteOutboundDnclist(ctx, d.Id())
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Outbound DNC list %s error: %s", d.Id(), err), resp)
 		}

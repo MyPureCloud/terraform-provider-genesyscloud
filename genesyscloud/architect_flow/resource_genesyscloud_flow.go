@@ -285,7 +285,7 @@ func deleteFlow(ctx context.Context, d *schema.ResourceData, meta any) diag.Diag
 				log.Printf("Deleted Flow %s", d.Id())
 				return nil
 			}
-			if resp.StatusCode == http.StatusConflict {
+			if resp != nil && resp.StatusCode == http.StatusConflict {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error deleting flow %s | error: %s", d.Id(), err), resp))

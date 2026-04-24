@@ -342,26 +342,20 @@ func validateScriptPublished(scriptResourcePath string) resource.TestCheckFunc {
 
 		script, resp, err := scriptsAPI.GetScriptsPublishedScriptId(scriptID, "")
 
+		if err != nil {
+			return fmt.Errorf("error retrieving published script %s: %s", scriptID, err)
+		}
+
 		//if response == 200
-		if resp.StatusCode == http.StatusOK && *script.Id == scriptID {
+		if resp != nil && resp.StatusCode == http.StatusOK && *script.Id == scriptID {
 			return nil
 		}
 
 		//If the item is not found this indicates it is not published
-		if resp.StatusCode == http.StatusNotFound && err == nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return fmt.Errorf("Script %s was created, but not published.", scriptID)
 		}
 
-		//Some APIs will return an error code even if the response code is a 404.
-		if resp.StatusCode == http.StatusNotFound && err == nil {
-			return fmt.Errorf("Script %s was created, but not published.", scriptID)
-		}
-
-		//Err
-		if err != nil {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
-		}
-		return nil
+		return fmt.Errorf("Unexpected response for script %s", scriptID)
 	}
 }

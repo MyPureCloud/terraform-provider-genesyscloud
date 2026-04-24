@@ -330,7 +330,7 @@ func TestContactListBuildSdkOutboundContactListContactEmailAddressColumnSliceEdg
 
 func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t *testing.T) {
 	// Test case 1: Empty input
-	emptyResult := flattenSdkOutboundContactListContactPhoneNumberColumnSlice([]platformclientv2.Contactphonenumbercolumn{})
+	emptyResult := flattenSdkOutboundContactListContactPhoneNumberColumnSlice([]platformclientv2.Contactphonenumbercolumn{}, nil)
 	if emptyResult != nil {
 		t.Errorf("Expected nil for empty input, got %v", emptyResult)
 	}
@@ -349,7 +349,7 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 		},
 	}
 
-	result := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(singleColumn)
+	result := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(singleColumn, nil)
 
 	if result == nil {
 		t.Fatal("Expected non-nil result for single column")
@@ -392,7 +392,7 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 		},
 	}
 
-	multiResult := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(multipleColumns)
+	multiResult := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(multipleColumns, nil)
 
 	if multiResult == nil {
 		t.Fatal("Expected non-nil result for multiple columns")
@@ -405,7 +405,7 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 
 func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(t *testing.T) {
 	// Test case 1: Empty input
-	emptyResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice([]platformclientv2.Emailcolumn{})
+	emptyResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice([]platformclientv2.Emailcolumn{}, nil)
 	if emptyResult != nil {
 		t.Errorf("Expected nil for empty input, got %v", emptyResult)
 	}
@@ -424,7 +424,7 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 		},
 	}
 
-	result := flattenSdkOutboundContactListContactEmailAddressColumnSlice(singleColumn)
+	result := flattenSdkOutboundContactListContactEmailAddressColumnSlice(singleColumn, nil)
 
 	if result == nil {
 		t.Fatal("Expected non-nil result for single column")
@@ -443,9 +443,10 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 	resultMap := resultList[0].(map[string]interface{})
 
 	expectedValues := map[string]string{
-		"column_name":             "email_col",
-		"type":                    "email",
-		"contactable_time_column": "time_col",
+		"column_name":                  "email_col",
+		"type":                         "email",
+		"contactable_time_column_name": "time_col",
+		"contactable_time_column":      "time_col",
 	}
 
 	for key, expectedVal := range expectedValues {
@@ -467,7 +468,7 @@ func TestContactListFlattenSdkOutboundContactListContactEmailAddressColumnSlice(
 		},
 	}
 
-	multiResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice(multipleColumns)
+	multiResult := flattenSdkOutboundContactListContactEmailAddressColumnSlice(multipleColumns, nil)
 
 	if multiResult == nil {
 		t.Fatal("Expected non-nil result for multiple columns")
