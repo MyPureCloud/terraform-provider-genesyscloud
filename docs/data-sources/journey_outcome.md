@@ -3,12 +3,12 @@
 page_title: "genesyscloud_journey_outcome Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  [DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name
+  [DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 ---
 
 # genesyscloud_journey_outcome (Data Source)
 
-[DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name
+[DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 
 ## Example Usage
 
