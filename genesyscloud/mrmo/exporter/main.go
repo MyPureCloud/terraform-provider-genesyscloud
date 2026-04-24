@@ -47,8 +47,16 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 	log.Println("Getting the resource exporter by resource type")
 	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
 
-	log.Printf("Exporting %s resource to '%s'. ID: '%s'", input.ResourceType, input.Directory, input.EntityId)
-	exportResponse, exportDiags := gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	log.Printf("Exporting %s resource to '%s'. ID: '%s' (useGetByID=%t)", input.ResourceType, input.Directory, input.EntityId, input.UseGetByID)
+	var (
+		exportResponse *tfexporter.MrMoExportResponse
+		exportDiags    diag.Diagnostics
+	)
+	if input.UseGetByID {
+		exportResponse, exportDiags = gcResourceExporter.ExportForMrMoByID(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	} else {
+		exportResponse, exportDiags = gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	}
 	if exportDiags != nil {
 		diags = append(diags, exportDiags...)
 	}
