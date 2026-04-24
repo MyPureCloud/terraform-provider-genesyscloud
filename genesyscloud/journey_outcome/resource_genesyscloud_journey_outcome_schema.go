@@ -7,10 +7,11 @@ package journey_outcome
 // @description: Manages customer journey analytics and predictive engagement. Provides customer segmentation, outcome tracking, predictive modeling, and journey visualization for proactive customer engagement strategies.
 
 import (
+	"regexp"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -245,11 +246,12 @@ func JourneyOutcomeExporter() *resourceExporter.ResourceExporter {
 
 func ResourceJourneyOutcome() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Genesys Cloud Journey Outcome",
-		CreateContext: provider.CreateWithPooledClient(createJourneyOutcome),
-		ReadContext:   provider.ReadWithPooledClient(readJourneyOutcome),
-		UpdateContext: provider.UpdateWithPooledClient(updateJourneyOutcome),
-		DeleteContext: provider.DeleteWithPooledClient(deleteJourneyOutcome),
+		Description:        "[DEPRECATED] Genesys Cloud Journey Outcome. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		DeprecationMessage: "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		CreateContext:      provider.CreateWithPooledClient(createJourneyOutcome),
+		ReadContext:        provider.ReadWithPooledClient(readJourneyOutcome),
+		UpdateContext:      provider.UpdateWithPooledClient(updateJourneyOutcome),
+		DeleteContext:      provider.DeleteWithPooledClient(deleteJourneyOutcome),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -260,8 +262,9 @@ func ResourceJourneyOutcome() *schema.Resource {
 
 func DataSourceJourneyOutcome() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name",
-		ReadContext: provider.ReadWithPooledClient(dataSourceJourneyOutcomeRead),
+		Description:        "[DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		DeprecationMessage: "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		ReadContext:        provider.ReadWithPooledClient(dataSourceJourneyOutcomeRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Journey Outcome name.",
