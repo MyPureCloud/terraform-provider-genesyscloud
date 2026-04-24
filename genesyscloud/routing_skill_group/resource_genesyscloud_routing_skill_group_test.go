@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 func testAccCheckSkillConditions(resourcePath string, targetSkillConditionJson string) resource.TestCheckFunc {
@@ -725,7 +725,7 @@ func testVerifySkillGroupAndUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 			if user != nil {
 				return fmt.Errorf("user Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
@@ -779,7 +779,7 @@ func checkUserDeleted(id string) resource.TestCheckFunc {
 func isUserDeleted(id string) (bool, error) {
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	// Check if the user is not found (deleted)
 	if response != nil && response.StatusCode == 404 {

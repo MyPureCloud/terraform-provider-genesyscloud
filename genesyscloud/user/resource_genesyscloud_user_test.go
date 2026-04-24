@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ext1, ext2 string) {
@@ -1397,7 +1397,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 
 			if err != nil {
 				if util.IsStatus404(resp) {
@@ -1682,7 +1682,7 @@ func isUserDeleted(id string) (bool, error) {
 	sdkConfig, _ := provider.AuthorizeSdk()
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	// Check if the user is not found (deleted)
 	if response != nil && response.StatusCode == 404 {

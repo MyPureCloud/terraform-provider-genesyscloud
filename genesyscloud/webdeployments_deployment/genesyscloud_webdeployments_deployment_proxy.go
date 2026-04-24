@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 var internalProxy *webDeploymentsProxy
@@ -84,7 +84,7 @@ func (p *webDeploymentsProxy) deleteWebDeployment(ctx context.Context, deploymen
 
 func getAllWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.webDeploymentsApi.GetWebdeploymentsDeployments([]string{})
+	return p.webDeploymentsApi.GetWebdeploymentsDeployments("", "", "", []string{})
 }
 
 func getWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
@@ -113,7 +113,7 @@ func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, confi
 	draft := "DRAFT"
 	versionList := []string{}
 	err := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId)
+		versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId, "", "", "")
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))

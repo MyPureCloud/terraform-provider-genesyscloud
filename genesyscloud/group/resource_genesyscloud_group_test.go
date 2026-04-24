@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -626,7 +626,7 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue //Try one more time
 			}
-			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {

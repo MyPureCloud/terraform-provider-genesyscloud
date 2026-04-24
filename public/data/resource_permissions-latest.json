@@ -498,6 +498,30 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_customer_intent",
+      "resource_name": "customer_intent",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:add",
+        "externalContacts:customerIntentTaxonomy:delete",
+        "externalContacts:customerIntentTaxonomy:edit",
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/intents/customerintents",
+        "GET /api/v2/intents/customerintents/{customerIntentId}",
+        "PATCH /api/v2/intents/customerintents/{customerIntentId}",
+        "DELETE /api/v2/intents/customerintents/{customerIntentId}",
+        "GET /api/v2/intents/customerintents",
+        "GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents",
+        "POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/add",
+        "POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/remove"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_employeeperformance_externalmetrics_definitions",
       "resource_name": "employeeperformance_externalmetrics_definitions",
       "permissions": [
@@ -1057,6 +1081,27 @@
         "PATCH /api/v2/conversations/messaging/integrations/facebook/{integrationId}",
         "DELETE /api/v2/conversations/messaging/integrations/facebook/{integrationId}",
         "GET /api/v2/conversations/messaging/integrations/facebook"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_intent_category",
+      "resource_name": "intent_category",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:add",
+        "externalContacts:customerIntentTaxonomy:delete",
+        "externalContacts:customerIntentTaxonomy:edit",
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/intents/categories",
+        "GET /api/v2/intents/categories/{categoryId}",
+        "PATCH /api/v2/intents/categories/{categoryId}",
+        "DELETE /api/v2/intents/categories/{categoryId}",
+        "GET /api/v2/intents/categories"
       ]
     },
     {
