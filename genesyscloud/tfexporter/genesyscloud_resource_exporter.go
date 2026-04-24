@@ -571,6 +571,12 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	var failedTypes []string
 	var statsMutex sync.Mutex
 
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range exportersCopy {
 		tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource type: %s", resType))
@@ -579,12 +585,13 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 			defer wg.Done()
 			tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource type: %s", resType))
 
-			// Check if context was cancelled before processing
+			// Acquire semaphore
 			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
 			case <-ctx.Done():
-				tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled before processing resource type: %s", resType))
+				tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while acquiring semaphore for resource type: %s", resType))
 				return
-			default:
 			}
 
 			tflog.Debug(g.ctx, fmt.Sprintf("Getting exported resources for [%s]", resType))
@@ -2101,11 +2108,9 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		tflog.Debug(g.ctx, fmt.Sprintf("Resource has no importer or StateContext for ID: %s", resID))
 	}
 
-	g.resourceStateMutex.Lock()
-	tflog.Trace(g.ctx, fmt.Sprintf("Acquiring mutex lock for RefreshWithoutUpgrade for ID: %s", resID))
+	// resourceStateMutex is not needed to wrap this, as it operates on its own copy of state and is safe to call concurrently.
+	// In fact, wrapping it with the resourceStateMutex causes performance bottlenecks (DEVTOOLING-1655)
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
-	g.resourceStateMutex.Unlock()
-	tflog.Trace(g.ctx, fmt.Sprintf("Released mutex lock after RefreshWithoutUpgrade for ID: %s", resID))
 
 	if err != nil {
 		tflog.Error(g.ctx, fmt.Sprintf("Error during RefreshWithoutUpgrade for resource %s: %v", resID, err))
