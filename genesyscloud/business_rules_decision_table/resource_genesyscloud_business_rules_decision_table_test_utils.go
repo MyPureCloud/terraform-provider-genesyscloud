@@ -720,3 +720,256 @@ func generateBusinessRulesSchemaResource(resourceLabel, name, description string
 	}
 	`, resourceLabel, name, description)
 }
+
+// generateRowsWithWhitespaceEdgeCases generates rows identical to generateRows() but with
+// whitespace edge cases that reproduce the customer issue from RULES-1491:
+// - "John Doe " (trailing space on customer_name string)
+// - "vip, premium, support" (spaces after commas in stringList)
+// - "Premium Support " (trailing space on output string)
+// - "premium_support, escalation, technical_expert" (spaces after commas in output stringList)
+// All other values are identical to generateRows() so the only differences are whitespace.
+func generateRowsWithWhitespaceEdgeCases(queueResourceLabel string) string {
+	return `rows {
+		inputs {
+			literal {
+				value = "VIP"
+				type  = "string"
+			}
+		}
+		inputs {
+			literal {
+				value = "John Doe "
+				type  = "string"
+			}
+		}
+		inputs {
+			literal {
+				value = "5"
+				type  = "integer"
+			}
+		}
+		inputs {
+			literal {
+				value = "85.5"
+				type  = "number"
+			}
+		}
+		inputs {
+			literal {
+				value = "2023-01-15"
+				type  = "date"
+			}
+		}
+		inputs {
+			literal {
+				value = "2023-01-15T10:30:00.000Z"
+				type  = "datetime"
+			}
+		}
+		inputs {
+			literal {
+				value = "true"
+				type  = "boolean"
+			}
+		}
+		inputs {
+			literal {
+				value = ""
+				type  = ""
+			}
+		}
+		inputs {
+			literal {
+				value = "vip, premium, support"
+				type  = "stringList"
+			}
+		}
+		outputs {
+			literal {
+				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "Premium Support "
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {}
+		}
+		outputs {
+			literal {
+				value = "premium_support, escalation, technical_expert"
+				type  = "stringList"
+			}
+		}
+	}`
+}
+
+// generateRowsWithRealContentChange generates rows with actual content differences from
+// generateRows() to verify that real changes still trigger updates after diff suppression
+// is added. Changes: "John Doe" -> "Jane Smith", "Premium Support" -> "Standard Support"
+func generateRowsWithRealContentChange(queueResourceLabel string) string {
+	return `rows {
+		inputs {
+			literal {
+				value = "VIP"
+				type  = "string"
+			}
+		}
+		inputs {
+			literal {
+				value = "Jane Smith"
+				type  = "string"
+			}
+		}
+		inputs {
+			literal {
+				value = "5"
+				type  = "integer"
+			}
+		}
+		inputs {
+			literal {
+				value = "85.5"
+				type  = "number"
+			}
+		}
+		inputs {
+			literal {
+				value = "2023-01-15"
+				type  = "date"
+			}
+		}
+		inputs {
+			literal {
+				value = "2023-01-15T10:30:00.000Z"
+				type  = "datetime"
+			}
+		}
+		inputs {
+			literal {
+				value = "true"
+				type  = "boolean"
+			}
+		}
+		inputs {
+			literal {
+				value = ""
+				type  = ""
+			}
+		}
+		inputs {
+			literal {
+				value = "vip,premium,support"
+				type  = "stringList"
+			}
+		}
+		outputs {
+			literal {
+				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "Standard Support"
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {}
+		}
+		outputs {
+			literal {
+				value = "premium_support,escalation,technical_expert"
+				type  = "stringList"
+			}
+		}
+	}`
+}
+
+// generateRowsWithRealContentChangeAndWhitespace is the same as generateRowsWithRealContentChange
+// but with whitespace padding added. Used to verify diff suppression works after an update too.
+// "Jane Smith" -> "Jane Smith ", "Standard Support" -> "Standard Support "
+func generateRowsWithRealContentChangeAndWhitespace(queueResourceLabel string) string {
+	return `rows {
+		inputs {
+			literal {
+				value = "VIP"
+				type  = "string"
+			}
+		}
+		inputs {
+			literal {
+				value = "Jane Smith "
+				type  = "string"
+			}
+		}
+		inputs {
+			literal {
+				value = "5"
+				type  = "integer"
+			}
+		}
+		inputs {
+			literal {
+				value = "85.5"
+				type  = "number"
+			}
+		}
+		inputs {
+			literal {
+				value = "2023-01-15"
+				type  = "date"
+			}
+		}
+		inputs {
+			literal {
+				value = "2023-01-15T10:30:00.000Z"
+				type  = "datetime"
+			}
+		}
+		inputs {
+			literal {
+				value = "true"
+				type  = "boolean"
+			}
+		}
+		inputs {
+			literal {
+				value = ""
+				type  = ""
+			}
+		}
+		inputs {
+			literal {
+				value = "vip, premium, support"
+				type  = "stringList"
+			}
+		}
+		outputs {
+			literal {
+				value = genesyscloud_routing_queue.` + queueResourceLabel + `.id
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "Standard Support "
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {}
+		}
+		outputs {
+			literal {
+				value = "premium_support, escalation, technical_expert"
+				type  = "stringList"
+			}
+		}
+	}`
+}
