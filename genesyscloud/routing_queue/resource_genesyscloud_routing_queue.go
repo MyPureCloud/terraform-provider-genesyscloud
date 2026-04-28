@@ -242,6 +242,8 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		if currentQueue.ConditionalGroupActivation != nil {
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
+		} else {
+			_ = d.Set("conditional_group_activation", nil)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
