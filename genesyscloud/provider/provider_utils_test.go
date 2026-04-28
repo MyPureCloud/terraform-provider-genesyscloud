@@ -5,8 +5,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestUnitGetCustomRetryTimeout_Default(t *testing.T) {
@@ -19,7 +17,11 @@ func TestUnitGetCustomRetryTimeout_Default(t *testing.T) {
 		}
 	}()
 
-	// Clear provider config
+	// Clear provider meta/config
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -44,7 +46,11 @@ func TestUnitGetCustomRetryTimeout_EnvVar(t *testing.T) {
 		}
 	}()
 
-	// Clear provider config to test env var fallback
+	// Clear provider meta/config to test env var fallback
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -69,7 +75,11 @@ func TestUnitGetCustomRetryTimeout_ZeroEnvVar(t *testing.T) {
 		}
 	}()
 
-	// Clear provider config
+	// Clear provider meta/config
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -93,7 +103,11 @@ func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
 		}
 	}()
 
-	// Clear provider config
+	// Clear provider meta/config
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -107,29 +121,9 @@ func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
 }
 
 func TestUnitGetCustomRetryTimeout_ConcurrentProviderConfigAccess_NoPanic(t *testing.T) {
-	// Ensure env var doesn't influence this test
-	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
-	os.Unsetenv(customRetryTimeoutEnvVar)
-	defer func() {
-		if originalEnv != "" {
-			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
-		}
-	}()
-
-	// Build a minimal provider config ResourceData with custom_retry_timeout set
-	schemaMap := map[string]*schema.Schema{
-		AttrCustomRetryTimeout: {
-			Type:     schema.TypeString,
-			Optional: true,
-		},
-	}
-	d := schema.TestResourceDataRaw(t, schemaMap, map[string]interface{}{
-		AttrCustomRetryTimeout: "1s",
-	})
-
-	originalConfig := providerConfig
-	setProviderConfig(d)
-	defer setProviderConfig(originalConfig)
+	originalMeta := providerMeta
+	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
+	defer setProviderMeta(originalMeta)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 25; i++ {
@@ -142,6 +136,26 @@ func TestUnitGetCustomRetryTimeout_ConcurrentProviderConfigAccess_NoPanic(t *tes
 		}()
 	}
 	wg.Wait()
+}
+
+func TestUnitGetCustomRetryTimeout_UsesProviderMetaValue(t *testing.T) {
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Setenv(customRetryTimeoutEnvVar, "30s")
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		} else {
+			os.Unsetenv(customRetryTimeoutEnvVar)
+		}
+	}()
+
+	originalMeta := providerMeta
+	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
+	defer setProviderMeta(originalMeta)
+
+	if got := GetCustomRetryTimeout(); got != 1*time.Second {
+		t.Fatalf("expected provider meta timeout 1s, got %v", got)
+	}
 }
 
 func TestUnitValidateLogFilePath(t *testing.T) {
