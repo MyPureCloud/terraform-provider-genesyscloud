@@ -12,4 +12,3 @@ func TestSpeechAndTextAnalyticsTopicExporter_DoesNotForceDataSource(t *testing.T
 		t.Fatalf("expected %s exporter to not force data source export", sttTopic.ResourceType)
 	}
 }
-
