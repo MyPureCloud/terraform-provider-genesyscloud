@@ -2,7 +2,6 @@ package provider
 
 import (
 	"os"
-	"sync"
 	"testing"
 	"time"
 )
@@ -17,11 +16,7 @@ func TestUnitGetCustomRetryTimeout_Default(t *testing.T) {
 		}
 	}()
 
-	// Clear provider meta/config
-	originalMeta := providerMeta
-	providerMeta = nil
-	defer func() { providerMeta = originalMeta }()
-
+	// Clear provider config
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -46,11 +41,7 @@ func TestUnitGetCustomRetryTimeout_EnvVar(t *testing.T) {
 		}
 	}()
 
-	// Clear provider meta/config to test env var fallback
-	originalMeta := providerMeta
-	providerMeta = nil
-	defer func() { providerMeta = originalMeta }()
-
+	// Clear provider config to test env var fallback
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -75,11 +66,7 @@ func TestUnitGetCustomRetryTimeout_ZeroEnvVar(t *testing.T) {
 		}
 	}()
 
-	// Clear provider meta/config
-	originalMeta := providerMeta
-	providerMeta = nil
-	defer func() { providerMeta = originalMeta }()
-
+	// Clear provider config
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -103,11 +90,7 @@ func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
 		}
 	}()
 
-	// Clear provider meta/config
-	originalMeta := providerMeta
-	providerMeta = nil
-	defer func() { providerMeta = originalMeta }()
-
+	// Clear provider config
 	originalConfig := providerConfig
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
@@ -117,44 +100,6 @@ func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
 
 	if timeout != expectedTimeout {
 		t.Errorf("Expected default timeout %v for invalid env var, got %v", expectedTimeout, timeout)
-	}
-}
-
-func TestUnitGetCustomRetryTimeout_ConcurrentProviderConfigAccess_NoPanic(t *testing.T) {
-	originalMeta := providerMeta
-	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
-	defer setProviderMeta(originalMeta)
-
-	var wg sync.WaitGroup
-	for i := 0; i < 25; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < 200; j++ {
-				_ = GetCustomRetryTimeout()
-			}
-		}()
-	}
-	wg.Wait()
-}
-
-func TestUnitGetCustomRetryTimeout_UsesProviderMetaValue(t *testing.T) {
-	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
-	os.Setenv(customRetryTimeoutEnvVar, "30s")
-	defer func() {
-		if originalEnv != "" {
-			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
-		} else {
-			os.Unsetenv(customRetryTimeoutEnvVar)
-		}
-	}()
-
-	originalMeta := providerMeta
-	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
-	defer setProviderMeta(originalMeta)
-
-	if got := GetCustomRetryTimeout(); got != 1*time.Second {
-		t.Fatalf("expected provider meta timeout 1s, got %v", got)
 	}
 }
 

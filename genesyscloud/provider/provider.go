@@ -79,7 +79,6 @@ type ProviderMeta struct {
 	Organization          *platformclientv2.Organization
 	DefaultCountryCode    string
 	MaxClients            int
-	CustomRetryTimeout    time.Duration
 }
 
 type IntegrationMeta struct {
@@ -153,8 +152,6 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
-		customRetryTimeout := parseCustomRetryTimeout(data)
-
 		meta := &ProviderMeta{
 			Version:               version,
 			Platform:              &platform,
@@ -165,7 +162,6 @@ func configure(version string) schema.ConfigureContextFunc {
 			Organization:          currentOrg,
 			DefaultCountryCode:    *currentOrg.DefaultCountryCode,
 			MaxClients:            maxClients,
-			CustomRetryTimeout:    customRetryTimeout,
 		}
 
 		setProviderMeta(meta)
