@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -1066,9 +1067,9 @@ func normalizeLiteralValue(value, literalType string) string {
 
 	switch literalType {
 	case "string":
-		return strings.TrimSpace(stripInvisibleUnicode(value))
+		return strings.TrimSpace(util.StripInvisibleUnicodeFromString(value))
 	case "stringList":
-		stripped := stripInvisibleUnicode(value)
+		stripped := util.StripInvisibleUnicodeFromString(value)
 		parts := strings.Split(stripped, ",")
 		for i, part := range parts {
 			parts[i] = strings.TrimSpace(part)
@@ -1077,22 +1078,4 @@ func normalizeLiteralValue(value, literalType string) string {
 	default:
 		return value
 	}
-}
-
-// stripInvisibleUnicode removes invisible Unicode characters from spreadsheet copy-paste.
-func stripInvisibleUnicode(s string) string {
-	return strings.Map(func(r rune) rune {
-		switch r {
-		case '\u00A0': // Non-breaking space → replace with regular space
-			return ' '
-		case '\u200B', // Zero-width space
-			'\u200C', // Zero-width non-joiner
-			'\u200D', // Zero-width joiner
-			'\u2060', // Word joiner
-			'\uFEFF': // Byte order mark
-			return -1 // Remove the character
-		default:
-			return r
-		}
-	}, s)
 }
