@@ -21,4 +21,3 @@ func TestRoutingQueueExporter_InactivityTimeoutFlowIdIsRefAttr(t *testing.T) {
 		t.Fatalf("expected %q RefType %q, got %q", key, architectFlow.ResourceType, settings.RefType)
 	}
 }
-
