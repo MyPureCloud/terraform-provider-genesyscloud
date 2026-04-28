@@ -134,15 +134,21 @@ func GetOrgDefaultCountryCode() string {
 // and finally uses the default value (5 minutes).
 // A timeout of 0 means no retries (immediate fail-fast behavior).
 func GetCustomRetryTimeout() time.Duration {
-	// First try to get from provider configuration
-	config := GetProviderConfig()
+	// First try to get from provider configuration.
+	// IMPORTANT: schema.ResourceData is not safe for concurrent access. Since exporter and
+	// read operations can run in parallel goroutines, we must serialize access to the
+	// stored provider config to avoid "fatal error: concurrent map writes" inside the SDK.
+	mutex.Lock()
+	config := providerConfig
 	if config != nil {
 		if v, ok := config.GetOk(AttrCustomRetryTimeout); ok {
 			if timeout, err := time.ParseDuration(v.(string)); err == nil {
+				mutex.Unlock()
 				return timeout
 			}
 		}
 	}
+	mutex.Unlock()
 
 	// Fall back to environment variable
 	if envVal := os.Getenv(customRetryTimeoutEnvVar); envVal != "" {

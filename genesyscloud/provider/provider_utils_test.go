@@ -2,8 +2,11 @@ package provider
 
 import (
 	"os"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func TestUnitGetCustomRetryTimeout_Default(t *testing.T) {
@@ -101,6 +104,44 @@ func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
 	if timeout != expectedTimeout {
 		t.Errorf("Expected default timeout %v for invalid env var, got %v", expectedTimeout, timeout)
 	}
+}
+
+func TestUnitGetCustomRetryTimeout_ConcurrentProviderConfigAccess_NoPanic(t *testing.T) {
+	// Ensure env var doesn't influence this test
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Unsetenv(customRetryTimeoutEnvVar)
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		}
+	}()
+
+	// Build a minimal provider config ResourceData with custom_retry_timeout set
+	schemaMap := map[string]*schema.Schema{
+		AttrCustomRetryTimeout: {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+	d := schema.TestResourceDataRaw(t, schemaMap, map[string]interface{}{
+		AttrCustomRetryTimeout: "1s",
+	})
+
+	originalConfig := providerConfig
+	setProviderConfig(d)
+	defer setProviderConfig(originalConfig)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 25; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 200; j++ {
+				_ = GetCustomRetryTimeout()
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 func TestUnitValidateLogFilePath(t *testing.T) {
