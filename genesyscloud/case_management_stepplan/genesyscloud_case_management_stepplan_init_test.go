@@ -4,6 +4,7 @@ import (
 	"sync"
 	"testing"
 
+	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	caseplanpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
 	stageplanpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
@@ -12,6 +13,7 @@ import (
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -39,6 +41,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources[workbin.ResourceType] = workbin.ResourceTaskManagementWorkbin()
 	providerResources[worktype.ResourceType] = worktype.ResourceTaskManagementWorktype()
+	providerResources[authrole.ResourceType] = authrole.ResourceAuthRole()
+	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[userpkg.ResourceType] = userpkg.ResourceUser()
 }
 

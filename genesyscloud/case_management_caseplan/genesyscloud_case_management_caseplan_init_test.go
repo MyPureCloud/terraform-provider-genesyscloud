@@ -4,10 +4,12 @@ import (
 	"sync"
 	"testing"
 
+	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
 	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,6 +33,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[customerIntent.ResourceType] = customerIntent.ResourceCustomerIntent()
 	providerResources[intentCategory.ResourceType] = intentCategory.ResourceIntentCategory()
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
+	providerResources[authrole.ResourceType] = authrole.ResourceAuthRole()
+	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 	providerResources[userpkg.ResourceType] = userpkg.ResourceUser()
 }
 
