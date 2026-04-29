@@ -766,3 +766,44 @@ func generateRandomDomainEntityRef() platformclientv2.Domainentityref {
 		Id: &id,
 	}
 }
+
+func TestUnitBuildCgaPilotRule_nonNilConditionsWhenExpressionWithoutConditionsKey(t *testing.T) {
+	pilot := []interface{}{
+		map[string]interface{}{
+			"condition_expression": "C1",
+		},
+	}
+	out := buildCgaPilotRule(pilot)
+	assert.NotNil(t, out)
+	assert.NotNil(t, out.Conditions)
+	assert.Empty(t, *out.Conditions)
+	assert.NotNil(t, out.ConditionExpression)
+	assert.Equal(t, "C1", *out.ConditionExpression)
+}
+
+func TestUnitBuildCgaNumberedRules_nonNilConditionsWhenExpressionWithoutConditionsKey(t *testing.T) {
+	rules := []interface{}{
+		map[string]interface{}{
+			"condition_expression": "C1",
+			"groups": []interface{}{
+				map[string]interface{}{
+					"member_group_id":   "g1",
+					"member_group_type": "GROUP",
+				},
+			},
+		},
+	}
+	out := buildCgaNumberedRules(rules)
+	assert.NotNil(t, out)
+	assert.Len(t, *out, 1)
+	rule := (*out)[0]
+	assert.NotNil(t, rule.Conditions)
+	assert.Empty(t, *rule.Conditions)
+}
+
+func TestUnitFlattenCgaRuleConditions_emptyAPISlice(t *testing.T) {
+	empty := make([]platformclientv2.Conditionalgroupactivationcondition, 0)
+	out := flattenCgaRuleConditions(&empty)
+	assert.NotNil(t, out)
+	assert.Empty(t, out)
+}
