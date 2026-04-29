@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 /*
@@ -180,18 +182,18 @@ func listAllCaseplans(p *caseManagementCaseplanProxy) ([]platformclientv2.Casepl
 		}
 		entities := *listing.Entities
 		all = append(all, entities...)
-		if len(entities) < pageSize {
+
+		if listing.NextUri == nil || *listing.NextUri == "" {
 			break
 		}
-		last := entities[len(entities)-1]
-		if last.Id == nil || *last.Id == "" {
+		nextAfter, err := util.GetQueryParamValueFromUri(*listing.NextUri, "after")
+		if err != nil {
+			return nil, resp, fmt.Errorf("unable to parse after cursor from caseplans next uri: %w", err)
+		}
+		if nextAfter == "" || nextAfter == after {
 			break
 		}
-		next := *last.Id
-		if next == after {
-			break
-		}
-		after = next
+		after = nextAfter
 	}
 
 	return all, lastResp, nil

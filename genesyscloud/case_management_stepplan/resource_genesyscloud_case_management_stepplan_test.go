@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
+	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	caseplanpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -18,14 +19,11 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
+// Serial: creates workitem schema/workbin/worktype; parallel acc can hit org quotas.
 func TestAccResourceCaseManagementStepplan(t *testing.T) {
-	t.Parallel()
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_stp_" + suffix
-	refPrefix := strings.ReplaceAll(suffix, "-", "")
-	if len(refPrefix) > 8 {
-		refPrefix = refPrefix[:8]
-	}
+	refPrefix := testAccCaseplanReferencePrefix(suffix)
 	schemaName := substrForSchema("tf_stp_" + suffix)
 	wbName := substrForSchema("tf_wb_" + suffix)
 	wtName := substrForSchema("tf_wt_" + suffix)
@@ -90,6 +88,7 @@ func testAccCaseplanStackForStepplan(caseplanName, refPrefix, schemaName, wbName
     acc_note_text = {
       allOf     = [{ "$ref" = "#/definitions/text" }]
       title     = "n"
+      minLength = 1
       maxLength = 100
     }
   })`
@@ -113,7 +112,11 @@ resource "genesyscloud_user" "owner" {
   division_id = data.genesyscloud_auth_division_home.home.id
 }
 
+%[4]s
+
 resource "genesyscloud_case_management_caseplan" "cp" {
+  depends_on = [genesyscloud_user_roles.cp_owner_roles]
+
   name                            = "%[2]s"
   division_id                     = data.genesyscloud_auth_division_home.home.id
   description                     = "acc caseplan for stepplan test"
@@ -133,8 +136,12 @@ resource "genesyscloud_case_management_caseplan" "cp" {
     id      = genesyscloud_task_management_workitem_schema.schema.id
     version = floor(genesyscloud_task_management_workitem_schema.schema.version)
   }
+
+  lifecycle {
+    ignore_changes = [data_schema]
+  }
 }
-`, emailLocal, caseplanName, refPrefix)
+`, emailLocal, caseplanName, strings.ToUpper(strings.TrimSpace(refPrefix)), testAccCaseplanOwnerRoleAndUserRolesHCL(caseplanName))
 }
 
 func generateAccCustomerIntentDeps(namePrefix string) string {
@@ -153,11 +160,41 @@ resource "genesyscloud_customer_intent" "intent" {
 `, namePrefix)
 }
 
+func testAccCaseplanReferencePrefix(suffix string) string {
+	p := strings.ReplaceAll(suffix, "-", "")
+	if len(p) > 8 {
+		p = p[:8]
+	}
+	return strings.ToUpper(p)
+}
+
 func substrForSchema(s string) string {
 	if len(s) <= 50 {
 		return s
 	}
 	return s[:50]
+}
+
+func testAccCaseplanOwnerRoleAndUserRolesHCL(roleDisplayName string) string {
+	roleName := roleDisplayName
+	if len(roleName) > 100 {
+		roleName = roleName[:100]
+	}
+	return authrole.GenerateAuthRoleResource(
+		"cp_owner_cm",
+		roleName,
+		"TF acc: caseManagement caseplan and case view for default_case_owner in home division",
+		authrole.GenerateRolePermPolicy("caseManagement", "caseplan", `"view"`),
+		authrole.GenerateRolePermPolicy("caseManagement", "case", `"view"`),
+	) + `
+resource "genesyscloud_user_roles" "cp_owner_roles" {
+  user_id = genesyscloud_user.owner.id
+  roles {
+    role_id      = genesyscloud_auth_role.cp_owner_cm.id
+    division_ids = [data.genesyscloud_auth_division_home.home.id]
+  }
+}
+`
 }
 
 func testAccVerifyCaseManagementCaseplanDestroyed(state *terraform.State) error {
