@@ -297,6 +297,7 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 		RequestLogHook: func(request *http.Request, count int) {
 			sdkDebugRequest := newSDKDebugRequest(request, count)
 			request.Header.Set("TF-Correlation-Id", sdkDebugRequest.TransactionId)
+			storeSDKDebugMirrorRequestBodyForHook(sdkDebugRequest)
 			err, jsonStr := sdkDebugRequest.ToJSON()
 
 			if err != nil {
@@ -305,6 +306,12 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
+			cid := ""
+			if response != nil && response.Request != nil {
+				cid = response.Request.Header.Get("TF-Correlation-Id")
+			}
+			storedRequestBody := popSDKDebugMirrorRequestBody(cid)
+
 			sdkDebugResponse := newSDKDebugResponse(response)
 			err, jsonStr := sdkDebugResponse.ToJSON()
 
@@ -312,6 +319,9 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
 			log.Println(jsonStr)
+			if err == nil {
+				mirrorSDKDebugHTTPErrorToFile(response, storedRequestBody)
+			}
 		},
 	}
 
@@ -354,6 +364,8 @@ func withRetries(ctx context.Context, timeout time.Duration, method func() *retr
 }
 
 func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	sdkDebugHookRequestBodyEnabled.Store(data.Get("sdk_debug").(bool))
+
 	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 	if data.Get("sdk_debug").(bool) {
 		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
@@ -365,8 +377,11 @@ func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configu
 		config.LoggingConfiguration.SetLogFilePath(sdkDebugFilePath)
 
 		dir, _ := filepath.Split(sdkDebugFilePath)
-		if err := os.MkdirAll(dir, os.ModePerm); os.IsExist(err) {
-			return diag.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
+		if dir != "" {
+			if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+				sdkDebugErrorMirrorPath.Store("")
+				return diag.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
+			}
 		}
 
 		if format := data.Get("sdk_debug_format"); format == "Json" {
@@ -374,6 +389,9 @@ func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configu
 		} else {
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		}
+		sdkDebugErrorMirrorPath.Store(sdkDebugFilePath)
+	} else {
+		sdkDebugErrorMirrorPath.Store("")
 	}
 	return nil
 }
