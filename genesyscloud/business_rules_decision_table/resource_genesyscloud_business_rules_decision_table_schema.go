@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -259,6 +260,9 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 		DeleteContext: provider.DeleteWithPooledClient(deleteBusinessRulesDecisionTable),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Timeouts: &schema.ResourceTimeout{
+			Read: schema.DefaultTimeout(8 * time.Minute),
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{

@@ -118,7 +118,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 	tableId := d.Id()
 	log.Printf("Reading business rules decision table %s", tableId)
 
-	return util.WithRetriesForReadCustomTimeout(ctx, 1*time.Minute, d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 
 		// Get table details to find the published version and table metadata
 		table, resp, err := proxy.getBusinessRulesDecisionTable(ctx, tableId)
