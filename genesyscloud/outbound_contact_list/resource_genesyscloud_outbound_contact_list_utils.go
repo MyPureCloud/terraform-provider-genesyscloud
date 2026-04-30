@@ -565,9 +565,20 @@ func stripSystemColumnsFromCSV(filePath string, columnsToKeep []string) error {
 
 	// Find the indexes of columns to keep, preserving CSV column order
 	var keepIndexes []int
+	var rebuiltHeaders []string
 	for i, header := range headers {
+		// Some columns have extra whitespace or unicode that needs to be stripped
+		// For example: "<feff>""inin-outbound-id"""
+		header = util.StripInvisibleUnicodeFromString(header)
+
+		// Some columns have extra quotes that need to be stripped (see above example).
+		// The CSV writer will automagically put them back in and we have no control over
+		// this behavior, but we don't want triple double-quote headers (i.e. """inin-outbound-id""")
+		header = strings.Trim(header, "\"")
+
 		if keepSet[header] {
 			keepIndexes = append(keepIndexes, i)
+			rebuiltHeaders = append(rebuiltHeaders, header)
 		}
 	}
 
@@ -578,16 +589,21 @@ func stripSystemColumnsFromCSV(filePath string, columnsToKeep []string) error {
 
 	log.Printf("Stripping %d system-generated columns from CSV (keeping %d of %d)", len(headers)-len(keepIndexes), len(keepIndexes), len(headers))
 
-	// Build filtered records
-	filteredRecords := make([][]string, len(allRecords))
-	for i, record := range allRecords {
-		filteredRow := make([]string, len(keepIndexes))
+	// Build stripped records
+	strippedColumnsRecords := make([][]string, len(allRecords))
+
+	// Set the header row with rebuilt headers
+	strippedColumnsRecords[0] = rebuiltHeaders
+
+	// Process data rows
+	for i, record := range allRecords[1:len(allRecords)] {
+		strippedRow := make([]string, len(keepIndexes))
 		for j, idx := range keepIndexes {
 			if idx < len(record) {
-				filteredRow[j] = record[idx]
+				strippedRow[j] = record[idx]
 			}
 		}
-		filteredRecords[i] = filteredRow
+		strippedColumnsRecords[i+1] = strippedRow // Index is 1-indexed since we already wrote the header
 	}
 
 	// Write back to the same file
@@ -598,7 +614,7 @@ func stripSystemColumnsFromCSV(filePath string, columnsToKeep []string) error {
 	defer out.Close()
 
 	writer := csv.NewWriter(out)
-	if err := writer.WriteAll(filteredRecords); err != nil {
+	if err := writer.WriteAll(strippedColumnsRecords); err != nil {
 		return fmt.Errorf("failed to write CSV file: %w", err)
 	}
 
