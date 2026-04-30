@@ -781,6 +781,12 @@ func TestUnitBuildCgaPilotRule_nonNilConditionsWhenExpressionWithoutConditionsKe
 	assert.Equal(t, "C1", *out.ConditionExpression)
 }
 
+func TestUnitBuildCgaPilotRule_nilWhenPilotRuleListEmpty(t *testing.T) {
+	// Matches Terraform when pilot_rule is present as a block but with no nested elements:
+	// BuildSDKInterfaceArrayValueIfNotNil still runs the builder with an empty slice.
+	assert.Nil(t, buildCgaPilotRule([]interface{}{}))
+}
+
 func TestUnitBuildCgaNumberedRules_nonNilConditionsWhenExpressionWithoutConditionsKey(t *testing.T) {
 	rules := []interface{}{
 		map[string]interface{}{

@@ -517,9 +517,16 @@ func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgro
 	// Genesys queue update can NPE when pilotRule.conditions is null (omitted JSON). A non-nil
 	// pointer to an empty slice marshals as "conditions":[] so the platform gets a list, not null.
 	if sdkPilotRule.Conditions == nil && sdkPilotRule.ConditionExpression != nil && *sdkPilotRule.ConditionExpression != "" {
-		log.Printf("[routing_queue] CGA pilot_rule: nil conditions with expression %q; using empty slice for API payload", *sdkPilotRule.ConditionExpression)
 		empty := make([]platformclientv2.Conditionalgroupactivationcondition, 0)
 		sdkPilotRule.Conditions = &empty
+	}
+
+	// Empty block or omitted attributes yield a non-nil *struct with all API fields unset. Sending that
+	// as pilotRule can trigger platform NPEs
+	exprEmpty := sdkPilotRule.ConditionExpression == nil || *sdkPilotRule.ConditionExpression == ""
+	condMeaningful := sdkPilotRule.Conditions != nil && len(*sdkPilotRule.Conditions) > 0
+	if exprEmpty && !condMeaningful {
+		return nil
 	}
 
 	return &sdkPilotRule
@@ -528,7 +535,7 @@ func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgro
 func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalgroupactivationrule {
 	var sdkRules []platformclientv2.Conditionalgroupactivationrule
 
-	for ruleIdx, ruleElement := range rules {
+	for _, ruleElement := range rules {
 		var sdkRule platformclientv2.Conditionalgroupactivationrule
 		ruleMap, ok := ruleElement.(map[string]interface{})
 		if !ok {
@@ -540,7 +547,6 @@ func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalg
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Groups, ruleMap, "groups", buildCgaGroups)
 
 		if sdkRule.Conditions == nil && sdkRule.ConditionExpression != nil && *sdkRule.ConditionExpression != "" {
-			log.Printf("[routing_queue] CGA rules[%d]: nil conditions with expression %q; using empty slice for API payload", ruleIdx, *sdkRule.ConditionExpression)
 			empty := make([]platformclientv2.Conditionalgroupactivationcondition, 0)
 			sdkRule.Conditions = &empty
 		}
@@ -924,24 +930,6 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	return nil
 }
 
-// logCgaFlattenConditionsMismatch logs when a GET queue response has a CGA pilot/rule with a
-// condition_expression but null or empty Conditions. That can happen after applies that sent full
-// condition blocks from Terraform, and it explains state missing conditions until the next build workaround.
-func logCgaFlattenConditionsMismatch(context string, expression *string, conditions *[]platformclientv2.Conditionalgroupactivationcondition) {
-	if expression == nil || *expression == "" {
-		return
-	}
-	if conditions != nil && len(*conditions) > 0 {
-		return
-	}
-	apiDesc := "nil"
-	if conditions != nil {
-		apiDesc = "empty (len=0)"
-	}
-	log.Printf("[routing_queue] CGA compare read vs prior apply: %s has condition_expression=%q but API returned Conditions=%s — Terraform may have sent non-empty conditions on last apply; verify GET /api/v2/routing/queues/{id} response",
-		context, *expression, apiDesc)
-}
-
 func flattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactivationsimplemetric) []interface{} {
 	if simpleMetric == nil {
 		return nil
@@ -999,8 +987,7 @@ func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) [
 
 	rulesOut := make([]interface{}, 0)
 
-	for ruleIdx, rule := range *rules {
-		logCgaFlattenConditionsMismatch(fmt.Sprintf("rules[%d]", ruleIdx), rule.ConditionExpression, rule.Conditions)
+	for _, rule := range *rules {
 
 		ruleOut := make(map[string]interface{})
 
@@ -1017,7 +1004,6 @@ func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroup
 
 	// convert pilot rule
 	if sdkCga.PilotRule != nil {
-		logCgaFlattenConditionsMismatch("pilot_rule", sdkCga.PilotRule.ConditionExpression, sdkCga.PilotRule.Conditions)
 
 		pilotRuleMap := make(map[string]interface{})
 
