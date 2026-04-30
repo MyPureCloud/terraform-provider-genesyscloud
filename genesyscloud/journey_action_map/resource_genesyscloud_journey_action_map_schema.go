@@ -49,13 +49,14 @@ var (
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        outcomeProbabilityConditionResource,
-			Deprecated:  "Use trigger_with_outcome_quantile_conditions attribute instead.",
+			Deprecated:  "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 		},
 		"trigger_with_outcome_quantile_conditions": {
 			Description: "Quantile conditions for outcomes that must be satisfied to trigger the action map.",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        outcomeQuantileConditionResource,
+			Deprecated:  "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 		},
 		"page_url_conditions": {
 			Description: "URL conditions that a page must match for web actions to be displayable.",
