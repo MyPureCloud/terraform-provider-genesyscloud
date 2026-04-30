@@ -514,13 +514,6 @@ func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgro
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkPilotRule.Conditions, pilotRuleMap, "conditions", buildCgaConditions)
 	}
 
-	// Genesys queue update can NPE when pilotRule.conditions is null (omitted JSON). A non-nil
-	// pointer to an empty slice marshals as "conditions":[] so the platform gets a list, not null.
-	if sdkPilotRule.Conditions == nil && sdkPilotRule.ConditionExpression != nil && *sdkPilotRule.ConditionExpression != "" {
-		empty := make([]platformclientv2.Conditionalgroupactivationcondition, 0)
-		sdkPilotRule.Conditions = &empty
-	}
-
 	// Empty block or omitted attributes yield a non-nil *struct with all API fields unset. Sending that
 	// as pilotRule can trigger platform NPEs
 	exprEmpty := sdkPilotRule.ConditionExpression == nil || *sdkPilotRule.ConditionExpression == ""
@@ -545,11 +538,6 @@ func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalg
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.ConditionExpression, ruleMap, "condition_expression")
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", buildCgaConditions)
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Groups, ruleMap, "groups", buildCgaGroups)
-
-		if sdkRule.Conditions == nil && sdkRule.ConditionExpression != nil && *sdkRule.ConditionExpression != "" {
-			empty := make([]platformclientv2.Conditionalgroupactivationcondition, 0)
-			sdkRule.Conditions = &empty
-		}
 
 		sdkRules = append(sdkRules, sdkRule)
 	}
@@ -943,11 +931,8 @@ func flattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactiv
 }
 
 func flattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupactivationcondition) []interface{} {
-	if conditions == nil {
+	if conditions == nil || len(*conditions) == 0 {
 		return nil
-	}
-	if len(*conditions) == 0 {
-		return []interface{}{}
 	}
 
 	conditionsOut := make([]interface{}, 0)
