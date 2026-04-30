@@ -5,11 +5,8 @@ package speechandtextanalytics_topic
 // @description: Manage Speech & Text Analytics Topics. These topic IDs can be referenced from Quality Evaluation Forms assistance conditions.
 
 import (
-	"context"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -118,13 +115,7 @@ func SpeechAndTextAnalyticsTopicExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllTopics),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
-		ExportAsDataFunc: shouldExportSpeechAndTextAnalyticsTopicAsDataSource,
 	}
-}
-
-func shouldExportSpeechAndTextAnalyticsTopicAsDataSource(_ context.Context, _ *platformclientv2.Configuration, _ map[string]string) (bool, error) {
-	// Topics are often pre-existing platform configuration; exporting as data avoids forcing topic creation in the target org.
-	return true, nil
 }
 
 func DataSourceSpeechAndTextAnalyticsTopic() *schema.Resource {
