@@ -382,7 +382,7 @@ func literalValueSchemaFunc() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Default:          "",
-				DiffSuppressFunc: suppressNumberFormattingDiff,
+				DiffSuppressFunc: suppressLiteralValueDiff,
 			},
 		},
 	}
@@ -486,34 +486,39 @@ func DataSourceBusinessRulesDecisionTable() *schema.Resource {
 	}
 }
 
-// suppressNumberFormattingDiff suppresses diffs when the only difference is number formatting
-// (e.g., "1.0" vs "1", "1.00" vs "1", etc.) for number type literals.
-// This allows users to write "1.0" in their Terraform config while the API returns "1",
-// without causing unnecessary plan diffs.
-func suppressNumberFormattingDiff(k, old, new string, d *schema.ResourceData) bool {
-	// Get the type field from the same resource path
-	typeKey := strings.Replace(k, ".value", ".type", 1)
-	literalType := d.Get(typeKey).(string)
-
-	// Only suppress diffs for number type literals
-	if literalType != "number" {
-		return false
-	}
-
+// suppressLiteralValueDiff suppresses diffs for the following literal value types:
+//   - string: trims leading/trailing whitespace and invisible Unicode characters
+//   - stringList: normalizes comma spacing and trims whitespace from each element
+//   - number: suppresses formatting differences (e.g. "1.0" vs "1")
+func suppressLiteralValueDiff(k, old, new string, d *schema.ResourceData) bool {
 	// If either value is empty, don't suppress (let normal diff handling work)
 	if old == "" || new == "" {
 		return false
 	}
 
-	// Parse both values as floats
-	oldFloat, oldErr := strconv.ParseFloat(old, 64)
-	newFloat, newErr := strconv.ParseFloat(new, 64)
-
-	// If either parsing fails, don't suppress (let normal diff handling work)
-	if oldErr != nil || newErr != nil {
-		return false
+	// Get the type field from the same resource path
+	typeKey := strings.Replace(k, ".value", ".type", 1)
+	literalType := ""
+	if d != nil {
+		if v, ok := d.GetOk(typeKey); ok {
+			literalType = v.(string)
+		}
 	}
 
-	// Suppress diff if the numeric values are equal
-	return oldFloat == newFloat
+	switch literalType {
+	case "number":
+		// Parse both values as floats
+		oldFloat, oldErr := strconv.ParseFloat(old, 64)
+		newFloat, newErr := strconv.ParseFloat(new, 64)
+		// If either parsing fails, don't suppress (let normal diff handling work)
+		if oldErr != nil || newErr != nil {
+			return false
+		}
+		// Suppress diff if the numeric values are equal
+		return oldFloat == newFloat
+	case "string", "stringList":
+		return normalizeLiteralValue(old, literalType) == normalizeLiteralValue(new, literalType)
+	default:
+		return false
+	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -629,12 +630,14 @@ func convertLiteralToSDK(literal map[string]interface{}) (*platformclientv2.Lite
 	return sdkLiteral, nil
 }
 
-// converts an SDK literal to provider format
+// convertSDKLiteralToProvider converts an SDK literal to provider format.
+// String and stringList values are trimmed to ensure clean exports between orgs.
 func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[string]interface{} {
 	literal := make(map[string]interface{})
 
 	if sdkLiteral.VarString != nil {
-		literal["value"] = *sdkLiteral.VarString
+		// Trim whitespace to ensure consistency between orgs
+		literal["value"] = strings.TrimSpace(*sdkLiteral.VarString)
 		literal["type"] = "string"
 	} else if sdkLiteral.Integer != nil {
 		literal["value"] = strconv.Itoa(*sdkLiteral.Integer)
@@ -657,8 +660,12 @@ func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[strin
 		literal["value"] = *sdkLiteral.Special
 		literal["type"] = "special"
 	} else if sdkLiteral.Strings != nil {
-		// Convert string slice back to comma-separated string
-		literal["value"] = strings.Join(*sdkLiteral.Strings, ",")
+		// Trim whitespace to ensure consistency between orgs
+		trimmed := make([]string, len(*sdkLiteral.Strings))
+		for i, s := range *sdkLiteral.Strings {
+			trimmed[i] = strings.TrimSpace(s)
+		}
+		literal["value"] = strings.Join(trimmed, ",")
 		literal["type"] = "stringList"
 	} else {
 		// If no fields are set, return empty values to indicate use of column default
@@ -1050,4 +1057,25 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 
 	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(addedRows))
 	return nil
+}
+
+// normalizeLiteralValue normalizes whitespace in string and stringList literal values.
+func normalizeLiteralValue(value, literalType string) string {
+	if value == "" {
+		return value
+	}
+
+	switch literalType {
+	case "string":
+		return strings.TrimSpace(util.StripInvisibleUnicodeFromString(value))
+	case "stringList":
+		stripped := util.StripInvisibleUnicodeFromString(value)
+		parts := strings.Split(stripped, ",")
+		for i, part := range parts {
+			parts[i] = strings.TrimSpace(part)
+		}
+		return strings.Join(parts, ",")
+	default:
+		return value
+	}
 }

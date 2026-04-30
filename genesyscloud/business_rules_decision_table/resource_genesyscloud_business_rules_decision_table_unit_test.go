@@ -3152,3 +3152,138 @@ func intPtr(i int) *int {
 func float64Ptr(f float64) *float64 {
 	return &f
 }
+
+// TestUnitNormalizeLiteralValue tests the normalizeLiteralValue utility function.
+func TestUnitNormalizeLiteralValue(t *testing.T) {
+	tests := []struct {
+		name        string
+		value       string
+		literalType string
+		expected    string
+	}{
+		{"String trailing whitespace", "John Doe ", "string", "John Doe"},
+		{"String leading whitespace", " VIP", "string", "VIP"},
+		{"String both sides", " hello ", "string", "hello"},
+		{"Invisible Unicode U+00A0", "Hello\u00A0World", "string", "Hello World"},
+		{"Invisible Unicode U+200B", "test\u200Bvalue", "string", "testvalue"},
+		{"Invisible Unicode U+FEFF BOM", "\uFEFFdata", "string", "data"},
+		{"StringList comma spacing", "vip, premium, support", "stringList", "vip,premium,support"},
+		{"StringList trailing space and comma spacing", "a , b , c ", "stringList", "a,b,c"},
+		{"Empty string unchanged", "", "string", ""},
+		{"Non-string type unchanged", "5 ", "integer", "5 "},
+		{"Boolean type unchanged", "true ", "boolean", "true "},
+		{"No whitespace unchanged", "clean", "string", "clean"},
+		{"Special type unchanged", "Wildcard", "special", "Wildcard"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := normalizeLiteralValue(tt.value, tt.literalType)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestUnitSuppressLiteralValueDiff tests the suppressLiteralValueDiff DiffSuppressFunc.
+func TestUnitSuppressLiteralValueDiff(t *testing.T) {
+	paramSchema := rowParameterSchemaFunc().Schema
+
+	tests := []struct {
+		name         string
+		literalType  string
+		oldValue     string
+		newValue     string
+		expectResult bool
+		description  string
+	}{
+		// Whitespace suppression for string
+		{"String trailing whitespace suppressed", "string", "John Doe", "John Doe ", true, "trailing space should be suppressed"},
+		{"String leading whitespace suppressed", "string", "VIP", " VIP", true, "leading space should be suppressed"},
+		{"Invisible Unicode suppressed", "string", "Hello World", "Hello\u00A0World", true, "non-breaking space should be suppressed"},
+
+		// Whitespace suppression for stringList
+		{"StringList comma spacing suppressed", "stringList", "vip,premium,support", "vip, premium, support", true, "spaces after commas should be suppressed"},
+
+		// Number formatting preserved
+		{"Number formatting still suppressed", "number", "1", "1.0", true, "existing number formatting suppression preserved"},
+
+		// Real content differences NOT suppressed
+		{"String content difference not suppressed", "string", "VIP", "Standard", false, "actual content change must be detected"},
+		{"StringList content difference not suppressed", "stringList", "A,B", "A,C", false, "actual list change must be detected"},
+		{"Integer content difference not suppressed", "integer", "5", "8", false, "integer change must be detected"},
+
+		// Non-string types NOT suppressed for whitespace
+		{"Integer whitespace not suppressed", "integer", "5", "5 ", false, "integer type should not get whitespace suppression"},
+		{"Boolean whitespace not suppressed", "boolean", "true", "true ", false, "boolean type should not get whitespace suppression"},
+
+		// Empty string defaults NOT suppressed
+		{"Empty string default not suppressed", "string", "", "", false, "empty defaults must be preserved"},
+		{"Empty vs non-empty not suppressed", "string", "", "value", false, "empty to non-empty must be detected"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resourceDataMap := map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"type":  tt.literalType,
+						"value": tt.oldValue,
+					},
+				},
+			}
+			d := schema.TestResourceDataRaw(t, paramSchema, resourceDataMap)
+			result := suppressLiteralValueDiff("literal.0.value", tt.oldValue, tt.newValue, d)
+			assert.Equal(t, tt.expectResult, result, "%s", tt.description)
+		})
+	}
+}
+
+// TestUnitConvertSDKLiteralToProviderTrimsWhitespace verifies that the read/export path
+// trims whitespace from string and stringList values returned by the API.
+func TestUnitConvertSDKLiteralToProviderTrimsWhitespace(t *testing.T) {
+	tests := []struct {
+		name          string
+		literal       *platformclientv2.Literal
+		expectedValue string
+		expectedType  string
+	}{
+		{
+			name:          "String trailing space trimmed",
+			literal:       &platformclientv2.Literal{VarString: stringPtr("John Doe ")},
+			expectedValue: "John Doe",
+			expectedType:  "string",
+		},
+		{
+			name:          "String leading space trimmed",
+			literal:       &platformclientv2.Literal{VarString: stringPtr(" VIP")},
+			expectedValue: "VIP",
+			expectedType:  "string",
+		},
+		{
+			name:          "String no whitespace unchanged",
+			literal:       &platformclientv2.Literal{VarString: stringPtr("clean")},
+			expectedValue: "clean",
+			expectedType:  "string",
+		},
+		{
+			name:          "StringList elements trimmed",
+			literal:       &platformclientv2.Literal{Strings: &[]string{" vip ", "premium", " support "}},
+			expectedValue: "vip,premium,support",
+			expectedType:  "stringList",
+		},
+		{
+			name:          "StringList no whitespace unchanged",
+			literal:       &platformclientv2.Literal{Strings: &[]string{"vip", "premium"}},
+			expectedValue: "vip,premium",
+			expectedType:  "stringList",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := convertSDKLiteralToProvider(tt.literal)
+			assert.Equal(t, tt.expectedValue, result["value"])
+			assert.Equal(t, tt.expectedType, result["type"])
+		})
+	}
+}
