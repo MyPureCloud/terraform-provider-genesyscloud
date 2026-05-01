@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -1537,7 +1537,7 @@ func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations("", "", "", false)
 	if getErr != nil {
 		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
 		return

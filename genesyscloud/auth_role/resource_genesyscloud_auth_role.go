@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 /*
@@ -149,15 +149,12 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	defaultRoleID := d.Get("default_role_id").(string)
-
 	log.Printf("Updating role %s", name)
 	roleObj := platformclientv2.Domainorganizationroleupdate{
 		Name:               &name,
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
 		PermissionPolicies: policies,
-		DefaultRoleId:      &defaultRoleID,
 	}
 	_, proxyResponse, err := proxy.updateAuthRole(ctx, d.Id(), &roleObj)
 	if err != nil {

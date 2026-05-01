@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
 )
 
 func TestAccResourceWebDeploymentsDeployment(t *testing.T) {
@@ -473,7 +473,7 @@ func cleanupWebDeploymentsDeployment(t *testing.T, prefix string) {
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	webDeployments, resp, getErr := deploymentsAPI.GetWebdeploymentsDeployments([]string{})
+	webDeployments, resp, getErr := deploymentsAPI.GetWebdeploymentsDeployments("", "", "", []string{})
 	if getErr != nil {
 		t.Logf("failed to get page of deployments: %v %v", getErr, resp)
 		return
