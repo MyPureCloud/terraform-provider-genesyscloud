@@ -1895,6 +1895,26 @@ func TestAccResourceRoutingQueueSkillGroupsAndConditionalGroupActivation(t *test
 					},
 				),
 			},
+			{
+				// DEVTOOLING-1658: Remove conditional_group_activation block and verify it is
+				// detected as a change and actually removed from state after apply.
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(skillGroupResourceLabel, skillGroupName, skillGroupDescription) +
+					group.GenerateBasicGroupResource(groupResourceLabel, groupName,
+						group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					) +
+					GenerateRoutingQueueResourceBasicWithDepends(
+						queueResourceLabel,
+						"genesyscloud_routing_skill_group."+skillGroupResourceLabel,
+						queueName,
+						"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
+						"groups = [genesyscloud_group."+groupResourceLabel+".id]",
+						// No GenerateConditionalGroupActivation — block is removed
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.#", "0"),
+				),
+			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
