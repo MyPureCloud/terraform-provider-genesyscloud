@@ -29,6 +29,7 @@ import (
 type BcpResource struct {
 	ID           string                `json:"id"`
 	Name         string                `json:"name"`
+	BlockLabel   string                `json:"blockLabel"`
 	Dependencies BcpResourceDependency `json:"dependencies"`
 }
 
@@ -137,6 +138,7 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 			resources = append(resources, BcpResource{
 				ID:           id,
 				Name:         name,
+				BlockLabel:   resMeta.BlockLabel,
 				Dependencies: deps,
 			})
 		}

@@ -221,6 +221,7 @@ func TestUnitBcpTfExporter_JSONStructure(t *testing.T) {
 	user := userResources[0]
 	assert.Equal(t, "user1", user.ID)
 	assert.Equal(t, "Test User", user.Name)
+	assert.Equal(t, "test_user", user.BlockLabel)
 	assert.Equal(t, user.Dependencies, BcpResourceDependency{
 		AsProviderResourceList: []string{},
 		AsObjectMap:            map[string][]string{},
@@ -232,6 +233,7 @@ func TestUnitBcpTfExporter_JSONStructure(t *testing.T) {
 	group := groupResources[0]
 	assert.Equal(t, "group1", group.ID)
 	assert.Equal(t, "Test Group", group.Name)
+	assert.Equal(t, "test_group", group.BlockLabel)
 	// Should have empty dependencies since resource reading fails in test
 	assert.Equal(t, group.Dependencies, BcpResourceDependency{
 		AsProviderResourceList: []string{},
