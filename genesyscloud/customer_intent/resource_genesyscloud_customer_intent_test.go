@@ -139,30 +139,39 @@ func generateIntentCategoryResource(
 func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 	t.Parallel()
 	var (
-		resourcePath     = "genesyscloud_customer_intent.test_intent_with_sources"
-		categoryResource = "test_category"
-		intentResource   = "test_intent_with_sources"
-		categoryName     = "Test Category " + uuid.NewString()
-		intentName       = "Test Customer Intent with Sources " + uuid.NewString()
-		intentDesc       = "Test customer intent with source intents"
-		expiryTime       = 24
-		// Mock source intent IDs - in a real test these would be actual bot intent IDs
-		sourceIntentId1 = "mock-source-intent-id-1"
-		sourceIntentId2 = "mock-source-intent-id-2"
-		sourceIntentId3 = "mock-source-intent-id-3"
+		resourcePath      = "genesyscloud_customer_intent.test_intent_with_sources"
+		categoryResource  = "test_category_src"
+		intentResource    = "test_intent_with_sources"
+		sourceResource1   = "source_intent_1"
+		sourceResource2   = "source_intent_2"
+		sourceResource3   = "source_intent_3"
+		categoryName      = "Test Category " + uuid.NewString()
+		intentName        = "Test Customer Intent with Sources " + uuid.NewString()
+		intentDesc        = "Test customer intent with source intents"
+		expiryTime        = 24
+		sourceIntentName1 = "Source Intent 1 " + uuid.NewString()
+		sourceIntentName2 = "Source Intent 2 " + uuid.NewString()
+		sourceIntentName3 = "Source Intent 3 " + uuid.NewString()
 	)
+
+	// Helper to build the base config: category + 3 source customer intents
+	baseConfig := func() string {
+		return generateIntentCategoryResource(categoryResource, categoryName, "Test category for source intents") +
+			generateCustomerIntentResource(sourceResource1, sourceIntentName1, "Source intent 1", expiryTime,
+				"genesyscloud_intent_category."+categoryResource+".id") +
+			generateCustomerIntentResource(sourceResource2, sourceIntentName2, "Source intent 2", expiryTime,
+				"genesyscloud_intent_category."+categoryResource+".id") +
+			generateCustomerIntentResource(sourceResource3, sourceIntentName3, "Source intent 3", expiryTime,
+				"genesyscloud_intent_category."+categoryResource+".id")
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create customer intent with source intents
-				Config: generateIntentCategoryResource(
-					categoryResource,
-					categoryName,
-					"Test category for customer intent",
-				) + generateCustomerIntentWithSourceIntents(
+				// Create customer intent with 2 source intents referencing real customer intent resources
+				Config: baseConfig() + generateCustomerIntentWithSourceIntents(
 					intentResource,
 					intentName,
 					intentDesc,
@@ -170,18 +179,14 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 					"genesyscloud_intent_category."+categoryResource+".id",
 					[]sourceIntentConfig{
 						{
-							sourceIntentId:   sourceIntentId1,
-							sourceIntentName: "Source Intent 1",
-							sourceType:       "Bot",
-							sourceId:         "bot-id-1",
-							sourceName:       "Test Bot",
+							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource1 + ".id",
+							sourceIntentName: sourceIntentName1,
+							sourceType:       "Topic",
 						},
 						{
-							sourceIntentId:   sourceIntentId2,
-							sourceIntentName: "Source Intent 2",
-							sourceType:       "Bot",
-							sourceId:         "bot-id-1",
-							sourceName:       "Test Bot",
+							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource2 + ".id",
+							sourceIntentName: sourceIntentName2,
+							sourceType:       "Topic",
 						},
 					},
 				),
@@ -193,12 +198,8 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 				),
 			},
 			{
-				// Update source intents - remove one, add one
-				Config: generateIntentCategoryResource(
-					categoryResource,
-					categoryName,
-					"Test category for customer intent",
-				) + generateCustomerIntentWithSourceIntents(
+				// Update source intents - swap source1 for source3
+				Config: baseConfig() + generateCustomerIntentWithSourceIntents(
 					intentResource,
 					intentName,
 					intentDesc,
@@ -206,18 +207,14 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 					"genesyscloud_intent_category."+categoryResource+".id",
 					[]sourceIntentConfig{
 						{
-							sourceIntentId:   sourceIntentId2,
-							sourceIntentName: "Source Intent 2",
-							sourceType:       "Bot",
-							sourceId:         "bot-id-1",
-							sourceName:       "Test Bot",
+							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource2 + ".id",
+							sourceIntentName: sourceIntentName2,
+							sourceType:       "Topic",
 						},
 						{
-							sourceIntentId:   sourceIntentId3,
-							sourceIntentName: "Source Intent 3",
-							sourceType:       "Bot",
-							sourceId:         "bot-id-2",
-							sourceName:       "Another Bot",
+							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource3 + ".id",
+							sourceIntentName: sourceIntentName3,
+							sourceType:       "Topic",
 						},
 					},
 				),
@@ -228,11 +225,7 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 			},
 			{
 				// Remove all source intents
-				Config: generateIntentCategoryResource(
-					categoryResource,
-					categoryName,
-					"Test category for customer intent",
-				) + generateCustomerIntentResource(
+				Config: baseConfig() + generateCustomerIntentResource(
 					intentResource,
 					intentName,
 					intentDesc,
@@ -280,15 +273,20 @@ func generateCustomerIntentWithSourceIntents(
 `, resourceLabel, name, description, expiryTime, categoryId)
 
 	for _, si := range sourceIntents {
-		config += fmt.Sprintf(`
+		block := fmt.Sprintf(`
 		source_intents {
-			source_intent_id   = "%s"
+			source_intent_id   = %s
 			source_intent_name = "%s"
 			source_type        = "%s"
-			source_id          = "%s"
-			source_name        = "%s"
+`, si.sourceIntentId, si.sourceIntentName, si.sourceType)
+		if si.sourceId != "" {
+			block += fmt.Sprintf("\t\t\tsource_id = %s\n", si.sourceId)
 		}
-`, si.sourceIntentId, si.sourceIntentName, si.sourceType, si.sourceId, si.sourceName)
+		if si.sourceName != "" {
+			block += fmt.Sprintf("\t\t\tsource_name = \"%s\"\n", si.sourceName)
+		}
+		block += "\t\t}\n"
+		config += block
 	}
 
 	config += "\t}\n"
