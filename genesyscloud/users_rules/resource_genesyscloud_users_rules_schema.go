@@ -16,14 +16,13 @@ ResourceName is defined in this file along with four functions:
 3.  The datasource schema definitions for the users_rules datasource.
 4.  The resource exporter configuration for the users_rules exporter.
 */
-const ResourceName = "genesyscloud_users_rules"
-const ResourceType = ResourceName
+const ResourceType = "genesyscloud_users_rules"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceName, ResourceUsersRules())
-	regInstance.RegisterDataSource(ResourceName, DataSourceUsersRules())
-	regInstance.RegisterExporter(ResourceName, UsersRulesExporter())
+	regInstance.RegisterResource(ResourceType, ResourceUsersRules())
+	regInstance.RegisterDataSource(ResourceType, DataSourceUsersRules())
+	regInstance.RegisterExporter(ResourceType, UsersRulesExporter())
 }
 
 // ResourceUsersRules registers the genesyscloud_users_rules resource with Terraform
@@ -161,9 +160,6 @@ func DataSourceUsersRules() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Users Rules. Select a Users Rule by name.`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceUsersRulesRead),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `Users Rule name.`,

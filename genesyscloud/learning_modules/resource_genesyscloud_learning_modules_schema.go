@@ -16,14 +16,13 @@ ResourceName is defined in this file along with four functions:
 3.  The datasource schema definitions for the learning_modules datasource.
 4.  The resource exporter configuration for the learning_modules exporter.
 */
-const ResourceName = "genesyscloud_learning_modules"
-const ResourceType = ResourceName
+const ResourceType = "genesyscloud_learning_modules"
 
 // SetRegistrar registers all the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
-	regInstance.RegisterResource(ResourceName, ResourceLearningModules())
-	regInstance.RegisterDataSource(ResourceName, DataSourceLearningModules())
-	regInstance.RegisterExporter(ResourceName, LearningModulesExporter())
+	regInstance.RegisterResource(ResourceType, ResourceLearningModules())
+	regInstance.RegisterDataSource(ResourceType, DataSourceLearningModules())
+	regInstance.RegisterExporter(ResourceType, LearningModulesExporter())
 }
 
 // ResourceLearningModules registers the genesyscloud_learning_modules resource with Terraform
@@ -405,9 +404,6 @@ func DataSourceLearningModules() *schema.Resource {
 	return &schema.Resource{
 		Description: `Data source for Genesys Cloud Learning Modules. Select a Learning Module by name.`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceLearningModulesRead),
-		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
-		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: `Learning Module name.`,
