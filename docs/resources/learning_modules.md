@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-learning-modules--moduleId-)
 * [GET /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules--moduleId-)
 * [PUT /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-learning-modules--moduleId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `learning:module:add`
+* `learning:module:delete`
+* `learning:module:edit`
+* `learning:module:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `learning`
+* `learning:readonly`
+
 
 ## Example Usage
 

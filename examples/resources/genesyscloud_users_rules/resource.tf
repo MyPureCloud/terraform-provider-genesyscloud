@@ -1,7 +1,7 @@
 resource "genesyscloud_users_rules" "example_users_rules" {
-  name                    = "Example name"
-  description             = "Example description"
-  type                    = "Learning"
+  name        = "Example name"
+  description = "Example description"
+  type        = "Learning"
   criteria {
     operator = "Or"
     group {

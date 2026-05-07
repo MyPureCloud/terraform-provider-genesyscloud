@@ -1356,6 +1356,27 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_learning_modules",
+      "resource_name": "learning_modules",
+      "permissions": [
+        "learning:module:add",
+        "learning:module:delete",
+        "learning:module:edit",
+        "learning:module:view"
+      ],
+      "scopes": [
+        "learning",
+        "learning:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/learning/modules",
+        "POST /api/v2/learning/modules",
+        "DELETE /api/v2/learning/modules/{moduleId}",
+        "GET /api/v2/learning/modules/{moduleId}",
+        "PUT /api/v2/learning/modules/{moduleId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_location",
       "resource_name": "location",
       "permissions": [
@@ -2080,7 +2101,8 @@
       "permissions": [
         "routing:skill:create",
         "routing:skill:delete",
-        "routing:skill:manage"
+        "routing:skill:manage",
+        "routing:skill:view"
       ],
       "scopes": [
         "routing",
@@ -2690,6 +2712,27 @@
         "GET /api/v2/authorization/divisions/home",
         "POST /api/v2/authorization/subjects/{subjectId}/bulkadd",
         "DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_users_rules",
+      "resource_name": "users_rules",
+      "permissions": [
+        "users:rules:add",
+        "users:rules:delete",
+        "users:rules:edit",
+        "users:rules:view"
+      ],
+      "scopes": [
+        "users-rules",
+        "users-rules:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/users/rules",
+        "POST /api/v2/users/rules",
+        "DELETE /api/v2/users/rules/{ruleId}",
+        "GET /api/v2/users/rules/{ruleId}",
+        "PATCH /api/v2/users/rules/{ruleId}"
       ]
     },
     {

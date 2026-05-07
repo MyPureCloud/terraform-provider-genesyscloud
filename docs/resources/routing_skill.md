@@ -22,6 +22,7 @@ The following permissions are required to use this resource:
 * `routing:skill:create`
 * `routing:skill:delete`
 * `routing:skill:manage`
+* `routing:skill:view`
 
 The following OAuth scopes are required to use this resource:
 
