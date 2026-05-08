@@ -34,6 +34,11 @@ func DataSourceRoutingSkill() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"divisionId": {
+				Description: "Division of a skill",
+				Type:        schema.TypeString,
+				Required:    false,
+			},
 		},
 	}
 }
@@ -54,6 +59,12 @@ func ResourceRoutingSkill() *schema.Resource {
 				Description: "Skill name. Changing the name attribute will cause the skill object object to dropped and recreated with a new ID.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
+			},
+			"divisionId": {
+				Description: "Division of a skill. Changing the division will cause the skill object object to dropped and recreated",
+				Type:        schema.TypeString,
+				Required:    false,
 				ForceNew:    true,
 			},
 		},
