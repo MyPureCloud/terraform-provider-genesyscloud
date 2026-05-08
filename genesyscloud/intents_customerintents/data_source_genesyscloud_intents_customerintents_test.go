@@ -1,4 +1,4 @@
-package customer_intent
+package intents_customerintents
 
 import (
 	"fmt"
@@ -42,16 +42,16 @@ func TestAccDataSourceCustomerIntentBasic(t *testing.T) {
 					intentName,
 					intentDesc,
 					expiryTime,
-					"genesyscloud_intent_category."+categoryResource+".id",
+					"genesyscloud_intents_categories."+categoryResource+".id",
 				) + generateCustomerIntentDataSource(
 					dataSourceLabel,
 					intentName,
-					"genesyscloud_customer_intent."+resourceLabel,
+					"genesyscloud_intents_customerintents."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_customer_intent."+dataSourceLabel, "id",
-						"genesyscloud_customer_intent."+resourceLabel, "id",
+						"data.genesyscloud_intents_customerintents."+dataSourceLabel, "id",
+						"genesyscloud_intents_customerintents."+resourceLabel, "id",
 					),
 				),
 			},
@@ -86,13 +86,13 @@ func TestAccDataSourceCustomerIntentNotFound(t *testing.T) {
 
 func generateCustomerIntentDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	if dependsOn != "" {
-		return fmt.Sprintf(`data "genesyscloud_customer_intent" "%s" {
+		return fmt.Sprintf(`data "genesyscloud_intents_customerintents" "%s" {
 		name       = "%s"
 		depends_on = [%s]
 	}
 	`, dataSourceLabel, name, dependsOn)
 	}
-	return fmt.Sprintf(`data "genesyscloud_customer_intent" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_intents_customerintents" "%s" {
 		name = "%s"
 	}
 	`, dataSourceLabel, name)

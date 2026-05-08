@@ -1,11 +1,12 @@
-package customer_intent_category
+package intents_categories
 
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -14,7 +15,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_intent_category.go contains the data source implementation
+   The data_source_genesyscloud_intents_categories.go contains the data source implementation
    for the resource.
 */
 

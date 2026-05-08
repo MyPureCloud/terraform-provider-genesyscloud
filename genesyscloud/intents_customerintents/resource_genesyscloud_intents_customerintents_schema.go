@@ -1,4 +1,4 @@
-package customer_intent
+package intents_customerintents
 
 // @team: Sirona
 // @chat: #AIP Sirona
@@ -10,22 +10,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
+	intentsCategories "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
 /*
-resource_genesycloud_customer_intent_schema.go holds four functions within it:
+resource_genesycloud_intents_customerintents_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the customer_intent resource.
-3.  The datasource schema definitions for the customer_intent datasource.
-4.  The resource exporter configuration for the customer_intent exporter.
+2.  The resource schema definitions for the intents_customerintents resource.
+3.  The datasource schema definitions for the intents_customerintents datasource.
+4.  The resource exporter configuration for the intents_customerintents exporter.
 */
 
-const ResourceType = "genesyscloud_customer_intent"
+const ResourceType = "genesyscloud_intents_customerintents"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -34,7 +34,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(ResourceType, CustomerIntentExporter())
 }
 
-// ResourceCustomerIntent registers the genesyscloud_customer_intent resource with Terraform
+// ResourceCustomerIntent registers the genesyscloud_intents_customerintents resource with Terraform
 func ResourceCustomerIntent() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud customer intent`,
@@ -107,17 +107,17 @@ func ResourceCustomerIntent() *schema.Resource {
 	}
 }
 
-// CustomerIntentExporter returns the resourceExporter object used to hold the genesyscloud_customer_intent exporter's config
+// CustomerIntentExporter returns the resourceExporter object used to hold the genesyscloud_intents_customerintents exporter's config
 func CustomerIntentExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthCustomerIntents),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"category_id": {RefType: intentCategory.ResourceType},
+			"category_id": {RefType: intentsCategories.ResourceType},
 		},
 	}
 }
 
-// DataSourceCustomerIntent registers the genesyscloud_customer_intent data source
+// DataSourceCustomerIntent registers the genesyscloud_intents_customerintents data source
 func DataSourceCustomerIntent() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud customer intent data source. Select a customer intent by name`,

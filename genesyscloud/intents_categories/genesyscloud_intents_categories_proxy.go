@@ -1,4 +1,4 @@
-package customer_intent_category
+package intents_categories
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 /*
-The genesyscloud_customer_intent_category_proxy.go file contains the proxy structures and methods that interact
+The genesyscloud_intents_categories_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 */

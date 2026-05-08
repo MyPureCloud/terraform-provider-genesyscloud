@@ -1,4 +1,4 @@
-package customer_intent
+package intents_customerintents
 
 import (
 	"fmt"
@@ -13,14 +13,14 @@ import (
 )
 
 /*
-The resource_genesyscloud_customer_intent_test.go contains all of the test cases for running the resource
-tests for customer_intent.
+The resource_genesyscloud_intents_customerintents_test.go contains all of the test cases for running the resource
+tests for intents_customerintents.
 */
 
 func TestAccResourceCustomerIntent(t *testing.T) {
 	t.Parallel()
 	var (
-		resourcePath     = "genesyscloud_customer_intent.test_intent"
+		resourcePath     = "genesyscloud_intents_customerintents.test_intent"
 		categoryResource = "test_category"
 		intentResource   = "test_intent"
 		categoryName     = "Test Category " + uuid.NewString()
@@ -47,13 +47,13 @@ func TestAccResourceCustomerIntent(t *testing.T) {
 					intentName1,
 					intentDesc1,
 					expiryTime1,
-					"genesyscloud_intent_category."+categoryResource+".id",
+					"genesyscloud_intents_categories."+categoryResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", intentName1),
 					resource.TestCheckResourceAttr(resourcePath, "description", intentDesc1),
 					resource.TestCheckResourceAttr(resourcePath, "expiry_time", fmt.Sprintf("%d", expiryTime1)),
-					resource.TestCheckResourceAttrPair(resourcePath, "category_id", "genesyscloud_intent_category."+categoryResource, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "category_id", "genesyscloud_intents_categories."+categoryResource, "id"),
 				),
 			},
 			{
@@ -67,13 +67,13 @@ func TestAccResourceCustomerIntent(t *testing.T) {
 					intentName2,
 					intentDesc2,
 					expiryTime2,
-					"genesyscloud_intent_category."+categoryResource+".id",
+					"genesyscloud_intents_categories."+categoryResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", intentName2),
 					resource.TestCheckResourceAttr(resourcePath, "description", intentDesc2),
 					resource.TestCheckResourceAttr(resourcePath, "expiry_time", fmt.Sprintf("%d", expiryTime2)),
-					resource.TestCheckResourceAttrPair(resourcePath, "category_id", "genesyscloud_intent_category."+categoryResource, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "category_id", "genesyscloud_intents_categories."+categoryResource, "id"),
 				),
 			},
 			{
@@ -90,7 +90,7 @@ func TestAccResourceCustomerIntent(t *testing.T) {
 func testVerifyCustomerIntentDestroyed(state *terraform.State) error {
 	intentsApi := platformclientv2.NewIntentsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_customer_intent" {
+		if rs.Type != "genesyscloud_intents_customerintents" {
 			continue
 		}
 
@@ -114,7 +114,7 @@ func generateCustomerIntentResource(
 	expiryTime int,
 	categoryId string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_customer_intent" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_intents_customerintents" "%s" {
 		name        = "%s"
 		description = "%s"
 		expiry_time = %d
@@ -129,7 +129,7 @@ func generateIntentCategoryResource(
 	name string,
 	description string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_intent_category" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_intents_categories" "%s" {
 		name        = "%s"
 		description = "%s"
 	}
@@ -139,7 +139,7 @@ func generateIntentCategoryResource(
 func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 	t.Parallel()
 	var (
-		resourcePath      = "genesyscloud_customer_intent.test_intent_with_sources"
+		resourcePath      = "genesyscloud_intents_customerintents.test_intent_with_sources"
 		categoryResource  = "test_category_src"
 		intentResource    = "test_intent_with_sources"
 		sourceResource1   = "source_intent_1"
@@ -158,11 +158,11 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 	baseConfig := func() string {
 		return generateIntentCategoryResource(categoryResource, categoryName, "Test category for source intents") +
 			generateCustomerIntentResource(sourceResource1, sourceIntentName1, "Source intent 1", expiryTime,
-				"genesyscloud_intent_category."+categoryResource+".id") +
+				"genesyscloud_intents_categories."+categoryResource+".id") +
 			generateCustomerIntentResource(sourceResource2, sourceIntentName2, "Source intent 2", expiryTime,
-				"genesyscloud_intent_category."+categoryResource+".id") +
+				"genesyscloud_intents_categories."+categoryResource+".id") +
 			generateCustomerIntentResource(sourceResource3, sourceIntentName3, "Source intent 3", expiryTime,
-				"genesyscloud_intent_category."+categoryResource+".id")
+				"genesyscloud_intents_categories."+categoryResource+".id")
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -176,15 +176,15 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 					intentName,
 					intentDesc,
 					expiryTime,
-					"genesyscloud_intent_category."+categoryResource+".id",
+					"genesyscloud_intents_categories."+categoryResource+".id",
 					[]sourceIntentConfig{
 						{
-							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource1 + ".id",
+							sourceIntentId:   "genesyscloud_intents_customerintents." + sourceResource1 + ".id",
 							sourceIntentName: sourceIntentName1,
 							sourceType:       "Topic",
 						},
 						{
-							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource2 + ".id",
+							sourceIntentId:   "genesyscloud_intents_customerintents." + sourceResource2 + ".id",
 							sourceIntentName: sourceIntentName2,
 							sourceType:       "Topic",
 						},
@@ -204,15 +204,15 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 					intentName,
 					intentDesc,
 					expiryTime,
-					"genesyscloud_intent_category."+categoryResource+".id",
+					"genesyscloud_intents_categories."+categoryResource+".id",
 					[]sourceIntentConfig{
 						{
-							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource2 + ".id",
+							sourceIntentId:   "genesyscloud_intents_customerintents." + sourceResource2 + ".id",
 							sourceIntentName: sourceIntentName2,
 							sourceType:       "Topic",
 						},
 						{
-							sourceIntentId:   "genesyscloud_customer_intent." + sourceResource3 + ".id",
+							sourceIntentId:   "genesyscloud_intents_customerintents." + sourceResource3 + ".id",
 							sourceIntentName: sourceIntentName3,
 							sourceType:       "Topic",
 						},
@@ -230,7 +230,7 @@ func TestAccResourceCustomerIntentWithSourceIntents(t *testing.T) {
 					intentName,
 					intentDesc,
 					expiryTime,
-					"genesyscloud_intent_category."+categoryResource+".id",
+					"genesyscloud_intents_categories."+categoryResource+".id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", intentName),
@@ -265,7 +265,7 @@ func generateCustomerIntentWithSourceIntents(
 	categoryId string,
 	sourceIntents []sourceIntentConfig,
 ) string {
-	config := fmt.Sprintf(`resource "genesyscloud_customer_intent" "%s" {
+	config := fmt.Sprintf(`resource "genesyscloud_intents_customerintents" "%s" {
 		name        = "%s"
 		description = "%s"
 		expiry_time = %d

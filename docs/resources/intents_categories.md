@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_intent_category Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_intents_categories Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud intent category
 ---
-# genesyscloud_intent_category (Resource)
+# genesyscloud_intents_categories (Resource)
 
 Genesys Cloud intent category
 
@@ -36,7 +36,7 @@ The following OAuth scopes are required to use this resource:
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_intent_category" "example_intent_category" {
+resource "genesyscloud_intents_categories" "example_intent_category" {
   name        = "example intent category name"
   description = "example intent category description"
 }
@@ -53,4 +53,3 @@ resource "genesyscloud_intent_category" "example_intent_category" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
