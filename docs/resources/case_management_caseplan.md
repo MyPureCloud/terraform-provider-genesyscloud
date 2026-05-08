@@ -20,7 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ## Example Usage
 
 ```terraform
-# Replace data_schema id with a genesyscloud_task_management_workitem_schema id; set version to that schema's version.
+# Replace data_schema id with a genesyscloud_task_management_workitem_schema id.
 # Optional: division_id, customer_intent, default_case_owner, intake_settings (see resource documentation).
 resource "genesyscloud_case_management_caseplan" "example" {
   name                            = "Example caseplan"
@@ -30,8 +30,7 @@ resource "genesyscloud_case_management_caseplan" "example" {
   default_ttl_seconds             = 31536000
 
   data_schema {
-    id      = "00000000-0000-0000-0000-000000000001"
-    version = 1
+    id = "00000000-0000-0000-0000-000000000001"
   }
 }
 ```
@@ -42,6 +41,7 @@ resource "genesyscloud_case_management_caseplan" "example" {
 ### Required
 
 - `data_schema` (Block List, Min: 1, Max: 1) Task management workitem schema bound to case data for this caseplan. Updates use PUT /caseplans/{id}/dataschemas/default (only key "default" exists today). IDs must be task-management workitem schemas. Cannot be changed after the caseplan has been published at least once. (see [below for nested schema](#nestedblock--data_schema))
+- `name` (String) The name of the Caseplan.
 
 ### Optional
 
@@ -52,7 +52,6 @@ resource "genesyscloud_case_management_caseplan" "example" {
 - `description` (String) The description of the Caseplan.
 - `division_id` (String) The division to which this entity belongs. Cannot be changed after the caseplan has been published at least once.
 - `intake_settings` (Block List, Max: 10) Intake field configuration when collecting case data (maps to API intakeSettings). Up to 10 entries. Read uses GET .../caseplans/{id}/versions/{version}/intakesettings because the caseplan GET response does not include this field. Cannot be changed after the caseplan has been published at least once. (see [below for nested schema](#nestedblock--intake_settings))
-- `name` (String) The name of the Caseplan.
 - `reference_prefix` (String) The prefix used when creating the reference for Cases from the Caseplan. Cannot be changed after the caseplan has been published at least once.
 
 ### Read-Only
@@ -65,7 +64,6 @@ resource "genesyscloud_case_management_caseplan" "example" {
 Required:
 
 - `id` (String) Workitem schema id.
-- `version` (Number) Workitem schema version number.
 
 
 <a id="nestedblock--customer_intent"></a>

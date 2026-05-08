@@ -9,27 +9,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnit_caseplanDataSchemasFromResourceList_coercesFloatVersion(t *testing.T) {
+func TestUnit_caseplanDataSchemasFromResourceList_idOnly(t *testing.T) {
 	t.Parallel()
 	raw := []interface{}{
-		map[string]interface{}{"id": "11111111-1111-1111-1111-111111111111", "version": float64(3)},
+		map[string]interface{}{"id": "11111111-1111-1111-1111-111111111111"},
 	}
 	out := caseplanDataSchemasFromResourceList(raw)
 	require.Len(t, out, 1)
-	assert.Equal(t, 3, *out[0].Version)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", *out[0].Id)
+	assert.Nil(t, out[0].Version)
 }
 
 func TestUnitFlattenExpandCaseplanDataSchemas(t *testing.T) {
 	t.Parallel()
 	id1 := "11111111-1111-1111-1111-111111111111"
-	v1 := 2
 	flat := flattenCaseplanDataSchemas(&[]platformclientv2.Caseplandataschema{
-		{Id: platformclientv2.String(id1), Version: platformclientv2.Int(v1)},
+		{Id: platformclientv2.String(id1)},
 	})
 	assert.Len(t, flat, 1)
 	m := flat[0].(map[string]interface{})
 	assert.Equal(t, id1, m["id"])
-	assert.Equal(t, v1, m["version"])
+	_, hasVer := m["version"]
+	assert.False(t, hasVer)
 
 	assert.Nil(t, flattenCaseplanDataSchemas(nil))
 	assert.Nil(t, flattenCaseplanDataSchemas(&[]platformclientv2.Caseplandataschema{}))
@@ -62,7 +63,7 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 			map[string]interface{}{"id": "user-1"},
 		},
 		"data_schema": []interface{}{
-			map[string]interface{}{"id": "schema-1", "version": 7},
+			map[string]interface{}{"id": "schema-1"},
 		},
 		"intake_settings": []interface{}{
 			map[string]interface{}{"property": "case_note_text", "required": true, "display_order": 1},
@@ -82,7 +83,7 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 	assert.NotNil(t, ds)
 	assert.Len(t, *ds, 1)
 	assert.Equal(t, "schema-1", *(*ds)[0].Id)
-	assert.Equal(t, 7, *(*ds)[0].Version)
+	assert.Nil(t, (*ds)[0].Version)
 	isettings := body.IntakeSettings
 	assert.NotNil(t, isettings)
 	assert.Len(t, *isettings, 1)
@@ -112,7 +113,7 @@ func TestUnitFlattenExpandCaseplanIntakeSettings(t *testing.T) {
 	sch := ResourceCaseManagementCaseplan().Schema
 	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
 		"data_schema": []interface{}{
-			map[string]interface{}{"id": "schema-1", "version": 1},
+			map[string]interface{}{"id": "schema-1"},
 		},
 		"intake_settings": []interface{}{
 			map[string]interface{}{"property": "a", "required": false, "display_order": 0},

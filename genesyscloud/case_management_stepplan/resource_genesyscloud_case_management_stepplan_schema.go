@@ -84,7 +84,7 @@ func ResourceCaseManagementStepplan() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			"stage_number": {
-				Description:  `Stage ordinal 1–3 (same as genesyscloud_case_management_stageplan). The stepplan under that stage is resolved via list; exactly one stepplan per stage is required.`,
+				Description:  `Index 1–3 into the caseplan's stageplans after listing and sorting by name (same rule as genesyscloud_case_management_stageplan), not workflow order. After create, read/update use stored stageplan_id so renames do not remap steps. Exactly one stepplan per stage is required.`,
 				Required:     true,
 				ForceNew:     true,
 				Type:         schema.TypeInt,

@@ -8,9 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
-	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
@@ -21,8 +18,8 @@ import (
 func TestAccResourceCaseManagementCaseplan(t *testing.T) {
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_cp_" + suffix
-	refPrefix := testAccCaseplanReferencePrefix(suffix)
-	schemaName := substrForSchema("tf_cp_" + suffix)
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cp_" + suffix)
 	emailLocal := "tf_acc_cp_" + strings.ReplaceAll(suffix, "-", "")
 
 	resourcePath := "genesyscloud_case_management_caseplan.cp"
@@ -55,15 +52,55 @@ data "genesyscloud_case_management_caseplan" "by_name" {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+		CheckDestroy: AccVerifyCaseplanDestroyed,
+	})
+}
+
+func TestAccResourceCaseManagementCaseplanIntakeSettings(t *testing.T) {
+	suffix := uuid.NewString()
+	caseplanName := "tf_acc_cpin_" + suffix
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cpin_" + suffix)
+	emailLocal := "tf_acc_cpin_" + strings.ReplaceAll(suffix, "-", "")
+	resourcePath := "genesyscloud_case_management_caseplan.cp"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, false, 0),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.property", "acc_note_text"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.required", "false"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "0"),
+				),
+			},
+			{
+				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, true, 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.property", "acc_note_text"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.required", "true"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "1"),
+				),
+			},
+			{
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
 }
 
 func TestAccResourceCaseManagementCaseplanPublish(t *testing.T) {
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_cppub_" + suffix
-	refPrefix := testAccCaseplanReferencePrefix(suffix)
-	schemaName := substrForSchema("tf_cpp_" + suffix)
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cpp_" + suffix)
 	emailLocal := "tf_acc_cpp_" + strings.ReplaceAll(suffix, "-", "")
 
 	resourcePath := "genesyscloud_case_management_caseplan.cp"
@@ -90,15 +127,15 @@ resource "genesyscloud_case_management_caseplan_publish" "pub" {
 				ImportStateVerifyIgnore: []string{"revision"},
 			},
 		},
-		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
 }
 
 func TestAccResourceCaseManagementCaseplanPublish_revisionBump(t *testing.T) {
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_cppubr_" + suffix
-	refPrefix := testAccCaseplanReferencePrefix(suffix)
-	schemaName := substrForSchema("tf_cppr_" + suffix)
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cppr_" + suffix)
 	emailLocal := "tf_acc_cppr_" + strings.ReplaceAll(suffix, "-", "")
 
 	resourcePath := "genesyscloud_case_management_caseplan.cp"
@@ -157,15 +194,15 @@ resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
 				),
 			},
 		},
-		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
 }
 
 func TestAccResourceCaseManagementCaseplanCreateVersion(t *testing.T) {
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_cpver_" + suffix
-	refPrefix := testAccCaseplanReferencePrefix(suffix)
-	schemaName := substrForSchema("tf_cpv_" + suffix)
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cpv_" + suffix)
 	emailLocal := "tf_acc_cpv_" + strings.ReplaceAll(suffix, "-", "")
 
 	resourcePath := "genesyscloud_case_management_caseplan.cp"
@@ -200,15 +237,15 @@ resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
 				ImportStateVerifyIgnore: []string{"revision"},
 			},
 		},
-		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
 }
 
 func TestAccResourceCaseManagementCaseplanCreateVersion_revisionAfterRepublish(t *testing.T) {
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_cpverr_" + suffix
-	refPrefix := testAccCaseplanReferencePrefix(suffix)
-	schemaName := substrForSchema("tf_cpvr_" + suffix)
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cpvr_" + suffix)
 	emailLocal := "tf_acc_cpvr_" + strings.ReplaceAll(suffix, "-", "")
 
 	resourcePath := "genesyscloud_case_management_caseplan.cp"
@@ -259,7 +296,7 @@ resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
 				),
 			},
 		},
-		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
 }
 
@@ -268,8 +305,8 @@ resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
 func TestAccResourceCaseManagementCaseplan_publishDraftUpdateRepublish(t *testing.T) {
 	suffix := uuid.NewString()
 	caseplanName := "tf_acc_cpup_" + suffix
-	refPrefix := testAccCaseplanReferencePrefix(suffix)
-	schemaName := substrForSchema("tf_cpup_" + suffix)
+	refPrefix := AccReferencePrefix(suffix)
+	schemaName := AccSubstrSchema("tf_cpup_" + suffix)
 	emailLocal := "tf_acc_cpup_" + strings.ReplaceAll(suffix, "-", "")
 
 	resourcePath := "genesyscloud_case_management_caseplan.cp"
@@ -365,7 +402,7 @@ resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
 				),
 			},
 		},
-		CheckDestroy: testVerifyCaseManagementCaseplanDestroyed,
+		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
 }
 
@@ -383,12 +420,12 @@ func testAccCaseManagementCaseplanConfigFlexible(caseplanName, refPrefix, schema
     }
   })`
 
-	ownerGrants := testAccCaseplanOwnerRoleAndUserRolesHCL(caseplanName)
+	ownerGrants := AccOwnerRoleAndUserRolesHCL(caseplanName)
 	// POST accepts mixed case but GET canonicalizes uppercase; mismatch fails SDK post-apply empty-plan checks.
 	refNormalized := strings.ToUpper(strings.TrimSpace(refPrefix))
 
 	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
-		generateAccCustomerIntentDeps(caseplanName) +
+		AccCustomerIntentDepsHCL(caseplanName, "acc caseplan deps") +
 		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
 		fmt.Sprintf(`
 resource "genesyscloud_user" "owner" {
@@ -419,88 +456,73 @@ resource "genesyscloud_case_management_caseplan" "cp" {
   }
 
   data_schema {
-    id      = genesyscloud_task_management_workitem_schema.schema.id
-    version = floor(genesyscloud_task_management_workitem_schema.schema.version)
+    id = genesyscloud_task_management_workitem_schema.schema.id
   }
 
   lifecycle {
-    # Version read from dataschemas can lag floor(workitem_schema.version) briefly after create.
     ignore_changes = [data_schema]
   }
 }
 `, emailLocal, caseplanName, refNormalized, strconv.Quote(description), defaultDueSec, defaultTtlSec, ownerGrants)
 }
 
-func generateAccCustomerIntentDeps(namePrefix string) string {
-	return fmt.Sprintf(`
-resource "genesyscloud_intent_category" "cat" {
-  name        = "%[1]s_cat"
-  description = "acc caseplan deps"
+func testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, description string, defaultDueSec, defaultTtlSec int, intakeRequired bool, intakeOrder int) string {
+	props := `jsonencode({
+    acc_note_text = {
+      allOf     = [{ "$ref" = "#/definitions/text" }]
+      title     = "n"
+      minLength = 1
+      maxLength = 100
+    }
+  })`
+
+	ownerGrants := AccOwnerRoleAndUserRolesHCL(caseplanName)
+	refNormalized := strings.ToUpper(strings.TrimSpace(refPrefix))
+
+	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
+		AccCustomerIntentDepsHCL(caseplanName, "acc caseplan deps") +
+		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
+		fmt.Sprintf(`
+resource "genesyscloud_user" "owner" {
+  email       = "%[1]s@exampleuser.com"
+  name        = "%[2]s owner"
+  password    = "TfAccCaseplan1!"
+  division_id = data.genesyscloud_auth_division_home.home.id
 }
 
-resource "genesyscloud_customer_intent" "intent" {
-  name        = "%[1]s_intent"
-  description = "acc"
-  expiry_time = 24
-  category_id = genesyscloud_intent_category.cat.id
-}
-`, namePrefix)
-}
+%[7]s
 
-func testAccCaseplanReferencePrefix(suffix string) string {
-	p := strings.ReplaceAll(suffix, "-", "")
-	if len(p) > 8 {
-		p = p[:8]
-	}
-	return strings.ToUpper(p)
-}
+resource "genesyscloud_case_management_caseplan" "cp" {
+  depends_on = [genesyscloud_user_roles.cp_owner_roles]
 
-func substrForSchema(s string) string {
-	if len(s) <= 50 {
-		return s
-	}
-	return s[:50]
-}
+  name                            = "%[2]s"
+  division_id                     = data.genesyscloud_auth_division_home.home.id
+  description                     = %[4]s
+  reference_prefix                = "%[3]s"
+  default_due_duration_in_seconds = %[5]d
+  default_ttl_seconds             = %[6]d
 
-// Ensures genesyscloud_user.owner can be default_case_owner (caseManagement:{caseplan,case}:view in home division).
-func testAccCaseplanOwnerRoleAndUserRolesHCL(roleDisplayName string) string {
-	roleName := roleDisplayName
-	if len(roleName) > 100 {
-		roleName = roleName[:100]
-	}
-	return authrole.GenerateAuthRoleResource(
-		"cp_owner_cm",
-		roleName,
-		"TF acc: caseManagement caseplan and case view for default_case_owner in home division",
-		authrole.GenerateRolePermPolicy("caseManagement", "caseplan", `"view"`),
-		authrole.GenerateRolePermPolicy("caseManagement", "case", `"view"`),
-	) + `
-resource "genesyscloud_user_roles" "cp_owner_roles" {
-  user_id = genesyscloud_user.owner.id
-  roles {
-    role_id      = genesyscloud_auth_role.cp_owner_cm.id
-    division_ids = [data.genesyscloud_auth_division_home.home.id]
+  customer_intent {
+    id = genesyscloud_customer_intent.intent.id
+  }
+
+  default_case_owner {
+    id = genesyscloud_user.owner.id
+  }
+
+  data_schema {
+    id = genesyscloud_task_management_workitem_schema.schema.id
+  }
+
+  intake_settings {
+    property      = "acc_note_text"
+    required      = %[8]t
+    display_order = %[9]d
+  }
+
+  lifecycle {
+    ignore_changes = [data_schema]
   }
 }
-`
-}
-
-func testVerifyCaseManagementCaseplanDestroyed(state *terraform.State) error {
-	api := platformclientv2.NewCaseManagementApi()
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != ResourceType {
-			continue
-		}
-		cp, resp, err := api.GetCasemanagementCaseplan(rs.Primary.ID)
-		if cp != nil {
-			return fmt.Errorf("case management caseplan (%s) still exists", rs.Primary.ID)
-		}
-		if util.IsStatus404(resp) {
-			continue
-		}
-		if err != nil {
-			return fmt.Errorf("unexpected error verifying caseplan destroy: %s", err)
-		}
-	}
-	return nil
+`, emailLocal, caseplanName, refNormalized, strconv.Quote(description), defaultDueSec, defaultTtlSec, ownerGrants, intakeRequired, intakeOrder)
 }

@@ -246,7 +246,7 @@ func patchCaseManagementCaseplanFn(ctx context.Context, p *caseManagementCasepla
 func postCaseManagementCaseplanDataschemaFn(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string, body caseplanDataschemaPostBody) (*platformclientv2.Caseplandataschema, *platformclientv2.APIResponse, error) {
 	cfg := p.caseManagementApi.Configuration
 	path := cfg.BasePath + "/api/v2/casemanagement/caseplans/{caseplanId}/dataschemas"
-	path = strings.Replace(path, "{caseplanId}", url.PathEscape(fmt.Sprintf("%v", caseplanId)), -1)
+	path = strings.ReplaceAll(path, "{caseplanId}", url.PathEscape(fmt.Sprintf("%v", caseplanId)))
 
 	headerParams := casemanagementAPIHeaders(cfg)
 	headerParams["Content-Type"] = cfg.APIClient.SelectHeaderContentType([]string{"application/json"})
@@ -275,8 +275,8 @@ func postCaseManagementCaseplanDataschemaFn(ctx context.Context, p *caseManageme
 func putCaseManagementCaseplanDataschemaFn(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string, schemaKeyName string, body platformclientv2.Caseplandataschema) (*platformclientv2.Caseplandataschema, *platformclientv2.APIResponse, error) {
 	cfg := p.caseManagementApi.Configuration
 	path := cfg.BasePath + "/api/v2/casemanagement/caseplans/{caseplanId}/dataschemas/{schemaKeyName}"
-	path = strings.Replace(path, "{caseplanId}", url.PathEscape(fmt.Sprintf("%v", caseplanId)), -1)
-	path = strings.Replace(path, "{schemaKeyName}", url.PathEscape(fmt.Sprintf("%v", schemaKeyName)), -1)
+	path = strings.ReplaceAll(path, "{caseplanId}", url.PathEscape(fmt.Sprintf("%v", caseplanId)))
+	path = strings.ReplaceAll(path, "{schemaKeyName}", url.PathEscape(fmt.Sprintf("%v", schemaKeyName)))
 
 	headerParams := casemanagementAPIHeaders(cfg)
 	headerParams["Content-Type"] = cfg.APIClient.SelectHeaderContentType([]string{"application/json"})
@@ -307,8 +307,8 @@ func postCaseManagementCaseplanVersionsFn(ctx context.Context, p *caseManagement
 func deleteCaseManagementCaseplanDataschemaFn(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string, schemaKeyName string) (*platformclientv2.APIResponse, error) {
 	cfg := p.caseManagementApi.Configuration
 	path := cfg.BasePath + "/api/v2/casemanagement/caseplans/{caseplanId}/dataschemas/{schemaKeyName}"
-	path = strings.Replace(path, "{caseplanId}", url.PathEscape(fmt.Sprintf("%v", caseplanId)), -1)
-	path = strings.Replace(path, "{schemaKeyName}", url.PathEscape(fmt.Sprintf("%v", schemaKeyName)), -1)
+	path = strings.ReplaceAll(path, "{caseplanId}", url.PathEscape(fmt.Sprintf("%v", caseplanId)))
+	path = strings.ReplaceAll(path, "{schemaKeyName}", url.PathEscape(fmt.Sprintf("%v", schemaKeyName)))
 
 	headerParams := casemanagementAPIHeaders(cfg)
 	if accept := cfg.APIClient.SelectHeaderAccept([]string{"application/json"}); accept != "" {

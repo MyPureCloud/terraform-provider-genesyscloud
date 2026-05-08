@@ -66,12 +66,13 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the Caseplan.`,
-				Optional:    true,
+				Required:    true,
 				Type:        schema.TypeString,
 			},
 			`division_id`: {
 				Description: `The division to which this entity belongs. Cannot be changed after the caseplan has been published at least once.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 			`description`: {
@@ -121,11 +122,6 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 							Type:        schema.TypeString,
 							Required:    true,
 						},
-						`version`: {
-							Description: `Workitem schema version number.`,
-							Type:        schema.TypeInt,
-							Required:    true,
-						},
 					},
 				},
 			},
@@ -164,8 +160,11 @@ func ResourceCaseManagementCaseplan() *schema.Resource {
 func CaseManagementCaseplanExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthCaseManagementCaseplans),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
-			// TODO: Add any reference attributes here
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id":           {RefType: "genesyscloud_auth_division"},
+			"default_case_owner.id": {RefType: "genesyscloud_user"},
+			"customer_intent.id":    {RefType: "genesyscloud_customer_intent"},
+			"data_schema.id":        {RefType: "genesyscloud_task_management_workitem_schema"},
 		},
 	}
 }

@@ -16,12 +16,9 @@ func dataSourceCaseManagementStageplanRead(ctx context.Context, d *schema.Resour
 	caseplanID := d.Get("caseplan_id").(string)
 	stageNumber := d.Get("stage_number").(int)
 
-	stage, resp, err := resolveStageplanByOrdinal(ctx, proxy, caseplanID, stageNumber)
+	stage, _, err := resolveStageplanByOrdinal(ctx, proxy, caseplanID, stageNumber)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-	if resp != nil {
-		// non-fatal: resolveStageplanByOrdinal only sets resp from list calls
 	}
 	if stage == nil || stage.Id == nil {
 		return diag.Errorf("could not resolve stageplan for caseplan %s stage_number %d", caseplanID, stageNumber)

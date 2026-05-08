@@ -12,10 +12,8 @@ import (
 // getCaseManagementCaseplanCreateFromResourceData maps ResourceData to Caseplancreate for POST /caseplans.
 func getCaseManagementCaseplanCreateFromResourceData(d *schema.ResourceData) platformclientv2.Caseplancreate {
 	c := platformclientv2.Caseplancreate{}
-	if v, ok := d.GetOk("name"); ok {
-		c.Name = platformclientv2.String(v.(string))
-	}
-	if v, ok := d.GetOk("division_id"); ok {
+	c.Name = platformclientv2.String(d.Get("name").(string))
+	if v, ok := d.GetOk("division_id"); ok && v.(string) != "" {
 		c.DivisionId = platformclientv2.String(v.(string))
 	}
 	if v, ok := d.GetOk("description"); ok {
@@ -204,55 +202,34 @@ func caseplanDataSchemasFromResourceList(raw []interface{}) []platformclientv2.C
 		if id, ok := m["id"].(string); ok && id != "" {
 			row.Id = platformclientv2.String(id)
 		}
-		v := schemaMapInt(m["version"])
-		row.Version = platformclientv2.Int(v)
 		out = append(out, row)
 	}
 	return out
 }
 
-func schemaMapInt(v interface{}) int {
-	switch t := v.(type) {
-	case int:
-		return t
-	case int32:
-		return int(t)
-	case int64:
-		return int(t)
-	case float64:
-		return int(t)
-	default:
-		return 0
-	}
-}
-
-// caseplanDataSchemaSyncPlanFromState returns workitem schema ids no longer in config (deleteIDs) and rows that need a write (new id or version change).
-// execCaseplanDataSchemaSync maps these to DELETE on .../dataschemas/default when needed, then POST /dataschemas for new ids or PUT .../default for same-id updates.
+// caseplanDataSchemaSyncPlanFromState returns schema IDs removed from config (deleteIDs) and rows to bind (puts).
+// Only id is tracked: new ids get a POST after delete; re-binding the same id after a delete uses the fallback in execCaseplanDataSchemaSync.
 func caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw []interface{}) (deleteIDs []string, puts []platformclientv2.Caseplandataschema) {
-	oldByID := make(map[string]int)
-	for _, row := range caseplanDataSchemasFromResourceList(oldRaw) {
-		if row.Id != nil && *row.Id != "" && row.Version != nil {
-			oldByID[*row.Id] = *row.Version
+	oldIDs := caseplanDataSchemaIDSetFromRaw(oldRaw)
+	newRows := caseplanDataSchemasFromResourceList(newRaw)
+	newIDSet := make(map[string]struct{})
+	for _, row := range newRows {
+		if row.Id != nil && *row.Id != "" {
+			newIDSet[*row.Id] = struct{}{}
 		}
 	}
-	newByID := make(map[string]int)
-	for _, row := range caseplanDataSchemasFromResourceList(newRaw) {
-		if row.Id != nil && *row.Id != "" && row.Version != nil {
-			newByID[*row.Id] = *row.Version
-		}
-	}
-	for id := range oldByID {
-		if _, ok := newByID[id]; !ok {
+	for id := range oldIDs {
+		if _, ok := newIDSet[id]; !ok {
 			deleteIDs = append(deleteIDs, id)
 		}
 	}
-	for id, nv := range newByID {
-		ov, had := oldByID[id]
-		if !had || ov != nv {
-			puts = append(puts, platformclientv2.Caseplandataschema{
-				Id:      platformclientv2.String(id),
-				Version: platformclientv2.Int(nv),
-			})
+	for _, row := range newRows {
+		if row.Id == nil || *row.Id == "" {
+			continue
+		}
+		id := *row.Id
+		if _, had := oldIDs[id]; !had {
+			puts = append(puts, platformclientv2.Caseplandataschema{Id: platformclientv2.String(id)})
 		}
 	}
 	return deleteIDs, puts
@@ -269,11 +246,6 @@ func flattenCaseplanDataSchemas(schemas *[]platformclientv2.Caseplandataschema) 
 		if s.Id != nil {
 			m["id"] = *s.Id
 		}
-		ver := 0
-		if s.Version != nil {
-			ver = *s.Version
-		}
-		m["version"] = ver
 		out = append(out, m)
 	}
 	return out

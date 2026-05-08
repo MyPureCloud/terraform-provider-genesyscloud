@@ -59,6 +59,25 @@ func createCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, m
 	return readCaseManagementStepplan(ctx, d, meta)
 }
 
+// resolveParentStageplanID returns the stageplan UUID that owns this stepplan.
+// Prefer state (stageplan_id) so read/update stay stable after stageplans are renamed
+// (ordinal resolution sorts by name and changes order).
+func resolveParentStageplanID(ctx context.Context, d *schema.ResourceData, sdkConfig *platformclientv2.Configuration, caseplanID string, stageNumber int) (string, error) {
+	if v, ok := d.GetOk("stageplan_id"); ok {
+		if id := v.(string); id != "" {
+			return id, nil
+		}
+	}
+	stage, _, err := case_management_stageplan.ResolveStageplanForCaseplanOrdinal(ctx, sdkConfig, caseplanID, stageNumber)
+	if err != nil {
+		return "", err
+	}
+	if stage == nil || stage.Id == nil {
+		return "", fmt.Errorf("could not resolve parent stageplan for caseplan %s stage_number %d", caseplanID, stageNumber)
+	}
+	return *stage.Id, nil
+}
+
 func applyStepplanPatchIfConfigured(ctx context.Context, d *schema.ResourceData, meta interface{}, caseplanID, stageplanID, stepplanID string) diag.Diagnostics {
 	body := buildStepplanUpdate(d)
 	if body.Name == nil && body.Description == nil && body.ActivityType == nil && body.WorkitemSettings == nil {
@@ -83,16 +102,12 @@ func readCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, met
 		return diag.FromErr(err)
 	}
 
-	stage, _, err := case_management_stageplan.ResolveStageplanForCaseplanOrdinal(ctx, sdkConfig, caseplanID, stageNumber)
+	stageplanID, err := resolveParentStageplanID(ctx, d, sdkConfig, caseplanID, stageNumber)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if stage == nil || stage.Id == nil {
-		return diag.Errorf("could not resolve parent stageplan for read")
-	}
-	stageplanID := *stage.Id
 
-	log.Printf("Reading case management stepplan %s (caseplan=%s stage=%d)", stepplanID, caseplanID, stageNumber)
+	log.Printf("Reading case management stepplan %s (caseplan=%s stage=%d stageplan=%s)", stepplanID, caseplanID, stageNumber, stageplanID)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		stepplan, resp, getErr := proxy.getCaseManagementStepplan(ctx, caseplanID, stageplanID, stepplanID)
@@ -126,14 +141,11 @@ func updateCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	stage, _, err := case_management_stageplan.ResolveStageplanForCaseplanOrdinal(ctx, sdkConfig, caseplanID, stageNumber)
+	parentStageplanID, err := resolveParentStageplanID(ctx, d, sdkConfig, caseplanID, stageNumber)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	if stage == nil || stage.Id == nil {
-		return diag.Errorf("could not resolve parent stageplan for update")
-	}
-	if diagErr := applyStepplanPatchIfConfigured(ctx, d, meta, caseplanID, *stage.Id, stepplanID); diagErr != nil {
+	if diagErr := applyStepplanPatchIfConfigured(ctx, d, meta, caseplanID, parentStageplanID, stepplanID); diagErr != nil {
 		return diagErr
 	}
 	return readCaseManagementStepplan(ctx, d, meta)

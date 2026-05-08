@@ -3,18 +3,20 @@ package case_management_caseplan
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 /*
@@ -32,7 +34,14 @@ func getAllAuthCaseManagementCaseplans(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, caseplan := range *caseplans {
-		resources[*caseplan.Id] = &resourceExporter.ResourceMeta{BlockLabel: *caseplan.Name}
+		if caseplan.Id == nil || *caseplan.Id == "" {
+			continue
+		}
+		blockLabel := "caseplan"
+		if caseplan.Name != nil && *caseplan.Name != "" {
+			blockLabel = *caseplan.Name
+		}
+		resources[*caseplan.Id] = &resourceExporter.ResourceMeta{BlockLabel: blockLabel}
 	}
 
 	return resources, nil
@@ -63,6 +72,7 @@ func createCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, m
 func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCaseManagementCaseplanProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCaseManagementCaseplan(), constants.ConsistencyChecks(), resourceName)
 
 	log.Printf("Reading case management caseplan %s", d.Id())
 
@@ -127,8 +137,12 @@ func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, met
 			_ = d.Set("intake_settings", []interface{}{})
 		}
 
-		log.Printf("Read case management caseplan %s %s", d.Id(), *caseplan.Name)
-		return nil
+		readName := ""
+		if caseplan.Name != nil {
+			readName = *caseplan.Name
+		}
+		log.Printf("Read case management caseplan %s %s", d.Id(), readName)
+		return cc.CheckState(d)
 	})
 }
 
@@ -189,9 +203,8 @@ func caseplanApplyIntakePutIfChanged(ctx context.Context, proxy *caseManagementC
 	return nil
 }
 
-// execCaseplanDataSchemaSync uses DELETE on .../dataschemas/default when bindings are removed, then for each desired row:
-// POST /dataschemas {"id"} for a workitem schema id that was not in the prior config (draft add), or
-// PUT .../dataschemas/default with id+version when the id was already present (e.g. version bump).
+// execCaseplanDataSchemaSync uses DELETE on .../dataschemas/default when the binding id changes or is removed, then
+// POST /dataschemas {"id"} for a new workitem schema id, or PUT .../dataschemas/default when re-binding after delete (fallback path).
 func execCaseplanDataSchemaSync(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID string, oldRaw, newRaw []interface{}) diag.Diagnostics {
 	if len(newRaw) > 1 {
 		return diag.Errorf("%s: only one data_schema block is supported (API uses .../dataschemas/default); found %d blocks", ResourceType, len(newRaw))

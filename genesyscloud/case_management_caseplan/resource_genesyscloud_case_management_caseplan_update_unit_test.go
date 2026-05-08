@@ -2,7 +2,6 @@ package case_management_caseplan
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,35 +13,27 @@ import (
 
 func TestUnit_caseplanDataSchemaSyncPlanFromState(t *testing.T) {
 	t.Parallel()
-	t.Run("version bump same id", func(t *testing.T) {
-		oldRaw := []interface{}{map[string]interface{}{"id": "a", "version": 1}}
-		newRaw := []interface{}{map[string]interface{}{"id": "a", "version": 2}}
-		del, puts := caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw)
-		assert.Empty(t, del)
-		require.Len(t, puts, 1)
-		assert.Equal(t, "a", *puts[0].Id)
-		assert.Equal(t, 2, *puts[0].Version)
-	})
-	t.Run("replace id single schema", func(t *testing.T) {
-		oldRaw := []interface{}{map[string]interface{}{"id": "a", "version": 1}}
-		newRaw := []interface{}{map[string]interface{}{"id": "b", "version": 1}}
-		del, puts := caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw)
-		assert.ElementsMatch(t, []string{"a"}, del)
-		require.Len(t, puts, 1)
-		assert.Equal(t, "b", *puts[0].Id)
-	})
-	t.Run("unchanged", func(t *testing.T) {
-		raw := []interface{}{map[string]interface{}{"id": "a", "version": 3}}
+	t.Run("same id unchanged", func(t *testing.T) {
+		raw := []interface{}{map[string]interface{}{"id": "a"}}
 		del, puts := caseplanDataSchemaSyncPlanFromState(raw, raw)
 		assert.Empty(t, del)
 		assert.Empty(t, puts)
 	})
+	t.Run("replace id single schema", func(t *testing.T) {
+		oldRaw := []interface{}{map[string]interface{}{"id": "a"}}
+		newRaw := []interface{}{map[string]interface{}{"id": "b"}}
+		del, puts := caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw)
+		assert.ElementsMatch(t, []string{"a"}, del)
+		require.Len(t, puts, 1)
+		assert.Equal(t, "b", *puts[0].Id)
+		assert.Nil(t, puts[0].Version)
+	})
 	t.Run("remove one of two", func(t *testing.T) {
 		oldRaw := []interface{}{
-			map[string]interface{}{"id": "a", "version": 1},
-			map[string]interface{}{"id": "b", "version": 1},
+			map[string]interface{}{"id": "a"},
+			map[string]interface{}{"id": "b"},
 		}
-		newRaw := []interface{}{map[string]interface{}{"id": "b", "version": 1}}
+		newRaw := []interface{}{map[string]interface{}{"id": "b"}}
 		del, puts := caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw)
 		assert.ElementsMatch(t, []string{"a"}, del)
 		assert.Empty(t, puts)
@@ -66,39 +57,42 @@ func TestUnit_execCaseplanDataSchemaSync_deleteDefaultThenPostNewId(t *testing.T
 			return nil, nil
 		},
 	}
-	oldRaw := []interface{}{map[string]interface{}{"id": "a", "version": 1}}
-	newRaw := []interface{}{map[string]interface{}{"id": "b", "version": 1}}
+	oldRaw := []interface{}{map[string]interface{}{"id": "a"}}
+	newRaw := []interface{}{map[string]interface{}{"id": "b"}}
 	diags := execCaseplanDataSchemaSync(context.Background(), p, "cp", oldRaw, newRaw)
 	assert.Empty(t, diags)
 	assert.Equal(t, []string{"del:default", "post:b"}, ops)
 }
 
-func TestUnit_execCaseplanDataSchemaSync_versionBumpUsesPutOnly(t *testing.T) {
+func TestUnit_execCaseplanDataSchemaSync_sameIdNoNetworkCalls(t *testing.T) {
 	t.Parallel()
 	var ops []string
 	p := &caseManagementCaseplanProxy{
 		postCaseManagementCaseplanDataschemaAttr: func(ctx context.Context, pr *caseManagementCaseplanProxy, caseplanID string, body caseplanDataschemaPostBody) (*platformclientv2.Caseplandataschema, *platformclientv2.APIResponse, error) {
-			t.Fatal("post not expected for same id")
+			ops = append(ops, "post")
 			return nil, nil, nil
 		},
 		putCaseManagementCaseplanDataschemaAttr: func(ctx context.Context, pr *caseManagementCaseplanProxy, caseplanID, schemaKey string, body platformclientv2.Caseplandataschema) (*platformclientv2.Caseplandataschema, *platformclientv2.APIResponse, error) {
-			ops = append(ops, "put:"+schemaKey+":"+*body.Id+":"+fmt.Sprintf("%d", *body.Version))
-			return &body, nil, nil
+			ops = append(ops, "put")
+			return nil, nil, nil
+		},
+		deleteCaseManagementCaseplanDataschemaAttr: func(ctx context.Context, pr *caseManagementCaseplanProxy, caseplanID, schemaKey string) (*platformclientv2.APIResponse, error) {
+			ops = append(ops, "del")
+			return nil, nil
 		},
 	}
-	oldRaw := []interface{}{map[string]interface{}{"id": "a", "version": 1}}
-	newRaw := []interface{}{map[string]interface{}{"id": "a", "version": 2}}
-	diags := execCaseplanDataSchemaSync(context.Background(), p, "cp", oldRaw, newRaw)
+	raw := []interface{}{map[string]interface{}{"id": "a"}}
+	diags := execCaseplanDataSchemaSync(context.Background(), p, "cp", raw, raw)
 	assert.Empty(t, diags)
-	assert.Equal(t, []string{"put:default:a:2"}, ops)
+	assert.Empty(t, ops)
 }
 
 func TestUnit_execCaseplanDataSchemaSync_rejectsMultipleNewBlocks(t *testing.T) {
 	t.Parallel()
-	oldRaw := []interface{}{map[string]interface{}{"id": "a", "version": 1}}
+	oldRaw := []interface{}{map[string]interface{}{"id": "a"}}
 	newRaw := []interface{}{
-		map[string]interface{}{"id": "b", "version": 1},
-		map[string]interface{}{"id": "c", "version": 1},
+		map[string]interface{}{"id": "b"},
+		map[string]interface{}{"id": "c"},
 	}
 	diags := execCaseplanDataSchemaSync(context.Background(), &caseManagementCaseplanProxy{}, "cp", oldRaw, newRaw)
 	assert.NotEmpty(t, diags)
@@ -122,10 +116,10 @@ func TestUnit_execCaseplanDataSchemaSync_deleteThenPutFallbackWhenPutsEmpty(t *t
 		},
 	}
 	oldRaw := []interface{}{
-		map[string]interface{}{"id": "a", "version": 1},
-		map[string]interface{}{"id": "b", "version": 1},
+		map[string]interface{}{"id": "a"},
+		map[string]interface{}{"id": "b"},
 	}
-	newRaw := []interface{}{map[string]interface{}{"id": "b", "version": 1}}
+	newRaw := []interface{}{map[string]interface{}{"id": "b"}}
 	diags := execCaseplanDataSchemaSync(context.Background(), p, "cp", oldRaw, newRaw)
 	assert.Empty(t, diags)
 	assert.Equal(t, []string{"del:default", "put:default:b"}, ops)
@@ -146,10 +140,9 @@ func TestUnit_caseplanApplyPatchIfChanged(t *testing.T) {
 	sch := ResourceCaseManagementCaseplan().Schema
 	state := &terraform.InstanceState{
 		Attributes: map[string]string{
-			"name":                  "old-name",
-			"data_schema.#":         "1",
-			"data_schema.0.id":      "11111111-1111-1111-1111-111111111111",
-			"data_schema.0.version": "1",
+			"name":             "old-name",
+			"data_schema.#":    "1",
+			"data_schema.0.id": "11111111-1111-1111-1111-111111111111",
 		},
 	}
 	diff := &terraform.InstanceDiff{
@@ -178,10 +171,9 @@ func TestUnit_caseplanApplyPatchIfChanged_noopWhenNoDiff(t *testing.T) {
 	sch := ResourceCaseManagementCaseplan().Schema
 	state := &terraform.InstanceState{
 		Attributes: map[string]string{
-			"name":                  "same",
-			"data_schema.#":         "1",
-			"data_schema.0.id":      "11111111-1111-1111-1111-111111111111",
-			"data_schema.0.version": "1",
+			"name":             "same",
+			"data_schema.#":    "1",
+			"data_schema.0.id": "11111111-1111-1111-1111-111111111111",
 		},
 	}
 	diff := &terraform.InstanceDiff{Attributes: map[string]*terraform.ResourceAttrDiff{}}
@@ -207,9 +199,9 @@ func TestUnit_caseplanApplyIntakePutIfChanged(t *testing.T) {
 	sch := ResourceCaseManagementCaseplan().Schema
 	state := &terraform.InstanceState{
 		Attributes: map[string]string{
+			"name":                            "cp",
 			"data_schema.#":                   "1",
 			"data_schema.0.id":                "11111111-1111-1111-1111-111111111111",
-			"data_schema.0.version":           "1",
 			"intake_settings.#":               "1",
 			"intake_settings.0.property":      "p1",
 			"intake_settings.0.required":      "false",
@@ -242,9 +234,9 @@ func TestUnit_caseplanApplyIntakePutIfChanged_noop(t *testing.T) {
 	sch := ResourceCaseManagementCaseplan().Schema
 	state := &terraform.InstanceState{
 		Attributes: map[string]string{
+			"name":                            "cp",
 			"data_schema.#":                   "1",
 			"data_schema.0.id":                "11111111-1111-1111-1111-111111111111",
-			"data_schema.0.version":           "1",
 			"intake_settings.#":               "1",
 			"intake_settings.0.property":      "p1",
 			"intake_settings.0.required":      "false",
@@ -271,11 +263,11 @@ func TestUnit_caseplanDiagsIfImmutableFieldsChangeAfterPublish_blocksWhenPublish
 	sch := ResourceCaseManagementCaseplan().Schema
 	state := &terraform.InstanceState{
 		Attributes: map[string]string{
+			"name":                            "cp",
 			"division_id":                     "div-a",
 			"reference_prefix":                "AB12",
 			"data_schema.#":                   "1",
 			"data_schema.0.id":                "11111111-1111-1111-1111-111111111111",
-			"data_schema.0.version":           "1",
 			"customer_intent.#":               "1",
 			"customer_intent.0.id":            "22222222-2222-2222-2222-222222222222",
 			"intake_settings.#":               "1",
@@ -309,10 +301,10 @@ func TestUnit_caseplanDiagsIfImmutableFieldsChangeAfterPublish_allowsWhenUnpubli
 	sch := ResourceCaseManagementCaseplan().Schema
 	state := &terraform.InstanceState{
 		Attributes: map[string]string{
-			"division_id":           "div-a",
-			"data_schema.#":         "1",
-			"data_schema.0.id":      "11111111-1111-1111-1111-111111111111",
-			"data_schema.0.version": "1",
+			"name":             "cp",
+			"division_id":      "div-a",
+			"data_schema.#":    "1",
+			"data_schema.0.id": "11111111-1111-1111-1111-111111111111",
 		},
 	}
 	diff := &terraform.InstanceDiff{
