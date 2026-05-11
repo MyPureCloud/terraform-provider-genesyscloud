@@ -1115,12 +1115,12 @@ func TestStripSystemColumnsFromCSV(t *testing.T) {
 		}
 	})
 
-	t.Run("strips many system columns like real export scenario", func(t *testing.T) {
+	t.Run("strips handles exported CSV column output, with many system columns like real export scenario", func(t *testing.T) {
 		tempDir := t.TempDir()
 		csvPath := filepath.Join(tempDir, "test.csv")
 
 		// Simulate a real export: 3 user columns + 5 system columns
-		header := "inin-outbound-id,acct_numb,phone1,ContactCallable,AutomaticTimeZone-phone1,Callable-phone1,CallRecordLastAttempt-phone1,CallRecordLastResult-phone1"
+		header := "\uFEFF\"\"inin-outbound-id\"\",acct_numb,phone1,ContactCallable,AutomaticTimeZone-phone1,Callable-phone1,CallRecordLastAttempt-phone1,CallRecordLastResult-phone1"
 		row := "id1,123,555-0100,true,US/Eastern,true,2024-01-01,BUSY"
 		csvContent := header + "\n" + row + "\n"
 		os.WriteFile(csvPath, []byte(csvContent), 0644)
