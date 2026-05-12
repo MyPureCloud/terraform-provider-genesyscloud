@@ -8,7 +8,7 @@ description: |-
 
 # genesyscloud_integration_action (Data Source)
 
-Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, `integration_id` can be provided to disambiguate the lookup.
+Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.
 
 ## Example Usage
 
@@ -17,7 +17,9 @@ data "genesyscloud_integration_action" "integrationAction" {
   name = "example integration action name"
 }
 
-# Disambiguate a static data action by also specifying the parent integration id
+# Disambiguate a static (built-in) data action by also specifying the parent integration id.
+# This is useful when the same static action name (e.g. "Get User") exists across multiple
+# integration instances and the exporter has emitted both as data sources.
 data "genesyscloud_integration_action" "staticAction" {
   name           = "Get User"
   integration_id = genesyscloud_integration.my_integration.id
