@@ -2035,7 +2035,8 @@
       "permissions": [
         "routing:skill:create",
         "routing:skill:delete",
-        "routing:skill:manage"
+        "routing:skill:manage",
+        "routing:skill:view"
       ],
       "scopes": [
         "routing",
