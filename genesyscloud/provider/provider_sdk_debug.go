@@ -514,17 +514,22 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 	// If ResourceId or ResourceName are empty, nil, or unavailable, try to extract from response body
 	if debugResp.ResourceId == "" || debugResp.ResourceId == "unavailable" ||
 		debugResp.ResourceName == "" || debugResp.ResourceName == "unavailable" {
+		// Safely attempt to read and parse response body
 		if response.Body != nil {
 			bodyBytes, err := io.ReadAll(response.Body)
 			if err == nil && len(bodyBytes) > 0 {
+				// Restore the body in case it's needed later
 				response.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
+				// Extract id and name from JSON body
 				extractedId, extractedName := extractIdOrNameFromJSON(bodyBytes)
 
+				// Update ResourceId if it was empty/unavailable and we found an id
 				if (debugResp.ResourceId == "" || debugResp.ResourceId == "unavailable") && extractedId != "" {
 					debugResp.ResourceId = extractedId
 				}
 
+				// Update ResourceName if it was empty/unavailable and we found a name
 				if (debugResp.ResourceName == "" || debugResp.ResourceName == "unavailable") && extractedName != "" {
 					debugResp.ResourceName = extractedName
 				}
