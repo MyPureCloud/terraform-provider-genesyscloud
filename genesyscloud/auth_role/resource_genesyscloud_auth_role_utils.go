@@ -164,6 +164,163 @@ func flattenRolePermissionPolicies(policies []platformclientv2.Domainpermissionp
 	return policySet
 }
 
+// flattenRolePermissionPoliciesWithWildcardSuppress flattens permission policies from the API response
+// while preserving wildcard values from the user's configuration to suppress diffs caused by the
+// Genesys Cloud wildcard permission deprecation (effective June 1, 2026).
+//
+// When the API expands wildcards into explicit permissions, this function detects matching policies
+// and preserves the wildcard in state so Terraform does not show a perpetual diff.
+func flattenRolePermissionPoliciesWithWildcardSuppress(policies []platformclientv2.Domainpermissionpolicy, configuredPolicies []interface{}) *schema.Set {
+	policySet := schema.NewSet(schema.HashResource(rolePermPolicyResource), []interface{}{})
+
+	for _, sdkPolicy := range policies {
+		policyMap := make(map[string]interface{})
+		if sdkPolicy.Domain != nil {
+			policyMap["domain"] = *sdkPolicy.Domain
+		}
+		if sdkPolicy.EntityName != nil {
+			policyMap["entity_name"] = *sdkPolicy.EntityName
+		}
+		if sdkPolicy.ActionSet != nil {
+			policyMap["action_set"] = lists.StringListToSet(*sdkPolicy.ActionSet)
+		}
+		if sdkPolicy.ResourceConditionNode != nil {
+			policyMap["conditions"] = flattenRoleConditionNode(*sdkPolicy.ResourceConditionNode)
+		}
+
+		// Check if this policy matches a configured policy that uses wildcards
+		// and suppress the diff by preserving the wildcard value
+		suppressWildcardDiffForPolicy(policyMap, configuredPolicies)
+
+		policySet.Add(policyMap)
+	}
+
+	// Handle the case where the config has entity_name = "*" (all entities in a domain).
+	// The API may return multiple separate policies for each entity in that domain.
+	// We need to check if all returned policies for a domain are covered by a wildcard entity config.
+	policySet = suppressWildcardEntityName(policySet, policies, configuredPolicies)
+
+	return policySet
+}
+
+// suppressWildcardDiffForPolicy checks if a flattened policy from the API matches a configured policy
+// that uses a wildcard in action_set. If so, it replaces the expanded action list with ["*"].
+func suppressWildcardDiffForPolicy(policyMap map[string]interface{}, configuredPolicies []interface{}) {
+	domain, _ := policyMap["domain"].(string)
+	entityName, _ := policyMap["entity_name"].(string)
+
+	for _, configPolicy := range configuredPolicies {
+		configMap, ok := configPolicy.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		configDomain, _ := configMap["domain"].(string)
+		configEntity, _ := configMap["entity_name"].(string)
+
+		// Match on domain and entity_name
+		if configDomain != domain || configEntity != entityName {
+			continue
+		}
+
+		// Check if the configured action_set contains "*"
+		if configActionSet, ok := configMap["action_set"]; ok {
+			configActions := configActionSet.(*schema.Set).List()
+			for _, action := range configActions {
+				if action.(string) == "*" {
+					// The user configured a wildcard — preserve it in state to suppress the diff
+					wildcardSet := schema.NewSet(schema.HashString, []interface{}{"*"})
+					policyMap["action_set"] = wildcardSet
+					return
+				}
+			}
+		}
+	}
+}
+
+// suppressWildcardEntityName handles the case where the user configured entity_name = "*" for a domain.
+// After the deprecation, the API may return separate policies for each entity in that domain.
+// This function collapses them back into a single policy with entity_name = "*" to match the config.
+func suppressWildcardEntityName(policySet *schema.Set, policies []platformclientv2.Domainpermissionpolicy, configuredPolicies []interface{}) *schema.Set {
+	// Find configured policies with entity_name = "*"
+	wildcardEntityConfigs := make(map[string]map[string]interface{}) // domain -> config map
+	for _, configPolicy := range configuredPolicies {
+		configMap, ok := configPolicy.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		configEntity, _ := configMap["entity_name"].(string)
+		if configEntity == "*" {
+			configDomain, _ := configMap["domain"].(string)
+			wildcardEntityConfigs[configDomain] = configMap
+		}
+	}
+
+	if len(wildcardEntityConfigs) == 0 {
+		return policySet
+	}
+
+	// For each domain with a wildcard entity config, check if the API returned
+	// multiple policies for that domain. If so, replace them with a single wildcard policy.
+	for domain, configMap := range wildcardEntityConfigs {
+		// Check if any returned policies belong to this domain and don't already have entity_name = "*"
+		domainHasExpandedEntities := false
+		for _, sdkPolicy := range policies {
+			if sdkPolicy.Domain != nil && *sdkPolicy.Domain == domain {
+				if sdkPolicy.EntityName != nil && *sdkPolicy.EntityName != "*" {
+					domainHasExpandedEntities = true
+					break
+				}
+			}
+		}
+
+		if !domainHasExpandedEntities {
+			continue
+		}
+
+		// Remove all policies for this domain from the set and add back a single wildcard policy
+		newPolicySet := schema.NewSet(schema.HashResource(rolePermPolicyResource), []interface{}{})
+		for _, item := range policySet.List() {
+			itemMap := item.(map[string]interface{})
+			itemDomain, _ := itemMap["domain"].(string)
+			if itemDomain != domain {
+				newPolicySet.Add(item)
+			}
+		}
+
+		// Add back the wildcard entity policy matching the user's config
+		wildcardPolicyMap := make(map[string]interface{})
+		wildcardPolicyMap["domain"] = domain
+		wildcardPolicyMap["entity_name"] = "*"
+
+		// Preserve wildcard action_set if configured
+		if configActionSet, ok := configMap["action_set"]; ok {
+			configActions := configActionSet.(*schema.Set).List()
+			hasWildcardAction := false
+			for _, action := range configActions {
+				if action.(string) == "*" {
+					hasWildcardAction = true
+					break
+				}
+			}
+			if hasWildcardAction {
+				wildcardPolicyMap["action_set"] = schema.NewSet(schema.HashString, []interface{}{"*"})
+			} else {
+				wildcardPolicyMap["action_set"] = configActionSet
+			}
+		}
+
+		if conditions, ok := configMap["conditions"]; ok {
+			wildcardPolicyMap["conditions"] = conditions
+		}
+
+		newPolicySet.Add(wildcardPolicyMap)
+		policySet = newPolicySet
+	}
+
+	return policySet
+}
+
 func flattenRoleConditionNode(conditions platformclientv2.Domainresourceconditionnode) []interface{} {
 	conditionMap := make(map[string]interface{})
 
