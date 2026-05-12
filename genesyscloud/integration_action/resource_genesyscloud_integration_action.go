@@ -50,18 +50,89 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration actions %s", err), resp)
 	}
 
+	// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
+	// updated, or deleted via the public API. They are included here so the exporter
+	// can emit them as data sources (see ExportAsDataFunc on the exporter) rather than
+	// as managed resources, allowing other resources to reference them. A given static
+	// action name (e.g. "Get User") frequently repeats across integration instances of
+	// the same type, so we fold the parent integration name into the block label to
+	// keep labels distinct in the exported config.
+	integrationNamesById, diagErr := buildIntegrationNameLookup(ctx, iap, *actions)
+	if diagErr != nil {
+		return nil, diagErr
+	}
+
 	for _, action := range *actions {
-		// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
-		// updated, or deleted via the public API. They are included here so the exporter
-		// can emit them as data sources (see ExportAsDataFunc on the exporter) rather than
-		// as managed resources, allowing other resources to reference them.
 		blockHash, err := util.QuickHashFields(action.Category)
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Category + "_" + *action.Name, BlockHash: blockHash}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: buildIntegrationActionBlockLabel(action, integrationNamesById),
+			BlockHash:  blockHash,
+		}
 	}
 	return resources, nil
+}
+
+// buildIntegrationNameLookup returns a map of integration id -> integration name to use
+// when generating block labels. The lookup is only populated when at least one static
+// action is present in the supplied actions, since custom actions don't need the
+// integration name baked into their label and the API call is otherwise wasted work.
+func buildIntegrationNameLookup(ctx context.Context, iap *integrationActionsProxy, actions []platformclientv2.Action) (map[string]string, diag.Diagnostics) {
+	hasStatic := false
+	for _, action := range actions {
+		if action.Id != nil && strings.HasPrefix(*action.Id, staticActionIDPrefix) {
+			hasStatic = true
+			break
+		}
+	}
+	if !hasStatic {
+		return nil, nil
+	}
+
+	integrations, resp, err := iap.getAllIntegrations(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integrations for static action labels: %s", err), resp)
+	}
+
+	lookup := make(map[string]string, len(*integrations))
+	for _, integration := range *integrations {
+		if integration.Id == nil || integration.Name == nil {
+			continue
+		}
+		lookup[*integration.Id] = *integration.Name
+	}
+	return lookup, nil
+}
+
+// buildIntegrationActionBlockLabel returns the label used for an action's exported block.
+// For static (built-in) actions, the label includes the parent integration's name so that
+// actions sharing a name across integration instances (e.g. "Get User") still produce
+// distinct labels. Custom actions retain their existing `<category>_<name>` label so that
+// existing exports remain stable.
+func buildIntegrationActionBlockLabel(action platformclientv2.Action, integrationNamesById map[string]string) string {
+	category := ""
+	if action.Category != nil {
+		category = *action.Category
+	}
+	name := ""
+	if action.Name != nil {
+		name = *action.Name
+	}
+
+	if action.Id == nil || !strings.HasPrefix(*action.Id, staticActionIDPrefix) {
+		return category + "_" + name
+	}
+
+	if action.IntegrationId == nil {
+		return category + "_" + name
+	}
+	integrationName, ok := integrationNamesById[*action.IntegrationId]
+	if !ok || integrationName == "" {
+		return category + "_" + name
+	}
+	return category + "_" + integrationName + "_" + name
 }
 
 // createIntegrationAction is used by the integration actions resource to create Genesyscloud integration action

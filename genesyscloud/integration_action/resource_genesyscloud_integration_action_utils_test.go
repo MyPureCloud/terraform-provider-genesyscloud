@@ -3,7 +3,11 @@ package integration_action
 import (
 	"context"
 	"testing"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
+
+func strPtr(s string) *string { return &s }
 
 // TestShouldExportIntegrationActionAsDataSource asserts that static (built-in)
 // integration actions are flagged for data-source export while custom actions
@@ -49,6 +53,77 @@ func TestShouldExportIntegrationActionAsDataSource(t *testing.T) {
 			}
 			if got != tc.expectAsDS {
 				t.Fatalf("%s: shouldExportIntegrationActionAsDataSource() = %v, want %v", tc.description, got, tc.expectAsDS)
+			}
+		})
+	}
+}
+
+// TestBuildIntegrationActionBlockLabel verifies the export block label format:
+//   - custom actions keep the legacy "<category>_<name>" format so existing exports
+//     remain stable;
+//   - static actions fold in the parent integration name to disambiguate copies that
+//     share a name across integration instances;
+//   - missing/unknown integration metadata falls back to the legacy format.
+func TestBuildIntegrationActionBlockLabel(t *testing.T) {
+	const customId = "9b1d8c50-cafe-4b1a-b0c0-feeddeadbeef"
+	const staticId = "static_e7b86b86-abcd-4242-9999-1234567890ab"
+
+	tests := []struct {
+		name                 string
+		action               platformclientv2.Action
+		integrationNamesById map[string]string
+		want                 string
+	}{
+		{
+			name: "custom action keeps legacy label",
+			action: platformclientv2.Action{
+				Id:            strPtr(customId),
+				Name:          strPtr("My Action"),
+				Category:      strPtr("My Category"),
+				IntegrationId: strPtr("integ-1"),
+			},
+			integrationNamesById: map[string]string{"integ-1": "Primary Integration"},
+			want:                 "My Category_My Action",
+		},
+		{
+			name: "static action includes parent integration name",
+			action: platformclientv2.Action{
+				Id:            strPtr(staticId),
+				Name:          strPtr("Get User"),
+				Category:      strPtr("Genesys Cloud Data Actions"),
+				IntegrationId: strPtr("integ-1"),
+			},
+			integrationNamesById: map[string]string{"integ-1": "Primary Integration"},
+			want:                 "Genesys Cloud Data Actions_Primary Integration_Get User",
+		},
+		{
+			name: "static action without lookup entry falls back",
+			action: platformclientv2.Action{
+				Id:            strPtr(staticId),
+				Name:          strPtr("Get User"),
+				Category:      strPtr("Genesys Cloud Data Actions"),
+				IntegrationId: strPtr("integ-unknown"),
+			},
+			integrationNamesById: map[string]string{"integ-1": "Primary Integration"},
+			want:                 "Genesys Cloud Data Actions_Get User",
+		},
+		{
+			name: "static action with nil integration id falls back",
+			action: platformclientv2.Action{
+				Id:       strPtr(staticId),
+				Name:     strPtr("Get User"),
+				Category: strPtr("Genesys Cloud Data Actions"),
+			},
+			integrationNamesById: nil,
+			want:                 "Genesys Cloud Data Actions_Get User",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := buildIntegrationActionBlockLabel(tc.action, tc.integrationNamesById)
+			if got != tc.want {
+				t.Fatalf("buildIntegrationActionBlockLabel() = %q, want %q", got, tc.want)
 			}
 		})
 	}
