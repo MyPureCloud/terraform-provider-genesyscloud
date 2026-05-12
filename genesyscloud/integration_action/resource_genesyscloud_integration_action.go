@@ -51,10 +51,10 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 	}
 
 	for _, action := range *actions {
-		// Don't include "static" actions
-		if strings.HasPrefix(*action.Id, "static") {
-			continue
-		}
+		// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
+		// updated, or deleted via the public API. They are included here so the exporter
+		// can emit them as data sources (see ExportAsDataFunc on the exporter) rather than
+		// as managed resources, allowing other resources to reference them.
 		blockHash, err := util.QuickHashFields(action.Category)
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)

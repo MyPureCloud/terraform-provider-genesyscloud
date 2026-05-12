@@ -3,18 +3,24 @@
 page_title: "genesyscloud_integration_action Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud integration action. Select an integration action by name
+  Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.
 ---
 
 # genesyscloud_integration_action (Data Source)
 
-Data source for Genesys Cloud integration action. Select an integration action by name
+Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, `integration_id` can be provided to disambiguate the lookup.
 
 ## Example Usage
 
 ```terraform
 data "genesyscloud_integration_action" "integrationAction" {
   name = "example integration action name"
+}
+
+# Disambiguate a static data action by also specifying the parent integration id
+data "genesyscloud_integration_action" "staticAction" {
+  name           = "Get User"
+  integration_id = genesyscloud_integration.my_integration.id
 }
 ```
 
@@ -24,6 +30,10 @@ data "genesyscloud_integration_action" "integrationAction" {
 ### Required
 
 - `name` (String) The name of the integration action
+
+### Optional
+
+- `integration_id` (String) The ID of the integration that owns the action. Optional, used to disambiguate static (built-in) data actions whose names may not be unique across integration instances.
 
 ### Read-Only
 
