@@ -18,20 +18,18 @@ import (
 	"github.com/google/uuid"
 )
 
-// sdkDebugHookRequestBodyEnabled mirrors provider sdk_debug: when true, RequestLogHook
-// JSON includes full request_body. When false, bodies are only read when needed to
-// infer resource id/name (avoids logging large/sensitive payloads on every request).
+// True when provider sdk_debug is on: log full request_body in hooks; false = read body only to infer id/name.
 var sdkDebugHookRequestBodyEnabled atomic.Bool
 
-// sdkDebugErrorMirrorPath is the sdk_debug log file path when sdk_debug is enabled; empty disables mirroring.
+// sdk_debug log path while sdk_debug is enabled; empty turns off file mirroring.
 var sdkDebugErrorMirrorPath atomic.Value // string
 
 var sdkDebugErrorMirrorMu sync.Mutex
 
-// sdkDebugMirrorRequestBodies maps TF-Correlation-Id (set in RequestLogHook) to the outbound body bytes
+// TF-Correlation-Id -> last outbound body (so error mirror can log request after send).
 var sdkDebugMirrorRequestBodies sync.Map
 
-// maxMirrorBodyBytes caps mirrored request/response bodies written to sdk_debug.log.
+// Max bytes written per mirrored request/response body in sdk_debug.log.
 const maxMirrorBodyBytes = 1 << 20
 
 func storeSDKDebugMirrorRequestBodyForHook(dr *sdkDebugRequest) {
@@ -70,8 +68,7 @@ func sdkDebugStatusNeedsErrorMirror(statusCode int) bool {
 	return false
 }
 
-// sdkDebugFileErrorLine matches the Genesys platform SDK logStatement JSON when sdk_debug_format is Json
-// (see platformclientv2/logger.go logStatement).
+// One sdk_debug.log JSON line: same shape as platformclientv2 logger logStatement (Json format).
 type sdkDebugFileErrorLine struct {
 	Date            *time.Time  `json:"date,omitempty"`
 	Level           string      `json:"level,omitempty"`
@@ -143,9 +140,7 @@ func mirrorResponseBodyForSDKFile(resp *http.Response) string {
 	return string(b)
 }
 
-// mirrorSDKDebugHTTPErrorToFile appends one JSON line matching the SDK file format for ERROR logs when
-// retryablehttp returns (nil, err) on retry exhaustion so platformclientv2 never calls LoggingConfiguration.error().
-// storedRequestBody comes from popSDKDebugMirrorRequestBody(TF-Correlation-Id) in ResponseLogHook.
+// Appends SDK-style JSON error to sdk_debug.log for 429/5xx when the SDK skips file logging after retry exhaustion
 func mirrorSDKDebugHTTPErrorToFile(resp *http.Response, storedRequestBody string) {
 	if resp == nil || resp.Request == nil || !sdkDebugStatusNeedsErrorMirror(resp.StatusCode) {
 		return
@@ -196,10 +191,10 @@ func mirrorSDKDebugHTTPErrorToFile(resp *http.Response, storedRequestBody string
 	_, _ = f.Write(append(line, '\n'))
 }
 
-// maxRequestBodyGrowHint caps ContentLength-based preallocation (avoids huge Grow on bogus headers).
+// Max Content-Length hint for hook body buffer prealloc
 const maxRequestBodyGrowHint = 4 << 20
 
-// readRequestBodyForHook reads r fully; uses a single buffer grow when Content-Length is trustworthy.
+// Reads the full hook request body
 func readRequestBodyForHook(r io.Reader, contentLength int64) ([]byte, error) {
 	if contentLength > 0 && contentLength <= maxRequestBodyGrowHint {
 		var buf bytes.Buffer
@@ -231,7 +226,6 @@ func (s *sdkDebugRequest) ToJSON() (err error, jsonStr string) {
 		return err, ""
 	}
 
-	// Print the JSON string
 	return nil, string(jsonData)
 }
 
@@ -255,7 +249,6 @@ func (s *sdkDebugResponse) ToJSON() (err error, jsonStr string) {
 		return err, ""
 	}
 
-	// Print the JSON string
 	return nil, string(jsonData)
 }
 
@@ -311,15 +304,12 @@ func getGoroutineID() uint64 {
 	return id
 }
 
-// setContextForRequest stores the context for the current goroutine.
-// This allows the RequestLogHook to access the context even though
-// the SDK doesn't pass context to HTTP requests.
+// setContextForRequest binds ctx to the current goroutine for RequestLogHook.
 func setContextForRequest(ctx context.Context) {
 	if ctx == nil {
 		return
 	}
 
-	// Store by goroutine ID
 	goroutineID := getGoroutineID()
 	if goroutineID > 0 {
 		contextStorage.Store(goroutineID, ctx)
@@ -462,8 +452,7 @@ func newSDKDebugRequest(request *http.Request, count int) *sdkDebugRequest {
 	needsBodyPeek := debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable" ||
 		debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable"
 
-	// When sdk_debug is true, read the body for RequestBody in hook JSON (fixes missing body when SDK logging fails on retries).
-	// When sdk_debug is false, only read if id/name are missing (legacy), and do not populate RequestBody (avoids huge/sensitive logs).
+	// sdk_debug on: capture full body for hooks/mirror; off: read only if id/name missing (no request_body in hook JSON).
 	var bodyBytes []byte
 	if request.Body != nil && (captureFull || needsBodyPeek) {
 		body, err := readRequestBodyForHook(request.Body, request.ContentLength)
@@ -522,22 +511,17 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 	// If ResourceId or ResourceName are empty, nil, or unavailable, try to extract from response body
 	if debugResp.ResourceId == "" || debugResp.ResourceId == "unavailable" ||
 		debugResp.ResourceName == "" || debugResp.ResourceName == "unavailable" {
-		// Safely attempt to read and parse response body
 		if response.Body != nil {
 			bodyBytes, err := io.ReadAll(response.Body)
 			if err == nil && len(bodyBytes) > 0 {
-				// Restore the body in case it's needed later
 				response.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-				// Extract id and name from JSON body
 				extractedId, extractedName := extractIdOrNameFromJSON(bodyBytes)
 
-				// Update ResourceId if it was empty/unavailable and we found an id
 				if (debugResp.ResourceId == "" || debugResp.ResourceId == "unavailable") && extractedId != "" {
 					debugResp.ResourceId = extractedId
 				}
 
-				// Update ResourceName if it was empty/unavailable and we found a name
 				if (debugResp.ResourceName == "" || debugResp.ResourceName == "unavailable") && extractedName != "" {
 					debugResp.ResourceName = extractedName
 				}
