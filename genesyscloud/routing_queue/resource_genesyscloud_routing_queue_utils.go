@@ -514,6 +514,14 @@ func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgro
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkPilotRule.Conditions, pilotRuleMap, "conditions", buildCgaConditions)
 	}
 
+	// Empty block or omitted attributes yield a non-nil *struct with all API fields unset. Sending that
+	// as pilotRule can trigger platform NPEs
+	exprEmpty := sdkPilotRule.ConditionExpression == nil || *sdkPilotRule.ConditionExpression == ""
+	condMeaningful := sdkPilotRule.Conditions != nil && len(*sdkPilotRule.Conditions) > 0
+	if exprEmpty && !condMeaningful {
+		return nil
+	}
+
 	return &sdkPilotRule
 }
 
@@ -965,6 +973,7 @@ func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) [
 	rulesOut := make([]interface{}, 0)
 
 	for _, rule := range *rules {
+
 		ruleOut := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(ruleOut, "condition_expression", rule.ConditionExpression)
@@ -980,6 +989,7 @@ func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroup
 
 	// convert pilot rule
 	if sdkCga.PilotRule != nil {
+
 		pilotRuleMap := make(map[string]interface{})
 
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(pilotRuleMap, "conditions", sdkCga.PilotRule.Conditions, flattenCgaRuleConditions)
