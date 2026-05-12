@@ -304,12 +304,15 @@ func getGoroutineID() uint64 {
 	return id
 }
 
-// setContextForRequest binds ctx to the current goroutine for RequestLogHook.
+// setContextForRequest stores the context for the current goroutine.
+// This allows the RequestLogHook to access the context even though
+// the SDK doesn't pass context to HTTP requests.
 func setContextForRequest(ctx context.Context) {
 	if ctx == nil {
 		return
 	}
 
+	// Store by goroutine ID
 	goroutineID := getGoroutineID()
 	if goroutineID > 0 {
 		contextStorage.Store(goroutineID, ctx)
