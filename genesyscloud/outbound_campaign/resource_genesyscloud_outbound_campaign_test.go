@@ -464,6 +464,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 						contactSortNumeric,
 					),
 					generateDynamicContactQueueingSettingsBlock(util.FalseValue, util.FalseValue),
+					generateDiagnosticsSettingsBlock(util.TrueValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "name", nameUpdated),
@@ -482,6 +483,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "contact_sorts.0.numeric", contactSortNumeric),
 					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.sort", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "dynamic_contact_queueing_settings.0.filter", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "diagnostics_settings.0.report_low_max_calls_per_agent_alert", util.TrueValue),
 					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
 					resource.TestCheckResourceAttrPair(resourcePath, "callable_time_set_id",
@@ -1347,6 +1349,14 @@ func generateDynamicLineBalancingSettingsBlock(enabled, weight string) string {
 		relative_weight = %s
 	}
 	`, enabled, weight)
+}
+
+func generateDiagnosticsSettingsBlock(reportLowMaxCallsPerAgentAlert string) string {
+	return fmt.Sprintf(`
+	diagnostics_settings {
+		report_low_max_calls_per_agent_alert = %s
+	}
+	`, reportLowMaxCallsPerAgentAlert)
 }
 
 func getPublishedScriptId() (string, error) {

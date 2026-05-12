@@ -119,6 +119,17 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:         schema.TypeInt,
 				ValidateFunc: validation.IntAtLeast(1),
 			},
+			`max_calls_per_agent_decimal`: {
+				Description: `The maximum number of calls that can be placed per agent on this campaign with decimal precision.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeFloat,
+			},
+			`agent_owned_column`: {
+				Description: `Name of the contact list column containing the id of the agent who owns the record. Only applicable to preview campaigns.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			`dnc_list_ids`: {
 				Description: `DncLists for this Campaign to check before placing a call.`,
 				Optional:    true,
@@ -282,6 +293,22 @@ func ResourceOutboundCampaign() *schema.Resource {
 							Type:         schema.TypeInt,
 							Optional:     true,
 							ValidateFunc: validation.IntBetween(0, 100),
+						},
+					},
+				},
+			},
+			`diagnostics_settings`: {
+				Description: `Campaign diagnostics settings.`,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"report_low_max_calls_per_agent_alert": {
+							Description: "Whether to report on low max calls per agent alerts.",
+							Type:        schema.TypeBool,
+							Optional:    true,
 						},
 					},
 				},

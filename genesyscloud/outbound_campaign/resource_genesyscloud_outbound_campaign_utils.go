@@ -38,6 +38,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
 	priority := d.Get("priority").(int)
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
+	maxCallsPerAgentDecimal := d.Get("max_calls_per_agent_decimal").(float64)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
 
@@ -73,6 +74,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
+		DiagnosticsSettings:            buildDiagnosticsSettings(d.Get("diagnostics_settings").([]interface{})),
+		AgentOwnedColumn:               resourcedata.GetNonZeroPointer[string](d, "agent_owned_column"),
 	}
 
 	if len(skillColumns) > 0 {
@@ -101,6 +104,9 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	}
 	if maxCallsPerAgent != 0 {
 		campaign.MaxCallsPerAgent = &maxCallsPerAgent
+	}
+	if maxCallsPerAgentDecimal != 0 {
+		campaign.MaxCallsPerAgentDecimal = &maxCallsPerAgentDecimal
 	}
 	return campaign
 }
@@ -194,6 +200,21 @@ func buildLineBalancingSettings(settings []interface{}) *platformclientv2.Dynami
 	return &sdkLineBalancingSettings
 }
 
+func buildDiagnosticsSettings(settings []interface{}) *platformclientv2.Diagnosticssettings {
+	if len(settings) < 1 {
+		return nil
+	}
+	settingMap, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	var sdkDiagnosticsSettings platformclientv2.Diagnosticssettings
+	if v, ok := settingMap["report_low_max_calls_per_agent_alert"].(bool); ok {
+		sdkDiagnosticsSettings.ReportLowMaxCallsPerAgentAlert = platformclientv2.Bool(v)
+	}
+	return &sdkDiagnosticsSettings
+}
+
 func flattenSettings(settings *platformclientv2.Dynamiccontactqueueingsettings) []interface{} {
 	settingsMap := make(map[string]interface{}, 0)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "sort", settings.Sort)
@@ -239,6 +260,12 @@ func flattenLineBalancingSettings(settings *platformclientv2.Dynamiclinebalancin
 	settingsMap := make(map[string]interface{}, 0)
 	settingsMap["enabled"] = *settings.Enabled
 	resourcedata.SetMapValueIfNotNil(settingsMap, "relative_weight", settings.RelativeWeight)
+	return []interface{}{settingsMap}
+}
+
+func flattenDiagnosticsSettings(settings *platformclientv2.Diagnosticssettings) []interface{} {
+	settingsMap := make(map[string]interface{}, 0)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "report_low_max_calls_per_agent_alert", settings.ReportLowMaxCallsPerAgentAlert)
 	return []interface{}{settingsMap}
 }
 
