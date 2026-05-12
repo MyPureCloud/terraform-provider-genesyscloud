@@ -1,11 +1,12 @@
 package external_user
 
 import (
+	"testing"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -18,7 +19,7 @@ func TestAccResourceExternalUser(t *testing.T) {
 		userEmail          = randomizer + "@website.com"
 		externalKey        = randomizer
 		UpdatedExternalKey = "updated" + randomizer
-		authorityName      = "msft"
+		authorityName      = "https://www.bankofamerica.com/sit"
 		userResoureLabel   = "sample_user"
 		resourceLabel      = "sample_external_user"
 		resourcePath       = ResourceType + "." + resourceLabel
