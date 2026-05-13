@@ -412,7 +412,7 @@ func deleteScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error
 		return nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp == nil || resp.StatusCode != http.StatusOK {
 		response := "nil"
 		if resp != nil {
 			response = resp.Status
