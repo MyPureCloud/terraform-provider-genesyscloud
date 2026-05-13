@@ -162,7 +162,7 @@ func RoutingQueueConditionalGroupActivationExporter() *resourceExporter.Resource
 			"rules.conditions.simple_metric.queue_id":      {RefType: "genesyscloud_routing_queue"},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 		},
 	}
 }
