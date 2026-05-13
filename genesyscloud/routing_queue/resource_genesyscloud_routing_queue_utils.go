@@ -311,7 +311,7 @@ func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv
 		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		if enableInactivityTimeout, ok := subTypeMap["enable_inactivity_timeout"].(bool); ok && enableInactivityTimeout {
+		if enableInactivityTimeout, ok := subTypeMap["enable_inactivity_timeout"].(bool); ok {
 			subTypeSetting.EnableInactivityTimeout = &enableInactivityTimeout
 		}
 		returnObj[mediaType] = subTypeSetting
