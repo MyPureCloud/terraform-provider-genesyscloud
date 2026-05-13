@@ -140,7 +140,8 @@ func createOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, out
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create campaign %s", err)
 	}
@@ -234,7 +235,8 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 		outboundCampaign.CampaignStatus = campaign.CampaignStatus
 	}
 	outboundCampaign.Version = campaign.Version
-	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update campaign: %s", err)
 	}

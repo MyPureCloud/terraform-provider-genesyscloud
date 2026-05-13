@@ -125,7 +125,14 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "campaign_status", campaign.CampaignStatus)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
-		resourcedata.SetNillableValue(d, "max_calls_per_agent", campaign.MaxCallsPerAgent)
+		// Use MaxCallsPerAgentDecimal if available, fall back to MaxCallsPerAgent for backward compatibility
+		if campaign.MaxCallsPerAgentDecimal != nil {
+			resourcedata.SetNillableValue(d, "max_calls_per_agent", campaign.MaxCallsPerAgentDecimal)
+		} else if campaign.MaxCallsPerAgent != nil {
+			// Convert int to float64 for backward compatibility with existing campaigns
+			maxCallsFloat := float64(*campaign.MaxCallsPerAgent)
+			_ = d.Set("max_calls_per_agent", maxCallsFloat)
+		}
 		if campaign.DncLists != nil {
 			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*campaign.DncLists))
 		}
