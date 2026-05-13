@@ -154,28 +154,25 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	log.Printf("Created Routing Queue %s", d.Id())
 	return readRoutingQueue(ctx, d, meta)
+}
+
+func syncStateOnPartialFailure(ctx context.Context, d *schema.ResourceData, meta interface{}, diagErr diag.Diagnostics) diag.Diagnostics {
+	consistency_checker.DeleteConsistencyCheck(d.Id())
+	log.Printf("Syncing queue %s state after partial failure", d.Id())
+	if readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta); readDiags != nil {
+		diagErr = append(diagErr, readDiags...)
+	}
+	return diagErr
 }
 
 func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -539,24 +536,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		log.Printf("Syncing queue state")
-		readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	log.Printf("Updated queue %s", *updateQueue.Name)

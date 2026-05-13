@@ -106,6 +106,15 @@ func DeleteConsistencyCheck(id string) {
 	mccMutex.Unlock()
 }
 
+// ConsistencyCheckExists reports whether a consistency check is registered for the resource ID.
+// It is intended for unit tests that assert cleanup after partial failure (for example, routing queue member/wrapup sync).
+func ConsistencyCheckExists(id string) bool {
+	mccMutex.RLock()
+	defer mccMutex.RUnlock()
+	_, ok := mcc[id]
+	return ok
+}
+
 func getUnexportedField(field reflect.Value) interface{} {
 	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
 }
