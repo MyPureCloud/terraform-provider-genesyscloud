@@ -8,6 +8,8 @@ description: |-
 
 Genesys Cloud intent category
 
+~> **Note:** This resource was previously available as `genesyscloud_intent_category` in earlier versions of the provider. It has been renamed in this version to `genesyscloud_intents_categories` to align with the Genesys Cloud API naming conventions. If you are upgrading from a prior version, update your configuration files and run `terraform state mv` to migrate existing state entries.
+
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
