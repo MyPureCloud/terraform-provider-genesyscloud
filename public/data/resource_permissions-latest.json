@@ -498,6 +498,30 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_customer_intent",
+      "resource_name": "customer_intent",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:add",
+        "externalContacts:customerIntentTaxonomy:delete",
+        "externalContacts:customerIntentTaxonomy:edit",
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/intents/customerintents",
+        "GET /api/v2/intents/customerintents/{customerIntentId}",
+        "PATCH /api/v2/intents/customerintents/{customerIntentId}",
+        "DELETE /api/v2/intents/customerintents/{customerIntentId}",
+        "GET /api/v2/intents/customerintents",
+        "GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents",
+        "POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/add",
+        "POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/remove"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_employeeperformance_externalmetrics_definitions",
       "resource_name": "employeeperformance_externalmetrics_definitions",
       "permissions": [
@@ -1060,6 +1084,27 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_intent_category",
+      "resource_name": "intent_category",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:add",
+        "externalContacts:customerIntentTaxonomy:delete",
+        "externalContacts:customerIntentTaxonomy:edit",
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/intents/categories",
+        "GET /api/v2/intents/categories/{categoryId}",
+        "PATCH /api/v2/intents/categories/{categoryId}",
+        "DELETE /api/v2/intents/categories/{categoryId}",
+        "GET /api/v2/intents/categories"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_journey_action_map",
       "resource_name": "journey_action_map",
       "permissions": [
@@ -1308,6 +1353,27 @@
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}",
         "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}",
         "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_learning_modules",
+      "resource_name": "learning_modules",
+      "permissions": [
+        "learning:module:add",
+        "learning:module:delete",
+        "learning:module:edit",
+        "learning:module:view"
+      ],
+      "scopes": [
+        "learning",
+        "learning:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/learning/modules",
+        "POST /api/v2/learning/modules",
+        "DELETE /api/v2/learning/modules/{moduleId}",
+        "GET /api/v2/learning/modules/{moduleId}",
+        "PUT /api/v2/learning/modules/{moduleId}"
       ]
     },
     {
@@ -1975,6 +2041,22 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_routing_queue_conditional_group_activation",
+      "resource_name": "routing_queue_conditional_group_activation",
+      "permissions": [
+        "routing:queue:edit",
+        "routing:queue:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/queues/{queueId}",
+        "PUT /api/v2/routing/queues/{queueId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_routing_queue_conditional_group_routing",
       "resource_name": "routing_queue_conditional_group_routing",
       "permissions": [
@@ -2035,7 +2117,8 @@
       "permissions": [
         "routing:skill:create",
         "routing:skill:delete",
-        "routing:skill:manage"
+        "routing:skill:manage",
+        "routing:skill:view"
       ],
       "scopes": [
         "routing",
@@ -2645,6 +2728,27 @@
         "GET /api/v2/authorization/divisions/home",
         "POST /api/v2/authorization/subjects/{subjectId}/bulkadd",
         "DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_users_rules",
+      "resource_name": "users_rules",
+      "permissions": [
+        "users:rules:add",
+        "users:rules:delete",
+        "users:rules:edit",
+        "users:rules:view"
+      ],
+      "scopes": [
+        "users-rules",
+        "users-rules:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/users/rules",
+        "POST /api/v2/users/rules",
+        "DELETE /api/v2/users/rules/{ruleId}",
+        "GET /api/v2/users/rules/{ruleId}",
+        "PATCH /api/v2/users/rules/{ruleId}"
       ]
     },
     {

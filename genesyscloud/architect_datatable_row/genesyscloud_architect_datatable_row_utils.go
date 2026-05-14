@@ -81,7 +81,8 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 
 	// For each property in the schema, check if a value is set in the config
 	if datatable.Schema != nil && datatable.Schema.Properties != nil {
-		for name, prop := range *datatable.Schema.Properties {
+		for _, name := range datatable.Schema.Properties.Keys() {
+			prop, _ := datatable.Schema.Properties.Get(name)
 			if name == "key" {
 				// Skip setting the key value
 				continue

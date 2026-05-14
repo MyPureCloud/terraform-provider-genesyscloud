@@ -369,6 +369,7 @@ IMPORTANT: Row inputs and outputs must follow the same positional order as defin
 ### Optional
 
 - `description` (String) The decision table description.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
@@ -613,4 +614,14 @@ Optional:
 								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
 								- StringList: "item1,item2,item3" (comma-separated string)
 								- Default: Empty string "" uses column default Defaults to ``.
+
+
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String)
 

@@ -472,6 +472,13 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 	g.exporters = &exports
 	g.exportersMutex.Unlock()
 
+	// Assign excluded attributes to the config Map
+	if excludedAttrs, ok := g.d.GetOk("exclude_attributes"); ok {
+		if diagErr := g.populateConfigExcluded(*g.exporters, lists.InterfaceListToStrings(excludedAttrs.([]interface{}))); diagErr != nil {
+			return diagErr
+		}
+	}
+
 	return nil
 }
 
@@ -564,6 +571,12 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 	var failedTypes []string
 	var statsMutex sync.Mutex
 
+	maxConcurrentOps := g.maxConcurrentOps
+	if maxConcurrentOps <= 0 {
+		maxConcurrentOps = 10
+	}
+	sem := make(chan struct{}, maxConcurrentOps)
+
 	// We use concurrency here to spin off each exporter type and getting the data
 	for resType, exporter := range exportersCopy {
 		tflog.Debug(g.ctx, fmt.Sprintf("Starting processing for resource type: %s", resType))
@@ -572,12 +585,13 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstances() dia
 			defer wg.Done()
 			tflog.Trace(g.ctx, fmt.Sprintf("Starting goroutine for resource type: %s", resType))
 
-			// Check if context was cancelled before processing
+			// Acquire semaphore
 			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
 			case <-ctx.Done():
-				tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled before processing resource type: %s", resType))
+				tflog.Warn(g.ctx, fmt.Sprintf("Context cancelled while acquiring semaphore for resource type: %s", resType))
 				return
-			default:
 			}
 
 			tflog.Debug(g.ctx, fmt.Sprintf("Getting exported resources for [%s]", resType))
@@ -1594,26 +1608,51 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 			tflog.Info(g.ctx, fmt.Sprintf("Getting all resources for type %s", resourceType))
 			exporter.FilterResource = g.resourceFilter
 
-			err := exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
-
-			// Used in tests
-			if mockError != nil {
-				err = mockError
-			}
-			if errors.ContainsPermissionsErrorOnly(err) && logErrors {
-				// Bubble up GetAll* function errors to be reported at the end of the run
-				var resourceError = ResourceErrorInfo{
-					ErrorMessage:  err[0].Summary,
-					ResourceType:  resourceType,
-					ResourceID:    "*",
-					ResourceLabel: "GetAllFunction",
+			// Retry the GetAll functions at least three times (in case of transient errors)
+			maxRetries := 3
+			var err diag.Diagnostics
+			for attempt := 0; attempt < maxRetries; attempt++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
 				}
-				g.resourceErrorsMutex.Lock()
-				g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
-				g.resourceErrorsMutex.Unlock()
-				tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
-				tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
-				return
+				err = exporter.LoadSanitizedResourceMap(ctx, resourceType, filter)
+
+				// Used in tests
+				if mockError != nil {
+					err = mockError
+				}
+				// Don't retry permissions errors
+				if errors.ContainsPermissionsErrorOnly(err) && logErrors {
+					// Bubble up GetAll* function errors to be reported at the end of the run
+					var resourceError = ResourceErrorInfo{
+						ErrorMessage:  err[0].Summary,
+						ResourceType:  resourceType,
+						ResourceID:    "*",
+						ResourceLabel: "GetAllFunction",
+					}
+					g.resourceErrorsMutex.Lock()
+					g.resourceErrors[resourceType] = append(g.resourceErrors[resourceType], resourceError)
+					g.resourceErrorsMutex.Unlock()
+					tflog.Error(g.ctx, fmt.Sprintf("%v", err[0].Summary))
+					tflog.Warn(g.ctx, fmt.Sprintf("Logging permission error for %s. Resuming export...", resourceType))
+					return
+				}
+				if err == nil {
+					break
+				}
+
+				if attempt < maxRetries-1 {
+					backoff := time.Duration(1<<attempt) * time.Second
+					tflog.Warn(g.ctx, fmt.Sprintf("Failed to load resources for %s (attempt %d/%d). Retrying in %v. Error: %v",
+						resourceType, attempt+1, maxRetries, backoff, err))
+					select {
+					case <-time.After(backoff):
+					case <-ctx.Done():
+						return
+					}
+				}
 			}
 			if err != nil {
 				if !logErrors {
@@ -2069,11 +2108,9 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		tflog.Debug(g.ctx, fmt.Sprintf("Resource has no importer or StateContext for ID: %s", resID))
 	}
 
-	g.resourceStateMutex.Lock()
-	tflog.Trace(g.ctx, fmt.Sprintf("Acquiring mutex lock for RefreshWithoutUpgrade for ID: %s", resID))
+	// resourceStateMutex is not needed to wrap this, as it operates on its own copy of state and is safe to call concurrently.
+	// In fact, wrapping it with the resourceStateMutex causes performance bottlenecks (DEVTOOLING-1655)
 	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
-	g.resourceStateMutex.Unlock()
-	tflog.Trace(g.ctx, fmt.Sprintf("Released mutex lock after RefreshWithoutUpgrade for ID: %s", resID))
 
 	if err != nil {
 		tflog.Error(g.ctx, fmt.Sprintf("Error during RefreshWithoutUpgrade for resource %s: %v", resID, err))
@@ -2549,6 +2586,52 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 		}
 	}
 	return result
+}
+
+func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
+	for _, excluded := range configExcluded {
+		matchFound := false
+		resourceIdx := strings.Index(excluded, ".")
+		if resourceIdx == -1 {
+			return diag.Errorf("Invalid excluded_attribute %s", excluded)
+		}
+
+		if len(excluded) == resourceIdx {
+			return diag.Errorf("excluded_attributes value %s does not contain an attribute", excluded)
+		}
+
+		resourceTypePattern := excluded[:resourceIdx]
+		// identify all the resource types which match the regex
+		exporter := exporters[resourceTypePattern]
+		if exporter == nil {
+			for resourceType, exporter1 := range exporters {
+				match, _ := regexp.MatchString(resourceTypePattern, resourceType)
+
+				if match {
+					excludedAttr := excluded[resourceIdx+1:]
+					exporter1.AddExcludedAttribute(excludedAttr)
+					tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
+					matchFound = true
+					continue
+				}
+			}
+
+			if !matchFound {
+				if g.addDependsOn {
+					excludedAttr := excluded[resourceIdx+1:]
+					tflog.Warn(g.ctx, fmt.Sprintf("Ignoring exclude attribute %s on %s resources. Since exporter is not retrieved", excludedAttr, resourceTypePattern))
+					continue
+				} else {
+					return diag.Errorf("Resource %s in excluded_attributes is not being exported.", resourceTypePattern)
+				}
+			}
+		} else {
+			excludedAttr := excluded[resourceIdx+1:]
+			exporter.AddExcludedAttribute(excludedAttr)
+			tflog.Info(g.ctx, fmt.Sprintf("Excluding attribute %s on %s resources.", excludedAttr, resourceTypePattern))
+		}
+	}
+	return nil
 }
 
 // removeUserDefinedExcludedAttributesFromConfigMaps applies the user-configured

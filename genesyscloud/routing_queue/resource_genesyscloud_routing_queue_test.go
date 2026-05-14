@@ -1638,8 +1638,10 @@ func validateConditionalGroupActivation(queueResourceLabel, groupResourceLabel s
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.simple_metric.0.metric", "EstimatedWaitTime"),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.operator", "LessThan"),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.value", "90"),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_type", "GROUP"),
-		resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceLabel, "id"),
+		resource.TestCheckTypeSetElemNestedAttrs("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.*", map[string]string{
+			"member_group_type": "GROUP",
+		}),
+		resource.TestCheckTypeSetElemAttrPair("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.*.member_group_id", "genesyscloud_group."+groupResourceLabel, "id"),
 	)
 }
 

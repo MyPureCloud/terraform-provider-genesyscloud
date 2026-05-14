@@ -32,11 +32,11 @@ type Datatableproperty struct {
 
 // Overriding the SDK Datatable document as it does not allow setting additionalProperties to 'false' as required by the API
 type Jsonschemadocument struct {
-	Schema               *string                       `json:"$schema,omitempty"`
-	VarType              *string                       `json:"type,omitempty"`
-	Required             *[]string                     `json:"required,omitempty"`
-	Properties           *map[string]Datatableproperty `json:"properties,omitempty"`
-	AdditionalProperties *interface{}                  `json:"additionalProperties,omitempty"`
+	Schema               *string                             `json:"$schema,omitempty"`
+	VarType              *string                             `json:"type,omitempty"`
+	Required             *[]string                           `json:"required,omitempty"`
+	Properties           *util.OrderedMap[Datatableproperty] `json:"properties,omitempty"`
+	AdditionalProperties *interface{}                        `json:"additionalProperties,omitempty"`
 }
 
 type Datatable struct {

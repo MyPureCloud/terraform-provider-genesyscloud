@@ -123,6 +123,12 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			resourcedata.SetNillableValue(d, "flow_rules_enabled", worktype.RuleSettings.FlowRulesEnabled)
 		}
 
+		// disable_default_status_creation is a write-only (create-time) flag in the API/SDK.
+		// Keep state aligned with config to avoid perpetual diffs/invalid plans on refresh.
+		if v := resourcedata.GetNillableBool(d, "disable_default_status_creation"); v != nil {
+			_ = d.Set("disable_default_status_creation", *v)
+		}
+
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)
 		return cc.CheckState(d)
 	})
