@@ -1,20 +1,20 @@
-resource "genesyscloud_intent_category" "example_intent_category" {
+resource "genesyscloud_intents_categories" "example_intent_category" {
   name = "Example Intent Category"
 }
 
-resource "genesyscloud_customer_intent" "example_customer_intent" {
+resource "genesyscloud_intents_customerintents" "example_customer_intent" {
   name        = "Example Customer Intent"
   description = "Example customer intent description"
   expiry_time = 24
-  category_id = genesyscloud_intent_category.example_intent_category.id
+  category_id = genesyscloud_intents_categories.example_intent_category.id
 }
 
 # Example with source intents
-resource "genesyscloud_customer_intent" "example_with_source_intents" {
+resource "genesyscloud_intents_customerintents" "example_with_source_intents" {
   name        = "Example Customer Intent with Source Intents"
   description = "Customer intent with mapped source intents"
   expiry_time = 48
-  category_id = genesyscloud_intent_category.example_intent_category.id
+  category_id = genesyscloud_intents_categories.example_intent_category.id
 
   source_intents {
     source_intent_id   = "bot-intent-id-1"

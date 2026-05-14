@@ -1,4 +1,4 @@
-package customer_intent_category
+package intents_categories
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 func TestAccResourceIntentCategory(t *testing.T) {
 	t.Parallel()
 	var (
-		resourcePath = "genesyscloud_intent_category.test_category"
+		resourcePath = "genesyscloud_intents_categories.test_category"
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -29,8 +29,8 @@ func TestAccResourceIntentCategory(t *testing.T) {
 					"Test description",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "name", "Test category"),
-					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "description", "Test description"),
+					resource.TestCheckResourceAttr("genesyscloud_intents_categories.test_category", "name", "Test category"),
+					resource.TestCheckResourceAttr("genesyscloud_intents_categories.test_category", "description", "Test description"),
 				),
 			},
 			{
@@ -40,8 +40,8 @@ func TestAccResourceIntentCategory(t *testing.T) {
 					"The category has been updated",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "name", "Updated test category"),
-					resource.TestCheckResourceAttr("genesyscloud_intent_category.test_category", "description", "The category has been updated"),
+					resource.TestCheckResourceAttr("genesyscloud_intents_categories.test_category", "name", "Updated test category"),
+					resource.TestCheckResourceAttr("genesyscloud_intents_categories.test_category", "description", "The category has been updated"),
 				),
 			},
 			{
@@ -57,7 +57,7 @@ func TestAccResourceIntentCategory(t *testing.T) {
 func testVerifyIntentCategoryDestroyed(state *terraform.State) error {
 	intentsApi := platformclientv2.NewIntentsApi()
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "genesyscloud_intent_category" {
+		if rs.Type != "genesyscloud_intents_categories" {
 			continue
 		}
 
@@ -79,7 +79,7 @@ func generateIntentCategoryResource(
 	name string,
 	description string,
 ) string {
-	return fmt.Sprintf(`resource "genesyscloud_intent_category" "%s" {
+	return fmt.Sprintf(`resource "genesyscloud_intents_categories" "%s" {
 		name        = "%s"
 		description = "%s"
 	}

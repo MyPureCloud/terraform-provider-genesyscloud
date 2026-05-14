@@ -1,4 +1,4 @@
-package customer_intent_category
+package intents_categories
 
 // @team: Sirona
 // @chat: #AIP Sirona
@@ -15,14 +15,14 @@ import (
 )
 
 /*
-resource_genesycloud_intent_category_schema.go holds four functions within it:
+resource_genesycloud_intents_categories_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the intent_category resource.
-3.  The datasource schema definitions for the intent_category datasource.
-4.  The resource exporter configuration for the intent_category exporter.
+2.  The resource schema definitions for the intents_categories resource.
+3.  The datasource schema definitions for the intents_categories datasource.
+4.  The resource exporter configuration for the intents_categories exporter.
 */
-const ResourceType = "genesyscloud_intent_category"
+const ResourceType = "genesyscloud_intents_categories"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -31,7 +31,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(ResourceType, IntentCategoryExporter())
 }
 
-// ResourceIntentCategory registers the genesyscloud_intent_category resource with Terraform
+// ResourceIntentCategory registers the genesyscloud_intents_categories resource with Terraform
 func ResourceIntentCategory() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud intent category`,
@@ -59,7 +59,7 @@ func ResourceIntentCategory() *schema.Resource {
 	}
 }
 
-// IntentCategoryExporter returns the resourceExporter object used to hold the genesyscloud_intent_category exporter's config
+// IntentCategoryExporter returns the resourceExporter object used to hold the genesyscloud_intents_categories exporter's config
 func IntentCategoryExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIntentCategories),
@@ -67,7 +67,7 @@ func IntentCategoryExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-// DataSourceIntentCategory registers the genesyscloud_intent_category data source
+// DataSourceIntentCategory registers the genesyscloud_intents_categories data source
 func DataSourceIntentCategory() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud intent category data source. Select an intent category by name`,

@@ -1,4 +1,4 @@
-package customer_intent_category
+package intents_categories
 
 import (
 	"fmt"
@@ -37,12 +37,12 @@ func TestAccDataSourceIntentCategoryBasic(t *testing.T) {
 				) + generateIntentCategoryDataSource(
 					dataSourceLabel,
 					categoryName,
-					"genesyscloud_intent_category."+resourceLabel,
+					"genesyscloud_intents_categories."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_intent_category."+dataSourceLabel, "id",
-						"genesyscloud_intent_category."+resourceLabel, "id",
+						"data.genesyscloud_intents_categories."+dataSourceLabel, "id",
+						"genesyscloud_intents_categories."+resourceLabel, "id",
 					),
 				),
 			},
@@ -84,13 +84,13 @@ func generateIntentCategoryDataSource(
 	dependsOn string,
 ) string {
 	if dependsOn != "" {
-		return fmt.Sprintf(`data "genesyscloud_intent_category" "%s" {
+		return fmt.Sprintf(`data "genesyscloud_intents_categories" "%s" {
 		name       = "%s"
 		depends_on = [%s]
 	}
 	`, dataSourceLabel, name, dependsOn)
 	}
-	return fmt.Sprintf(`data "genesyscloud_intent_category" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_intents_categories" "%s" {
 		name = "%s"
 	}
 	`, dataSourceLabel, name)

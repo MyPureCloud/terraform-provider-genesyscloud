@@ -1,14 +1,15 @@
-package customer_intent_category
+package intents_categories
 
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	"log"
-	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -21,7 +22,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_intent_category.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_intents_categories.go contains all of the methods that perform the core logic for a resource.
 */
 
 // getAllAuthIntentCategory retrieves all of the intent category via Terraform in the Genesys Cloud and is used for the exporter
@@ -41,7 +42,7 @@ func getAllAuthIntentCategories(ctx context.Context, clientConfig *platformclien
 	return resources, nil
 }
 
-// createIntentCategory is used by the intent_category resource to create Genesys cloud intent category
+// createIntentCategory is used by the intents_categories resource to create Genesys cloud intent category
 func createIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)
@@ -59,7 +60,7 @@ func createIntentCategory(ctx context.Context, d *schema.ResourceData, meta inte
 	return readIntentCategory(ctx, d, meta)
 }
 
-// readIntentCategory is used by the intent_category resource to read an intent category from genesys cloud
+// readIntentCategory is used by the intents_categories resource to read an intent category from genesys cloud
 func readIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)
@@ -84,7 +85,7 @@ func readIntentCategory(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
-// updateIntentCategory is used by the intent_category resource to update an intent category in Genesys Cloud
+// updateIntentCategory is used by the intents_categories resource to update an intent category in Genesys Cloud
 func updateIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)
@@ -101,7 +102,7 @@ func updateIntentCategory(ctx context.Context, d *schema.ResourceData, meta inte
 	return readIntentCategory(ctx, d, meta)
 }
 
-// deleteIntentCategory is used by the intent_category resource to delete an intent category from Genesys cloud
+// deleteIntentCategory is used by the intents_categories resource to delete an intent category from Genesys cloud
 func deleteIntentCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntentCategoryProxy(sdkConfig)

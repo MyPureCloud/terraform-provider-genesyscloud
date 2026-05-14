@@ -1,11 +1,12 @@
-package customer_intent
+package intents_customerintents
 
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -14,7 +15,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_customer_intent.go contains the data source implementation
+   The data_source_genesyscloud_intents_customerintents.go contains the data source implementation
    for the resource.
 */
 
