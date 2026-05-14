@@ -21,7 +21,7 @@ import (
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -77,7 +77,7 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 			defaultExpirationS:           86400,
 			defaultDueDurationS:          86400,
 			defaultPriority:              100,
-			defaultTtlS:                  86400,
+			defaultTtlS:                  86500,
 			defaultLanguageId:            fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
 			defaultQueueId:               fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),
 			defaultSkillIds: []string{

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -93,6 +95,9 @@ func (p *employeeperformanceExternalmetricsDefinitionProxy) deleteEmployeeperfor
 
 // createEmployeeperformanceExternalmetricsDefinitionFn is an implementation function for creating a Genesys Cloud employeeperformance externalmetrics definition
 func createEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinitioncreaterequest) (*platformclientv2.Externalmetricdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	definition, resp, err := p.gamificationApi.PostEmployeeperformanceExternalmetricsDefinitions(*employeeperformanceExternalmetricsDefinition)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create employeeperformance externalmetrics definition: %s", err)
@@ -102,6 +107,9 @@ func createEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p
 
 // getAllEmployeeperformanceExternalmetricsDefinitionFn is the implementation for retrieving all employeeperformance externalmetrics definition in Genesys Cloud
 func getAllEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy) (*[]platformclientv2.Externalmetricdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allDefinitions []platformclientv2.Externalmetricdefinition
 	const pageSize = 100
 
@@ -136,6 +144,9 @@ func getAllEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p
 
 // getEmployeeperformanceExternalmetricsDefinitionIdByNameFn is an implementation of the function to get a Genesys Cloud employeeperformance externalmetrics definition by name
 func getEmployeeperformanceExternalmetricsDefinitionIdByNameFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	definitions, resp, err := getAllEmployeeperformanceExternalmetricsDefinitionFn(ctx, p)
 	if err != nil {
 		return "", false, resp, err
@@ -156,6 +167,9 @@ func getEmployeeperformanceExternalmetricsDefinitionIdByNameFn(ctx context.Conte
 
 // getEmployeeperformanceExternalmetricsDefinitionByIdFn is an implementation of the function to get a Genesys Cloud employeeperformance externalmetrics definition by Id
 func getEmployeeperformanceExternalmetricsDefinitionByIdFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinition, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	definition, resp, err := p.gamificationApi.GetEmployeeperformanceExternalmetricsDefinition(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve employeeperformance externalmetrics definition by id %s: %s", id, err)
@@ -165,6 +179,9 @@ func getEmployeeperformanceExternalmetricsDefinitionByIdFn(ctx context.Context, 
 
 // updateEmployeeperformanceExternalmetricsDefinitionFn is an implementation of the function to update a Genesys Cloud employeeperformance externalmetrics definition
 func updateEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string, employeeperformanceExternalmetricsDefinition *platformclientv2.Externalmetricdefinitionupdaterequest) (*platformclientv2.Externalmetricdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	definition, resp, err := p.gamificationApi.PatchEmployeeperformanceExternalmetricsDefinition(id, *employeeperformanceExternalmetricsDefinition)
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to update employeeperformance externalmetrics definition: %s", err)
@@ -174,6 +191,9 @@ func updateEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p
 
 // deleteEmployeeperformanceExternalmetricsDefinitionFn is an implementation function for deleting a Genesys Cloud employeeperformance externalmetrics definition
 func deleteEmployeeperformanceExternalmetricsDefinitionFn(ctx context.Context, p *employeeperformanceExternalmetricsDefinitionProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.gamificationApi.DeleteEmployeeperformanceExternalmetricsDefinition(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete employeeperformance externalmetrics definition: %s", err)

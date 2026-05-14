@@ -78,5 +78,11 @@ func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			// Data source expects the domain's full ID (e.g. "subdomain.mypurecloud.com").
+			// For subdomains, the resource attribute "domain_id" is intentionally stripped to the short label,
+			// so use the instance ID instead.
+			{Attr: "name"}: {Attr: resourceExporter.InstanceStateIDToken},
+		},
 	}
 }

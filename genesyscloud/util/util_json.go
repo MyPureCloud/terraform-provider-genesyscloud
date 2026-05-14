@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -120,4 +122,26 @@ func MapToJson(m *map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to marshal %v: %v", *m, err)
 	}
 	return string(j), nil
+}
+
+func LoadJsonFileToMap(filename string) (map[string]interface{}, error) {
+	var data map[string]interface{}
+
+	jsonFile, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open export file at path %s: %v", filename, err)
+	}
+	defer func(jsonFile *os.File) {
+		_ = jsonFile.Close()
+	}(jsonFile)
+
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read export file at path %s: %v", filename, err)
+	}
+	if err := json.Unmarshal(byteValue, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal json exportData to map variable: %v", err)
+	}
+
+	return data, nil
 }

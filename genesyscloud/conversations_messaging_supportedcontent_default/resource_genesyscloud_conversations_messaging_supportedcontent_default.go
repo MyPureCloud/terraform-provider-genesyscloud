@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -37,7 +37,7 @@ func getAuthConversationsMessagingSupportedcontentDefaults(ctx context.Context, 
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging supportedcontent default: %s", err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "supported_content_default"}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: "supported_content_default"}
 
 	return resources, nil
 }

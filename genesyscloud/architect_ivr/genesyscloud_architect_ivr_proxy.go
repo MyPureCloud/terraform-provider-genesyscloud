@@ -6,9 +6,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -137,7 +138,8 @@ func createArchitectIvrFn(ctx context.Context, a *architectIvrProxy, ivr platfor
 }
 
 // getArchitectIvrFn is an implementation function for retrieving a Genesys Cloud Architect IVR by ID
-func getArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func getArchitectIvrFn(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return a.api.GetArchitectIvr(id)
 }
 
@@ -148,23 +150,27 @@ func updateArchitectIvrFn(ctx context.Context, a *architectIvrProxy, id string, 
 
 // createArchitectIvrBasicFn is an implementation function for performing a basic post of a Genesys Cloud Architect IVR
 // without any chunking logic for the dnis field
-func createArchitectIvrBasicFn(_ context.Context, a *architectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func createArchitectIvrBasicFn(ctx context.Context, a *architectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return a.api.PostArchitectIvrs(ivr)
 }
 
 // updateArchitectIvrBasicFn is an implementation function for performing a basic put of a Genesys Cloud Architect IVR
 // without any chunking logic for the dnis field
-func updateArchitectIvrBasicFn(_ context.Context, a *architectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func updateArchitectIvrBasicFn(ctx context.Context, a *architectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return a.api.PutArchitectIvr(id, ivr)
 }
 
 // deleteArchitectIvrFn is an implementation function for deleting a Genesys Cloud Architect IVR
-func deleteArchitectIvrFn(_ context.Context, a *architectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
+func deleteArchitectIvrFn(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return a.api.DeleteArchitectIvr(id)
 }
 
 // getAllArchitectIvrsFn is an implementation function for retrieving all Genesys Cloud Architect IVRs
-func getAllArchitectIvrsFn(_ context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+func getAllArchitectIvrsFn(ctx context.Context, a *architectIvrProxy, name string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var (
 		allIvrs   []platformclientv2.Ivr
 		pageCount int

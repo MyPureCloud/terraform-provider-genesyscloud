@@ -17,6 +17,16 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [DELETE /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
 - [PUT /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `telephony:plugin:all`
+
+The following OAuth scopes are required to use this resource:
+
+* `telephony`
+* `telephony:readonly`
 ## Export Behavior
 
 ### Managed Trunk Base Settings

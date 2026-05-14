@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/taskmanagement/workitems/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-taskmanagement-workitems-schemas--schemaId-)
 * [DELETE /api/v2/taskmanagement/workitems/schemas/{schemaId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-workitems-schemas--schemaId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:workitemSchema:add`
+* `workitems:workitemSchema:delete`
+* `workitems:workitemSchema:edit`
+* `workitems:workitemSchema:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 

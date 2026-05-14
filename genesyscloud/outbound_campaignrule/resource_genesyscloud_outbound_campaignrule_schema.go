@@ -1,5 +1,11 @@
 package outbound_campaignrule
 
+// @team: Outbound Rules
+// @chat: #Outbound Rules
+// @pm: Chad Mccormick
+// @jira: OBR
+// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
+
 import (
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"

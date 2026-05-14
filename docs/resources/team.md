@@ -19,6 +19,21 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-teams--teamId--members)
 * [POST /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams--teamId--members)
 * [GET /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId--members)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `groups:team:add`
+* `groups:team:assign`
+* `groups:team:delete`
+* `groups:team:edit`
+* `groups:team:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `groups`
+* `groups:readonly`
+
 
 ## Example Usage
 

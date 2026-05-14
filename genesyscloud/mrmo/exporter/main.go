@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
@@ -15,17 +16,12 @@ import (
 //
 // It returns the exported data that would be written to the .tf.json file during export, the schema.ResourceData object representing the resource
 // (this can be passed to the C/U/D context functions), and a diagnostics object which can contain errors or warnings.
-func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *ExportOutput, diags diag.Diagnostics) {
+func Export(ctx context.Context, input ExportInput, clientConfig *platformclientv2.Configuration) (resp *ExportOutput, diags diag.Diagnostics) {
 	if err := validateExportInput(input); err != nil {
 		return nil, diag.FromErr(err)
 	}
 
 	generateDefaults(&input)
-
-	clientConfig, err := CreateClientConfig(creds)
-	if err != nil {
-		return nil, diag.FromErr(err)
-	}
 
 	log.Println("Activating MRMO")
 	mrmo.Activate(clientConfig)
@@ -39,7 +35,7 @@ func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *Ex
 	exportResourceConfig := createExportResourceData(tfexporter.ResourceTfExport().Schema, input)
 
 	log.Println("Creating the genesyscloud resource exporter")
-	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources)
+	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources, tfexporter.AllowDependencyResolution)
 	if newExporterDiags != nil {
 		diags = append(diags, newExporterDiags...)
 	}
@@ -51,14 +47,22 @@ func Export(ctx context.Context, input ExportInput, creds Credentials) (resp *Ex
 	log.Println("Getting the resource exporter by resource type")
 	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
 
-	log.Printf("Exporting %s resource to '%s'. ID: '%s'", input.ResourceType, input.Directory, input.EntityId)
-	exportResponse, exportDiags := gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	log.Printf("Exporting %s resource to '%s'. ID: '%s' (useGetByID=%t)", input.ResourceType, input.Directory, input.EntityId, input.UseGetByID)
+	var (
+		exportResponse *tfexporter.MrMoExportResponse
+		exportDiags    diag.Diagnostics
+	)
+	if input.UseGetByID {
+		exportResponse, exportDiags = gcResourceExporter.ExportForMrMoByID(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	} else {
+		exportResponse, exportDiags = gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	}
 	if exportDiags != nil {
 		diags = append(diags, exportDiags...)
 	}
 
 	if diags.HasError() {
-		log.Printf("Error returned from ExportForMrMo: %v", err)
+		log.Printf("Error returned from ExportForMrMo: %v", diags)
 		return nil, diags
 	}
 

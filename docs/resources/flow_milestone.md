@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#delete-api-v2-flows-milestones--milestoneId-)
 * [GET /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-milestones--milestoneId-)
 * [PUT /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-flows-milestones--milestoneId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `architect:flowMilestone:add`
+* `architect:flowMilestone:delete`
+* `architect:flowMilestone:edit`
+* `architect:flowMilestone:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

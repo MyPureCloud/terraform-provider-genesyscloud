@@ -18,6 +18,23 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#patch-api-v2-integrations-actions--actionId-)
 * [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#delete-api-v2-integrations-actions--actionId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `bridge:actions:view`
+* `integrations:action:add`
+* `integrations:action:delete`
+* `integrations:action:edit`
+* `integrations:action:view`
+* `integrations:actionFunction:edit`
+* `integrations:actionFunction:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `integrations`
+* `integrations:readonly`
+* `upload`
 ## Function Configuration APIs
 
 * [POST /api/v2/integrations/actions/{actionId}/draft/function/upload](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-function-upload)
@@ -143,7 +160,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
 
 ### Required
 
-- `category` (String) Category of action. Can be up to 256 characters long.
+- `category` (String) Category of action. Can be up to 256 characters long. If the category contains 'function data action' (case-insensitive, underscores and hyphens treated as spaces), the action will be treated as a function data action and requires function_config to be set.
 - `contract_input` (String) JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.
 - `contract_output` (String) JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.
 - `integration_id` (String) The ID of the integration this action is associated with. Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.

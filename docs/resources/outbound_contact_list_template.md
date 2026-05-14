@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [PUT /api/v2/outbound/contactlisttemplates/{contactListTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlisttemplates--contactListTemplateId-)
 - [DELETE /api/v2/outbound/contactlisttemplates/{contactListTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlisttemplates--contactListTemplateId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:contactListTemplate:add`
+* `outbound:contactListTemplate:delete`
+* `outbound:contactListTemplate:edit`
+* `outbound:contactListTemplate:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 
@@ -84,7 +98,8 @@ Required:
 
 Optional:
 
-- `contactable_time_column` (String) A column that indicates the timezone to use for a given contact when checking contactable times.
+- `contactable_time_column` (String, Deprecated) *DEPRECATED: Use `contactable_time_column_name` instead.* A column that indicates the timezone to use for a given contact when checking contactable times.
+- `contactable_time_column_name` (String) A column name that indicates the timezone to use for a given contact when checking contactable times.
 
 
 <a id="nestedblock--phone_columns"></a>
@@ -97,5 +112,6 @@ Required:
 
 Optional:
 
-- `callable_time_column` (String) A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.
+- `callable_time_column` (String, Deprecated) *DEPRECATED: Use `callable_time_column_name` instead.* A column that indicates the timezone to use for a given contact when checking callable times. Not allowed if 'automaticTimeZoneMapping' is set to true.
+- `callable_time_column_name` (String) A column name that indicates the timezone to use for a given contact when checking callable times.
 

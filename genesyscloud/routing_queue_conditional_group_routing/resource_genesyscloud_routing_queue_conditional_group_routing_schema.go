@@ -1,5 +1,11 @@
 package routing_queue_conditional_group_routing
 
+// @team: Assignment
+// @chat: #genesys-cloud-acd-routing
+// @pm: Rob Blane
+// @jira: AS
+// @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -116,7 +122,7 @@ func RoutingQueueConditionalGroupRoutingExporter() *resourceExporter.ResourceExp
 			"rules.evaluated_queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"rules.condition_value":        {ResolverFunc: resourceExporter.ConditionValueResolver},
 		},
 	}

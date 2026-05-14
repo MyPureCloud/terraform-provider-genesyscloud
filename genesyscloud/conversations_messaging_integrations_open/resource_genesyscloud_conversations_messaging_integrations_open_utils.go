@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -42,17 +42,22 @@ func getConversationsMessagingIntegrationsOpenFromResourceDataForUpdate(d *schem
 	var webhookHeaders map[string]string
 	_ = json.Unmarshal([]byte(d.Get("webhook_headers").(string)), &webhookHeaders)
 
-	supportedContentId := d.Get("supported_content_id").(string)
-	messagingSettingId := d.Get("messaging_setting_id").(string)
-
-	return platformclientv2.Openintegrationupdaterequest{
+	request := platformclientv2.Openintegrationupdaterequest{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
-		SupportedContent:               &platformclientv2.Supportedcontentreference{Id: &supportedContentId},
-		MessagingSetting:               &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId},
 		OutboundNotificationWebhookUrl: platformclientv2.String(d.Get("outbound_notification_webhook_url").(string)),
 		OutboundNotificationWebhookSignatureSecretToken: platformclientv2.String(d.Get("outbound_notification_webhook_signature_secret_token").(string)),
 		WebhookHeaders: &webhookHeaders,
 	}
+
+	if supportedContentId := d.Get("supported_content_id").(string); supportedContentId != "" {
+		request.SupportedContent = &platformclientv2.Supportedcontentreference{Id: &supportedContentId}
+	}
+
+	if messagingSettingId := d.Get("messaging_setting_id").(string); messagingSettingId != "" {
+		request.MessagingSetting = &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId}
+	}
+
+	return request
 }
 
 func GenerateWebhookHeadersProperties(

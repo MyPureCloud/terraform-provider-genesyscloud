@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -121,6 +121,12 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 
 		if worktype.RuleSettings != nil {
 			resourcedata.SetNillableValue(d, "flow_rules_enabled", worktype.RuleSettings.FlowRulesEnabled)
+		}
+
+		// disable_default_status_creation is a write-only (create-time) flag in the API/SDK.
+		// Keep state aligned with config to avoid perpetual diffs/invalid plans on refresh.
+		if v := resourcedata.GetNillableBool(d, "disable_default_status_creation"); v != nil {
+			_ = d.Set("disable_default_status_creation", *v)
 		}
 
 		log.Printf("Read task management worktype %s %s", d.Id(), *worktype.Name)

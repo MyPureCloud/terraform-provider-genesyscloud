@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -174,7 +174,7 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 		expected *platformclientv2.Idletokentimeout
 	}{
 		{
-			name: "Valid timeout settings",
+			name: "Valid timeout settings (enabled)",
 			input: map[string]interface{}{
 				"timeout_settings": []interface{}{
 					map[string]interface{}{
@@ -189,6 +189,20 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 			},
 		},
 		{
+			name: "Valid timeout settings (disabled)",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 0,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout: platformclientv2.Bool(false),
+			},
+		},
+		{
 			name:     "Nil timeout settings",
 			input:    map[string]interface{}{"timeout_settings": nil},
 			expected: nil,
@@ -197,6 +211,36 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 			name:     "Empty timeout settings",
 			input:    map[string]interface{}{"timeout_settings": []interface{}{}},
 			expected: nil,
+		},
+		{
+			name: "Timeout disabled - IdleTokenTimeoutSeconds should be nil",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 0,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: nil,
+			},
+		},
+		{
+			name: "Timeout disabled with non-zero value - IdleTokenTimeoutSeconds should be nil",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 300,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: nil,
+			},
 		},
 	}
 
@@ -238,16 +282,31 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 				t.Fatal("expected non-nil result")
 			}
 
-			if *result.EnableIdleTokenTimeout != *tt.expected.EnableIdleTokenTimeout {
-				t.Errorf("EnableIdleTokenTimeout: expected %v, got %v",
-					*tt.expected.EnableIdleTokenTimeout,
-					*result.EnableIdleTokenTimeout)
+			if tt.expected.EnableIdleTokenTimeout != nil {
+				if *result.EnableIdleTokenTimeout != *tt.expected.EnableIdleTokenTimeout {
+					t.Errorf("EnableIdleTokenTimeout: expected %v, got %v",
+						*tt.expected.EnableIdleTokenTimeout,
+						*result.EnableIdleTokenTimeout)
+				}
+			} else {
+				if result.EnableIdleTokenTimeout != nil {
+					t.Errorf("expected nil EnableIdleTokenTimeout, got %v", *result.EnableIdleTokenTimeout)
+				}
 			}
 
-			if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
-				t.Errorf("IdleTokenTimeoutSeconds: expected %v, got %v",
-					*tt.expected.IdleTokenTimeoutSeconds,
-					*result.IdleTokenTimeoutSeconds)
+			// Check IdleTokenTimeoutSeconds - it can be nil when enable_idle_token_timeout is false
+			if tt.expected.IdleTokenTimeoutSeconds == nil {
+				if result.IdleTokenTimeoutSeconds != nil {
+					t.Errorf("IdleTokenTimeoutSeconds: expected nil, got %v", *result.IdleTokenTimeoutSeconds)
+				}
+			} else {
+				if result.IdleTokenTimeoutSeconds == nil {
+					t.Errorf("IdleTokenTimeoutSeconds: expected %v, got nil", *tt.expected.IdleTokenTimeoutSeconds)
+				} else if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
+					t.Errorf("IdleTokenTimeoutSeconds: expected %v, got %v",
+						*tt.expected.IdleTokenTimeoutSeconds,
+						*result.IdleTokenTimeoutSeconds)
+				}
 			}
 		})
 	}
@@ -261,7 +320,7 @@ func TestFlattenTimeOutSettings(t *testing.T) {
 		expected []interface{}
 	}{
 		{
-			name: "Valid timeout settings",
+			name: "Valid timeout settings (enabled)",
 			input: &platformclientv2.Idletokentimeout{
 				EnableIdleTokenTimeout:  platformclientv2.Bool(true),
 				IdleTokenTimeoutSeconds: platformclientv2.Int(3600),
@@ -270,6 +329,19 @@ func TestFlattenTimeOutSettings(t *testing.T) {
 				map[string]interface{}{
 					"enable_idle_token_timeout":  true,
 					"idle_token_timeout_seconds": 3600,
+				},
+			},
+		},
+		{
+			name: "Valid timeout settings (disabled)",
+			input: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: platformclientv2.Int(0),
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"enable_idle_token_timeout":  false,
+					"idle_token_timeout_seconds": 0,
 				},
 			},
 		},

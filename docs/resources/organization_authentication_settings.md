@@ -13,6 +13,17 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 * [GET /api/v2/organizations/authentication/settings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-organizations-authentication-settings)
 * [PATCH /api/v2/organizations/authentication/settings](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-organizations-authentication-settings)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `directory:organization:admin`
+
+The following OAuth scopes are required to use this resource:
+
+* `organization`
+* `organization:readonly`
+
 
 ## Example Usage
 

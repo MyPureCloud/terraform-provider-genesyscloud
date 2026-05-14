@@ -3,7 +3,9 @@ package telephony_providers_edges_trunk
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 //generate a proxy for telephony_providers_edges_trunk
@@ -90,18 +92,22 @@ func (p *trunkProxy) getAllTrunks(ctx context.Context, pageNum int, pageSize int
 }
 
 func getEdgeFn(ctx context.Context, p *trunkProxy, edgeId string) (*platformclientv2.Edge, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.edgesApi.GetTelephonyProvidersEdge(edgeId, nil)
 }
 
 func putEdgeFn(ctx context.Context, p *trunkProxy, edgeId string, edge platformclientv2.Edge) (*platformclientv2.Edge, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.edgesApi.PutTelephonyProvidersEdge(edgeId, edge)
 }
 
 func getEdgeGroupFn(ctx context.Context, p *trunkProxy, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.edgesApi.GetTelephonyProvidersEdgesEdgegroup(edgeGroupId, nil)
 }
 
 func putEdgeGroupFn(ctx context.Context, p *trunkProxy, edgeGroupId string, edgeGroup platformclientv2.Edgegroup) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.edgesApi.PutTelephonyProvidersEdgesEdgegroup(edgeGroupId, edgeGroup)
 }
 

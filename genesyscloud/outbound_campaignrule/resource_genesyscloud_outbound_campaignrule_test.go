@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
@@ -1082,7 +1082,10 @@ data "genesyscloud_auth_division_home" "home" {}
 }
 
 func TestAccResourceOutboundCampaignRuleMessaging(t *testing.T) {
-
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "us-east-1" {
+		t.Skipf("verification will fail in org other than us-east-1 %s org", v)
+		return
+	}
 	var (
 		resourceLabel = "campaign_rule"
 		ruleName      = "Terraform test rule " + uuid.NewString()

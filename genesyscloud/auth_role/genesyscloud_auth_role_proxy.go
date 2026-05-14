@@ -6,7 +6,9 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -126,6 +128,9 @@ func (p *authRoleProxy) getAllowedPermissions(domain string) (*map[string][]plat
 
 // createAuthRoleFn is an implementation function for creating a Genesys Cloud auth role
 func createAuthRoleFn(ctx context.Context, p *authRoleProxy, authRole *platformclientv2.Domainorganizationrolecreate) (*platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	role, apiResponse, err := p.authorizationApi.PostAuthorizationRoles(*authRole)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to create role %s: %s", *authRole.Name, err)
@@ -135,6 +140,9 @@ func createAuthRoleFn(ctx context.Context, p *authRoleProxy, authRole *platformc
 
 // getAllAuthRoleFn is the implementation for retrieving all auth role in Genesys Cloud
 func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageSize = 100
 	var allAuthRoles []platformclientv2.Domainorganizationrole
 
@@ -169,7 +177,10 @@ func getAllAuthRoleFn(ctx context.Context, p *authRoleProxy) (*[]platformclientv
 }
 
 // getAuthRoleIdByNameFn is an implementation of the function to get a Genesys Cloud auth role by name
-func getAuthRoleIdByNameFn(_ context.Context, p *authRoleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func getAuthRoleIdByNameFn(ctx context.Context, p *authRoleProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageSize = 100
 	const pageNum = 1
 	roles, resp, getErr := p.authorizationApi.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", name, nil, nil, false, nil)
@@ -192,6 +203,9 @@ func getAuthRoleIdByNameFn(_ context.Context, p *authRoleProxy, name string) (id
 
 // getAuthRoleByIdFn is an implementation of the function to get a Genesys Cloud auth role by Id
 func getAuthRoleByIdFn(ctx context.Context, p *authRoleProxy, id string) (authRole *platformclientv2.Domainorganizationrole, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	role, apiResponse, err := p.authorizationApi.GetAuthorizationRole(id, false, nil)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to retrieve role %s by id: %s", id, err)
@@ -200,6 +214,9 @@ func getAuthRoleByIdFn(ctx context.Context, p *authRoleProxy, id string) (authRo
 }
 
 func getDefaultRoleIdFn(ctx context.Context, p *authRoleProxy, defaultRoleID string) (roleId string, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageSize = 1
 	const pageNum = 1
 	roles, apiResponse, getErr := p.authorizationApi.GetAuthorizationRoles(pageSize, pageNum, "", nil, "", "", "", nil, []string{defaultRoleID}, false, nil)
@@ -214,6 +231,9 @@ func getDefaultRoleIdFn(ctx context.Context, p *authRoleProxy, defaultRoleID str
 
 // updateAuthRoleFn is an implementation of the function to update a Genesys Cloud auth role
 func updateAuthRoleFn(ctx context.Context, p *authRoleProxy, id string, authRole *platformclientv2.Domainorganizationroleupdate) (*platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	role, apiResponse, err := p.authorizationApi.PutAuthorizationRole(id, *authRole)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to update role %s: %s", id, err)
@@ -223,6 +243,9 @@ func updateAuthRoleFn(ctx context.Context, p *authRoleProxy, id string, authRole
 
 // deleteAuthRoleFn is an implementation function for deleting a Genesys Cloud auth role
 func deleteAuthRoleFn(ctx context.Context, p *authRoleProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	apiResponse, err := p.authorizationApi.DeleteAuthorizationRole(id)
 	if err != nil {
 		return apiResponse, err
@@ -232,6 +255,9 @@ func deleteAuthRoleFn(ctx context.Context, p *authRoleProxy, id string) (respons
 }
 
 func restoreDefaultRolesFn(ctx context.Context, p *authRoleProxy, roles *[]platformclientv2.Domainorganizationrole) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, apiResponse, err := p.authorizationApi.PutAuthorizationRolesDefault(*roles)
 	if err != nil {
 		return apiResponse, err

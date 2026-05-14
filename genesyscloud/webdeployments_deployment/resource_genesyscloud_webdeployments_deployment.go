@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -89,6 +89,16 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	if flow != nil {
 		inputDeployment.Flow = flow
+	}
+
+	// Add supported content if provided
+	if supportedContent := buildSupportedContentReference(d); supportedContent != nil {
+		inputDeployment.SupportedContent = supportedContent
+	}
+
+	// Add push integrations if provided
+	if pushIntegrations := buildPushIntegrations(d); pushIntegrations != nil {
+		inputDeployment.PushIntegrations = pushIntegrations
 	}
 
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
@@ -170,6 +180,15 @@ func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interfa
 		if deployment.Status != nil {
 			_ = d.Set("status", *deployment.Status)
 		}
+		if deployment.Snippet != nil {
+			_ = d.Set("snippet", *deployment.Snippet)
+		}
+		if deployment.SupportedContent != nil && deployment.SupportedContent.Id != nil {
+			_ = d.Set("supported_content_id", *deployment.SupportedContent.Id)
+		}
+		if deployment.PushIntegrations != nil {
+			_ = d.Set("push_integrations", flattenPushIntegrations(deployment.PushIntegrations))
+		}
 
 		log.Printf("Read web deployment %s %s", d.Id(), *deployment.Name)
 		return cc.CheckState(d)
@@ -219,6 +238,16 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 
 	if flow != nil {
 		inputDeployment.Flow = flow
+	}
+
+	// Add supported content if provided
+	if supportedContent := buildSupportedContentReference(d); supportedContent != nil {
+		inputDeployment.SupportedContent = supportedContent
+	}
+
+	// Add push integrations if provided
+	if pushIntegrations := buildPushIntegrations(d); pushIntegrations != nil {
+		inputDeployment.PushIntegrations = pushIntegrations
 	}
 
 	diagErr := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {

@@ -2,6 +2,8 @@ package outbound_contact_list
 
 import (
 	"context"
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -19,8 +21,73 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
+
+type outboundContactListRawResponse struct {
+	PhoneColumns []outboundContactListRawPhoneColumn `json:"phoneColumns"`
+	EmailColumns []outboundContactListRawEmailColumn `json:"emailColumns"`
+}
+
+type outboundContactListRawPhoneColumn struct {
+	ColumnName             *string `json:"columnName"`
+	VarType                *string `json:"type"`
+	CallableTimeColumn     *string `json:"callableTimeColumn"`
+	CallableTimeColumnName *string `json:"callableTimeColumnName"`
+}
+
+type outboundContactListRawEmailColumn struct {
+	ColumnName                *string `json:"columnName"`
+	VarType                   *string `json:"type"`
+	ContactableTimeColumn     *string `json:"contactableTimeColumn"`
+	ContactableTimeColumnName *string `json:"contactableTimeColumnName"`
+}
+
+func buildPhoneColumnTimeZoneNameIndex(raw []outboundContactListRawPhoneColumn) map[string]string {
+	idx := make(map[string]string, len(raw))
+	for _, c := range raw {
+		if c.ColumnName == nil || c.VarType == nil {
+			continue
+		}
+		if c.CallableTimeColumnName != nil && *c.CallableTimeColumnName != "" {
+			idx[*c.ColumnName+"|"+*c.VarType] = *c.CallableTimeColumnName
+			continue
+		}
+		// Fallback: some payloads may only include callableTimeColumn
+		if c.CallableTimeColumn != nil && *c.CallableTimeColumn != "" {
+			idx[*c.ColumnName+"|"+*c.VarType] = *c.CallableTimeColumn
+		}
+	}
+	return idx
+}
+
+func buildEmailColumnTimeZoneNameIndex(raw []outboundContactListRawEmailColumn) map[string]string {
+	idx := make(map[string]string, len(raw))
+	for _, c := range raw {
+		if c.ColumnName == nil || c.VarType == nil {
+			continue
+		}
+		if c.ContactableTimeColumnName != nil && *c.ContactableTimeColumnName != "" {
+			idx[*c.ColumnName+"|"+*c.VarType] = *c.ContactableTimeColumnName
+			continue
+		}
+		if c.ContactableTimeColumn != nil && *c.ContactableTimeColumn != "" {
+			idx[*c.ColumnName+"|"+*c.VarType] = *c.ContactableTimeColumn
+		}
+	}
+	return idx
+}
+
+func parseOutboundContactListRaw(respBody []byte) (phoneIdx map[string]string, emailIdx map[string]string) {
+	if len(respBody) == 0 {
+		return nil, nil
+	}
+	var raw outboundContactListRawResponse
+	if err := json.Unmarshal(respBody, &raw); err != nil {
+		return nil, nil
+	}
+	return buildPhoneColumnTimeZoneNameIndex(raw.PhoneColumns), buildEmailColumnTimeZoneNameIndex(raw.EmailColumns)
+}
 
 func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
 	if contactPhoneNumberColumn == nil {
@@ -38,7 +105,9 @@ func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumber
 		if varType := contactPhoneNumberColumnMap["type"].(string); varType != "" {
 			sdkContactPhoneNumberColumn.VarType = &varType
 		}
-		if callableTimeColumn := contactPhoneNumberColumnMap["callable_time_column"].(string); callableTimeColumn != "" {
+		if callableTimeColumnName, ok := contactPhoneNumberColumnMap["callable_time_column_name"].(string); ok && callableTimeColumnName != "" {
+			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumnName
+		} else if callableTimeColumn := contactPhoneNumberColumnMap["callable_time_column"].(string); callableTimeColumn != "" {
 			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumn
 		}
 
@@ -47,23 +116,34 @@ func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumber
 	return &sdkContactPhoneNumberColumnSlice
 }
 
-func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []platformclientv2.Contactphonenumbercolumn) *schema.Set {
+func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []platformclientv2.Contactphonenumbercolumn, callableTimeColumnNameIndex map[string]string) *schema.Set {
 	if len(contactPhoneNumberColumns) == 0 {
 		return nil
 	}
 
-	contactPhoneNumberColumnSet := schema.NewSet(schema.HashResource(outboundContactListContactPhoneNumberColumnResource), []interface{}{})
+	contactPhoneNumberColumnSet := schema.NewSet(hashOutboundContactListPhoneColumn, []interface{}{})
 	for _, contactPhoneNumberColumn := range contactPhoneNumberColumns {
 		contactPhoneNumberColumnMap := make(map[string]interface{})
 
+		var key string
 		if contactPhoneNumberColumn.ColumnName != nil {
 			contactPhoneNumberColumnMap["column_name"] = *contactPhoneNumberColumn.ColumnName
+			if contactPhoneNumberColumn.VarType != nil {
+				key = *contactPhoneNumberColumn.ColumnName + "|" + *contactPhoneNumberColumn.VarType
+			}
 		}
 		if contactPhoneNumberColumn.VarType != nil {
 			contactPhoneNumberColumnMap["type"] = *contactPhoneNumberColumn.VarType
 		}
 		if contactPhoneNumberColumn.CallableTimeColumn != nil {
+			// Keep legacy + new fields in sync while users migrate.
+			contactPhoneNumberColumnMap["callable_time_column_name"] = *contactPhoneNumberColumn.CallableTimeColumn
 			contactPhoneNumberColumnMap["callable_time_column"] = *contactPhoneNumberColumn.CallableTimeColumn
+		} else if callableTimeColumnNameIndex != nil && key != "" {
+			if v, ok := callableTimeColumnNameIndex[key]; ok && v != "" {
+				contactPhoneNumberColumnMap["callable_time_column_name"] = v
+				contactPhoneNumberColumnMap["callable_time_column"] = v
+			}
 		}
 
 		contactPhoneNumberColumnSet.Add(contactPhoneNumberColumnMap)
@@ -140,7 +220,9 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 		}
 
 		// Safely handle contactable_time_column
-		if contactableTimeColumn, ok := contactEmailAddressColumnMap["contactable_time_column"].(string); ok && contactableTimeColumn != "" {
+		if contactableTimeColumnName, ok := contactEmailAddressColumnMap["contactable_time_column_name"].(string); ok && contactableTimeColumnName != "" {
+			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumnName
+		} else if contactableTimeColumn, ok := contactEmailAddressColumnMap["contactable_time_column"].(string); ok && contactableTimeColumn != "" {
 			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
 		}
 
@@ -149,29 +231,91 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 	return &sdkContactEmailAddressColumnSlice
 }
 
-func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumns []platformclientv2.Emailcolumn) *schema.Set {
+func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumns []platformclientv2.Emailcolumn, contactableTimeColumnNameIndex map[string]string) *schema.Set {
 	if len(contactEmailAddressColumns) == 0 {
 		return nil
 	}
 
-	contactEmailAddressColumnSet := schema.NewSet(schema.HashResource(outboundContactListEmailColumnResource), []interface{}{})
+	contactEmailAddressColumnSet := schema.NewSet(hashOutboundContactListEmailColumn, []interface{}{})
 	for _, contactEmailAddressColumn := range contactEmailAddressColumns {
 		contactEmailAddressColumnMap := make(map[string]interface{})
 
+		var key string
 		if contactEmailAddressColumn.ColumnName != nil {
 			contactEmailAddressColumnMap["column_name"] = *contactEmailAddressColumn.ColumnName
+			if contactEmailAddressColumn.VarType != nil {
+				key = *contactEmailAddressColumn.ColumnName + "|" + *contactEmailAddressColumn.VarType
+			}
 		}
 		if contactEmailAddressColumn.VarType != nil {
 			contactEmailAddressColumnMap["type"] = *contactEmailAddressColumn.VarType
 		}
 		if contactEmailAddressColumn.ContactableTimeColumn != nil {
+			// Keep legacy + new fields in sync while users migrate.
+			contactEmailAddressColumnMap["contactable_time_column_name"] = *contactEmailAddressColumn.ContactableTimeColumn
 			contactEmailAddressColumnMap["contactable_time_column"] = *contactEmailAddressColumn.ContactableTimeColumn
+		} else if contactableTimeColumnNameIndex != nil && key != "" {
+			if v, ok := contactableTimeColumnNameIndex[key]; ok && v != "" {
+				contactEmailAddressColumnMap["contactable_time_column_name"] = v
+				contactEmailAddressColumnMap["contactable_time_column"] = v
+			}
 		}
 
 		contactEmailAddressColumnSet.Add(contactEmailAddressColumnMap)
 	}
 
 	return contactEmailAddressColumnSet
+}
+
+func buildSdkOutboundContactListContactWhatsAppColumnSlice(contactWhatsAppColumn *schema.Set) *[]platformclientv2.Whatsappcolumn {
+	if contactWhatsAppColumn == nil {
+		return nil
+	}
+	sdkContactWhatsAppColumnSlice := make([]platformclientv2.Whatsappcolumn, 0)
+	contactWhatsAppColumnList := contactWhatsAppColumn.List()
+	for _, configWhatsAppColumn := range contactWhatsAppColumnList {
+		var sdkContactWhatsAppColumn platformclientv2.Whatsappcolumn
+
+		contactWhatsAppColumnMap, ok := configWhatsAppColumn.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Safely handle column_name
+		if columnName, ok := contactWhatsAppColumnMap["column_name"].(string); ok && columnName != "" {
+			sdkContactWhatsAppColumn.ColumnName = &columnName
+		}
+
+		// Safely handle type
+		if varType, ok := contactWhatsAppColumnMap["type"].(string); ok && varType != "" {
+			sdkContactWhatsAppColumn.VarType = &varType
+		}
+
+		sdkContactWhatsAppColumnSlice = append(sdkContactWhatsAppColumnSlice, sdkContactWhatsAppColumn)
+	}
+	return &sdkContactWhatsAppColumnSlice
+}
+
+func flattenSdkOutboundContactListContactWhatsAppColumnSlice(contactWhatsAppColumns []platformclientv2.Whatsappcolumn) *schema.Set {
+	if len(contactWhatsAppColumns) == 0 {
+		return nil
+	}
+
+	contactWhatsAppColumnSet := schema.NewSet(schema.HashResource(outboundContactListWhatsAppColumnResource), []interface{}{})
+	for _, contactWhatsAppColumn := range contactWhatsAppColumns {
+		contactWhatsAppColumnMap := make(map[string]interface{})
+
+		if contactWhatsAppColumn.ColumnName != nil {
+			contactWhatsAppColumnMap["column_name"] = *contactWhatsAppColumn.ColumnName
+		}
+		if contactWhatsAppColumn.VarType != nil {
+			contactWhatsAppColumnMap["type"] = *contactWhatsAppColumn.VarType
+		}
+
+		contactWhatsAppColumnSet.Add(contactWhatsAppColumnMap)
+	}
+
+	return contactWhatsAppColumnSet
 }
 
 func buildSdkOutboundContactListColumnDataTypeSpecifications(columnDataTypeSpecifications []interface{}) *[]platformclientv2.Columndatatypespecification {
@@ -308,6 +452,20 @@ func ContactsExporterResolver(resourceId, exportDirectory, subDirectory string, 
 	fullCurrentPath := filepath.Join(fullDirectoryPath, exportFileName)
 	fullRelativePath := filepath.Join(subDirectory, exportFileName)
 	log.Printf("Saving exported contact list %s to file %s and updating state", contactListName, fullRelativePath)
+
+	// Strip system-generated columns from the exported CSV to prevent CONTACT_COLUMNS_LIMIT_EXCEEDED
+	// errors when importing into another org. The Genesys Cloud export API includes system metadata
+	// columns (e.g. CallRecordLastAttempt, Callable, AutomaticTimeZone) that are not part of the
+	// user-defined column_names and can cause the column limit to be exceeded.
+	columnsToKeep := getListAttributeFromState(resource.State.Attributes, "column_names")
+	if len(columnsToKeep) > 0 {
+		columnsToKeep = append([]string{"inin-outbound-id"}, columnsToKeep...)
+		if err := stripSystemColumnsFromCSV(fullCurrentPath, columnsToKeep); err != nil {
+			return fmt.Errorf("failed to strip system columns from exported contact list CSV: %w", err)
+		}
+		log.Printf("Stripped system-generated columns from exported contact list %s CSV", contactListName)
+	}
+
 	configMap["contacts_filepath"] = fullRelativePath
 	configMap["contacts_id_name"] = "inin-outbound-id"
 
@@ -339,7 +497,7 @@ func GeneratePhoneColumnsBlock(columnName, columnType, callableTimeColumn string
 	phone_columns {
 		column_name          = "%s"
 		type                 = "%s"
-		callable_time_column = %s
+		callable_time_column_name = %s
 	}
 `, columnName, columnType, callableTimeColumn)
 }
@@ -395,7 +553,123 @@ func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn str
 	email_columns {
 		column_name             = "%s"
 		type                    = "%s"
-		contactable_time_column = %s
+		contactable_time_column_name = %s
 	}
 `, columnName, columnType, contactableTimeColumn)
+}
+
+// getListAttributeFromState reads a list attribute from Terraform's flat InstanceState format.
+// In InstanceState, list attributes are stored as: attrName.# = "3", attrName.0 = "val1", etc.
+func getListAttributeFromState(attrs map[string]string, attrName string) []string {
+	countStr, ok := attrs[attrName+".#"]
+	if !ok {
+		return nil
+	}
+	count, err := strconv.Atoi(countStr)
+	if err != nil || count == 0 {
+		return nil
+	}
+	values := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		if val, ok := attrs[fmt.Sprintf("%s.%d", attrName, i)]; ok {
+			values = append(values, val)
+		}
+	}
+	return values
+}
+
+// stripSystemColumnsFromCSV reads a CSV file and rewrites it keeping only the columns specified in columnsToKeep.
+func stripSystemColumnsFromCSV(filePath string, columnsToKeep []string) error {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open CSV file: %w", err)
+	}
+
+	reader := csv.NewReader(f)
+	reader.LazyQuotes = true
+	reader.TrimLeadingSpace = true
+
+	allRecords, err := reader.ReadAll()
+	f.Close()
+	if err != nil {
+		return fmt.Errorf("failed to read CSV file: %w", err)
+	}
+
+	if len(allRecords) == 0 {
+		return nil
+	}
+
+	headers := allRecords[0]
+
+	// Build a set of columns to keep for fast lookup
+	keepSet := make(map[string]bool, len(columnsToKeep))
+	for _, col := range columnsToKeep {
+		keepSet[col] = true
+	}
+
+	// Find the indexes of columns to keep, preserving CSV column order
+	var keepIndexes []int
+	var rebuiltHeaders []string
+	for i, header := range headers {
+		// Some columns have extra whitespace or unicode that needs to be stripped
+		// For example: "<feff>""inin-outbound-id"""
+		header = util.StripInvisibleUnicodeFromString(header)
+
+		// Some columns have extra quotes that need to be stripped (see above example).
+		// The CSV writer will automagically put them back in and we have no control over
+		// this behavior, but we don't want triple double-quote headers (i.e. """inin-outbound-id""")
+		header = strings.Trim(header, "\"")
+
+		if keepSet[header] {
+			keepIndexes = append(keepIndexes, i)
+			rebuiltHeaders = append(rebuiltHeaders, header)
+		}
+	}
+
+	// If no columns were stripped, no need to rewrite
+	if len(keepIndexes) == len(headers) {
+		return nil
+	}
+
+	log.Printf("Stripping %d system-generated columns from CSV (keeping %d of %d)", len(headers)-len(keepIndexes), len(keepIndexes), len(headers))
+
+	// Build stripped records
+	strippedColumnsRecords := make([][]string, len(allRecords))
+
+	// Set the header row with rebuilt headers
+	strippedColumnsRecords[0] = rebuiltHeaders
+
+	// Process data rows
+	for i, record := range allRecords[1:len(allRecords)] {
+		strippedRow := make([]string, len(keepIndexes))
+		for j, idx := range keepIndexes {
+			if idx < len(record) {
+				strippedRow[j] = record[idx]
+			}
+		}
+		strippedColumnsRecords[i+1] = strippedRow // Index is 1-indexed since we already wrote the header
+	}
+
+	// Write back to the same file
+	out, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create CSV file: %w", err)
+	}
+	defer out.Close()
+
+	writer := csv.NewWriter(out)
+	if err := writer.WriteAll(strippedColumnsRecords); err != nil {
+		return fmt.Errorf("failed to write CSV file: %w", err)
+	}
+
+	return nil
+}
+
+func GenerateWhatsAppColumnsBlock(columnName, columnType string) string {
+	return fmt.Sprintf(`
+	whats_app_columns {
+		column_name             = "%s"
+		type                    = "%s"
+	}
+`, columnName, columnType)
 }

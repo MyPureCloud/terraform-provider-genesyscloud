@@ -33,6 +33,7 @@ terraform-provider-genesyscloud
 **/true
 website/vendor
 vendor/
+test-intent-category/
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
@@ -58,3 +59,6 @@ consistency-errors.log.json
 test/temp/*
 
 public/data/dependency_tree*
+public/data/resource_permissions*
+
+tools/resource_metadata_exporter/build/*

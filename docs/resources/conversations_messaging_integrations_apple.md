@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-apple--integrationId-)
 * [DELETE /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-apple--integrationId-)
 * [GET /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `messaging:appleIntegration:add`
+* `messaging:appleIntegration:edit`
+* `messaging:integration:delete`
+* `messaging:integration:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `messaging`
+* `messaging:readonly`
+
 
 ## Example Usage
 

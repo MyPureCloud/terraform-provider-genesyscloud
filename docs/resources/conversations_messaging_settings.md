@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-settings--messageSettingId-)
 * [PATCH /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-settings--messageSettingId-)
 * [DELETE /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-settings--messageSettingId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `messaging:setting:add`
+* `messaging:setting:delete`
+* `messaging:setting:edit`
+* `messaging:setting:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `messaging`
+* `messaging:readonly`
+
 
 ## Example Usage
 

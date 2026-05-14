@@ -13,6 +13,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 - [GET /api/v2/outbound/wrapupcodemappings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-wrapupcodemappings)
 - [PUT /api/v2/outbound/wrapupcodemappings](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-wrapupcodemappings)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:wrapUpCodeMapping:edit`
+* `outbound:wrapUpCodeMapping:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

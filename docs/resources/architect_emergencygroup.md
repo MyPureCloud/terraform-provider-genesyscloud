@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/routing/architect/#post-api-v2-architect-emergencygroups)
 * [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#delete-api-v2-architect-emergencygroups--emergencyGroupId-)
 * [PUT /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-architect-emergencygroups--emergencyGroupId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:emergencyGroup:add`
+* `routing:emergencyGroup:delete`
+* `routing:emergencyGroup:edit`
+* `routing:emergencyGroup:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

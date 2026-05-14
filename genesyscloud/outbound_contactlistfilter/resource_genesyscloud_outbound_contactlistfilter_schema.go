@@ -1,5 +1,11 @@
 package outbound_contactlistfilter
 
+// @team: List Management
+// @chat: #Genesys Cloud Dialer
+// @pm: Mason Mansfield
+// @jira: LM
+// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

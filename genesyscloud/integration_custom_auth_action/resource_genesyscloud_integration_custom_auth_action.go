@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
 /*
@@ -80,6 +80,9 @@ func createIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	}
 
 	log.Printf("Retrieving the custom auth action of integration %s", integrationId)
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	// Retrieve the automatically-generated custom auth action
 	// to make sure it exists before updating
@@ -141,6 +144,9 @@ func readIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceData
 
 	log.Printf("Reading integration action %s", d.Id())
 
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		action, resp, err := cap.getCustomAuthActionById(ctx, d.Id())
 		if err != nil {
@@ -199,6 +205,9 @@ func updateIntegrationCustomAuthAction(ctx context.Context, d *schema.ResourceDa
 	name := resourcedata.GetNillableValue[string](d, "name")
 
 	log.Printf("Updating integration custom auth action %s", *name)
+
+	// Set resource context for SDK debug logging before entering retry loop
+	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
