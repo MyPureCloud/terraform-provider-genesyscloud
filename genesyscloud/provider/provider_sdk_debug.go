@@ -8,11 +8,204 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
+	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+// True when provider sdk_debug is on: log full request_body in hooks; false = read body only to infer id/name.
+var sdkDebugHookRequestBodyEnabled atomic.Bool
+
+// sdk_debug log path while sdk_debug is enabled; empty turns off file mirroring.
+var sdkDebugErrorMirrorPath atomic.Value // string
+
+var sdkDebugErrorMirrorMu sync.Mutex
+
+// TF-Correlation-Id -> last outbound body (so error mirror can log request after send).
+var sdkDebugMirrorRequestBodies sync.Map
+
+// Max bytes written per mirrored request/response body in sdk_debug.log.
+const maxMirrorBodyBytes = 1 << 20
+
+func storeSDKDebugMirrorRequestBodyForHook(dr *sdkDebugRequest) {
+	if dr == nil || dr.TransactionId == "" || !sdkDebugHookRequestBodyEnabled.Load() {
+		return
+	}
+	body := dr.RequestBody
+	if body == "" {
+		return
+	}
+	if len(body) > maxMirrorBodyBytes {
+		body = body[:maxMirrorBodyBytes]
+	}
+	sdkDebugMirrorRequestBodies.Store(dr.TransactionId, body)
+}
+
+func popSDKDebugMirrorRequestBody(correlationID string) string {
+	if correlationID == "" {
+		return ""
+	}
+	v, ok := sdkDebugMirrorRequestBodies.LoadAndDelete(correlationID)
+	if !ok {
+		return ""
+	}
+	s, _ := v.(string)
+	return s
+}
+
+func sdkDebugStatusNeedsErrorMirror(statusCode int) bool {
+	if statusCode == http.StatusTooManyRequests {
+		return true
+	}
+	if statusCode == 0 || (statusCode >= 500 && statusCode != http.StatusNotImplemented) {
+		return true
+	}
+	return false
+}
+
+// One sdk_debug.log JSON line: same shape as platformclientv2 logger logStatement (Json format).
+type sdkDebugFileErrorLine struct {
+	Date            *time.Time  `json:"date,omitempty"`
+	Level           string      `json:"level,omitempty"`
+	Method          string      `json:"method,omitempty"`
+	URL             string      `json:"url,omitempty"`
+	RequestHeaders  http.Header `json:"requestHeaders,omitempty"`
+	ResponseHeaders http.Header `json:"responseHeaders,omitempty"`
+	CorrelationId   string      `json:"correlationId,omitempty"`
+	StatusCode      int         `json:"statusCode,omitempty"`
+	RequestBody     string      `json:"requestBody,omitempty"`
+	ResponseBody    string      `json:"responseBody,omitempty"`
+}
+
+func cloneHTTPHeaderRedactAuth(src http.Header) http.Header {
+	if src == nil {
+		return nil
+	}
+	dst := make(http.Header, len(src))
+	for k, vals := range src {
+		nv := make([]string, len(vals))
+		copy(nv, vals)
+		dst[k] = nv
+	}
+	for k := range dst {
+		if strings.EqualFold(k, "Authorization") {
+			dst.Set(k, "[REDACTED]")
+		}
+	}
+	return dst
+}
+
+func sdkDebugMirrorCorrelationID(h http.Header) string {
+	for k, vals := range h {
+		if strings.EqualFold(k, "inin-correlation-id") && len(vals) > 0 && vals[0] != "" {
+			return vals[0]
+		}
+	}
+	return ""
+}
+
+func mirrorRequestBodyForSDKFile(req *http.Request) string {
+	if req == nil || !sdkDebugHookRequestBodyEnabled.Load() {
+		return ""
+	}
+	if req.GetBody == nil {
+		return ""
+	}
+	rc, err := req.GetBody()
+	if err != nil || rc == nil {
+		return ""
+	}
+	defer rc.Close()
+	b, err := io.ReadAll(io.LimitReader(rc, maxMirrorBodyBytes))
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func mirrorResponseBodyForSDKFile(resp *http.Response) string {
+	if resp == nil || resp.Body == nil || !sdkDebugHookRequestBodyEnabled.Load() {
+		return ""
+	}
+	b, err := io.ReadAll(io.LimitReader(resp.Body, maxMirrorBodyBytes))
+	if err != nil {
+		return ""
+	}
+	resp.Body = io.NopCloser(bytes.NewReader(b))
+	return string(b)
+}
+
+// Appends SDK-style JSON error to sdk_debug.log for 429/5xx when the SDK skips file logging after retry exhaustion
+func mirrorSDKDebugHTTPErrorToFile(resp *http.Response, storedRequestBody string) {
+	if resp == nil || resp.Request == nil || !sdkDebugStatusNeedsErrorMirror(resp.StatusCode) {
+		return
+	}
+	v := sdkDebugErrorMirrorPath.Load()
+	path, _ := v.(string)
+	if path == "" {
+		return
+	}
+
+	now := time.Now()
+	reqURL := ""
+	if resp.Request.URL != nil {
+		reqURL = resp.Request.URL.String()
+	}
+
+	reqBody := storedRequestBody
+	if reqBody == "" {
+		reqBody = mirrorRequestBodyForSDKFile(resp.Request)
+	}
+
+	lineObj := sdkDebugFileErrorLine{
+		Date:            &now,
+		Level:           "error",
+		Method:          resp.Request.Method,
+		URL:             reqURL,
+		RequestHeaders:  cloneHTTPHeaderRedactAuth(resp.Request.Header),
+		ResponseHeaders: cloneHTTPHeaderRedactAuth(resp.Header),
+		CorrelationId:   sdkDebugMirrorCorrelationID(resp.Header),
+		StatusCode:      resp.StatusCode,
+		RequestBody:     reqBody,
+		ResponseBody:    mirrorResponseBodyForSDKFile(resp),
+	}
+
+	line, err := json.Marshal(lineObj)
+	if err != nil {
+		return
+	}
+
+	sdkDebugErrorMirrorMu.Lock()
+	defer sdkDebugErrorMirrorMu.Unlock()
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_, _ = f.Write(append(line, '\n'))
+}
+
+// Max Content-Length hint for hook body buffer prealloc
+const maxRequestBodyGrowHint = 4 << 20
+
+// Reads the full hook request body
+func readRequestBodyForHook(r io.Reader, contentLength int64) ([]byte, error) {
+	if contentLength > 0 && contentLength <= maxRequestBodyGrowHint {
+		var buf bytes.Buffer
+		buf.Grow(int(contentLength))
+		if _, err := buf.ReadFrom(r); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	}
+	return io.ReadAll(r)
+}
 
 type sdkDebugRequest struct {
 	DebugType        string `json:"debug_type,omitempty"`        //Indicates whether it is a request or response debug
@@ -20,6 +213,7 @@ type sdkDebugRequest struct {
 	InvocationCount  int    `json:"invocation_count,omitempty"`  //Number of times the URL has been invoked.  Will be greater then zero when it is a retry
 	InvocationMethod string `json:"invocation_method,omitempty"` //HTTP method that will be invoked
 	InvocationUrl    string `json:"invocation_url,omitempty"`    //HTTP URL
+	RequestBody      string `json:"request_body,omitempty"`      //HTTP request body
 	ResourceType     string `json:"resource_type,omitempty"`     //Terraform resource type (e.g., "genesyscloud_routing_queue")
 	ResourceId       string `json:"resource_id,omitempty"`       //Terraform resource ID
 	ResourceName     string `json:"resource_name,omitempty"`     //Terraform resource name
@@ -32,7 +226,6 @@ func (s *sdkDebugRequest) ToJSON() (err error, jsonStr string) {
 		return err, ""
 	}
 
-	// Print the JSON string
 	return nil, string(jsonData)
 }
 
@@ -56,7 +249,6 @@ func (s *sdkDebugResponse) ToJSON() (err error, jsonStr string) {
 		return err, ""
 	}
 
-	// Print the JSON string
 	return nil, string(jsonData)
 }
 
@@ -259,29 +451,33 @@ func newSDKDebugRequest(request *http.Request, count int) *sdkDebugRequest {
 		debugReq.ResourceName = resourceCtx.ResourceName
 	}
 
-	// If ResourceId or ResourceName are empty, nil, or unavailable, try to extract from request body
-	if debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable" ||
-		debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable" {
-		// Safely attempt to read and parse request body
-		if request.Body != nil {
-			bodyBytes, err := io.ReadAll(request.Body)
-			if err == nil && len(bodyBytes) > 0 {
-				// Restore the body for the actual request
-				request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	captureFull := sdkDebugHookRequestBodyEnabled.Load()
+	needsBodyPeek := debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable" ||
+		debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable"
 
-				// Extract id and name from JSON body
-				extractedId, extractedName := extractIdOrNameFromJSON(bodyBytes)
+	// sdk_debug on: capture full body for hooks/mirror; off: read only if id/name missing (no request_body in hook JSON).
+	var bodyBytes []byte
+	if request.Body != nil && (captureFull || needsBodyPeek) {
+		body, err := readRequestBodyForHook(request.Body, request.ContentLength)
+		if err != nil {
+			log.Printf("[WARN] sdk RequestLogHook: read request body: %v", err)
+			request.Body = io.NopCloser(bytes.NewReader(nil))
+			return debugReq
+		}
+		bodyBytes = body
+		if captureFull && len(bodyBytes) > 0 {
+			debugReq.RequestBody = string(bodyBytes)
+		}
+		request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+	}
 
-				// Update ResourceId if it was empty/unavailable and we found an id
-				if (debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable") && extractedId != "" {
-					debugReq.ResourceId = extractedId
-				}
-
-				// Update ResourceName if it was empty/unavailable and we found a name
-				if (debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable") && extractedName != "" {
-					debugReq.ResourceName = extractedName
-				}
-			}
+	if needsBodyPeek && len(bodyBytes) > 0 {
+		extractedId, extractedName := extractIdOrNameFromJSON(bodyBytes)
+		if (debugReq.ResourceId == "" || debugReq.ResourceId == "unavailable") && extractedId != "" {
+			debugReq.ResourceId = extractedId
+		}
+		if (debugReq.ResourceName == "" || debugReq.ResourceName == "unavailable") && extractedName != "" {
+			debugReq.ResourceName = extractedName
 		}
 	}
 
