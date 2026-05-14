@@ -73,6 +73,7 @@ import (
 	knowledgeDocumentVariation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_document_variation"
 	knowledgeKnowledgebase "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_knowledgebase"
 	knowledgeLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_label"
+	learningModules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/learning_modules"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	oauth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/oauth_client"
 	oAuthSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/organization_authentication_settings"
@@ -108,6 +109,7 @@ import (
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingQueueConditionalGroupActivation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_activation"
 	routingQueueConditionalGroupRouting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
 	routingQueueOutboundEmailAddress "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_settings"
@@ -145,6 +147,7 @@ import (
 	tfexp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
+	usersRules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/users_rules"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 	workforcemanagementBusinessunits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
@@ -337,6 +340,7 @@ func registerResources() {
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
+	routingQueueConditionalGroupActivation.SetRegistrar(regInstance)       //Registering routing queue conditional group activation
 	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
@@ -372,6 +376,8 @@ func registerResources() {
 	businessRulesSchema.SetRegistrar(regInstance)                          //Registering business rules schema
 	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
 	workforcemanagementBusinessunits.SetRegistrar(regInstance)             //Registering workforcemanagement businessunits
+	learningModules.SetRegistrar(regInstance)                              //Registering learning modules
+	usersRules.SetRegistrar(regInstance)                                   //Registering users rules
 	// setting resources for Use cases  like TF export where provider is used in resource classes.
 	tfexp.SetRegistrar(regInstance)         //Registering tf exporter
 	bcpTfExporter.SetRegistrar(regInstance) //Registering bcp tf exporter
