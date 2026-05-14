@@ -174,7 +174,7 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 		expected *platformclientv2.Idletokentimeout
 	}{
 		{
-			name: "Valid timeout settings",
+			name: "Valid timeout settings (enabled)",
 			input: map[string]interface{}{
 				"timeout_settings": []interface{}{
 					map[string]interface{}{
@@ -186,6 +186,20 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 			expected: &platformclientv2.Idletokentimeout{
 				EnableIdleTokenTimeout:  platformclientv2.Bool(true),
 				IdleTokenTimeoutSeconds: platformclientv2.Int(3600),
+			},
+		},
+		{
+			name: "Valid timeout settings (disabled)",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 0,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout: platformclientv2.Bool(false),
 			},
 		},
 		{
@@ -268,10 +282,16 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 				t.Fatal("expected non-nil result")
 			}
 
-			if *result.EnableIdleTokenTimeout != *tt.expected.EnableIdleTokenTimeout {
-				t.Errorf("EnableIdleTokenTimeout: expected %v, got %v",
-					*tt.expected.EnableIdleTokenTimeout,
-					*result.EnableIdleTokenTimeout)
+			if tt.expected.EnableIdleTokenTimeout != nil {
+				if *result.EnableIdleTokenTimeout != *tt.expected.EnableIdleTokenTimeout {
+					t.Errorf("EnableIdleTokenTimeout: expected %v, got %v",
+						*tt.expected.EnableIdleTokenTimeout,
+						*result.EnableIdleTokenTimeout)
+				}
+			} else {
+				if result.EnableIdleTokenTimeout != nil {
+					t.Errorf("expected nil EnableIdleTokenTimeout, got %v", *result.EnableIdleTokenTimeout)
+				}
 			}
 
 			// Check IdleTokenTimeoutSeconds - it can be nil when enable_idle_token_timeout is false
@@ -300,7 +320,7 @@ func TestFlattenTimeOutSettings(t *testing.T) {
 		expected []interface{}
 	}{
 		{
-			name: "Valid timeout settings",
+			name: "Valid timeout settings (enabled)",
 			input: &platformclientv2.Idletokentimeout{
 				EnableIdleTokenTimeout:  platformclientv2.Bool(true),
 				IdleTokenTimeoutSeconds: platformclientv2.Int(3600),
@@ -309,6 +329,19 @@ func TestFlattenTimeOutSettings(t *testing.T) {
 				map[string]interface{}{
 					"enable_idle_token_timeout":  true,
 					"idle_token_timeout_seconds": 3600,
+				},
+			},
+		},
+		{
+			name: "Valid timeout settings (disabled)",
+			input: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: platformclientv2.Int(0),
+			},
+			expected: []interface{}{
+				map[string]interface{}{
+					"enable_idle_token_timeout":  false,
+					"idle_token_timeout_seconds": 0,
 				},
 			},
 		},

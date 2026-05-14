@@ -2,6 +2,8 @@ package knowledge_document_variation
 
 // @team: Knowledge Administration Service Team
 // @chat: #knowledge-team
+// @pm: Harshali Desai
+// @jira: GKC
 // @description: Knowledge Administration service manages knowledge content for agent assistance. Provides APIs and UI for creating, searching, rating, and organizing knowledge articles that agents use to answer customer interactions effectively.
 
 import (
@@ -1045,6 +1047,9 @@ func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 		},
 		ExcludedAttributes: []string{
 			"knowledge_document_variation.document_version",
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}: {Attr: "knowledge_document_variation\\.\\d+\\.name"},
 		},
 	}
 }

@@ -24,6 +24,8 @@ func TestDiscoverCommand(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -80,6 +82,8 @@ func TestExportCommand_Markdown(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -144,6 +148,8 @@ func TestExportCommand_JSON(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -211,6 +217,8 @@ func TestExportCommand_CSV(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -255,7 +263,7 @@ func ResourceTest() *schema.Resource {
 	}
 
 	// Check header
-	if !strings.Contains(lines[0], "Resource Type,Package,Team,Chat Room,Description") {
+	if !strings.Contains(lines[0], "Resource Type,Package,Team,Chat Room,Product Manager,Jira Project,Description") {
 		t.Error("Expected CSV header")
 	}
 
@@ -279,6 +287,8 @@ func TestExportCommand_InvalidFormat(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -335,6 +345,8 @@ func TestValidateCommand(t *testing.T) {
 	testContent := `package test_package
 // @team: Test Team
 // @chat: #test-team
+// @pm: Test PM
+// @jira: TESTPROJECT
 // @description: Test resource
 const ResourceType = "genesyscloud_test"
 func ResourceTest() *schema.Resource {
@@ -470,11 +482,13 @@ func TestTemplateCommand_MissingRequiredFlags(t *testing.T) {
 func TestExportFunctions(t *testing.T) {
 	metadata := []ResourceMetadata{
 		{
-			ResourceType: "genesyscloud_test",
-			PackageName:  "test_package",
-			TeamName:     "Test Team",
-			TeamChatRoom: "#test-team",
-			Description:  "Test resource",
+			ResourceType:   "genesyscloud_test",
+			PackageName:    "test_package",
+			TeamName:       "Test Team",
+			TeamChatRoom:   "#test-team",
+			Description:    "Test resource",
+			ProductManager: "Test PM",
+			JiraProject:    "TESTPROJECT",
 		},
 	}
 
@@ -518,7 +532,7 @@ func TestExportFunctions(t *testing.T) {
 	}
 
 	output = buf.String()
-	if !strings.Contains(output, "Resource Type,Package,Team,Chat Room,Description") {
+	if !strings.Contains(output, "Resource Type,Package,Team,Chat Room,Product Manager,Jira Project,Description") {
 		t.Error("Expected CSV header")
 	}
 

@@ -66,7 +66,8 @@ func TestAccResourceConversationsSettings(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyConversationsSettingsDestroyed,
+		// CheckDestroy disabled since it is conversation setting - it cannot be destroyed
+		CheckDestroy: nil,
 	})
 }
 
@@ -110,7 +111,8 @@ func TestAccResourceConversationsSettingsMinimal(t *testing.T) {
 				ImportStateVerify: true,
 			},
 		},
-		CheckDestroy: testVerifyConversationsSettingsDestroyed,
+		// CheckDestroy disabled since it is conversation setting - it cannot be destroyed
+		CheckDestroy: nil,
 	})
 }
 

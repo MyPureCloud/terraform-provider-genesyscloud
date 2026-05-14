@@ -1,7 +1,9 @@
 package outbound_campaignrule
 
-// @team: Outbound Digital
-// @chat: #genesys-cloud-digital-campaigns
+// @team: Outbound Rules
+// @chat: #Outbound Rules
+// @pm: Chad Mccormick
+// @jira: OBR
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (

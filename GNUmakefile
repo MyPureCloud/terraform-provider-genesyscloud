@@ -71,9 +71,11 @@ build:
 GOOS = $(shell go env GOOS)
 GOARCH = $(shell go env GOARCH)
 
-sideload: build
+sideload-only:
 	mkdir -p ${PLUGINS_DIR}/${PLUGIN_PATH}/${DEV_VERSION}/$(GOOS)_$(GOARCH)
 	cp ${BIN_PATH} ${PLUGINS_DIR}/${PLUGIN_PATH}/${DEV_VERSION}/$(GOOS)_$(GOARCH)/${BIN_NAME}
+
+sideload: build sideload-only
 
 generate-dependencyTree:
 	go run ./tools/dependency_tree "public/data/" $(version)

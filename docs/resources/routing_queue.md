@@ -169,6 +169,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   enable_audio_monitoring  = true
   enable_manual_assignment = true
   calling_party_name       = "Example Inc."
+  last_agent_routing_mode  = "QueueMembersOnly" # Valid values: Disabled, QueueMembersOnly, AnyAgent
   groups                   = [genesyscloud_group.example_group.id, genesyscloud_group.example_group2.id]
 
   media_settings_call {
@@ -481,7 +482,7 @@ Required:
 
 - `condition_expression` (String) A string expression that defines the relationships of conditions in this rule.
 - `conditions` (Block List, Min: 1, Max: 10) The list of conditions used in this rule. (see [below for nested schema](#nestedblock--conditional_group_activation--rules--conditions))
-- `groups` (Block List, Min: 1, Max: 5) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_activation--rules--groups))
+- `groups` (Block Set, Min: 1, Max: 5) The group(s) to activate if the rule evaluates as true. (see [below for nested schema](#nestedblock--conditional_group_activation--rules--groups))
 
 <a id="nestedblock--conditional_group_activation--rules--conditions"></a>
 ### Nested Schema for `conditional_group_activation.rules.conditions`

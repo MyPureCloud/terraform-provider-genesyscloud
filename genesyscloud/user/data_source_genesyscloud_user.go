@@ -116,8 +116,9 @@ func getUserByName(c *rc.DataSourceCache, searchField string, ctx context.Contex
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error requesting users: %s", getErr), resp))
 		}
 
+		// any error from datasource should be non-retryable
 		if users.Results == nil || len(*users.Results) == 0 {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No users found with search criteria %v", searchCriteria), resp))
 		}
 
 		// Select first user in the list

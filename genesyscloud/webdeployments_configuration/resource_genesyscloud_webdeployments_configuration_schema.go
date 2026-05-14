@@ -1,5 +1,11 @@
 package webdeployments_configuration
 
+// @team: Squonk
+// @chat: #Squonk
+// @pm: Angelo Cicchitto
+// @jira: SQUONK
+// @description: Manages versioned configuration settings for Genesys Cloud web deployments. Provides control over messenger, cobrowse, video, journey events, knowledge portal and knowledge channels that are served to end users through deployments.
+
 import (
 	"strings"
 
@@ -26,24 +32,24 @@ var (
 	customI18nLabel = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"language": {
-				Description: "Language of localized labels in homescreen app (eg. en-us, de-de)",
+				Description: "Language of localized labels in messenger homescreen or push notification (eg. en-us, de-de)",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"localized_labels": {
-				Description: "Contains localized labels used in homescreen app",
+				Description: "Contains localized labels used in messenger homescreen or push notification. PushNotificationTitle and PushNotificationBody are required when notifications are enabled.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"key": {
-							Description:  "Contains localized label key used in messenger homescreen",
+							Description:  "Contains localized label key used in messenger homescreen or push notification.",
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle", "PushNotificationTitle", "PushNotificationBody"}, false),
 						},
 						"value": {
-							Description: "Contains localized label value used in messenger homescreen",
+							Description: "Contains localized label value used in messenger homescreen or push notification",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
@@ -143,6 +149,12 @@ var (
 
 	fileUploadSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"enable_attachments": {
+				Description: "Whether or not file attachments are enabled",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"mode": {
 				Description: "The list of supported file upload modes",
 				Type:        schema.TypeList,
@@ -187,6 +199,13 @@ var (
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        fileUploadSettings,
+			},
+			"session_persistence_type": {
+				Description:  "The session persistence type for messenger. Valid values: AcrossSubdomains, DomainOrSubdomainOnly",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"AcrossSubdomains", "DomainOrSubdomainOnly"}, false),
 			},
 			"apps": {
 				Description: "The apps embedded in the messenger",
@@ -258,6 +277,33 @@ var (
 									"conversation_clear_enabled": {
 										Description: "The conversation clear settings for the messenger app",
 										Type:        schema.TypeBool,
+										Optional:    true,
+										Computed:    true,
+									},
+									"notifications": {
+										Description: "The notification settings for messenger conversations",
+										Type:        schema.TypeList,
+										MaxItems:    1,
+										Optional:    true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"enabled": {
+													Description: "Whether or not notifications are enabled",
+													Type:        schema.TypeBool,
+													Optional:    true,
+												},
+												"notification_content_type": {
+													Description:  "The notification content type. Valid values: IncludeMessagesContent, ExcludeMessagesContent",
+													Type:         schema.TypeString,
+													Optional:     true,
+													ValidateFunc: validation.StringInSlice([]string{"IncludeMessagesContent", "ExcludeMessagesContent"}, false),
+												},
+											},
+										},
+									},
+									"session_duration_seconds": {
+										Description: "The guest session duration in seconds for messenger conversations",
+										Type:        schema.TypeInt,
 										Optional:    true,
 										Computed:    true,
 									},
@@ -903,6 +949,22 @@ var (
 				Optional:    true,
 				Elem:        styleSetting,
 			},
+			"label_filter": {
+				Description: "Document label filter for knowledge portal. If set, only documents having at least one of the specified labels will be returned.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"label_ids": {
+							Description: "List of knowledge label IDs to filter by",
+							Type:        schema.TypeList,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+			},
 			"feedback_enabled": {
 				Description: "Whether or not requesting customer feedback on article content and article search results is enabled",
 				Type:        schema.TypeBool,
@@ -1083,6 +1145,7 @@ func WebDeploymentConfigurationExporter() *resourceExporter.ResourceExporter {
 			"authentication_settings.integration_id": {RefType: "genesyscloud_integration"},
 			"enabled_categories.category_id":         {RefType: "genesyscloud_knowledge_category"},
 			"apps.knowledge.knowlege_base_id":        {RefType: "genesyscloud_knowledge_knowledgebase"},
+			"support_center.label_filter.label_ids":  {RefType: "genesyscloud_knowledge_label"},
 		},
 	}
 }

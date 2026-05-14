@@ -10,6 +10,9 @@ type Credentials struct {
 	ClientId     string
 	ClientSecret string
 	Region       string
+
+	// BasePathOverride can be used to override the basepath of the client configuration (useful for testing). If BasePathOverride is not specified/is empty string, the base path will be determined based on the value of Region.
+	BasePathOverride string
 }
 
 type ExportInput struct {
@@ -27,6 +30,14 @@ type ExportInput struct {
 
 	// Directory - The output directory that export data will be written to. Required if GenerateOutputFiles is true.
 	Directory string
+
+	// UseGetByID, when true, causes Export to fetch the single entity directly
+	// via the resource's get-by-ID path (its Read context) instead of calling
+	// the resource type's GetResourcesFunc, which lists every instance of the
+	// type in the org. This is O(1) API calls per export rather than O(N).
+	// All current Genesys Cloud resources support get-by-ID; singleton
+	// resources transparently fall back to the legacy listing path.
+	UseGetByID bool
 }
 
 type ExportOutput struct {

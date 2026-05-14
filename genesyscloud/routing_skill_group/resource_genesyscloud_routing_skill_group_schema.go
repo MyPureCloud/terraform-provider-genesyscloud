@@ -1,7 +1,9 @@
 package routing_skill_group
 
-// @team: Assignment
-// @chat: #genesys-cloud-acd-routing
+// @team: Platform User Services
+// @chat: #GC Skills
+// @pm: Becky Powell
+// @jira: PLUS
 // @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
 
 import (

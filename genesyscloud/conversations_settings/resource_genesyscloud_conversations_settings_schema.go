@@ -74,5 +74,7 @@ func ResourceConversationsSettings() *schema.Resource {
 func ConversationsSettingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllConversationsSettings),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 	}
 }

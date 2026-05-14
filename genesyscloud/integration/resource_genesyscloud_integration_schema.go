@@ -1,7 +1,9 @@
 package integration
 
-// @team: Integration Services Indy
-// @chat: #genesys-cloud-integrations
+// @team: Integration Services RTP
+// @chat: #Integration Services - RTP Dev
+// @pm: Richard Schott
+// @jira: REG
 // @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
 
 import (

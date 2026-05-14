@@ -233,44 +233,65 @@ func downloadExportFile(directory, fileName, uri string) (*platformclientv2.APIR
 var DownloadExportFileWithAccessToken = downloadExportFileWithAccessToken
 
 func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken string) (*platformclientv2.APIResponse, error) {
+	const maxRetries = 10
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if accessToken != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
-
-	if apiErr != nil {
-		return apiResp, apiErr
-	}
-	defer resp.Body.Close()
-
-	if err := os.MkdirAll(directory, 0755); err != nil {
-		return apiResp, fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	out, err := os.Create(filepath.Join(directory, fileName))
-	if err != nil {
-		return apiResp, err
-	}
-	defer func(out *os.File) {
-		if err := out.Close(); err != nil {
-			log.Printf("failed to close file: %s", err.Error())
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		req, err := http.NewRequest("GET", uri, nil)
+		if err != nil {
+			return nil, err
 		}
-	}(out)
 
-	_, err = io.Copy(out, resp.Body)
-	return apiResp, err
+		if accessToken != "" {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		apiResp, apiErr := platformclientv2.NewAPIResponse(resp, nil)
+
+		if util.IsStatus429(apiResp) {
+			resp.Body.Close()
+			if attempt >= maxRetries {
+				return apiResp, fmt.Errorf("exhausted %d retries downloading export file %s due to rate limiting", maxRetries, fileName)
+			}
+			delay, doRetry := util.GetRetryAfterDelay(apiResp)
+			if !doRetry {
+				delay = min(time.Duration(1<<attempt)*time.Second, 30*time.Second)
+			}
+			log.Printf("Rate limited (429) downloading export file %s. Retrying in %v (attempt %d/%d)", fileName, delay, attempt+1, maxRetries)
+			time.Sleep(delay)
+			continue
+		}
+
+		if apiErr != nil {
+			resp.Body.Close()
+			return apiResp, apiErr
+		}
+
+		if err := os.MkdirAll(directory, 0755); err != nil {
+			resp.Body.Close()
+			return apiResp, fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		out, err := os.Create(filepath.Join(directory, fileName))
+		if err != nil {
+			resp.Body.Close()
+			return apiResp, err
+		}
+
+		_, copyErr := io.Copy(out, resp.Body)
+		resp.Body.Close()
+		if closeErr := out.Close(); closeErr != nil {
+			log.Printf("failed to close file: %s", closeErr.Error())
+		}
+		return apiResp, copyErr
+	}
+
+	// Unreachable: loop always returns on every path, but required by compiler
+	return nil, fmt.Errorf("how did you get here? this code path to download %s should be unreachable!", fileName)
 }
 
 // HashFileContent Hash file content, used in stateFunc for "filepath" type attributes

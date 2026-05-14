@@ -77,7 +77,7 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 			defaultExpirationS:           86400,
 			defaultDueDurationS:          86400,
 			defaultPriority:              100,
-			defaultTtlS:                  86400,
+			defaultTtlS:                  86500,
 			defaultLanguageId:            fmt.Sprintf("genesyscloud_routing_language.%s.id", langResourceLabel),
 			defaultQueueId:               fmt.Sprintf("genesyscloud_routing_queue.%s.id", queueResourceLabel),
 			defaultSkillIds: []string{

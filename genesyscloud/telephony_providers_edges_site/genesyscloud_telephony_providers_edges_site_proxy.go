@@ -292,6 +292,7 @@ func createSiteFn(ctx context.Context, p *SiteProxy, siteReq *platformclientv2.S
 	if err != nil {
 		return nil, resp, err
 	}
+
 	return site, resp, nil
 }
 
@@ -372,6 +373,15 @@ func getSiteIdByNameFn(ctx context.Context, p *SiteProxy, siteName string) (stri
 func updateSiteFn(ctx context.Context, p *SiteProxy, siteId string, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Nil out read-only/computed fields that the API returns in GET responses
+	// but should not be sent in PUT requests. These fields can be very large
+	// in orgs with many edges/sites (e.g. primaryEdges contains full Edge
+	// objects each embedding all sites), causing the PUT payload to exceed
+	// the API's 512KB request size limit and resulting in a 413 error.
+	site.PrimaryEdges = nil
+	site.SecondaryEdges = nil
+	site.Edges = nil
 
 	updatedSite, resp, err := p.edgesApi.PutTelephonyProvidersEdgesSite(siteId, *site)
 	if err != nil {

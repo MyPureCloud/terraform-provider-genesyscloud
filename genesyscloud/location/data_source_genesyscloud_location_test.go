@@ -2,6 +2,7 @@ package location
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"testing"
@@ -13,7 +14,7 @@ func TestAccDataSourceLocation(t *testing.T) {
 	var (
 		locResourceLabel = "test-location-members"
 		locDataLabel     = "location-data"
-		locName          = "test-location"
+		locName          = "test-location-" + uuid.NewString()
 
 		locNotes = "HQ1"
 		street   = "7601 Interactive Way"
@@ -43,6 +44,7 @@ func TestAccDataSourceLocation(t *testing.T) {
 				),
 			},
 		},
+		CheckDestroy: testVerifyLocationsDestroyed,
 	})
 }
 

@@ -68,11 +68,10 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 	id := d.Id()
 
 	edgeGroup := &platformclientv2.Edgegroup{
-		Id:              &id,
-		Name:            &name,
-		Managed:         &managed,
-		Hybrid:          &hybrid,
-		PhoneTrunkBases: buildSdkTrunkBases(d),
+		Id:      &id,
+		Name:    &name,
+		Managed: &managed,
+		Hybrid:  &hybrid,
 	}
 
 	if description != "" {
@@ -91,6 +90,13 @@ func updateEdgeGroup(ctx context.Context, d *schema.ResourceData, meta interface
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read edge group %s error: %s", d.Id(), getErr), resp)
 		}
 		edgeGroup.Version = edgeGroupFromApi.Version
+		edgeGroup.EdgeTrunkBaseAssignment = edgeGroupFromApi.EdgeTrunkBaseAssignment
+
+		if d.HasChange("phone_trunk_base_ids") {
+			edgeGroup.PhoneTrunkBases = buildSdkTrunkBases(d)
+		} else {
+			edgeGroup.PhoneTrunkBases = edgeGroupFromApi.PhoneTrunkBases
+		}
 
 		log.Printf("Updating edge group %s", name)
 		_, resp, putErr := edgeGroupProxy.updateEdgeGroup(ctx, d.Id(), *edgeGroup)

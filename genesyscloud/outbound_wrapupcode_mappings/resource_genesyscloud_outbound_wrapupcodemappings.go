@@ -45,7 +45,7 @@ func getOutboundWrapupCodeMappings(ctx context.Context, clientConfig *platformcl
 		}
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "wrapupcodemappings"}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: "wrapupcodemappings"}
 	return resources, nil
 }
 

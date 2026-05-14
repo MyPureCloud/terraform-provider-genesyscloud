@@ -1,7 +1,9 @@
 package outbound_contact_list_contact
 
-// @team: Outbound Digital
-// @chat: #genesys-cloud-digital-campaigns
+// @team: List Management
+// @chat: #Genesys Cloud Dialer
+// @pm: Mason Mansfield
+// @jira: LM
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (

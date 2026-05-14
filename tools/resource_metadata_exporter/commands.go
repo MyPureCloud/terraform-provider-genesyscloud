@@ -127,11 +127,13 @@ func runExport(cmd *cobra.Command, args []string) error {
 	var cliMetadata []ResourceMetadata
 	for _, m := range metadata {
 		cliMetadata = append(cliMetadata, ResourceMetadata{
-			ResourceType: m.ResourceType,
-			PackageName:  m.PackageName,
-			TeamName:     m.TeamName,
-			TeamChatRoom: m.TeamChatRoom,
-			Description:  m.Description,
+			ResourceType:   m.ResourceType,
+			PackageName:    m.PackageName,
+			TeamName:       m.TeamName,
+			TeamChatRoom:   m.TeamChatRoom,
+			Description:    m.Description,
+			ProductManager: m.ProductManager,
+			JiraProject:    m.JiraProject,
 		})
 	}
 
@@ -286,11 +288,13 @@ func runReport(cmd *cobra.Command, args []string) error {
 	var fullMetadata []ResourceMetadata
 	for _, m := range metadata {
 		fullMetadata = append(fullMetadata, ResourceMetadata{
-			ResourceType: m.ResourceType,
-			PackageName:  m.PackageName,
-			TeamName:     m.TeamName,
-			TeamChatRoom: m.TeamChatRoom,
-			Description:  m.Description,
+			ResourceType:   m.ResourceType,
+			PackageName:    m.PackageName,
+			TeamName:       m.TeamName,
+			TeamChatRoom:   m.TeamChatRoom,
+			Description:    m.Description,
+			ProductManager: m.ProductManager,
+			JiraProject:    m.JiraProject,
 		})
 	}
 
@@ -415,8 +419,8 @@ func getCurrentDate() string {
 
 // Export functions
 func exportMarkdown(annotations []ResourceMetadata, output io.Writer) error {
-	fmt.Fprintln(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Description |")
-	fmt.Fprintln(output, "|--------------|:--------:|------|:-----------------------------:|-------------|")
+	fmt.Fprintln(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Product Manager | Jira Project | Description |")
+	fmt.Fprintln(output, "|--------------|:--------:|------|:-----------------------------:|:---------------:|:------------:|-------------|")
 
 	for _, a := range annotations {
 		resourceType := strings.ReplaceAll(a.ResourceType, "_", "\\_")
@@ -432,16 +436,28 @@ func exportMarkdown(annotations []ResourceMetadata, output io.Writer) error {
 			chatRoom = "Unknown Chat Room"
 		}
 
+		pm := a.ProductManager
+		if pm == "" {
+			pm = "N/A"
+		}
+
+		jira := a.JiraProject
+		if jira == "" {
+			jira = "N/A"
+		}
+
 		description := a.Description
 		if description == "" {
 			description = "N/A"
 		}
 
-		fmt.Fprintf(output, "| %s | %s | %s | %s | %s |\n",
+		fmt.Fprintf(output, "| %s | %s | %s | %s | %s | %s | %s |\n",
 			resourceType,
 			packageName,
 			teamName,
 			chatRoom,
+			pm,
+			jira,
 			description)
 	}
 
@@ -458,7 +474,7 @@ func exportCSV(annotations []ResourceMetadata, output io.Writer) error {
 	writer := csv.NewWriter(output)
 	defer writer.Flush()
 
-	if err := writer.Write([]string{"Resource Type", "Package", "Team", "Chat Room", "Description"}); err != nil {
+	if err := writer.Write([]string{"Resource Type", "Package", "Team", "Chat Room", "Product Manager", "Jira Project", "Description"}); err != nil {
 		return err
 	}
 
@@ -468,6 +484,8 @@ func exportCSV(annotations []ResourceMetadata, output io.Writer) error {
 			m.PackageName,
 			m.TeamName,
 			m.TeamChatRoom,
+			m.ProductManager,
+			m.JiraProject,
 			m.Description,
 		}); err != nil {
 			return err
@@ -479,11 +497,13 @@ func exportCSV(annotations []ResourceMetadata, output io.Writer) error {
 
 // ResourceMetadata represents the metadata structure for the CLI tool
 type ResourceMetadata struct {
-	ResourceType string `json:"resource_type"`
-	PackageName  string `json:"package_name"`
-	TeamName     string `json:"team_name"`
-	TeamChatRoom string `json:"team_chat_room"`
-	Description  string `json:"description"`
+	ResourceType    string `json:"resource_type"`
+	PackageName     string `json:"package_name"`
+	TeamName        string `json:"team_name"`
+	TeamChatRoom    string `json:"team_chat_room"`
+	Description     string `json:"description"`
+	ProductManager  string `json:"product_manager"`
+	JiraProject     string `json:"jira_project"`
 }
 
 // ResourceDiscovery provides functionality to discover and extract metadata from resources
@@ -567,6 +587,8 @@ func (d *ResourceDiscovery) extractMetadataFromFile(filePath string) (*ResourceM
 	var teamName string
 	var teamChatRoom string
 	var description string
+	var productManager string
+	var jiraProject string
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -597,6 +619,10 @@ func (d *ResourceDiscovery) extractMetadataFromFile(filePath string) (*ResourceM
 			teamChatRoom = strings.TrimSpace(strings.TrimPrefix(line, "// @chat:"))
 		} else if strings.HasPrefix(line, "// @description:") {
 			description = strings.TrimSpace(strings.TrimPrefix(line, "// @description:"))
+		} else if strings.HasPrefix(line, "// @pm:") {
+			productManager = strings.TrimSpace(strings.TrimPrefix(line, "// @pm:"))
+		} else if strings.HasPrefix(line, "// @jira:") {
+			jiraProject = strings.TrimSpace(strings.TrimPrefix(line, "// @jira:"))
 		}
 
 		// Extract build tag annotations
@@ -621,11 +647,13 @@ func (d *ResourceDiscovery) extractMetadataFromFile(filePath string) (*ResourceM
 	}
 
 	return &ResourceMetadata{
-		ResourceType: resourceType,
-		PackageName:  packageName,
-		TeamName:     teamName,
-		TeamChatRoom: teamChatRoom,
-		Description:  description,
+		ResourceType:   resourceType,
+		PackageName:    packageName,
+		TeamName:       teamName,
+		TeamChatRoom:   teamChatRoom,
+		Description:    description,
+		ProductManager: productManager,
+		JiraProject:    jiraProject,
 	}, nil
 }
 

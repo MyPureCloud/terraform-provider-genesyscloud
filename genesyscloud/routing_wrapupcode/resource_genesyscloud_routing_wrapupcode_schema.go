@@ -2,6 +2,8 @@ package routing_wrapupcode
 
 // @team: Assignment
 // @chat: #genesys-cloud-acd-routing
+// @pm: Rob Blane
+// @jira: AS
 // @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
 
 import (

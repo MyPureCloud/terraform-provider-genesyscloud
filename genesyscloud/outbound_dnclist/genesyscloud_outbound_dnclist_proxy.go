@@ -242,7 +242,7 @@ func getOutboundDnclistExportFn(ctx context.Context, p *outboundDnclistProxy, dn
 func getOutboundDnclistEntriesFn(ctx context.Context, p *outboundDnclistProxy, dncListId string) ([]interface{}, *platformclientv2.APIResponse, error) {
 	data, resp, err := p.getOutboundDnclistExport(ctx, dncListId, "")
 	if err != nil {
-		if util.IsStatus400(resp) {
+		if util.IsStatus400(resp) || util.IsStatus404(resp) {
 			return nil, resp, fmt.Errorf("Export not ready yet for Outbound DNC list %s: %s", dncListId, err)
 		}
 		return nil, resp, fmt.Errorf("Failed to retrieve export URI for Outbound DNC list %s: %s", dncListId, err)

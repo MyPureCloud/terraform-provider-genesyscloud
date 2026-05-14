@@ -1,8 +1,143 @@
 package provider
 
 import (
+	"os"
 	"testing"
+	"time"
 )
+
+func TestUnitGetCustomRetryTimeout_Default(t *testing.T) {
+	// Clear any existing environment variable
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Unsetenv(customRetryTimeoutEnvVar)
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		}
+	}()
+
+	// Clear provider meta/config
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
+	originalConfig := providerConfig
+	providerConfig = nil
+	defer func() { providerConfig = originalConfig }()
+
+	timeout := GetCustomRetryTimeout()
+	expectedTimeout := 5 * time.Minute
+
+	if timeout != expectedTimeout {
+		t.Errorf("Expected default timeout %v, got %v", expectedTimeout, timeout)
+	}
+}
+
+func TestUnitGetCustomRetryTimeout_EnvVar(t *testing.T) {
+	// Set environment variable
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Setenv(customRetryTimeoutEnvVar, "30s")
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		} else {
+			os.Unsetenv(customRetryTimeoutEnvVar)
+		}
+	}()
+
+	// Clear provider meta/config to test env var fallback
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
+	originalConfig := providerConfig
+	providerConfig = nil
+	defer func() { providerConfig = originalConfig }()
+
+	timeout := GetCustomRetryTimeout()
+	expectedTimeout := 30 * time.Second
+
+	if timeout != expectedTimeout {
+		t.Errorf("Expected timeout from env var %v, got %v", expectedTimeout, timeout)
+	}
+}
+
+func TestUnitGetCustomRetryTimeout_ZeroEnvVar(t *testing.T) {
+	// Set environment variable to zero for fail-fast
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Setenv(customRetryTimeoutEnvVar, "0s")
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		} else {
+			os.Unsetenv(customRetryTimeoutEnvVar)
+		}
+	}()
+
+	// Clear provider meta/config
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
+	originalConfig := providerConfig
+	providerConfig = nil
+	defer func() { providerConfig = originalConfig }()
+
+	timeout := GetCustomRetryTimeout()
+
+	if timeout != 0 {
+		t.Errorf("Expected zero timeout for fail-fast, got %v", timeout)
+	}
+}
+
+func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
+	// Set invalid environment variable - should fall back to default
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Setenv(customRetryTimeoutEnvVar, "invalid")
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		} else {
+			os.Unsetenv(customRetryTimeoutEnvVar)
+		}
+	}()
+
+	// Clear provider meta/config
+	originalMeta := providerMeta
+	providerMeta = nil
+	defer func() { providerMeta = originalMeta }()
+
+	originalConfig := providerConfig
+	providerConfig = nil
+	defer func() { providerConfig = originalConfig }()
+
+	timeout := GetCustomRetryTimeout()
+	expectedTimeout := 5 * time.Minute
+
+	if timeout != expectedTimeout {
+		t.Errorf("Expected default timeout %v for invalid env var, got %v", expectedTimeout, timeout)
+	}
+}
+
+func TestUnitGetCustomRetryTimeout_UsesProviderMetaValue(t *testing.T) {
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Setenv(customRetryTimeoutEnvVar, "30s")
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		} else {
+			os.Unsetenv(customRetryTimeoutEnvVar)
+		}
+	}()
+
+	originalMeta := providerMeta
+	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
+	defer setProviderMeta(originalMeta)
+
+	if got := GetCustomRetryTimeout(); got != 1*time.Second {
+		t.Fatalf("expected provider meta timeout 1s, got %v", got)
+	}
+}
 
 func TestUnitValidateLogFilePath(t *testing.T) {
 	testCases := []struct {

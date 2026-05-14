@@ -107,6 +107,7 @@ func readOutboundMessagingcampaign(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", messagingCampaign.DynamicContactQueueingSettings, flattenDynamicContactQueueingSettingss)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "email_config", messagingCampaign.EmailConfig, flattenEmailConfigs)
 		d.Set("sms_config", flattenSmsConfigs(messagingCampaign.SmsConfig))
+		d.Set("whats_app_config", flattenWhatsAppConfigs(messagingCampaign.WhatsAppConfig))
 
 		log.Printf("Read outbound messagingcampaign %s %s", d.Id(), *messagingCampaign.Name)
 		return cc.CheckState(d)

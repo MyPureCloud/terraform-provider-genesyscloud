@@ -19,6 +19,11 @@ import (
 var resourceExporters map[string]*ResourceExporter
 var resourceExporterMapMutex = sync.RWMutex{}
 
+// InstanceStateIDToken is a special lookup token that exporters can use when they need the Terraform
+// instance ID (InstanceState.ID) instead of a value from InstanceState.Attributes. This avoids
+// collisions with real state attributes like "id".
+const InstanceStateIDToken = "__terraform_instance_id__"
+
 type ResourceMeta struct {
 	// BlockLabel of the resource to be used in exports
 	BlockLabel string
@@ -79,6 +84,11 @@ type DataSourceResolver struct {
 type RefAttrCustomResolver struct {
 	ResolverFunc            func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error
 	ResolveToDataSourceFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]interface{}, bool)
+	ResolveRefTypeFunc      func(configMap map[string]interface{}) (string, error)
+
+	// ResolverWithClientConfigFunc is like ResolverFunc but with access to the SDK client config
+	// for resolvers that need to make API calls (e.g. resolving a GUID to a human-readable name).
+	ResolverWithClientConfigFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) error
 }
 
 type CustomFileWriterSettings struct {
@@ -121,6 +131,13 @@ type ResourceExporter struct {
 	// Returned map key should be the ID and the value should be a label to use for the resource.
 	// Label will be sanitized with part of the ID appended, so it is not required that they be unique
 	GetResourcesFunc GetAllResourcesFunc
+
+	// IsSingleton indicates the exporter manages a single org-wide resource instance.
+	// ExportId is required when IsSingleton is true
+	IsSingleton bool
+
+	// ExportId is the singleton key used in the ResourceIDMetaMap returned by GetAllResourcesFunc.
+	ExportId string
 
 	// A map of resource attributes to types that they reference
 	// Attributes in nested objects can be defined with a '.' separator
@@ -192,6 +209,11 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 		return err
 	}
 
+	result, err = r.normalizeSingletonResourceMap(resourceType, result)
+	if err != nil {
+		return err
+	}
+
 	if r.FilterResource != nil {
 		result = r.FilterResource(result, resourceType, filter)
 	}
@@ -205,6 +227,36 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
 
 	return nil
+}
+
+func (r *ResourceExporter) normalizeSingletonResourceMap(resourceType string, result ResourceIDMetaMap) (ResourceIDMetaMap, diag.Diagnostics) {
+	if !r.IsSingleton {
+		return result, nil
+	}
+
+	if r.ExportId == "" {
+		return nil, diag.Errorf("singleton exporter %s is missing ExportId", resourceType)
+	}
+
+	if len(result) == 0 {
+		return result, nil
+	}
+
+	if len(result) > 1 {
+		return nil, diag.Errorf("singleton exporter %s returned %d resources; expected at most 1", resourceType, len(result))
+	}
+
+	if _, ok := result[r.ExportId]; ok {
+		return result, nil
+	}
+
+	normalized := make(ResourceIDMetaMap, 1)
+	for _, meta := range result {
+		normalized[r.ExportId] = meta
+		break
+	}
+
+	return normalized, nil
 }
 
 // Thread-safe methods for accessing SanitizedResourceMap
@@ -274,6 +326,13 @@ func (r *ResourceExporter) DataResolver(instanceState *terraform.InstanceState, 
 }
 
 func (r *ResourceExporter) fetchFromInstanceState(instanceState *terraform.InstanceState, pattern string) string {
+	// Some data sources accept the Terraform instance ID as their lookup input.
+	// The instance ID is not always present in the attributes map, so allow exporters
+	// to request it explicitly via a collision-proof token.
+	if instanceState != nil && pattern == InstanceStateIDToken && instanceState.ID != "" {
+		return instanceState.ID
+	}
+
 	re := regexp.MustCompile(pattern)
 	for key, val := range instanceState.Attributes {
 		if re.MatchString(key) {

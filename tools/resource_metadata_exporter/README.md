@@ -191,6 +191,8 @@ package architect_flow
 
 // @team: Platform Team
 // @chat: #platform-team
+// @pm: John Doe
+// @jira: DEVTOOLING
 // @description: Manages Genesys Cloud flows and their configurations
 
 import (
@@ -274,6 +276,8 @@ const (
 |-------|----------|-------------|---------|
 | `@team` | Yes | Team name responsible for the resource | `@team: Platform Team` |
 | `@chat` | No | Team chat room for questions/updates | `@chat: #platform-team` |
+| `@pm` | No | Product Manager for the resource | `@pm: John Doe` |
+| `@jira` | No | Jira project key for the resource | `@jira: DEVTOOLING` |
 | `@description` | No | Brief description of the resource | `@description: Manages Genesys Cloud flows` |
 
 ### Best Practices
@@ -373,7 +377,9 @@ Structured data for programmatic consumption:
     "package_name": "architect_flow",
     "team_name": "Platform Team",
     "team_chat_room": "#platform-team",
-    "description": "Manages Genesys Cloud flows"
+    "description": "Manages Genesys Cloud flows",
+    "product_manager": "John Doe",
+    "jira_project": "DEVTOOLING"
   }
 ]
 ```
@@ -383,9 +389,9 @@ Structured data for programmatic consumption:
 Spreadsheet-compatible format:
 
 ```csv
-Resource Type,Package,Team,Chat Room,Description
-genesyscloud_flow,architect_flow,Platform Team,#platform-team,Manages Genesys Cloud flows
-genesyscloud_queue,routing_queue,Routing Team,#routing-team,Manages routing queues
+Resource Type,Package,Team,Chat Room,Product Manager,Jira Project,Description
+genesyscloud_flow,architect_flow,Platform Team,#platform-team,John Doe,DEVTOOLING,Manages Genesys Cloud flows
+genesyscloud_queue,routing_queue,Routing Team,#routing-team,Jane Smith,ROUTING,Manages routing queues
 ```
 
 ## Development

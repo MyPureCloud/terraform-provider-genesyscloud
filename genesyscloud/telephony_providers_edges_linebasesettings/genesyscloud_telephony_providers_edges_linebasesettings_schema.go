@@ -1,7 +1,8 @@
 package telephony_providers_edges_linebasesettings
 
-// @team: Genesys Cloud Media
-// @chat: #media-infrastructure-team
+// @team: Telephony Configuration
+// @pm: Alan Lanteigne
+// @jira: TC
 // @description: Telephony infrastructure and configuration management for Genesys Cloud Edge devices. Manages sites, phones, trunks, DIDs, and base settings for voice connectivity and call routing.
 
 import (

@@ -40,7 +40,7 @@ func getAllOrganizationAuthenticationSettings(ctx context.Context, clientConfig 
 		}
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s resource due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: ResourceType}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: ResourceType}
 	return resources, nil
 }
 

@@ -26,6 +26,10 @@ provider "genesyscloud" {
 
 - `access_token` (String) A string that the OAuth client uses to make requests. Can be set with the `GENESYSCLOUD_ACCESS_TOKEN` environment variable.
 - `aws_region` (String) AWS region where org exists. e.g. us-east-1. Can be set with the `GENESYSCLOUD_REGION` environment variable.
+- `custom_retry_timeout` (String) Maximum time to retry reading a resource after creation to handle eventual consistency.
+When a resource exists in Terraform state but returns 404 from the API (deleted externally), the provider retries with exponential backoff up to this timeout before removing it from state.
+Set to "0" or "0s" for immediate fail-fast behavior (no retries), useful for recovery scenarios where resources have been deleted from Genesys Cloud.
+Can be set with the GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT environment variable. Default is 5 minutes.
 - `gateway` (Block Set) (see [below for nested schema](#nestedblock--gateway))
 - `log_stack_traces` (Boolean) If true, stack traces will be logged to a file instead of crashing the provider, whenever possible.
 If the stack trace occurs within the create context and before the ID is set in the schema object, then the command will fail with the message

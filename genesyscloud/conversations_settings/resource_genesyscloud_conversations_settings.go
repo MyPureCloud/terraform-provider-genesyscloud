@@ -41,7 +41,7 @@ func getAllConversationsSettings(ctx context.Context, clientConfig *platformclie
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "conversations_settings"}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: "conversations_settings"}
 	return resources, nil
 }
 

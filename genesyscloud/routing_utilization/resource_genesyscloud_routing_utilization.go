@@ -36,7 +36,7 @@ func getAllRoutingUtilization(ctx context.Context, clientConfig *platformclientv
 		}
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get %s due to error: %s", ResourceType, err), resp)
 	}
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "routing_utilization"}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: "routing_utilization"}
 	return resources, nil
 }
 

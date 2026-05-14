@@ -79,7 +79,7 @@ func updateGroupRolesFn(ctx context.Context, p *groupRolesProxy, roleId string, 
 	// Get existing roles/divisions
 	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
 
-	if err != nil || resp.StatusCode == http.StatusNotFound || subject == nil {
+	if err != nil || (resp != nil && resp.StatusCode == http.StatusNotFound) || subject == nil {
 		return resp, fmt.Errorf("failed to get current grants for subject %s: %s while updating group role", roleId, err)
 	}
 
