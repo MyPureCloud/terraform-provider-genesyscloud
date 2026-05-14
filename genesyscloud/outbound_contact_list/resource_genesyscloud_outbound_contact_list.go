@@ -191,7 +191,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("column_names", *sdkContactList.ColumnNames)
 		}
 		if sdkContactList.PhoneColumns != nil {
-			flattenedPhoneColumns := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns)
+			flattenedPhoneColumns := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneTzIdx)
 
 			if existingRaw, ok := d.GetOk("phone_columns"); ok {
 				if existingSet, ok := existingRaw.(*schema.Set); ok && existingSet != nil && flattenedPhoneColumns != nil {

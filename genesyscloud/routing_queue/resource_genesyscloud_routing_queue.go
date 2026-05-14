@@ -180,6 +180,7 @@ func syncStateOnPartialFailure(ctx context.Context, d *schema.ResourceData, meta
 	return diagErr
 }
 
+// syncRoutingQueueStateFromAPI refreshes Terraform state from the API after a partial update failure.
 func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetRoutingQueueProxy(sdkConfig)
@@ -246,8 +247,13 @@ func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, m
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
 	}
 
-	if currentQueue.ConditionalGroupActivation != nil {
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
+	if exists := featureToggles.CGAToggleExists(); !exists {
+		if currentQueue.ConditionalGroupActivation != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, FlattenConditionalGroupActivation)
+		}
+	} else {
+		log.Printf("%s is set, not reading conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
+		_ = d.Set("conditional_group_activation", nil)
 	}
 
 	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
