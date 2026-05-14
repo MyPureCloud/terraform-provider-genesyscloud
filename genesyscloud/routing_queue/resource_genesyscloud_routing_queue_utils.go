@@ -537,7 +537,18 @@ func BuildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalg
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.ConditionExpression, ruleMap, "condition_expression")
 		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", BuildCgaConditions)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Groups, ruleMap, "groups", BuildCgaGroups)
+
+		// groups is a TypeSet, so extract via *schema.Set and convert to []interface{} for BuildCgaGroups
+		if groupsVal, ok := ruleMap["groups"]; ok && groupsVal != nil {
+			if groupsSet, ok := groupsVal.(*schema.Set); ok {
+				groups := BuildCgaGroups(groupsSet.List())
+				sdkRule.Groups = groups
+			} else if groupsList, ok := groupsVal.([]interface{}); ok {
+				// Fallback for cases where groups comes as []interface{} (e.g., during tests)
+				groups := BuildCgaGroups(groupsList)
+				sdkRule.Groups = groups
+			}
+		}
 
 		sdkRules = append(sdkRules, sdkRule)
 	}
@@ -948,21 +959,19 @@ func FlattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupact
 	return conditionsOut
 }
 
-func FlattenCgaRuleGroups(groups *[]platformclientv2.Membergroup) []interface{} {
+func FlattenCgaRuleGroups(groups *[]platformclientv2.Membergroup) *schema.Set {
+	groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
 	if groups == nil || len(*groups) == 0 {
-		return nil
+		return groupSet
 	}
-
-	groupsOut := make([]interface{}, 0)
 
 	for _, group := range *groups {
 		groupOut := make(map[string]interface{})
-
 		resourcedata.SetMapValueIfNotNil(groupOut, "member_group_id", group.Id)
 		resourcedata.SetMapValueIfNotNil(groupOut, "member_group_type", group.VarType)
-		groupsOut = append(groupsOut, groupOut)
+		groupSet.Add(groupOut)
 	}
-	return groupsOut
+	return groupSet
 }
 
 func FlattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) []interface{} {
@@ -978,7 +987,11 @@ func FlattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) [
 
 		resourcedata.SetMapValueIfNotNil(ruleOut, "condition_expression", rule.ConditionExpression)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "conditions", rule.Conditions, FlattenCgaRuleConditions)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "groups", rule.Groups, FlattenCgaRuleGroups)
+
+		if rule.Groups != nil {
+			ruleOut["groups"] = FlattenCgaRuleGroups(rule.Groups)
+		}
+
 		rulesOut = append(rulesOut, ruleOut)
 	}
 	return rulesOut

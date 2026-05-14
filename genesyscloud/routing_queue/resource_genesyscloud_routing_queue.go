@@ -104,7 +104,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
-		CannedResponseLibraries: buildCannedResponseLibraries(d),
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	if exists := featureToggles.CGAToggleExists(); !exists {
@@ -361,7 +361,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		EnableManualAssignment:       platformclientv2.Bool(d.Get("enable_manual_assignment").(bool)),
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
-		CannedResponseLibraries: buildCannedResponseLibraries(d),
+		CannedResponseLibraries:      buildCannedResponseLibraries(d),
 	}
 
 	diagErr := addCGRAndOEAAndCGA(proxy, d, &updateQueue)

@@ -2041,6 +2041,22 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_routing_queue_conditional_group_activation",
+      "resource_name": "routing_queue_conditional_group_activation",
+      "permissions": [
+        "routing:queue:edit",
+        "routing:queue:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/queues/{queueId}",
+        "PUT /api/v2/routing/queues/{queueId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_routing_queue_conditional_group_routing",
       "resource_name": "routing_queue_conditional_group_routing",
       "permissions": [

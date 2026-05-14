@@ -410,7 +410,7 @@ var (
 						},
 						"groups": {
 							Description: "The group(s) to activate if the rule evaluates as true.",
-							Type:        schema.TypeList,
+							Type:        schema.TypeSet,
 							Required:    true,
 							MinItems:    1,
 							MaxItems:    5,
