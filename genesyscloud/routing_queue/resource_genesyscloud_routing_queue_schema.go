@@ -597,7 +597,6 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
 				Elem:        conditionalGroupActivationResource,
 			},
 			"conditional_group_routing_rules": {

@@ -251,6 +251,7 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			}
 		} else {
 			log.Printf("%s is set, not reading conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
+			_ = d.Set("conditional_group_activation", nil)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
