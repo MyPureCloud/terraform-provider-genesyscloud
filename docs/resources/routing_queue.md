@@ -383,7 +383,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
 - `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
 - `conditional_group_activation` (Block List, Max: 1) The Conditional Group Activation settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_activation))
-- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Important:** conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing. When ENABLE_STANDALONE_CGR is set, this attribute will not be read or exported. The two approaches are mutually exclusive to prevent duplicate data during org exports. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
@@ -560,7 +560,7 @@ Optional:
 - `condition_value` (Number) The limit value, beyond which a rule evaluates as true.
 - `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel Defaults to `EstimatedWaitTime`.
 - `operator` (String) The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.
-- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.
+- `queue_id` (String) The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so no queue id should be specified for the first rule. If the queue references itself, it will be automatically removed during export (the API interprets null as "use the current queue").
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 
 <a id="nestedblock--conditional_group_routing_rules--groups"></a>

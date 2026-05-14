@@ -600,7 +600,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Elem:        conditionalGroupActivationResource,
 			},
 			"conditional_group_routing_rules": {
-				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
+				Description: "The Conditional Group Routing settings for the queue. **Important:** conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing. When ENABLE_STANDALONE_CGR is set, this attribute will not be read or exported. The two approaches are mutually exclusive to prevent duplicate data during org exports.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    5,
@@ -609,7 +609,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"queue_id": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.`,
+							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so no queue id should be specified for the first rule. If the queue references itself, it will be automatically removed during export (the API interprets null as "use the current queue").`,
 						},
 						"operator": {
 							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
@@ -880,7 +880,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"outbound_email_address": {"route_id"},
 			"members":                {"user_id"},
 		},
-		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id"},
+		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id", "conditional_group_routing_rules.queue_id", "conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id", "conditional_group_activation.rules.conditions.simple_metric.queue_id"},
 		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
