@@ -11,20 +11,28 @@ Genesys Cloud Script
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/scripts/{scriptId}/export](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-scripts--scriptId--export)
 * [GET /api/v2/scripts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts)
 * [GET /api/v2/scripts/{scriptId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts--scriptId-)
-* [GET /api/v2/scripts/uploads/{uploadId}/status](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts-uploads--uploadId--status)
+* [DELETE /api/v2/scripts/{scriptId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-scripts--scriptId-)
+* [POST /api/v2/scripts/{scriptId}/export](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-scripts--scriptId--export)
+* [GET /api/v2/scripts/published](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts-published)
 * [POST /api/v2/scripts/published](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-scripts-published)
+* [GET /api/v2/scripts/uploads/{uploadId}/status](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts-uploads--uploadId--status)
+* [POST /api/v2/authorization/divisions/{divisionId}/objects/{objectType}](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-authorization-divisions--divisionId--objects--objectType-)
+* [DELETE /api/v2/scripts/{scriptsId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-scripts--scriptsId-)
+* [POST /api/v2/authorization/divisions/{divisionsId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionsId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `scripter:publishedScript:add`
+* `scripter:publishedScript:view`
 * `scripter:script:view`
 
 The following OAuth scopes are required to use this resource:
 
+* `authorization`
 * `scripts`
 * `scripts:readonly`
 

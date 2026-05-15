@@ -16,10 +16,13 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses--responseId-)
 * [PUT /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-responsemanagement-responses--responseId-)
 * [DELETE /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-responses--responseId-)
+* [GET /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-responsemanagement-libraries)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `responses:library:view`
 * `responses:response:add`
 * `responses:response:delete`
 * `responses:response:edit`

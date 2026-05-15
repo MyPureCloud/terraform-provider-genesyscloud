@@ -16,6 +16,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials--credentialId-)
 * [PUT /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#put-api-v2-integrations-credentials--credentialId-)
 * [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/api/rest/v2/integrations/#delete-api-v2-integrations-credentials--credentialId-)
+* [GET /api/v2/integrations/credentials/listing](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials-listing)
+* [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

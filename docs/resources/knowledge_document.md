@@ -20,15 +20,25 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
 * [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--versions)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `knowledge:category:view`
 * `knowledge:document:add`
 * `knowledge:document:delete`
 * `knowledge:document:edit`
 * `knowledge:document:view`
 * `knowledge:documentVersion:add`
+* `knowledge:knowledgebase:view`
+* `knowledge:label:view`
 
 The following OAuth scopes are required to use this resource:
 

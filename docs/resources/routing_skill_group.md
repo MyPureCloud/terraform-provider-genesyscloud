@@ -15,11 +15,33 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 [POST /api/v2/routing/skillgroups](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-routing-skillgroups)
 [PATCH /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-routing-skillgroups--skillGroupId-)
 [DELETE /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-routing-skillgroups--skillGroupId-)
+* [GET /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups)
+* [POST /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skillgroups)
+* [GET /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups--skillGroupId-)
+* [PATCH /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-routing-skillgroups--skillGroupId-)
+* [DELETE /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-skillgroups--skillGroupId-)
+* [POST /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skillgroups--skillGroupId--members-divisions)
+* [GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups--skillGroupId--members-divisions)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:skillGroup:add`
+* `routing:skillGroup:delete`
+* `routing:skillGroup:edit`
+* `routing:skillGroup:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_routing_skill_group" "skillgroup" {
+resource "genesyscloud_routing_skill_group" "example_skill_group" {
   name        = "Series6"
   description = "Agents with exposure to Series 6 license"
   skill_conditions = jsonencode(

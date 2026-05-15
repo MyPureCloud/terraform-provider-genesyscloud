@@ -19,6 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/quality/publishedforms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-evaluations)
 * [GET /api/v2/quality/publishedforms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-evaluations--formId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations--formId--versions)
+* [GET /api/v2/quality/forms/evaluations/bulk/contexts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations-bulk-contexts)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -16,10 +16,13 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#delete-api-v2-webdeployments-deployments--deploymentId-)
 * [GET /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-deployments--deploymentId-)
 * [PUT /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#put-api-v2-webdeployments-deployments--deploymentId-)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `webDeployments:configuration:view`
 * `webDeployments:deployment:add`
 * `webDeployments:deployment:delete`
 * `webDeployments:deployment:edit`

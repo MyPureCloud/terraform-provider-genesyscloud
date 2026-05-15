@@ -20,6 +20,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--wrapupcodes)
 - [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
 - [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
+* [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues)
+* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-queues--queueId-)
 
 ## Permissions and Scopes
 
@@ -36,6 +38,7 @@ The following OAuth scopes are required to use this resource:
 
 * `routing`
 * `routing:readonly`
+
 ## Schema Migration: Routing Queue V1 to V2
 
 ### Migration Details
@@ -150,7 +153,6 @@ resource "genesyscloud_routing_queue" "example" {
 #### Action Required
 
 The state will be automatically upgraded when you run terraform init with version 1.60.0 or later of the provider. After this, you will have to update your config to remove these attributes from the `media_settings_call`, `media_settings_email`, `media_settings_chat`, and `media_settings_message` config blocks as they are no longer supported.
-
 
 ## Example Usage
 

@@ -15,6 +15,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [GET /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
 - [PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
 - [DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
+* [POST /api/v2/outbound/contactlists/{contactListId}/contacts/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlists--contactListId--contacts-search)
 
 ## Permissions and Scopes
 
@@ -29,6 +30,7 @@ The following OAuth scopes are required to use this resource:
 
 * `outbound`
 * `outbound:readonly`
+
 ## Migrating from genesyscloud_outbound_contact_list_contact
 
 ### Deprecation Notice
@@ -55,7 +57,6 @@ The exporter functionality has been removed from this resource in favor of the `
    ```
 3. Ensure your CSV file contains all required columns defined in `column_names`
 4. Run `terraform plan` to verify the changes
-
 
 ## Example Usage
 

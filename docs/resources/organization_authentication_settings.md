@@ -13,6 +13,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 * [GET /api/v2/organizations/authentication/settings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-organizations-authentication-settings)
 * [PATCH /api/v2/organizations/authentication/settings](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-organizations-authentication-settings)
+* [GET /api/v2/tokens/timeout](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-tokens-timeout)
+* [PUT /api/v2/tokens/timeout](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-tokens-timeout)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -21,6 +24,8 @@ The following permissions are required to use this resource:
 
 The following OAuth scopes are required to use this resource:
 
+* `authorization`
+* `authorization:readonly`
 * `organization`
 * `organization:readonly`
 

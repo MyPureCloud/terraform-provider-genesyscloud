@@ -16,6 +16,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/flows/datatables/{datatableId}/rows](https://developer.mypurecloud.com/api/rest/v2/architect/#post-api-v2-flows-datatables--datatableId--rows)
 * [PUT /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.mypurecloud.com/api/rest/v2/architect/#put-api-v2-flows-datatables--datatableId--rows--rowId-)
 * [DELETE /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.mypurecloud.com/api/rest/v2/architect/#delete-api-v2-flows-datatables--datatableId--rows--rowId-)
+* [GET /api/v2/flows/datatables](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

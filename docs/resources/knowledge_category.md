@@ -16,6 +16,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -24,6 +26,7 @@ The following permissions are required to use this resource:
 * `knowledge:category:delete`
 * `knowledge:category:edit`
 * `knowledge:category:view`
+* `knowledge:knowledgebase:view`
 
 The following OAuth scopes are required to use this resource:
 

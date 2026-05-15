@@ -16,7 +16,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics--topicId-)
 * [PUT /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-speechandtextanalytics-topics--topicId-)
 * [DELETE /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-speechandtextanalytics-topics--topicId-)
-
+* [POST /api/v2/speechandtextanalytics/topics/publishjobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-topics-publishjobs)
+* [GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics-publishjobs--jobId-)
 
 ## Permissions and Scopes
 
@@ -25,6 +26,7 @@ The following permissions are required to use this resource:
 * `speechAndTextAnalytics:topic:add`
 * `speechAndTextAnalytics:topic:delete`
 * `speechAndTextAnalytics:topic:edit`
+* `speechAndTextAnalytics:topic:publish`
 * `speechAndTextAnalytics:topic:view`
 
 The following OAuth scopes are required to use this resource:

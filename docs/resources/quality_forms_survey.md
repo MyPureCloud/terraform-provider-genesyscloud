@@ -19,12 +19,15 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/quality/publishedforms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-surveys)
 * [GET /api/v2/quality/publishedforms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-surveys--formId-)
 * [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId--versions)
+* [PATCH /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-quality-forms-surveys--formId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `quality:surveyForm:add`
 * `quality:surveyForm:delete`
+* `quality:surveyForm:disable`
 * `quality:surveyForm:edit`
 * `quality:surveyForm:view`
 

@@ -21,6 +21,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/groups/{groupId}/members](https://developer.mypurecloud.com/api/rest/v2/groups/#delete-api-v2-groups--groupId--members)
 * [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#get-api-v2-voicemail-groups--groupId--policy)
 * [PATCH /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/commdigital/voicemail/#patch-api-v2-voicemail-groups--groupId--policy)
+* [POST /api/v2/groups/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-groups-search)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

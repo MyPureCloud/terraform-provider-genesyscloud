@@ -17,6 +17,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-roles--roleId-)
 * [PUT /api/v2/authorization/roles/default](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-roles-default)
 * [DELETE /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-roles--roleId-)
+* [GET /api/v2/authorization/permissions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-permissions)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -16,6 +16,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/locations/{locationId}](https://developer.mypurecloud.com/api/rest/v2/locations/#get-api-v2-locations--locationId-)
 * [PATCH /api/v2/locations/{locationId}](https://developer.mypurecloud.com/api/rest/v2/locations/#patch-api-v2-locations--locationId-)
 * [DELETE /api/v2/locations/{locationId}](https://developer.mypurecloud.com/api/rest/v2/locations/#delete-api-v2-locations--locationId-)
+* [POST /api/v2/locations/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-locations-search)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -28,6 +30,7 @@ The following OAuth scopes are required to use this resource:
 
 * `locations`
 * `locations:readonly`
+* `search:readonly`
 
 
 ## Example Usage

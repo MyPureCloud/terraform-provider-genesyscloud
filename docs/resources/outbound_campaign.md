@@ -64,7 +64,7 @@ resource "genesyscloud_outbound_campaign" "power_campaign" {
   max_calls_per_agent           = 2
   campaign_status               = "off"
   contact_list_id               = genesyscloud_outbound_contact_list.contact_list.id
-  queue_id                      = genesyscloud_routing_queue.queue.id
+  queue_id                      = genesyscloud_routing_queue.example_queue.id
   site_id                       = genesyscloud_telephony_providers_edges_site.site.id
   call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.example_cars.id
   phone_columns {

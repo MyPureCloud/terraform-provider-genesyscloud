@@ -16,17 +16,21 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [POST /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
 - [DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 - [PUT /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId-)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `telephony:plugin:all`
+* `telephony:sites:view`
 
 The following OAuth scopes are required to use this resource:
 
 * `telephony`
 * `telephony:readonly`
+
 #### Compatibility Note
 
 In versions 1.39.0 to 1.48.0 of the provider, this resource was constructed with a different structure. The current version introduces structural changes that are not backwards compatible with those earlier versions.
@@ -44,7 +48,6 @@ If the associated Genesys Cloud Telephony Site is configured as a `managed` reso
 - This limitation is enforced by the Genesys Cloud API itself
 
 This behavior ensures consistency with Genesys Cloud's management policies for managed telephony sites.
-
 
 ## Example Usage
 

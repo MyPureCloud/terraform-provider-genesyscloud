@@ -16,10 +16,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [GET /api/v2/outbound/contactlists/{contactListId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId-)
 - [PUT /api/v2/outbound/contactlists/{contactListId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlists--contactListId-)
 - [DELETE /api/v2/outbound/contactlists/{contactListId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlists--contactListId-)
+* [POST /api/v2/outbound/contactlists/{contactListId}/contacts/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlists--contactListId--contacts-search)
+* [POST /api/v2/outbound/contactlists/{contactListId}/clear](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlists--contactListId--clear)
+* [POST /api/v2/outbound/contactlists/{contactListId}/export](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlists--contactListId--export)
+* [GET /api/v2/outbound/contactlists/{contactListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlists--contactListId--export)
+* [GET /api/v2/outbound/contactlists/{contactListId}/importstatus](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlists--contactListId--importstatus)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `outbound:contact:delete`
+* `outbound:contact:view`
 * `outbound:contactList:add`
 * `outbound:contactList:delete`
 * `outbound:contactList:edit`

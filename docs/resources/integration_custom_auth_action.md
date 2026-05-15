@@ -20,6 +20,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PATCH /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/platform/integrations/#patch-api-v2-integrations-actions--actionId--draft)
 * [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/platform/integrations/#post-api-v2-integrations-actions--actionId--draft-publish)
 * [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/platform/integrations/#get-api-v2-integrations-actions--actionId--draft)
+* [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
 
 ## Permissions and Scopes
 

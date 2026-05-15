@@ -8,17 +8,15 @@ description: |-
 
 Genesys Cloud intent category
 
-~> **Note:** This resource was previously available as `genesyscloud_intent_category` in earlier versions of the provider. It has been renamed in this version to `genesyscloud_intents_categories` to align with the Genesys Cloud API naming conventions. If you are upgrading from a prior version, update your configuration files and run `terraform state mv` to migrate existing state entries.
-
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/intents/categories]()
-* [GET /api/v2/intents/categories/{categoryId}]()
-* [PATCH /api/v2/intents/categories/{categoryId}]()
-* [DELETE /api/v2/intents/categories/{categoryId}]()
-* [GET /api/v2/intents/categories]()
 
+* [POST /api/v2/intents/categories](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-intents-categories)
+* [GET /api/v2/intents/categories](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-categories)
+* [GET /api/v2/intents/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-categories--categoryId-)
+* [PATCH /api/v2/intents/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-intents-categories--categoryId-)
+* [DELETE /api/v2/intents/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-intents-categories--categoryId-)
 
 ## Permissions and Scopes
 
@@ -34,6 +32,9 @@ The following OAuth scopes are required to use this resource:
 * `external-contacts`
 * `external-contacts:readonly`
 
+## Note on Resource Type Name
+
+This resource was previously available as `genesyscloud_intent_category` in earlier versions of the provider. It has been renamed in this version to `genesyscloud_intents_categories` to align with the Genesys Cloud API naming conventions. If you are upgrading from a prior version, update your configuration files and run `terraform state mv` to migrate existing state entries.
 
 ## Example Usage
 
@@ -55,3 +56,4 @@ resource "genesyscloud_intents_categories" "example_intent_category" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
