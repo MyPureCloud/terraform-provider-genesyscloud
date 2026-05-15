@@ -4,6 +4,7 @@ import (
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
@@ -31,8 +32,25 @@ func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroup
 	}
 
 	if sdkCga.Rules != nil {
-		result["rules"] = routingQueue.FlattenCgaRules(sdkCga.Rules)
+		// FlattenCgaRules returns groups as *schema.Set for genesyscloud_routing_queue nested CGA (TypeSet).
+		// This resource uses TypeList for rules.*.groups; Terraform requires a slice here, not a Set.
+		result["rules"] = cgaRuleGroupsSetToList(routingQueue.FlattenCgaRules(sdkCga.Rules))
 	}
 
 	return result
+}
+
+func cgaRuleGroupsSetToList(rules []interface{}) []interface{} {
+	for _, rule := range rules {
+		ruleMap, ok := rule.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if groupsVal, ok := ruleMap["groups"]; ok {
+			if set, ok := groupsVal.(*schema.Set); ok {
+				ruleMap["groups"] = set.List()
+			}
+		}
+	}
+	return rules
 }
