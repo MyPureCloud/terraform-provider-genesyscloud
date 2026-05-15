@@ -157,7 +157,7 @@ func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExa
 		// Audit proxy and update apis.md with detected endpoints
 		apiFileName := fmt.Sprintf("%s/apis.md", examplesDir)
 		if opMap != nil {
-			updateApisMdFromProxy(resourceName, apiFileName, opMap)
+			updateApisMdFromProxy(resourceName, examplesDir, apiFileName, opMap)
 		}
 
 		// Read the (potentially updated) apis.md file
@@ -216,21 +216,18 @@ func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExa
 
 // updateApisMdFromProxy scans the proxy file for a resource, detects API endpoints,
 // and updates the apis.md file with any missing endpoints.
-func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]APIEndpoint) {
+func updateApisMdFromProxy(resourceName, examplesDir, apisMdFile string, opMap map[string]APIEndpoint) {
 	pkgName := strings.TrimPrefix(resourceName, "genesyscloud_")
 
-	// Check both naming conventions for proxy files
-	proxyFile := filepath.Join("genesyscloud", pkgName, fmt.Sprintf("genesyscloud_%s_proxy.go", pkgName))
-	if _, err := os.Stat(proxyFile); os.IsNotExist(err) {
-		proxyFile = filepath.Join("genesyscloud", pkgName, fmt.Sprintf("resource_genesyscloud_%s_proxy.go", pkgName))
-		if _, err := os.Stat(proxyFile); os.IsNotExist(err) {
-			return
-		}
+	// Find the source file to scan for API calls
+	sourceFile := findSourceFile(pkgName, examplesDir)
+	if sourceFile == "" {
+		return
 	}
 
-	proxyContent, err := ioutil.ReadFile(proxyFile)
+	proxyContent, err := ioutil.ReadFile(sourceFile)
 	if err != nil {
-		log.Printf("Warning: could not read %s: %v", proxyFile, err)
+		log.Printf("Warning: could not read %s: %v", sourceFile, err)
 		return
 	}
 
@@ -332,6 +329,57 @@ func writePermissionsJSON(permissions []ResourcePermissions, outputDir, filename
 	return nil
 }
 
+// findSourceFile locates the proxy or source file for a given resource package name.
+// It tries multiple strategies to handle naming inconsistencies.
+func findSourceFile(pkgName, examplesDir string) string {
+	// Strategy 0: Check for a .source file that explicitly points to the source
+	sourcePointer := filepath.Join(examplesDir, ".source")
+	if data, err := ioutil.ReadFile(sourcePointer); err == nil {
+		relPath := strings.TrimSpace(string(data))
+		resolved := filepath.Join(examplesDir, relPath)
+		if _, err := os.Stat(resolved); err == nil {
+			return resolved
+		}
+	}
+
+	// Strategy 1: Exact package match with standard proxy naming
+	candidates := []string{
+		filepath.Join("genesyscloud", pkgName, fmt.Sprintf("genesyscloud_%s_proxy.go", pkgName)),
+		filepath.Join("genesyscloud", pkgName, fmt.Sprintf("resource_genesyscloud_%s_proxy.go", pkgName)),
+	}
+	for _, c := range candidates {
+		if _, err := os.Stat(c); err == nil {
+			return c
+		}
+	}
+
+	// Strategy 2: Find a proxy file inside a matching sub-package directory
+	// Handles cases like script->scripts, routing_sms_address->routing_sms_addresses
+	matches, _ := filepath.Glob(filepath.Join("genesyscloud", pkgName+"*", "*_proxy.go"))
+	if len(matches) > 0 {
+		return matches[0]
+	}
+
+	// Strategy 3: Find proxy file where the package dir contains the name without underscores
+	// Handles cases like external_contacts_organization -> externalcontacts_organization
+	compactName := strings.ReplaceAll(pkgName, "_", "")
+	allProxies, _ := filepath.Glob(filepath.Join("genesyscloud", "*", "*_proxy.go"))
+	for _, p := range allProxies {
+		dir := filepath.Base(filepath.Dir(p))
+		if strings.ReplaceAll(dir, "_", "") == compactName {
+			return p
+		}
+	}
+
+	// Strategy 4: Legacy data source file in root package
+	legacyFile := filepath.Join("genesyscloud", fmt.Sprintf("data_source_genesyscloud_%s.go", pkgName))
+	if _, err := os.Stat(legacyFile); err == nil {
+		return legacyFile
+	}
+
+	return ""
+}
+
 // buildOperationIdMap creates a map from operationId -> APIEndpoint using the Swagger spec
 func buildOperationIdMap(spec *SwaggerSpec) map[string]APIEndpoint {
 	opMap := make(map[string]APIEndpoint)
@@ -357,8 +405,9 @@ func detectEndpointsFromProxy(content string, opMap map[string]APIEndpoint) []AP
 	var endpoints []APIEndpoint
 	seen := make(map[string]bool)
 
-	// Pattern 1: SDK method calls like p.someApi.MethodName(...) or a.api.MethodName(...)
-	sdkCallRe := regexp.MustCompile(`\.[a-zA-Z]*[Aa]pi\.([A-Z][a-zA-Z0-9]+)\s*\(`)
+	// Pattern 1: SDK method calls like p.someApi.MethodName(...), a.api.MethodName(...),
+	// or standalone apiVar.MethodName(...)
+	sdkCallRe := regexp.MustCompile(`(?:^|[^a-zA-Z])[a-zA-Z]*[Aa]pi\.([A-Z][a-zA-Z0-9]+)\s*\(`)
 	matches := sdkCallRe.FindAllStringSubmatch(content, -1)
 	for _, match := range matches {
 		if len(match) >= 2 {
