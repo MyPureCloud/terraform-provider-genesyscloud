@@ -1261,7 +1261,7 @@ func TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings(t *testing.T) 
 	t.Parallel()
 	var (
 		resourceLabel            = "campaign_predictive_diag"
-		name                     = "Test Predictive Diag Campaign " + uuid.NewString()
+		name                     = "Test Pred Diag " + uuid.NewString()
 		dialingMode              = "predictive"
 		callerName               = "Test Name Predictive"
 		callerAddress            = "+353371111115"
@@ -1273,6 +1273,11 @@ func TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings(t *testing.T) 
 
 		resourcePath = ResourceType + "." + resourceLabel
 	)
+
+	scriptId, err := getPublishedScriptId()
+	if err != nil || scriptId == "" {
+		t.Skip("Skipping as a published script ID is needed to run this test")
+	}
 
 	emergencyNumber := "+13178793438"
 	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
@@ -1313,7 +1318,7 @@ func TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings(t *testing.T) 
 						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
 						util.NullValue,
 						util.NullValue,
-						util.NullValue,
+						strconv.Quote(scriptId),
 						"genesyscloud_routing_queue."+queueResourceLabel+".id",
 						"genesyscloud_telephony_providers_edges_site."+siteId+".id",
 						util.NullValue,
