@@ -18,10 +18,12 @@ import (
 )
 
 const (
-	swaggerURL     = "https://api.mypurecloud.com/api/v2/docs/swagger"
-	proxyFileGlob  = "genesyscloud/*/genesyscloud_*_proxy.go"
-	exampleFolder  = "examples/resources"
-	resourceFolder = "docs/resources"
+	swaggerURL            = "https://api.mypurecloud.com/api/v2/docs/swagger"
+	proxyFileGlob         = "genesyscloud/*/genesyscloud_*_proxy.go"
+	resourceExampleFolder = "examples/resources"
+	resourceDocsFolder    = "docs/resources"
+	dataSourceExampleFolder = "examples/data-sources"
+	dataSourceDocsFolder    = "docs/data-sources"
 )
 
 // SwaggerSpec represents the relevant parts of the Swagger/OAS v2 specification
@@ -101,28 +103,55 @@ func main() {
 		fmt.Printf("Built operation ID map with %d entries\n", len(opMap))
 	}
 
-	files, err := ioutil.ReadDir(resourceFolder)
+	// Process resources
+	fmt.Println("\nProcessing resources...")
+	allResourcePermissions = processDocsFolder(resourceDocsFolder, resourceExampleFolder, apiDocsTag, ignoredExamples, swaggerSpec, opMap, allResourcePermissions, &missingExamples)
+
+	// Process data sources
+	fmt.Println("\nProcessing data sources...")
+	allResourcePermissions = processDocsFolder(dataSourceDocsFolder, dataSourceExampleFolder, apiDocsTag, ignoredExamples, swaggerSpec, opMap, allResourcePermissions, &missingExamples)
+
+	fmt.Println()
+	fmt.Printf("The following resources were explicitly ignored, and so no docs were generated: %v", ignoredExamples)
+	fmt.Println()
+	fmt.Printf("The following resources/data-sources did not have any examples, and so docs without examples or APIs were generated: %v", missingExamples)
+
+	// Write permissions data to JSON file
+	if len(allResourcePermissions) > 0 {
+		fmt.Println()
+		fmt.Println("Writing permissions data to JSON file...")
+		if err := writePermissionsJSON(allResourcePermissions, outputDir, outputFilename, version); err != nil {
+			log.Printf("Error writing permissions JSON: %v", err)
+		} else {
+			outputFile := fmt.Sprintf("%s-%s.json", outputFilename, version)
+			fmt.Printf("Permissions data written to: %s/%s\n", outputDir, outputFile)
+		}
+	}
+}
+
+// processDocsFolder iterates over doc files in a folder, audits proxy files,
+// updates apis.md, and enhances docs with permissions and notes.
+func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExamples []string, swaggerSpec *SwaggerSpec, opMap map[string]APIEndpoint, allPerms []ResourcePermissions, missingExamples *[]string) []ResourcePermissions {
+	files, err := ioutil.ReadDir(docsFolder)
 	if err != nil {
-		log.Fatalf("Failed to read folder %s", resourceFolder)
+		log.Printf("Warning: Failed to read folder %s: %v", docsFolder, err)
+		return allPerms
 	}
 
 	for _, file := range files {
-
 		shortResourceName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 		resourceName := fmt.Sprintf("genesyscloud_%s", shortResourceName)
-		fullResourceFilePath := fmt.Sprintf("%s/%s", resourceFolder, file.Name())
+		fullFilePath := fmt.Sprintf("%s/%s", docsFolder, file.Name())
 
-		// Remove any docs generated for ignored examples
 		if lists.ItemInSlice(resourceName, ignoredExamples) {
-			os.Remove(fullResourceFilePath)
+			os.Remove(fullFilePath)
 			continue
 		}
 
-		// If no examples are provided, note, and alert at end
-		examplesDir := fmt.Sprintf("%s/%s", exampleFolder, resourceName)
+		examplesDir := fmt.Sprintf("%s/%s", examplesFolder, resourceName)
 		if _, err := os.Stat(examplesDir); os.IsNotExist(err) {
 			log.Printf("No examples found! %s", resourceName)
-			missingExamples = append(missingExamples, shortResourceName)
+			*missingExamples = append(*missingExamples, shortResourceName)
 		}
 
 		// Audit proxy and update apis.md with detected endpoints
@@ -151,21 +180,19 @@ func main() {
 					enhancedContent = enhancedContent + "\n" + permissionsAndScopes
 				}
 
-				// Collect permissions data for JSON output
 				resourcePerms := extractResourcePermissions(resourceName, shortResourceName, endpoints, swaggerSpec)
 				if len(resourcePerms.Permissions) > 0 || len(resourcePerms.Scopes) > 0 {
-					allResourcePermissions = append(allResourcePermissions, resourcePerms)
+					allPerms = append(allPerms, resourcePerms)
 				}
 			}
 		}
 
-		// Append notes after permissions
 		if notesContent != "" {
 			enhancedContent = enhancedContent + "\n" + notesContent
 		}
 
 		// Open the doc file and replace the placeholder
-		docFile, err := os.OpenFile(fullResourceFilePath, os.O_RDWR, 0666)
+		docFile, err := os.OpenFile(fullFilePath, os.O_RDWR, 0666)
 		if err != nil {
 			fmt.Printf("Couldn't open file: %s\n", file.Name())
 			continue
@@ -178,29 +205,13 @@ func main() {
 			continue
 		}
 
-		// Replace the **No APIs** line with the enhanced content
 		newBytes := bytes.Replace(docFileBytes, []byte(apiDocsTag), []byte(enhancedContent), 1)
 		docFile.Truncate(0)
 		docFile.WriteAt(newBytes, 0)
 		fmt.Printf("Updated APIs in doc file: %s\n", file.Name())
 	}
 
-	fmt.Println()
-	fmt.Printf("The following resources were explicitly ignored, and so no docs were generated: %v", ignoredExamples)
-	fmt.Println()
-	fmt.Printf("The following resources did not have any examples, and so docs without examples or APIs were generated: %v", missingExamples)
-
-	// Write permissions data to JSON file
-	if len(allResourcePermissions) > 0 {
-		fmt.Println()
-		fmt.Println("Writing permissions data to JSON file...")
-		if err := writePermissionsJSON(allResourcePermissions, outputDir, outputFilename, version); err != nil {
-			log.Printf("Error writing permissions JSON: %v", err)
-		} else {
-			outputFile := fmt.Sprintf("%s-%s.json", outputFilename, version)
-			fmt.Printf("Permissions data written to: %s/%s\n", outputDir, outputFile)
-		}
-	}
+	return allPerms
 }
 
 // updateApisMdFromProxy scans the proxy file for a resource, detects API endpoints,
