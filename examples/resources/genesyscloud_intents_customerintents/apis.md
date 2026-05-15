@@ -1,0 +1,9 @@
+
+* [POST /api/v2/intents/customerintents](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-intents-customerintents)
+* [GET /api/v2/intents/customerintents](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-customerintents)
+* [GET /api/v2/intents/customerintents/{customerIntentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-customerintents--customerIntentId-)
+* [PATCH /api/v2/intents/customerintents/{customerIntentId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-intents-customerintents--customerIntentId-)
+* [DELETE /api/v2/intents/customerintents/{customerIntentId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-intents-customerintents--customerIntentId-)
+* [GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-customerintents--customerIntentId--sourceintents)
+* [POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/add](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-intents-customerintents--customerIntentId--sourceintents-bulk-add)
+* [POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/remove](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-intents-customerintents--customerIntentId--sourceintents-bulk-remove)

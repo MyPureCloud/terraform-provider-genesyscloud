@@ -3,3 +3,4 @@
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)

@@ -11,3 +11,5 @@
 * [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId--draft-function)
 * [PUT /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/api/rest/v2/integrations/#put-api-v2-integrations-actions--actionId--draft-function)
 * [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-publish)
+* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--function)
+* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft)

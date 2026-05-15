@@ -3,3 +3,4 @@
 * [GET /api/v2/guides/{guideId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId-)
 * [DELETE /api/v2/guides/{guideId}/jobs](https://apicentral.genesys.cloud/api-explorer-standalone#delete-api-v2-guides--guideId--jobs)
 * [GET /api/v2/guides/{guideId}/jobs/{jobId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId--jobs--jobId-)
+* [GET /api/v2/guides/{guidesId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guidesId-)

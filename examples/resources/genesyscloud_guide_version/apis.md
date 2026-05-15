@@ -3,3 +3,5 @@
 * [PATCH /api/v2/guides/{guideId}/versions/{versionId}](https://apicentral.genesys.cloud/api-explorer-standalone#patch-api-v2-guides--guideId--versions--versionId-)
 * [POST /api/v2/guides/{guideId}/versions/{versionId}/jobs](https://apicentral.genesys.cloud/api-explorer-standalone#post-api-v2-guides--guideId--versions--versionId--jobs)
 * [GET /api/v2/guides/{guideId}/versions/{versionId}/jobs/{jobId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId--versions--versionId--jobs--jobId-)
+* [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides)
+* [POST /api/v2/guides/{guidesId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guidesId-)

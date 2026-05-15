@@ -6,3 +6,5 @@
 * [POST /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/api/rest/v2/architect/#post-api-v2-architect-prompts--promptId--resources)
 * [GET /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-prompts--promptId--resources--languageCode-)
 * [PUT /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-prompts--promptId--resources--languageCode-)
+* [DELETE /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-prompts--promptId--resources--languageCode-)
+* [GET /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts--promptId--resources)
