@@ -28,7 +28,9 @@ All other \*.tf files are ignored by the documentation tool. This allows example
 - **resource.tf** - The primary example file that appears in the documentation. It demonstrates a complete, working example with all commonly used attributes.
 - **simplest_resource.tf** - (Optional) A minimal working example with only required attributes. Used for testing basic functionality and backward compatibility.
 - **locals.tf** - Contains schema definitions, dependencies, and test constraints.
-- **apis.md** - Contains links to the APIs used by the resource.
+- **apis.md** - Contains links to the APIs used by the resource. **Auto-generated** by the `apidocs` tool from proxy file analysis.
+- **notes.md** - (Optional) Contains addendum content (migration guides, export behavior, breaking changes) that is appended to the generated documentation after the API endpoints and permissions sections.
+- **.source** - (Optional) Points the `apidocs` tool to the correct source file to scan when auto-detection fails. Contains a relative path to the proxy or data source file.
 
 ### Additional Files
 
@@ -197,8 +199,16 @@ When creating new examples:
    - Add skip conditions if the resource requires specific products
 
 5. **Document APIs** in apis.md:
-   - List all APIs used by the resource
-   - Include links to API documentation
+   - The `apis.md` file is **auto-generated** by the `apidocs` tool during `make docs`
+   - The tool scans the resource's proxy file, detects SDK method calls and raw HTTP calls, maps them to API endpoints via the Swagger spec's `operationId` field, and writes the endpoint list to `apis.md`
+   - You generally do not need to create or edit `apis.md` manually — it will be created/updated automatically
+   - In rare cases where auto-detection fails (e.g., the HTTP method is defined far from the path in the source), you may need to seed the file manually
+
+6. **Create a `.source` file** (if needed):
+   - If the tool cannot automatically locate the proxy or source file for a resource (due to naming mismatches between the data source name and the package/proxy file), create a `.source` file in the examples directory
+   - The `.source` file contains a single line: the **relative path** from the examples directory to the source file that should be scanned for API calls
+   - Example: `../../../genesyscloud/integration/genesyscloud_integration_proxy.go`
+   - This is most commonly needed for data sources that live in a differently-named package or use a shared proxy from another resource
 
 ## Dependency Resolution
 
@@ -229,7 +239,7 @@ This ensures tests don't fail due to missing products or environment-specific co
 - **Test thoroughly**: Ensure examples can be applied successfully.
 - **Include comments**: Add comments to explain complex configurations.
 - **Maintain dependencies**: Keep track of dependencies between resources.
-- **Document APIs**: Keep API documentation up to date.
+- **Document APIs**: The `apis.md` file is auto-generated — run `make docs` to update it.
 - **Use variables**: Use variables for values that might change.
 - **Follow naming conventions**: Use consistent naming across examples.
 - **Keep simplest_resource.tf minimal**: Include only required attributes.

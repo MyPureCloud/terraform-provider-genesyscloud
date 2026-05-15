@@ -1,0 +1,6 @@
+
+* [POST /api/v2/journey/outcomes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-outcomes)
+* [GET /api/v2/journey/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-outcomes)
+* [GET /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-outcomes--outcomeId-)
+* [PATCH /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-journey-outcomes--outcomeId-)
+* [DELETE /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-outcomes--outcomeId-)

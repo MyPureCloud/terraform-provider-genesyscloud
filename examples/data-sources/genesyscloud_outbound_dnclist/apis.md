@@ -1,0 +1,10 @@
+
+* [POST /api/v2/outbound/dnclists](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-dnclists)
+* [GET /api/v2/outbound/dnclists](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-dnclists)
+* [PUT /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-dnclists--dncListId-)
+* [POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-dnclists--dncListId--phonenumbers)
+* [DELETE /api/v2/outbound/dnclists/{dncListId}/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-dnclists--dncListId--phonenumbers)
+* [DELETE /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-dnclists--dncListId-)
+* [GET /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-dnclists--dncListId-)
+* [POST /api/v2/outbound/dnclists/{dncListId}/export](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-dnclists--dncListId--export)
+* [GET /api/v2/outbound/dnclists/{dncListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-dnclists--dncListId--export)

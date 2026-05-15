@@ -1,0 +1,12 @@
+
+* [POST /api/v2/groups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-groups)
+* [PUT /api/v2/groups/{groupId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-groups--groupId-)
+* [DELETE /api/v2/groups/{groupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-groups--groupId-)
+* [GET /api/v2/groups/{groupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups--groupId-)
+* [POST /api/v2/groups/{groupId}/members](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-groups--groupId--members)
+* [DELETE /api/v2/groups/{groupId}/members](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-groups--groupId--members)
+* [GET /api/v2/groups/{groupId}/individuals](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups--groupId--individuals)
+* [POST /api/v2/groups/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-groups-search)
+* [GET /api/v2/groups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups)
+* [PATCH /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-voicemail-groups--groupId--policy)
+* [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-voicemail-groups--groupId--policy)

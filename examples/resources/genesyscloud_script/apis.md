@@ -6,3 +6,5 @@
 * [POST /api/v2/scripts/published](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-scripts-published)
 * [GET /api/v2/scripts/uploads/{uploadId}/status](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts-uploads--uploadId--status)
 * [POST /api/v2/authorization/divisions/{divisionId}/objects/{objectType}](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-authorization-divisions--divisionId--objects--objectType-)
+* [DELETE /api/v2/scripts/{scriptsId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-scripts--scriptsId-)
+* [POST /api/v2/authorization/divisions/{divisionsId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionsId-)

@@ -1,0 +1,6 @@
+
+* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-campaigns)
+* [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaigns)
+* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaigns--campaignId-)
+* [PUT /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-campaigns--campaignId-)
+* [DELETE /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-campaigns--campaignId-)

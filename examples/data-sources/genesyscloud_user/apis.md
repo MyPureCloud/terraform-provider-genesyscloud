@@ -1,0 +1,11 @@
+
+* [POST /api/v2/users](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-users)
+* [GET /api/v2/users/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId-)
+* [GET /api/v2/users](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users)
+* [POST /api/v2/users/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-users-search)
+* [DELETE /api/v2/users/{userId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId-)
+* [PATCH /api/v2/users/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId-)
+* [GET /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-voicemail-userpolicies--userId-)
+* [POST /api/v2/users/{userId}/password](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-users--userId--password)
+* [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools)
+* [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
