@@ -34,18 +34,17 @@ var supportedDiagnosticsSettingsDialingModes = []string{"power", "predictive"}
 
 // validateDiagnosticsSettingsDialingMode validates that diagnostics_settings is only used with power or predictive dialing modes
 func validateDiagnosticsSettingsDialingMode(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
-	// Optional+Computed: validate only when diagnostics_settings appears in config (not API-only refresh).
 	cfgVal, cfgDiags := diff.GetRawConfigAt(cty.GetAttrPath("diagnostics_settings"))
-	if cfgDiags.HasError() {
+	if cfgDiags.HasError() { // skip if raw config path cannot be resolved
 		return nil
 	}
-	if cfgVal.IsNull() || !cfgVal.IsKnown() {
+	if cfgVal.IsNull() || !cfgVal.IsKnown() { // diagnostics block omitted or unknown in config
 		return nil
 	}
-	if !cfgVal.Type().IsCollectionType() || !cfgVal.IsWhollyKnown() {
+	if !cfgVal.Type().IsCollectionType() || !cfgVal.IsWhollyKnown() { // expect a fully known list/tuple from HCL
 		return nil
 	}
-	if cfgVal.LengthInt() == 0 {
+	if cfgVal.LengthInt() == 0 { // empty diagnostics_settings list in config
 		return nil
 	}
 
