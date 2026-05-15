@@ -2062,13 +2062,15 @@ func TestAccResourceExporterFormat(t *testing.T) {
 // TestAccResourceTfExportArchitectFlowExporterLegacyAndNew creates an inbound call flow, then exports it using the
 // legacy exporter (creates a tfvars file but does not export flow config files) and then exports using the new archy
 // exporter by setting use_legacy_architect_flow_exporter to false.
-// Verifies that the appropriate files are/are not created when use_legacy_architect_flow_exporter is set to true/false
-// Verifies that the appropriate filepath is set inside the exported resource config when use_legacy_architect_flow_exporter is set to true/false
-func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
+// TestAccResourceTfExportArchitectFlowExporterLegacy creates an inbound call flow and exports it using the
+// legacy exporter (creates a tfvars file but does not export flow config files).
+// Verifies that the appropriate files are/are not created when use_legacy_architect_flow_exporter is set to true
+// Verifies that the appropriate filepath is set inside the exported resource config
+func TestAccResourceTfExportArchitectFlowExporterLegacy(t *testing.T) {
 	testSetup(t)
 
 	var (
-		flowName          = "tf_test_flow_exporter_" + uuid.NewString()
+		flowName          = "tf_test_flow_legacy_" + uuid.NewString()
 		flowType          = "INBOUNDCALL"
 		flowResourceLabel = "test_flow"
 		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
@@ -2077,10 +2079,9 @@ func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 
 		flowNameSanitized = strings.Replace(flowName, " ", "_", -1)
 
-		exportResourceLabel              = "export"
-		exportTestDir                    = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
-		exportFullPath                   = ResourceType + "." + exportResourceLabel
-		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
+		exportResourceLabel = "export"
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath      = ResourceType + "." + exportResourceLabel
 
 		pathToExportedTerraformConfig           = filepath.Join(exportTestDir, defaultTfJSONFile)
 		expectedFilepathValueWithLegacyExporter = fmt.Sprintf("${var.genesyscloud_flow_%s_%s_filepath}", flowType, flowNameSanitized)
@@ -2099,7 +2100,80 @@ func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 		false,
 	)
 
-	// Build export config with depends_on to ensure the flow is created before the export runs
+	generateExportWithDependsOn := func(useLegacyExporter string) string {
+		return flowResource + fmt.Sprintf(`
+resource "%s" "%s" {
+	directory                          = "%s"
+	include_state_file                 = %s
+	export_format                      = %s
+	use_legacy_architect_flow_exporter = %s
+	include_filter_resources           = [%s]
+	depends_on                         = [%s.%s]
+}
+`, ResourceType, exportResourceLabel, exportTestDir, util.TrueValue, strconv.Quote("json"),
+			useLegacyExporter,
+			strconv.Quote(architectFlow.ResourceType+"::"+flowName),
+			architectFlow.ResourceType, flowResourceLabel)
+	}
+
+	exportedFlowResourceLabel := flowType + "_" + flowNameSanitized
+	exportedFlowResourceFullPath := "resource." + architectFlow.ResourceType + "." + exportedFlowResourceLabel
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateExportWithDependsOn(util.NullValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
+					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
+					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
+					util.ValidateJSONFileKeyValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithLegacyExporter),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportArchitectFlowExporterNew creates an inbound call flow and exports it using the new archy
+// exporter by setting use_legacy_architect_flow_exporter to false.
+// Verifies that the appropriate files are created and the filepath in the exported config matches the new exporter format
+func TestAccResourceTfExportArchitectFlowExporterNew(t *testing.T) {
+	testSetup(t)
+
+	var (
+		flowName          = "tf_test_flow_new_" + uuid.NewString()
+		flowType          = "INBOUNDCALL"
+		flowResourceLabel = "test_flow"
+		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+
+		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+
+		flowNameSanitized = strings.Replace(flowName, " ", "_", -1)
+
+		exportResourceLabel              = "export"
+		exportTestDir                    = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath                   = ResourceType + "." + exportResourceLabel
+		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
+
+		pathToExportedTerraformConfig = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occured while removing directory '%s': %s", exportTestDir, err)
+		}
+	}(exportTestDir)
+
+	flowResource := architectFlow.GenerateFlowResource(
+		flowResourceLabel,
+		filePath,
+		inboundcallConfig,
+		false,
+	)
+
 	generateExportWithDependsOn := func(useLegacyExporter string) string {
 		return flowResource + fmt.Sprintf(`
 resource "%s" "%s" {
@@ -2135,7 +2209,6 @@ resource "%s" "%s" {
 		}
 	}
 
-	// validateExportedFlowFilepath checks the filepath value in the exported JSON config matches the new exporter format.
 	validateExportedFlowFilepath := func(flowResourcePath, configFile, resourceFullPath string) resource.TestCheckFunc {
 		return func(state *terraform.State) error {
 			flowRes, ok := state.RootModule().Resources[flowResourcePath]
@@ -2153,17 +2226,6 @@ resource "%s" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Step 1: Create the flow and export with legacy exporter (default)
-				Config: generateExportWithDependsOn(util.NullValue),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
-					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
-					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
-					util.ValidateJSONFileKeyValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithLegacyExporter),
-				),
-			},
-			{
-				// Step 2: Export with new archy exporter
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
