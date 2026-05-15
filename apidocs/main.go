@@ -219,9 +219,13 @@ func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExa
 func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]APIEndpoint) {
 	pkgName := strings.TrimPrefix(resourceName, "genesyscloud_")
 
+	// Check both naming conventions for proxy files
 	proxyFile := filepath.Join("genesyscloud", pkgName, fmt.Sprintf("genesyscloud_%s_proxy.go", pkgName))
 	if _, err := os.Stat(proxyFile); os.IsNotExist(err) {
-		return
+		proxyFile = filepath.Join("genesyscloud", pkgName, fmt.Sprintf("resource_genesyscloud_%s_proxy.go", pkgName))
+		if _, err := os.Stat(proxyFile); os.IsNotExist(err) {
+			return
+		}
 	}
 
 	proxyContent, err := ioutil.ReadFile(proxyFile)
