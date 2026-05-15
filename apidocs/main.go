@@ -17,6 +17,13 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
+const (
+	swaggerURL     = "https://api.mypurecloud.com/api/v2/docs/swagger"
+	proxyFileGlob  = "genesyscloud/*/genesyscloud_*_proxy.go"
+	exampleFolder  = "examples/resources"
+	resourceFolder = "docs/resources"
+)
+
 // SwaggerSpec represents the relevant parts of the Swagger/OAS v2 specification
 type SwaggerSpec struct {
 	Paths map[string]map[string]EndpointSpec `json:"paths"`
@@ -24,6 +31,7 @@ type SwaggerSpec struct {
 
 // EndpointSpec represents an API endpoint specification
 type EndpointSpec struct {
+	OperationId              string                `json:"operationId"`
 	XIninRequiresPermissions PermissionsSpec       `json:"x-inin-requires-permissions"`
 	Security                 []map[string][]string `json:"security"`
 }
@@ -59,10 +67,7 @@ type PermissionsData struct {
 func main() {
 	fmt.Println("Updating APIs in docs...")
 	const (
-		resourceFolder = "docs/resources"
-		exampleFolder  = "examples/resources"
 		apiDocsTag     = "**No APIs**"
-		swaggerURL     = "https://api.mypurecloud.com/api/v2/docs/swagger"
 		outputDir      = "public/data"
 		outputFilename = "resource_permissions"
 	)
@@ -89,7 +94,14 @@ func main() {
 		fmt.Println("Swagger specification loaded successfully")
 	}
 
-	files, err := ioutil.ReadDir("docs/resources")
+	// Build operationId map for proxy auditing
+	var opMap map[string]APIEndpoint
+	if swaggerSpec != nil {
+		opMap = buildOperationIdMap(swaggerSpec)
+		fmt.Printf("Built operation ID map with %d entries\n", len(opMap))
+	}
+
+	files, err := ioutil.ReadDir(resourceFolder)
 	if err != nil {
 		log.Fatalf("Failed to read folder %s", resourceFolder)
 	}
@@ -113,29 +125,30 @@ func main() {
 			missingExamples = append(missingExamples, shortResourceName)
 		}
 
-		// Open and read the apis.md file for this resource
+		// Audit proxy and update apis.md with detected endpoints
 		apiFileName := fmt.Sprintf("%s/apis.md", examplesDir)
-		apisFile, err := os.Open(apiFileName)
+		if opMap != nil {
+			updateApisMdFromProxy(resourceName, apiFileName, opMap)
+		}
+
+		// Read the (potentially updated) apis.md file
+		apiFileBytes, err := ioutil.ReadFile(apiFileName)
 		if err != nil {
 			fmt.Printf("Missing APIs file: %s\n", apiFileName)
 			continue
 		}
-		defer apisFile.Close()
 
-		apiFileBytes, err := ioutil.ReadAll(apisFile)
-		if err != nil {
-			fmt.Printf("Couldn't read bytes from %s\n", apiFileName)
-			continue
-		}
+		// Read optional notes.md file for addendum content
+		notesContent := readNotesFile(examplesDir)
 
-		// Parse API endpoints and enhance with permissions/scopes
+		// Build the full content: endpoints + permissions + notes
 		enhancedContent := string(apiFileBytes)
 		if swaggerSpec != nil {
 			endpoints := parseAPIEndpoints(string(apiFileBytes))
 			if len(endpoints) > 0 {
 				permissionsAndScopes := extractPermissionsAndScopes(endpoints, swaggerSpec)
 				if permissionsAndScopes != "" {
-					enhancedContent = insertPermissionsAndScopes(string(apiFileBytes), permissionsAndScopes)
+					enhancedContent = enhancedContent + "\n" + permissionsAndScopes
 				}
 
 				// Collect permissions data for JSON output
@@ -146,8 +159,13 @@ func main() {
 			}
 		}
 
-		//open the doc file
-		docFile, err := os.OpenFile(fmt.Sprintf("%s/%s", resourceFolder, file.Name()), os.O_RDWR, 0666)
+		// Append notes after permissions
+		if notesContent != "" {
+			enhancedContent = enhancedContent + "\n" + notesContent
+		}
+
+		// Open the doc file and replace the placeholder
+		docFile, err := os.OpenFile(fullResourceFilePath, os.O_RDWR, 0666)
 		if err != nil {
 			fmt.Printf("Couldn't open file: %s\n", file.Name())
 			continue
@@ -185,40 +203,247 @@ func main() {
 	}
 }
 
+// updateApisMdFromProxy scans the proxy file for a resource, detects API endpoints,
+// and updates the apis.md file with any missing endpoints.
+func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]APIEndpoint) {
+	pkgName := strings.TrimPrefix(resourceName, "genesyscloud_")
+
+	proxyFile := filepath.Join("genesyscloud", pkgName, fmt.Sprintf("genesyscloud_%s_proxy.go", pkgName))
+	if _, err := os.Stat(proxyFile); os.IsNotExist(err) {
+		return
+	}
+
+	proxyContent, err := ioutil.ReadFile(proxyFile)
+	if err != nil {
+		log.Printf("Warning: could not read %s: %v", proxyFile, err)
+		return
+	}
+
+	detectedEndpoints := detectEndpointsFromProxy(string(proxyContent), opMap)
+	if len(detectedEndpoints) == 0 {
+		return
+	}
+
+	// Read current apis.md (may not exist yet)
+	var currentContent string
+	if data, err := ioutil.ReadFile(apisMdFile); err == nil {
+		currentContent = string(data)
+	}
+
+	// Parse what's already documented
+	documentedEndpoints := parseAPIEndpoints(currentContent)
+	documentedSet := make(map[string]bool)
+	for _, ep := range documentedEndpoints {
+		key := strings.ToUpper(ep.Method) + " " + ep.Path
+		documentedSet[key] = true
+	}
+
+	// Find missing endpoints
+	var missing []APIEndpoint
+	seen := make(map[string]bool)
+	for _, ep := range detectedEndpoints {
+		key := ep.Method + " " + ep.Path
+		if !documentedSet[key] && !seen[key] {
+			seen[key] = true
+			missing = append(missing, ep)
+		}
+	}
+
+	if len(missing) == 0 {
+		return
+	}
+
+	fmt.Printf("  Proxy audit: adding %d missing endpoint(s) to %s apis.md\n", len(missing), resourceName)
+	for _, ep := range missing {
+		fmt.Printf("    + %s %s\n", ep.Method, ep.Path)
+	}
+
+	var buf strings.Builder
+	buf.WriteString(strings.TrimSpace(currentContent))
+	for _, ep := range missing {
+		anchor := buildAnchor(ep.Method, ep.Path)
+		buf.WriteString(fmt.Sprintf("\n* [%s %s](https://developer.genesys.cloud/devapps/api-explorer#%s)", ep.Method, ep.Path, anchor))
+	}
+	buf.WriteString("\n")
+
+	ioutil.WriteFile(apisMdFile, []byte(buf.String()), 0644)
+}
+
+
+// readNotesFile reads the optional notes.md file from a resource's examples directory.
+func readNotesFile(examplesDir string) string {
+	notesFile := filepath.Join(examplesDir, "notes.md")
+	data, err := ioutil.ReadFile(notesFile)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+// buildAnchor generates a URL-safe anchor from an endpoint method and path.
+func buildAnchor(method, path string) string {
+	anchor := strings.ToLower(method) + "-" + strings.ReplaceAll(strings.ReplaceAll(path, "/", "-"), "{", "-")
+	anchor = strings.ReplaceAll(anchor, "}", "-")
+	return anchor
+}
+
 // writePermissionsJSON writes the permissions data to a JSON file
 func writePermissionsJSON(permissions []ResourcePermissions, outputDir, filename, version string) error {
-	// Sort by resource type
 	sort.Slice(permissions, func(i, j int) bool {
 		return permissions[i].ResourceType < permissions[j].ResourceType
 	})
 
-	// Create the data structure
 	data := PermissionsData{
 		Version:   version,
 		Resources: permissions,
 	}
 
-	// Marshal to JSON with indentation
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	// Ensure output directory exists
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	// Create versioned filename
 	versionedFilename := fmt.Sprintf("%s-%s.json", filename, version)
 	outputPath := filepath.Join(outputDir, versionedFilename)
 
-	// Write to file
 	if err := ioutil.WriteFile(outputPath, jsonData, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
 	return nil
+}
+
+// buildOperationIdMap creates a map from operationId -> APIEndpoint using the Swagger spec
+func buildOperationIdMap(spec *SwaggerSpec) map[string]APIEndpoint {
+	opMap := make(map[string]APIEndpoint)
+	for path, methods := range spec.Paths {
+		for method, endpointSpec := range methods {
+			if endpointSpec.OperationId == "" {
+				continue
+			}
+			opMap[strings.ToLower(endpointSpec.OperationId)] = APIEndpoint{
+				Method: strings.ToUpper(method),
+				Path:   path,
+			}
+		}
+	}
+	return opMap
+}
+
+// detectEndpointsFromProxy extracts API endpoints from a proxy file by:
+// 1. Matching SDK method calls (e.g., p.scriptsApi.GetScripts(...)) and looking up operationId
+// 2. Matching raw HTTP calls with explicit /api/v2/ paths
+// 3. Matching BasePath + "/api/v2/..." concatenation patterns
+func detectEndpointsFromProxy(content string, opMap map[string]APIEndpoint) []APIEndpoint {
+	var endpoints []APIEndpoint
+	seen := make(map[string]bool)
+
+	// Pattern 1: SDK method calls like p.someApi.MethodName(...) or a.api.MethodName(...)
+	sdkCallRe := regexp.MustCompile(`\.[a-zA-Z]*[Aa]pi\.([A-Z][a-zA-Z0-9]+)\s*\(`)
+	matches := sdkCallRe.FindAllStringSubmatch(content, -1)
+	for _, match := range matches {
+		if len(match) >= 2 {
+			methodName := match[1]
+			if ep, ok := opMap[strings.ToLower(methodName)]; ok {
+				key := ep.Method + " " + ep.Path
+				if !seen[key] {
+					seen[key] = true
+					endpoints = append(endpoints, ep)
+				}
+			}
+		}
+	}
+
+	// Pattern 2: Raw HTTP calls with explicit paths like "/api/v2/scripts/" + scriptId
+	rawPathRe := regexp.MustCompile(`"(/api/v2/[^"]+)"`)
+	rawMatches := rawPathRe.FindAllStringSubmatch(content, -1)
+	for _, match := range rawMatches {
+		if len(match) >= 2 {
+			rawPath := match[1]
+			httpMethod := detectHTTPMethodNearPath(content, match[0])
+			if httpMethod != "" {
+				normalizedPath := normalizeRawPath(rawPath)
+				key := httpMethod + " " + normalizedPath
+				if !seen[key] {
+					seen[key] = true
+					endpoints = append(endpoints, APIEndpoint{Method: httpMethod, Path: normalizedPath})
+				}
+			}
+		}
+	}
+
+	// Pattern 3: BasePath + "/api/v2/..." concatenation patterns
+	basePathRe := regexp.MustCompile(`BasePath\s*\+\s*"(/api/v2/[^"]+)"`)
+	basePathMatches := basePathRe.FindAllStringSubmatch(content, -1)
+	for _, match := range basePathMatches {
+		if len(match) >= 2 {
+			rawPath := match[1]
+			httpMethod := detectHTTPMethodNearPath(content, match[0])
+			if httpMethod != "" {
+				normalizedPath := normalizeRawPath(rawPath)
+				key := httpMethod + " " + normalizedPath
+				if !seen[key] {
+					seen[key] = true
+					endpoints = append(endpoints, APIEndpoint{Method: httpMethod, Path: normalizedPath})
+				}
+			}
+		}
+	}
+
+	return endpoints
+}
+
+// detectHTTPMethodNearPath looks for HTTP method indicators near a raw path usage
+func detectHTTPMethodNearPath(content, pathMatch string) string {
+	idx := strings.Index(content, pathMatch)
+	if idx == -1 {
+		return ""
+	}
+
+	start := idx - 200
+	if start < 0 {
+		start = 0
+	}
+	end := idx + len(pathMatch) + 200
+	if end > len(content) {
+		end = len(content)
+	}
+	context := content[start:end]
+
+	if strings.Contains(context, "http.MethodDelete") || strings.Contains(context, "\"DELETE\"") {
+		return "DELETE"
+	}
+	if strings.Contains(context, "http.MethodPost") || strings.Contains(context, "\"POST\"") {
+		return "POST"
+	}
+	if strings.Contains(context, "http.MethodPut") || strings.Contains(context, "\"PUT\"") {
+		return "PUT"
+	}
+	if strings.Contains(context, "http.MethodPatch") || strings.Contains(context, "\"PATCH\"") {
+		return "PATCH"
+	}
+	if strings.Contains(context, "http.MethodGet") || strings.Contains(context, "\"GET\"") {
+		return "GET"
+	}
+
+	return ""
+}
+
+// normalizeRawPath converts raw paths with variable concatenation into Swagger-style parameterized paths
+// e.g., "/api/v2/scripts/" becomes "/api/v2/scripts/{scriptsId}" if followed by a variable
+func normalizeRawPath(path string) string {
+	if strings.HasSuffix(path, "/") {
+		parts := strings.Split(strings.TrimRight(path, "/"), "/")
+		if len(parts) > 0 {
+			lastPart := parts[len(parts)-1]
+			path = path + "{" + lastPart + "Id}"
+		}
+	}
+	return path
 }
 
 // fetchSwaggerSpec downloads and parses the Swagger specification
@@ -250,7 +475,6 @@ func fetchSwaggerSpec(url string) (*SwaggerSpec, error) {
 func parseAPIEndpoints(content string) []APIEndpoint {
 	var endpoints []APIEndpoint
 
-	// Regex to match lines like: - [POST /api/v2/path](url) or * [POST /api/v2/path](url)
 	re := regexp.MustCompile(`[-*]\s*\[([A-Z]+)\s+(/api/v2/[^\]]+)\]`)
 	matches := re.FindAllStringSubmatch(content, -1)
 
@@ -272,11 +496,7 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 	scopesMap := make(map[string]bool)
 
 	for _, endpoint := range endpoints {
-		// Normalize path - remove path parameters like {id}
-		normalizedPath := endpoint.Path
-
-		// Look up the endpoint in the spec
-		pathSpec, pathExists := spec.Paths[normalizedPath]
+		pathSpec, pathExists := spec.Paths[endpoint.Path]
 		if !pathExists {
 			continue
 		}
@@ -286,14 +506,12 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 			continue
 		}
 
-		// Extract permissions
 		for _, perm := range endpointSpec.XIninRequiresPermissions.Permissions {
 			if perm != "" {
 				permissionsMap[perm] = true
 			}
 		}
 
-		// Extract scopes
 		for _, securityItem := range endpointSpec.Security {
 			if oauthScopes, ok := securityItem["PureCloud OAuth"]; ok {
 				for _, scope := range oauthScopes {
@@ -305,7 +523,6 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 		}
 	}
 
-	// If no permissions or scopes found, return empty string
 	if len(permissionsMap) == 0 && len(scopesMap) == 0 {
 		return ""
 	}
@@ -313,7 +530,6 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 	var result strings.Builder
 	result.WriteString("## Permissions and Scopes\n\n")
 
-	// Add permissions section
 	if len(permissionsMap) > 0 {
 		result.WriteString("The following permissions are required to use this resource:\n\n")
 
@@ -329,7 +545,6 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 		result.WriteString("\n")
 	}
 
-	// Add scopes section
 	if len(scopesMap) > 0 {
 		result.WriteString("The following OAuth scopes are required to use this resource:\n\n")
 
@@ -347,48 +562,6 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 	return result.String()
 }
 
-// insertPermissionsAndScopes inserts the permissions and scopes section before the first
-// markdown heading (##) in the content, or at the end if no headings are present
-func insertPermissionsAndScopes(content, permissionsAndScopes string) string {
-	lines := strings.Split(content, "\n")
-
-	// Find the first line that starts with ## (markdown heading)
-	insertIndex := -1
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "##") {
-			insertIndex = i
-			break
-		}
-	}
-
-	// If no heading found, append at the end
-	if insertIndex == -1 {
-		return content + "\n" + permissionsAndScopes
-	}
-
-	// Insert before the first heading
-	result := strings.Builder{}
-
-	// Add all lines before the heading
-	for i := 0; i < insertIndex; i++ {
-		result.WriteString(lines[i])
-		result.WriteString("\n")
-	}
-
-	// Add the permissions and scopes section
-	result.WriteString(permissionsAndScopes)
-
-	// Add the remaining lines (including the heading)
-	for i := insertIndex; i < len(lines); i++ {
-		result.WriteString(lines[i])
-		if i < len(lines)-1 {
-			result.WriteString("\n")
-		}
-	}
-
-	return result.String()
-}
 
 // extractResourcePermissions extracts permissions and scopes for a resource and returns structured data
 func extractResourcePermissions(resourceType, resourceName string, endpoints []APIEndpoint, spec *SwaggerSpec) ResourcePermissions {
@@ -397,10 +570,8 @@ func extractResourcePermissions(resourceType, resourceName string, endpoints []A
 	endpointsList := []string{}
 
 	for _, endpoint := range endpoints {
-		// Add endpoint to list
 		endpointsList = append(endpointsList, fmt.Sprintf("%s %s", strings.ToUpper(endpoint.Method), endpoint.Path))
 
-		// Look up the endpoint in the spec
 		pathSpec, pathExists := spec.Paths[endpoint.Path]
 		if !pathExists {
 			continue
@@ -411,14 +582,12 @@ func extractResourcePermissions(resourceType, resourceName string, endpoints []A
 			continue
 		}
 
-		// Extract permissions
 		for _, perm := range endpointSpec.XIninRequiresPermissions.Permissions {
 			if perm != "" {
 				permissionsMap[perm] = true
 			}
 		}
 
-		// Extract scopes
 		for _, securityItem := range endpointSpec.Security {
 			if oauthScopes, ok := securityItem["PureCloud OAuth"]; ok {
 				for _, scope := range oauthScopes {
@@ -430,7 +599,6 @@ func extractResourcePermissions(resourceType, resourceName string, endpoints []A
 		}
 	}
 
-	// Convert maps to sorted slices
 	permissions := make([]string, 0, len(permissionsMap))
 	for perm := range permissionsMap {
 		permissions = append(permissions, perm)

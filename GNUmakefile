@@ -79,3 +79,6 @@ sideload: build sideload-only
 
 generate-dependencyTree:
 	go run ./tools/dependency_tree "public/data/" $(version)
+
+generate-apidocs:
+	go run ./apidocs $(version)

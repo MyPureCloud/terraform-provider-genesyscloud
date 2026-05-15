@@ -7,9 +7,7 @@ import (
 	"testing"
 )
 
-// TestPermissionsDataStructure verifies the JSON structure is correct
 func TestPermissionsDataStructure(t *testing.T) {
-	// Create a sample permissions data
 	testData := PermissionsData{
 		Version: "test",
 		Resources: []ResourcePermissions{
@@ -23,51 +21,40 @@ func TestPermissionsDataStructure(t *testing.T) {
 		},
 	}
 
-	// Marshal to JSON
 	jsonData, err := json.MarshalIndent(testData, "", "  ")
 	if err != nil {
 		t.Fatalf("Failed to marshal test data: %v", err)
 	}
 
-	// Unmarshal back
 	var decoded PermissionsData
 	if err := json.Unmarshal(jsonData, &decoded); err != nil {
 		t.Fatalf("Failed to unmarshal test data: %v", err)
 	}
 
-	// Verify structure
 	if decoded.Version != "test" {
 		t.Errorf("Expected version 'test', got '%s'", decoded.Version)
 	}
-
 	if len(decoded.Resources) != 1 {
 		t.Errorf("Expected 1 resource, got %d", len(decoded.Resources))
 	}
-
 	resource := decoded.Resources[0]
 	if resource.ResourceType != "genesyscloud_test_resource" {
 		t.Errorf("Expected resource type 'genesyscloud_test_resource', got '%s'", resource.ResourceType)
 	}
-
 	if len(resource.Permissions) != 1 || resource.Permissions[0] != "test:permission:view" {
 		t.Errorf("Permissions not correctly preserved")
 	}
-
 	if len(resource.Scopes) != 1 || resource.Scopes[0] != "test-scope" {
 		t.Errorf("Scopes not correctly preserved")
 	}
-
 	if len(resource.Endpoints) != 1 || resource.Endpoints[0] != "GET /api/v2/test" {
 		t.Errorf("Endpoints not correctly preserved")
 	}
 }
 
-// TestWritePermissionsJSON verifies the file writing functionality
 func TestWritePermissionsJSON(t *testing.T) {
-	// Create temporary directory
 	tempDir := t.TempDir()
 
-	// Create test data
 	testData := []ResourcePermissions{
 		{
 			ResourceType: "genesyscloud_test_resource",
@@ -78,21 +65,16 @@ func TestWritePermissionsJSON(t *testing.T) {
 		},
 	}
 
-	// Write to file
-	filename := "test_permissions"
-	version := "1.0.0"
-	err := writePermissionsJSON(testData, tempDir, filename, version)
+	err := writePermissionsJSON(testData, tempDir, "test_permissions", "1.0.0")
 	if err != nil {
 		t.Fatalf("Failed to write permissions JSON: %v", err)
 	}
 
-	// Verify file exists
 	expectedPath := filepath.Join(tempDir, "test_permissions-1.0.0.json")
 	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
 		t.Fatalf("Expected file not created: %s", expectedPath)
 	}
 
-	// Read and verify content
 	fileData, err := os.ReadFile(expectedPath)
 	if err != nil {
 		t.Fatalf("Failed to read generated file: %v", err)
@@ -102,19 +84,14 @@ func TestWritePermissionsJSON(t *testing.T) {
 	if err := json.Unmarshal(fileData, &decoded); err != nil {
 		t.Fatalf("Failed to unmarshal generated file: %v", err)
 	}
-
-	// Verify version
-	if decoded.Version != version {
-		t.Errorf("Expected version '%s', got '%s'", version, decoded.Version)
+	if decoded.Version != "1.0.0" {
+		t.Errorf("Expected version '1.0.0', got '%s'", decoded.Version)
 	}
-
-	// Verify resources
 	if len(decoded.Resources) != 1 {
 		t.Errorf("Expected 1 resource, got %d", len(decoded.Resources))
 	}
 }
 
-// TestParseAPIEndpoints verifies endpoint parsing from markdown
 func TestParseAPIEndpoints(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -162,66 +139,195 @@ func TestParseAPIEndpoints(t *testing.T) {
 	}
 }
 
-// TestInsertPermissionsAndScopes verifies the insertion logic
-func TestInsertPermissionsAndScopes(t *testing.T) {
+func TestBuildOperationIdMap(t *testing.T) {
+	spec := &SwaggerSpec{
+		Paths: map[string]map[string]EndpointSpec{
+			"/api/v2/scripts": {
+				"get":  {OperationId: "getScripts"},
+				"post": {OperationId: "postScripts"},
+			},
+			"/api/v2/scripts/{scriptId}": {
+				"get":    {OperationId: "getScript"},
+				"delete": {OperationId: "deleteScript"},
+			},
+		},
+	}
+
+	opMap := buildOperationIdMap(spec)
+
+	if len(opMap) != 4 {
+		t.Errorf("Expected 4 entries, got %d", len(opMap))
+	}
+
+	ep, ok := opMap["getscripts"]
+	if !ok {
+		t.Fatal("Expected 'getscripts' in map")
+	}
+	if ep.Method != "GET" || ep.Path != "/api/v2/scripts" {
+		t.Errorf("Expected GET /api/v2/scripts, got %s %s", ep.Method, ep.Path)
+	}
+
+	ep, ok = opMap["deletescript"]
+	if !ok {
+		t.Fatal("Expected 'deletescript' in map")
+	}
+	if ep.Method != "DELETE" || ep.Path != "/api/v2/scripts/{scriptId}" {
+		t.Errorf("Expected DELETE /api/v2/scripts/{scriptId}, got %s %s", ep.Method, ep.Path)
+	}
+}
+
+func TestDetectEndpointsFromProxy(t *testing.T) {
+	opMap := map[string]APIEndpoint{
+		"getscripts":             {Method: "GET", Path: "/api/v2/scripts"},
+		"postscriptspublished":   {Method: "POST", Path: "/api/v2/scripts/published"},
+		"getscript":              {Method: "GET", Path: "/api/v2/scripts/{scriptId}"},
+		"postscriptexport":       {Method: "POST", Path: "/api/v2/scripts/{scriptId}/export"},
+		"getscriptsuploadstatus": {Method: "GET", Path: "/api/v2/scripts/uploads/{uploadId}/status"},
+	}
+
 	tests := []struct {
-		name                 string
-		content              string
-		permissionsAndScopes string
-		expectBefore         string
+		name     string
+		content  string
+		expected []string
 	}{
 		{
-			name: "insert before heading",
-			content: `- [GET /api/v2/test](link)
-
-## Migration Notes
-
-Some migration content`,
-			permissionsAndScopes: "## Permissions\n\nTest permissions\n",
-			expectBefore:         "## Migration Notes",
+			name:     "SDK method calls with Api suffix",
+			content:  `p.scriptsApi.GetScripts(pageSize, pageNum, "", scriptName, "", "", "", "", "", "")`,
+			expected: []string{"GET /api/v2/scripts"},
 		},
 		{
-			name: "append when no heading",
-			content: `- [GET /api/v2/test](link)
-- [POST /api/v2/test](link)`,
-			permissionsAndScopes: "## Permissions\n\nTest permissions\n",
-			expectBefore:         "", // Should be at end
+			name:     "SDK method calls with lowercase api",
+			content:  `a.api.GetScript(id)`,
+			expected: []string{"GET /api/v2/scripts/{scriptId}"},
+		},
+		{
+			name: "Raw HTTP call with BasePath",
+			content: `fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + scriptId
+r, _ := http.NewRequestWithContext(ctx, http.MethodDelete, fullPath, nil)`,
+			expected: []string{"DELETE /api/v2/scripts/{scriptsId}"},
+		},
+		{
+			name: "Multiple SDK calls",
+			content: `p.scriptsApi.GetScripts(100, 1, "", "", "", "", "", "", "", "")
+p.scriptsApi.PostScriptsPublished("0", *publishScriptBody)
+p.scriptsApi.PostScriptExport(scriptId, body)`,
+			expected: []string{
+				"GET /api/v2/scripts",
+				"POST /api/v2/scripts/published",
+				"POST /api/v2/scripts/{scriptId}/export",
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := insertPermissionsAndScopes(tt.content, tt.permissionsAndScopes)
-
-			// Verify permissions section is present
-			if !contains(result, "## Permissions") {
-				t.Error("Permissions section not found in result")
+			endpoints := detectEndpointsFromProxy(tt.content, opMap)
+			detected := make(map[string]bool)
+			for _, ep := range endpoints {
+				detected[ep.Method+" "+ep.Path] = true
 			}
-
-			// If we expect it before a heading, verify that
-			if tt.expectBefore != "" {
-				permsIdx := indexOf(result, "## Permissions")
-				headingIdx := indexOf(result, tt.expectBefore)
-				if permsIdx == -1 || headingIdx == -1 {
-					t.Error("Could not find expected sections")
-				} else if permsIdx >= headingIdx {
-					t.Error("Permissions section should appear before heading")
+			for _, exp := range tt.expected {
+				if !detected[exp] {
+					t.Errorf("Expected endpoint %s not detected. Got: %v", exp, endpoints)
 				}
 			}
 		})
 	}
 }
 
-// Helper functions
-func contains(s, substr string) bool {
-	return indexOf(s, substr) != -1
+func TestDetectHTTPMethodNearPath(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		path     string
+		expected string
+	}{
+		{
+			name:     "http.MethodDelete",
+			content:  `r, _ := http.NewRequestWithContext(ctx, http.MethodDelete, "/api/v2/scripts/" + id, nil)`,
+			path:     `"/api/v2/scripts/"`,
+			expected: "DELETE",
+		},
+		{
+			name:     "http.MethodPost",
+			content:  "action := http.MethodPost\nfullPath := p.Configuration.BasePath + \"/api/v2/authorization/divisions/\"",
+			path:     `"/api/v2/authorization/divisions/"`,
+			expected: "POST",
+		},
+		{
+			name:     "string literal GET",
+			content:  "method := \"GET\"\nurl := \"/api/v2/test\"",
+			path:     `"/api/v2/test"`,
+			expected: "GET",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := detectHTTPMethodNearPath(tt.content, tt.path)
+			if result != tt.expected {
+				t.Errorf("Expected %s, got %s", tt.expected, result)
+			}
+		})
+	}
 }
 
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
+func TestNormalizeRawPath(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"/api/v2/scripts", "/api/v2/scripts"},
+		{"/api/v2/scripts/", "/api/v2/scripts/{scriptsId}"},
+		{"/api/v2/authorization/divisions/", "/api/v2/authorization/divisions/{divisionsId}"},
 	}
-	return -1
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := normalizeRawPath(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected %s, got %s", tt.expected, result)
+			}
+		})
+	}
+}
+
+
+func TestReadNotesFile(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// No notes.md - should return empty
+	result := readNotesFile(tempDir)
+	if result != "" {
+		t.Errorf("Expected empty string for missing notes.md, got %q", result)
+	}
+
+	// With notes.md
+	notesContent := "## Export Behavior\n\nSome notes here.\n"
+	os.WriteFile(filepath.Join(tempDir, "notes.md"), []byte(notesContent), 0644)
+
+	result = readNotesFile(tempDir)
+	if result != "## Export Behavior\n\nSome notes here." {
+		t.Errorf("Expected trimmed notes content, got %q", result)
+	}
+}
+
+func TestBuildAnchor(t *testing.T) {
+	tests := []struct {
+		method   string
+		path     string
+		expected string
+	}{
+		{"GET", "/api/v2/scripts", "get--api-v2-scripts"},
+		{"DELETE", "/api/v2/scripts/{scriptId}", "delete--api-v2-scripts--scriptId-"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			result := buildAnchor(tt.method, tt.path)
+			if result != tt.expected {
+				t.Errorf("Expected %s, got %s", tt.expected, result)
+			}
+		})
+	}
 }
