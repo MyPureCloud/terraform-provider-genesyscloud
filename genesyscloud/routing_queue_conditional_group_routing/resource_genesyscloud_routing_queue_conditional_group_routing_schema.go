@@ -44,7 +44,7 @@ var (
 // ResourceRoutingQueueConditionalGroupRouting registers the genesyscloud_routing_queue_conditional_group_routing resource with Terraform
 func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud routing queue conditional group routing rules",
+		Description: "Genesys Cloud routing queue conditional group routing rules. **Important:** This resource requires the ENABLE_STANDALONE_CGR environment variable to be set. When enabled, the conditional_group_routing_rules attribute on genesyscloud_routing_queue will not be read or exported — this resource takes over management of conditional group routing rules. The two approaches are mutually exclusive to prevent duplicate data during org exports.",
 
 		CreateContext: provider.CreateWithPooledClient(createRoutingQueueConditionalRoutingGroup),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingQueueConditionalRoutingGroup),
@@ -70,7 +70,7 @@ func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"evaluated_queue_id": {
-							Description: "The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.",
+							Description: "The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified. The API interprets a null queue as the current queue.",
 							Type:        schema.TypeString,
 							Optional:    true,
 						},

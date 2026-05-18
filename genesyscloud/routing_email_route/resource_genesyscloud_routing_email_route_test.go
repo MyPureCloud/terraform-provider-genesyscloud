@@ -35,9 +35,9 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		skillName            = "Terraform Skill" + uuid.NewString()
 		routeResourceLabel1  = "email-route1"
 		routeResourceLabel2  = "email-route2"
-		routePattern1        = "terraform1"
-		routePattern2        = "terraform2"
-		routePattern3        = "terraform3"
+		routePattern1        = "terraform1" + strings.Replace(uuid.NewString(), "-", "", -1)[:8]
+		routePattern2        = "terraform2" + strings.Replace(uuid.NewString(), "-", "", -1)[:8]
+		routePattern3        = "terraform3" + strings.Replace(uuid.NewString(), "-", "", -1)[:8]
 		fromEmail1           = "terraform1@test.com"
 		fromEmail2           = "terraform2@test.com"
 		fromName1            = "John Terraform"
