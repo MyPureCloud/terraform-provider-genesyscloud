@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -33,8 +34,17 @@ var supportedDiagnosticsSettingsDialingModes = []string{"power", "predictive"}
 
 // validateDiagnosticsSettingsDialingMode validates that diagnostics_settings is only used with power or predictive dialing modes
 func validateDiagnosticsSettingsDialingMode(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
-	diagnosticsSettings := diff.Get("diagnostics_settings").([]interface{})
-	if len(diagnosticsSettings) == 0 {
+	cfgVal, cfgDiags := diff.GetRawConfigAt(cty.GetAttrPath("diagnostics_settings"))
+	if cfgDiags.HasError() { // skip if raw config path cannot be resolved
+		return nil
+	}
+	if cfgVal.IsNull() || !cfgVal.IsKnown() { // diagnostics block omitted or unknown in config
+		return nil
+	}
+	if !cfgVal.Type().IsCollectionType() || !cfgVal.IsWhollyKnown() { // expect a fully known list/tuple from HCL
+		return nil
+	}
+	if cfgVal.LengthInt() == 0 { // empty diagnostics_settings list in config
 		return nil
 	}
 
