@@ -46,6 +46,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath1),
 					resource.TestCheckResourceAttr(resourceFullPath, "name", fullPath1),
+					resource.TestCheckResourceAttrSet(resourceFullPath, "content_location"),
 					provider.TestDefaultHomeDivision(resourceFullPath),
 				),
 			},
@@ -55,6 +56,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
 					resource.TestCheckResourceAttr(resourceFullPath, "name", fullPath2),
+					resource.TestCheckResourceAttrSet(resourceFullPath, "content_location"),
 					resource.TestCheckResourceAttrPair(resourceFullPath, "division_id",
 						authDivision.ResourceType+"."+divisionResourceLabel, "id"),
 				),
@@ -66,6 +68,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
 					resource.TestCheckResourceAttr(resourceFullPath, "name", fullPath2),
+					resource.TestCheckResourceAttrSet(resourceFullPath, "content_location"),
 					provider.TestDefaultHomeDivision(resourceFullPath),
 				),
 			},
@@ -77,6 +80,7 @@ func TestAccResourceResponseManagementResponseAsset(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"filename",
 					"file_content_hash",
+					"content_location",
 				},
 			},
 		},
@@ -109,6 +113,7 @@ func TestAccResourceResponseManagementResponseAssetWithNameField(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath1),
 					resource.TestCheckResourceAttr(resourceFullPath, "name", fileName1),
+					resource.TestCheckResourceAttrSet(resourceFullPath, "content_location"),
 					provider.TestDefaultHomeDivision(resourceFullPath),
 				),
 			},
@@ -118,6 +123,7 @@ func TestAccResourceResponseManagementResponseAssetWithNameField(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
 					resource.TestCheckResourceAttr(resourceFullPath, "name", fileName2),
+					resource.TestCheckResourceAttrSet(resourceFullPath, "content_location"),
 					resource.TestCheckResourceAttrPair(resourceFullPath, "division_id",
 						authDivision.ResourceType+"."+divisionResourceLabel, "id"),
 				),
@@ -129,6 +135,7 @@ func TestAccResourceResponseManagementResponseAssetWithNameField(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceFullPath, "filename", fullPath2),
 					resource.TestCheckResourceAttr(resourceFullPath, "name", fileName2),
+					resource.TestCheckResourceAttrSet(resourceFullPath, "content_location"),
 					provider.TestDefaultHomeDivision(resourceFullPath),
 				),
 			},
@@ -140,6 +147,7 @@ func TestAccResourceResponseManagementResponseAssetWithNameField(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"filename",
 					"file_content_hash",
+					"content_location",
 				},
 			},
 		},
@@ -323,6 +331,7 @@ func TestAccResourceResponseManagementResponseAssetWithS3(t *testing.T) {
 				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, s3URI, util.NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourcePath, "filename", s3URI),
+					resource.TestCheckResourceAttrSet(fullResourcePath, "content_location"),
 					provider.TestDefaultHomeDivision(fullResourcePath),
 					// Store the initial resource ID
 					func(s *terraform.State) error {
@@ -363,6 +372,7 @@ func TestAccResourceResponseManagementResponseAssetWithS3(t *testing.T) {
 				Config: GenerateResponseManagementResponseAssetResource(resourceLabel, s3URI, util.NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(fullResourcePath, "filename", s3URI),
+					resource.TestCheckResourceAttrSet(fullResourcePath, "content_location"),
 					provider.TestDefaultHomeDivision(fullResourcePath),
 					// Verify that the resource ID has changed due to file_content_hash change
 					func(s *terraform.State) error {
@@ -387,6 +397,7 @@ func TestAccResourceResponseManagementResponseAssetWithS3(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"file_content_hash",
 					"filename",
+					"content_location",
 				},
 			},
 		},
