@@ -20,12 +20,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
 )
 
-const wildcardDeprecationMessage = "Using wildcard \"*\" in permission_policies is deprecated. " +
-	"Genesys Cloud no longer stores wildcard permissions. Please replace \"*\" with the explicit list of actions " +
-	"or entity names. Wildcard suppression support in this provider will only be available until June 30, 2026. " +
-	"After that date, wildcard usage will cause unexpected behavior. " +
-	"Refer to the Genesys Cloud deprecation notice: Deprecation of \"any future permissions\" and wildcard permission storage."
-
 /*
 The resource_genesyscloud_auth_role_utils.go contains all of the methods that perform the core logic for a resource.
 */
@@ -111,9 +105,6 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		configuredPolicies = configPolicies.(*schema.Set).List()
 	}
 
-	// Check for wildcard deprecation warning to show in terminal
-	diagWarnings := getWildcardDeprecationWarnings(configuredPolicies)
-
 	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		role, proxyResponse, getErr := proxy.getAuthRoleById(ctx, d.Id())
 		if getErr != nil {
@@ -147,42 +138,6 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		return retryErr
 	}
 
-	// Return deprecation warnings to display in terminal
-	return diagWarnings
-}
-
-// getWildcardDeprecationWarnings returns diag.Diagnostics with a warning if any permission policy uses wildcards.
-// This warning is displayed directly in the user's terminal during plan/apply.
-func getWildcardDeprecationWarnings(configuredPolicies []interface{}) diag.Diagnostics {
-	for _, policy := range configuredPolicies {
-		policyMap, ok := policy.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if entityName, ok := policyMap["entity_name"].(string); ok && entityName == "*" {
-			return diag.Diagnostics{
-				diag.Diagnostic{
-					Severity: diag.Warning,
-					Summary:  "Wildcard permission deprecation",
-					Detail:   wildcardDeprecationMessage,
-				},
-			}
-		}
-		if actionSet, ok := policyMap["action_set"]; ok {
-			actions := actionSet.(*schema.Set).List()
-			for _, action := range actions {
-				if action.(string) == "*" {
-					return diag.Diagnostics{
-						diag.Diagnostic{
-							Severity: diag.Warning,
-							Summary:  "Wildcard permission deprecation",
-							Detail:   wildcardDeprecationMessage,
-						},
-					}
-				}
-			}
-		}
-	}
 	return nil
 }
 
