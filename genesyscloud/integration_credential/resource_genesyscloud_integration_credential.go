@@ -52,18 +52,24 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	}
 
 	for _, cred := range *credentials {
-		log.Printf("Dealing with credential id : %s, credential name : %s", *cred.Id, util.StringOrNil(cred.Name))
+		log.Printf("Dealing with credential id: %s, credential name: %s", *cred.Id, util.StringOrNil(cred.Name))
 		if cred.Name != nil { // Credential is possible to have no name
 
 			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
 			integration, resp, err := ip.getIntegrationByCredentialId(ctx, *cred.Id)
 			if err != nil {
 				if util.IsStatus404(resp) {
-					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", cred.Id, *cred.Id)
+					log.Printf("The Integration associated with the Integration Credential %s no longer exist, we are therefore not exporting the Integration Credential", cred.Id)
 					continue
 				} else {
-					log.Printf("Integration Credential id %s exists but we got an unexpected error retrieving it: %v", cred.Id, err)
+					log.Printf("The Integration associated with the Integration Credential %s exists but we got an unexpected error retrieving it: %v", cred.Id, err)
 				}
+
+			}
+
+			if integration == nil {
+				log.Printf("Could not find integration associated with integration credential %s, we are therefore not exporting the associated integration credential", cred.Id)
+				continue
 			}
 			// Block Label: DEVTOOLING-1135
 			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: "Integration-" + *integration.Name}
