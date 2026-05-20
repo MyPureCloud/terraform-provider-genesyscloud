@@ -19,7 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var (
@@ -596,7 +596,7 @@ func isUserDeleted(id string) (bool, error) {
 	defer mu.Unlock()
 
 	usersAPI := platformclientv2.NewUsersApi()
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	if response != nil && response.StatusCode == 404 {
 		return true, nil
@@ -629,7 +629,7 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
