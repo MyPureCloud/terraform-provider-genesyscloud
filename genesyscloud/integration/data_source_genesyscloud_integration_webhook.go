@@ -24,7 +24,7 @@ import (
 // dataSourceIntegrationWebhookRead retrieves webhook integration by name
 func dataSourceIntegrationWebhookRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 	integrationName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {

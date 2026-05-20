@@ -382,6 +382,90 @@ func validateIntegrationProperties(integrationResourcePath string, groupResource
 	}
 }
 
+func TestAccResourceIntegrationCredentialLookup(t *testing.T) {
+	var (
+		inteResourceLabel = "test_integration_cred_lookup"
+		inteName          = "Terraform Integration Cred Lookup-" + uuid.NewString()
+		enabledState      = "ENABLED"
+		typeID            = "custom-smtp-server"
+
+		credResourceLabel = "test_credential_lookup"
+		credName          = "Terraform Credential Lookup-" + uuid.NewString()
+		credTypeName      = "basicAuth"
+		key               = "userName"
+		val               = "someUserName"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: integrationCred.GenerateCredentialResource(
+					credResourceLabel,
+					strconv.Quote(credName),
+					strconv.Quote(credTypeName),
+					integrationCred.GenerateCredentialFields(
+						map[string]string{
+							key: strconv.Quote(val),
+						},
+					),
+				) + GenerateIntegrationResource(
+					inteResourceLabel,
+					strconv.Quote(enabledState),
+					strconv.Quote(typeID),
+					GenerateIntegrationConfig(
+						strconv.Quote(inteName),
+						util.NullValue,
+						util.GenerateMapProperty(credTypeName, "genesyscloud_integration_credential."+credResourceLabel+".id"),
+						util.GenerateJsonEncodedProperties(
+							util.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
+						),
+						util.NullValue,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					testVerifyIntegrationCredentialLookup("genesyscloud_integration."+inteResourceLabel, "genesyscloud_integration_credential."+credResourceLabel),
+				),
+			},
+		},
+		CheckDestroy: testVerifyIntegrationAndUsersDestroyed,
+	})
+}
+
+func testVerifyIntegrationCredentialLookup(integrationResourcePath, credentialResourcePath string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		integrationResource, ok := state.RootModule().Resources[integrationResourcePath]
+		if !ok {
+			return fmt.Errorf("failed to find integration %s in state", integrationResourcePath)
+		}
+
+		credentialResource, ok := state.RootModule().Resources[credentialResourcePath]
+		if !ok {
+			return fmt.Errorf("failed to find credential %s in state", credentialResourcePath)
+		}
+
+		credentialId := credentialResource.Primary.ID
+		expectedIntegrationId := integrationResource.Primary.ID
+
+		// Use the integration credential proxy to look up the integration by credential ID
+		sdkConfig := platformclientv2.GetDefaultConfiguration()
+		proxy := integrationCred.GetIntegrationCredsProxy(sdkConfig)
+
+		integration, _, err := proxy.GetIntegrationByCredentialId(nil, credentialId)
+		if err != nil {
+			return fmt.Errorf("getIntegrationByCredentialId failed: %s", err)
+		}
+		if integration == nil || integration.Id == nil {
+			return fmt.Errorf("getIntegrationByCredentialId returned nil integration for credential %s", credentialId)
+		}
+		if *integration.Id != expectedIntegrationId {
+			return fmt.Errorf("expected integration id %s, got %s", expectedIntegrationId, *integration.Id)
+		}
+		return nil
+	}
+}
+
 func testVerifyIntegrationAndUsersDestroyed(state *terraform.State) error {
 	integrationAPI := platformclientv2.NewIntegrationsApi()
 	usersAPI := platformclientv2.NewUsersApi()

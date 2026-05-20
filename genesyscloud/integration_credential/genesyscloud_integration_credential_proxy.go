@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
@@ -39,34 +40,36 @@ type getIntegrationCredByIdFunc func(ctx context.Context, p *integrationCredsPro
 type getIntegrationCredByNameFunc func(ctx context.Context, p *integrationCredsProxy, credentialName string) (credential *platformclientv2.Credentialinfo, retryable bool, response *platformclientv2.APIResponse, err error)
 type updateIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string, credential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type deleteIntegrationCredFunc func(ctx context.Context, p *integrationCredsProxy, credentialId string) (response *platformclientv2.APIResponse, err error)
-type getIntegrationByIdFunc func(ctx context.Context, p *integrationCredsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
+type getIntegrationByCredentialIdFunc func(ctx context.Context, p *integrationCredsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
 
 // integrationCredsProxy contains all of the methods that call genesys cloud APIs.
 type integrationCredsProxy struct {
-	clientConfig                 *platformclientv2.Configuration
-	integrationsApi              *platformclientv2.IntegrationsApi
-	getAllIntegrationCredsAttr   getAllIntegrationCredsFunc
-	createIntegrationCredAttr    createIntegrationCredFunc
-	getIntegrationCredByIdAttr   getIntegrationCredByIdFunc
-	getIntegrationCredByNameAttr getIntegrationCredByNameFunc
-	updateIntegrationCredAttr    updateIntegrationCredFunc
-	deleteIntegrationCredAttr    deleteIntegrationCredFunc
-	getIntegrationByIdAttr       getIntegrationByIdFunc
+	clientConfig                     *platformclientv2.Configuration
+	integrationsApi                  *platformclientv2.IntegrationsApi
+	getAllIntegrationCredsAttr       getAllIntegrationCredsFunc
+	createIntegrationCredAttr        createIntegrationCredFunc
+	getIntegrationCredByIdAttr       getIntegrationCredByIdFunc
+	getIntegrationCredByNameAttr     getIntegrationCredByNameFunc
+	updateIntegrationCredAttr        updateIntegrationCredFunc
+	deleteIntegrationCredAttr        deleteIntegrationCredFunc
+	getIntegrationByCredentialIdAttr getIntegrationByCredentialIdFunc
+	integrationCache                 rc.CacheInterface[platformclientv2.Integration]
 }
 
 // newIntegrationCredsProxy initializes the Integration Credentials proxy with all of the data needed to communicate with Genesys Cloud
 func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *integrationCredsProxy {
 	api := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 	return &integrationCredsProxy{
-		clientConfig:                 clientConfig,
-		integrationsApi:              api,
-		getAllIntegrationCredsAttr:   getAllIntegrationCredsFn,
-		createIntegrationCredAttr:    createIntegrationCredFn,
-		getIntegrationCredByIdAttr:   getIntegrationCredByIdFn,
-		getIntegrationCredByNameAttr: getIntegrationCredByNameFn,
-		updateIntegrationCredAttr:    updateIntegrationCredFn,
-		deleteIntegrationCredAttr:    deleteIntegrationCredFn,
-		getIntegrationByIdAttr:       getIntegrationByIdFn,
+		clientConfig:                     clientConfig,
+		integrationsApi:                  api,
+		getAllIntegrationCredsAttr:       getAllIntegrationCredsFn,
+		createIntegrationCredAttr:        createIntegrationCredFn,
+		getIntegrationCredByIdAttr:       getIntegrationCredByIdFn,
+		getIntegrationCredByNameAttr:     getIntegrationCredByNameFn,
+		updateIntegrationCredAttr:        updateIntegrationCredFn,
+		deleteIntegrationCredAttr:        deleteIntegrationCredFn,
+		getIntegrationByCredentialIdAttr: getIntegrationByCredentialIdFn,
+		integrationCache:                 rc.NewResourceCache[platformclientv2.Integration](),
 	}
 }
 
@@ -77,6 +80,11 @@ func getIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *int
 		internalProxy = newIntegrationCredsProxy(clientConfig)
 	}
 	return internalProxy
+}
+
+// GetIntegrationCredsProxy returns the proxy instance for use by other packages (e.g. tests)
+func GetIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *integrationCredsProxy {
+	return getIntegrationCredsProxy(clientConfig)
 }
 
 // getAllIntegrationCreds retrieves all Genesys Cloud Integration Credentials using cursor-based paging
@@ -109,9 +117,14 @@ func (p *integrationCredsProxy) deleteIntegrationCred(ctx context.Context, crede
 	return p.deleteIntegrationCredAttr(ctx, p, credentialId)
 }
 
-// getIntegrationById gets Genesys Cloud Integration by id
-func (p *integrationCredsProxy) getIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
-	return p.getIntegrationByIdAttr(ctx, p, integrationId)
+// getIntegrationByCredentialId gets Genesys Cloud Integration by id
+func (p *integrationCredsProxy) getIntegrationByCredentialId(ctx context.Context, credentialId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	return p.getIntegrationByCredentialIdAttr(ctx, p, credentialId)
+}
+
+// GetIntegrationByCredentialId is the public wrapper for getIntegrationByCredentialId for use by other packages (e.g. tests)
+func (p *integrationCredsProxy) GetIntegrationByCredentialId(ctx context.Context, credentialId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	return p.getIntegrationByCredentialId(ctx, credentialId)
 }
 
 // getAllIntegrationCredsFn is the implementation for getting all integration credentials in Genesys Cloud using cursor-based paging
@@ -245,16 +258,54 @@ func deleteIntegrationCredFn(ctx context.Context, p *integrationCredsProxy, cred
 	return resp, nil
 }
 
-// getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
-func getIntegrationByIdFn(ctx context.Context, p *integrationCredsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+// getIntegrationByCredentialIdFn is the implementation for getting a Genesys Cloud Integration by credential id.
+// It builds a credential-to-integration cache on first call to avoid repeated API calls during export.
+func getIntegrationByCredentialIdFn(ctx context.Context, p *integrationCredsProxy, credentialId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	const pageSize = 100
-	const pageNum = 1
-	integration, resp, err := p.integrationsApi.GetIntegration(integrationId, pageSize, pageNum, "", nil, "", "")
-	if err != nil {
-		return nil, resp, err
+	// Check cache first
+	if cached := rc.GetCacheItem(p.integrationCache, credentialId); cached != nil {
+		return cached, nil, nil
 	}
-	return integration, resp, nil
+
+	// Cache miss — fetch all integrations and their configs, then populate cache
+	var allIntegrations []platformclientv2.Integration
+	var resp *platformclientv2.APIResponse
+	const pageSize = 100
+	for pageNum := 1; ; pageNum++ {
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
+		if err != nil {
+			return nil, response, err
+		}
+		resp = response
+		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
+			break
+		}
+		allIntegrations = append(allIntegrations, *integrations.Entities...)
+	}
+
+	for _, integ := range allIntegrations {
+		if integ.Id == nil || *integ.Id == "" {
+			continue
+		}
+		integrationConfig, _, err := p.integrationsApi.GetIntegrationConfigCurrent(*integ.Id)
+		if err != nil {
+			continue
+		}
+		if integrationConfig.Credentials == nil {
+			continue
+		}
+		for _, cred := range *integrationConfig.Credentials {
+			if cred.Id != nil {
+				rc.SetCache(p.integrationCache, *cred.Id, integ)
+			}
+		}
+	}
+
+	// Check cache again after populating
+	if cached := rc.GetCacheItem(p.integrationCache, credentialId); cached != nil {
+		return cached, resp, nil
+	}
+	return nil, nil, fmt.Errorf("failed to find integration using credential id: %s", credentialId)
 }

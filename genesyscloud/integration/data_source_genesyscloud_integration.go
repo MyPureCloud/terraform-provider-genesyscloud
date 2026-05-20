@@ -3,9 +3,10 @@ package integration
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -23,7 +24,7 @@ import (
 // dataSourceIntegrationRead retrieves by name the integration id in question
 func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
+	ip := GetIntegrationsProxy(sdkConfig)
 	integrationName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
