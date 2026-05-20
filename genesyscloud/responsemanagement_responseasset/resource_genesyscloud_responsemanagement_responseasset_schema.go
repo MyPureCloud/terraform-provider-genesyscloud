@@ -72,6 +72,13 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Computed:    true,
 				ForceNew:    true,
 			},
+			"content_location": {
+				Description: "Location URL of the response asset file content.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+			},
 			`name`: {
 				Description: "Name of the response asset. Can be optionally defined to replace the name given in the filename. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \\{^}%`]\">[~<#|,",
 				Type:        schema.TypeString,
