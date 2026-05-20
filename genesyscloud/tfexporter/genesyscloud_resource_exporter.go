@@ -147,6 +147,7 @@ type GenesysCloudResourceExporter struct {
 	// 1-byte alignment
 	// .. Booleans
 	addDependsOn         bool
+	excludeDeprecated    bool
 	exportComputed       bool
 	ignoreCyclicDeps     bool
 	includeStateFile     bool
@@ -208,6 +209,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
+		excludeDeprecated:    d.Get("exclude_deprecated").(bool),
 		addDependsOn:         computeDependsOn(d.Get("enable_dependency_resolution").(bool), exporterDependencyResolutionDecision),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
@@ -1889,6 +1891,11 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					// Remove any computed read-only attributes from being exported regardless of exporter config
 					// because they cannot be set by a user when reapplying the configuration in a different org
 					if resSchema.Computed == true && resSchema.Optional == false {
+						delete(instanceState.Attributes, resAttribute)
+						continue
+					}
+					// Remove deprecated attributes if exclude_deprecated is set
+					if resSchema.Deprecated != "" && g.excludeDeprecated {
 						delete(instanceState.Attributes, resAttribute)
 						continue
 					}
