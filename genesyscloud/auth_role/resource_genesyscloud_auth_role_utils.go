@@ -141,29 +141,6 @@ func buildSdkPermPolicyCondOperands(operands []interface{}) *[]platformclientv2.
 	return &sdkOperands
 }
 
-func flattenRolePermissionPolicies(policies []platformclientv2.Domainpermissionpolicy) *schema.Set {
-	policySet := schema.NewSet(schema.HashResource(rolePermPolicyResource), []interface{}{})
-
-	for _, sdkPolicy := range policies {
-		policyMap := make(map[string]interface{})
-		if sdkPolicy.Domain != nil {
-			policyMap["domain"] = *sdkPolicy.Domain
-		}
-		if sdkPolicy.EntityName != nil {
-			policyMap["entity_name"] = *sdkPolicy.EntityName
-		}
-		if sdkPolicy.ActionSet != nil {
-			policyMap["action_set"] = lists.StringListToSet(*sdkPolicy.ActionSet)
-		}
-		if sdkPolicy.ResourceConditionNode != nil {
-			policyMap["conditions"] = flattenRoleConditionNode(*sdkPolicy.ResourceConditionNode)
-		}
-		policySet.Add(policyMap)
-	}
-
-	return policySet
-}
-
 // flattenRolePermissionPoliciesWithWildcardSuppress flattens permission policies from the API response
 // while preserving wildcard values from the user's configuration to suppress diffs caused by the
 // Genesys Cloud wildcard permission deprecation (effective June 1, 2026).
