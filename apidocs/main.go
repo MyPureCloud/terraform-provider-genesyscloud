@@ -207,6 +207,7 @@ func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExa
 			continue
 		}
 
+		// Replace the **No APIs** line with the enhanced content
 		newBytes := bytes.Replace(docFileBytes, []byte(apiDocsTag), []byte(enhancedContent), 1)
 		docFile.Truncate(0)
 		docFile.WriteAt(newBytes, 0)
@@ -312,27 +313,33 @@ func buildAnchor(method, path string) string {
 
 // writePermissionsJSON writes the permissions data to a JSON file
 func writePermissionsJSON(permissions []ResourcePermissions, outputDir, filename, version string) error {
+	// Sort by resource type
 	sort.Slice(permissions, func(i, j int) bool {
 		return permissions[i].ResourceType < permissions[j].ResourceType
 	})
 
+	// Create the data structure
 	data := PermissionsData{
 		Version:   version,
 		Resources: permissions,
 	}
 
+	// Marshal to JSON with indentation
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
+	// Ensure output directory exists
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
+	// Create versioned filename
 	versionedFilename := fmt.Sprintf("%s-%s.json", filename, version)
 	outputPath := filepath.Join(outputDir, versionedFilename)
 
+	// Write to file
 	if err := ioutil.WriteFile(outputPath, jsonData, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
@@ -570,6 +577,7 @@ func fetchSwaggerSpec(url string) (*SwaggerSpec, error) {
 func parseAPIEndpoints(content string) []APIEndpoint {
 	var endpoints []APIEndpoint
 
+	// Regex to match lines like: - [POST /api/v2/path](url) or * [POST /api/v2/path](url)
 	re := regexp.MustCompile(`[-*]\s*\[([A-Z]+)\s+(/api/v2/[^\]]+)\]`)
 	matches := re.FindAllStringSubmatch(content, -1)
 
@@ -601,12 +609,14 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 			continue
 		}
 
+		// Extract permissions
 		for _, perm := range endpointSpec.XIninRequiresPermissions.Permissions {
 			if perm != "" {
 				permissionsMap[perm] = true
 			}
 		}
 
+		// Extract scopes
 		for _, securityItem := range endpointSpec.Security {
 			if oauthScopes, ok := securityItem["PureCloud OAuth"]; ok {
 				for _, scope := range oauthScopes {
@@ -676,12 +686,14 @@ func extractResourcePermissions(resourceType, resourceName string, endpoints []A
 			continue
 		}
 
+		// Extract permissions
 		for _, perm := range endpointSpec.XIninRequiresPermissions.Permissions {
 			if perm != "" {
 				permissionsMap[perm] = true
 			}
 		}
 
+		// Extract scopes
 		for _, securityItem := range endpointSpec.Security {
 			if oauthScopes, ok := securityItem["PureCloud OAuth"]; ok {
 				for _, scope := range oauthScopes {
@@ -693,6 +705,7 @@ func extractResourcePermissions(resourceType, resourceName string, endpoints []A
 		}
 	}
 
+	// Convert maps to sorted slices
 	permissions := make([]string, 0, len(permissionsMap))
 	for perm := range permissionsMap {
 		permissions = append(permissions, perm)
