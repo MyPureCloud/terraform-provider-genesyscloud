@@ -12,8 +12,8 @@ Genesys Cloud Script
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [POST /api/v2/authorization/divisions/{divisionId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionId-)
 * [POST /api/v2/authorization/divisions/{divisionId}/objects/{objectType}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionId--objects--objectType-)
-* [POST /api/v2/authorization/divisions/{divisionsId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionsId-)
 * [GET /api/v2/scripts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-scripts)
 * [GET /api/v2/scripts/published](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-scripts-published)
 * [POST /api/v2/scripts/published](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-scripts-published)
@@ -21,7 +21,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/scripts/{scriptId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-scripts--scriptId-)
 * [GET /api/v2/scripts/{scriptId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-scripts--scriptId-)
 * [POST /api/v2/scripts/{scriptId}/export](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-scripts--scriptId--export)
-* [DELETE /api/v2/scripts/{scriptsId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-scripts--scriptsId-)
 
 ## Permissions and Scopes
 

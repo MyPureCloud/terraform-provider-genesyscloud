@@ -204,7 +204,7 @@ func TestDetectEndpointsFromProxy(t *testing.T) {
 			name: "Raw HTTP call with BasePath",
 			content: `fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + scriptId
 r, _ := http.NewRequestWithContext(ctx, http.MethodDelete, fullPath, nil)`,
-			expected: []string{"DELETE /api/v2/scripts/{scriptsId}"},
+			expected: []string{"DELETE /api/v2/scripts/{scriptId}"},
 		},
 		{
 			name: "Multiple SDK calls",
@@ -273,18 +273,30 @@ func TestDetectHTTPMethodNearPath(t *testing.T) {
 }
 
 func TestNormalizeRawPath(t *testing.T) {
+	swaggerPaths := map[string]bool{
+		"/api/v2/scripts":                              true,
+		"/api/v2/scripts/{scriptId}":                    true,
+		"/api/v2/authorization/divisions/{divisionId}":  true,
+		"/api/v2/routing/queues/{queueId}":              true,
+		"/api/v2/knowledge/categories/{categoryId}":     true,
+		"/api/v2/responses/{responseId}":                true,
+	}
+
 	tests := []struct {
 		input    string
 		expected string
 	}{
 		{"/api/v2/scripts", "/api/v2/scripts"},
-		{"/api/v2/scripts/", "/api/v2/scripts/{scriptsId}"},
-		{"/api/v2/authorization/divisions/", "/api/v2/authorization/divisions/{divisionsId}"},
+		{"/api/v2/scripts/", "/api/v2/scripts/{scriptId}"},
+		{"/api/v2/authorization/divisions/", "/api/v2/authorization/divisions/{divisionId}"},
+		{"/api/v2/routing/queues/", "/api/v2/routing/queues/{queueId}"},
+		{"/api/v2/knowledge/categories/", "/api/v2/knowledge/categories/{categoryId}"},
+		{"/api/v2/responses/", "/api/v2/responses/{responseId}"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			result := normalizeRawPath(tt.input)
+			result := normalizeRawPath(tt.input, swaggerPaths)
 			if result != tt.expected {
 				t.Errorf("Expected %s, got %s", tt.expected, result)
 			}

@@ -13,12 +13,12 @@ Genesys Cloud Guide Version
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides)
+* [POST /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guideId-)
 * [POST /api/v2/guides/{guideId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guideId--versions)
 * [GET /api/v2/guides/{guideId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId--versions--versionId-)
 * [PATCH /api/v2/guides/{guideId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-guides--guideId--versions--versionId-)
 * [POST /api/v2/guides/{guideId}/versions/{versionId}/jobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guideId--versions--versionId--jobs)
 * [GET /api/v2/guides/{guideId}/versions/{versionId}/jobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId--versions--versionId--jobs--jobId-)
-* [POST /api/v2/guides/{guidesId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guidesId-)
 
 ## Permissions and Scopes
 
