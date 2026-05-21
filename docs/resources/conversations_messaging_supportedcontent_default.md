@@ -9,11 +9,11 @@ description: |-
 Genesys Cloud conversations messaging supportedcontent default
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [PUT /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-conversations-messaging-supportedcontent-default)
-* [GET /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-supportedcontent-default)
-
+* [GET /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-supportedcontent-default)
+* [PUT /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-conversations-messaging-supportedcontent-default)
 
 ## Permissions and Scopes
 

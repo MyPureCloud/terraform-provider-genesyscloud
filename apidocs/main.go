@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	swaggerURL            = "https://api.mypurecloud.com/api/v2/docs/swagger"
-	proxyFileGlob         = "genesyscloud/*/genesyscloud_*_proxy.go"
-	resourceExampleFolder = "examples/resources"
-	resourceDocsFolder    = "docs/resources"
+	swaggerURL              = "https://api.mypurecloud.com/api/v2/docs/swagger"
+	proxyFileGlob           = "genesyscloud/*/genesyscloud_*_proxy.go"
+	resourceExampleFolder   = "examples/resources"
+	resourceDocsFolder      = "docs/resources"
 	dataSourceExampleFolder = "examples/data-sources"
 	dataSourceDocsFolder    = "docs/data-sources"
 )
@@ -175,11 +175,13 @@ func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExa
 		if swaggerSpec != nil {
 			endpoints := parseAPIEndpoints(string(apiFileBytes))
 			if len(endpoints) > 0 {
+				// Extract and collect permissions and scopes for writing to API docs
 				permissionsAndScopes := extractPermissionsAndScopes(endpoints, swaggerSpec)
 				if permissionsAndScopes != "" {
 					enhancedContent = enhancedContent + "\n" + permissionsAndScopes
 				}
 
+				// Extract and collect resource permissions for writing to JSON file
 				resourcePerms := extractResourcePermissions(resourceName, shortResourceName, endpoints, swaggerSpec)
 				if len(resourcePerms.Permissions) > 0 || len(resourcePerms.Scopes) > 0 {
 					allPerms = append(allPerms, resourcePerms)
@@ -232,9 +234,6 @@ func updateApisMdFromProxy(resourceName, examplesDir, apisMdFile string, opMap m
 	}
 
 	detectedEndpoints := detectEndpointsFromProxy(string(proxyContent), opMap)
-	if len(detectedEndpoints) == 0 {
-		return
-	}
 
 	// Read current apis.md (may not exist yet)
 	var currentContent string
@@ -261,26 +260,38 @@ func updateApisMdFromProxy(resourceName, examplesDir, apisMdFile string, opMap m
 		}
 	}
 
-	if len(missing) == 0 {
+	if len(missing) > 0 {
+		fmt.Printf("  Proxy audit: adding %d missing endpoint(s) to %s apis.md\n", len(missing), resourceName)
+		for _, ep := range missing {
+			fmt.Printf("    + %s %s\n", ep.Method, ep.Path)
+		}
+	}
+
+	// Combine documented and missing, then sort by path first, then method
+	allEndpoints := append(documentedEndpoints, missing...)
+	if len(allEndpoints) == 0 {
 		return
 	}
 
-	fmt.Printf("  Proxy audit: adding %d missing endpoint(s) to %s apis.md\n", len(missing), resourceName)
-	for _, ep := range missing {
-		fmt.Printf("    + %s %s\n", ep.Method, ep.Path)
-	}
+	sort.Slice(allEndpoints, func(i, j int) bool {
+		if allEndpoints[i].Path != allEndpoints[j].Path {
+			return allEndpoints[i].Path < allEndpoints[j].Path
+		}
+		return strings.ToUpper(allEndpoints[i].Method) < strings.ToUpper(allEndpoints[j].Method)
+	})
 
 	var buf strings.Builder
-	buf.WriteString(strings.TrimSpace(currentContent))
-	for _, ep := range missing {
+	for i, ep := range allEndpoints {
 		anchor := buildAnchor(ep.Method, ep.Path)
-		buf.WriteString(fmt.Sprintf("\n* [%s %s](https://developer.genesys.cloud/devapps/api-explorer#%s)", ep.Method, ep.Path, anchor))
+		if i > 0 {
+			buf.WriteString("\n")
+		}
+		buf.WriteString(fmt.Sprintf("* [%s %s](https://developer.genesys.cloud/devapps/api-explorer#%s)", strings.ToUpper(ep.Method), ep.Path, anchor))
 	}
 	buf.WriteString("\n")
 
 	ioutil.WriteFile(apisMdFile, []byte(buf.String()), 0644)
 }
-
 
 // readNotesFile reads the optional notes.md file from a resource's examples directory.
 func readNotesFile(examplesDir string) string {
@@ -625,7 +636,6 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 
 	return result.String()
 }
-
 
 // extractResourcePermissions extracts permissions and scopes for a resource and returns structured data
 func extractResourcePermissions(resourceType, resourceName string, endpoints []APIEndpoint, spec *SwaggerSpec) ResourcePermissions {

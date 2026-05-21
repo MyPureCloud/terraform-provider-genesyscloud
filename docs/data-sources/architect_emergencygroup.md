@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud Emergency Groups. Select an emergency group by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
 * [GET /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-emergencygroups)
+* [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-emergencygroups)
+* [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-emergencygroups--emergencyGroupId-)
 * [GET /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-emergencygroups--emergencyGroupId-)
 * [PUT /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-emergencygroups--emergencyGroupId-)
-* [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-emergencygroups--emergencyGroupId-)
-* [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-emergencygroups)
 
 ## Permissions and Scopes
 

@@ -9,18 +9,19 @@ description: |-
 Genesys Cloud User Audio Prompt
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/prompts](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-prompts)
-* [POST /api/v2/architect/prompts](https://developer.genesys.cloud/api/rest/v2/architect/#post-api-v2-architect-prompts)
-* [DELETE /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-architect-prompts--promptId-)
-* [GET /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-prompts--promptId-)
-* [PUT /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-prompts--promptId-)
-* [POST /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/api/rest/v2/architect/#post-api-v2-architect-prompts--promptId--resources)
-* [GET /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-prompts--promptId--resources--languageCode-)
-* [PUT /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-prompts--promptId--resources--languageCode-)
-* [DELETE /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-prompts--promptId--resources--languageCode-)
+* [GET /api/v2/architect/prompts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts)
+* [POST /api/v2/architect/prompts](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-prompts)
+* [DELETE /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-prompts--promptId-)
+* [GET /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts--promptId-)
+* [PUT /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-prompts--promptId-)
 * [GET /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts--promptId--resources)
+* [POST /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-prompts--promptId--resources)
+* [DELETE /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-prompts--promptId--resources--languageCode-)
+* [GET /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts--promptId--resources--languageCode-)
+* [PUT /api/v2/architect/prompts/{promptId}/resources/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-prompts--promptId--resources--languageCode-)
 
 ## Permissions and Scopes
 

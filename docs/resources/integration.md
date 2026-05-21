@@ -9,17 +9,18 @@ description: |-
 Genesys Cloud Integration
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/integrations](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations)
-* [POST /api/v2/integrations](https://developer.mypurecloud.com/api/rest/v2/integrations/#post-api-v2-integrations)
-* [GET /api/v2/integrations/{integrationId}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations--integrationId-)
-* [DELETE /api/v2/integrations/{integrationId}](https://developer.mypurecloud.com/api/rest/v2/integrations/#delete-api-v2-integrations--integrationId-)
-* [PATCH /api/v2/integrations/{integrationId}](https://developer.mypurecloud.com/api/rest/v2/integrations/#patch-api-v2-integrations--integrationId-)
-* [GET /api/v2/integrations/{integrationId}/config/current](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations--integrationId--config-current)
-* [PUT /api/v2/integrations/{integrationId}/config/current](https://developer.mypurecloud.com/api/rest/v2/integrations/#put-api-v2-integrations--integrationId--config-current)
-* [GET /api/v2/integrations/types/{typeId}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId-)
-* [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-)
+* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations)
+* [POST /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations)
+* [GET /api/v2/integrations/types/{typeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-types--typeId-)
+* [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-types--typeId--configschemas--configType-)
+* [DELETE /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations--integrationId-)
+* [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
+* [PATCH /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations--integrationId-)
+* [GET /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId--config-current)
+* [PUT /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations--integrationId--config-current)
 
 ## Permissions and Scopes
 

@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud Action Map. Select a journey action map by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-actionmaps)
 * [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps)
+* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-actionmaps)
+* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-actionmaps--actionMapId-)
 * [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps--actionMapId-)
 * [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-journey-actionmaps--actionMapId-)
-* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-actionmaps--actionMapId-)
 
 ## Permissions and Scopes
 

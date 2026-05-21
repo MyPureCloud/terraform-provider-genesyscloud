@@ -1,4 +1,4 @@
-* [GET /api/v2/routing/skills](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-skills)
-* [POST /api/v2/routing/skills](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-skills)
-* [GET /api/v2/routing/skills/{skillId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-skills--skillId-)
-* [DELETE /api/v2/routing/skills/{skillId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills)
+* [POST /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skills)
+* [DELETE /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills--skillId-)

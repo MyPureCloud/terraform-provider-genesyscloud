@@ -312,6 +312,63 @@ func TestReadNotesFile(t *testing.T) {
 	}
 }
 
+func TestUpdateApisMdFromProxy(t *testing.T) {
+	tempDir := t.TempDir()
+	examplesDir := filepath.Join(tempDir, "examples")
+	os.MkdirAll(examplesDir, 0755)
+
+	// Create an existing apis.md with unsorted endpoints
+	existingContent := `* [POST /api/v2/scripts](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-scripts)
+* [GET /api/v2/scripts/{scriptId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-scripts--scriptId-)
+`
+	apisMdFile := filepath.Join(examplesDir, "apis.md")
+	os.WriteFile(apisMdFile, []byte(existingContent), 0644)
+
+	// Create a fake proxy file that references additional endpoints
+	proxyFile := filepath.Join(tempDir, "proxy.go")
+	proxyContent := `package script
+func (p *proxy) doStuff() {
+	p.scriptsApi.DeleteScript(id)
+	p.scriptsApi.GetScripts(100, 1, "", "", "", "", "", "", "", "")
+}
+`
+	os.WriteFile(proxyFile, []byte(proxyContent), 0644)
+
+	// Create a .source file pointing to the proxy (relative to examplesDir)
+	relPath, _ := filepath.Rel(examplesDir, proxyFile)
+	os.WriteFile(filepath.Join(examplesDir, ".source"), []byte(relPath), 0644)
+
+	opMap := map[string]APIEndpoint{
+		"deletescript": {Method: "DELETE", Path: "/api/v2/scripts/{scriptId}"},
+		"getscripts":   {Method: "GET", Path: "/api/v2/scripts"},
+	}
+
+	updateApisMdFromProxy("genesyscloud_script", examplesDir, apisMdFile, opMap)
+
+	result, err := os.ReadFile(apisMdFile)
+	if err != nil {
+		t.Fatalf("Failed to read apis.md: %v", err)
+	}
+
+	endpoints := parseAPIEndpoints(string(result))
+	if len(endpoints) != 4 {
+		t.Fatalf("Expected 4 endpoints, got %d: %s", len(endpoints), string(result))
+	}
+
+	// Verify sorted order: path first, then method
+	expected := []struct{ method, path string }{
+		{"get", "/api/v2/scripts"},
+		{"post", "/api/v2/scripts"},
+		{"delete", "/api/v2/scripts/{scriptId}"},
+		{"get", "/api/v2/scripts/{scriptId}"},
+	}
+	for i, exp := range expected {
+		if endpoints[i].Method != exp.method || endpoints[i].Path != exp.path {
+			t.Errorf("Endpoint[%d]: expected %s %s, got %s %s", i, exp.method, exp.path, endpoints[i].Method, endpoints[i].Path)
+		}
+	}
+}
+
 func TestBuildAnchor(t *testing.T) {
 	tests := []struct {
 		method   string

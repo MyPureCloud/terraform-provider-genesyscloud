@@ -9,14 +9,14 @@ description: |-
 Genesys Cloud external contacts organization data source. Select an external contacts organization by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
 * [POST /api/v2/externalcontacts/organizations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-externalcontacts-organizations)
-* [GET /api/v2/externalcontacts/scan/organizations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-scan-organizations)
+* [DELETE /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-externalcontacts-organizations--externalOrganizationId-)
 * [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-organizations--externalOrganizationId-)
 * [PUT /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-externalcontacts-organizations--externalOrganizationId-)
-* [DELETE /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-externalcontacts-organizations--externalOrganizationId-)
+* [GET /api/v2/externalcontacts/scan/organizations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-scan-organizations)
 
 ## Permissions and Scopes
 

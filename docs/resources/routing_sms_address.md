@@ -9,12 +9,14 @@ description: |-
 Genesys Cloud routing sms address
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-sms-addresses)
-* [POST /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-sms-addresses)
-* [DELETE /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-sms-addresses--addressId-)
-* [GET /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-sms-addresses--addressId-)
+* [GET /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-addresses)
+* [POST /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-sms-addresses)
+* [DELETE /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-sms-addresses--addressId-)
+* [GET /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-addresses--addressId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -9,14 +9,15 @@ description: |-
 Genesys Cloud Directory JourneyView
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/journey/views](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-journey-views)
-* [POST /api/v2/journey/views/{viewId}/versions](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-journey-views--viewId--versions)
-* [GET /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-journey-views--viewId-)
-* [DELETE /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-journey-views--viewId-)
-* [PUT /api/v2/journey/views/{viewId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-journey-views--viewId--versions--versionId-)
 * [GET /api/v2/journey/views](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-views)
+* [POST /api/v2/journey/views](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-views)
+* [DELETE /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-views--viewId-)
+* [GET /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-views--viewId-)
+* [POST /api/v2/journey/views/{viewId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-views--viewId--versions)
+* [PUT /api/v2/journey/views/{viewId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-journey-views--viewId--versions--versionId-)
 
 ## Permissions and Scopes
 

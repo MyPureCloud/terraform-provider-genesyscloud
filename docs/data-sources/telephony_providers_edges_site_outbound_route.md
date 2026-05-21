@@ -9,15 +9,15 @@ description: |-
 Data source for Genesys Cloud Site Outbound Routes. Select a Site Outbound Route by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
 * [GET /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId-)
-* [POST /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
 * [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
+* [POST /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
+* [DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 * [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 * [PUT /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
-* [DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 
 ## Permissions and Scopes
 

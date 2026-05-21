@@ -9,13 +9,15 @@ description: |-
 Genesys Cloud Greeting
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#post-api-v2-greetings)
-* [GET /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings--greetingId-)
-* [GET /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings)
-* [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
-* [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-greetings)
+* [POST /api/v2/greetings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-greetings)
+* [DELETE /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-greetings--greetingId-)
+* [PUT /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-greetings--greetingId-)
+
 ## Permissions and Scopes
 
 The following OAuth scopes are required to use this resource:

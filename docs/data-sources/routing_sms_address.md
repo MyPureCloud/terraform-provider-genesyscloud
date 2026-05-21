@@ -9,13 +9,13 @@ description: |-
 Data source for Genesys Cloud Routing Sms Address. Select a Routing Sms Address by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-sms-addresses)
 * [GET /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-addresses)
-* [GET /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-addresses--addressId-)
+* [POST /api/v2/routing/sms/addresses](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-sms-addresses)
 * [DELETE /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-sms-addresses--addressId-)
+* [GET /api/v2/routing/sms/addresses/{addressId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-addresses--addressId-)
 
 ## Permissions and Scopes
 

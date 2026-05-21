@@ -9,15 +9,16 @@ description: |-
 Genesys Cloud Authorization Role
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/authorization/roles](https://developer.mypurecloud.com/api/rest/v2/authorization/#post-api-v2-authorization-roles)
-* [GET /api/v2/authorization/roles](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-roles)
-* [GET /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-roles--roleId-)
-* [PUT /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-roles--roleId-)
-* [PUT /api/v2/authorization/roles/default](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-roles-default)
-* [DELETE /api/v2/authorization/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-roles--roleId-)
 * [GET /api/v2/authorization/permissions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-permissions)
+* [GET /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-roles)
+* [POST /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-roles)
+* [PUT /api/v2/authorization/roles/default](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-authorization-roles-default)
+* [DELETE /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-authorization-roles--roleId-)
+* [GET /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-roles--roleId-)
+* [PUT /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-authorization-roles--roleId-)
 
 ## Permissions and Scopes
 

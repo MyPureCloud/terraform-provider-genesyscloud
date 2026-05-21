@@ -9,11 +9,13 @@ description: |-
 Genesys Cloud Org-wide Routing Utilization Settings.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/utilization](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
-* [PUT /api/v2/routing/utilization](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-utilization)
-* [DELETE /api/v2/routing/utilization](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-utilization)
+* [DELETE /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-utilization)
+* [GET /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization)
+* [PUT /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-utilization)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

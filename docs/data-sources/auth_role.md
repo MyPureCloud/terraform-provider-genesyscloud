@@ -9,16 +9,16 @@ description: |-
 Data source for Genesys Cloud Roles. Select a role by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-roles)
+* [GET /api/v2/authorization/permissions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-permissions)
 * [GET /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-roles)
+* [POST /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-roles)
+* [PUT /api/v2/authorization/roles/default](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-authorization-roles-default)
+* [DELETE /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-authorization-roles--roleId-)
 * [GET /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-roles--roleId-)
 * [PUT /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-authorization-roles--roleId-)
-* [DELETE /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-authorization-roles--roleId-)
-* [PUT /api/v2/authorization/roles/default](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-authorization-roles-default)
-* [GET /api/v2/authorization/permissions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-permissions)
 
 ## Permissions and Scopes
 

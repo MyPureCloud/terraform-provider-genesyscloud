@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Select a Employeeperformance Externalmetrics Definition by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-employeeperformance-externalmetrics-definitions)
 * [GET /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions)
+* [POST /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-employeeperformance-externalmetrics-definitions)
+* [DELETE /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 * [GET /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 * [PATCH /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
-* [DELETE /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 
 ## Permissions and Scopes
 

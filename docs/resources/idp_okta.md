@@ -9,11 +9,13 @@ description: |-
 Genesys Cloud Single Sign-on Okta Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-okta-as-a-single-sign-on-provider/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/identityproviders/okta](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#get-api-v2-identityproviders-okta)
-* [PUT /api/v2/identityproviders/okta](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#put-api-v2-identityproviders-okta)
-* [DELETE /api/v2/identityproviders/okta](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#delete-api-v2-identityproviders-okta)
+* [DELETE /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-identityproviders-okta)
+* [GET /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-identityproviders-okta)
+* [PUT /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-identityproviders-okta)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

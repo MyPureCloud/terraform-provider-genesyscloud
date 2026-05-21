@@ -9,14 +9,15 @@ description: |-
 Genesys Cloud Authorization Division
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/authorization/divisions/home](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-divisions-home)
-* [POST /api/v2/authorization/divisions](https://developer.mypurecloud.com/api/rest/v2/authorization/#post-api-v2-authorization-divisions)
-* [GET /api/v2/authorization/divisions/{divisionId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-divisions--divisionId-)
-* [GET /api/v2/authorization/divisions](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-divisions)
-* [PUT /api/v2/authorization/divisions/{divisionId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#put-api-v2-authorization-divisions--divisionId-)
-* [DELETE /api/v2/authorization/divisions/{divisionId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-divisions--divisionId-)
+* [GET /api/v2/authorization/divisions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-divisions)
+* [POST /api/v2/authorization/divisions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions)
+* [GET /api/v2/authorization/divisions/home](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-divisions-home)
+* [DELETE /api/v2/authorization/divisions/{divisionId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-authorization-divisions--divisionId-)
+* [GET /api/v2/authorization/divisions/{divisionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-divisions--divisionId-)
+* [PUT /api/v2/authorization/divisions/{divisionId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-authorization-divisions--divisionId-)
 
 ## Permissions and Scopes
 

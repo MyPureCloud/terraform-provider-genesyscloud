@@ -9,16 +9,16 @@ description: |-
 Data source for Genesys Cloud Speech & Text Analytics Topics. Select a topic by name and dialect.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-topics)
-* [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics--topicId-)
-* [PUT /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-speechandtextanalytics-topics--topicId-)
-* [DELETE /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-speechandtextanalytics-topics--topicId-)
 * [GET /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics)
+* [POST /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-topics)
 * [POST /api/v2/speechandtextanalytics/topics/publishjobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-topics-publishjobs)
 * [GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics-publishjobs--jobId-)
+* [DELETE /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-speechandtextanalytics-topics--topicId-)
+* [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics--topicId-)
+* [PUT /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-speechandtextanalytics-topics--topicId-)
 
 ## Permissions and Scopes
 

@@ -9,13 +9,14 @@ description: |-
 Genesys Cloud Guide
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/guides](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides)
-* [POST /api/v2/guides](https://apicentral.genesys.cloud/api-explorer-standalone#post-api-v2-guides)
-* [GET /api/v2/guides/{guideId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId-)
-* [DELETE /api/v2/guides/{guideId}/jobs](https://apicentral.genesys.cloud/api-explorer-standalone#delete-api-v2-guides--guideId--jobs)
-* [GET /api/v2/guides/{guideId}/jobs/{jobId}](https://apicentral.genesys.cloud/api-explorer-standalone#get-api-v2-guides--guideId--jobs--jobId-)
+* [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides)
+* [POST /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides)
+* [GET /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId-)
+* [DELETE /api/v2/guides/{guideId}/jobs](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-guides--guideId--jobs)
+* [GET /api/v2/guides/{guideId}/jobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId--jobs--jobId-)
 * [GET /api/v2/guides/{guidesId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guidesId-)
 
 ## Permissions and Scopes

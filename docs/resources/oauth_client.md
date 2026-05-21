@@ -9,17 +9,18 @@ description: |-
 Genesys Cloud OAuth Clients. See this page for detailed configuration information: https://help.mypurecloud.com/articles/create-an-oauth-client/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#get-api-v2-oauth-clients)
-* [GET /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#get-api-v2-oauth-clients--clientId-)
-* [POST /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#post-api-v2-oauth-clients)
-* [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#put-api-v2-oauth-clients--clientId-)
-* [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#delete-api-v2-oauth-clients--clientId-)
+* [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-credentials)
+* [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials--credentialId-)
 * [PUT /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations-credentials--credentialId-)
-* [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-credentials--credentialId-)
-* [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-credentials)
+* [GET /api/v2/oauth/clients](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-oauth-clients)
+* [POST /api/v2/oauth/clients](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-oauth-clients)
+* [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-oauth-clients--clientId-)
+* [GET /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-oauth-clients--clientId-)
+* [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-oauth-clients--clientId-)
 * [GET /api/v2/tokens/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-tokens-me)
 * [GET /api/v2/users/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users-me)
 * [GET /api/v2/users/{subjectId}/roles](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--subjectId--roles)

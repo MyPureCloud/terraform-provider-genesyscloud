@@ -9,6 +9,7 @@ description: |-
 Genesys Cloud External Contact
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#get-api-v2-externalcontacts-contacts)

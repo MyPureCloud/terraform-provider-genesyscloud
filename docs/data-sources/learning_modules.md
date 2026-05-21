@@ -9,15 +9,15 @@ description: |-
 Data source for Genesys Cloud Learning Modules. Select a Learning Module by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-learning-modules)
-* [POST /api/v2/learning/modules/{moduleId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-learning-modules--moduleId--publish)
 * [GET /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-learning-modules)
+* [POST /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-learning-modules)
+* [DELETE /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-learning-modules--moduleId-)
 * [GET /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-learning-modules--moduleId-)
 * [PUT /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-learning-modules--moduleId-)
-* [DELETE /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-learning-modules--moduleId-)
+* [POST /api/v2/learning/modules/{moduleId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-learning-modules--moduleId--publish)
 
 ## Permissions and Scopes
 

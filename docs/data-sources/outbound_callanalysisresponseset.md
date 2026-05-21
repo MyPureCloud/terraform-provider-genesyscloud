@@ -9,14 +9,14 @@ description: |-
 Genesys Cloud outbound callanalysisresponseset data source. Select an outbound callanalysisresponseset by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/outbound/callanalysisresponsesets](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-callanalysisresponsesets)
 * [GET /api/v2/outbound/callanalysisresponsesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-callanalysisresponsesets)
+* [POST /api/v2/outbound/callanalysisresponsesets](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-callanalysisresponsesets)
+* [DELETE /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
 * [GET /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
 * [PUT /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
-* [DELETE /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
 
 ## Permissions and Scopes
 

@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud Knowledge Base. Select a knowledge base by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
 * [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId-)
 * [POST /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases)
-* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId-)
 
 ## Permissions and Scopes
 

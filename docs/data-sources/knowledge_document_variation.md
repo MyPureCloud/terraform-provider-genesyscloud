@@ -9,16 +9,16 @@ description: |-
 Data source for Genesys Cloud Knowledge Document Variation. Select a knowledge document variation by knowledge document id and variation id
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
+* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
+* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
-* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations--documentVariationId-)
 * [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--versions)
-* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
 
 ## Permissions and Scopes
 

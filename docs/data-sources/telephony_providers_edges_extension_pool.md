@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud Extension pool. Select an Extension pool by starting number and ending number
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
-* [DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
-* [PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
-* [POST /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-extensionpools)
 * [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools)
+* [POST /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-extensionpools)
+* [DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
 
 ## Permissions and Scopes
 

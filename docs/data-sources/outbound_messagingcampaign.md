@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud Outbound Messaging Campaign. Select a Outbound Messaging Campaign by name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-messagingcampaigns)
 * [GET /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-messagingcampaigns)
+* [POST /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-messagingcampaigns)
+* [DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
-* [DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 
 ## Permissions and Scopes
 

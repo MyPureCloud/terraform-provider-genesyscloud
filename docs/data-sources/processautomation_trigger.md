@@ -9,9 +9,10 @@ description: |-
 Data source for Genesys Cloud process automation trigger. Select a trigger by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/processautomation/triggers](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-processautomation-triggers)
+* [GET /api/v2/processautomation/triggers](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-processautomation-triggers)
 
 ## Permissions and Scopes
 

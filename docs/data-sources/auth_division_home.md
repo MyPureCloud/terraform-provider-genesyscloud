@@ -9,9 +9,10 @@ description: |-
 Data source for Genesys Cloud Divisions. Get the Home division
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/authorization/divisions/home](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-divisions-home)
+* [GET /api/v2/authorization/divisions/home](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-divisions-home)
 
 ## Permissions and Scopes
 

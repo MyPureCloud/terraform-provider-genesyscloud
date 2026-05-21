@@ -9,17 +9,18 @@ description: |-
 Genesys Cloud Evaluation Forms
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations)
-* [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations--formId-)
-* [POST /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-forms-evaluations)
-* [PUT /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#put-api-v2-quality-forms-evaluations--formId-)
-* [DELETE /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#delete-api-v2-quality-forms-evaluations--formId-)
-* [POST /api/v2/quality/publishedforms/evaluations](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-evaluations)
-* [GET /api/v2/quality/publishedforms/evaluations/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-evaluations--formId-)
-* [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-evaluations--formId--versions)
+* [GET /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations)
+* [POST /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-quality-forms-evaluations)
 * [GET /api/v2/quality/forms/evaluations/bulk/contexts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations-bulk-contexts)
+* [DELETE /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-quality-forms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations--formId-)
+* [PUT /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-quality-forms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations--formId--versions)
+* [POST /api/v2/quality/publishedforms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-quality-publishedforms-evaluations)
+* [GET /api/v2/quality/publishedforms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-publishedforms-evaluations--formId-)
 
 ## Permissions and Scopes
 

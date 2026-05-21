@@ -9,13 +9,15 @@ description: |-
 Genesys Cloud responsemanagement library
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-libraries)
-* [POST /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-responsemanagement-libraries)
-* [GET /api/v2/responsemanagement/libraries/{libraryId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-libraries--libraryId-)
-* [PUT /api/v2/responsemanagement/libraries/{libraryId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-responsemanagement-libraries--libraryId-)
-* [DELETE /api/v2/responsemanagement/libraries/{libraryId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-libraries--libraryId-)
+* [GET /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-responsemanagement-libraries)
+* [POST /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-responsemanagement-libraries)
+* [DELETE /api/v2/responsemanagement/libraries/{libraryId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-responsemanagement-libraries--libraryId-)
+* [GET /api/v2/responsemanagement/libraries/{libraryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-responsemanagement-libraries--libraryId-)
+* [PUT /api/v2/responsemanagement/libraries/{libraryId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-responsemanagement-libraries--libraryId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

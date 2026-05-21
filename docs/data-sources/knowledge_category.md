@@ -9,15 +9,15 @@ description: |-
 Data source for Genesys Cloud Knowledge Base Category. Select a category by name.
 
 ## API Usage
-The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories)
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories)
-* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 
 ## Permissions and Scopes
 

@@ -9,14 +9,14 @@ description: |-
 Data source for Genesys Cloud webhook integration. Select a webhook integration by name
 
 ## API Usage
-The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations)
 * [POST /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations)
+* [DELETE /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations--integrationId-)
 * [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
 * [PATCH /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations--integrationId-)
-* [DELETE /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations--integrationId-)
 * [GET /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId--config-current)
 * [PUT /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations--integrationId--config-current)
 

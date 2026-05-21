@@ -9,9 +9,10 @@ description: |-
 Data source for Genesys Cloud Line Base Settings. Select a line base settings by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/telephony/providers/edges/linebasesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-linebasesettings)
+* [GET /api/v2/telephony/providers/edges/linebasesettings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-linebasesettings)
 
 ## Permissions and Scopes
 

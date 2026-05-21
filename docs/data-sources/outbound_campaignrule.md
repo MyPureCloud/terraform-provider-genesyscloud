@@ -9,14 +9,14 @@ description: |-
 Genesys Cloud outbound campaign rule data source. Select a campaign rule by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/outbound/campaignrules](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-campaignrules)
 * [GET /api/v2/outbound/campaignrules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaignrules)
+* [POST /api/v2/outbound/campaignrules](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-campaignrules)
+* [DELETE /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-campaignrules--campaignRuleId-)
 * [GET /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaignrules--campaignRuleId-)
 * [PUT /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-campaignrules--campaignRuleId-)
-* [DELETE /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-campaignrules--campaignRuleId-)
 
 ## Permissions and Scopes
 

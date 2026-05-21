@@ -1,6 +1,5 @@
-
 * [POST /api/v2/taskmanagement/worktypes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes)
 * [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes-query)
+* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-worktypes--worktypeId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-worktypes--worktypeId-)
-* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-worktypes--worktypeId-)

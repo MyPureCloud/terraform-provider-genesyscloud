@@ -9,13 +9,15 @@ description: |-
 Genesys Cloud Journey Action Map
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-actionmaps)
-* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#post-api-v2-journey-actionmaps)
-* [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-actionmaps--actionMapId-)
-* [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-actionmaps--actionMapId-)
-* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-actionmaps--actionMapId-)
+* [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps)
+* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-actionmaps)
+* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-actionmaps--actionMapId-)
+* [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps--actionMapId-)
+* [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-journey-actionmaps--actionMapId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

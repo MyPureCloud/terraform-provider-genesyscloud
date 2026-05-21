@@ -9,20 +9,20 @@ description: |-
 Data source for Genesys Cloud Knowledge Document. Select a knowledge document by title and optionally by category name.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
+* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents)
+* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
+* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--versions)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
-* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
-* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents)
-* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--versions)
-* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
-* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
 
 ## Permissions and Scopes
 

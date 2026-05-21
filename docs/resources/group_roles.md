@@ -9,12 +9,14 @@ description: |-
 Genesys Cloud Group Roles maintains group role assignments.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/authorization/subjects/{subjectId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-subjects--subjectId-)
-* [GET /api/v2/authorization/divisions/home](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-divisions-home)
-* [POST /api/v2/authorization/subjects/{subjectId}/bulkadd](https://developer.mypurecloud.com/api/rest/v2/authorization/#post-api-v2-authorization-subjects--subjectId--bulkadd)
-* [DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-subjects--subjectId--divisions--divisionId--roles--roleId-)
+* [GET /api/v2/authorization/divisions/home](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-divisions-home)
+* [GET /api/v2/authorization/subjects/{subjectId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-subjects--subjectId-)
+* [POST /api/v2/authorization/subjects/{subjectId}/bulkadd](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-subjects--subjectId--bulkadd)
+* [DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-authorization-subjects--subjectId--divisions--divisionId--roles--roleId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

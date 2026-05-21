@@ -9,18 +9,19 @@ description: |-
 Genesys Cloud organization presence definition
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-presence-definitions)
-* [GET /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-presence-definitions--definitionId-)
-* [PUT /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-presence-definitions--definitionId-)
-* [DELETE /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-presence-definitions--definitionId-)
-* [GET /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-presence-definitions)
-* [POST /api/v2/presencedefinitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-presencedefinitions)
+* [GET /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-presence-definitions)
+* [POST /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-presence-definitions)
+* [DELETE /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-presence-definitions--definitionId-)
+* [GET /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-presence-definitions--definitionId-)
+* [PUT /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-presence-definitions--definitionId-)
 * [GET /api/v2/presencedefinitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-presencedefinitions)
+* [POST /api/v2/presencedefinitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-presencedefinitions)
+* [DELETE /api/v2/presencedefinitions/{presenceId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-presencedefinitions--presenceId-)
 * [GET /api/v2/presencedefinitions/{presenceId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-presencedefinitions--presenceId-)
 * [PUT /api/v2/presencedefinitions/{presenceId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-presencedefinitions--presenceId-)
-* [DELETE /api/v2/presencedefinitions/{presenceId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-presencedefinitions--presenceId-)
 
 ## Permissions and Scopes
 

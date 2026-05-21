@@ -9,13 +9,13 @@ description: |-
 Data source for Genesys Cloud Routing Skills. Select a skill by name.
 
 ## API Usage
-The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills)
 * [POST /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skills)
-* [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills--skillId-)
 * [DELETE /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills--skillId-)
 
 ## Permissions and Scopes
 

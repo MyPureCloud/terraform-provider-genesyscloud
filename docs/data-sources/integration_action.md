@@ -9,17 +9,17 @@ description: |-
 Data source for Genesys Cloud integration action. Select an integration action by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
 * [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions)
+* [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-actions--actionId-)
+* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft)
 * [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft-function)
-* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--function)
 * [PUT /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations-actions--actionId--draft-function)
 * [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-actions--actionId--draft-publish)
-* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft)
-* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations-actions--actionId-)
-* [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--function)
 
 ## Permissions and Scopes
 

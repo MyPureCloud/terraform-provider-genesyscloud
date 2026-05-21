@@ -9,14 +9,14 @@ description: |-
 Genesys Cloud conversations messaging integrations instagram data source. Select an conversations messaging integrations instagram by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
-* [POST /api/v2/conversations/messaging/integrations/instagram](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-conversations-messaging-integrations-instagram)
 * [GET /api/v2/conversations/messaging/integrations/instagram](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-instagram)
+* [POST /api/v2/conversations/messaging/integrations/instagram](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-conversations-messaging-integrations-instagram)
+* [DELETE /api/v2/conversations/messaging/integrations/instagram/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-conversations-messaging-integrations-instagram--integrationId-)
 * [GET /api/v2/conversations/messaging/integrations/instagram/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-instagram--integrationId-)
 * [PATCH /api/v2/conversations/messaging/integrations/instagram/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-conversations-messaging-integrations-instagram--integrationId-)
-* [DELETE /api/v2/conversations/messaging/integrations/instagram/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-conversations-messaging-integrations-instagram--integrationId-)
 
 ## Permissions and Scopes
 

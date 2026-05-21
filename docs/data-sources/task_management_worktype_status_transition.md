@@ -9,13 +9,13 @@ description: |-
 Genesys Cloud task management worktype status transition data source. Select an task management worktype status by name
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-
+* [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--statuses)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
-* [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
 
 ## Permissions and Scopes
 

@@ -9,11 +9,13 @@ description: |-
 Genesys Cloud Single Sign-on OneLogin Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-onelogin-as-single-sign-on-provider/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/identityproviders/onelogin](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#get-api-v2-identityproviders-onelogin)
-* [PUT /api/v2/identityproviders/onelogin](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#put-api-v2-identityproviders-onelogin)
-* [DELETE /api/v2/identityproviders/onelogin](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#delete-api-v2-identityproviders-onelogin)
+* [DELETE /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-identityproviders-onelogin)
+* [GET /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-identityproviders-onelogin)
+* [PUT /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-identityproviders-onelogin)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

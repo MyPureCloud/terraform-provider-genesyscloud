@@ -9,10 +9,12 @@ description: |-
 Genesys Cloud routing queue conditional group routing rules. **Important:** This resource requires the ENABLE_STANDALONE_CGR environment variable to be set. When enabled, the conditional_group_routing_rules attribute on genesyscloud_routing_queue will not be read or exported — this resource takes over management of conditional group routing rules. The two approaches are mutually exclusive to prevent duplicate data during org exports.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId-)
-* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-queues--queueId-)
+* [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId-)
+* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-queues--queueId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -1,3 +1,3 @@
-- [GET /api/v2/outbound/wrapupcodemappings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-wrapupcodemappings)
-- [PUT /api/v2/outbound/wrapupcodemappings](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-wrapupcodemappings)
+* [GET /api/v2/outbound/wrapupcodemappings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-wrapupcodemappings)
+* [PUT /api/v2/outbound/wrapupcodemappings](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-wrapupcodemappings)
 * [GET /api/v2/routing/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-wrapupcodes)

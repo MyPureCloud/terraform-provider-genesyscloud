@@ -9,21 +9,22 @@ description: |-
 Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables)
-* [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId-)
-* [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-businessrules-decisiontables--tableId-)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId-)
-* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables-search)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables)
+* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables-search)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId-)
+* [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-businessrules-decisiontables--tableId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables--tableId--versions)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
 
 ## Permissions and Scopes
 

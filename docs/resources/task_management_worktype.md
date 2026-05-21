@@ -9,13 +9,15 @@ description: |-
 Genesys Cloud task management worktype
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/taskmanagement/worktypes](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-worktypes)
-* [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-worktypes--worktypeId-)
-* [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-worktypes--worktypeId-)
-* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-worktypes--worktypeId-)
-* [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-worktypes-query)
+* [POST /api/v2/taskmanagement/worktypes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes)
+* [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes-query)
+* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-worktypes--worktypeId-)
+* [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
+* [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-worktypes--worktypeId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -9,13 +9,14 @@ description: |-
 Genesys Cloud IVR config
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/ivrs](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-ivrs)
-* [POST /api/v2/architect/ivrs](https://developer.genesys.cloud/api/rest/v2/architect/#post-api-v2-architect-ivrs)
-* [GET /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-ivrs--ivrId-)
-* [PUT /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-ivrs--ivrId-)
-* [DELETE /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/api/rest/v2/architect/#delete-api-v2-architect-ivrs--ivrId-)
+* [GET /api/v2/architect/ivrs](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-ivrs)
+* [POST /api/v2/architect/ivrs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-ivrs)
+* [DELETE /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-ivrs--ivrId-)
+* [GET /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-ivrs--ivrId-)
+* [PUT /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-ivrs--ivrId-)
 
 ## Permissions and Scopes
 

@@ -9,10 +9,12 @@ description: |-
 An organization's outbound settings
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/settings](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-settings)
-* [PATCH /api/v2/outbound/settings](https://developer.genesys.cloud/routing/outbound/#patch-api-v2-outbound-settings)
+* [GET /api/v2/outbound/settings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-settings)
+* [PATCH /api/v2/outbound/settings](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-outbound-settings)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
