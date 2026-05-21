@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -42,18 +42,44 @@ func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Con
 func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSkillProxy(sdkConfig)
+
+	var createRoutingSkill platformclientv2.Createroutingskill
 	name := d.Get("name").(string)
+	createRoutingSkill.Name = &name
+
+	divisionId := d.Get("divisionId").(string)
+	if divisionId != "" {
+		createRoutingSkill.DivisionId = &divisionId
+	}
 
 	log.Printf("Creating skill %s", name)
-	skill, resp, err := proxy.createRoutingSkill(ctx, &platformclientv2.Createroutingskill{
-		Name: &name,
-	})
+	skill, resp, err := proxy.createRoutingSkill(ctx, &createRoutingSkill)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create skill %s error: %s", name, err), resp)
 	}
 
 	d.SetId(*skill.Id)
 	log.Printf("Created skill %s %s", name, *skill.Id)
+	return readRoutingSkill(ctx, d, meta)
+}
+
+func updateRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := getRoutingSkillProxy(sdkConfig)
+
+	var routingSkill platformclientv2.Updateskilldivisionrequest
+	skillId := d.Id()
+	divisionId := d.Get("divisionId").(string)
+	routingSkill.DivisionId = &divisionId
+
+	log.Printf("Updating skill %s", skillId)
+	skill, resp, err := proxy.updateRoutingSkill(ctx, skillId, &routingSkill)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update skill %s error: %s", skillId, err), resp)
+	}
+
+	d.SetId(*skill.Id)
+	log.Printf("Updated skill %s", *skill.Id)
 	return readRoutingSkill(ctx, d, meta)
 }
 
@@ -78,6 +104,9 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		_ = d.Set("name", *skill.Name)
+		if skill.DivisionId != nil {
+			_ = d.Set("divisionId", *skill.DivisionId)
+		}
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
 		return cc.CheckState(d)
 	})
@@ -120,4 +149,15 @@ func GenerateRoutingSkillResource(
 		name = "%s"
 	}
 	`, resourceLabel, name)
+}
+
+func GenerateUpdateRoutingSkillResource(
+	resourceLabel string,
+	id string,
+	divisionId string) string {
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
+		id = "%s",
+		divisionId = "%s"
+	}
+	`, resourceLabel, id, divisionId)
 }

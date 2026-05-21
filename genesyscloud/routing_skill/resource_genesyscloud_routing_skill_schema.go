@@ -34,11 +34,6 @@ func DataSourceRoutingSkill() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"divisionId": {
-				Description: "Division of a skill",
-				Type:        schema.TypeString,
-				Required:    false,
-			},
 		},
 	}
 }
@@ -48,6 +43,7 @@ func ResourceRoutingSkill() *schema.Resource {
 		Description: "Genesys Cloud Routing Skill",
 
 		CreateContext: provider.CreateWithPooledClient(createRoutingSkill),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingSkill),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingSkill),
 		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingSkill),
 		Importer: &schema.ResourceImporter{
@@ -64,7 +60,6 @@ func ResourceRoutingSkill() *schema.Resource {
 			"divisionId": {
 				Description: "Division of a skill. Changing the division will cause the skill object object to dropped and recreated",
 				Type:        schema.TypeString,
-				Required:    false,
 				ForceNew:    true,
 			},
 		},

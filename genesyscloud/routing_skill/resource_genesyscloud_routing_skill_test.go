@@ -10,13 +10,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func TestAccResourceRoutingSkillBasic(t *testing.T) {
 	var (
 		skillResourceLabel1 = "test-skill1"
 		skillName1          = "Terraform Skill" + uuid.NewString()
+		skillDivision1      = uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -28,6 +29,17 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 				Config: GenerateRoutingSkillResource(
 					skillResourceLabel1,
 					skillName1,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "name", skillName1),
+				),
+			},
+			{
+				// Update
+				Config: GenerateUpdateRoutingSkillResource(
+					skillResourceLabel1,
+					skillId1,
+					skillDivision1,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "name", skillName1),
