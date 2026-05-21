@@ -125,7 +125,13 @@ func TaskManagementWorktypeStatusExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorktypeStatuss),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
+			"worktype_id":                   {RefType: "genesyscloud_task_management_worktype"},
+			"destination_status_ids":        {RefType: ResourceType},
+			"default_destination_status_id": {RefType: ResourceType},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"destination_status_ids":        {ResolverFunc: WorktypeStatusArrayRefResolver("destination_status_ids")},
+			"default_destination_status_id": {ResolverFunc: WorktypeStatusRefResolver("default_destination_status_id")},
 		},
 	}
 }

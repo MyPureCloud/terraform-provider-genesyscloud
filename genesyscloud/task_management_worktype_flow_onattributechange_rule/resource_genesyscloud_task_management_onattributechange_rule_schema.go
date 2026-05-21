@@ -92,9 +92,9 @@ func TaskManagementOnAttributeChangeRuleExporter() *resourceExporter.ResourceExp
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementOnAttributeChangeRule),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
-			"new_value":   {RefType: "genesyscloud_task_management_worktype_status"},
-			"old_value":   {RefType: "genesyscloud_task_management_worktype_status"},
+			"worktype_id":         {RefType: "genesyscloud_task_management_worktype"},
+			"condition.new_value": {RefType: "genesyscloud_task_management_worktype_status"},
+			"condition.old_value": {RefType: "genesyscloud_task_management_worktype_status"},
 		},
 	}
 }
