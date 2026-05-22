@@ -88,7 +88,7 @@ func flattenConfigCredentials(credentials map[string]platformclientv2.Credential
 
 // updateIntegrationConfigFromResourceData takes the integrationsProxy to update updates the config of an integration
 // Returns a diag error and the name of the integration
-func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.ResourceData, p *integrationsProxy) (diag.Diagnostics, string) {
+func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.ResourceData, p *IntegrationsProxy) (diag.Diagnostics, string) {
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
 

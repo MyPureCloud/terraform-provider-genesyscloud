@@ -24,7 +24,7 @@ import (
 // dataSourceIntegrationRead retrieves by name the integration id in question
 func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	ip := GetIntegrationsProxy(sdkConfig)
+	ip := getIntegrationsProxy(sdkConfig)
 	integrationName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {

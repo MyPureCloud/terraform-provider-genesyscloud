@@ -454,10 +454,10 @@ func testVerifyIntegrationCredentialLookup(integrationResourcePath, credentialRe
 
 		integration, _, err := proxy.GetIntegrationByCredentialId(nil, credentialId)
 		if err != nil {
-			return fmt.Errorf("getIntegrationByCredentialId failed: %s", err)
+			return fmt.Errorf("GetIntegrationByCredentialId failed: %s", err)
 		}
 		if integration == nil || integration.Id == nil {
-			return fmt.Errorf("getIntegrationByCredentialId returned nil integration for credential %s", credentialId)
+			return fmt.Errorf("GetIntegrationByCredentialId returned nil integration for credential %s", credentialId)
 		}
 		if *integration.Id != expectedIntegrationId {
 			return fmt.Errorf("expected integration id %s, got %s", expectedIntegrationId, *integration.Id)
