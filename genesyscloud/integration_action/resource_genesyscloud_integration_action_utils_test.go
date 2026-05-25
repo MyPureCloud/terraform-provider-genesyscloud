@@ -61,8 +61,10 @@ func TestShouldExportIntegrationActionAsDataSource(t *testing.T) {
 // TestBuildIntegrationActionBlockLabel verifies the export block label format:
 //   - custom actions keep the legacy "<category>_<name>" format so existing exports
 //     remain stable;
-//   - static actions fold in the parent integration name to disambiguate copies that
-//     share a name across integration instances;
+//   - static actions are prefixed with the parent integration name and a three-underscore
+//     delimiter ("<integrationName>___<category>_<name>") to disambiguate copies that
+//     share a name across integration instances and keep the integration name visually
+//     separable from the category/name pair;
 //   - missing/unknown integration metadata falls back to the legacy format.
 func TestBuildIntegrationActionBlockLabel(t *testing.T) {
 	const customId = "9b1d8c50-cafe-4b1a-b0c0-feeddeadbeef"
@@ -86,7 +88,7 @@ func TestBuildIntegrationActionBlockLabel(t *testing.T) {
 			want:                 "My Category_My Action",
 		},
 		{
-			name: "static action includes parent integration name",
+			name: "static action is prefixed with parent integration name",
 			action: platformclientv2.Action{
 				Id:            strPtr(staticId),
 				Name:          strPtr("Get User"),
@@ -94,7 +96,7 @@ func TestBuildIntegrationActionBlockLabel(t *testing.T) {
 				IntegrationId: strPtr("integ-1"),
 			},
 			integrationNamesById: map[string]string{"integ-1": "Primary Integration"},
-			want:                 "Genesys Cloud Data Actions_Primary Integration_Get User",
+			want:                 "Primary Integration___Genesys Cloud Data Actions_Get User",
 		},
 		{
 			name: "static action without lookup entry falls back",

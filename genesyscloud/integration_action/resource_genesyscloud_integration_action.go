@@ -107,10 +107,12 @@ func buildIntegrationNameLookup(ctx context.Context, iap *integrationActionsProx
 }
 
 // buildIntegrationActionBlockLabel returns the label used for an action's exported block.
-// For static (built-in) actions, the label includes the parent integration's name so that
-// actions sharing a name across integration instances (e.g. "Get User") still produce
-// distinct labels. Custom actions retain their existing `<category>_<name>` label so that
-// existing exports remain stable.
+// Custom actions retain their existing `<category>_<name>` label so that existing exports
+// remain stable. Static (built-in) actions are prefixed with the parent integration's
+// name and a three-underscore delimiter (`<integrationName>___<category>_<name>`) so
+// that actions sharing a name across integration instances (e.g. "Get User") still
+// produce distinct labels, and so the integration name is visually separable from the
+// `<category>_<name>` portion.
 func buildIntegrationActionBlockLabel(action platformclientv2.Action, integrationNamesById map[string]string) string {
 	category := ""
 	if action.Category != nil {
@@ -121,18 +123,21 @@ func buildIntegrationActionBlockLabel(action platformclientv2.Action, integratio
 		name = *action.Name
 	}
 
-	if action.Id == nil || !strings.HasPrefix(*action.Id, staticActionIDPrefix) {
-		return category + "_" + name
-	}
+	blockLabel := category + "_" + name
 
+	if action.Id == nil || !strings.HasPrefix(*action.Id, staticActionIDPrefix) {
+		return blockLabel
+	}
 	if action.IntegrationId == nil {
-		return category + "_" + name
+		return blockLabel
 	}
 	integrationName, ok := integrationNamesById[*action.IntegrationId]
 	if !ok || integrationName == "" {
-		return category + "_" + name
+		return blockLabel
 	}
-	return category + "_" + integrationName + "_" + name
+
+	blockLabel = integrationName + "___" + blockLabel
+	return blockLabel
 }
 
 // createIntegrationAction is used by the integration actions resource to create Genesyscloud integration action
