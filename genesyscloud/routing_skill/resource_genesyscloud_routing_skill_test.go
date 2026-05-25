@@ -17,6 +17,7 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 	var (
 		skillResourceLabel1 = "test-skill1"
 		skillName1          = "Terraform Skill" + uuid.NewString()
+		skillId1            = uuid.NewString()
 		skillDivision1      = uuid.NewString()
 	)
 
@@ -43,6 +44,8 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "name", skillName1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "id", skillId1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "divisionId", skillDivision1),
 				),
 			},
 			{
