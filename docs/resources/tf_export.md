@@ -131,10 +131,10 @@ resource "genesyscloud_tf_export" "exclude_filter" {
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
 - `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Resources mentioned in exclude_attributes will not be exported. Defaults to `false`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_type}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
-- `exclude_deprecated` (Boolean) When true, deprecated attributes will be excluded from the exported configuration. Defaults to false to match existing functionality. This attribute's default value will likely switch to true in a future release. Defaults to `false`.
 - `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
 - `export_as_hcl` (Boolean) Export the config as HCL. Deprecated. Please use the export_format attribute instead Defaults to `false`.
 - `export_computed` (Boolean) Export attributes that are marked as being Computed and Optional. Does not attempt to export attributes that are explicitly marked as read-only by the provider. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release. Defaults to `true`.
+- `export_deprecated` (Boolean) Export attributes that are marked as being Deprecated. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release. Defaults to `true`.
 - `export_format` (String) Export the config as hcl or json or json_hcl. Defaults to `json`.
 - `ignore_cyclic_deps` (Boolean) Ignore Cyclic Dependencies when building the flows and do not throw an error. Defaults to `true`.
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.

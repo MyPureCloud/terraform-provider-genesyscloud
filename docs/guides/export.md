@@ -104,16 +104,16 @@ On the other hand, Terraform also provides the `exclude_attributes` option for i
 
 ## Excluding Deprecated Attributes:
 
-Some resource attributes have been deprecated in favor of newer alternatives. By default, these deprecated attributes are still included in exports for backward compatibility. To produce cleaner exports that omit deprecated fields, set `exclude_deprecated` to `true`:
+Some resource attributes have been deprecated in favor of newer alternatives. By default, these deprecated attributes are still included in exports for backward compatibility. To produce cleaner exports that omit deprecated fields, set `export_deprecated` to `false`:
 
 ```hcl
 resource "genesyscloud_tf_export" "export" {
   directory          = "./genesyscloud"
-  exclude_deprecated = true
+  export_deprecated = false
 }
 ```
 
-~> **Note:** The default value of `exclude_deprecated` will likely switch to `true` in a future release.
+~> **Note:** The default value of `export_deprecated` (`true`) will likely switch to `false` in a future release.
 
 ## Export State File Comparison:
 

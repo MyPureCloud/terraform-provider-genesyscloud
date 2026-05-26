@@ -196,11 +196,11 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 			},
-			"exclude_deprecated": {
-				Description: "When true, deprecated attributes will be excluded from the exported configuration. Defaults to false to match existing functionality. This attribute's default value will likely switch to true in a future release.",
+			"export_deprecated": {
+				Description: "Export attributes that are marked as being Deprecated. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Default:     true,
 				ForceNew:    true,
 			},
 		},
