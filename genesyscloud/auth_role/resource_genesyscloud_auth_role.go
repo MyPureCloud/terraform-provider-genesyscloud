@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -99,7 +99,13 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 
 	log.Printf("Reading role %s", d.Id())
 
-	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
+	// Capture configured permission policies before reading from API to detect wildcard usage
+	var configuredPolicies []interface{}
+	if configPolicies, ok := d.GetOk("permission_policies"); ok {
+		configuredPolicies = configPolicies.(*schema.Set).List()
+	}
+
+	retryErr := util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		role, proxyResponse, getErr := proxy.getAuthRoleById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(proxyResponse) {
@@ -119,7 +125,7 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		if role.PermissionPolicies != nil {
-			_ = d.Set("permission_policies", flattenRolePermissionPolicies(*role.PermissionPolicies))
+			_ = d.Set("permission_policies", flattenRolePermissionPoliciesWithWildcardSuppress(*role.PermissionPolicies, configuredPolicies))
 		} else {
 			_ = d.Set("permission_policies", nil)
 		}
@@ -127,6 +133,12 @@ func readAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{})
 		log.Printf("Read role %s %s", d.Id(), *role.Name)
 		return cc.CheckState(d)
 	})
+
+	if retryErr != nil {
+		return retryErr
+	}
+
+	return nil
 }
 
 // updateAuthRole is used by the auth_role resource to update an auth role in Genesys Cloud
@@ -149,7 +161,6 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	defaultRoleID := d.Get("default_role_id").(string)
 
 	log.Printf("Updating role %s", name)
 	roleObj := platformclientv2.Domainorganizationroleupdate{
@@ -157,7 +168,6 @@ func updateAuthRole(ctx context.Context, d *schema.ResourceData, meta interface{
 		Description:        &description,
 		Permissions:        buildSdkRolePermissions(d),
 		PermissionPolicies: policies,
-		DefaultRoleId:      &defaultRoleID,
 	}
 	_, proxyResponse, err := proxy.updateAuthRole(ctx, d.Id(), &roleObj)
 	if err != nil {

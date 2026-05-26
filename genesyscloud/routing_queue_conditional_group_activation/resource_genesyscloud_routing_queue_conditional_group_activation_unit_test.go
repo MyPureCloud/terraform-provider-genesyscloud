@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func TestUnitBuildConditionalGroupActivation(t *testing.T) {
