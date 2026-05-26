@@ -148,6 +148,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
 		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
+		resourcedata.SetNillableValue(d, "preview_auto_end", campaign.PreviewAutoEnd)
 		resourcedata.SetNillableValue(d, "always_running", campaign.AlwaysRunning)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "contact_sorts", campaign.ContactSorts, flattenContactSorts)
 		resourcedata.SetNillableValue(d, "no_answer_timeout", campaign.NoAnswerTimeout)
