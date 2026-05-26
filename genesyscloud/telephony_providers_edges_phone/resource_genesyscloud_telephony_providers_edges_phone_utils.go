@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -80,8 +80,7 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 		(*phoneConfig.Properties)["phone_standalone"] = phoneStandalone
 	}
 
-	webRtcUserId := d.Get("web_rtc_user_id")
-	if webRtcUserId != "" {
+	if webRtcUserId := d.Get("web_rtc_user_id").(string); webRtcUserId != "" {
 		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 

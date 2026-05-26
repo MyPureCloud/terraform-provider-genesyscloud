@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -105,7 +105,12 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
-		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
+	}
+
+	if exists := featureToggles.CGAToggleExists(); !exists {
+		createQueue.ConditionalGroupActivation = BuildSdkConditionalGroupActivation(d)
+	} else {
+		log.Printf("%s is set, not creating conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
 	}
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
@@ -154,16 +159,170 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	log.Printf("Created Routing Queue %s", d.Id())
 	return readRoutingQueue(ctx, d, meta)
+}
+
+func syncStateOnPartialFailure(ctx context.Context, d *schema.ResourceData, meta interface{}, diagErr diag.Diagnostics) diag.Diagnostics {
+	consistency_checker.DeleteConsistencyCheck(d.Id())
+	log.Printf("Syncing queue %s state after partial failure", d.Id())
+	if readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta); readDiags != nil {
+		diagErr = append(diagErr, readDiags...)
+	}
+	return diagErr
+}
+
+// syncRoutingQueueStateFromAPI refreshes Terraform state from the API after a partial update failure.
+func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	proxy := GetRoutingQueueProxy(sdkConfig)
+
+	log.Printf("Syncing queue state from API for %s after partial update failure", d.Id())
+
+	currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
+	if getErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp)
+	}
+
+	resourcedata.SetNillableValue(d, "name", currentQueue.Name)
+	resourcedata.SetNillableValue(d, "description", currentQueue.Description)
+	resourcedata.SetNillableValue(d, "skill_evaluation_method", currentQueue.SkillEvaluationMethod)
+	resourcedata.SetNillableReferenceDivision(d, "division_id", currentQueue.Division)
+
+	_ = d.Set("acw_wrapup_prompt", nil)
+	_ = d.Set("acw_timeout_ms", nil)
+
+	if currentQueue.AcwSettings != nil {
+		resourcedata.SetNillableValue(d, "acw_wrapup_prompt", currentQueue.AcwSettings.WrapupPrompt)
+		resourcedata.SetNillableValue(d, "acw_timeout_ms", currentQueue.AcwSettings.TimeoutMs)
+	}
+
+	_ = d.Set("media_settings_call", nil)
+	_ = d.Set("media_settings_callback", nil)
+	_ = d.Set("media_settings_chat", nil)
+	_ = d.Set("media_settings_email", nil)
+	_ = d.Set("media_settings_message", nil)
+	_ = d.Set("agent_owned_routing", nil)
+
+	if currentQueue.MediaSettings != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_call", currentQueue.MediaSettings.Call, flattenMediaSetting)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_callback", currentQueue.MediaSettings.Callback, flattenMediaSettingCallback)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_chat", currentQueue.MediaSettings.Chat, flattenMediaSetting)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSettingsMessage)
+	}
+	_ = d.Set("outbound_messaging_sms_address_id", nil)
+	_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)
+	_ = d.Set("outbound_messaging_open_messaging_recipient_id", nil)
+
+	if currentQueue.OutboundMessagingAddresses != nil {
+		if currentQueue.OutboundMessagingAddresses.SmsAddress != nil {
+			_ = d.Set("outbound_messaging_sms_address_id", *currentQueue.OutboundMessagingAddresses.SmsAddress.Id)
+		}
+		if currentQueue.OutboundMessagingAddresses.WhatsAppRecipient != nil {
+			_ = d.Set("outbound_messaging_whatsapp_recipient_id", *currentQueue.OutboundMessagingAddresses.WhatsAppRecipient.Id)
+		}
+		if currentQueue.OutboundMessagingAddresses.OpenMessagingRecipient != nil {
+			_ = d.Set("outbound_messaging_open_messaging_recipient_id", *currentQueue.OutboundMessagingAddresses.OpenMessagingRecipient.Id)
+		}
+	}
+
+	if currentQueue.AgentOwnedRouting != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "agent_owned_routing", currentQueue.AgentOwnedRouting, flattenAgentOwnedRouting)
+	}
+
+	if currentQueue.Bullseye != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "bullseye_rings", currentQueue.Bullseye.Rings, flattenBullseyeRings)
+	}
+
+	if currentQueue.CannedResponseLibraries != nil {
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
+	}
+
+	if exists := featureToggles.CGAToggleExists(); !exists {
+		if currentQueue.ConditionalGroupActivation != nil {
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, FlattenConditionalGroupActivation)
+		}
+	} else {
+		log.Printf("%s is set, not reading conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
+		_ = d.Set("conditional_group_activation", nil)
+	}
+
+	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
+	resourcedata.SetNillableReference(d, "queue_flow_id", currentQueue.QueueFlow)
+	resourcedata.SetNillableReference(d, "message_in_queue_flow_id", currentQueue.MessageInQueueFlow)
+	resourcedata.SetNillableReference(d, "email_in_queue_flow_id", currentQueue.EmailInQueueFlow)
+	resourcedata.SetNillableReference(d, "whisper_prompt_id", currentQueue.WhisperPrompt)
+	resourcedata.SetNillableReference(d, "on_hold_prompt_id", currentQueue.OnHoldPrompt)
+	resourcedata.SetNillableValue(d, "auto_answer_only", currentQueue.AutoAnswerOnly)
+	resourcedata.SetNillableValue(d, "enable_transcription", currentQueue.EnableTranscription)
+	resourcedata.SetNillableValue(d, "suppress_in_queue_call_recording", currentQueue.SuppressInQueueCallRecording)
+	resourcedata.SetNillableValue(d, "enable_audio_monitoring", currentQueue.EnableAudioMonitoring)
+	resourcedata.SetNillableValue(d, "enable_manual_assignment", currentQueue.EnableManualAssignment)
+	resourcedata.SetNillableValue(d, "calling_party_name", currentQueue.CallingPartyName)
+	resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
+	resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
+	resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
+	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
+	resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
+
+	if currentQueue.DefaultScripts != nil {
+		_ = d.Set("default_script_ids", flattenDefaultScripts(*currentQueue.DefaultScripts))
+	} else {
+		_ = d.Set("default_script_ids", nil)
+	}
+
+	wrapupCodes, diagErr := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
+	if diagErr != nil && diagErr.HasError() {
+		return diagErr
+	}
+	_ = d.Set("wrapup_codes", wrapupCodes)
+
+	if !d.Get("ignore_members").(bool) {
+		members, diagErr := flattenQueueMembers(d.Id(), "user", sdkConfig)
+		if diagErr != nil && diagErr.HasError() {
+			return diagErr
+		}
+		_ = d.Set("members", members)
+	} else {
+		log.Println("Not reading queue members because ignore_members is set to true. Queue ID: ", strconv.Quote(d.Id()))
+	}
+
+	skillGroup := "SKILLGROUP"
+	team := "TEAM"
+	group := "GROUP"
+
+	_ = d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, &skillGroup))
+	_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
+	_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
+
+	if exists := featureToggles.CSGToggleExists(); !exists {
+		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))
+	} else {
+		log.Printf("%s is set, not reading conditional_group_routing_rules attribute in routing_queue %s resource", featureToggles.CSGToggleName(), d.Id())
+	}
+
+	if exists := featureToggles.OEAToggleExists(); !exists {
+		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
+			outboundEmailAddress := *currentQueue.OutboundEmailAddress
+			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
+		} else {
+			_ = d.Set("outbound_email_address", nil)
+		}
+	} else {
+		log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
+	}
+
+	log.Printf("Synced queue %s %s from API", d.Id(), *currentQueue.Name)
+	return nil
 }
 
 func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -240,8 +399,13 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "canned_response_libraries", currentQueue.CannedResponseLibraries, flattenCannedResponse)
 		}
 
-		if currentQueue.ConditionalGroupActivation != nil {
-			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, flattenConditionalGroupActivation)
+		if exists := featureToggles.CGAToggleExists(); !exists {
+			if currentQueue.ConditionalGroupActivation != nil {
+				resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditional_group_activation", currentQueue.ConditionalGroupActivation, FlattenConditionalGroupActivation)
+			}
+		} else {
+			log.Printf("%s is set, not reading conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
+			_ = d.Set("conditional_group_activation", nil)
 		}
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "routing_rules", currentQueue.RoutingRules, flattenRoutingRules)
@@ -268,16 +432,16 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 			_ = d.Set("default_script_ids", nil)
 		}
 
-		wrapupCodes, err := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("%v", err))
+		wrapupCodes, diagErr := flattenQueueWrapupCodes(ctx, d.Id(), proxy)
+		if diagErr != nil && diagErr.HasError() {
+			return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 		}
 		_ = d.Set("wrapup_codes", wrapupCodes)
 
 		if !d.Get("ignore_members").(bool) {
-			members, err := flattenQueueMembers(d.Id(), "user", sdkConfig)
-			if err != nil {
-				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			members, diagErr := flattenQueueMembers(d.Id(), "user", sdkConfig)
+			if diagErr != nil && diagErr.HasError() {
+				return retry.NonRetryableError(fmt.Errorf("%v", diagErr))
 			}
 			_ = d.Set("members", members)
 		} else {
@@ -353,10 +517,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		CannedResponseLibraries:      buildCannedResponseLibraries(d),
-		ConditionalGroupActivation:   buildSdkConditionalGroupActivation(d),
 	}
 
-	diagErr := addCGRAndOEA(proxy, d, &updateQueue)
+	diagErr := addCGRAndOEAAndCGA(proxy, d, &updateQueue)
 	if diagErr.HasError() {
 		return diagErr
 	}
@@ -391,12 +554,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
 	if diagErr.HasError() {
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		return diagErr
+		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
 	}
 
 	log.Printf("Updated queue %s", *updateQueue.Name)
@@ -404,11 +567,12 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 /*
-DEVTOOLING-751: If conditional group routing rules and outbound email address are managed by their independent resource
-they are being removed when the parent queue is updated since the update body does not contain them.
-If the independent resources are enabled, pass in the current OEA and/or CGR to the update queue so they are not removed
+DEVTOOLING-751: If conditional group routing rules, outbound email address, or conditional group activation
+are managed by their independent resource, they are being removed when the parent queue is updated since the
+update body does not contain them.
+If the independent resources are enabled, pass in the current OEA, CGR, and/or CGA to the update queue so they are not removed.
 */
-func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
+func addCGRAndOEAAndCGA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platformclientv2.Queuerequest) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get queue %s for update, error: %s", *queue.Name, err), resp)
@@ -428,6 +592,13 @@ func addCGRAndOEA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue *platf
 		if queue.ConditionalGroupRouting != nil && len(*queue.ConditionalGroupRouting.Rules) > 0 {
 			(*queue.ConditionalGroupRouting.Rules)[0].Queue = nil
 		}
+	}
+
+	if exists := featureToggles.CGAToggleExists(); !exists {
+		queue.ConditionalGroupActivation = BuildSdkConditionalGroupActivation(d)
+	} else {
+		log.Printf("%s is set, not updating conditional_group_activation attribute in routing_queue %s resource", featureToggles.CGAToggleName(), d.Id())
+		queue.ConditionalGroupActivation = currentQueue.ConditionalGroupActivation
 	}
 
 	if exists := featureToggles.OEAToggleExists(); !exists {

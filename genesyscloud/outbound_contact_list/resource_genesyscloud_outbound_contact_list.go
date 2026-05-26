@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func getAllOutboundContactLists(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -191,7 +191,15 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			_ = d.Set("column_names", *sdkContactList.ColumnNames)
 		}
 		if sdkContactList.PhoneColumns != nil {
-			_ = d.Set("phone_columns", flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneTzIdx))
+			flattenedPhoneColumns := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneTzIdx)
+
+			if existingRaw, ok := d.GetOk("phone_columns"); ok {
+				if existingSet, ok := existingRaw.(*schema.Set); ok && existingSet != nil && flattenedPhoneColumns != nil {
+					flattenedPhoneColumns = mergePhoneColumnsCallableTimeColumnFromState(existingSet, flattenedPhoneColumns)
+				}
+			}
+
+			_ = d.Set("phone_columns", flattenedPhoneColumns)
 		}
 		if sdkContactList.EmailColumns != nil {
 			_ = d.Set("email_columns", flattenSdkOutboundContactListContactEmailAddressColumnSlice(*sdkContactList.EmailColumns, emailTzIdx))

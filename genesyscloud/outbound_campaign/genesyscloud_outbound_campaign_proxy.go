@@ -12,7 +12,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -140,7 +140,8 @@ func createOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, out
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create campaign %s", err)
 	}
@@ -234,7 +235,8 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 		outboundCampaign.CampaignStatus = campaign.CampaignStatus
 	}
 	outboundCampaign.Version = campaign.Version
-	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update campaign: %s", err)
 	}

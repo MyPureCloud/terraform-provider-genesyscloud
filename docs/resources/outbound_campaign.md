@@ -52,6 +52,32 @@ resource "genesyscloud_outbound_campaign" "campaign" {
   }
 }
 
+# Example Power dialing campaign with diagnostics settings
+# diagnostics_settings is only applicable to Power and Predictive dialing modes
+resource "genesyscloud_outbound_campaign" "power_campaign" {
+  name                          = "Example Power Campaign"
+  dialing_mode                  = "power"
+  caller_name                   = "Support Team"
+  caller_address                = "+15559876543"
+  outbound_line_count           = 5
+  abandon_rate                  = 5.0
+  max_calls_per_agent           = 2
+  campaign_status               = "off"
+  contact_list_id               = genesyscloud_outbound_contact_list.contact_list.id
+  queue_id                      = genesyscloud_routing_queue.queue.id
+  site_id                       = genesyscloud_telephony_providers_edges_site.site.id
+  call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.example_cars.id
+  phone_columns {
+    column_name = "Cell"
+  }
+  # Diagnostics settings - controls campaign health alerts
+  # report_low_max_calls_per_agent_alert: When true (default), generates a health alert
+  # if Max Calls Per Agent is set below the value in Outbound Settings
+  diagnostics_settings {
+    report_low_max_calls_per_agent_alert = true
+  }
+}
+
 resource "genesyscloud_outbound_campaign" "campaign2" {
   name                          = "Example Voice Campaign2"
   dialing_mode                  = "agentless"
@@ -95,14 +121,14 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 - `campaign_status` (String) The current status of the Campaign. A Campaign may be turned 'on' or 'off' (default). If this value is changed alongside other changes to the resource, a subsequent update will occur immediately afterwards to set the campaign status. This is due to behavioral requirements in the Genesys Cloud API.
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
-- `diagnostics_settings` (Block List, Max: 1) Campaign diagnostics settings. (see [below for nested schema](#nestedblock--diagnostics_settings))
+- `diagnostics_settings` (Block List, Max: 1) Campaign diagnostics settings. Only applicable to Power and Predictive dialing modes. (see [below for nested schema](#nestedblock--diagnostics_settings))
 - `division_id` (String) The division this campaign belongs to.
 - `dnc_list_ids` (Set of String) DncLists for this Campaign to check before placing a call.
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
 - `dynamic_line_balancing_settings` (Block List, Max: 1) Dynamic line balancing settings. (see [below for nested schema](#nestedblock--dynamic_line_balancing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
-- `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign.
 - `max_calls_per_agent_decimal` (Number) The maximum number of calls that can be placed per agent on this campaign with decimal precision.
+- `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign. Must be >= 1. Supports decimal values (e.g., 1.5, 2.3).
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
 - `outbound_line_count` (Number) The number of outbound lines to be concurrently dialed. Only applicable to non-preview campaigns; only required for agentless.
 - `preview_time_out_seconds` (Number) The number of seconds before a call will be automatically placed on a preview. A value of 0 indicates no automatic placement of calls. Only applicable to preview campaigns.
@@ -144,7 +170,7 @@ Optional:
 
 Optional:
 
-- `report_low_max_calls_per_agent_alert` (Boolean) Whether to report on low max calls per agent alerts.
+- `report_low_max_calls_per_agent_alert` (Boolean) Enables or disables the campaign health alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to `true`.
 
 
 <a id="nestedblock--dynamic_contact_queueing_settings"></a>

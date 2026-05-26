@@ -7,6 +7,10 @@ package outbound_campaign
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -24,6 +28,35 @@ resource_genesycloud_outbound_campaign_schema.go holds four functions within it:
 */
 
 const ResourceType = "genesyscloud_outbound_campaign"
+
+// supportedDiagnosticsSettingsDialingModes defines the dialing modes that support diagnostics_settings
+var supportedDiagnosticsSettingsDialingModes = []string{"power", "predictive"}
+
+// validateDiagnosticsSettingsDialingMode validates that diagnostics_settings is only used with power or predictive dialing modes
+func validateDiagnosticsSettingsDialingMode(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	cfgVal, cfgDiags := diff.GetRawConfigAt(cty.GetAttrPath("diagnostics_settings"))
+	if cfgDiags.HasError() { // skip if raw config path cannot be resolved
+		return nil
+	}
+	if cfgVal.IsNull() || !cfgVal.IsKnown() { // diagnostics block omitted or unknown in config
+		return nil
+	}
+	if !cfgVal.Type().IsCollectionType() || !cfgVal.IsWhollyKnown() { // expect a fully known list/tuple from HCL
+		return nil
+	}
+	if cfgVal.LengthInt() == 0 { // empty diagnostics_settings list in config
+		return nil
+	}
+
+	dialingMode := diff.Get("dialing_mode").(string)
+	for _, supportedMode := range supportedDiagnosticsSettingsDialingModes {
+		if dialingMode == supportedMode {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("diagnostics_settings is only applicable to Power and Predictive dialing modes, but dialing_mode is set to '%s'", dialingMode)
+}
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -55,6 +88,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: validateDiagnosticsSettingsDialingMode,
 		Schema: map[string]*schema.Schema{
 			`name`: {
 				Description: `The name of the Campaign.`,
@@ -114,10 +148,10 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:        schema.TypeFloat,
 			},
 			`max_calls_per_agent`: {
-				Description:  `The maximum number of calls that can be placed per agent on this campaign.`,
+				Description:  `The maximum number of calls that can be placed per agent on this campaign. Must be >= 1. Supports decimal values (e.g., 1.5, 2.3).`,
 				Optional:     true,
-				Type:         schema.TypeInt,
-				ValidateFunc: validation.IntAtLeast(1),
+				Type:         schema.TypeFloat,
+				ValidateFunc: validation.FloatAtLeast(1),
 			},
 			`max_calls_per_agent_decimal`: {
 				Description: `The maximum number of calls that can be placed per agent on this campaign with decimal precision.`,
@@ -298,7 +332,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				},
 			},
 			`diagnostics_settings`: {
-				Description: `Campaign diagnostics settings.`,
+				Description: `Campaign diagnostics settings. Only applicable to Power and Predictive dialing modes.`,
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -306,9 +340,10 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"report_low_max_calls_per_agent_alert": {
-							Description: "Whether to report on low max calls per agent alerts.",
+							Description: "Enables or disables the campaign health alert when Max Calls Per Agent is set below the value in Outbound Settings.",
 							Type:        schema.TypeBool,
 							Optional:    true,
+							Default:     true,
 						},
 					},
 				},

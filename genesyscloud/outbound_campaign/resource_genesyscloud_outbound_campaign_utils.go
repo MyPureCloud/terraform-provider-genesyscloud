@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -37,8 +37,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	noAnswerTimeout := d.Get("no_answer_timeout").(int)
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
 	priority := d.Get("priority").(int)
-	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
-	maxCallsPerAgentDecimal := d.Get("max_calls_per_agent_decimal").(float64)
+	maxCallsPerAgent := d.Get("max_calls_per_agent").(float64)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
 
@@ -102,11 +101,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	if priority != 0 {
 		campaign.Priority = &priority
 	}
-	if maxCallsPerAgent != 0 {
-		campaign.MaxCallsPerAgent = &maxCallsPerAgent
-	}
-	if maxCallsPerAgentDecimal != 0 {
-		campaign.MaxCallsPerAgentDecimal = &maxCallsPerAgentDecimal
+	if maxCallsPerAgent >= 1 {
+		campaign.MaxCallsPerAgentDecimal = &maxCallsPerAgent
 	}
 	return campaign
 }
@@ -264,6 +260,9 @@ func flattenLineBalancingSettings(settings *platformclientv2.Dynamiclinebalancin
 }
 
 func flattenDiagnosticsSettings(settings *platformclientv2.Diagnosticssettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
 	settingsMap := make(map[string]interface{}, 0)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "report_low_max_calls_per_agent_alert", settings.ReportLowMaxCallsPerAgentAlert)
 	return []interface{}{settingsMap}
