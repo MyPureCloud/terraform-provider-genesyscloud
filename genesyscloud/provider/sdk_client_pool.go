@@ -32,6 +32,9 @@ const (
 
 	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
 
+	DefaultMaxConcurrentPages = 50
+	MaxConcurrentPages        = 75
+
 	// Logging intervals
 	MetricsLoggingInterval = 5 * time.Minute
 )
@@ -55,11 +58,12 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	AcquireTimeout time.Duration
-	InitTimeout    time.Duration
-	MaxClients     int
-	DebugLogging   bool
-	Version        string
+	AcquireTimeout     time.Duration
+	InitTimeout        time.Duration
+	MaxClients         int
+	MaxConcurrentPages int
+	DebugLogging       bool
+	Version            string
 }
 
 type poolMetrics struct {
@@ -141,11 +145,12 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 		}
 
 		config := &SDKClientPoolConfig{
-			MaxClients:     max,
-			AcquireTimeout: acquireTimeout,
-			InitTimeout:    initTimeout,
-			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
-			Version:        version,
+			MaxClients:         max,
+			MaxConcurrentPages: providerConfig.Get(AttrMaxConcurrentPages).(int),
+			AcquireTimeout:     acquireTimeout,
+			InitTimeout:        initTimeout,
+			DebugLogging:       providerConfig.Get(AttrSdkClientPoolDebug).(bool),
+			Version:            version,
 		}
 
 		SdkClientPool = &SDKClientPool{
@@ -431,6 +436,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 func (p *SDKClientPool) GetMaxClients() int {
 	return p.config.MaxClients
+}
+
+func (p *SDKClientPool) GetMaxConcurrentPages() int {
+	return p.config.MaxConcurrentPages
 }
 
 func cleanupConfiguration(config *platformclientv2.Configuration) error {
