@@ -32,19 +32,12 @@ func postProcessAutomationTrigger(pat *ProcessAutomationTrigger, api *platformcl
 
 func getProcessAutomationTrigger(triggerId string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTrigger, *platformclientv2.APIResponse, error) {
 	c := customapi.NewClient(api.Configuration, ResourceType)
-	rawBody, resp, err := customapi.DoRaw(context.Background(), c, customapi.MethodGet, "/api/v2/processAutomation/triggers/"+triggerId, nil, nil)
+	_, resp, err := customapi.DoRaw(context.Background(), c, customapi.MethodGet, "/api/v2/processAutomation/triggers/"+triggerId, nil, nil)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	// Custom unmarshaling needed to preserve matchCriteria as raw JSON
-	apiResp := &platformclientv2.APIResponse{
-		RawBody:       rawBody,
-		StatusCode:    resp.StatusCode,
-		CorrelationID: resp.CorrelationID,
-		Response:      resp.Response,
-	}
-	result, err := NewProcessAutomationFromPayload(apiResp)
+	result, err := NewProcessAutomationFromPayload(resp)
 	if err != nil {
 		return nil, resp, err
 	}
