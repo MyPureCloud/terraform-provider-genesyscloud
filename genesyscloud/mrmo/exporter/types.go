@@ -16,20 +16,10 @@ type Credentials struct {
 }
 
 type ExportInput struct {
-	// ResourceType - The resource type of the entity to export e.g. genesyscloud_flow
-	ResourceType string
+	BaseExportInput
 
 	// EntityId - The identifier of the entity we want to export.
 	EntityId string
-
-	// GenerateOutputFiles - If set to false, no export folders or files will be created and only the ResourceData will be returned.
-	GenerateOutputFiles bool
-
-	// IncludeStateFile - Whether or not to include the state file in the export. Irrelevant if GenerateOutputFiles is false.
-	IncludeStateFile bool
-
-	// Directory - The output directory that export data will be written to. Required if GenerateOutputFiles is true.
-	Directory string
 
 	// UseGetByID, when true, causes Export to fetch the single entity directly
 	// via the resource's get-by-ID path (its Read context) instead of calling
@@ -39,6 +29,22 @@ type ExportInput struct {
 	// resources transparently fall back to the legacy listing path.
 	UseGetByID bool
 }
+
+type BaseExportInput struct {
+	// ResourceType - The resource type of the entity to export e.g. genesyscloud_flow
+	ResourceType string
+
+	// GenerateOutputFiles - If set to false, no export folders or files will be created and only the ResourceData will be returned.
+	GenerateOutputFiles bool
+
+	// IncludeStateFile - Whether or not to include the state file in the export. Irrelevant if GenerateOutputFiles is false.
+	IncludeStateFile bool
+
+	// Directory - The output directory that export data will be written to. Required if GenerateOutputFiles is true.
+	Directory string
+}
+
+type ExportByTypeInput = BaseExportInput
 
 type ExportOutput struct {
 	// ExportData is the exported data that would be written to the .tf.json file during export
