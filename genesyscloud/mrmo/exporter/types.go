@@ -54,3 +54,18 @@ type ExportOutput struct {
 	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
 	ResourceExporter *resource_exporter.ResourceExporter
 }
+
+type ExportByTypeOutput struct {
+	// ExportData is the exported data that would be written to the .tf.json file during export
+	ExportData util.JsonMap
+
+	// ExportDataPath is the path to the export directory i.e. the value of "directory" in the genesyscloud_tf_export resource config
+	ExportDataPath string
+
+	// ExportedResourceDataList is the []*schema.ResourceData representation of the exported resources. This are the types we can pass into
+	// the create and update context functions.
+	ExportedResourceDataList []*schema.ResourceData
+
+	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
+	ResourceExporter *resource_exporter.ResourceExporter
+}
