@@ -15,6 +15,19 @@
 //   - Endpoints that already have SDK methods — use the SDK directly
 //   - S3 uploads or presigned URL flows — use net/http directly
 //
+// # SDK CallAPI benefits
+//
+// All functions in this package delegate to the SDK's APIClient.CallAPI() method,
+// which means they automatically inherit the SDK's built-in behaviors:
+//   - Retry logic: Configured via the provider's RetryConfiguration (up to 20 retries
+//     with 1–30s exponential backoff), retrying on 429 Too Many Requests and 5xx errors
+//   - Rate limit handling: Respects the Retry-After header on 429 responses
+//   - Token refresh: Automatically refreshes expired access tokens on 401 Unauthorized
+//   - Proxy/gateway support: Routes through configured proxy or gateway infrastructure
+//   - SDK debug logging: Request/response logging when SDK debug mode is enabled
+//
+// Callers do NOT need to implement their own retry or rate-limit handling.
+//
 // # Available functions
 //
 //   - Do[T]             — Generic typed response (JSON unmarshaled into T)
