@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -212,6 +212,36 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 			input:    map[string]interface{}{"timeout_settings": []interface{}{}},
 			expected: nil,
 		},
+		{
+			name: "Timeout disabled - IdleTokenTimeoutSeconds should be nil",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 0,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: nil,
+			},
+		},
+		{
+			name: "Timeout disabled with non-zero value - IdleTokenTimeoutSeconds should be nil",
+			input: map[string]interface{}{
+				"timeout_settings": []interface{}{
+					map[string]interface{}{
+						"enable_idle_token_timeout":  false,
+						"idle_token_timeout_seconds": 300,
+					},
+				},
+			},
+			expected: &platformclientv2.Idletokentimeout{
+				EnableIdleTokenTimeout:  platformclientv2.Bool(false),
+				IdleTokenTimeoutSeconds: nil,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -264,15 +294,18 @@ func TestGetTimeOutSettingsFromResourceData(t *testing.T) {
 				}
 			}
 
-			if tt.expected.IdleTokenTimeoutSeconds != nil {
-				if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
+			// Check IdleTokenTimeoutSeconds - it can be nil when enable_idle_token_timeout is false
+			if tt.expected.IdleTokenTimeoutSeconds == nil {
+				if result.IdleTokenTimeoutSeconds != nil {
+					t.Errorf("IdleTokenTimeoutSeconds: expected nil, got %v", *result.IdleTokenTimeoutSeconds)
+				}
+			} else {
+				if result.IdleTokenTimeoutSeconds == nil {
+					t.Errorf("IdleTokenTimeoutSeconds: expected %v, got nil", *tt.expected.IdleTokenTimeoutSeconds)
+				} else if *result.IdleTokenTimeoutSeconds != *tt.expected.IdleTokenTimeoutSeconds {
 					t.Errorf("IdleTokenTimeoutSeconds: expected %v, got %v",
 						*tt.expected.IdleTokenTimeoutSeconds,
 						*result.IdleTokenTimeoutSeconds)
-				}
-			} else {
-				if result.IdleTokenTimeoutSeconds != nil {
-					t.Errorf("expected nil IdleTokenTimeoutSeconds, got %v", *result.IdleTokenTimeoutSeconds)
 				}
 			}
 		})

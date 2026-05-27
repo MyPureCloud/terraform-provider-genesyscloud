@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var (
@@ -1590,7 +1590,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
@@ -1638,8 +1638,10 @@ func validateConditionalGroupActivation(queueResourceLabel, groupResourceLabel s
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.simple_metric.0.metric", "EstimatedWaitTime"),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.operator", "LessThan"),
 		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.conditions.1.value", "90"),
-		resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_type", "GROUP"),
-		resource.TestCheckResourceAttrPair("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.0.member_group_id", "genesyscloud_group."+groupResourceLabel, "id"),
+		resource.TestCheckTypeSetElemNestedAttrs("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.*", map[string]string{
+			"member_group_type": "GROUP",
+		}),
+		resource.TestCheckTypeSetElemAttrPair("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.0.rules.0.groups.*.member_group_id", "genesyscloud_group."+groupResourceLabel, "id"),
 	)
 }
 
@@ -1895,6 +1897,26 @@ func TestAccResourceRoutingQueueSkillGroupsAndConditionalGroupActivation(t *test
 					},
 				),
 			},
+			{
+				// DEVTOOLING-1658: Remove conditional_group_activation block and verify it is
+				// detected as a change and actually removed from state after apply.
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					routingSkillGroup.GenerateRoutingSkillGroupResourceBasic(skillGroupResourceLabel, skillGroupName, skillGroupDescription) +
+					group.GenerateBasicGroupResource(groupResourceLabel, groupName,
+						group.GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					) +
+					GenerateRoutingQueueResourceBasicWithDepends(
+						queueResourceLabel,
+						"genesyscloud_routing_skill_group."+skillGroupResourceLabel,
+						queueName,
+						"skill_groups = [genesyscloud_routing_skill_group."+skillGroupResourceLabel+".id]",
+						"groups = [genesyscloud_group."+groupResourceLabel+".id]",
+						// No GenerateConditionalGroupActivation — block is removed
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "conditional_group_activation.#", "0"),
+				),
+			},
 		},
 		CheckDestroy: testVerifyQueuesAndUsersDestroyed,
 	})
@@ -1937,7 +1959,7 @@ func isUserDeleted(id string) (bool, error) {
 
 	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	// Check if the user is not found (deleted)
 	if response != nil && response.StatusCode == 404 {

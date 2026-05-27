@@ -2,19 +2,20 @@ package outbound_messagingcampaign
 
 import (
 	"fmt"
-	obDigRuleset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
-	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 
+	obDigRuleset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_digitalruleset"
+	obDnclist "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_dnclist"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 
 	obCallableTimeset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_callabletimeset"
 	obContactList "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_contact_list"
@@ -756,6 +757,20 @@ func generateOutboundMessagingCampaignEmailConfig(
 		}
 	}
 `, strings.Join(emailColumns, ", "), contentTemplateId, fromAddressDomainId, fromAddressLocalPart, replyToAddressDomainId, replyToAddressRouteId)
+}
+
+func generateOutboundMessagingCampaignWhatsAppConfig(
+	whatsAppColumns []string,
+	whatsAppIntegrationId string,
+	contentTemplateId string,
+) string {
+	return fmt.Sprintf(`
+	whats_app_config {
+		whats_app_columns        = [%s]
+		whats_app_integration_id = %s
+		content_template_id      = %s
+	}
+`, strings.Join(whatsAppColumns, ", "), whatsAppIntegrationId, contentTemplateId)
 }
 
 func generateDynamicContactQueueingSettings(sort string, filter string) string {

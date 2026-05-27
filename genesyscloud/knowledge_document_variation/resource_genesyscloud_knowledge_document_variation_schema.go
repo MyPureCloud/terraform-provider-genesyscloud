@@ -1048,5 +1048,8 @@ func KnowledgeDocumentVariationExporter() *resourceExporter.ResourceExporter {
 		ExcludedAttributes: []string{
 			"knowledge_document_variation.document_version",
 		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}: {Attr: "knowledge_document_variation\\.\\d+\\.name"},
+		},
 	}
 }

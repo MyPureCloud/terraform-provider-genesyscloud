@@ -1,0 +1,5 @@
+* [POST /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#post-api-v2-greetings)
+* [GET /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings)
+* [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
+* [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)

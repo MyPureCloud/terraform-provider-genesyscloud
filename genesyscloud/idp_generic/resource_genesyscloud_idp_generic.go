@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -45,7 +45,7 @@ func getAllAuthIdpGenerics(ctx context.Context, clientConfig *platformclientv2.C
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get IDP Generic error: %s", getErr), resp)
 	}
 
-	resources["0"] = &resourceExporter.ResourceMeta{BlockLabel: "generic"}
+	resources[ResourceType] = &resourceExporter.ResourceMeta{BlockLabel: "generic"}
 	return resources, nil
 }
 

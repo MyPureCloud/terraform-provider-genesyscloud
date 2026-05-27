@@ -3,7 +3,7 @@ package dependent_consumers
 import (
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/stretchr/testify/assert"
 )
@@ -206,9 +206,6 @@ func TestGetDependentConsumerProxy_Singleton(t *testing.T) {
 }
 
 func TestNewDependentConsumerProxy_ThreadSafe(t *testing.T) {
-	// Reset singleton for test
-	InternalProxy = nil
-
 	config := &platformclientv2.Configuration{}
 	done := make(chan *DependentConsumerProxy, 10)
 
@@ -233,9 +230,6 @@ func TestNewDependentConsumerProxy_ThreadSafe(t *testing.T) {
 }
 
 func TestGetDependentConsumerProxy_NilConfig(t *testing.T) {
-	// Reset singleton
-	InternalProxy = nil
-
 	proxy := GetDependentConsumerProxy(nil)
 
 	assert.NotNil(t, proxy)

@@ -3,6 +3,7 @@ package idp_adfs
 // @team: GC IAM (Auth/Donut)
 // @chat: #gc-iam-auth-donut
 // @jira: IAM
+// @pm: David Murray
 // @description: Manages Single Sign-On (SSO) identity provider integrations for Genesys Cloud. Configures SAML-based authentication with external identity providers to enable federated login.
 
 import (
@@ -107,6 +108,8 @@ func ResourceIdpAdfs() *schema.Resource {
 func IdpAdfsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthIdpAdfss),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{
 			// TODO: Add any reference attributes here
 		},

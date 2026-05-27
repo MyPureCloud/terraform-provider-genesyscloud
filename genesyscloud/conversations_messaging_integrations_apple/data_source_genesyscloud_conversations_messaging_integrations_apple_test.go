@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -49,6 +49,20 @@ func TestAccDataSourceAppleIntegration(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data."+ResourceType+"."+dataSourceLabel, "id", ResourceType+"."+resourceLabel, "id"),
 				),
+			},
+			{
+				// Wait for integration provisioning to complete before destroy
+				Config: generateBasicAppleIntegrationResource(
+					resourceLabel,
+					integrationName,
+					businessId,
+				) + generateAppleIntegrationDataSource(
+					dataSourceLabel,
+					ResourceType+"."+resourceLabel+".name",
+					ResourceType+"."+resourceLabel,
+				),
+				PreConfig: func() { time.Sleep(30 * time.Second) },
+				Check:     resource.ComposeTestCheckFunc(),
 			},
 		},
 		CheckDestroy: testVerifyAppleIntegrationDeleted,

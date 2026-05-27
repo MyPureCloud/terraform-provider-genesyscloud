@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 const (
@@ -311,6 +311,16 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 		if resultErr != nil {
 			p.logDebug("Error pre-filling client pool - %s", p.formatMetrics())
 			return resultErr
+		}
+		// Check if context was cancelled even though errDone fired first.
+		// When both channels are ready, Go's select picks randomly, so we
+		// must check ctx.Err() explicitly to reliably detect timeouts.
+		if ctx.Err() != nil {
+			p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
+			if p.config.DebugLogging {
+				log.Printf("Timed out pre-filling client pool - %s", p.formatMetrics())
+			}
+			return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
 		}
 		p.logDebug("Successfully pre-filled client pool - %s", p.formatMetrics())
 		// Also log to standard logger for test capture when debug is enabled
@@ -659,6 +669,10 @@ func (p *SDKClientPool) AddClientsToPool(ctx context.Context, providerConfig *sc
 		if resultErr != nil {
 			p.logDebug("Error adding clients to pool - %s", p.formatMetrics())
 			return resultErr
+		}
+		if ctx.Err() != nil {
+			p.logDebug("Timed out adding clients to pool - %s", p.formatMetrics())
+			return diag.Errorf("Timed out adding clients to pool: %v", ctx.Err())
 		}
 		p.logDebug("Successfully added %d clients to pool - %s", numClients, p.formatMetrics())
 		return nil

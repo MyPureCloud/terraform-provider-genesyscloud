@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
@@ -35,7 +35,7 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 	exportResourceConfig := createExportResourceData(tfexporter.ResourceTfExport().Schema, input)
 
 	log.Println("Creating the genesyscloud resource exporter")
-	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources)
+	gcResourceExporter, newExporterDiags := tfexporter.NewGenesysCloudResourceExporter(ctx, exportResourceConfig, providerMeta, tfexporter.IncludeResources, tfexporter.AllowDependencyResolution)
 	if newExporterDiags != nil {
 		diags = append(diags, newExporterDiags...)
 	}
@@ -47,8 +47,16 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 	log.Println("Getting the resource exporter by resource type")
 	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
 
-	log.Printf("Exporting %s resource to '%s'. ID: '%s'", input.ResourceType, input.Directory, input.EntityId)
-	exportResponse, exportDiags := gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	log.Printf("Exporting %s resource to '%s'. ID: '%s' (useGetByID=%t)", input.ResourceType, input.Directory, input.EntityId, input.UseGetByID)
+	var (
+		exportResponse *tfexporter.MrMoExportResponse
+		exportDiags    diag.Diagnostics
+	)
+	if input.UseGetByID {
+		exportResponse, exportDiags = gcResourceExporter.ExportForMrMoByID(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	} else {
+		exportResponse, exportDiags = gcResourceExporter.ExportForMrMo(input.ResourceType, input.EntityId, input.GenerateOutputFiles, exporter)
+	}
 	if exportDiags != nil {
 		diags = append(diags, exportDiags...)
 	}

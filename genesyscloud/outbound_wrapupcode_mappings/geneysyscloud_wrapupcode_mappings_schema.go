@@ -1,9 +1,9 @@
 package outbound_wrapupcode_mappings
 
-// @team: Outbound Digital
-// @chat: #genesys-cloud-digital-campaigns
-// @pm: Marudhu Panidan
-// @jira: OD
+// @team: Outbound Voice
+// @chat: #Genesys Cloud Dialer
+// @pm: Chad Mccormick
+// @jira: OV
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
@@ -52,6 +52,8 @@ func SetRegistrar(l registrar.Registrar) {
 func OutboundWrapupCodeMappingsExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getOutboundWrapupCodeMappings),
+		IsSingleton:      true,
+		ExportId:         ResourceType,
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			`mappings.wrapup_code_id`: {
 				RefType: `genesyscloud_routing_wrapupcode`,

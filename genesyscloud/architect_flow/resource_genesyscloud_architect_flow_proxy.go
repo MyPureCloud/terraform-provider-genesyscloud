@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
+	"strings"
 	"time"
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
@@ -12,7 +12,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -25,8 +25,8 @@ type getArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, string)
 type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string, []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
 type getFlowIdByNameAndTypeFunc func(ctx context.Context, a *architectFlowProxy, name string, varType string) (id string, resp *platformclientv2.APIResponse, retryable bool, err error)
 
-type generateDownloadUrlFunc func(a *architectFlowProxy, flowId string) (string, error)
-type createExportJobFunc func(a *architectFlowProxy, flowId string) (_ *platformclientv2.Registerarchitectexportjobresponse, _ *platformclientv2.APIResponse, _ error)
+type generateDownloadUrlFunc func(a *architectFlowProxy, flowId, flowVersion string) (string, error)
+type createExportJobFunc func(a *architectFlowProxy, flowId, flowVersion string) (_ *platformclientv2.Registerarchitectexportjobresponse, _ *platformclientv2.APIResponse, _ error)
 type getExportJobStatusByIdFunc func(a *architectFlowProxy, jobId string) (*platformclientv2.Architectexportjobstateresponse, *platformclientv2.APIResponse, error)
 type pollExportJobForDownloadUrlFunc func(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (downloadUrl string, err error)
 
@@ -72,13 +72,6 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		pollExportJobForDownloadUrlAttr: pollExportJobForDownloadUrlFn,
 		flowCache:                       flowCache,
 	}
-}
-
-func IsStatus429(resp *platformclientv2.APIResponse) bool {
-	if resp != nil {
-		return resp.StatusCode == http.StatusTooManyRequests
-	}
-	return false
 }
 
 func getArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *architectFlowProxy {
@@ -157,6 +150,7 @@ func (a *architectFlowProxy) getFlowIdByNameAndType(ctx context.Context, name, v
 // Parameters:
 //   - a: *architectFlowProxy - The architect flow proxy instance
 //   - flowId: string - The ID of the flow to be exported
+//   - flowVersion: string - The specific published version of the flow to be exported (if available)
 //
 // Returns:
 //   - string: The download URL for the exported flow
@@ -171,8 +165,8 @@ func (a *architectFlowProxy) getFlowIdByNameAndType(ctx context.Context, name, v
 //   - The export job creation fails
 //   - The job polling times out
 //   - The job fails to generate a download URL
-func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) {
-	return a.generateDownloadUrlAttr(a, flowId)
+func (a *architectFlowProxy) generateDownloadUrl(flowId, flowVersion string) (string, error) {
+	return a.generateDownloadUrlAttr(a, flowId, flowVersion)
 }
 
 // createExportJob creates an export job for a specified architect flow.
@@ -180,6 +174,7 @@ func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) 
 // Parameters:
 //   - a: *architectFlowProxy - The architect flow proxy instance
 //   - flowId: string - The ID of the flow to be exported
+//   - flowVersion: string - The specific published version of the flow to be exported (if available)
 //
 // Returns:
 //   - *platformclientv2.Registerarchitectexportjobresponse: The response body from the POST request
@@ -191,8 +186,8 @@ func (a *architectFlowProxy) generateDownloadUrl(flowId string) (string, error) 
 //   - The API call fails
 //   - The created job response is nil
 //   - The job ID in the response is nil
-func (a *architectFlowProxy) createExportJob(flowId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
-	return a.createExportJobAttr(a, flowId)
+func (a *architectFlowProxy) createExportJob(flowId, flowVersion string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+	return a.createExportJobAttr(a, flowId, flowVersion)
 }
 
 // getExportJobStatusById retrieves the status of an architect flow export job.
@@ -363,7 +358,7 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 }
 
 // generateDownloadUrlFn is the implementation function for the generateDownloadUrl method
-func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl string, err error) {
+func generateDownloadUrlFn(a *architectFlowProxy, flowId, flowVersion string) (downloadUrl string, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error in generateDownloadUrlFn: %w", err)
@@ -371,83 +366,100 @@ func generateDownloadUrlFn(a *architectFlowProxy, flowId string) (downloadUrl st
 		}
 	}()
 
-	const maxRetries = 5
-	var exportJob *platformclientv2.Registerarchitectexportjobresponse
-	var resp *platformclientv2.APIResponse
-
-	// Retry logic for creating export job (handles 429 rate limits)
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		log.Printf("Creating export job for flow %s (attempt %d/%d)", flowId, attempt+1, maxRetries)
-		exportJob, resp, err = a.createExportJob(flowId)
-
-		if err == nil {
-			break // Success
-		}
-
-		// Check if it's a rate limit error (HTTP 429)
-		if resp != nil && IsStatus429(resp) {
-			// Check for Retry-After header first
-			if delay, ok := util.GetRetryAfterDelay(resp); ok {
-				log.Printf("Rate limited (429) creating export job for flow %s. Retry-After header indicates %v delay. Retrying (attempt %d/%d)...",
-					flowId, delay, attempt+1, maxRetries)
-				time.Sleep(delay)
-			} else {
-				// Fall back
-				backoffDuration := time.Duration(1<<attempt) * time.Second
-				if backoffDuration > 60*time.Second {
-					backoffDuration = 60 * time.Second
-				}
-				log.Printf("Rate limited (429) creating export job for flow %s. Retrying with exponential backoff %v (attempt %d/%d)...",
-					flowId, backoffDuration, attempt+1, maxRetries)
-				time.Sleep(backoffDuration)
-			}
-			continue // Retry the request
-		}
-
-		// Non-retryable error
-		if resp != nil {
-			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
-		}
-		return "", err
+	logVersion := "unknown version"
+	if flowVersion != "" {
+		logVersion = fmt.Sprintf("version %s", flowVersion)
 	}
 
-	// Check if all retries were exhausted
-	if err != nil {
-		if resp != nil {
-			err = fmt.Errorf("%w. API Response: %s", err, resp.String())
-		}
-		return "", fmt.Errorf("failed to create export job for flow %s after %d attempts: %w", flowId, maxRetries, err)
-	}
-
-	if exportJob == nil || exportJob.Id == nil {
-		return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
-	}
-
-	log.Printf("Successfully created export job '%s' for flow '%s'", *exportJob.Id, flowId)
-
-	log.Printf("Polling job '%s' for download url", *exportJob.Id)
+	const maxJobAttempts = 5
 	const pollTimeoutInSeconds float64 = 90
-	downloadUrl, err = a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
-	if err != nil {
-		return "", err
-	}
-	log.Printf("Successfully read download URL. Export job: %s", *exportJob.Id)
 
-	return downloadUrl, err
+	for attempt := 1; attempt <= maxJobAttempts; attempt++ {
+		log.Printf("Creating export job for flow %s with %s (attempt %d/%d)", flowId, logVersion, attempt, maxJobAttempts)
+		exportJob, resp, createErr := a.createExportJob(flowId, flowVersion)
+		if createErr != nil {
+			if resp != nil {
+				createErr = fmt.Errorf("%w. API Response: %s", createErr, resp.String())
+			}
+			return "", createErr
+		}
+
+		if exportJob == nil || exportJob.Id == nil {
+			return "", fmt.Errorf("no export job flow ID returned for flow %s", flowId)
+		}
+
+		log.Printf("Successfully created export job '%s' for flow '%s'", *exportJob.Id, flowId)
+
+		log.Printf("Polling job '%s' for download url", *exportJob.Id)
+		downloadUrl, pollErr := a.pollExportJobForDownloadUrl(*exportJob.Id, pollTimeoutInSeconds)
+		if pollErr != nil {
+			if isRetryableJobFailure(pollErr) && attempt < maxJobAttempts {
+				backoff := time.Duration(attempt*15) * time.Second
+				log.Printf("Export job for flow %s failed with retryable error. Retrying in %v (attempt %d/%d): %v", flowId, backoff, attempt, maxJobAttempts, pollErr)
+				time.Sleep(backoff)
+				continue
+			}
+			return "", pollErr
+		}
+
+		log.Printf("Successfully read download URL. Export job: %s", *exportJob.Id)
+		return downloadUrl, nil
+	}
+
+	return "", fmt.Errorf("exhausted %d export job attempts for flow %s", maxJobAttempts, flowId)
 }
 
-// createExportJobFn is the implementation function for the createExportJob method
-func createExportJobFn(a *architectFlowProxy, flowId string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+// isRetryableJobFailure checks if a job failure error is likely caused by backend
+// rate limiting (429) rather than a genuine "flow not found" condition.
+// The Archy backend surfaces 429-induced failures as "could not find the flow with id"
+// or with exit code 107.
+func isRetryableJobFailure(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return (strings.Contains(msg, "could not find the flow with id") && strings.Contains(msg, "exit code: 107")) ||
+		(strings.Contains(msg, "could not find the flow with id") && strings.Contains(msg, "Archy failed"))
+}
+
+// createExportJobFn is the implementation function for the createExportJob method.
+// Includes retry logic that respects Retry-After headers from 429 responses,
+// since the SDK's RetryWaitMax (30s) may be lower than the backend's Retry-After values.
+func createExportJobFn(a *architectFlowProxy, flowId, flowVersion string) (*platformclientv2.Registerarchitectexportjobresponse, *platformclientv2.APIResponse, error) {
+	flowReference := &platformclientv2.Architectflowreference{
+		Id: &flowId,
+	}
+	if flowVersion != "" {
+		flowReference.Version = &flowVersion
+	}
 	body := platformclientv2.Registerarchitectexportjob{
 		Flows: &[]platformclientv2.Exportdetails{
 			{
-				Flow: &platformclientv2.Architectflowreference{
-					Id: &flowId,
-				},
+				Flow: flowReference,
 			},
 		},
 	}
-	return a.api.PostFlowsExportJobs(body)
+
+	const maxAttempts = 5
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		result, resp, err := a.api.PostFlowsExportJobs(body)
+		if err == nil {
+			return result, resp, nil
+		}
+		if util.IsStatus429(resp) && attempt < maxAttempts {
+			delay := time.Duration(30) * time.Second // default fallback
+			if resp.Response != nil {
+				if d, doRetry := util.GetRetryAfterDelay(resp); doRetry {
+					delay = d
+				}
+			}
+			log.Printf("Rate limited (429) creating export job for flow %s. Retrying in %v (attempt %d/%d)", flowId, delay, attempt, maxAttempts)
+			time.Sleep(delay)
+			continue
+		}
+		return result, resp, err
+	}
+	return nil, nil, fmt.Errorf("exhausted %d attempts creating export job for flow %s due to rate limiting", maxAttempts, flowId)
 }
 
 // getExportJobStatusByIdFn is the implementation function for getExportJobStatusById
@@ -464,62 +476,23 @@ func getExportJobStatusByIdFn(a *architectFlowProxy, jobId string) (*platformcli
 	return jobStatus, resp, nil
 }
 
-// pollExportJobForDownloadUrlFn is the implementation function for pollExportJobForDownloadUrl
+// pollExportJobForDownloadUrlFn is the implementation function for pollExportJobForDownloadUrl.
+// Note: 429 rate limiting is handled by the SDK's RetryConfiguration for getExportJobStatusById,
+// so no additional retry logic is needed here.
 func pollExportJobForDownloadUrlFn(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (string, error) {
 	startTime := time.Now()
-	const maxRetries = 5
-	retryCount := 0
 
 	for {
-		elapsedTimeInSeconds := time.Since(startTime).Seconds()
-		if elapsedTimeInSeconds > timeoutInSeconds {
-			return "", fmt.Errorf("timed out after %f seconds waiting for job %s to complete", elapsedTimeInSeconds, jobId)
+		if time.Since(startTime).Seconds() > timeoutInSeconds {
+			return "", fmt.Errorf("timed out after %.0f seconds waiting for job %s to complete", timeoutInSeconds, jobId)
 		}
 
-		// Increase polling interval to reduce rate limit hits
-		sleepDuration := 2 * time.Second // Increased from 1 second to reduce API load
-		if retryCount > 0 {
-			sleepDuration = time.Duration(1<<retryCount) * time.Second
-			if sleepDuration > 10*time.Second {
-				sleepDuration = 10 * time.Second
-			}
-		}
-		log.Printf("Sleeping for %v before polling job %s", sleepDuration, jobId)
-		time.Sleep(sleepDuration)
+		time.Sleep(2 * time.Second)
 
-		exportJob, resp, err := a.getExportJobStatusById(jobId)
+		exportJob, _, err := a.getExportJobStatusById(jobId)
 		if err != nil {
-			// Check if it's a rate limit error (HTTP 429)
-			if resp != nil && IsStatus429(resp) && retryCount < maxRetries {
-				retryCount++
-				// Check for Retry-After header
-				if delay, ok := util.GetRetryAfterDelay(resp); ok {
-					log.Printf("Rate limited (429) polling job %s. Retry-After header indicates %v delay. Retrying (attempt %d/%d)...",
-						jobId, delay, retryCount, maxRetries)
-					time.Sleep(delay)
-				} else {
-					// Exponential backoff if no Retry-After header
-					backoffDuration := time.Duration(1<<retryCount) * time.Second
-					if backoffDuration > 10*time.Second {
-						backoffDuration = 10 * time.Second
-					}
-					log.Printf("Rate limited (429) polling job %s. Retrying with exponential backoff %v (attempt %d/%d)...",
-						jobId, backoffDuration, retryCount, maxRetries)
-					time.Sleep(backoffDuration)
-				}
-				continue // Retry the request
-			}
-
-			// Non-retryable error
-			log.Printf("Error polling job %s: %v", jobId, err)
-			if resp != nil {
-				log.Printf("API Response: %s", resp.String())
-			}
-			return "", err
+			return "", fmt.Errorf("error polling job %s: %w", jobId, err)
 		}
-
-		// Reset retry count on successful call
-		retryCount = 0
 
 		status := *exportJob.Status
 

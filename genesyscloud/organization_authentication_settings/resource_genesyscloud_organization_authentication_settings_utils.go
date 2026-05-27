@@ -5,7 +5,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -34,12 +34,15 @@ func getTimeOutSettingsFromResourceData(d *schema.ResourceData) *platformclientv
 	timeOutData := d.Get("timeout_settings").([]interface{})
 	if len(timeOutData) > 0 {
 		if timeOutMap, ok := timeOutData[0].(map[string]interface{}); ok {
+			enableIdleTokenTimeout := timeOutMap["enable_idle_token_timeout"].(bool)
 			idleTokenTimeout := &platformclientv2.Idletokentimeout{
-				EnableIdleTokenTimeout: platformclientv2.Bool(timeOutMap["enable_idle_token_timeout"].(bool)),
+				EnableIdleTokenTimeout: platformclientv2.Bool(enableIdleTokenTimeout),
 			}
-			if *idleTokenTimeout.EnableIdleTokenTimeout {
+
+			if enableIdleTokenTimeout {
 				idleTokenTimeout.IdleTokenTimeoutSeconds = platformclientv2.Int(timeOutMap["idle_token_timeout_seconds"].(int))
 			}
+
 			return idleTokenTimeout
 		}
 	}

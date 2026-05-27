@@ -18,7 +18,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -420,7 +420,7 @@ func getScriptByIdFn(ctx context.Context, p *scriptsProxy, scriptId string) (scr
 
 	script, resp, err = p.scriptsApi.GetScript(scriptId)
 	if err != nil {
-		if resp.StatusCode == http.StatusNotFound {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return nil, resp, nil
 		}
 		return nil, resp, err

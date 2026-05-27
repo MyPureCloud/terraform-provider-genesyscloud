@@ -88,6 +88,7 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 - `errors` (Block List) A list of current error conditions associated with this messaging campaign. (see [below for nested schema](#nestedblock--errors))
 - `rule_set_ids` (List of String) Rule Sets to be applied while this campaign is sending messages
 - `sms_config` (Block Set, Max: 1) Configuration for this messaging campaign to send SMS messages. (see [below for nested schema](#nestedblock--sms_config))
+- `whats_app_config` (Block Set, Max: 1) Configuration for this messaging campaign to send WhatsApp messages. (see [below for nested schema](#nestedblock--whats_app_config))
 
 ### Read-Only
 
@@ -175,4 +176,14 @@ Optional:
 
 - `content_template_id` (String) The content template used to formulate the message to send to the contact.
 - `message_column` (String) The Contact List column specifying the message to send to the contact.
+
+
+<a id="nestedblock--whats_app_config"></a>
+### Nested Schema for `whats_app_config`
+
+Required:
+
+- `content_template_id` (String) The content template used to formulate the email to send to the contact.
+- `whats_app_columns` (List of String) The contact list columns specifying the WhatsApp address(es) of the contact
+- `whats_app_integration_id` (String) The WhatsApp integration used to send message to the contact.
 

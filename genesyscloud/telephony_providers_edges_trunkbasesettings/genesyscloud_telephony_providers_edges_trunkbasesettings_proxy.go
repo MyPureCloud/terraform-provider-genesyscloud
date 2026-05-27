@@ -9,7 +9,7 @@ import (
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var internalProxy *trunkbaseSettingProxy
@@ -26,7 +26,7 @@ type trunkbaseSettingProxy struct {
 	clientConfig *platformclientv2.Configuration
 	edgesApi     *platformclientv2.TelephonyProvidersEdgeApi
 
-	customApiClient            *customapi.Client
+	customApiClient             *customapi.Client
 	getTrunkBaseSettingByIdAttr getTrunkBaseSettingByIdFunc
 	getAllTrunkBaseSettingsAttr getAllTrunkBaseSettingsFunc
 	createTrunkBaseSettingAttr  createTrunkBaseSettingFunc
