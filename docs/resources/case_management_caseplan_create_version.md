@@ -11,8 +11,8 @@ Calls POST /api/v2/casemanagement/caseplans/{caseplanId}/versions (no body). Use
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://apicentral.genesys.cloud/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--versions)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--versions)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
 
 
 ## Example Usage

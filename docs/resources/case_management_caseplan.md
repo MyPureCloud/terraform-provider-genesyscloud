@@ -11,10 +11,10 @@ Genesys Cloud case management caseplan
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/casemanagement/caseplans](https://apicentral.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans)
-* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/api-explorer#post-api-v2-casemanagement-caseplans)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-)
-* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/api-explorer#delete-api-v2-casemanagement-caseplans-caseplanid-)
+* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans)
+* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-)
+* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-casemanagement-caseplans-caseplanid-)
 
 
 ## Example Usage

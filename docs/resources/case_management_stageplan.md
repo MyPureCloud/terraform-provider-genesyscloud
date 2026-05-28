@@ -11,9 +11,9 @@ Binds to a stageplan auto-created with a caseplan (exactly 3 per caseplan). Uses
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans](https://developer.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-versions-versionid-stageplans)
-* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}](https://developer.genesys.cloud/api-explorer#patch-api-v2-casemanagement-caseplans-caseplanid-stageplans-stageplanid-)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}](https://developer.genesys.cloud/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-versions-versionid-stageplans-stageplanid-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-versions-versionid-stageplans)
+* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-casemanagement-caseplans-caseplanid-stageplans-stageplanid-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-versions-versionid-stageplans-stageplanid-)
 
 
 

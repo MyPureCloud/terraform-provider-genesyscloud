@@ -11,7 +11,7 @@ Calls POST /api/v2/casemanagement/caseplans/{caseplanId}/publish. Use depends_on
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://apicentral.genesys.cloud/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--publish)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--publish)
 
 
 ## Example Usage
