@@ -17,10 +17,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
-var (
-	sdkConfig *platformclientv2.Configuration
-	err       error
-)
+var sdkConfig *platformclientv2.Configuration
 
 /*
    The genesyscloud_journey_action_map_init_test.go file is used to initialize the data sources and resources
@@ -62,9 +59,6 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
@@ -76,9 +70,14 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the architect_schedulegroups package
+	var err error
+	sdkConfig, err = provider.AuthorizeSdk()
+	if err != nil {
+		log.Printf("journey_action_map.TestMain: %s", err.Error())
+		sdkConfig = platformclientv2.GetDefaultConfiguration()
+	}
+
 	initTestResources()
 
-	// Run the test suite for the architect_schedulegroups package
 	m.Run()
 }
