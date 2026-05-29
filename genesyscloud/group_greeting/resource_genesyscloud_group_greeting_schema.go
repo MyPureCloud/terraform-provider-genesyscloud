@@ -4,6 +4,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/greetingmedia"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -91,6 +92,18 @@ func ResourceGroupGreeting() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"audio_filename": {
+				Description: "Path to the greeting audio file used during export and import.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"audio_file_content_hash": {
+				Description: "Hash value of the greeting audio file content. Used to detect changes.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -100,6 +113,14 @@ func GreetingExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGreetings),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"group_id": {RefType: "genesyscloud_group"},
+		},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: greetingmedia.GroupGreetingAudioResolver,
+			SubDirectory:              greetingmedia.SubDirectory,
+		},
+		ThirdPartyRefAttrs: []string{
+			"audio_filename",
+			"audio_file_content_hash",
 		},
 	}
 }

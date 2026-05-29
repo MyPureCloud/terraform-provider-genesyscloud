@@ -44,6 +44,8 @@ audio_tts = "This is a test greeting"
 ### Optional
 
 - `audio_file` (Block List, Max: 1) Greeting audio file. (see [below for nested schema](#nestedblock--audio_file))
+- `audio_file_content_hash` (String) Hash value of the greeting audio file content. Used to detect changes.
+- `audio_filename` (String) Path to the greeting audio file used during export and import.
 - `audio_tts` (String) Greeting audio TTS.
 - `group_id` (String) The ID of the group owner of the greeting.
 - `name` (String) Greeting name.
