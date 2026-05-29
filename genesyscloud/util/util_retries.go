@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
@@ -229,6 +229,13 @@ func IsStatus412(resp *platformclientv2.APIResponse, additionalCodes ...int) boo
 			IsAdditionalCode(resp.StatusCode, additionalCodes...) {
 			return true
 		}
+	}
+	return false
+}
+
+func IsStatus429(resp *platformclientv2.APIResponse) bool {
+	if resp != nil {
+		return resp.StatusCode == http.StatusTooManyRequests
 	}
 	return false
 }

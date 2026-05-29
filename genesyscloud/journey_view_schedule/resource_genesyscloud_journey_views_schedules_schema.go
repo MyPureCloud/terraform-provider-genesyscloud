@@ -2,8 +2,8 @@ package journey_view_schedule
 
 // @team: Journey Data
 // @chat: #customer-journey-data
-// @pm: Angelo Cicchitto
-// @jira: CPR
+// @pm: Charles Quincy
+// @jira: JM
 // @description: Manages customer journey analytics and predictive engagement. Provides customer segmentation, outcome tracking, predictive modeling, and journey visualization for proactive customer engagement strategies.
 
 import (

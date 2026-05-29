@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -37,7 +37,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	noAnswerTimeout := d.Get("no_answer_timeout").(int)
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
 	priority := d.Get("priority").(int)
-	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
+	maxCallsPerAgent := d.Get("max_calls_per_agent").(float64)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
 
@@ -73,6 +73,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
+		DiagnosticsSettings:            buildDiagnosticsSettings(d.Get("diagnostics_settings").([]interface{})),
 	}
 
 	if len(skillColumns) > 0 {
@@ -99,8 +100,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	if priority != 0 {
 		campaign.Priority = &priority
 	}
-	if maxCallsPerAgent != 0 {
-		campaign.MaxCallsPerAgent = &maxCallsPerAgent
+	if maxCallsPerAgent >= 1 {
+		campaign.MaxCallsPerAgentDecimal = &maxCallsPerAgent
 	}
 	return campaign
 }
@@ -239,6 +240,30 @@ func flattenLineBalancingSettings(settings *platformclientv2.Dynamiclinebalancin
 	settingsMap := make(map[string]interface{}, 0)
 	settingsMap["enabled"] = *settings.Enabled
 	resourcedata.SetMapValueIfNotNil(settingsMap, "relative_weight", settings.RelativeWeight)
+	return []interface{}{settingsMap}
+}
+
+func buildDiagnosticsSettings(settings []interface{}) *platformclientv2.Diagnosticssettings {
+	if settings == nil || len(settings) < 1 {
+		return nil
+	}
+	var sdkSettings platformclientv2.Diagnosticssettings
+	setting, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	if reportAlert, ok := setting["report_low_max_calls_per_agent_alert"].(bool); ok {
+		sdkSettings.ReportLowMaxCallsPerAgentAlert = platformclientv2.Bool(reportAlert)
+	}
+	return &sdkSettings
+}
+
+func flattenDiagnosticsSettings(settings *platformclientv2.Diagnosticssettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]interface{}, 0)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "report_low_max_calls_per_agent_alert", settings.ReportLowMaxCallsPerAgentAlert)
 	return []interface{}{settingsMap}
 }
 

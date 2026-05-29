@@ -16,9 +16,12 @@ import (
 
 // import other necessary packages here
 
+const DataSourceType = ResourceType
+
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterResource(ResourceType, ResourceKnowledgeDocument())
+	l.RegisterDataSource(ResourceType, DataSourceKnowledgeDocument())
 	l.RegisterExporter(ResourceType, KnowledgeDocumentExporter())
 }
 
@@ -30,6 +33,14 @@ func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"knowledge_document.label_names": {ResolverFunc: resourceExporter.KnowledgeDocumentLabelNamesResolver},
+			"knowledge_base_name": {
+				ResolverWithClientConfigFunc: resourceExporter.KnowledgeBaseNameResolver,
+			},
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "category_name"}:       {Attr: "knowledge_document\\.\\d+\\.category_name"},
+			{Attr: "title"}:               {Attr: "knowledge_document\\.\\d+\\.title"},
+			{Attr: "knowledge_base_name"}: {Attr: "knowledge_base_id"},
 		},
 	}
 }
@@ -84,6 +95,30 @@ var (
 		},
 	}
 )
+
+func DataSourceKnowledgeDocument() *schema.Resource {
+	return &schema.Resource{
+		Description: "Data source for Genesys Cloud Knowledge Document. Select a knowledge document by title and optionally by category name.",
+		ReadContext: provider.ReadWithPooledClient(dataSourceKnowledgeDocumentRead),
+		Schema: map[string]*schema.Schema{
+			"title": {
+				Description: "Knowledge document title",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"knowledge_base_name": {
+				Description: "Knowledge base name",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			"category_name": {
+				Description: "The name of the category to filter the knowledge document by. This is useful when multiple documents share the same title.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		},
+	}
+}
 
 func ResourceKnowledgeDocument() *schema.Resource {
 	return &schema.Resource{

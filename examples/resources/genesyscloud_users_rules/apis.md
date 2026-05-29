@@ -1,0 +1,5 @@
+* [GET /api/v2/users/rules](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-users-rules)
+* [POST /api/v2/users/rules](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-users-rules)
+* [DELETE /api/v2/users/rules/{ruleId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-users-rules--ruleId-)
+* [GET /api/v2/users/rules/{ruleId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-users-rules--ruleId-)
+* [PATCH /api/v2/users/rules/{ruleId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-users-rules--ruleId-)

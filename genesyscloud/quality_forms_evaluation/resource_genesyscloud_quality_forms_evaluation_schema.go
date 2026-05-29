@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -390,7 +391,22 @@ func ResourceEvaluationForm() *schema.Resource {
 func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllEvaluationForms),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"question_groups.questions.answer_options.assistance_conditions.topic_ids": {
+				RefType: sttTopic.ResourceType,
+			},
+			"question_groups.questions.multiple_select_option_questions.answer_options.assistance_conditions.topic_ids": {
+				RefType: sttTopic.ResourceType,
+			},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"question_groups.questions.answer_options.assistance_conditions.topic_ids": {
+				ResolveToDataSourceFunc: resourceExporter.SpeechAndTextAnalyticsTopicIdResolver,
+			},
+			"question_groups.questions.multiple_select_option_questions.answer_options.assistance_conditions.topic_ids": {
+				ResolveToDataSourceFunc: resourceExporter.SpeechAndTextAnalyticsTopicIdResolver,
+			},
+		},
 		AllowZeroValues: []string{
 			"question_groups.questions.answer_options.value",
 			"question_groups.questions.multiple_select_option_questions.answer_options.value",

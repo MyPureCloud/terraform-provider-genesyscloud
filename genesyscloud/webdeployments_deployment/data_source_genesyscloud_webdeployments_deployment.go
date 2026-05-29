@@ -3,10 +3,10 @@ package webdeployments_deployment
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"net/http"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -23,11 +23,10 @@ func dataSourceDeploymentRead(ctx context.Context, d *schema.ResourceData, m int
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
 		deployments, resp, err := wd.getWebDeployments(ctx)
 
-		if err != nil && resp.StatusCode == http.StatusNotFound {
-			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No web deployment record found %s | error: %s", name, err), resp))
-		}
-
-		if err != nil && resp.StatusCode != http.StatusNotFound {
+		if err != nil {
+			if util.IsStatus404(resp) {
+				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No web deployment record found %s | error: %s", name, err), resp))
+			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error retrieving web deployment %s | error: %s", name, err), resp))
 		}
 

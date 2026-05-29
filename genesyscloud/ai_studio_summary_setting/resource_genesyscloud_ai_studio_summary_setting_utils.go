@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -44,7 +44,7 @@ func buildSummarySettingPIIs(summarySettingPIIs []interface{}) *platformclientv2
 	}
 
 	return &platformclientv2.Summarysettingpii{
-		All: resourcedata.GetNillableValueFromMap[bool](summarySettingPIIsMap, "all", false),
+		All: resourcedata.GetNillableValueFromMap[bool](summarySettingPIIsMap, "all", true),
 	}
 }
 

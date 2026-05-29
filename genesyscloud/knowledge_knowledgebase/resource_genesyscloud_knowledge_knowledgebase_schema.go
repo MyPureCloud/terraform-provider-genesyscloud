@@ -26,6 +26,9 @@ func KnowledgeKnowledgebaseExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "core_language"}: {Attr: "core_language"},
+		},
 	}
 }
 

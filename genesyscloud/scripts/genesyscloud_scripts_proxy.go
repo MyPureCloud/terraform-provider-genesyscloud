@@ -17,7 +17,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -403,12 +403,16 @@ func deleteScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error
 	client := &http.Client{}
 	resp, err := client.Do(r)
 
+	if err != nil {
+		return fmt.Errorf("failed to delete script %s. Error: %v", scriptId, err)
+	}
+
 	if resp.StatusCode == http.StatusNotFound {
 		log.Printf("Failed to delete script '%s' because it does not exist", scriptId)
 		return nil
 	}
 
-	if err != nil || (resp != nil && resp.StatusCode != http.StatusOK) {
+	if resp == nil || resp.StatusCode != http.StatusOK {
 		response := "nil"
 		if resp != nil {
 			response = resp.Status
@@ -432,7 +436,7 @@ func getScriptByIdFn(ctx context.Context, p *scriptsProxy, scriptId string) (scr
 
 	script, resp, err = p.scriptsApi.GetScript(scriptId)
 	if err != nil {
-		if resp.StatusCode == http.StatusNotFound {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return nil, resp, nil
 		}
 		return nil, resp, err

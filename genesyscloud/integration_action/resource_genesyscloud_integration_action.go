@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -59,7 +59,7 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Name, BlockHash: blockHash}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Category + "_" + *action.Name, BlockHash: blockHash}
 	}
 	return resources, nil
 }

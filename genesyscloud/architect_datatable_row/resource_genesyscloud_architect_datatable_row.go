@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -32,11 +32,11 @@ type Datatableproperty struct {
 
 // Overriding the SDK Datatable document as it does not allow setting additionalProperties to 'false' as required by the API
 type Jsonschemadocument struct {
-	Schema               *string                       `json:"$schema,omitempty"`
-	VarType              *string                       `json:"type,omitempty"`
-	Required             *[]string                     `json:"required,omitempty"`
-	Properties           *map[string]Datatableproperty `json:"properties,omitempty"`
-	AdditionalProperties *interface{}                  `json:"additionalProperties,omitempty"`
+	Schema               *string                             `json:"$schema,omitempty"`
+	VarType              *string                             `json:"type,omitempty"`
+	Required             *[]string                           `json:"required,omitempty"`
+	Properties           *util.OrderedMap[Datatableproperty] `json:"properties,omitempty"`
+	AdditionalProperties *interface{}                        `json:"additionalProperties,omitempty"`
 }
 
 type Datatable struct {
