@@ -31,20 +31,20 @@ Each proxy implementation:
 */
 
 // internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *integrationsProxy
+var internalProxy *IntegrationsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type getAllIntegrationsFunc func(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error)
-type createIntegrationFunc func(ctx context.Context, p *integrationsProxy, integration *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
-type getIntegrationByIdFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
-type getIntegrationByNameFunc func(ctx context.Context, p *integrationsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, response *platformclientv2.APIResponse, err error)
-type updateIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
-type deleteIntegrationFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error)
-type getIntegrationConfigFunc func(ctx context.Context, p *integrationsProxy, integrationId string) (config *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
-type updateIntegrationConfigFunc func(ctx context.Context, p *integrationsProxy, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (integration *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
+type getAllIntegrationsFunc func(ctx context.Context, p *IntegrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error)
+type createIntegrationFunc func(ctx context.Context, p *IntegrationsProxy, integration *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
+type getIntegrationByIdFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
+type getIntegrationByNameFunc func(ctx context.Context, p *IntegrationsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, response *platformclientv2.APIResponse, err error)
+type updateIntegrationFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
+type deleteIntegrationFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error)
+type getIntegrationConfigFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string) (config *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
+type updateIntegrationConfigFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (integration *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
 
 // integrationProxy contains all of the methods that call genesys cloud APIs.
-type integrationsProxy struct {
+type IntegrationsProxy struct {
 	clientConfig                *platformclientv2.Configuration
 	integrationsApi             *platformclientv2.IntegrationsApi
 	getAllIntegrationsAttr      getAllIntegrationsFunc
@@ -58,9 +58,9 @@ type integrationsProxy struct {
 }
 
 // newIntegrationsProxy initializes the Integrations proxy with all of the data needed to communicate with Genesys Cloud
-func newIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integrationsProxy {
+func newIntegrationsProxy(clientConfig *platformclientv2.Configuration) *IntegrationsProxy {
 	api := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
-	return &integrationsProxy{
+	return &IntegrationsProxy{
 		clientConfig:                clientConfig,
 		integrationsApi:             api,
 		getAllIntegrationsAttr:      getAllIntegrationsFn,
@@ -76,55 +76,60 @@ func newIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integra
 
 // getIntegrationsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getIntegrationsProxy(clientConfig *platformclientv2.Configuration) *integrationsProxy {
+func getIntegrationsProxy(clientConfig *platformclientv2.Configuration) *IntegrationsProxy {
 	if internalProxy == nil {
 		internalProxy = newIntegrationsProxy(clientConfig)
 	}
 	return internalProxy
 }
 
-// getAllIntegrations retrieves all Genesys Cloud Integrations
-func (p *integrationsProxy) getAllIntegrations(ctx context.Context) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+// GetIntegrationsProxy returns the proxy instance for use by other packages (e.g. tests)
+func GetIntegrationsProxy(clientConfig *platformclientv2.Configuration) *IntegrationsProxy {
+	return getIntegrationsProxy(clientConfig)
+}
+
+// GetAllIntegrations retrieves all Genesys Cloud Integrations
+func (p *IntegrationsProxy) GetAllIntegrations(ctx context.Context) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.getAllIntegrationsAttr(ctx, p)
 }
 
 // createIntegration creates a Genesys Cloud Integration
-func (p *integrationsProxy) createIntegration(ctx context.Context, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func (p *IntegrationsProxy) createIntegration(ctx context.Context, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.createIntegrationAttr(ctx, p, integrationReq)
 }
 
 // getIntegrationById gets Genesys Cloud Integration by id
-func (p *integrationsProxy) getIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func (p *IntegrationsProxy) getIntegrationById(ctx context.Context, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationByIdAttr(ctx, p, integrationId)
 }
 
 // getIntegrationByName gets a Genesys Cloud Integration by name
-func (p *integrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
+func (p *IntegrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationByNameAttr(ctx, p, integrationName)
 }
 
 // updateIntegration updates a Genesys Cloud Integration
-func (p *integrationsProxy) updateIntegration(ctx context.Context, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func (p *IntegrationsProxy) updateIntegration(ctx context.Context, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	return p.updateIntegrationAttr(ctx, p, integrationId, integration)
 }
 
 // deleteIntegration deletes a Genesys Cloud Integration
-func (p *integrationsProxy) deleteIntegration(ctx context.Context, integrationId string) (response *platformclientv2.APIResponse, err error) {
+func (p *IntegrationsProxy) deleteIntegration(ctx context.Context, integrationId string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteIntegrationAttr(ctx, p, integrationId)
 }
 
-// getIntegrationConfig get the current config of a Genesys Cloud Integration
-func (p *integrationsProxy) getIntegrationConfig(ctx context.Context, integrationId string) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
+// GetIntegrationConfig get the current config of a Genesys Cloud Integration
+func (p *IntegrationsProxy) GetIntegrationConfig(ctx context.Context, integrationId string) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationConfigAttr(ctx, p, integrationId)
 }
 
 // updateIntegrationConfig updates the config of a Genesys Cloud Integration
-func (p *integrationsProxy) updateIntegrationConfig(ctx context.Context, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
+func (p *IntegrationsProxy) updateIntegrationConfig(ctx context.Context, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
 	return p.updateIntegrationConfigAttr(ctx, p, integrationId, integrationConfig)
 }
 
 // getAllIntegrationsFn is the implementation for retrieving all integrations in Genesys Cloud
-func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func getAllIntegrationsFn(ctx context.Context, p *IntegrationsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -146,7 +151,7 @@ func getAllIntegrationsFn(ctx context.Context, p *integrationsProxy) (*[]platfor
 }
 
 // createIntegrationFn is the implementation for creating an integration in Genesys Cloud
-func createIntegrationFn(ctx context.Context, p *integrationsProxy, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func createIntegrationFn(ctx context.Context, p *IntegrationsProxy, integrationReq *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -158,7 +163,7 @@ func createIntegrationFn(ctx context.Context, p *integrationsProxy, integrationR
 }
 
 // getIntegrationByIdFn is the implementation for getting a Genesys Cloud Integration by id
-func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func getIntegrationByIdFn(ctx context.Context, p *IntegrationsProxy, integrationId string) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -172,7 +177,7 @@ func getIntegrationByIdFn(ctx context.Context, p *integrationsProxy, integration
 }
 
 // getIntegrationByNameFn is the implementation for getting a Genesys Cloud Integration by name
-func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
+func getIntegrationByNameFn(ctx context.Context, p *IntegrationsProxy, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -203,7 +208,7 @@ func getIntegrationByNameFn(ctx context.Context, p *integrationsProxy, integrati
 }
 
 // updateIntegrationFn is the implementation for updating a Genesys Cloud Integration
-func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+func updateIntegrationFn(ctx context.Context, p *IntegrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -217,7 +222,7 @@ func updateIntegrationFn(ctx context.Context, p *integrationsProxy, integrationI
 }
 
 // deleteIntegrationFn is the implementation for deleting a Genesys Cloud Integration
-func deleteIntegrationFn(ctx context.Context, p *integrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error) {
+func deleteIntegrationFn(ctx context.Context, p *IntegrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -229,7 +234,7 @@ func deleteIntegrationFn(ctx context.Context, p *integrationsProxy, integrationI
 }
 
 // getIntegrationConfigFn is the implementation for getting the current config of a Genesys Cloud Integration
-func getIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrationId string) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
+func getIntegrationConfigFn(ctx context.Context, p *IntegrationsProxy, integrationId string) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -241,7 +246,7 @@ func getIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrati
 }
 
 // updateIntegrationConfigFn is the implementation for updating a Genesys Cloud Integration Config
-func updateIntegrationConfigFn(ctx context.Context, p *integrationsProxy, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
+func updateIntegrationConfigFn(ctx context.Context, p *IntegrationsProxy, integrationId string, integrationConfig *platformclientv2.Integrationconfiguration) (*platformclientv2.Integrationconfiguration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
