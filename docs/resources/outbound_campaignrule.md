@@ -88,6 +88,7 @@ resource "genesyscloud_outbound_campaignrule" "campaign_rule" {
 - `enabled` (Boolean) Whether or not this campaign rule is currently enabled. Defaults to `false`.
 - `execution_settings` (Block List, Max: 1) Campaign rule execution settings. (see [below for nested schema](#nestedblock--execution_settings))
 - `match_any_conditions` (Boolean) Whether actions are executed if any condition is met, or only when all conditions are met. Defaults to `false`.
+- `time_zone_id` (String) Optional. Used for date/time conditions. If omitted, Genesys Cloud defaults to UTC.
 
 ### Read-Only
 
@@ -161,6 +162,9 @@ Required:
 
 Optional:
 
+- `campaign_run_time_settings` (Block List, Max: 1) Settings for campaignRunTime conditions. Only valid with campaign_rule_processing = "v2" and condition_groups. (see [below for nested schema](#nestedblock--campaign_rule_conditions--campaign_run_time_settings))
+- `campaign_wait_time_settings` (Block List, Max: 1) Settings for campaignWaitTime conditions. Only valid with campaign_rule_processing = "v2" and condition_groups. (see [below for nested schema](#nestedblock--campaign_rule_conditions--campaign_wait_time_settings))
+- `date_time_parameters` (Block List, Max: 1) Parameters for date/time conditions (timeOfDay, dayOfWeek, dayOfMonth, specificDate, weekDayOfMonth). Only valid with campaign_rule_processing = "v2" and condition_groups. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters))
 - `id` (String) The ID of the CampaignRuleCondition.
 
 <a id="nestedblock--campaign_rule_conditions--parameters"></a>
@@ -172,6 +176,7 @@ Optional:
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
 - `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `for_duration` (Block List, Max: 1) Duration (in seconds) for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2". (see [below for nested schema](#nestedblock--campaign_rule_conditions--parameters--for_duration))
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
 - `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
@@ -182,6 +187,174 @@ Optional:
 - `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+<a id="nestedblock--campaign_rule_conditions--parameters--for_duration"></a>
+### Nested Schema for `campaign_rule_conditions.parameters.for_duration`
+
+Required:
+
+- `seconds` (Number) Duration in seconds.
+
+
+
+<a id="nestedblock--campaign_rule_conditions--campaign_run_time_settings"></a>
+### Nested Schema for `campaign_rule_conditions.campaign_run_time_settings`
+
+Optional:
+
+- `include_waiting_time` (Boolean) When true, counts all campaign running time. When false, only counts time when campaign is not waiting. Defaults to `true`.
+
+
+<a id="nestedblock--campaign_rule_conditions--campaign_wait_time_settings"></a>
+### Nested Schema for `campaign_rule_conditions.campaign_wait_time_settings`
+
+Required:
+
+- `wait_type` (String) Campaign wait type (Agents | Contacts | Lines).
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters`
+
+Optional:
+
+- `day_of_month` (Block List, Max: 1) Parameters for dayOfMonth condition type. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_month))
+- `day_of_week` (Block List, Max: 1) Parameters for dayOfWeek condition type. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week))
+- `inverted` (Boolean) If true, inverts the result of evaluating this condition. Defaults to `false`.
+- `specific_date` (Block List, Max: 1) Parameters for specificDate condition type. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--specific_date))
+- `time_of_day` (Block List, Max: 1) Parameters for timeOfDay condition type. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day))
+- `week_day_of_month` (Block List, Max: 1) Parameters for weekDayOfMonth condition type. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month))
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--day_of_month"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.day_of_month`
+
+Optional:
+
+- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.
+- `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_month--interval))
+- `threshold_value` (String) Day of month (1-31 or "LAST_DAY") for "before"/"after" operators.
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--day_of_month--interval"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.day_of_month.interval`
+
+Required:
+
+- `max` (String) Maximum day (1-31 or "LAST_DAY").
+- `min` (String) Minimum day (1-31).
+
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.day_of_week`
+
+Optional:
+
+- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals" operator.
+- `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week--interval))
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week--interval"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.day_of_week.interval`
+
+Required:
+
+- `max` (Number) Maximum day (1-7).
+- `min` (Number) Minimum day (1-7).
+
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--specific_date"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.specific_date`
+
+Optional:
+
+- `include_year` (Boolean) If true, includes year in date comparison. Defaults to `true`.
+- `interval` (Block List, Max: 1) Date interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--specific_date--interval))
+- `threshold_value` (String) Date in yyyy-MM-dd (with year) or MM-dd (without year) format.
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--specific_date--interval"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.specific_date.interval`
+
+Required:
+
+- `max` (String) Maximum date in yyyy-MM-dd or MM-dd format.
+- `min` (String) Minimum date in yyyy-MM-dd or MM-dd format.
+
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.time_of_day`
+
+Optional:
+
+- `interval` (Block List, Max: 1) Time interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day--interval))
+- `threshold_value` (String) Time in HH:mm:ss.SSS format.
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day--interval"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.time_of_day.interval`
+
+Required:
+
+- `max` (String) Maximum time in HH:mm:ss.SSS format.
+- `min` (String) Minimum time in HH:mm:ss.SSS format.
+
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.week_day_of_month`
+
+Optional:
+
+- `interval` (Block List, Max: 1) Weekday-of-month interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--interval))
+- `threshold_value` (Block List, Max: 1) The weekday-of-month value for "equals"/"before"/"after" operators. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--threshold_value))
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--interval"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.week_day_of_month.interval`
+
+Required:
+
+- `max` (Block List, Min: 1, Max: 1) Maximum weekday-of-month. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--interval--max))
+- `min` (Block List, Min: 1, Max: 1) Minimum weekday-of-month. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--interval--min))
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--interval--max"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.week_day_of_month.interval.max`
+
+Required:
+
+- `day_of_week` (Number) Day of week (1=Monday, 7=Sunday).
+
+Optional:
+
+- `month` (Number) Month (1-12). Optional.
+- `occurrence` (Number) Occurrence (1-4, or -1 for last).
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--interval--min"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.week_day_of_month.interval.min`
+
+Required:
+
+- `day_of_week` (Number) Day of week (1=Monday, 7=Sunday).
+
+Optional:
+
+- `month` (Number) Month (1-12). Optional.
+- `occurrence` (Number) Occurrence (1-4, or -1 for last).
+
+
+
+<a id="nestedblock--campaign_rule_conditions--date_time_parameters--week_day_of_month--threshold_value"></a>
+### Nested Schema for `campaign_rule_conditions.date_time_parameters.week_day_of_month.threshold_value`
+
+Required:
+
+- `day_of_week` (Number) Day of week (1=Monday, 7=Sunday).
+
+Optional:
+
+- `month` (Number) Month (1-12). Optional.
+- `occurrence` (Number) Occurrence (1-4, or -1 for last).
+
+
 
 
 
@@ -203,6 +376,9 @@ Required:
 
 Optional:
 
+- `campaign_run_time_settings` (Block List, Max: 1) Settings for campaignRunTime conditions. Only valid with campaign_rule_processing = "v2" and condition_groups. (see [below for nested schema](#nestedblock--condition_groups--conditions--campaign_run_time_settings))
+- `campaign_wait_time_settings` (Block List, Max: 1) Settings for campaignWaitTime conditions. Only valid with campaign_rule_processing = "v2" and condition_groups. (see [below for nested schema](#nestedblock--condition_groups--conditions--campaign_wait_time_settings))
+- `date_time_parameters` (Block List, Max: 1) Parameters for date/time conditions (timeOfDay, dayOfWeek, dayOfMonth, specificDate, weekDayOfMonth). Only valid with campaign_rule_processing = "v2" and condition_groups. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters))
 - `id` (String) The ID of the CampaignRuleCondition.
 
 <a id="nestedblock--condition_groups--conditions--parameters"></a>
@@ -214,6 +390,7 @@ Optional:
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
 - `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `for_duration` (Block List, Max: 1) Duration (in seconds) for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2". (see [below for nested schema](#nestedblock--condition_groups--conditions--parameters--for_duration))
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
 - `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
@@ -224,6 +401,174 @@ Optional:
 - `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+<a id="nestedblock--condition_groups--conditions--parameters--for_duration"></a>
+### Nested Schema for `condition_groups.conditions.parameters.for_duration`
+
+Required:
+
+- `seconds` (Number) Duration in seconds.
+
+
+
+<a id="nestedblock--condition_groups--conditions--campaign_run_time_settings"></a>
+### Nested Schema for `condition_groups.conditions.campaign_run_time_settings`
+
+Optional:
+
+- `include_waiting_time` (Boolean) When true, counts all campaign running time. When false, only counts time when campaign is not waiting. Defaults to `true`.
+
+
+<a id="nestedblock--condition_groups--conditions--campaign_wait_time_settings"></a>
+### Nested Schema for `condition_groups.conditions.campaign_wait_time_settings`
+
+Required:
+
+- `wait_type` (String) Campaign wait type (Agents | Contacts | Lines).
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters`
+
+Optional:
+
+- `day_of_month` (Block List, Max: 1) Parameters for dayOfMonth condition type. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_month))
+- `day_of_week` (Block List, Max: 1) Parameters for dayOfWeek condition type. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_week))
+- `inverted` (Boolean) If true, inverts the result of evaluating this condition. Defaults to `false`.
+- `specific_date` (Block List, Max: 1) Parameters for specificDate condition type. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--specific_date))
+- `time_of_day` (Block List, Max: 1) Parameters for timeOfDay condition type. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--time_of_day))
+- `week_day_of_month` (Block List, Max: 1) Parameters for weekDayOfMonth condition type. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month))
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--day_of_month"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.day_of_month`
+
+Optional:
+
+- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.
+- `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_month--interval))
+- `threshold_value` (String) Day of month (1-31 or "LAST_DAY") for "before"/"after" operators.
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--day_of_month--interval"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.day_of_month.interval`
+
+Required:
+
+- `max` (String) Maximum day (1-31 or "LAST_DAY").
+- `min` (String) Minimum day (1-31).
+
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--day_of_week"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.day_of_week`
+
+Optional:
+
+- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals" operator.
+- `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_week--interval))
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--day_of_week--interval"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.day_of_week.interval`
+
+Required:
+
+- `max` (Number) Maximum day (1-7).
+- `min` (Number) Minimum day (1-7).
+
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--specific_date"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.specific_date`
+
+Optional:
+
+- `include_year` (Boolean) If true, includes year in date comparison. Defaults to `true`.
+- `interval` (Block List, Max: 1) Date interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--specific_date--interval))
+- `threshold_value` (String) Date in yyyy-MM-dd (with year) or MM-dd (without year) format.
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--specific_date--interval"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.specific_date.interval`
+
+Required:
+
+- `max` (String) Maximum date in yyyy-MM-dd or MM-dd format.
+- `min` (String) Minimum date in yyyy-MM-dd or MM-dd format.
+
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--time_of_day"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.time_of_day`
+
+Optional:
+
+- `interval` (Block List, Max: 1) Time interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--time_of_day--interval))
+- `threshold_value` (String) Time in HH:mm:ss.SSS format.
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--time_of_day--interval"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.time_of_day.interval`
+
+Required:
+
+- `max` (String) Maximum time in HH:mm:ss.SSS format.
+- `min` (String) Minimum time in HH:mm:ss.SSS format.
+
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.week_day_of_month`
+
+Optional:
+
+- `interval` (Block List, Max: 1) Weekday-of-month interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--interval))
+- `threshold_value` (Block List, Max: 1) The weekday-of-month value for "equals"/"before"/"after" operators. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--threshold_value))
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--interval"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.week_day_of_month.interval`
+
+Required:
+
+- `max` (Block List, Min: 1, Max: 1) Maximum weekday-of-month. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--interval--max))
+- `min` (Block List, Min: 1, Max: 1) Minimum weekday-of-month. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--interval--min))
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--interval--max"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.week_day_of_month.interval.max`
+
+Required:
+
+- `day_of_week` (Number) Day of week (1=Monday, 7=Sunday).
+
+Optional:
+
+- `month` (Number) Month (1-12). Optional.
+- `occurrence` (Number) Occurrence (1-4, or -1 for last).
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--interval--min"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.week_day_of_month.interval.min`
+
+Required:
+
+- `day_of_week` (Number) Day of week (1=Monday, 7=Sunday).
+
+Optional:
+
+- `month` (Number) Month (1-12). Optional.
+- `occurrence` (Number) Occurrence (1-4, or -1 for last).
+
+
+
+<a id="nestedblock--condition_groups--conditions--date_time_parameters--week_day_of_month--threshold_value"></a>
+### Nested Schema for `condition_groups.conditions.date_time_parameters.week_day_of_month.threshold_value`
+
+Required:
+
+- `day_of_week` (Number) Day of week (1=Monday, 7=Sunday).
+
+Optional:
+
+- `month` (Number) Month (1-12). Optional.
+- `occurrence` (Number) Occurrence (1-4, or -1 for last).
+
+
 
 
 
