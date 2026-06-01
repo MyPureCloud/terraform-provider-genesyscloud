@@ -8,11 +8,12 @@ package outbound_campaignrule
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
-	"strconv"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -58,6 +59,13 @@ func getAllowedConditions() []string {
 		"campaignBusinessFailure",
 		"campaignValidAttempts",
 		"campaignRightPartyContacts",
+		"timeOfDay",
+		"dayOfWeek",
+		"dayOfMonth",
+		"weekDayOfMonth",
+		"specificDate",
+		"campaignRunTime",
+		"campaignWaitTime",
 	}
 }
 
