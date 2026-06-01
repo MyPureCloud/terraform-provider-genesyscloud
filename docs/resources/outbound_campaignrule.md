@@ -74,13 +74,16 @@ resource "genesyscloud_outbound_campaignrule" "campaign_rule" {
 ### Required
 
 - `campaign_rule_actions` (Block List, Min: 1) The list of actions that are executed if the conditions are satisfied. (see [below for nested schema](#nestedblock--campaign_rule_actions))
-- `campaign_rule_conditions` (Block List, Min: 1) The list of conditions that are evaluated on the entities. (see [below for nested schema](#nestedblock--campaign_rule_conditions))
 - `campaign_rule_entities` (Block Set, Min: 1, Max: 1) The list of entities that this campaign rule monitors. (see [below for nested schema](#nestedblock--campaign_rule_entities))
 - `name` (String) The name of the campaign rule.
 
 ### Optional
 
+- `campaign_rule_conditions` (Block List) The list of conditions that are evaluated on the entities. Required when not using condition_groups (campaign_rule_processing "v2"). (see [below for nested schema](#nestedblock--campaign_rule_conditions))
+- `campaign_rule_processing` (String) Campaign rule processing algorithm. Use "v2" to enable condition groups.
+- `condition_groups` (Block List) List of condition groups that are evaluated, used only with campaignRuleProcessing="v2". (see [below for nested schema](#nestedblock--condition_groups))
 - `enabled` (Boolean) Whether or not this campaign rule is currently enabled. Defaults to `false`.
+- `execution_settings` (Block List, Max: 1) Campaign rule execution settings. (see [below for nested schema](#nestedblock--execution_settings))
 - `match_any_conditions` (Boolean) Whether actions are executed if any condition is met, or only when all conditions are met. Defaults to `false`.
 
 ### Read-Only
@@ -134,6 +137,17 @@ Optional:
 
 
 
+<a id="nestedblock--campaign_rule_entities"></a>
+### Nested Schema for `campaign_rule_entities`
+
+Optional:
+
+- `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `email_campaign_ids` (List of String) The list of Email campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an Email campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `sms_campaign_ids` (List of String) The list of SMS campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an SMS campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+
+
 <a id="nestedblock--campaign_rule_conditions"></a>
 ### Nested Schema for `campaign_rule_conditions`
 
@@ -168,13 +182,57 @@ Optional:
 
 
 
-<a id="nestedblock--campaign_rule_entities"></a>
-### Nested Schema for `campaign_rule_entities`
+<a id="nestedblock--condition_groups"></a>
+### Nested Schema for `condition_groups`
+
+Required:
+
+- `conditions` (Block List, Min: 1) The list of conditions in this group. (see [below for nested schema](#nestedblock--condition_groups--conditions))
+- `match_any_conditions` (Boolean) Whether or not this condition group should be evaluated as true if any of sub conditions is matched.
+
+<a id="nestedblock--condition_groups--conditions"></a>
+### Nested Schema for `condition_groups.conditions`
+
+Required:
+
+- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents | campaignRecordsAttempted | campaignContactsMessaged | campaignBusinessSuccess | campaignBusinessNeutral | campaignBusinessFailure | campaignValidAttempts | campaignRightPartyContacts)
+- `parameters` (Block Set, Min: 1) The parameters for the CampaignRuleCondition. (see [below for nested schema](#nestedblock--condition_groups--conditions--parameters))
 
 Optional:
 
-- `campaign_ids` (List of String) The list of campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
-- `email_campaign_ids` (List of String) The list of Email campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an Email campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
-- `sequence_ids` (List of String) The list of sequences for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on a sequence. Changing the outboundCampaignRuleEntitySequenceRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
-- `sms_campaign_ids` (List of String) The list of SMS campaigns for a CampaignRule to monitor. Required if the CampaignRule has any conditions that run on an SMS campaign. Changing the outboundCampaignRuleEntityCampaignRuleId attribute will cause the outbound_campaignrule object to be dropped and recreated with a new ID.
+- `id` (String) The ID of the CampaignRuleCondition.
+
+<a id="nestedblock--condition_groups--conditions--parameters"></a>
+### Nested Schema for `condition_groups.conditions.parameters`
+
+Optional:
+
+- `abandon_rate` (String) Compliance Abandon Rate. Required for 'setCampaignAbandonRate' action
+- `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
+- `email_content_template_id` (String) The content template to set an Email campaign to.
+- `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
+- `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
+- `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
+- `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
+- `relative_weight` (String) Relative weight. Required for 'setCampaignWeight' action
+- `sms_content_template_id` (String) The content template to set a SMS campaign to.
+- `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
+- `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+
+
+
+<a id="nestedblock--execution_settings"></a>
+### Nested Schema for `execution_settings`
+
+Required:
+
+- `frequency` (String) Execution control frequency. Valid values: onEachTrigger, oncePerDay.
+
+Optional:
+
+- `time_zone_id` (String) The time zone for the execution control frequency="oncePerDay"; for example, Africa/Abidjan. This property is ignored when frequency is not "oncePerDay".
 
