@@ -46,6 +46,7 @@ import (
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	groupGreeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_greeting"
 	greeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting"
+	greetingUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting_user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
@@ -256,6 +257,7 @@ func registerResources() {
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
 	groupGreeting.SetRegistrar(regInstance)                                //Registering group greeting
 	greeting.SetRegistrar(regInstance)                                     //Registering greeting
+	greetingUser.SetRegistrar(regInstance)                                 //Registering greeting user
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	guide.SetRegistrar(regInstance)                                        //Registering guide
 	guideVersion.SetRegistrar(regInstance)                                 //Registering Guide Version
