@@ -461,11 +461,18 @@ func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 		},
 		// Note: To export routing queue resources that are referenced in decision tables,
 		// include "genesyscloud_routing_queue" in the export filter resources.
+		//
+		// IMPORTANT: Resolver paths are matched by exact string against the attribute
+		// path the exporter framework computes while walking the config (see
+		// sanitizeConfigMap / sanitizeConfigArray in genesyscloud/tfexporter). That path
+		// is dot-separated attribute names with no array indices and no wildcards, so a
+		// row literal value is looked up as "rows.inputs.literal.value" — anything with
+		// "*" or numeric segments will silently never match and the resolver will not run.
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"columns.outputs.defaults_to.value": {ResolverFunc: QueueIdResolver},
 			"columns.inputs.defaults_to.value":  {ResolverFunc: QueueIdResolver},
-			"rows.*.inputs.*.literal.value":     {ResolverFunc: QueueIdResolver},
-			"rows.*.outputs.*.literal.value":    {ResolverFunc: QueueIdResolver},
+			"rows.inputs.literal.value":         {ResolverFunc: QueueIdResolver},
+			"rows.outputs.literal.value":        {ResolverFunc: QueueIdResolver},
 		},
 	}
 }
