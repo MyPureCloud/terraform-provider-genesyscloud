@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v186/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 const caseplanAPIVersionLatest = "latest"
