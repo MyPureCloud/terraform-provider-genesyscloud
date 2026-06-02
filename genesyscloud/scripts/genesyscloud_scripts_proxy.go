@@ -12,11 +12,13 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -38,6 +40,7 @@ type getScriptByIdFunc func(ctx context.Context, p *scriptsProxy, scriptId strin
 type scriptsProxy struct {
 	clientConfig                      *platformclientv2.Configuration
 	scriptsApi                        *platformclientv2.ScriptsApi
+	customApiClient                   *customapi.Client
 	basePath                          string
 	accessToken                       string
 	createScriptAttr                  createScriptFunc
@@ -69,6 +72,7 @@ func newScriptsProxy(clientConfig *platformclientv2.Configuration) *scriptsProxy
 	return &scriptsProxy{
 		clientConfig:                      clientConfig,
 		scriptsApi:                        scriptsAPI,
+		customApiClient:                   customapi.NewClient(clientConfig, ResourceType),
 		basePath:                          strings.Replace(scriptsAPI.Configuration.BasePath, "api", "apps", -1),
 		accessToken:                       scriptsAPI.Configuration.AccessToken,
 		createScriptAttr:                  createScriptFn,
@@ -133,7 +137,10 @@ func (p *scriptsProxy) getScriptById(ctx context.Context, scriptId string) (scri
 }
 
 // publishScriptFn will publish the script after it has been successfully upload
-func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error) {
+func publishScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	publishScriptBody := &platformclientv2.Publishscriptrequestdata{
 		ScriptId: &scriptId,
 	}
@@ -142,7 +149,10 @@ func publishScriptFn(_ context.Context, p *scriptsProxy, scriptId string) (*plat
 }
 
 // getAllPublishedScriptsFn returns all published scripts within a Genesys Cloud org
-func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allPublishedScripts []platformclientv2.Script
 	var resp *platformclientv2.APIResponse
 	const pageSize = 100
@@ -177,7 +187,10 @@ func getAllPublishedScriptsFn(_ context.Context, p *scriptsProxy) (*[]platformcl
 }
 
 // getScriptsByNameFn Retrieves all scripts instances that match the name passed in
-func getScriptsByNameFn(_ context.Context, p *scriptsProxy, scriptName string) (scriptsThatMatchName []platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+func getScriptsByNameFn(ctx context.Context, p *scriptsProxy, scriptName string) (scriptsThatMatchName []platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("getScriptsByNameFn: %w", err)
@@ -261,6 +274,9 @@ func (p *scriptsProxy) uploadScriptFile(filePath, scriptName, scriptId string, s
 
 // getScriptIdByNameFn is the implementation function for retrieving a script ID by name, if no other scripts have the same name
 func getScriptIdByNameFn(ctx context.Context, p *scriptsProxy, name string) (_ string, _ bool, _ *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("getScriptIdByNameFn: %w", err)
@@ -294,6 +310,9 @@ func isDefaultScriptById(id string) bool {
 
 // verifyScriptUploadSuccessFn checks to see if a file has successfully uploaded
 func verifyScriptUploadSuccessFn(ctx context.Context, p *scriptsProxy, body []byte) (bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	uploadId, err := p.getUploadIdFromBody(body)
 	if err != nil {
 		return false, err
@@ -332,7 +351,9 @@ func (p *scriptsProxy) getUploadIdFromBody(body []byte) (string, error) {
 }
 
 // scriptWasUploadedSuccessfullyFn checks the Genesys Cloud API to see if the script was successfully uploaded
-func scriptWasUploadedSuccessfullyFn(_ context.Context, p *scriptsProxy, uploadId string) (bool, *platformclientv2.APIResponse, error) {
+func scriptWasUploadedSuccessfullyFn(ctx context.Context, p *scriptsProxy, uploadId string) (bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	data, resp, err := p.scriptsApi.GetScriptsUploadStatus(uploadId, false)
 	if err != nil {
@@ -346,7 +367,10 @@ func scriptWasUploadedSuccessfullyFn(_ context.Context, p *scriptsProxy, uploadI
 }
 
 // getScriptExportUrlFn retrieves the export URL for a targeted script
-func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (string, *platformclientv2.APIResponse, error) {
+func getScriptExportUrlFn(ctx context.Context, p *scriptsProxy, scriptId string) (string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		body platformclientv2.Exportscriptrequest
 	)
@@ -369,43 +393,34 @@ func getScriptExportUrlFn(_ context.Context, p *scriptsProxy, scriptId string) (
 }
 
 // deleteScriptFn deletes a script from Genesys Cloud
-func deleteScriptFn(_ context.Context, p *scriptsProxy, scriptId string) error {
-	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/scripts/" + scriptId
-	r, _ := http.NewRequest(http.MethodDelete, fullPath, nil)
-	r.Header.Set("Authorization", "Bearer "+p.scriptsApi.Configuration.AccessToken)
-	r.Header.Set("Content-Type", "application/json")
-
+func deleteScriptFn(ctx context.Context, p *scriptsProxy, scriptId string) error {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	log.Printf("Deleting script %s", scriptId)
-	client := &http.Client{}
-	resp, err := client.Do(r)
-
-	if resp.StatusCode == http.StatusNotFound {
+	resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/scripts/"+scriptId, nil, nil)
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
 		log.Printf("Failed to delete script '%s' because it does not exist", scriptId)
 		return nil
 	}
-
-	if err != nil || (resp != nil && resp.StatusCode != http.StatusOK) {
-		response := "nil"
-		if resp != nil {
-			response = resp.Status
-		}
-		return fmt.Errorf("failed to delete script %s. API response: %s. Error: %v", scriptId, response, err)
+	if err != nil {
+		return fmt.Errorf("failed to delete script %s: %v", scriptId, err)
 	}
-
 	rc.DeleteCacheItem(p.scriptCache, scriptId)
 	log.Printf("Successfully deleted script %s", scriptId)
 	return nil
 }
 
 // getScriptByIdFn retrieves a script by Id
-func getScriptByIdFn(_ context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+func getScriptByIdFn(ctx context.Context, p *scriptsProxy, scriptId string) (script *platformclientv2.Script, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if script := rc.GetCacheItem(p.scriptCache, scriptId); script != nil {
 		return script, nil, nil
 	}
 
 	script, resp, err = p.scriptsApi.GetScript(scriptId)
 	if err != nil {
-		if resp.StatusCode == http.StatusNotFound {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
 			return nil, resp, nil
 		}
 		return nil, resp, err
@@ -416,6 +431,9 @@ func getScriptByIdFn(_ context.Context, p *scriptsProxy, scriptId string) (scrip
 
 // createScriptFn is an implementation function for creating a Genesys Cloud Script
 func createScriptFn(ctx context.Context, filePath, scriptName, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.uploadScriptFile(filePath, scriptName, "", substitutions)
 	if err != nil {
 		return "", err
@@ -452,6 +470,9 @@ func createScriptFn(ctx context.Context, filePath, scriptName, divisionId string
 
 // updateScriptFn is an implementation function for updating a Genesys Cloud Script
 func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId, divisionId string, substitutions map[string]interface{}, p *scriptsProxy) (string, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.uploadScriptFile(filePath, scriptName, scriptId, substitutions)
 	if err != nil {
 		return "", err
@@ -483,26 +504,18 @@ func setScriptDivision(scriptId, divisionId string, p *scriptsProxy) error {
 	if divisionId == "" {
 		return nil
 	}
-	apiClient := &p.scriptsApi.Configuration.APIClient
-	action := http.MethodPost
-	fullPath := p.scriptsApi.Configuration.BasePath + "/api/v2/authorization/divisions/" + divisionId + "/objects/SCRIPT"
+	ctx := context.Background()
 	body := []string{scriptId}
-
-	headerParams := make(map[string]string)
-
-	for key := range p.scriptsApi.Configuration.DefaultHeader {
-		headerParams[key] = p.scriptsApi.Configuration.DefaultHeader[key]
+	resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodPost, "/api/v2/authorization/divisions/"+divisionId+"/objects/SCRIPT", body, nil)
+	if err != nil || (resp != nil && resp.StatusCode != http.StatusNoContent) {
+		statusCode := 0
+		errorMessage := ""
+		if resp != nil {
+			statusCode = resp.StatusCode
+			errorMessage = resp.ErrorMessage
+		}
+		return fmt.Errorf("failed to set divisionId script %s: status code %d due to %s", scriptId, statusCode, errorMessage)
 	}
-	headerParams["Authorization"] = "Bearer " + p.scriptsApi.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	response, err := apiClient.CallAPI(fullPath, action, body, headerParams, nil, nil, "", nil, "")
-
-	if err != nil || response.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("failed to set divisionId script %s: status code %d due to %s", scriptId, response.StatusCode, response.ErrorMessage)
-	}
-
 	log.Printf("successfully set divisionId for script %s", scriptId)
 	return nil
 }

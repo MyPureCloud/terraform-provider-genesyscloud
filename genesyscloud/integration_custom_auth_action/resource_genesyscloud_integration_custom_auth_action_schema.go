@@ -1,5 +1,11 @@
 package integration_custom_auth_action
 
+// @team: Integration Services Indy
+// @chat: #genesys-cloud-integrations
+// @pm: Richard Schott
+// @jira: INTINDY
+// @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -128,7 +134,11 @@ func IntegrationCustomAuthActionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllModifiedCustomAuthActions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"integration_id": {RefType: "genesyscloud_integration"},
+			"integration_id":        {RefType: "genesyscloud_integration"},
+			"parent_integration_id": {RefType: "genesyscloud_integration"},
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "parent_integration_id"}: {Attr: "integration_id"},
 		},
 	}
 }

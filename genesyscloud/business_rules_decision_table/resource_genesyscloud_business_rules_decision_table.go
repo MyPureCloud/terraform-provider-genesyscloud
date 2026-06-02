@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	platformclientv2 "github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	platformclientv2 "github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -118,7 +118,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 	tableId := d.Id()
 	log.Printf("Reading business rules decision table %s", tableId)
 
-	return util.WithRetriesForReadCustomTimeout(ctx, 1*time.Minute, d, func() *retry.RetryError {
+	return util.WithRetriesForReadCustomTimeout(ctx, d.Timeout(schema.TimeoutRead), d, func() *retry.RetryError {
 
 		// Get table details to find the published version and table metadata
 		table, resp, err := proxy.getBusinessRulesDecisionTable(ctx, tableId)

@@ -7,17 +7,19 @@ import (
 	"log"
 	"net/mail"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -113,7 +115,7 @@ func executeAllUpdates(ctx context.Context, d *schema.ResourceData, proxy *userP
 		return diagErr
 	}
 
-	diagErr = updateUserRoutingUtilization(d, proxy)
+	diagErr = updateUserRoutingUtilization(ctx, d, proxy)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -297,7 +299,7 @@ func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.
 	return nil
 }
 
-func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
+func updateUserRoutingUtilization(ctx context.Context, d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
 	if d.HasChange("routing_utilization") {
 		if utilConfig := d.Get("routing_utilization").([]interface{}); utilConfig != nil {
 			var err error
@@ -310,14 +312,13 @@ func updateUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
 
 				if len(labelUtilizations) > 0 {
-					apiClient := &proxy.routingApi.Configuration.APIClient
-
-					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-					headerParams := buildHeaderParams(proxy.routingApi)
-					requestPayload := make(map[string]interface{})
-					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
-					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil, "")
+					c := customapi.NewClient(proxy.routingApi.Configuration, ResourceType)
+					path := fmt.Sprintf("/api/v2/routing/users/%s/utilization", d.Id())
+					requestPayload := map[string]interface{}{
+						"utilization":       buildMediaTypeUtilizations(allSettings),
+						"labelUtilizations": buildLabelUtilizationsRequest(labelUtilizations),
+					}
+					_, err = customapi.DoNoResponse(ctx, c, customapi.MethodPut, path, requestPayload, nil)
 				} else {
 					sdkSettings := make(map[string]platformclientv2.Mediautilization)
 					for sdkType, schemaType := range getUtilizationMediaTypes() {
@@ -359,8 +360,27 @@ func updatePassword(ctx context.Context, d *schema.ResourceData, proxy *userProx
 		return nil // Skip password update if empty
 	}
 
-	_, err := proxy.updatePassword(ctx, d.Id(), password)
+	resp, err := proxy.updatePassword(ctx, d.Id(), password)
 	if err != nil {
+		// Genesys Cloud can temporarily block password changes with a timestamp.
+		// Retry once by waiting until the specified time.
+		if resp != nil && util.IsStatus400(resp) && strings.Contains(err.Error(), "password cannot be changed until") {
+			re := regexp.MustCompile(`password cannot be changed until ([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)`)
+			if match := re.FindStringSubmatch(err.Error()); len(match) == 2 {
+				if until, parseErr := time.Parse(time.RFC3339, match[1]); parseErr == nil {
+					wait := time.Until(until) + 2*time.Second
+					if wait > 0 && wait < 3*time.Minute {
+						time.Sleep(wait)
+						if _, retryErr := proxy.updatePassword(ctx, d.Id(), password); retryErr == nil {
+							return nil
+						} else {
+							return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update password for user %s", d.Id()), retryErr)
+						}
+					}
+				}
+			}
+		}
+
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to update password for user %s", d.Id()), err)
 	}
 
@@ -525,11 +545,9 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
 	log.Printf("Getting user utilization")
 
-	apiClient := &proxy.routingApi.Configuration.APIClient
-
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-	headerParams := buildHeaderParams(proxy.routingApi)
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
+	c := customapi.NewClient(proxy.routingApi.Configuration, ResourceType)
+	path := fmt.Sprintf("/api/v2/routing/users/%s/utilization", d.Id())
+	rawBody, response, err := customapi.DoRaw(context.Background(), c, customapi.MethodGet, path, nil, nil)
 
 	if err != nil {
 		if util.IsStatus404(response) {
@@ -540,7 +558,7 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 	}
 
 	agentUtilization := &agentUtilizationWithLabels{}
-	err = json.Unmarshal(response.RawBody, &agentUtilization)
+	err = json.Unmarshal(rawBody, &agentUtilization)
 	if err != nil {
 		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
 	}
@@ -587,14 +605,38 @@ func phoneNumberHash(val interface{}) int {
 	phoneMap := make(map[string]interface{})
 	for k, v := range val.(map[string]interface{}) {
 		if k != "extension_pool_id" {
-			phoneMap[k] = v
+			if v != nil {
+				phoneMap[k] = v
+			}
 		}
 	}
-	if num, ok := phoneMap["number"]; ok {
-		// Attempt to format phone numbers before hashing
-		number, err := phonenumbers.Parse(num.(string), "US")
-		if err == nil {
-			phoneMap["number"] = phonenumbers.Format(number, phonenumbers.E164)
+
+	// Normalize missing fields so partially-known set elements hash consistently with fully-known ones.
+	// This avoids Terraform producing duplicate/fragmented elements during plan/apply with Computed attrs.
+	if mt, ok := phoneMap["media_type"].(string); !ok || mt == "" {
+		phoneMap["media_type"] = "PHONE"
+	}
+	if t, ok := phoneMap["type"].(string); !ok || t == "" {
+		phoneMap["type"] = "WORK"
+	}
+	if _, ok := phoneMap["extension"].(string); !ok {
+		phoneMap["extension"] = ""
+	}
+
+	// If an extension is present, treat that as the identity.
+	// The Genesys Cloud API may populate/derive a "number" field even when only an
+	// extension is configured, which would otherwise cause perpetual diffs in a TypeSet.
+	if ext, ok := phoneMap["extension"].(string); ok && ext != "" {
+		delete(phoneMap, "number")
+	} else if num, ok := phoneMap["number"].(string); ok {
+		if num == "" {
+			delete(phoneMap, "number")
+		} else {
+			// Attempt to format phone numbers before hashing
+			number, err := phonenumbers.Parse(num, "US")
+			if err == nil {
+				phoneMap["number"] = phonenumbers.Format(number, phonenumbers.E164)
+			}
 		}
 	}
 	return schema.HashResource(phoneNumberResource)(phoneMap)
@@ -619,25 +661,33 @@ func buildSdkEmails(configEmails *schema.Set) []platformclientv2.Contact {
 
 func buildSdkPhoneNumbers(configPhoneNumbers *schema.Set) ([]platformclientv2.Contact, diag.Diagnostics) {
 	phoneNumberSlice := configPhoneNumbers.List()
-	sdkContacts := make([]platformclientv2.Contact, len(phoneNumberSlice))
-	for i, configPhone := range phoneNumberSlice {
+	sdkContacts := make([]platformclientv2.Contact, 0, len(phoneNumberSlice))
+	for _, configPhone := range phoneNumberSlice {
 		phoneMap := configPhone.(map[string]interface{})
 		phoneMediaType := phoneMap["media_type"].(string)
 		phoneType := phoneMap["type"].(string)
+
+		phoneNum, _ := phoneMap["number"].(string)
+		phoneExt, _ := phoneMap["extension"].(string)
+		if phoneNum == "" && phoneExt == "" {
+			// Terraform can transiently produce partially-known set elements (e.g. only defaults)
+			// when other fields are Computed. Skip invalid contacts rather than sending an invalid API payload.
+			continue
+		}
 
 		contact := platformclientv2.Contact{
 			MediaType: &phoneMediaType,
 			VarType:   &phoneType,
 		}
 
-		if phoneNum, ok := phoneMap["number"].(string); ok && phoneNum != "" {
+		if phoneNum != "" {
 			contact.Address = &phoneNum
 		}
-		if phoneExt, ok := phoneMap["extension"].(string); ok && phoneExt != "" {
+		if phoneExt != "" {
 			contact.Extension = &phoneExt
 		}
 
-		sdkContacts[i] = contact
+		sdkContacts = append(sdkContacts, contact)
 	}
 	return sdkContacts, nil
 }
@@ -723,14 +773,15 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 			if *address.MediaType == "SMS" || *address.MediaType == "PHONE" {
 				phoneNumber := make(map[string]interface{})
 				phoneNumber["media_type"] = *address.MediaType
-				phoneNumber["extension_pool_id"] = ""
 
 				// PHONE and SMS Addresses have four different ways they can return in the API
 				// We need to be able to handle them all, and strip off any parentheses that can surround
 				// values
 
 				//     	1.) Addresses that return an "address" field are phone numbers without extensions
-				if address.Address != nil {
+				// Skip setting a number for internal extensions mapped to a pool (Extension==Display),
+				// since some orgs also populate Address for these and that breaks state expectations.
+				if address.Address != nil && (address.Extension == nil || address.Display == nil || *address.Extension != *address.Display) {
 					phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()"))
 				}
 
@@ -741,7 +792,12 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 						if *address.Extension == *address.Display {
 							extensionNum := strings.Trim(*address.Extension, "()")
 							phoneNumber["extension"] = extensionNum
-							phoneNumber["extension_pool_id"] = fetchExtensionPoolId(ctx, extensionNum, proxy)
+							if poolID := fetchExtensionPoolId(ctx, extensionNum, proxy); poolID != "" {
+								phoneNumber["extension_pool_id"] = poolID
+								// Internal extensions mapped to a pool may also include an Address field.
+								// Ensure we don't persist an API-derived number for extension-only config.
+								delete(phoneNumber, "number")
+							}
 						}
 					}
 				}
@@ -895,20 +951,6 @@ func getUtilizationMediaTypes() map[string]string {
 	return utilizationMediaTypes
 }
 
-func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
-	headerParams := make(map[string]string)
-
-	for key := range routingAPI.Configuration.DefaultHeader {
-		headerParams[key] = routingAPI.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + routingAPI.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	return headerParams
-}
-
 func flattenUtilizationSetting(settings mediaUtilization) []interface{} {
 	settingsMap := make(map[string]interface{})
 
@@ -1053,7 +1095,6 @@ func waitForExtensionPoolActivation(ctx context.Context, d *schema.ResourceData,
 		}
 	}
 
-	return
 }
 
 // GenerateBasicUserResource generates a basic user resource with minimum required fields

@@ -86,7 +86,7 @@ func ResourceTfExport() *schema.Resource {
 				ConflictsWith: []string{"resource_types", "include_filter_resources", "exclude_filter_resources"},
 			},
 			"replace_with_datasource": {
-				Description: "Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.",
+				Description: "Replace exported resources with data sources for entries that match either a resource type (equivalent to \"type::\") or a resource type::regular expression. See export guide for additional information.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
@@ -196,6 +196,13 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 			},
+			"export_deprecated": {
+				Description: "Export attributes that are marked as being Deprecated. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
 		},
 	}
 }
@@ -204,7 +211,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	tfExporterState.ActivateExporterState()
 
 	if _, ok := d.GetOk("include_filter_resources"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResources, AllowDependencyResolution)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr
@@ -215,7 +222,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, ok := d.GetOk("include_filter_resources_by_id"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResourcesById)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, IncludeResourcesById, AllowDependencyResolution)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr
@@ -226,7 +233,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	if _, ok := d.GetOk("exclude_filter_resources"); ok {
-		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources)
+		gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, ExcludeResources, DisallowDependencyResolution)
 		diagErr := gre.Export()
 		if diagErr.HasError() {
 			return diagErr
@@ -237,7 +244,7 @@ func createTfExport(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	//Dealing with the traditional resource
-	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude)
+	gre, _ := NewGenesysCloudResourceExporter(ctx, d, meta, LegacyInclude, DisallowDependencyResolution)
 	diagErr := gre.Export()
 	if diagErr.HasError() {
 		return diagErr

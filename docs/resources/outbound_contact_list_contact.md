@@ -16,6 +16,19 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 - [PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
 - [DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:contact:add`
+* `outbound:contact:delete`
+* `outbound:contact:edit`
+* `outbound:contact:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
 ## Migrating from genesyscloud_outbound_contact_list_contact
 
 ### Deprecation Notice

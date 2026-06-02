@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 // Row IDs structured as {table-id}/{key-value}
@@ -81,7 +81,8 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 
 	// For each property in the schema, check if a value is set in the config
 	if datatable.Schema != nil && datatable.Schema.Properties != nil {
-		for name, prop := range *datatable.Schema.Properties {
+		for _, name := range datatable.Schema.Properties.Keys() {
+			prop, _ := datatable.Schema.Properties.Get(name)
 			if name == "key" {
 				// Skip setting the key value
 				continue

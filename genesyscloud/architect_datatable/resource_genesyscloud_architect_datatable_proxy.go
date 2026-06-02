@@ -2,11 +2,11 @@ package architect_datatable
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -21,6 +21,7 @@ type getAllArchitectDatatableFunc func(ctx context.Context, p *architectDatatabl
 type architectDatatableProxy struct {
 	clientConfig                         *platformclientv2.Configuration
 	architectApi                         *platformclientv2.ArchitectApi
+	customApiClient                      *customapi.Client
 	createOrUpdateArchitectDatatableAttr createOrUpdateArchitectDatatableFunc
 	getArchitectDatatableAttr            getArchitectDatatableFunc
 	getAllArchitectDatatableAttr         getAllArchitectDatatableFunc
@@ -32,6 +33,7 @@ func newArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *a
 	return &architectDatatableProxy{
 		clientConfig:                         clientConfig,
 		architectApi:                         api,
+		customApiClient:                      customapi.NewClient(clientConfig, ResourceType),
 		createOrUpdateArchitectDatatableAttr: createOrUpdateArchitectDatatableFn,
 		getArchitectDatatableAttr:            getArchitectDatatableFn,
 		getAllArchitectDatatableAttr:         getAllArchitectDatatableFn,
@@ -68,82 +70,40 @@ func (p *architectDatatableProxy) deleteArchitectDatatable(ctx context.Context, 
 }
 
 func createOrUpdateArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, createAction bool, datatable *Datatable) (*Datatable, *platformclientv2.APIResponse, error) {
-	apiClient := &p.architectApi.Configuration.APIClient
-	action := http.MethodPost
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	// create path and map variables
-	path := p.architectApi.Configuration.BasePath + "/api/v2/flows/datatables"
+	method := customapi.MethodPost
+	path := "/api/v2/flows/datatables"
 
 	if !createAction {
-		action = http.MethodPut
+		method = customapi.MethodPut
 		path += "/" + *datatable.Id
 	}
 
-	headerParams := make(map[string]string)
-
-	// add default headers if any
-	for key := range p.architectApi.Configuration.DefaultHeader {
-		headerParams[key] = p.architectApi.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + p.architectApi.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, action, datatable, headerParams, nil, nil, "", nil, "")
-
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
-
-	return successPayload, response, err
+	return customapi.Do[Datatable](ctx, p.customApiClient, method, path, datatable, nil)
 }
 
 func getArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, datatableId string, expanded string) (*Datatable, *platformclientv2.APIResponse, error) {
-	apiClient := &p.architectApi.Configuration.APIClient
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	// create path and map variables
-	path := p.architectApi.Configuration.BasePath + "/api/v2/flows/datatables/" + datatableId
+	queryParams := customapi.NewQueryParams(map[string]string{"expand": expanded})
 
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-
-	// oauth required
-	if p.architectApi.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + p.architectApi.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range p.architectApi.Configuration.DefaultHeader {
-		headerParams[key] = p.architectApi.Configuration.DefaultHeader[key]
-	}
-
-	queryParams["expand"] = apiClient.ParameterToString(expanded, "")
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal(response.RawBody, &successPayload)
-	}
-	return successPayload, response, err
+	return customapi.Do[Datatable](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/flows/datatables/"+datatableId, nil, queryParams)
 }
 
 func deleteArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy, datatableId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.architectApi.DeleteFlowsDatatable(datatableId, true)
 }
 
 func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableProxy) (*[]platformclientv2.Datatable, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var totalRecords []platformclientv2.Datatable
 
 	const pageSize = 100

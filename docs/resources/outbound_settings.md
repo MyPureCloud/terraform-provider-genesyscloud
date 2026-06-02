@@ -13,6 +13,18 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 * [GET /api/v2/outbound/settings](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-settings)
 * [PATCH /api/v2/outbound/settings](https://developer.genesys.cloud/routing/outbound/#patch-api-v2-outbound-settings)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:settings:edit`
+* `outbound:settings:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 

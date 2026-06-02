@@ -1,5 +1,11 @@
 package integration_action_draft
 
+// @team: Integration Services Indy
+// @chat: #genesys-cloud-integrations
+// @pm: Richard Schott
+// @jira: INTINDY
+// @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"

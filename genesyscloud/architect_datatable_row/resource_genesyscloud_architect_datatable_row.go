@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 type Datatableproperty struct {
@@ -32,11 +32,11 @@ type Datatableproperty struct {
 
 // Overriding the SDK Datatable document as it does not allow setting additionalProperties to 'false' as required by the API
 type Jsonschemadocument struct {
-	Schema               *string                       `json:"$schema,omitempty"`
-	VarType              *string                       `json:"type,omitempty"`
-	Required             *[]string                     `json:"required,omitempty"`
-	Properties           *map[string]Datatableproperty `json:"properties,omitempty"`
-	AdditionalProperties *interface{}                  `json:"additionalProperties,omitempty"`
+	Schema               *string                             `json:"$schema,omitempty"`
+	VarType              *string                             `json:"type,omitempty"`
+	Required             *[]string                           `json:"required,omitempty"`
+	Properties           *util.OrderedMap[Datatableproperty] `json:"properties,omitempty"`
+	AdditionalProperties *interface{}                        `json:"additionalProperties,omitempty"`
 }
 
 type Datatable struct {
@@ -183,7 +183,7 @@ func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Datatable Row %s error: %s", d.Id(), err), resp)
 	}
 
-	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		_, resp, err := archProxy.getArchitectDatatableRow(ctx, tableId, keyStr)
 		if err != nil {
 			if util.IsStatus404(resp) {

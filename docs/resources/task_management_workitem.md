@@ -19,6 +19,22 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins-query)
 
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `workitems:workbin:view`
+* `workitems:workitem:accept`
+* `workitems:workitem:add`
+* `workitems:workitem:delete`
+* `workitems:workitem:edit`
+* `workitems:workitem:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `workitems`
+* `workitems:readonly`
+
 
 ## Example Usage
 

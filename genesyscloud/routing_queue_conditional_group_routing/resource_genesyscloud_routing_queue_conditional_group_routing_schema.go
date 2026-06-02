@@ -1,5 +1,11 @@
 package routing_queue_conditional_group_routing
 
+// @team: Assignment
+// @chat: #genesys-cloud-acd-routing
+// @pm: Rob Blane
+// @jira: AS
+// @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -38,7 +44,7 @@ var (
 // ResourceRoutingQueueConditionalGroupRouting registers the genesyscloud_routing_queue_conditional_group_routing resource with Terraform
 func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud routing queue conditional group routing rules",
+		Description: "Genesys Cloud routing queue conditional group routing rules. **Important:** This resource requires the ENABLE_STANDALONE_CGR environment variable to be set. When enabled, the conditional_group_routing_rules attribute on genesyscloud_routing_queue will not be read or exported — this resource takes over management of conditional group routing rules. The two approaches are mutually exclusive to prevent duplicate data during org exports.",
 
 		CreateContext: provider.CreateWithPooledClient(createRoutingQueueConditionalRoutingGroup),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingQueueConditionalRoutingGroup),
@@ -64,7 +70,7 @@ func ResourceRoutingQueueConditionalGroupRouting() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"evaluated_queue_id": {
-							Description: "The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.",
+							Description: "The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified. The API interprets a null queue as the current queue.",
 							Type:        schema.TypeString,
 							Optional:    true,
 						},
@@ -116,7 +122,7 @@ func RoutingQueueConditionalGroupRoutingExporter() *resourceExporter.ResourceExp
 			"rules.evaluated_queue_id": {RefType: "genesyscloud_routing_queue"},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"rules.condition_value":        {ResolverFunc: resourceExporter.ConditionValueResolver},
 		},
 	}

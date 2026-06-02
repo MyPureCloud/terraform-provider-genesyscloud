@@ -5,7 +5,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 var internalProxy *oauthClientProxy
@@ -19,7 +20,7 @@ type getTerraformUserFunc func(context.Context, *oauthClientProxy) (*platformcli
 type getTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
 type updateTerraformUserRolesFunc func(context.Context, *oauthClientProxy, string, []string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error)
 type getIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error)
-type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error)
+type getAllOauthClientsFunc func(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclient, *platformclientv2.APIResponse, error)
 type deleteOAuthClientFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type deleteIntegrationCredentialFunc func(context.Context, *oauthClientProxy, string) (*platformclientv2.APIResponse, error)
 type updateIntegrationClientFunc func(context.Context, *oauthClientProxy, string, platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
@@ -165,7 +166,7 @@ func (o *oauthClientProxy) updateOAuthClient(ctx context.Context, id string, cli
 	return o.updateOAuthClientAttr(ctx, o, id, client)
 }
 
-func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
+func (o *oauthClientProxy) getAllOAuthClients(ctx context.Context) (*[]platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 	return o.getAllOauthClientsAttr(ctx, o)
 }
 
@@ -176,8 +177,8 @@ func (o *oauthClientProxy) getHomeDivisionInfo(ctx context.Context) (*platformcl
 func getOAuthClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
 	return o.oAuthApi.GetOauthClient(id)
 }
-func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclientlisting, *platformclientv2.APIResponse, error) {
-	var clients []platformclientv2.Oauthclientlisting
+func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platformclientv2.Oauthclient, *platformclientv2.APIResponse, error) {
+	var clients []platformclientv2.Oauthclient
 	firstPage, resp, err := o.oAuthApi.GetOauthClients()
 
 	if err != nil {
@@ -200,10 +201,16 @@ func getAllOauthClientsFn(ctx context.Context, o *oauthClientProxy) (*[]platform
 }
 
 func getIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string) (*platformclientv2.Credential, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return o.integrationApi.GetIntegrationsCredential(id)
 }
 
 func updateIntegrationClientFn(ctx context.Context, o *oauthClientProxy, id string, credential platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return o.integrationApi.PutIntegrationsCredential(id, credential)
 }
 
@@ -233,7 +240,7 @@ func getParentOAuthClientTokenFn(ctx context.Context, o *oauthClientProxy) (*pla
 }
 
 func getTerraformUserFn(ctx context.Context, o *oauthClientProxy) (*platformclientv2.Userme, *platformclientv2.APIResponse, error) {
-	return o.usersApi.GetUsersMe(nil, "")
+	return o.usersApi.GetUsersMe(nil, "", nil)
 }
 
 func getTerraformUserRolesFn(ctx context.Context, o *oauthClientProxy, userId string) (*platformclientv2.Userauthorization, *platformclientv2.APIResponse, error) {

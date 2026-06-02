@@ -1,5 +1,11 @@
 package external_contacts_organization
 
+// @team: External Contacts
+// @chat: #Genesys Cloud Single Customer View
+// @pm: Cilian Day
+// @jira: RELATE
+// @description: Home of record for external contacts, identifiers, and external orgs.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -11,7 +17,7 @@ import (
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
-const ResourceType = `genesyscloud_externalcontacts_organization`
+const ResourceType = "genesyscloud_externalcontacts_organization"
 
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceExternalContactsOrganization())

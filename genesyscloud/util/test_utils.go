@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -124,6 +125,46 @@ func ValidateResourceAttributeInArray(arrayResourceName string, arrayFieldName, 
 		}
 
 		return fmt.Errorf("%s %s not found for resource %s in state", arrayFieldName, sourceValue, sourceID)
+	}
+}
+
+func ValidateJSONFileKeyValue[T comparable](configFile, resourcePath, attr string, value T) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		items := strings.Split(resourcePath, ".")
+
+		_, err := os.ReadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to read file %s: %v", configFile, err)
+		}
+
+		// Load the JSON content of the export file
+		log.Println("Loading export config into map variable")
+		exportJsonData, err := LoadJsonFileToMap(configFile)
+		if err != nil {
+			return err
+		}
+
+		var exportedDataAttr map[string]interface{} = exportJsonData
+
+		for _, attrKey := range items {
+			// Drill down into the nested structure using the attribute keys
+			if nextLevel, ok := exportedDataAttr[attrKey].(map[string]interface{}); ok {
+				exportedDataAttr = nextLevel
+			} else {
+				// If the key doesn't exist or isn't a map, return an error
+				return fmt.Errorf("attribute %s not found in path %s from exported data at %s", attrKey, resourcePath, configFile)
+			}
+		}
+
+		exportedValue, ok := exportedDataAttr[attr].(T)
+		if !ok {
+			return fmt.Errorf("field %s not exported in resource %s config", attr, resourcePath)
+		}
+
+		if exportedValue != value {
+			return fmt.Errorf("expected %s to equal %v, got %v", attr, value, exportedValue)
+		}
+		return nil
 	}
 }
 

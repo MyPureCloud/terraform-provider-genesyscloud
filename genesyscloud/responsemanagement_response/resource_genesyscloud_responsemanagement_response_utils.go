@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Response {
@@ -139,7 +139,7 @@ func buildMessagingTemplate(messagingTemplate *schema.Set) *platformclientv2.Mes
 	return &sdkMessagingTemplate
 }
 
-func buildAddressableEntityRefs(addressableEntityRef *schema.Set) *[]platformclientv2.Addressableentityref {
+func buildAddressableEntityRefs(addressableEntityRef *schema.Set) *[]platformclientv2.Rmsassetaddressableref {
 	if addressableEntityRef == nil {
 		return nil
 	}
@@ -149,10 +149,10 @@ func buildAddressableEntityRefs(addressableEntityRef *schema.Set) *[]platformcli
 		return nil
 	}
 
-	addressableEntityRefs := make([]platformclientv2.Addressableentityref, len(*strList))
+	addressableEntityRefs := make([]platformclientv2.Rmsassetaddressableref, len(*strList))
 	for i, id := range *strList {
 		tempId := id
-		addressableEntityRefs[i] = platformclientv2.Addressableentityref{Id: &tempId}
+		addressableEntityRefs[i] = platformclientv2.Rmsassetaddressableref{Id: &tempId}
 	}
 	return &addressableEntityRefs
 }
@@ -246,7 +246,7 @@ func flattenMessagingTemplate(messagingTemplate *platformclientv2.Messagingtempl
 	return messagingTemplateSet
 }
 
-func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Addressableentityref) *schema.Set {
+func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Rmsassetaddressableref) *schema.Set {
 	addressableEntityRefList := make([]interface{}, len(*addressableEntityRefs))
 	for i, v := range *addressableEntityRefs {
 		addressableEntityRefList[i] = *v.Id

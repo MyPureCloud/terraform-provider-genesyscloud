@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -76,6 +76,11 @@ type authSettings struct {
 	enabled             bool
 	integrationId       string
 	allowSessionUpgrade bool
+}
+
+type testIpFilter struct {
+	ipAddress string
+	name      string
 }
 
 func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
@@ -226,11 +231,15 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.language", "en-us"),
-					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "4"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.key", "MessengerHomeHeaderTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.value", "My Messenger Home Header Title"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.key", "MessengerHomeHeaderSubTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.value", "My Messenger Home Header SubTitle"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.key", "PushNotificationTitle"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.value", "New Message"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.key", "PushNotificationBody"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.value", "You have a new message"),
 
 					resource.TestCheckResourceAttr(resourcePath, "position.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "position.0.alignment", "Auto"),
@@ -243,6 +252,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.styles.0.primary_color", "#B0B0B0"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.enable_attachments", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.0", "image/png"),
@@ -250,6 +260,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.session_persistence_type", "AcrossSubdomains"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.enabled", util.TrueValue),
@@ -261,6 +272,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.conversation_disconnect.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.conversation_disconnect.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.conversation_disconnect.0.type", "Send"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.0.notification_content_type", "IncludeMessagesContent"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.0.bot.#", "1"),
@@ -366,6 +380,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.styles.0.primary_color", "#B0B0B0"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.enable_attachments", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.0", "image/png"),
@@ -373,6 +388,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.session_persistence_type", "AcrossSubdomains"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_control", util.FalseValue),
@@ -975,6 +991,14 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 				key = "MessengerHomeHeaderSubTitle"
 				value = "My Messenger Home Header SubTitle"
 			}
+			localized_labels {
+				key = "PushNotificationTitle"
+				value = "New Message"
+			}
+			localized_labels {
+				key = "PushNotificationBody"
+				value = "You have a new message"
+			}
 		}
 		position {
 			alignment = "Auto"
@@ -994,6 +1018,7 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 				primary_color = "#B0B0B0"
 			}
 			file_upload {
+				enable_attachments = true
 				mode {
 					file_types = [ "image/png" ]
 					max_file_size_kb = 100
@@ -1003,6 +1028,7 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 					max_file_size_kb = 123
 				}
 			}
+			session_persistence_type = "AcrossSubdomains"
 			apps {
 				conversations {
 					enabled = true
@@ -1015,6 +1041,10 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 						type = "Send"
 					}
 					conversation_clear_enabled = true
+					notifications {
+						enabled = true
+						notification_content_type = "IncludeMessagesContent"
+					}
 					humanize {
 						enabled = true
 						bot {
@@ -1225,6 +1255,256 @@ func generateAuthenticationSettings(authSettings authSettings) string {
 	`, strconv.FormatBool(authSettings.enabled), authSettings.integrationId, strconv.FormatBool(authSettings.allowSessionUpgrade))
 }
 
+func generateTrackingSettingsBlock(shouldKeepUrlFragment bool, searchParams []string, excludedParams []string, ipFilters []testIpFilter) string {
+	return fmt.Sprintf(`
+	journey_events {
+		enabled = true
+		tracking_settings {
+			should_keep_url_fragment = %t
+			search_query_parameters = %s
+			excluded_query_parameters = %s
+			%s
+		}
+	}`,
+		shouldKeepUrlFragment,
+		util.GenerateStringArrayEnquote(searchParams...),
+		util.GenerateStringArrayEnquote(excludedParams...),
+		generateIpFiltersBlocks(ipFilters),
+	)
+}
+
+func generateIpFiltersBlocks(ipFilters []testIpFilter) string {
+	if len(ipFilters) == 0 {
+		return ""
+	}
+
+	var blocks []string
+	for _, filter := range ipFilters {
+		blocks = append(blocks, fmt.Sprintf(`
+			ip_filters {
+				ip_address = "%s"
+				name = "%s"
+			}`, filter.ipAddress, filter.name))
+	}
+	return strings.Join(blocks, "")
+}
+
+func generateJourneyEventsBlock(enabled bool, pageviewConfig string, excludedParam string, searchParams []string, excludedParams []string) string {
+	var searchParamsStr, excludedParamsStr string
+	if len(searchParams) > 0 {
+		searchParamsStr = fmt.Sprintf("search_query_parameters = %s", util.GenerateStringArrayEnquote(searchParams...))
+	}
+	if len(excludedParams) > 0 {
+		excludedParamsStr = fmt.Sprintf("excluded_query_parameters = %s", util.GenerateStringArrayEnquote(excludedParams...))
+	}
+	if excludedParam != "" {
+		excludedParamsStr = fmt.Sprintf("excluded_query_parameters = [\"%s\"]", excludedParam)
+	}
+
+	var pageviewStr string
+	if pageviewConfig != "" {
+		pageviewStr = fmt.Sprintf("pageview_config = \"%s\"", pageviewConfig)
+	}
+
+	return fmt.Sprintf(`
+	journey_events {
+		enabled = %t
+		%s
+		%s
+		%s
+	}`, enabled, pageviewStr, searchParamsStr, excludedParamsStr)
+}
+
+func TestAccResourceWebDeploymentsConfigurationTrackingSettings(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel        = "webdeploy-tracking-test"
+		resourcePath         = ResourceType + "." + resourceLabel
+		configName           = "tf-tracking-config-" + uuid.NewString()
+		configDescription    = "Test Configuration with Tracking Settings"
+		languages            = []string{"en-us"}
+		defaultLang          = "en-us"
+		searchParams         = []string{"q", "search"}
+		excludedParams       = []string{"utm_source", "ref"}
+		ipFilters            = []testIpFilter{{"192.168.1.1", "office-network"}, {"10.0.0.1", "vpn-network"}}
+		searchParamsUpdate   = []string{"query"}
+		excludedParamsUpdate = []string{"utm_campaign"}
+		ipFiltersUpdate      = []testIpFilter{{"2001:db8::1", "ipv6-network"}}
+	)
+
+	cleanupWebDeploymentsConfiguration(t, "tf-tracking-config-")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			// Create with basic tracking settings
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						true,           // should_keep_url_fragment
+						searchParams,   // search_query_parameters
+						excludedParams, // excluded_query_parameters
+						ipFilters,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", configName),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", strconv.Itoa(len(searchParams))),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", searchParams[0]),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.1", searchParams[1]),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", strconv.Itoa(len(excludedParams))),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.0", excludedParams[0]),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.1", excludedParams[1]),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", strconv.Itoa(len(ipFilters))),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", ipFilters[0].ipAddress),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.name", ipFilters[0].name),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.1.ip_address", ipFilters[1].ipAddress),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.1.name", ipFilters[1].name),
+				),
+			},
+			// Update tracking settings
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						false,                // should_keep_url_fragment (changed)
+						searchParamsUpdate,   // search_query_parameters (changed)
+						excludedParamsUpdate, // excluded_query_parameters (changed)
+						ipFiltersUpdate,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", strconv.Itoa(len(searchParamsUpdate))),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", searchParamsUpdate[0]),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", strconv.Itoa(len(excludedParamsUpdate))),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.0", excludedParamsUpdate[0]),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", strconv.Itoa(len(ipFiltersUpdate))),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", ipFiltersUpdate[0].ipAddress),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.name", ipFiltersUpdate[0].name),
+				),
+			},
+			// Test with minimal tracking settings (only boolean field)
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						true,             // should_keep_url_fragment
+						[]string{},       // empty search_query_parameters
+						[]string{},       // empty excluded_query_parameters
+						[]testIpFilter{}, // empty ip_filters
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.should_keep_url_fragment", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "0"),
+				),
+			},
+			// Remove tracking settings (test without tracking_settings block)
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateJourneyEventsBlock(true, "", "", []string{}, []string{}), // journey_events without tracking_settings
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.#", "0"),
+				),
+			},
+		},
+		CheckDestroy: verifyConfigurationDestroyed,
+	})
+}
+
+func TestAccResourceWebDeploymentsConfigurationTrackingSettingsLimits(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel     = "webdeploy-limits-test"
+		resourcePath      = ResourceType + "." + resourceLabel
+		configName        = "tf-limits-config-" + uuid.NewString()
+		configDescription = "Test Configuration with Maximum Limits"
+		languages         = []string{"en-us"}
+		defaultLang       = "en-us"
+	)
+
+	// Generate maximum allowed parameters (50 each)
+	maxSearchParams := make([]string, 50)
+	maxExcludedParams := make([]string, 50)
+	for i := 0; i < 50; i++ {
+		maxSearchParams[i] = fmt.Sprintf("search_param_%d", i)
+		maxExcludedParams[i] = fmt.Sprintf("excluded_param_%d", i)
+	}
+
+	// Generate maximum allowed IP filters (10)
+	maxIpFilters := make([]testIpFilter, 10)
+	for i := 0; i < 10; i++ {
+		maxIpFilters[i] = testIpFilter{
+			ipAddress: fmt.Sprintf("192.168.1.%d", i+1),
+			name:      fmt.Sprintf("host_%d", i+1),
+		}
+	}
+
+	cleanupWebDeploymentsConfiguration(t, "tf-limits-config-")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateConfigurationResource(
+					resourceLabel,
+					configName,
+					configDescription,
+					languages,
+					defaultLang,
+					generateTrackingSettingsBlock(
+						true,
+						maxSearchParams,
+						maxExcludedParams,
+						maxIpFilters,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.#", "50"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.excluded_query_parameters.#", "50"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.#", "10"),
+					// Test first and last elements
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.0", "search_param_0"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.search_query_parameters.49", "search_param_49"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.0.ip_address", "192.168.1.1"),
+					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.tracking_settings.0.ip_filters.9.ip_address", "192.168.1.10"),
+				),
+			},
+		},
+		CheckDestroy: verifyConfigurationDestroyed,
+	})
+}
+
 func verifyConfigurationDestroyed(state *terraform.State) error {
 	api := platformclientv2.NewWebDeploymentsApi()
 
@@ -1257,7 +1537,7 @@ func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations("", "", "", false)
 	if getErr != nil {
 		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
 		return

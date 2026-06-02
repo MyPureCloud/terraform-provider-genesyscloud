@@ -25,6 +25,28 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `businessrules:businessRulesSchema:view`
+* `businessrules:decisionTable:add`
+* `businessrules:decisionTable:delete`
+* `businessrules:decisionTable:edit`
+* `businessrules:decisionTable:publish`
+* `businessrules:decisionTable:search`
+* `businessrules:decisionTable:view`
+* `businessrules:decisionTableRow:add`
+* `businessrules:decisionTableRow:delete`
+* `businessrules:decisionTableRow:edit`
+* `businessrules:decisionTableRow:view`
+* `routing:queue:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `business-rules`
+* `business-rules:readonly`
+
 
 ## Example Usage
 
@@ -347,6 +369,7 @@ IMPORTANT: Row inputs and outputs must follow the same positional order as defin
 ### Optional
 
 - `description` (String) The decision table description.
+- `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
@@ -591,4 +614,14 @@ Optional:
 								- Special: "Wildcard", "Null", "Empty", "CurrentTime"
 								- StringList: "item1,item2,item3" (comma-separated string)
 								- Default: Empty string "" uses column default Defaults to ``.
+
+
+
+
+<a id="nestedblock--timeouts"></a>
+### Nested Schema for `timeouts`
+
+Optional:
+
+- `read` (String)
 

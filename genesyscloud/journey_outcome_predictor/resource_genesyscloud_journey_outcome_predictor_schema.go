@@ -1,5 +1,11 @@
 package journey_outcome_predictor
 
+// @team: Journey Data
+// @chat: #customer-journey-data
+// @pm: Angelo Cicchitto
+// @jira: CPR
+// @description: Manages customer journey analytics and predictive engagement. Provides customer segmentation, outcome tracking, predictive modeling, and journey visualization for proactive customer engagement strategies.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -26,7 +32,8 @@ func SetRegistrar(regInstance registrar.Registrar) {
 // ResourceJourneyOutcomePredictor registers the genesyscloud_journey_outcome_predictor resource with Terraform
 func ResourceJourneyOutcomePredictor() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud journey outcome predictor`,
+		Description:        "[DEPRECATED] Genesys Cloud journey outcome predictor. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
+		DeprecationMessage: "Journey Outcomes is being removed. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 
 		CreateContext: provider.CreateWithPooledClient(createJourneyOutcomePredictor),
 		ReadContext:   provider.ReadWithPooledClient(readJourneyOutcomePredictor),

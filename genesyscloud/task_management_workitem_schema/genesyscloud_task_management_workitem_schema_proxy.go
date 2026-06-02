@@ -3,14 +3,14 @@ package task_management_workitem_schema
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"net/http"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -35,6 +35,7 @@ type getTaskManagementWorkitemSchemaDeletedStatusFunc func(ctx context.Context, 
 type taskManagementProxy struct {
 	clientConfig                                     *platformclientv2.Configuration
 	taskManagementApi                                *platformclientv2.TaskManagementApi
+	customApiClient                                  *customapi.Client
 	createTaskManagementWorkitemSchemaAttr           createTaskManagementWorkitemSchemaFunc
 	getAllTaskManagementWorkitemSchemaAttr           getAllTaskManagementWorkitemSchemaFunc
 	getTaskManagementWorkitemSchemasByNameAttr       getTaskManagementWorkitemSchemasByNameFunc
@@ -53,6 +54,7 @@ func newTaskManagementProxy(clientConfig *platformclientv2.Configuration) *taskM
 	return &taskManagementProxy{
 		clientConfig:                                     clientConfig,
 		taskManagementApi:                                api,
+		customApiClient:                                  customapi.NewClient(clientConfig, ResourceType),
 		createTaskManagementWorkitemSchemaAttr:           createTaskManagementWorkitemSchemaFn,
 		getAllTaskManagementWorkitemSchemaAttr:           getAllTaskManagementWorkitemSchemaFn,
 		getTaskManagementWorkitemSchemasByNameAttr:       getTaskManagementWorkitemSchemasByNameFn,
@@ -110,6 +112,7 @@ func (p *taskManagementProxy) getTaskManagementWorkitemSchemaDeletedStatus(ctx c
 
 // createTaskManagementWorkitemSchemaFn is an implementation function for creating a Genesys Cloud task management workitem schema
 func createTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	log.Printf("Creating task management workitem schema: %s", *schema.Name)
 	createdSchema, resp, err := p.taskManagementApi.PostTaskmanagementWorkitemsSchemas(*schema)
 	log.Printf("Completed call to create task management workitem schema %s with status code %d, correlation id %s and err %s", *schema.Name, resp.StatusCode, resp.CorrelationID, err)
@@ -121,6 +124,7 @@ func createTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // getAllTaskManagementWorkitemSchemaFn is the implementation for retrieving all task management workitem schemas in Genesys Cloud
 func getAllTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy) (*[]platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// NOTE: At the time of implementation (Preview API) retrieving schemas does not have any sort of pagination.
 	// It seemingly will return all schemas in one call. This might have to be updated as there may be some
 	// undocumented limit or if there would be changes to the API call before release.
@@ -137,6 +141,7 @@ func getAllTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // getTaskManagementWorkitemSchemasByNameFn is an implementation of the function to get a Genesys Cloud task management workitem schemas by name
 func getTaskManagementWorkitemSchemasByNameFn(ctx context.Context, p *taskManagementProxy, name string) (matchingSchemas *[]platformclientv2.Dataschema, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	finalSchemas := []platformclientv2.Dataschema{}
 
 	schemas, resp, err := p.getAllTaskManagementWorkitemSchema(ctx)
@@ -158,6 +163,7 @@ func getTaskManagementWorkitemSchemasByNameFn(ctx context.Context, p *taskManage
 
 // getTaskManagementWorkitemSchemaByIdFn is an implementation of the function to get a Genesys Cloud task management workitem schema by Id
 func getTaskManagementWorkitemSchemaByIdFn(ctx context.Context, p *taskManagementProxy, id string) (schema *platformclientv2.Dataschema, resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	workitemSchema := rc.GetCacheItem(p.workitemSchemaCache, id)
 	if workitemSchema != nil {
 		return schema, nil, nil
@@ -167,6 +173,7 @@ func getTaskManagementWorkitemSchemaByIdFn(ctx context.Context, p *taskManagemen
 
 // updateTaskManagementWorkitemSchemaFn is an implementation of the function to update a Genesys Cloud task management workitem schema
 func updateTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, id string, schemaUpdate *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	schema, resp, err := p.taskManagementApi.PutTaskmanagementWorkitemsSchema(id, *schemaUpdate)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update task management workitem schema: %s", err)
@@ -176,6 +183,7 @@ func updateTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // deleteTaskManagementWorkitemSchemaFn is an implementation function for deleting a Genesys Cloud task management workitem schema
 func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagementProxy, id string) (resp *platformclientv2.APIResponse, err error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	resp, err = p.taskManagementApi.DeleteTaskmanagementWorkitemsSchema(id)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete task management workitem schema: %s", err)
@@ -186,45 +194,17 @@ func deleteTaskManagementWorkitemSchemaFn(ctx context.Context, p *taskManagement
 
 // getTaskManagementWorkitemSchemaDeletedStatusFn is an implementation function to get the 'deleted' status of a Genesys Cloud task management workitem schema
 func getTaskManagementWorkitemSchemaDeletedStatusFn(ctx context.Context, p *taskManagementProxy, schemaId string) (isDeleted bool, resp *platformclientv2.APIResponse, err error) {
-	apiClient := &p.clientConfig.APIClient
-
-	// create path and map variables
-	path := p.clientConfig.BasePath + "/api/v2/taskmanagement/workitems/schemas/" + schemaId
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-
-	// oauth required
-	if p.clientConfig.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + p.clientConfig.AccessToken
-	}
-	// add default headers if any
-	for key := range p.clientConfig.DefaultHeader {
-		headerParams[key] = p.clientConfig.DefaultHeader[key]
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload map[string]interface{}
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	rawBody, resp, err := customapi.DoRaw(ctx, p.customApiClient, customapi.MethodGet, "/api/v2/taskmanagement/workitems/schemas/"+schemaId, nil, nil)
 	if err != nil {
-		return false, response, fmt.Errorf("failed to get workitem schema %s: %v", schemaId, err)
+		return false, resp, fmt.Errorf("failed to get workitem schema %s: %v", schemaId, err)
 	}
-	if response.Error != nil {
-		return false, response, fmt.Errorf("failed to get workitem schema %s: %v", schemaId, errors.New(response.ErrorMessage))
+	var result map[string]interface{}
+	if err := json.Unmarshal(rawBody, &result); err != nil {
+		return false, resp, fmt.Errorf("failed to get deleted status of %s: %v", schemaId, err)
 	}
-
-	err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	if err != nil {
-		return false, response, fmt.Errorf("failed to get deleted status of %s: %v", schemaId, err)
+	if deleted, ok := result["deleted"].(bool); ok {
+		return deleted, resp, nil
 	}
-
-	// Manually query for the 'deleted' property because it is removed when
-	// response JSON body becomes SDK Dataschema object.
-	if isDeleted, ok := successPayload["deleted"].(bool); ok {
-		return isDeleted, response, nil
-	}
-
-	return false, response, fmt.Errorf("failed to get deleted status of %s: %v", schemaId, err)
+	return false, resp, fmt.Errorf("failed to get deleted status of %s", schemaId)
 }

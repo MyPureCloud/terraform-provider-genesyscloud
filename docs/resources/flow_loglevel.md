@@ -16,6 +16,21 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-flows--flowId--instances-settings-loglevels)
 * [PUT /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-flows-instances-settings-loglevels-default)
 * [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-flows-instances-settings-loglevels-default)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `architect:flow:search`
+* `architect:flowLogLevel:add`
+* `architect:flowLogLevel:delete`
+* `architect:flowLogLevel:edit`
+* `architect:flowLogLevel:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

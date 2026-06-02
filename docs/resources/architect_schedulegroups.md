@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/architect/schedulegroups/{scheduleGroupId}](https://developer.genesys.cloud/api/rest/v2/architect/#get-api-v2-architect-schedulegroups--scheduleGroupId-)
 * [PUT /api/v2/architect/schedulegroups/{scheduleGroupId}](https://developer.genesys.cloud/api/rest/v2/architect/#put-api-v2-architect-schedulegroups--scheduleGroupId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:scheduleGroup:add`
+* `routing:scheduleGroup:delete`
+* `routing:scheduleGroup:edit`
+* `routing:scheduleGroup:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

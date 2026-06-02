@@ -1,5 +1,11 @@
 package responsemanagement_responseasset
 
+// @team: Response Management
+// @chat: #genesys-cloud-canned-responses
+// @pm: Marudhu Pandian
+// @jira: RESPONSES
+// @description: Response management provides the ability to support 'canned' responses to commonly asked questions for contact center users. The responses are designed to be used with email, chat, SMS, etc.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -61,6 +67,13 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 			},
 			"file_content_hash": {
 				Description: "Hash value of the response asset file content. Used to detect changes. Note: If the file content hash changes, the existing response asset will be dropped and recreated with a new ID",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				ForceNew:    true,
+			},
+			"content_location": {
+				Description: "Location URL of the response asset file content.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,

@@ -17,6 +17,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId-)
 * [PATCH /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `architect:grammar:add`
+* `architect:grammar:delete`
+* `architect:grammar:edit`
+* `architect:grammar:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `architect`
+* `architect:readonly`
+
 
 ## Example Usage
 

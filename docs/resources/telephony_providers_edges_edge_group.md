@@ -16,6 +16,17 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
 * [GET /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-edgegroups)
 * [DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `telephony:plugin:all`
+
+The following OAuth scopes are required to use this resource:
+
+* `telephony`
+* `telephony:readonly`
+
 
 ## Example Usage
 

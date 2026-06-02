@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -98,6 +98,7 @@ func readRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		resourcedata.SetNillableValue(d, "name", sdkAsset.Name)
+		resourcedata.SetNillableValue(d, "content_location", sdkAsset.ContentLocation)
 
 		log.Printf("Read Responsemanagement response asset %s %s", d.Id(), *sdkAsset.Name)
 

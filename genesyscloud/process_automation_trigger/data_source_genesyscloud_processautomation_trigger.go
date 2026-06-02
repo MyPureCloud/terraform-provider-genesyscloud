@@ -2,12 +2,10 @@ package process_automation_trigger
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -15,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 type ProcessAutomationTriggers struct {
@@ -39,16 +37,14 @@ func dataSourceProcessAutomationTrigger() *schema.Resource {
 
 func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	integrationAPI := platformclientv2.NewIntegrationsApiWithConfig(sdkConfig)
 
 	triggerName := d.Get("name").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		// create path
-		path := integrationAPI.Configuration.BasePath + "/api/v2/processAutomation/triggers"
+		relativePath := "/api/v2/processAutomation/triggers"
 
-		for pageNum := 1; ; pageNum++ {
-			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(path, integrationAPI)
+		for {
+			processAutomationTriggers, resp, getErr := getAllProcessAutomationTriggers(ctx, sdkConfig, relativePath)
 
 			if getErr != nil {
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to get page of process automation triggers: %s", getErr), resp))
@@ -69,37 +65,12 @@ func dataSourceProcessAutomationTriggerRead(ctx context.Context, d *schema.Resou
 				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("no process automation triggers found with name: %s", getErr), resp))
 			}
 
-			path = integrationAPI.Configuration.BasePath + *processAutomationTriggers.NextUri
+			relativePath = *processAutomationTriggers.NextUri
 		}
 	})
 }
 
-func getAllProcessAutomationTriggers(path string, api *platformclientv2.IntegrationsApi) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
-	apiClient := &api.Configuration.APIClient
-
-	headerParams := make(map[string]string)
-
-	// oauth required
-	if api.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + api.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range api.Configuration.DefaultHeader {
-		headerParams[key] = api.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *ProcessAutomationTriggers
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, nil, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal([]byte(response.RawBody), &successPayload)
-	}
-
-	return successPayload, response, err
+func getAllProcessAutomationTriggers(ctx context.Context, config *platformclientv2.Configuration, relativePath string) (*ProcessAutomationTriggers, *platformclientv2.APIResponse, error) {
+	c := customapi.NewClient(config, ResourceType)
+	return customapi.Do[ProcessAutomationTriggers](ctx, c, customapi.MethodGet, relativePath, nil, nil)
 }

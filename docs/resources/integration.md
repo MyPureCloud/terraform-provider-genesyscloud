@@ -21,6 +21,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/integrations/types/{typeId}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId-)
 * [GET /api/v2/integrations/types/{typeId}/configschemas/{configType}](https://developer.mypurecloud.com/api/rest/v2/integrations/#get-api-v2-integrations-types--typeId--configschemas--configType-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `integrations:integration:add`
+* `integrations:integration:delete`
+* `integrations:integration:edit`
+* `integrations:integration:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `integrations`
+* `integrations:readonly`
+
 
 ## Example Usage
 

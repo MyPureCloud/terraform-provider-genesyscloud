@@ -2,13 +2,13 @@ package recording_media_retention_policy
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -138,6 +138,9 @@ func (p *policyProxy) getQualityFormsSurveyByName(ctx context.Context, surveyNam
 
 // getAllIntegrationCredsFn is the implementation for getting all media retention policy in Genesys Cloud
 func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.Policy, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allPolicies []platformclientv2.Policy
 	const pageSize = 100
 
@@ -170,6 +173,9 @@ func getAllPoliciesFn(ctx context.Context, p *policyProxy) (*[]platformclientv2.
 
 // createPolicyFn is the implementation for creating a media retention policy in Genesys Cloud
 func createPolicyFn(ctx context.Context, p *policyProxy, policyCreate *platformclientv2.Policycreate) (*platformclientv2.Policy, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	policy, resp, err := p.recordingApi.PostRecordingMediaretentionpolicies(*policyCreate)
 	if err != nil {
 		return nil, resp, err
@@ -179,6 +185,9 @@ func createPolicyFn(ctx context.Context, p *policyProxy, policyCreate *platformc
 
 // getPolicyByIdFn is the implementation for getting a media retention policy in Genesys Cloud by id
 func getPolicyByIdFn(ctx context.Context, p *policyProxy, policyId string) (policy *platformclientv2.Policy, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	policy, resp, err := p.recordingApi.GetRecordingMediaretentionpolicy(policyId)
 	if err != nil {
 		return nil, resp, err
@@ -188,6 +197,9 @@ func getPolicyByIdFn(ctx context.Context, p *policyProxy, policyId string) (poli
 
 // getPolicyByNameFn is the implementation for getting a media retention policy in Genesys Cloud by name
 func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (policy *platformclientv2.Policy, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	policies, resp, err := getAllPoliciesFn(ctx, p)
 	if err != nil {
 		return nil, false, resp, err
@@ -208,6 +220,9 @@ func getPolicyByNameFn(ctx context.Context, p *policyProxy, policyName string) (
 
 // updatePolicyFn is the implementation for updating a media retention policy in Genesys Cloud
 func updatePolicyFn(ctx context.Context, p *policyProxy, policyId string, policyBody *platformclientv2.Policy) (*platformclientv2.Policy, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	policy, resp, err := p.recordingApi.PutRecordingMediaretentionpolicy(policyId, *policyBody)
 	if err != nil {
 		return nil, resp, err
@@ -217,6 +232,9 @@ func updatePolicyFn(ctx context.Context, p *policyProxy, policyId string, policy
 
 // deletePolicyFn is the implementation for deleting a media retention policy in Genesys Cloud
 func deletePolicyFn(ctx context.Context, p *policyProxy, policyId string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.recordingApi.DeleteRecordingMediaretentionpolicy(policyId)
 	if err != nil {
 		return resp, err
@@ -226,6 +244,9 @@ func deletePolicyFn(ctx context.Context, p *policyProxy, policyId string) (respo
 
 // getFormsEvaluationFn is the implementation for getting an evaluation form in Genesys Cloud
 func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*platformclientv2.Evaluationformresponse, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	form, resp, err := p.qualityApi.GetQualityFormsEvaluation(formId)
 	if err != nil {
 		return nil, resp, err
@@ -235,6 +256,9 @@ func getFormsEvaluationFn(ctx context.Context, p *policyProxy, formId string) (*
 
 // getEvaluationFormRecentVerIdFn is the implementation for getting the most recent version if of an evaluation form in Genesys Cloud
 func getEvaluationFormRecentVerIdFn(ctx context.Context, p *policyProxy, formId string) (string, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	formVersions, resp, err := p.qualityApi.GetQualityFormsEvaluationVersions(formId, 25, 1, "desc")
 	if err != nil {
 		return "", resp, err
@@ -247,6 +271,9 @@ func getEvaluationFormRecentVerIdFn(ctx context.Context, p *policyProxy, formId 
 
 // getQualityFormsSurveyByNameFn is the implementation for getting a survey form in Genesys Cloud
 func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyName string) (*platformclientv2.Publishedsurveyformreference, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	const pageNum = 1
 	const pageSize = 100
 	forms, resp, err := p.qualityApi.GetQualityFormsSurveys(pageSize, pageNum, "", "", "", "", surveyName, "desc")
@@ -262,42 +289,10 @@ func getQualityFormsSurveyByNameFn(ctx context.Context, p *policyProxy, surveyNa
 
 // We need to call /api/v2/recording/mediaretentionpolicies manually to avoid setting optional boolean and integer parameters than filter results
 func callGetAllPoliciesApi(pageSize, pageNumber int, config *platformclientv2.Configuration) (*platformclientv2.Policyentitylisting, *platformclientv2.APIResponse, error) {
-	apiClient := &config.APIClient
-
-	// create path and map variables
-	path := config.BasePath + "/api/v2/recording/mediaretentionpolicies"
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-	formParams := url.Values{}
-	var postBody interface{}
-	var postFileName string
-	var postFilePath string
-	var fileBytes []byte
-
-	// oauth required
-	if config.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + config.AccessToken
-	}
-	// add default headers if any
-	for key := range config.DefaultHeader {
-		headerParams[key] = config.DefaultHeader[key]
-	}
-
-	queryParams["pageSize"] = apiClient.ParameterToString(pageSize, "")
-	queryParams["pageNumber"] = apiClient.ParameterToString(pageNumber, "")
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *platformclientv2.Policyentitylisting
-	response, err := apiClient.CallAPI(path, http.MethodGet, postBody, headerParams, queryParams, formParams, postFileName, fileBytes, postFilePath)
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal(response.RawBody, &successPayload)
-	}
-	return successPayload, response, err
+	c := customapi.NewClient(config, ResourceType)
+	queryParams := customapi.NewQueryParams(map[string]string{
+		"pageSize":   fmt.Sprintf("%d", pageSize),
+		"pageNumber": fmt.Sprintf("%d", pageNumber),
+	})
+	return customapi.Do[platformclientv2.Policyentitylisting](context.Background(), c, customapi.MethodGet, "/api/v2/recording/mediaretentionpolicies", nil, queryParams)
 }

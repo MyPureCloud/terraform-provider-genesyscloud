@@ -2,17 +2,29 @@
 page_title: "genesyscloud_routing_queue_conditional_group_routing Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud routing queue conditional group routing rules
+  Genesys Cloud routing queue conditional group routing rules. Important: This resource requires the ENABLE_STANDALONE_CGR environment variable to be set. When enabled, the conditional_group_routing_rules attribute on genesyscloud_routing_queue will not be read or exported — this resource takes over management of conditional group routing rules. The two approaches are mutually exclusive to prevent duplicate data during org exports.
 ---
 # genesyscloud_routing_queue_conditional_group_routing (Resource)
 
-Genesys Cloud routing queue conditional group routing rules
+Genesys Cloud routing queue conditional group routing rules. **Important:** This resource requires the ENABLE_STANDALONE_CGR environment variable to be set. When enabled, the conditional_group_routing_rules attribute on genesyscloud_routing_queue will not be read or exported — this resource takes over management of conditional group routing rules. The two approaches are mutually exclusive to prevent duplicate data during org exports.
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId-)
 * [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-queues--queueId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `routing:queue:edit`
+* `routing:queue:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 
@@ -69,7 +81,7 @@ Required:
 
 Optional:
 
-- `evaluated_queue_id` (String) The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified.
+- `evaluated_queue_id` (String) The queue being evaluated for this rule. For rule 1, this is always the current queue, so should not be specified. The API interprets a null queue as the current queue.
 - `metric` (String) The queue metric being evaluated. Valid values: EstimatedWaitTime, ServiceLevel. Defaults to `EstimatedWaitTime`.
 - `wait_seconds` (Number) The number of seconds to wait in this rule, if it evaluates as true, before evaluating the next rule. For the final rule, this is ignored, so need not be specified. Defaults to `2`.
 

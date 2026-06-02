@@ -32,6 +32,7 @@ var (
 				Description:      "Phone number. Phone number must be in an E.164 number format.",
 				Type:             schema.TypeString,
 				Optional:         true,
+				Computed:         true,
 				ValidateDiagFunc: validators.ValidatePhoneNumber,
 			},
 			"media_type": {
@@ -57,6 +58,7 @@ var (
 				Description: "Id of the extension pool which contains this extension.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

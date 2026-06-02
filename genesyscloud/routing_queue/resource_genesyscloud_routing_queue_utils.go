@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -13,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 // Build Functions
@@ -139,7 +140,7 @@ func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailme
 		return nil
 	}
 
-	return &platformclientv2.Emailmediasettings{
+	emailSetting := &platformclientv2.Emailmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		EnableAutoAnswer:       platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
 		ServiceLevel: &platformclientv2.Servicelevel{
@@ -147,6 +148,11 @@ func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailme
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
 	}
+
+	emailSetting.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", false)
+	emailSetting.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", false)
+
+	return emailSetting
 }
 
 func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasettings {
@@ -158,7 +164,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 		return nil
 	}
 
-	return &platformclientv2.Mediasettings{
+	mediaSetting := &platformclientv2.Mediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		EnableAutoAnswer:       platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
 		ServiceLevel: &platformclientv2.Servicelevel{
@@ -166,6 +172,11 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
 	}
+
+	mediaSetting.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", false)
+	mediaSetting.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", false)
+
+	return mediaSetting
 }
 
 func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemediasettings {
@@ -297,10 +308,13 @@ func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv
 		subTypeMap := subTypeItem.(map[string]interface{})
 		mediaType := subTypeMap["media_type"].(string)
 		enableAutoAnswer := subTypeMap["enable_auto_answer"].(bool)
-		baseMediaSettings := platformclientv2.Messagesubtypesettings{
+		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		returnObj[mediaType] = baseMediaSettings
+		if enableInactivityTimeout, ok := subTypeMap["enable_inactivity_timeout"].(bool); ok {
+			subTypeSetting.EnableInactivityTimeout = &enableInactivityTimeout
+		}
+		returnObj[mediaType] = subTypeSetting
 	}
 
 	if len(returnObj) > 0 {
@@ -431,7 +445,7 @@ func buildMemberGroupList(d *schema.ResourceData, groupKey string, groupType str
 	return &memberGroups
 }
 
-func buildCgaSimpleMetric(simpleMetric []interface{}) *platformclientv2.Conditionalgroupactivationsimplemetric {
+func BuildCgaSimpleMetric(simpleMetric []interface{}) *platformclientv2.Conditionalgroupactivationsimplemetric {
 	var sdkSimpleMetric platformclientv2.Conditionalgroupactivationsimplemetric
 
 	for _, simpleMetricElement := range simpleMetric {
@@ -450,7 +464,7 @@ func buildCgaSimpleMetric(simpleMetric []interface{}) *platformclientv2.Conditio
 	return &sdkSimpleMetric
 }
 
-func buildCgaConditions(condition []interface{}) *[]platformclientv2.Conditionalgroupactivationcondition {
+func BuildCgaConditions(condition []interface{}) *[]platformclientv2.Conditionalgroupactivationcondition {
 	var sdkConditions []platformclientv2.Conditionalgroupactivationcondition
 
 	for _, conditionElement := range condition {
@@ -461,7 +475,7 @@ func buildCgaConditions(condition []interface{}) *[]platformclientv2.Conditional
 			continue
 		}
 
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.SimpleMetric, conditionMap, "simple_metric", buildCgaSimpleMetric)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCondition.SimpleMetric, conditionMap, "simple_metric", BuildCgaSimpleMetric)
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Operator, conditionMap, "operator")
 
 		if value, ok := conditionMap["value"]; ok {
@@ -480,7 +494,7 @@ func buildCgaConditions(condition []interface{}) *[]platformclientv2.Conditional
 	return &sdkConditions
 }
 
-func buildCgaGroups(memberGroups []interface{}) *[]platformclientv2.Membergroup {
+func BuildCgaGroups(memberGroups []interface{}) *[]platformclientv2.Membergroup {
 	var sdkMemberGroups []platformclientv2.Membergroup
 
 	for _, memberGroupElement := range memberGroups {
@@ -500,7 +514,7 @@ func buildCgaGroups(memberGroups []interface{}) *[]platformclientv2.Membergroup 
 	return &sdkMemberGroups
 }
 
-func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgroupactivationpilotrule {
+func BuildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgroupactivationpilotrule {
 	var sdkPilotRule platformclientv2.Conditionalgroupactivationpilotrule
 
 	for _, pilotRuleElement := range pilotRule {
@@ -510,13 +524,21 @@ func buildCgaPilotRule(pilotRule []interface{}) *platformclientv2.Conditionalgro
 		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkPilotRule.ConditionExpression, pilotRuleMap, "condition_expression")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkPilotRule.Conditions, pilotRuleMap, "conditions", buildCgaConditions)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkPilotRule.Conditions, pilotRuleMap, "conditions", BuildCgaConditions)
+	}
+
+	// Empty block or omitted attributes yield a non-nil *struct with all API fields unset. Sending that
+	// as pilotRule can trigger platform NPEs
+	exprEmpty := sdkPilotRule.ConditionExpression == nil || *sdkPilotRule.ConditionExpression == ""
+	condMeaningful := sdkPilotRule.Conditions != nil && len(*sdkPilotRule.Conditions) > 0
+	if exprEmpty && !condMeaningful {
+		return nil
 	}
 
 	return &sdkPilotRule
 }
 
-func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalgroupactivationrule {
+func BuildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalgroupactivationrule {
 	var sdkRules []platformclientv2.Conditionalgroupactivationrule
 
 	for _, ruleElement := range rules {
@@ -527,8 +549,19 @@ func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalg
 		}
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkRule.ConditionExpression, ruleMap, "condition_expression")
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", buildCgaConditions)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Groups, ruleMap, "groups", buildCgaGroups)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkRule.Conditions, ruleMap, "conditions", BuildCgaConditions)
+
+		// groups is a TypeSet, so extract via *schema.Set and convert to []interface{} for BuildCgaGroups
+		if groupsVal, ok := ruleMap["groups"]; ok && groupsVal != nil {
+			if groupsSet, ok := groupsVal.(*schema.Set); ok {
+				groups := BuildCgaGroups(groupsSet.List())
+				sdkRule.Groups = groups
+			} else if groupsList, ok := groupsVal.([]interface{}); ok {
+				// Fallback for cases where groups comes as []interface{} (e.g., during tests)
+				groups := BuildCgaGroups(groupsList)
+				sdkRule.Groups = groups
+			}
+		}
 
 		sdkRules = append(sdkRules, sdkRule)
 	}
@@ -536,7 +569,7 @@ func buildCgaNumberedRules(rules []interface{}) *[]platformclientv2.Conditionalg
 	return &sdkRules
 }
 
-func buildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv2.Conditionalgroupactivation {
+func BuildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv2.Conditionalgroupactivation {
 	cga, ok := d.GetOk("conditional_group_activation")
 	if !ok {
 		return nil
@@ -551,8 +584,8 @@ func buildSdkConditionalGroupActivation(d *schema.ResourceData) *platformclientv
 			continue
 		}
 
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.PilotRule, cgaMap, "pilot_rule", buildCgaPilotRule)
-		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.Rules, cgaMap, "rules", buildCgaNumberedRules)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.PilotRule, cgaMap, "pilot_rule", BuildCgaPilotRule)
+		resourcedata.BuildSDKInterfaceArrayValueIfNotNil(&sdkCga.Rules, cgaMap, "rules", BuildCgaNumberedRules)
 	}
 
 	return &sdkCga
@@ -672,6 +705,8 @@ func flattenMediaEmailSetting(settings *platformclientv2.Emailmediasettings) []i
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
 	return []interface{}{settingsMap}
 }
 
@@ -682,6 +717,8 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
 	return []interface{}{settingsMap}
 }
 
@@ -725,11 +762,21 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 	if subType == nil {
 		return nil
 	}
-	subTypeList := make([]interface{}, 0)
-	for key, value := range subType {
+
+	// Sort keys to ensure deterministic ordering and avoid phantom diffs
+	keys := make([]string, 0, len(subType))
+	for key := range subType {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	subTypeList := make([]interface{}, 0, len(subType))
+	for _, key := range keys {
+		value := subType[key]
 		subTypeMap := make(map[string]interface{})
 		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
 		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
 		subTypeList = append(subTypeList, subTypeMap)
 	}
 	return subTypeList
@@ -900,7 +947,7 @@ func flattenQueueMemberGroupsList(queue *platformclientv2.Queue, groupType *stri
 	return nil
 }
 
-func flattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactivationsimplemetric) []interface{} {
+func FlattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactivationsimplemetric) []interface{} {
 	if simpleMetric == nil {
 		return nil
 	}
@@ -912,7 +959,7 @@ func flattenCgaSimpleMetric(simpleMetric *platformclientv2.Conditionalgroupactiv
 	return []interface{}{simpleMetricMap}
 }
 
-func flattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupactivationcondition) []interface{} {
+func FlattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupactivationcondition) []interface{} {
 	if conditions == nil || len(*conditions) == 0 {
 		return nil
 	}
@@ -922,7 +969,7 @@ func flattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupact
 	for _, condition := range *conditions {
 		conditionOut := make(map[string]interface{})
 
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionOut, "simple_metric", condition.SimpleMetric, flattenCgaSimpleMetric)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionOut, "simple_metric", condition.SimpleMetric, FlattenCgaSimpleMetric)
 		resourcedata.SetMapValueIfNotNil(conditionOut, "operator", condition.Operator)
 		resourcedata.SetMapValueIfNotNil(conditionOut, "value", condition.Value)
 		conditionsOut = append(conditionsOut, conditionOut)
@@ -930,24 +977,22 @@ func flattenCgaRuleConditions(conditions *[]platformclientv2.Conditionalgroupact
 	return conditionsOut
 }
 
-func flattenCgaRuleGroups(groups *[]platformclientv2.Membergroup) []interface{} {
+func FlattenCgaRuleGroups(groups *[]platformclientv2.Membergroup) *schema.Set {
+	groupSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{})
 	if groups == nil || len(*groups) == 0 {
-		return nil
+		return groupSet
 	}
-
-	groupsOut := make([]interface{}, 0)
 
 	for _, group := range *groups {
 		groupOut := make(map[string]interface{})
-
 		resourcedata.SetMapValueIfNotNil(groupOut, "member_group_id", group.Id)
 		resourcedata.SetMapValueIfNotNil(groupOut, "member_group_type", group.VarType)
-		groupsOut = append(groupsOut, groupOut)
+		groupSet.Add(groupOut)
 	}
-	return groupsOut
+	return groupSet
 }
 
-func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) []interface{} {
+func FlattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) []interface{} {
 	if rules == nil || len(*rules) == 0 {
 		return nil
 	}
@@ -955,24 +1000,30 @@ func flattenCgaRules(rules *[]platformclientv2.Conditionalgroupactivationrule) [
 	rulesOut := make([]interface{}, 0)
 
 	for _, rule := range *rules {
+
 		ruleOut := make(map[string]interface{})
 
 		resourcedata.SetMapValueIfNotNil(ruleOut, "condition_expression", rule.ConditionExpression)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "conditions", rule.Conditions, flattenCgaRuleConditions)
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "groups", rule.Groups, flattenCgaRuleGroups)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(ruleOut, "conditions", rule.Conditions, FlattenCgaRuleConditions)
+
+		if rule.Groups != nil {
+			ruleOut["groups"] = FlattenCgaRuleGroups(rule.Groups)
+		}
+
 		rulesOut = append(rulesOut, ruleOut)
 	}
 	return rulesOut
 }
 
-func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroupactivation) []interface{} {
+func FlattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroupactivation) []interface{} {
 	cgaMap := make(map[string]interface{})
 
 	// convert pilot rule
 	if sdkCga.PilotRule != nil {
+
 		pilotRuleMap := make(map[string]interface{})
 
-		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(pilotRuleMap, "conditions", sdkCga.PilotRule.Conditions, flattenCgaRuleConditions)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(pilotRuleMap, "conditions", sdkCga.PilotRule.Conditions, FlattenCgaRuleConditions)
 		resourcedata.SetMapValueIfNotNil(pilotRuleMap, "condition_expression", sdkCga.PilotRule.ConditionExpression)
 
 		cgaMap["pilot_rule"] = []interface{}{pilotRuleMap}
@@ -980,7 +1031,7 @@ func flattenConditionalGroupActivation(sdkCga *platformclientv2.Conditionalgroup
 
 	// convert numbered rules
 	if sdkCga.Rules != nil {
-		cgaMap["rules"] = flattenCgaRules(sdkCga.Rules)
+		cgaMap["rules"] = FlattenCgaRules(sdkCga.Rules)
 	}
 
 	return []interface{}{cgaMap}

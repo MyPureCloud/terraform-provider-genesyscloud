@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func TestAccResourceRoutingEmailRoute(t *testing.T) {
@@ -35,9 +35,9 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 		skillName            = "Terraform Skill" + uuid.NewString()
 		routeResourceLabel1  = "email-route1"
 		routeResourceLabel2  = "email-route2"
-		routePattern1        = "terraform1"
-		routePattern2        = "terraform2"
-		routePattern3        = "terraform3"
+		routePattern1        = "terraform1" + strings.Replace(uuid.NewString(), "-", "", -1)[:8]
+		routePattern2        = "terraform2" + strings.Replace(uuid.NewString(), "-", "", -1)[:8]
+		routePattern3        = "terraform3" + strings.Replace(uuid.NewString(), "-", "", -1)[:8]
 		fromEmail1           = "terraform1@test.com"
 		fromEmail2           = "terraform2@test.com"
 		fromName1            = "John Terraform"
@@ -182,10 +182,6 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 					generateRoutingAutoBcc(fromName2, bccEmail2),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					func(s *terraform.State) error {
-						time.Sleep(30 * time.Second) // Wait for 30 seconds for resources to be updated
-						return nil
-					},
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "pattern", routePattern2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_name", fromName2),
 					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel1, "from_email", ""),

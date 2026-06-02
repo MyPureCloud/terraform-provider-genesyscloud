@@ -85,7 +85,9 @@ In the course of managing your Terraform configuration, circumstances may arise 
 resource "genesyscloud_tf_export" "export" {
   directory = "./genesyscloud/datasource"
   replace_with_datasource = [
-    "genesyscloud_group::Test_Group"
+    "genesyscloud_group",               # All groups (equivalent to "genesyscloud_group::")
+    "genesyscloud_group::Test_Group",   # A specific group by label
+    "genesyscloud_group::.*_readonly$", # Regex match
   ]
   include_state_file     = true
   export_format          = "hcl"
@@ -99,6 +101,19 @@ resource "genesyscloud_tf_export" "export" {
 In its standard setup, this Terraform configuration exports only the dependencies explicitly defined in your configuration. However, by enabling `enable_dependency_resolution`, Terraform can automatically export additional dependencies, including static ones associated with an architecture flow. This feature enhances the comprehensiveness of your exports, ensuring that not just the primary resource, but also its related entities, are included.
 
 On the other hand, Terraform also provides the `exclude_attributes` option for instances where certain fields need to be omitted from an export. This, along with the ability to automatically export additional dependencies, contributes to Terraform’s flexible framework for managing resource exports. It allows for granular control over the inclusion or exclusion of elements in the export, ensuring that your exported configuration aligns precisely with your requirements.
+
+## Excluding Deprecated Attributes:
+
+Some resource attributes have been deprecated in favor of newer alternatives. By default, these deprecated attributes are still included in exports for backward compatibility. To produce cleaner exports that omit deprecated fields, set `export_deprecated` to `false`:
+
+```hcl
+resource "genesyscloud_tf_export" "export" {
+  directory          = "./genesyscloud"
+  export_deprecated = false
+}
+```
+
+~> **Note:** The default value of `export_deprecated` (`true`) will likely switch to `false` in a future release.
 
 ## Export State File Comparison:
 

@@ -1,5 +1,11 @@
 package routing_queue
 
+// @team: Assignment
+// @chat: #genesys-cloud-acd-routing
+// @pm: Rob Blane
+// @jira: AS
+// @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -64,17 +70,17 @@ var (
 	agentOwnedRoutingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"enable_agent_owned_callbacks": {
-				Description: "Enable Agent Owned Callbacks",
+				Description: "Indicates if Agent Owned Callbacks are enabled for the queue.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"max_owned_callback_hours": {
-				Description: "Auto End Delay Seconds Must be >= 7",
+				Description: "The max amount of time a callback can be owned (in hours). Allowable range 1 - 168 hour(s) (inclusive).",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
 			"max_owned_callback_delay_hours": {
-				Description: "Max Owned Call Back Delay Hours >= 7",
+				Description: "The max amount of time a callback can be scheduled out into the future (in hours). Allowable range 1 - 720 hour(s) (inclusive).",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
@@ -83,13 +89,18 @@ var (
 	subTypeSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"media_type": {
-				Description: "The name of the social media company",
+				Description: "The media subtype key (e.g. webmessaging, instagram, whatsapp).",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
 			"enable_auto_answer": {
 				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
 				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			"enable_inactivity_timeout": {
+				Description: "Indicates if inactivity timeout is enabled for the given subtype.",
+				Optional:    true,
 				Type:        schema.TypeBool,
 			},
 		},
@@ -102,14 +113,8 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
-			"sub_type_settings": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        subTypeSettingsResource,
-			},
 			"enable_auto_answer": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -126,6 +131,16 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
+			"auto_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for an auto-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"manual_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for a manual-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
 		},
 	}
 	queueMediaSettingsMessageResource = &schema.Resource{
@@ -137,13 +152,13 @@ var (
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"sub_type_settings": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
+				Description: "Map of media subtype to media subtype specific settings.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        subTypeSettingsResource,
 			},
 			"enable_auto_answer": {
-				Description: "Auto-Answer for digital channels(Email, Message)",
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -161,7 +176,7 @@ var (
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
 			"enable_inactivity_timeout": {
-				Description: "Indicates if inactivity timeout is enabled for all subtypes.",
+				Description: "Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the \"sub_type_settings\" configuration for each media type",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -179,7 +194,6 @@ var (
 	queueCallbackMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec":      queueMediaSettingsResource.Schema["alerting_timeout_sec"],
-			"sub_type_settings":         queueMediaSettingsResource.Schema["sub_type_settings"],
 			"enable_auto_answer":        queueMediaSettingsResource.Schema["enable_auto_answer"],
 			"service_level_percentage":  queueMediaSettingsResource.Schema["service_level_percentage"],
 			"service_level_duration_ms": queueMediaSettingsResource.Schema["service_level_duration_ms"],
@@ -191,18 +205,18 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"AgentFirst", "CustomerFirst"}, false),
 			},
 			"enable_auto_dial_and_end": {
-				Description: "Auto Dial and End",
+				Description: "Flag to enable Auto-Dial and Auto-End automation for callbacks on this queue.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
 			},
 			"auto_dial_delay_seconds": {
-				Description: "Auto Dial Delay Seconds.",
+				Description: "Time in seconds after agent connects to callback before outgoing call is auto-dialed. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
 			"auto_end_delay_seconds": {
-				Description: "Auto End Delay Seconds.",
+				Description: "Time in seconds after agent disconnects from the outgoing call before the encasing callback is auto-ended. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
@@ -277,19 +291,19 @@ var (
 	directRoutingResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"backup_queue_id": {
-				Description: "Direct Routing default backup queue id (if none supplied this queue will be used as backup).",
+				Description: "ID of another queue to be used as the default backup if an agent does not have their Backup Settings configured. If not set, the current queue will be used as backup, but with Direct Routing criteria removed from the conversation.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
 			},
 			"agent_wait_seconds": {
-				Description: "The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup.",
+				Description: "Time (in seconds) that a Direct Routing interaction will wait for Direct Routing agent before going to selected backup. Valid range [60, 864000].",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Default:     60,
 			},
 			"wait_for_agent": {
-				Description: "Boolean indicating if Direct Routing interactions should wait for the targeted agent by default.",
+				Description: "Flag indicating if Direct Routing interactions should wait for Direct Routing agent or go immediately to selected backup.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -348,10 +362,9 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"GreaterThan", "LessThan", "GreaterThanOrEqualTo", "LessThanOrEqualTo", "EqualTo", "NotEqualTo"}, false),
 			},
 			"value": {
-				Description:  "The threshold value, beyond which a rule evaluates as true.",
-				Type:         schema.TypeFloat,
-				Required:     true,
-				ValidateFunc: validation.FloatBetween(0, 1000000),
+				Description: "The threshold value, beyond which a rule evaluates as true.",
+				Type:        schema.TypeFloat,
+				Required:    true,
 			},
 		},
 	}
@@ -405,7 +418,7 @@ var (
 						},
 						"groups": {
 							Description: "The group(s) to activate if the rule evaluates as true.",
-							Type:        schema.TypeList,
+							Type:        schema.TypeSet,
 							Required:    true,
 							MinItems:    1,
 							MaxItems:    5,
@@ -484,7 +497,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Elem:        queueMediaSettingsResource,
 			},
 			"agent_owned_routing": {
-				Description: "Agent Owned Routing.",
+				Description: "The Agent Owned Routing settings for the queue.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -492,7 +505,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Elem:        agentOwnedRoutingResource,
 			},
 			"canned_response_libraries": {
-				Description: "Agent Owned Routing.",
+				Description: "Canned response library IDs and mode with which they are associated with the queue.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -592,11 +605,10 @@ func ResourceRoutingQueue() *schema.Resource {
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
 				Elem:        conditionalGroupActivationResource,
 			},
 			"conditional_group_routing_rules": {
-				Description: "The Conditional Group Routing settings for the queue. **Note**: conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing",
+				Description: "The Conditional Group Routing settings for the queue. **Important:** conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing. When ENABLE_STANDALONE_CGR is set, this attribute will not be read or exported. The two approaches are mutually exclusive to prevent duplicate data during org exports.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    5,
@@ -605,7 +617,7 @@ func ResourceRoutingQueue() *schema.Resource {
 						"queue_id": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always be the current queue, so no queue id should be specified for the first rule.`,
+							Description: `The ID of the queue being evaluated for this rule. For rule 1, this is always the current queue, so no queue id should be specified for the first rule. If the queue references itself, it will be automatically removed during export (the API interprets null as "use the current queue").`,
 						},
 						"operator": {
 							Description:  "The operator that compares the actual value against the condition value. Valid values: GreaterThan, GreaterThanOrEqualTo, LessThan, LessThanOrEqualTo.",
@@ -650,7 +662,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"MANDATORY", "OPTIONAL", "MANDATORY_TIMEOUT", "MANDATORY_FORCED_TIMEOUT", "AGENT_REQUESTED"}, false),
 			},
 			"acw_timeout_ms": {
-				Description:  "The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.",
+				Description:  "The amount of time the agent can stay in ACW (Min: 1 sec, Max: 60 min). Can only be used when ACW is AGENT_REQUESTED, MANDATORY_TIMEOUT or MANDATORY_FORCED_TIMEOUT.",
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Computed:     true, // Default may be set by server
@@ -809,7 +821,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"direct_routing": {
-				Description: "Used by the System to set Direct Routing settings for a system Direct Routing queue.",
+				Description: "The Direct Routing settings for the queue.",
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
@@ -868,6 +880,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
+			"media_settings_message.inactivity_timeout_settings.flow_id":                {RefType: architectFlow.ResourceType},
 			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
 			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},
 		},
@@ -875,11 +888,12 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"outbound_email_address": {"route_id"},
 			"members":                {"user_id"},
 		},
-		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id"},
+		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id", "conditional_group_routing_rules.queue_id", "conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id", "conditional_group_activation.rules.conditions.simple_metric.queue_id"},
 		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"bullseye_rings.member_groups.member_group_id":           {ResolverFunc: resourceExporter.MemberGroupsResolver},
-			"conditional_group_routing_rules.groups.member_group_id": {ResolverFunc: resourceExporter.MemberGroupsResolver},
+			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
+			"conditional_group_activation.rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 		},
 	}
 }

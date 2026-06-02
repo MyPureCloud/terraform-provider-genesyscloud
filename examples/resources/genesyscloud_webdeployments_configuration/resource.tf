@@ -103,6 +103,19 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
   #   excluded_query_parameters = ["marketingCampaign"]
 
   #   pageview_config = "Auto"
+  #   tracking_settings {
+  #     should_keep_url_fragment   = true
+  #     search_query_parameters    = ["q", "search", "term"]
+  #     excluded_query_parameters  = ["utm_source", "utm_medium"]
+  #     ip_filters {
+  #       ip_address = "192.168.1.1"
+  #       name       = "office-network"
+  #     }
+  #     ip_filters {
+  #       ip_address = "2001:db8::1"
+  #       name       = "ipv6-network"
+  #     }
+  #   }
 
   #   click_event {
   #     selector   = ".promo-button"

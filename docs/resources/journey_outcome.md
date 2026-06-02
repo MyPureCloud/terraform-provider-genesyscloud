@@ -1,12 +1,12 @@
 ---
 page_title: "genesyscloud_journey_outcome Resource - terraform-provider-genesyscloud"
-subcategory: ""
+subcategory: "Deprecated"
 description: |-
-  Genesys Cloud Journey Outcome
+  [DEPRECATED] Genesys Cloud Journey Outcome. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 ---
 # genesyscloud_journey_outcome (Resource)
 
-Genesys Cloud Journey Outcome
+[DEPRECATED] Genesys Cloud Journey Outcome. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
@@ -16,6 +16,20 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-outcomes--outcomeId-)
 * [PATCH /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-outcomes--outcomeId-)
 * [DELETE /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-outcomes--outcomeId-)
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `journey:outcome:add`
+* `journey:outcome:delete`
+* `journey:outcome:edit`
+* `journey:outcome:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `journey`
+* `journey:readonly`
+
 
 ## Example Usage
 

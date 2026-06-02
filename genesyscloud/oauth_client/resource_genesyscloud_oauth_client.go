@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var CacheFile = "/shared-cache.json"
@@ -145,17 +145,6 @@ func readOAuthClient(ctx context.Context, d *schema.ResourceData, meta interface
 			_ = d.Set("roles", flattenOAuthRoles(*client.RoleDivisions))
 		} else {
 			_ = d.Set("roles", nil)
-		}
-
-		// Only populate client_secret if explicitly requested
-		if d.Get("expose_client_secret").(bool) {
-			if client.Secret != nil {
-				_ = d.Set("client_secret", *client.Secret)
-			} else {
-				_ = d.Set("client_secret", "")
-			}
-		} else {
-			_ = d.Set("client_secret", "")
 		}
 
 		resourcedata.SetNillableValue(d, "client_id", client.Id)
@@ -313,9 +302,10 @@ func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta 
 	if dealIntegrationFlag {
 		credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
 
-		if client.Secret == nil || *client.Secret != "" {
+		if client.Secret == nil || *client.Secret == "" {
 			fields := fetchOauthClientSecret(sdkConfig, *client.Id)
-			*client.Secret = fields["client_secret"]
+			secret := fields["clientSecret"]
+			client.Secret = &secret
 		}
 		if credentialId != nil {
 			currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
@@ -346,7 +336,11 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		credType := "pureCloudOAuthClient"
 		results := make(map[string]string)
 		results["clientId"] = *client.Id
-		results["clientSecret"] = *client.Secret
+		if client.Secret != nil {
+			results["clientSecret"] = *client.Secret
+		} else {
+			log.Printf("Warning: client secret is nil for oauth client %s. Integration credential may be incomplete.", *client.Id)
+		}
 
 		createCredential := platformclientv2.Credential{
 			Name: credentialName,
@@ -364,12 +358,6 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 
 		resourcedata.SetNillableValue(d, "client_id", client.Id)
 
-		if d.Get("expose_client_secret").(bool) {
-			_ = d.Set("client_secret", *client.Secret)
-		} else {
-			_ = d.Set("client_secret", "")
-		}
-
 		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
 		resourcedata.SetNillableValue(d, "integration_credential_name", credential.Name)
 
@@ -386,7 +374,11 @@ func updateCredential(ctx context.Context, d *schema.ResourceData,
 		credType := "pureCloudOAuthClient"
 		results := make(map[string]string)
 		results["clientId"] = *client.Id
-		results["clientSecret"] = *client.Secret
+		if client.Secret != nil {
+			results["clientSecret"] = *client.Secret
+		} else {
+			log.Printf("Warning: client secret is nil for oauth client %s. Integration credential may be incomplete.", *client.Id)
+		}
 
 		updateCred := platformclientv2.Credential{
 			Name: credentialName,
@@ -405,12 +397,6 @@ func updateCredential(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "integration_credential_id", credential.Id)
 		resourcedata.SetNillableValue(d, "integration_credential_name", credential.Name)
 		resourcedata.SetNillableValue(d, "client_id", client.Id)
-
-		if d.Get("expose_client_secret").(bool) {
-			_ = d.Set("client_secret", *client.Secret)
-		} else {
-			_ = d.Set("client_secret", "")
-		}
 
 		log.Printf("Updated Integration Credential client %s", *credentialName)
 	}

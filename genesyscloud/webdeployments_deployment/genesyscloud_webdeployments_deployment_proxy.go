@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var internalProxy *webDeploymentsProxy
@@ -82,55 +83,104 @@ func (p *webDeploymentsProxy) deleteWebDeployment(ctx context.Context, deploymen
 }
 
 func getAllWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
-	return p.webDeploymentsApi.GetWebdeploymentsDeployments([]string{})
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	var allDeployments []platformclientv2.Expandablewebdeployment
+	var response *platformclientv2.APIResponse
+	after := ""
+
+	for {
+		deployments, resp, err := p.webDeploymentsApi.GetWebdeploymentsDeployments("", "", after, []string{})
+		if err != nil {
+			return nil, resp, err
+		}
+		response = resp
+
+		if deployments.Entities != nil {
+			allDeployments = append(allDeployments, *deployments.Entities...)
+		}
+
+		if deployments.NextUri == nil || *deployments.NextUri == "" {
+			break
+		}
+
+		newAfter, parseErr := util.GetQueryParamValueFromUri(*deployments.NextUri, "after")
+		if parseErr != nil || newAfter == "" || newAfter == after {
+			break
+		}
+		after = newAfter
+	}
+
+	result := &platformclientv2.Expandablewebdeploymententitylisting{
+		Entities: &allDeployments,
+	}
+	return result, response, nil
 }
 
 func getWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.GetWebdeploymentsDeployment(deployId, []string{})
 }
 
 func createWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PostWebdeploymentsDeployments(deployment)
 }
 
 func updateWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PutWebdeploymentsDeployment(deploymentId, deployment)
 }
 
 func deleteWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.DeleteWebdeploymentsDeployment(deploymentId)
 }
 
 func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	version := ""
 	draft := "DRAFT"
 	versionList := []string{}
 	err := util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId)
-		if getErr != nil {
-			if util.IsStatus404(resp) {
-				return retry.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
-			}
-			log.Printf("Failed to determine latest version. Defaulting to DRAFT. Details: %s", getErr)
-			version = draft
-			return retry.NonRetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
-		}
-
 		maxVersion := 0
-		for _, v := range *versions.Entities {
-			if *v.Version == draft {
-				versionList = append(versionList, *v.Version)
-				continue
+		after := ""
+
+		for {
+			versions, resp, getErr := p.webDeploymentsApi.GetWebdeploymentsConfigurationVersions(configurationId, "", "", after)
+			if getErr != nil {
+				if util.IsStatus404(resp) {
+					return retry.RetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
+				}
+				log.Printf("Failed to determine latest version. Defaulting to DRAFT. Details: %s", getErr)
+				version = draft
+				return retry.NonRetryableError(fmt.Errorf("Failed to determine latest version %s", getErr))
 			}
-			APIVersion, err := strconv.Atoi(*v.Version)
-			if err != nil {
-				log.Printf("Failed to convert version %s to an integer", *v.Version)
-			} else {
-				versionList = append(versionList, *v.Version)
-				if APIVersion > maxVersion {
-					maxVersion = APIVersion
+
+			for _, v := range *versions.Entities {
+				if *v.Version == draft {
+					versionList = append(versionList, *v.Version)
+					continue
+				}
+				APIVersion, err := strconv.Atoi(*v.Version)
+				if err != nil {
+					log.Printf("Failed to convert version %s to an integer", *v.Version)
+				} else {
+					versionList = append(versionList, *v.Version)
+					if APIVersion > maxVersion {
+						maxVersion = APIVersion
+					}
 				}
 			}
+
+			if versions.NextUri == nil || *versions.NextUri == "" {
+				break
+			}
+			newAfter, parseErr := util.GetQueryParamValueFromUri(*versions.NextUri, "after")
+			if parseErr != nil || newAfter == "" || newAfter == after {
+				break
+			}
+			after = newAfter
 		}
 
 		if maxVersion == 0 {

@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
@@ -221,7 +221,7 @@ func getAllUsersFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.U
 	var allUsers []platformclientv2.User
 	const pageSize = 100
 
-	users, resp, err := p.usersApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
+	users, resp, err := p.usersApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", nil, "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get users %s", err)
 	}
@@ -232,7 +232,7 @@ func getAllUsersFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.U
 	allUsers = append(allUsers, *users.Entities...)
 
 	for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
-		users, resp, err := p.usersApi.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", "")
+		users, resp, err := p.usersApi.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", nil, "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get users %s", err)
 		}

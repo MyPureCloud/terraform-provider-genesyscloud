@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -125,7 +125,14 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValue(d, "campaign_status", campaign.CampaignStatus)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "phone_columns", campaign.PhoneColumns, flattenPhoneColumn)
 		resourcedata.SetNillableValue(d, "abandon_rate", campaign.AbandonRate)
-		resourcedata.SetNillableValue(d, "max_calls_per_agent", campaign.MaxCallsPerAgent)
+		// Use MaxCallsPerAgentDecimal if available, fall back to MaxCallsPerAgent for backward compatibility
+		if campaign.MaxCallsPerAgentDecimal != nil {
+			resourcedata.SetNillableValue(d, "max_calls_per_agent", campaign.MaxCallsPerAgentDecimal)
+		} else if campaign.MaxCallsPerAgent != nil {
+			// Convert int to float64 for backward compatibility with existing campaigns
+			maxCallsFloat := float64(*campaign.MaxCallsPerAgent)
+			_ = d.Set("max_calls_per_agent", maxCallsFloat)
+		}
 		if campaign.DncLists != nil {
 			_ = d.Set("dnc_list_ids", util.SdkDomainEntityRefArrToSet(*campaign.DncLists))
 		}
@@ -159,6 +166,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_line_balancing_settings", campaign.DynamicLineBalancingSettings, flattenLineBalancingSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "diagnostics_settings", campaign.DiagnosticsSettings, flattenDiagnosticsSettings)
 		if campaign.SkillColumns != nil && len(*campaign.SkillColumns) > 0 {
 			_ = d.Set("skill_columns", *campaign.SkillColumns)
 		}
