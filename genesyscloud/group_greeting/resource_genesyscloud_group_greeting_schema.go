@@ -1,4 +1,4 @@
-package greeting
+package group_greeting
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -12,20 +12,20 @@ import (
 
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
-	l.RegisterResource(ResourceType, ResourceGreeting())
+	l.RegisterResource(ResourceType, ResourceGroupGreeting())
 	l.RegisterExporter(ResourceType, GreetingExporter())
 }
 
-const ResourceType = "genesyscloud_greeting"
+const ResourceType = "genesyscloud_group_greeting"
 
-func ResourceGreeting() *schema.Resource {
+func ResourceGroupGreeting() *schema.Resource {
 	return &schema.Resource{
-		Description: "Genesys Cloud Greeting",
+		Description: "Genesys Cloud Greetings (Group)",
 
-		CreateContext: provider.CreateWithPooledClient(createGreeting),
-		ReadContext:   provider.ReadWithPooledClient(readGreeting),
-		UpdateContext: provider.UpdateWithPooledClient(updateGreeting),
-		DeleteContext: provider.DeleteWithPooledClient(deleteGreeting),
+		CreateContext: provider.CreateWithPooledClient(createGroupGreeting),
+		ReadContext:   provider.ReadWithPooledClient(readGroupGreeting),
+		UpdateContext: provider.UpdateWithPooledClient(updateGroupGreeting),
+		DeleteContext: provider.DeleteWithPooledClient(deleteGroupGreeting),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -37,25 +37,30 @@ func ResourceGreeting() *schema.Resource {
 				Optional:    true,
 			},
 			"type": {
-				Description: "Greeting type.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"owner_type": {
-				Description:  "Greeting owner type. ORGANIZATION is the only supported owner type for organization greetings.",
+				Description:  "Greeting type. VOICEMAIL is the only supported type for group greetings.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"ORGANIZATION"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"VOICEMAIL"}, false),
+			},
+			"owner_type": {
+				Description:  "Greeting owner type. GROUP is the only supported owner type for group greetings.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"GROUP"}, false),
 				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 					// API may override owner_type. Suppress diffs when both values exist.
 					return oldValue != "" && newValue != ""
 				},
 			},
-			"owner_id": {
-				Description: "The ID of the owner (organization) of the greeting.",
+			"group_id": {
+				Description: "The ID of the group owner of the greeting.",
 				Optional:    true,
 				Computed:    true,
 				Type:        schema.TypeString,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					// Suppress diffs when both values exist - API may override or user reference resolves differently
+					return oldValue != "" && newValue != ""
+				},
 			},
 			"audio_file": {
 				Description: "Greeting audio file.",
@@ -106,8 +111,11 @@ func ResourceGreeting() *schema.Resource {
 func GreetingExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllGreetings),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"group_id": {RefType: "genesyscloud_group"},
+		},
 		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
-			RetrieveAndWriteFilesFunc: greetingmedia.OrganizationGreetingAudioResolver,
+			RetrieveAndWriteFilesFunc: greetingmedia.GroupGreetingAudioResolver,
 			SubDirectory:              greetingmedia.SubDirectory,
 		},
 		ThirdPartyRefAttrs: []string{

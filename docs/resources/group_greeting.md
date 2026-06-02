@@ -1,37 +1,35 @@
 ---
-page_title: "genesyscloud_greeting Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_group_greeting Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Greeting
+Genesys Cloud Greetings (Group)
 ---
-# genesyscloud_greeting (Resource)
+# genesyscloud_group_greeting (Resource)
 
-Genesys Cloud Greeting
+Genesys Cloud Greetings (Group)
 
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#post-api-v2-greetings)
+* [POST /api/v2/groups/{groupId}/greetings](https://apicentral.genesys.cloud/api-explorer#post-api-v2-groups--groupId--greetings)
 * [GET /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings--greetingId-)
-* [GET /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings)
+* [GET /api/v2/groups/{groupId}/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-groups--groupId--greetings)
 * [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
 * [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)
-## Permissions and Scopes
-
-The following OAuth scopes are required to use this resource:
-
-* `greetings`
-* `greetings:readonly`
-
 
 ## Example Usage
 
 ```terraform
-resource "genesyscloud_greeting" "test_greeting" {
-  name       = "Example Greeting"
-  type       = "NAME"
-  owner_type = "ORGANIZATION"
-  audio_tts  = "This is a test greeting"
+resource "genesyscloud_group" "ExampleTestGroup" {
+name = "Example Test Group"
+}
+
+resource "genesyscloud_group_greeting" "Test_Greeting" {
+name = "Example Test Group Greeting"
+type = "VOICEMAIL"
+owner_type = "GROUP"
+group_id = genesyscloud_group.ExampleTestGroup.id
+audio_tts = "This is a test greeting"
 }
 ```
 
@@ -40,8 +38,8 @@ resource "genesyscloud_greeting" "test_greeting" {
 
 ### Required
 
-- `owner_type` (String) Greeting owner type. ORGANIZATION is the only supported owner type for organization greetings.
-- `type` (String) Greeting type.
+- `owner_type` (String) Greeting owner type. GROUP is the only supported owner type for group greetings.
+- `type` (String) Greeting type. VOICEMAIL is the only supported type for group greetings.
 
 ### Optional
 
@@ -49,8 +47,8 @@ resource "genesyscloud_greeting" "test_greeting" {
 - `audio_file_content_hash` (String) Hash value of the greeting audio file content. Used to detect changes.
 - `audio_filename` (String) Path to the greeting audio file used during export and import.
 - `audio_tts` (String) Greeting audio TTS.
+- `group_id` (String) The ID of the group owner of the greeting.
 - `name` (String) Greeting name.
-- `owner_id` (String) The ID of the owner (organization) of the greeting.
 
 ### Read-Only
 
@@ -64,4 +62,3 @@ Optional:
 - `duration_milliseconds` (Number) Greeting audio file duration in milliseconds.
 - `self_uri` (String) Greeting audio file self URI.
 - `size_bytes` (Number) Greeting audio file size in bytes.
-
