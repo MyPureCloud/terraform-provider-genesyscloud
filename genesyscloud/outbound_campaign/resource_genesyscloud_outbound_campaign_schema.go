@@ -154,8 +154,7 @@ func ResourceOutboundCampaign() *schema.Resource {
 				ValidateFunc: validation.FloatAtLeast(1),
 			},
 			`max_calls_per_agent_decimal`: {
-				Description: `The maximum number of calls that can be placed per agent on this campaign with decimal precision.`,
-				Optional:    true,
+				Description: `The maximum number of calls that can be placed per agent on this campaign with decimal precision, as returned by the API. Use max_calls_per_agent to configure this value.`,
 				Computed:    true,
 				Type:        schema.TypeFloat,
 			},

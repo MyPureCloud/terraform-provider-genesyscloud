@@ -55,7 +55,4 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
   phone_columns {
     column_name = "Cell"
   }
-  diagnostics_settings {
-    report_low_max_calls_per_agent_alert = true
-  }
 }

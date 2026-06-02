@@ -41,15 +41,6 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
 
-	// Add logging for call_analysis_response_set_id
-	callAnalysisResponseSetId := d.Get("call_analysis_response_set_id").(string)
-	campaignName := d.Get("name").(string)
-	if callAnalysisResponseSetId != "" {
-		log.Printf("Campaign '%s': call_analysis_response_set_id is set to: %s", campaignName, callAnalysisResponseSetId)
-	} else {
-		log.Printf("Campaign '%s': call_analysis_response_set_id is empty/unset (will be nil in API call)", campaignName)
-	}
-
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
 		DialingMode:                    platformclientv2.String(d.Get("dialing_mode").(string)),
@@ -197,7 +188,7 @@ func buildLineBalancingSettings(settings []interface{}) *platformclientv2.Dynami
 }
 
 func buildDiagnosticsSettings(settings []interface{}) *platformclientv2.Diagnosticssettings {
-	if len(settings) < 1 {
+	if settings == nil || len(settings) < 1 {
 		return nil
 	}
 	settingMap, ok := settings[0].(map[string]interface{})

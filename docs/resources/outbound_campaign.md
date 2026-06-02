@@ -127,7 +127,6 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
 - `dynamic_line_balancing_settings` (Block List, Max: 1) Dynamic line balancing settings. (see [below for nested schema](#nestedblock--dynamic_line_balancing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
-- `max_calls_per_agent_decimal` (Number) The maximum number of calls that can be placed per agent on this campaign with decimal precision.
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign. Must be >= 1. Supports decimal values (e.g., 1.5, 2.3).
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
 - `outbound_line_count` (Number) The number of outbound lines to be concurrently dialed. Only applicable to non-preview campaigns; only required for agentless.
@@ -143,6 +142,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `max_calls_per_agent_decimal` (Number) The maximum number of calls that can be placed per agent on this campaign with decimal precision, as returned by the API. Use max_calls_per_agent to configure this value.
 
 <a id="nestedblock--phone_columns"></a>
 ### Nested Schema for `phone_columns`
