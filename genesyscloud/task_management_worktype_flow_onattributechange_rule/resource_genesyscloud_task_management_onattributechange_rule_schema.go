@@ -92,11 +92,31 @@ func TaskManagementOnAttributeChangeRuleExporter() *resourceExporter.ResourceExp
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementOnAttributeChangeRule),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id":         {RefType: "genesyscloud_task_management_worktype"},
-			"condition.new_value": {RefType: "genesyscloud_task_management_worktype_status"},
-			"condition.old_value": {RefType: "genesyscloud_task_management_worktype_status"},
+			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"condition.new_value": {ResolveRefTypeFunc: resolveConditionValueRefType},
+			"condition.old_value": {ResolveRefTypeFunc: resolveConditionValueRefType},
 		},
 	}
+}
+
+// resolveConditionValueRefType checks the condition.attribute field to determine
+// whether new_value/old_value should be resolved as a worktype_status reference.
+// Only statusId attribute values are references to worktype_status resources.
+func resolveConditionValueRefType(configMap map[string]interface{}) (string, error) {
+	attribute, ok := configMap["attribute"]
+	if !ok {
+		return "", nil
+	}
+	attrStr, ok := attribute.(string)
+	if !ok {
+		return "", nil
+	}
+	if attrStr == "statusId" {
+		return "genesyscloud_task_management_worktype_status", nil
+	}
+	return "", nil
 }
 
 // DataSourceTaskManagementOnAttributeChangeRule registers the genesyscloud_task_management_worktype_flow_onattributechange_rule data source

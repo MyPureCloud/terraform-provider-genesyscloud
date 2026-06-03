@@ -117,6 +117,19 @@ func ValidateStatusIds(statusResource1 string, key1 string, statusResource2 stri
 }
 
 // WorktypeStatusRefResolver resolves a bare status ID to a proper Terraform reference
+// findMetaByStatusSuffix searches the SanitizedResourceMap for a composite key ending with "/<statusId>".
+// Returns the ResourceMeta if found, nil otherwise.
+func findMetaByStatusSuffix(idMetaMap resourceExporter.ResourceIDMetaMap, statusId string) *resourceExporter.ResourceMeta {
+	suffix := "/" + statusId
+	for compositeId, meta := range idMetaMap {
+		if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
+			return meta
+		}
+	}
+	return nil
+}
+
+// WorktypeStatusRefResolver resolves a bare status ID to a proper Terraform reference
 // by searching the worktype_status SanitizedResourceMap for a composite key ending with "/<statusId>".
 // This is needed because the worktype_status resource uses composite IDs (worktypeId/statusId)
 // as map keys, but other resources store only the bare statusId in their state.
@@ -142,18 +155,12 @@ func WorktypeStatusRefResolver(attrName string) func(configMap map[string]interf
 			return nil
 		}
 
-		idMetaMap := exporter.SanitizedResourceMap
-		if idMetaMap == nil {
+		if exporter.SanitizedResourceMap == nil {
 			return nil
 		}
 
-		// Search for a composite key that ends with "/<statusId>"
-		suffix := "/" + statusId
-		for compositeId, meta := range idMetaMap {
-			if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
-				configMap[attrName] = fmt.Sprintf("${%s.%s.id}", ResourceType, meta.BlockLabel)
-				return nil
-			}
+		if meta := findMetaByStatusSuffix(exporter.SanitizedResourceMap, statusId); meta != nil {
+			configMap[attrName] = fmt.Sprintf("${%s.%s.id}", ResourceType, meta.BlockLabel)
 		}
 
 		return nil
@@ -179,8 +186,7 @@ func WorktypeStatusArrayRefResolver(attrName string) func(configMap map[string]i
 			return nil
 		}
 
-		idMetaMap := exporter.SanitizedResourceMap
-		if idMetaMap == nil {
+		if exporter.SanitizedResourceMap == nil {
 			return nil
 		}
 
@@ -198,18 +204,9 @@ func WorktypeStatusArrayRefResolver(attrName string) func(configMap map[string]i
 				continue
 			}
 
-			// Search for a composite key that ends with "/<statusId>"
-			found := false
-			suffix := "/" + statusId
-			for compositeId, meta := range idMetaMap {
-				if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
-					resolved = append(resolved, fmt.Sprintf("${%s.%s.id}", ResourceType, meta.BlockLabel))
-					found = true
-					break
-				}
-			}
-
-			if !found {
+			if meta := findMetaByStatusSuffix(exporter.SanitizedResourceMap, statusId); meta != nil {
+				resolved = append(resolved, fmt.Sprintf("${%s.%s.id}", ResourceType, meta.BlockLabel))
+			} else {
 				resolved = append(resolved, statusId)
 			}
 		}
