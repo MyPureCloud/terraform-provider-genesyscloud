@@ -1,5 +1,11 @@
 package business_rules_decision_table
 
+// @team: Avengers AI
+// @chat: #rule-based-decisions
+// @pm: Rob Blane
+// @jira: RULES
+// @description: Manages rule-based decision tables for Genesys Cloud. Provides a flexible way to define decision tables with inputs and outputs, and to manage their rows and columns.
+
 import (
 	"fmt"
 	"strconv"

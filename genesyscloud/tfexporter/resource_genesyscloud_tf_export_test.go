@@ -2467,7 +2467,10 @@ func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing
 	}
 
 	var (
-		uniqueSuffix = strings.ReplaceAll(uuid.NewString(), "-", "_")
+		// Schema name is capped at 50 chars by the platform, so keep the suffix
+		// short. The first 8 hex chars of a UUID give us enough uniqueness for
+		// concurrent test runs without overflowing the schema-name limit.
+		uniqueSuffix = uuid.NewString()[:8]
 
 		// Use snake_case names so the sanitized resource block labels equal the
 		// raw names; that makes the expected ${...} reference strings predictable
@@ -2559,11 +2562,29 @@ func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing
 // resource's own acceptance tests so this test bails cleanly on orgs without
 // the decision table feature toggle. Inlined here to avoid exporting a
 // test-only helper from the business_rules_decision_table package.
+//
+// The tfexporter package's TestMain does not authorize the SDK (unlike the
+// business_rules_decision_table package), so we authorize explicitly here -
+// otherwise the probe runs against an unauthenticated client and every org
+// looks like it has the feature disabled.
 func businessRulesDecisionTableExportFtEnabled(t *testing.T) bool {
 	t.Helper()
+	if _, err := provider.AuthorizeSdk(); err != nil {
+		t.Logf("Failed to authorize SDK for decision table feature probe: %v", err)
+		return false
+	}
 	businessRulesAPI := platformclientv2.NewBusinessRulesApi()
 	_, resp, err := businessRulesAPI.GetBusinessrulesDecisiontables("", "", nil, "")
-	if err != nil || resp == nil || resp.StatusCode != 200 {
+	if err != nil {
+		t.Logf("Decision table probe error: %v", err)
+		return false
+	}
+	if resp == nil || resp.StatusCode != 200 {
+		status := 0
+		if resp != nil {
+			status = resp.StatusCode
+		}
+		t.Logf("Decision table probe returned status %d", status)
 		return false
 	}
 	return true

@@ -1,5 +1,11 @@
 package business_rules_schema
 
+// @team: Avengers AI
+// @chat: #rule-based-decisions
+// @pm: Rob Blane
+// @jira: RULES
+// @description: Manages rule-based schemas for Genesys Cloud. Provides a flexible way to define schemas with properties for use in decision tables.
+
 import (
 	"context"
 	"fmt"
