@@ -35,9 +35,10 @@ The following OAuth scopes are required to use this resource:
 
 ```terraform
 resource "genesyscloud_knowledge_knowledgebase" "example_knowledgebase" {
-  name          = "MyKnowledgeBase"
-  description   = "An example knowledge base"
-  core_language = "en-US"
+  name                   = "MyKnowledgeBase"
+  description            = "An example knowledge base"
+  core_language          = "en-US"
+  content_search_enabled = true
 }
 ```
 
@@ -50,6 +51,7 @@ resource "genesyscloud_knowledge_knowledgebase" "example_knowledgebase" {
 
 ### Optional
 
+- `content_search_enabled` (Boolean) Flag that indicates search on article content is enabled for the knowledge base. This setting cannot be changed after the knowledge base is created. Defaults to `true`.
 - `description` (String) Knowledge base description
 - `name` (String) Knowledge base name
 - `published` (Boolean) Flag that indicates the knowledge base is published
