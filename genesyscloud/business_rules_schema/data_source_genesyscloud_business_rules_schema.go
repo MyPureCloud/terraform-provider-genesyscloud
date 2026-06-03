@@ -1,6 +1,6 @@
 package business_rules_schema
 
-// @team: Avengers AI
+// @team: RuleBasedDecisions
 // @chat: #rule-based-decisions
 // @pm: Rob Blane
 // @jira: RULES
