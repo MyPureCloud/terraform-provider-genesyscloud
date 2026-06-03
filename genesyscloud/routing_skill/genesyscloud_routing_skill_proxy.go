@@ -88,18 +88,29 @@ func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name strin
 
 	allRoutingSkills = append(allRoutingSkills, *routingSkills.Entities...)
 
-	for pageNum := 2; pageNum <= *routingSkills.PageCount; pageNum++ {
-		routingSkills, _, err := p.routingApi.GetRoutingSkills(pageSize, pageNum, name, nil)
-		if err != nil {
-			return nil, resp, err
-		}
+	totalPages := 1
+	if routingSkills.PageCount != nil {
+		totalPages = *routingSkills.PageCount
+	}
 
-		if routingSkills.Entities == nil || len(*routingSkills.Entities) == 0 {
-			break
-		}
+	allRoutingSkills, resp, err = provider.FetchPagesConcurrently(ctx, ResourceType, allRoutingSkills, resp, totalPages, p.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newRoutingSkillProxy(clientConfig)
+			pageSkills, pageResp, pageErr := pageProxy.routingApi.GetRoutingSkills(pageSize, pageNum, name, nil)
+			if pageErr != nil {
+				return nil, pageResp, fmt.Errorf("failed to get page of routing skills: %w", pageErr)
+			}
 
-		allRoutingSkills = append(allRoutingSkills, *routingSkills.Entities...)
+			if pageSkills.Entities == nil || len(*pageSkills.Entities) == 0 {
+				return []platformclientv2.Routingskill{}, pageResp, nil
+			}
 
+			return *pageSkills.Entities, pageResp, nil
+		},
+	)
+	if err != nil {
+		return nil, resp, err
 	}
 
 	for _, skill := range allRoutingSkills {
