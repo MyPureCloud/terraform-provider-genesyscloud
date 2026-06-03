@@ -2,7 +2,7 @@
 page_title: "genesyscloud_group_greeting Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Genesys Cloud Greetings (Group)
+  Genesys Cloud Greetings (Group)
 ---
 # genesyscloud_group_greeting (Resource)
 
@@ -16,20 +16,27 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/groups/{groupId}/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-groups--groupId--greetings)
 * [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
 * [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)
+## Permissions and Scopes
+
+The following OAuth scopes are required to use this resource:
+
+* `greetings`
+* `greetings:readonly`
+
 
 ## Example Usage
 
 ```terraform
 resource "genesyscloud_group" "ExampleTestGroup" {
-name = "Example Test Group"
+  name = "Example Test Group"
 }
 
 resource "genesyscloud_group_greeting" "Test_Greeting" {
-name = "Example Test Group Greeting"
-type = "VOICEMAIL"
-owner_type = "GROUP"
-group_id = genesyscloud_group.ExampleTestGroup.id
-audio_tts = "This is a test greeting"
+  name       = "Example Test Group Greeting"
+  type       = "VOICEMAIL"
+  owner_type = "GROUP"
+  group_id   = genesyscloud_group.ExampleTestGroup.id
+  audio_tts  = "This is a test greeting"
 }
 ```
 
@@ -62,3 +69,4 @@ Optional:
 - `duration_milliseconds` (Number) Greeting audio file duration in milliseconds.
 - `self_uri` (String) Greeting audio file self URI.
 - `size_bytes` (Number) Greeting audio file size in bytes.
+
