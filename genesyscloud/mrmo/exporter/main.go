@@ -6,11 +6,14 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
 )
+
+func prepareMRMOExportContext(ctx context.Context, clientConfig *platformclientv2.Configuration) context.Context {
+	return provider.ContextWithExportClientConfig(ctx, clientConfig)
+}
 
 // Export takes the resource type and resource ID of and exports that resource.
 //
@@ -23,8 +26,8 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 
 	generateDefaults(&input.BaseExportInput)
 
-	log.Println("Activating MRMO")
-	mrmo.Activate(clientConfig)
+	log.Println("Preparing MRMO export context")
+	ctx = prepareMRMOExportContext(ctx, clientConfig)
 
 	providerMeta := &provider.ProviderMeta{ClientConfig: clientConfig}
 
@@ -45,7 +48,7 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 	}
 
 	log.Println("Getting the resource exporter by resource type")
-	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
+	exporter := providerRegistrar.GetClonedResourceExporterByResourceType(input.ResourceType)
 	if exporter == nil {
 		return nil, diagUnsupportedResourceTypeForMRMOExport(input.ResourceType)
 	}
@@ -88,8 +91,8 @@ func ExportByType(ctx context.Context, input ExportByTypeInput, clientConfig *pl
 
 	generateDefaults(&input)
 
-	log.Println("Activating MRMO")
-	mrmo.Activate(clientConfig)
+	log.Println("Preparing MRMO export context")
+	ctx = prepareMRMOExportContext(ctx, clientConfig)
 
 	providerMeta := &provider.ProviderMeta{ClientConfig: clientConfig}
 
@@ -110,7 +113,7 @@ func ExportByType(ctx context.Context, input ExportByTypeInput, clientConfig *pl
 	}
 
 	log.Println("Getting the resource exporter by resource type")
-	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
+	exporter := providerRegistrar.GetClonedResourceExporterByResourceType(input.ResourceType)
 	if exporter == nil {
 		return nil, diagUnsupportedResourceTypeForMRMOExport(input.ResourceType)
 	}

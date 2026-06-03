@@ -32,6 +32,27 @@ func diagNilResourceExporter(resType string) diag.Diagnostics {
 	)
 }
 
+func cloneMrMoFlowExporter(generateOutputFiles bool) *resourceExporter.ResourceExporter {
+	var template *resourceExporter.ResourceExporter
+	if generateOutputFiles {
+		template = resourceExporter.GetNewFlowResourceExporter()
+	} else {
+		template = architectFlow.ArchitectFlowExporter()
+	}
+	return resourceExporter.CloneResourceExporter(template)
+}
+
+func swapMrMoFlowExporter(exporters map[string]*resourceExporter.ResourceExporter, resType string, generateOutputFiles bool, source *resourceExporter.ResourceExporter) {
+	flowExporterToUse := cloneMrMoFlowExporter(generateOutputFiles)
+	if generateOutputFiles {
+		log.Printf("Replaced flow exporter with new exporter")
+	} else {
+		log.Printf("Using legacy flow exporter")
+	}
+	flowExporterToUse.SetSanitizedResourceMap(source.GetSanitizedResourceMap())
+	exporters[resType] = flowExporterToUse
+}
+
 // ExportForMrMoByID runs the MrMo export pipeline for a single entity without
 // calling the resource type's GetResourcesFunc (i.e. without listing every
 // instance in the org). It relies on the resource's own Read context to fetch
@@ -59,16 +80,7 @@ func (g *GenesysCloudResourceExporter) ExportForMrMoByID(resType, resourceId str
 	g.exporters = &exporters
 
 	if resType == architectFlow.ResourceType {
-		var flowExporterToUse *resourceExporter.ResourceExporter
-		if generateOutputFiles {
-			log.Printf("Replaced flow exporter with new exporter")
-			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
-		} else {
-			log.Printf("Using legacy flow exporter")
-			flowExporterToUse = architectFlow.ArchitectFlowExporter()
-		}
-		flowExporterToUse.SetSanitizedResourceMap(exporter.GetSanitizedResourceMap())
-		(*g.exporters)[resType] = flowExporterToUse
+		swapMrMoFlowExporter(*g.exporters, resType, generateOutputFiles, exporter)
 	}
 
 	// Seed a single-entry SanitizedResourceMap so retrieveGenesysCloudObjectInstancesForMrMo
@@ -164,18 +176,7 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 	}
 
 	if resType == architectFlow.ResourceType {
-		var flowExporterToUse *resourceExporter.ResourceExporter
-		if generateOutputFiles {
-			// Use archy export service to download the flow config file (create, update)
-			log.Printf("Replaced flow exporter with new exporter")
-			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
-		} else {
-			// Use legacy exporter to be more efficient (more appropriate for flow deletion events that don't only require the ResourceData be exported)
-			log.Printf("Using legacy flow exporter")
-			flowExporterToUse = architectFlow.ArchitectFlowExporter()
-		}
-		flowExporterToUse.SetSanitizedResourceMap(exporter.GetSanitizedResourceMap())
-		(*g.exporters)[resType] = flowExporterToUse
+		swapMrMoFlowExporter(*g.exporters, resType, generateOutputFiles, exporter)
 	}
 
 	// Step #3 Filter out all resources from the resType exporters SanitizedResourceMap besides the one at index "{resourceId}"
@@ -241,18 +242,7 @@ func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, gener
 	}
 
 	if resType == architectFlow.ResourceType {
-		var flowExporterToUse *resourceExporter.ResourceExporter
-		if generateOutputFiles {
-			// Use archy export service to download the flow config file (create, update)
-			log.Printf("Replaced flow exporter with new exporter")
-			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
-		} else {
-			// Use legacy exporter to be more efficient (more appropriate for flow deletion events that don't only require the ResourceData be exported)
-			log.Printf("Using legacy flow exporter")
-			flowExporterToUse = architectFlow.ArchitectFlowExporter()
-		}
-		flowExporterToUse.SetSanitizedResourceMap(exporter.GetSanitizedResourceMap())
-		(*g.exporters)[resType] = flowExporterToUse
+		swapMrMoFlowExporter(*g.exporters, resType, generateOutputFiles, exporter)
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instance
