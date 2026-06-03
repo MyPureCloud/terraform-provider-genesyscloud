@@ -217,6 +217,12 @@ func GetResourceExporterByResourceType(resourceType string) *resourceExporter.Re
 	return resourceExporters[resourceType]
 }
 
+// ResourceTypeSupportsExport reports whether the provider has a ResourceExporter for the
+// given type (required for MRMO ExportByType and bulk export paths).
+func ResourceTypeSupportsExport(resourceType string) bool {
+	return GetResourceExporterByResourceType(resourceType) != nil
+}
+
 func GetResourceTypeNames() []string {
 	if !resourceMapsAreRegistered() {
 		registerResources()

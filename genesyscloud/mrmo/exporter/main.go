@@ -46,6 +46,9 @@ func Export(ctx context.Context, input ExportInput, clientConfig *platformclient
 
 	log.Println("Getting the resource exporter by resource type")
 	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
+	if exporter == nil {
+		return nil, diagUnsupportedResourceTypeForMRMOExport(input.ResourceType)
+	}
 
 	log.Printf("Exporting %s resource to '%s'. ID: '%s' (useGetByID=%t)", input.ResourceType, input.Directory, input.EntityId, input.UseGetByID)
 	var (
@@ -108,6 +111,9 @@ func ExportByType(ctx context.Context, input ExportByTypeInput, clientConfig *pl
 
 	log.Println("Getting the resource exporter by resource type")
 	exporter := providerRegistrar.GetResourceExporterByResourceType(input.ResourceType)
+	if exporter == nil {
+		return nil, diagUnsupportedResourceTypeForMRMOExport(input.ResourceType)
+	}
 
 	log.Printf("Exporting %s resources to '%s'.", input.ResourceType, input.Directory)
 	exportResponse, exportDiags := gcResourceExporter.ExportByTypeForMrMo(input.ResourceType, input.GenerateOutputFiles, exporter)

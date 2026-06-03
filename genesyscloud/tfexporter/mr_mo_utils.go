@@ -25,6 +25,13 @@ type MrMoExportByTypeResponse struct {
 	ResourceDataList []*schema.ResourceData
 }
 
+func diagNilResourceExporter(resType string) diag.Diagnostics {
+	return diag.Errorf(
+		"resource exporter is nil for type %q (no ResourceExporter registered in the provider)",
+		resType,
+	)
+}
+
 // ExportForMrMoByID runs the MrMo export pipeline for a single entity without
 // calling the resource type's GetResourcesFunc (i.e. without listing every
 // instance in the org). It relies on the resource's own Read context to fetch
@@ -40,7 +47,10 @@ type MrMoExportByTypeResponse struct {
 // returned rather than silently producing an empty export, which is the
 // desired behavior for MrMo where we expect the entity to exist.
 func (g *GenesysCloudResourceExporter) ExportForMrMoByID(resType, resourceId string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportResponse, diags diag.Diagnostics) {
-	if exporter != nil && exporter.IsSingleton {
+	if exporter == nil {
+		return nil, diagNilResourceExporter(resType)
+	}
+	if exporter.IsSingleton {
 		log.Printf("ExportForMrMoByID: resource type %s is a singleton; falling back to ExportForMrMo", resType)
 		return g.ExportForMrMo(resType, resourceId, generateOutputFiles, exporter)
 	}
@@ -140,6 +150,9 @@ func (g *GenesysCloudResourceExporter) ExportForMrMoByID(resType, resourceId str
 }
 
 func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportResponse, diags diag.Diagnostics) {
+	if exporter == nil {
+		return nil, diagNilResourceExporter(resType)
+	}
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
 	exporters[resType] = exporter
 	g.exporters = &exporters
@@ -214,6 +227,9 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 }
 
 func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportByTypeResponse, diags diag.Diagnostics) {
+	if exporter == nil {
+		return nil, diagNilResourceExporter(resType)
+	}
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
 	exporters[resType] = exporter
 	g.exporters = &exporters
@@ -366,6 +382,9 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrM
 
 func (g *GenesysCloudResourceExporter) buildSanitizedResourceMapsForMrMo(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	for resourceType, exporter := range exporters {
+		if exporter == nil {
+			return diagNilResourceExporter(resourceType)
+		}
 		log.Printf("Getting all resources for type %s", resourceType)
 		exporter.FilterResource = g.resourceFilter
 
