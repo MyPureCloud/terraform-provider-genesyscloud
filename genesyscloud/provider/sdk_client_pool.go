@@ -28,7 +28,7 @@ const (
 	// Default pool settings
 	DefaultMaxClients = 10
 	MinClients        = 1
-	MaxClients        = 20
+	MaxClients        = 50
 
 	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
 
