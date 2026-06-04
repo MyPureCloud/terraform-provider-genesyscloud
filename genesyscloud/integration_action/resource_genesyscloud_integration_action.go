@@ -244,7 +244,7 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("DEBUG: Publishing action as publish=true")
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("DEBUG: Updating Published draft with version: %d", version)
-		resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
+		resp, err := iap.publishIntegrationActionDraft(ctx, id, version)
 		if err != nil {
 			if resp != nil {
 				log.Printf("DEBUG: Publish failed with status %d", resp.StatusCode)
