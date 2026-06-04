@@ -71,10 +71,7 @@ func initTestResources() {
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
 	var err error
-	sdkConfig, err = provider.AuthorizeSdk()
-	if err != nil {
-		log.Fatalf("failed to authorize sdk: %s", err.Error())
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	// Run setup function before starting the test suite for telephony_providers_edges_site_outbound_route package
 	initTestResources()

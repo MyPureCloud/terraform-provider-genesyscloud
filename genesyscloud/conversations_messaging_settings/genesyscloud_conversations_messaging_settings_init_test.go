@@ -45,10 +45,7 @@ func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for package conversations_messaging_settings: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	regInstance := &registerTestInstance{}
 

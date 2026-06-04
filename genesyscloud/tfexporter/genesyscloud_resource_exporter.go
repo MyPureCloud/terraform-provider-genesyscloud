@@ -740,10 +740,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			// 4. Remove schema-based excluded attributes (computed, read-only, deprecated) recursively
 			// We do this before sanitization to remove any attributes that need removed. The sanitization function
 			// will correctly handle these attributes and not add extra entries to dependency resolution
-			if resSchema := g.provider.ResourcesMap[resource.Type]; resSchema != nil {
-				schemaExcluded := g.collectSchemaBasedExcludedAttributes(resource.Type, resSchema.Schema, "")
-				if len(schemaExcluded) > 0 {
-					removeExcludedAttrsFromMap(configMap, schemaExcluded, "")
+			if g.provider != nil {
+				if resSchema := g.provider.ResourcesMap[resource.Type]; resSchema != nil {
+					schemaExcluded := g.collectSchemaBasedExcludedAttributes(resource.Type, resSchema.Schema, "")
+					if len(schemaExcluded) > 0 {
+						removeExcludedAttrsFromMap(configMap, schemaExcluded, "")
+					}
 				}
 			}
 

@@ -59,10 +59,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatal(authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
