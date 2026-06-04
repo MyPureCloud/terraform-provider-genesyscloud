@@ -195,7 +195,7 @@ Required:
 
 Required:
 
-- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents | campaignRecordsAttempted | campaignContactsMessaged | campaignBusinessSuccess | campaignBusinessNeutral | campaignBusinessFailure | campaignValidAttempts | campaignRightPartyContacts)
+- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents | campaignRecordsAttempted | campaignContactsMessaged | campaignBusinessSuccess | campaignBusinessNeutral | campaignBusinessFailure | campaignValidAttempts | campaignRightPartyContacts | timeOfDay | dayOfWeek | dayOfMonth | weekDayOfMonth | specificDate | campaignRunTime | campaignWaitTime)
 - `parameters` (Block Set, Min: 1) The parameters for the CampaignRuleCondition. (see [below for nested schema](#nestedblock--condition_groups--conditions--parameters))
 
 Optional:
