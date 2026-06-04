@@ -217,9 +217,7 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
 	}
 
-	if enableInactivityTimeout, ok := settingsMap["enable_inactivity_timeout"].(bool); ok {
-		messageMediaSettings.EnableInactivityTimeout = &enableInactivityTimeout
-	}
+	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_inactivity_timeout", true)
 
 	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
 		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
@@ -311,9 +309,7 @@ func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv
 		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		if enableInactivityTimeout, ok := subTypeMap["enable_inactivity_timeout"].(bool); ok {
-			subTypeSetting.EnableInactivityTimeout = &enableInactivityTimeout
-		}
+		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableValueFromMap[bool](subTypeMap, "enable_inactivity_timeout", true)
 		returnObj[mediaType] = subTypeSetting
 	}
 
