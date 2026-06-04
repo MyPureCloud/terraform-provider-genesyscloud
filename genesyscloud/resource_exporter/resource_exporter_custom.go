@@ -218,6 +218,7 @@ func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]in
 	if routeId == currentRouteReference {
 		configMap["self_reference_route"] = true
 		configMap["route_id"] = nil
+		configMap["domain_id"] = nil
 	}
 	return nil
 }
