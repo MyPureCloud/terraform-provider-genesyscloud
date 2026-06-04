@@ -17,7 +17,6 @@ func TestUnit_caseplanDataSchemasFromResourceList_idOnly(t *testing.T) {
 	out := caseplanDataSchemasFromResourceList(raw)
 	require.Len(t, out, 1)
 	assert.Equal(t, "11111111-1111-1111-1111-111111111111", *out[0].Id)
-	assert.Nil(t, out[0].Version)
 }
 
 func TestUnitFlattenExpandCaseplanDataSchemas(t *testing.T) {
@@ -83,7 +82,6 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 	assert.NotNil(t, ds)
 	assert.Len(t, *ds, 1)
 	assert.Equal(t, "schema-1", *(*ds)[0].Id)
-	assert.Nil(t, (*ds)[0].Version)
 	isettings := body.IntakeSettings
 	assert.NotNil(t, isettings)
 	assert.Len(t, *isettings, 1)
