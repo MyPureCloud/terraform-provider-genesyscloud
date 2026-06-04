@@ -249,6 +249,11 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		resourceFilter:     IncludeFilterResourceByRegex,
 		exportFormat:       "hcl",
 		maxConcurrentOps:   10,
+		provider: &schema.Provider{
+			ResourcesMap: map[string]*schema.Resource{
+				testResourceType: testResource,
+			},
+		},
 		exporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
