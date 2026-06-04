@@ -691,6 +691,22 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_greeting_user",
+      "resource_name": "greeting_user",
+      "permissions": [],
+      "scopes": [
+        "greetings",
+        "greetings:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/users/{userId}/greetings",
+        "GET /api/v2/greetings/{greetingId}",
+        "GET /api/v2/users/{userId}/greetings",
+        "PUT /api/v2/greetings/{greetingId}",
+        "DELETE /api/v2/greetings/{greetingId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_group",
       "resource_name": "group",
       "permissions": [
@@ -717,6 +733,22 @@
         "DELETE /api/v2/groups/{groupId}/members",
         "GET /api/v2/voicemail/groups/{groupId}/policy",
         "PATCH /api/v2/voicemail/groups/{groupId}/policy"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_group_greeting",
+      "resource_name": "group_greeting",
+      "permissions": [],
+      "scopes": [
+        "greetings",
+        "greetings:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/groups/{groupId}/greetings",
+        "GET /api/v2/greetings/{greetingId}",
+        "GET /api/v2/groups/{groupId}/greetings",
+        "PUT /api/v2/greetings/{greetingId}",
+        "DELETE /api/v2/greetings/{greetingId}"
       ]
     },
     {
