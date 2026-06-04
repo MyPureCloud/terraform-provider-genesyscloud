@@ -1380,6 +1380,683 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileW
 	assert.Len(t, resourceMaps["test_resource_with_files"], 1)
 }
 
+func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
+	resourceType := "test_resource"
+	resourceLabel := "test_label"
+
+	tests := []struct {
+		name             string
+		exportComputed   bool
+		exportDeprecated bool
+		resourceSchema   map[string]*schema.Schema
+		stateAttrs       map[string]string
+		checkConfigMap   func(*testing.T, util.JsonMap)
+	}{
+		{
+			name:             "Top-level computed attribute removed from config map",
+			exportComputed:   false,
+			exportDeprecated: true,
+			resourceSchema: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"computed_field": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+			},
+			stateAttrs: map[string]string{
+				"name":           "my-resource",
+				"computed_field": "server-generated",
+			},
+			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
+				assert.Equal(t, "my-resource", configMap["name"])
+				assert.Nil(t, configMap["computed_field"])
+			},
+		},
+		{
+			name:             "Nested computed attribute removed from config map",
+			exportComputed:   false,
+			exportDeprecated: true,
+			resourceSchema: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"settings": {
+					Type:     schema.TypeList,
+					Optional: true,
+					MaxItems: 1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"value": {
+								Type:     schema.TypeString,
+								Required: true,
+							},
+							"internal_id": {
+								Type:     schema.TypeString,
+								Computed: true,
+								Optional: false,
+							},
+						},
+					},
+				},
+			},
+			stateAttrs: map[string]string{
+				"name":                      "my-resource",
+				"settings.#":                "1",
+				"settings.0.value":          "hello",
+				"settings.0.internal_id":    "abc-123",
+			},
+			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
+				assert.Equal(t, "my-resource", configMap["name"])
+				settings, ok := configMap["settings"].([]interface{})
+				require.True(t, ok, "settings should be a list")
+				require.Len(t, settings, 1)
+				settingsMap, ok := settings[0].(map[string]interface{})
+				require.True(t, ok, "settings[0] should be a map")
+				assert.Equal(t, "hello", settingsMap["value"])
+				assert.Nil(t, settingsMap["internal_id"])
+			},
+		},
+		{
+			name:             "Deprecated nested attribute removed from config map",
+			exportComputed:   true,
+			exportDeprecated: false,
+			resourceSchema: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"config": {
+					Type:     schema.TypeList,
+					Optional: true,
+					MaxItems: 1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"new_setting": {
+								Type:     schema.TypeString,
+								Optional: true,
+							},
+							"old_setting": {
+								Type:       schema.TypeString,
+								Optional:   true,
+								Deprecated: "Use new_setting",
+							},
+						},
+					},
+				},
+			},
+			stateAttrs: map[string]string{
+				"name":                   "my-resource",
+				"config.#":               "1",
+				"config.0.new_setting":   "modern",
+				"config.0.old_setting":   "legacy",
+			},
+			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
+				assert.Equal(t, "my-resource", configMap["name"])
+				configBlock, ok := configMap["config"].([]interface{})
+				require.True(t, ok, "config should be a list")
+				require.Len(t, configBlock, 1)
+				configBlockMap, ok := configBlock[0].(map[string]interface{})
+				require.True(t, ok, "config[0] should be a map")
+				assert.Equal(t, "modern", configBlockMap["new_setting"])
+				assert.Nil(t, configBlockMap["old_setting"])
+			},
+		},
+		{
+			name:             "Deeply nested computed attribute removed from config map",
+			exportComputed:   false,
+			exportDeprecated: true,
+			resourceSchema: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"outer": {
+					Type:     schema.TypeList,
+					Optional: true,
+					MaxItems: 1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"inner": {
+								Type:     schema.TypeList,
+								Optional: true,
+								MaxItems: 1,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"keep_me": {
+											Type:     schema.TypeString,
+											Required: true,
+										},
+										"remove_me": {
+											Type:     schema.TypeString,
+											Computed: true,
+											Optional: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			stateAttrs: map[string]string{
+				"name":                          "my-resource",
+				"outer.#":                       "1",
+				"outer.0.inner.#":               "1",
+				"outer.0.inner.0.keep_me":       "important",
+				"outer.0.inner.0.remove_me":     "ephemeral",
+			},
+			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
+				assert.Equal(t, "my-resource", configMap["name"])
+				outer, ok := configMap["outer"].([]interface{})
+				require.True(t, ok)
+				require.Len(t, outer, 1)
+				outerMap := outer[0].(map[string]interface{})
+				inner, ok := outerMap["inner"].([]interface{})
+				require.True(t, ok)
+				require.Len(t, inner, 1)
+				innerMap := inner[0].(map[string]interface{})
+				assert.Equal(t, "important", innerMap["keep_me"])
+				assert.Nil(t, innerMap["remove_me"])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			// Build the test resource schema
+			testResource := &schema.Resource{Schema: tt.resourceSchema}
+
+			// Build a provider with the resource in ResourcesMap
+			testProvider := &schema.Provider{
+				ResourcesMap: map[string]*schema.Resource{
+					resourceType: testResource,
+				},
+			}
+
+			// Build the exporter
+			exporters := map[string]*resourceExporter.ResourceExporter{
+				resourceType: {},
+			}
+
+			d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
+				"export_format":                      {Type: schema.TypeString},
+				"split_files_by_resource":            {Type: schema.TypeBool},
+				"log_permission_errors":              {Type: schema.TypeBool},
+				"add_depends_on":                     {Type: schema.TypeBool},
+				"include_state_file":                 {Type: schema.TypeBool},
+				"version":                            {Type: schema.TypeString},
+				"provider_registry":                  {Type: schema.TypeString},
+				"export_dir_path":                    {Type: schema.TypeString},
+				"ignore_cyclic_dependencies":         {Type: schema.TypeBool},
+				"export_computed":                    {Type: schema.TypeBool},
+				"export_deprecated":                  {Type: schema.TypeBool},
+				"use_legacy_architect_flow_exporter": {Type: schema.TypeBool},
+			}, map[string]interface{}{
+				"export_format":                      "hcl",
+				"split_files_by_resource":            false,
+				"log_permission_errors":              false,
+				"add_depends_on":                     false,
+				"include_state_file":                 false,
+				"version":                            "1.0.0",
+				"provider_registry":                  "test",
+				"export_dir_path":                    "/tmp/test",
+				"ignore_cyclic_dependencies":         false,
+				"export_computed":                    tt.exportComputed,
+				"export_deprecated":                  tt.exportDeprecated,
+				"use_legacy_architect_flow_exporter": false,
+			})
+
+			g := NewThreadSafeGenesysCloudResourceExporter(d, ctx, nil, testProvider, &exporters)
+			g.exportComputed = tt.exportComputed
+			g.exportDeprecated = tt.exportDeprecated
+
+			// Add the resource
+			g.addResources([]resourceExporter.ResourceInfo{
+				{
+					State: &terraform.InstanceState{
+						ID:         "test-id",
+						Attributes: tt.stateAttrs,
+					},
+					BlockLabel:    resourceLabel,
+					OriginalLabel: resourceLabel,
+					Type:          resourceType,
+					CtyType:       testResource.CoreConfigSchema().ImpliedType(),
+					BlockType:     "resource",
+				},
+			})
+
+			diags := g.buildResourceConfigMap()
+			require.False(t, diags.HasError(), "buildResourceConfigMap returned errors: %v", diags)
+
+			resourceMaps := g.getResourceTypesMaps()
+			require.Contains(t, resourceMaps, resourceType)
+			require.Contains(t, resourceMaps[resourceType], resourceLabel)
+
+			tt.checkConfigMap(t, resourceMaps[resourceType][resourceLabel])
+		})
+	}
+}
+
+func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
+	resourceType := "genesyscloud_test_resource"
+
+	tests := []struct {
+		name             string
+		exportComputed   bool
+		exportDeprecated bool
+		schemaMap        map[string]*schema.Schema
+		prefix           string
+		expected         []string
+	}{
+		{
+			name:             "Top-level computed attribute excluded when exportComputed is false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"computed_field": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"normal_field": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{"computed_field"},
+		},
+		{
+			name:             "Top-level computed attribute NOT excluded when exportComputed is true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"computed_field": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"normal_field": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{},
+		},
+		{
+			name:             "Read-only computed attribute always excluded even when exportComputed is true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"readonly_computed": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: false,
+				},
+				"normal_field": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{"readonly_computed"},
+		},
+		{
+			name:             "Deprecated attribute excluded when exportDeprecated is false",
+			exportComputed:   true,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"old_field": {
+					Type:       schema.TypeString,
+					Optional:   true,
+					Deprecated: "Use new_field instead",
+				},
+				"new_field": {
+					Type:     schema.TypeString,
+					Optional: true,
+				},
+			},
+			expected: []string{"old_field"},
+		},
+		{
+			name:             "Deprecated attribute NOT excluded when exportDeprecated is true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"old_field": {
+					Type:       schema.TypeString,
+					Optional:   true,
+					Deprecated: "Use new_field instead",
+				},
+			},
+			expected: []string{},
+		},
+		{
+			name:             "Nested computed attribute in a list block",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"parent_block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"child_computed": {
+								Type:     schema.TypeString,
+								Computed: true,
+								Optional: true,
+							},
+							"child_normal": {
+								Type:     schema.TypeString,
+								Required: true,
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"parent_block.child_computed"},
+		},
+		{
+			name:             "Nested read-only computed attribute in a set block",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"settings": {
+					Type:     schema.TypeSet,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"server_generated_id": {
+								Type:     schema.TypeString,
+								Computed: true,
+								Optional: false,
+							},
+							"value": {
+								Type:     schema.TypeString,
+								Required: true,
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"settings.server_generated_id"},
+		},
+		{
+			name:             "Nested deprecated attribute",
+			exportComputed:   true,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"config": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"legacy_setting": {
+								Type:       schema.TypeString,
+								Optional:   true,
+								Deprecated: "Use modern_setting instead",
+							},
+							"modern_setting": {
+								Type:     schema.TypeString,
+								Optional: true,
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"config.legacy_setting"},
+		},
+		{
+			name:             "Deeply nested computed attribute (3 levels)",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"level1": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"level2": {
+								Type:     schema.TypeList,
+								Optional: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"level3_computed": {
+											Type:     schema.TypeString,
+											Computed: true,
+											Optional: true,
+										},
+										"level3_normal": {
+											Type:     schema.TypeString,
+											Required: true,
+										},
+									},
+								},
+							},
+							"level2_normal": {
+								Type:     schema.TypeString,
+								Required: true,
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"level1.level2.level3_computed"},
+		},
+		{
+			name:             "Multiple exclusions at different nesting levels",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"top_computed": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"top_deprecated": {
+					Type:       schema.TypeString,
+					Optional:   true,
+					Deprecated: "removed",
+				},
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"nested_readonly": {
+								Type:     schema.TypeString,
+								Computed: true,
+								Optional: false,
+							},
+							"nested_deprecated": {
+								Type:       schema.TypeInt,
+								Optional:   true,
+								Deprecated: "no longer used",
+							},
+							"nested_normal": {
+								Type:     schema.TypeString,
+								Required: true,
+							},
+						},
+					},
+				},
+				"normal_field": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{"top_computed", "top_deprecated", "block.nested_readonly", "block.nested_deprecated"},
+		},
+		{
+			name:             "List with simple Elem (no nested schema) is not recursed",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"tags": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+				"computed_tags": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Optional: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+			},
+			expected: []string{"computed_tags"},
+		},
+		{
+			name:             "Map type with computed flag",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"metadata": {
+					Type:     schema.TypeMap,
+					Computed: true,
+					Optional: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+				"labels": {
+					Type:     schema.TypeMap,
+					Optional: true,
+					Elem:     &schema.Schema{Type: schema.TypeString},
+				},
+			},
+			expected: []string{"metadata"},
+		},
+		{
+			name:             "Prefix is applied correctly",
+			exportComputed:   false,
+			exportDeprecated: true,
+			prefix:           "outer_block",
+			schemaMap: map[string]*schema.Schema{
+				"inner_computed": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"inner_normal": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{"outer_block.inner_computed"},
+		},
+		{
+			name:             "No attributes excluded when all are normal",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"name": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+				"description": {
+					Type:     schema.TypeString,
+					Optional: true,
+				},
+			},
+			expected: []string{},
+		},
+		{
+			name:             "Empty schema returns no exclusions",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap:        map[string]*schema.Schema{},
+			expected:         []string{},
+		},
+		{
+			name:             "Computed parent block with nested children",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"computed_block": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"child_attr": {
+								Type:     schema.TypeString,
+								Optional: true,
+							},
+						},
+					},
+				},
+			},
+			// The parent itself is computed, so it gets excluded without recursing
+			expected: []string{"computed_block"},
+		},
+		{
+			name:             "Deeply nested with mixed exclusion reasons",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"routing": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"rules": {
+								Type:     schema.TypeList,
+								Optional: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"priority": {
+											Type:     schema.TypeInt,
+											Required: true,
+										},
+										"internal_id": {
+											Type:     schema.TypeString,
+											Computed: true,
+											Optional: false,
+										},
+										"old_weight": {
+											Type:       schema.TypeInt,
+											Optional:   true,
+											Deprecated: "Use weight instead",
+										},
+									},
+								},
+							},
+							"timeout": {
+								Type:     schema.TypeInt,
+								Computed: true,
+								Optional: true,
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"routing.rules.internal_id", "routing.rules.old_weight", "routing.timeout"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &GenesysCloudResourceExporter{
+				ctx:             context.Background(),
+				exportComputed:  tt.exportComputed,
+				exportDeprecated: tt.exportDeprecated,
+			}
+
+			result := g.collectSchemaBasedExcludedAttributes(resourceType, tt.schemaMap, tt.prefix)
+
+			if tt.expected == nil || len(tt.expected) == 0 {
+				assert.Empty(t, result)
+			} else {
+				assert.ElementsMatch(t, tt.expected, result)
+			}
+		})
+	}
+}
+
 // Test error handling in instanceStateToMap
 func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateError(t *testing.T) {
 	ctx := context.Background()

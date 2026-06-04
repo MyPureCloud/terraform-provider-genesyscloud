@@ -33,6 +33,9 @@ import (
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	cmSupportedContentDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	conversationsSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_settings"
+	caseManagementCaseplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
+	caseManagementStageplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
+	caseManagementStepplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stepplan"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	externalSource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
@@ -41,7 +44,9 @@ import (
 	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
+	groupGreeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_greeting"
 	greeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting"
+	greetingUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting_user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
@@ -262,7 +267,9 @@ func registerResources() {
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
+	groupGreeting.SetRegistrar(regInstance)                                //Registering group greeting
 	greeting.SetRegistrar(regInstance)                                     //Registering greeting
+	greetingUser.SetRegistrar(regInstance)                                 //Registering greeting user
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	guide.SetRegistrar(regInstance)                                        //Registering guide
 	guideVersion.SetRegistrar(regInstance)                                 //Registering Guide Version
@@ -314,6 +321,9 @@ func registerResources() {
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
 	intentsCustomerintents.SetRegistrar(regInstance)                       //Registering customer intent
 	intentsCategories.SetRegistrar(regInstance)                            //Registering intent category
+	caseManagementCaseplan.SetRegistrar(regInstance)                       //Registering case management caseplan
+	caseManagementStageplan.SetRegistrar(regInstance)                      //Registering case management stageplan
+	caseManagementStepplan.SetRegistrar(regInstance)                       //Registering case management stepplan
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
