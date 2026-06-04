@@ -37,7 +37,7 @@ resource "genesyscloud_intents_categories" "cat" {
   description = "%[2]s"
 }
 
-resource "genesyscloud_customer_intent" "intent" {
+resource "genesyscloud_intents_customerintents" "intent" {
   name        = "%[1]s_intent"
   description = "acc"
   expiry_time = 24
