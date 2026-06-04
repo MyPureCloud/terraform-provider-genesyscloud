@@ -32,9 +32,6 @@ The following permissions are required to use this resource:
 * `wfm:agent:edit`
 * `wfm:agent:view`
 * `wfm:agentSchedule:view`
-* `wfm:agentSchedulingPreferences:edit`
-* `wfm:agentSchedulingPreferencesQuery:view`
-* `wfm:agentSchedulingPreferencesSettings:view`
 * `wfm:agentShiftTradeRequest:participate`
 * `wfm:agentTimeOffRequest:submit`
 * `wfm:businessUnit:add`
@@ -58,9 +55,6 @@ The following permissions are required to use this resource:
 * `wfm:schedule:edit`
 * `wfm:schedule:generate`
 * `wfm:schedule:view`
-* `wfm:schedulingPreferencesQuery:view`
-* `wfm:schedulingPreferencesSettings:edit`
-* `wfm:schedulingPreferencesSettings:view`
 * `wfm:serviceGoalTemplate:add`
 * `wfm:serviceGoalTemplate:delete`
 * `wfm:serviceGoalTemplate:edit`

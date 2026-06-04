@@ -46,7 +46,6 @@ resource "genesyscloud_responsemanagement_responseasset" "example_asset" {
 
 ### Optional
 
-- `content_location` (String) Location URL of the response asset file content.
 - `division_id` (String) Division to associate to this asset. Can only be used with this division.
 - `file_content_hash` (String) Hash value of the response asset file content. Used to detect changes. Note: If the file content hash changes, the existing response asset will be dropped and recreated with a new ID
 - `name` (String) Name of the response asset. Can be optionally defined to replace the name given in the filename. Changing the name attribute will cause the existing response asset to be dropped and recreated with a new ID. It must not start with a dot and not end with a forward slash. The following characters are not allowed: \{^}%`]">[~<#|,
