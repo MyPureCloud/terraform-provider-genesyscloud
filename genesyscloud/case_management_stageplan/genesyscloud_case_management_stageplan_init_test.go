@@ -7,8 +7,8 @@ import (
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	caseplanpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
-	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
-	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
+	intentsCategories "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
+	intentsCustomerintents "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
@@ -32,8 +32,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[caseplanpkg.ResourceType] = caseplanpkg.ResourceCaseManagementCaseplan()
 	providerResources[caseplanpkg.PublishResourceType] = caseplanpkg.ResourceCaseManagementCaseplanPublish()
 	providerResources[caseplanpkg.CreateVersionResourceType] = caseplanpkg.ResourceCaseManagementCaseplanCreateVersion()
-	providerResources[customerIntent.ResourceType] = customerIntent.ResourceCustomerIntent()
-	providerResources[intentCategory.ResourceType] = intentCategory.ResourceIntentCategory()
+	providerResources[intentsCustomerintents.ResourceType] = intentsCustomerintents.ResourceCustomerIntent()
+	providerResources[intentsCategories.ResourceType] = intentsCategories.ResourceIntentCategory()
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources[authrole.ResourceType] = authrole.ResourceAuthRole()
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()

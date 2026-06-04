@@ -6,8 +6,8 @@ import (
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
-	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
-	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent_category"
+	intentsCategories "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
+	intentsCustomerintents "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -30,8 +30,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceCaseManagementCaseplan()
 	providerResources[PublishResourceType] = ResourceCaseManagementCaseplanPublish()
 	providerResources[CreateVersionResourceType] = ResourceCaseManagementCaseplanCreateVersion()
-	providerResources[customerIntent.ResourceType] = customerIntent.ResourceCustomerIntent()
-	providerResources[intentCategory.ResourceType] = intentCategory.ResourceIntentCategory()
+	providerResources[intentsCustomerintents.ResourceType] = intentsCustomerintents.ResourceCustomerIntent()
+	providerResources[intentsCategories.ResourceType] = intentsCategories.ResourceIntentCategory()
 	providerResources[workitemSchema.ResourceType] = workitemSchema.ResourceTaskManagementWorkitemSchema()
 	providerResources[authrole.ResourceType] = authrole.ResourceAuthRole()
 	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
