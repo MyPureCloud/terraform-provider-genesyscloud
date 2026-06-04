@@ -44,7 +44,7 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
-		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
+		queueMediaSettings.Message = buildSdkMediaSettingsMessage(d, mediaSettingsMessage)
 	}
 
 	return queueMediaSettings
@@ -179,7 +179,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	return mediaSetting
 }
 
-func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemediasettings {
+func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platformclientv2.Messagemediasettings {
 	if len(settings) == 0 {
 		return nil
 	}
@@ -214,10 +214,10 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 	}
 
 	if subTypeSettingsList, ok := settingsMap["sub_type_settings"].([]interface{}); ok {
-		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
+		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(d, subTypeSettingsList)
 	}
 
-	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_inactivity_timeout", true)
+	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableBool(d, "media_settings_message.0.enable_inactivity_timeout")
 
 	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
 		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
@@ -295,11 +295,11 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	return &callbackSettings
 }
 
-func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
+func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
 
 	returnObj := make(map[string]platformclientv2.Messagesubtypesettings)
 
-	for _, subTypeItem := range subTypeList {
+	for i, subTypeItem := range subTypeList {
 		if subTypeItem == nil {
 			continue
 		}
@@ -309,7 +309,7 @@ func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv
 		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableValueFromMap[bool](subTypeMap, "enable_inactivity_timeout", true)
+		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableBool(d, fmt.Sprintf("media_settings_message.0.sub_type_settings.%d.enable_inactivity_timeout", i))
 		returnObj[mediaType] = subTypeSetting
 	}
 
