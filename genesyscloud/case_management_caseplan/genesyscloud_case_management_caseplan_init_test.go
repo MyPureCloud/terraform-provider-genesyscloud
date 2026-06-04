@@ -7,7 +7,7 @@ import (
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
-	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
+	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"

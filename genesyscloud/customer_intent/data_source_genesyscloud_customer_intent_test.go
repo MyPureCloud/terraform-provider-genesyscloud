@@ -1,4 +1,4 @@
-package intents_customerintents
+package customer_intent
 
 import (
 	"fmt"
@@ -46,12 +46,12 @@ func TestAccDataSourceCustomerIntentBasic(t *testing.T) {
 				) + generateCustomerIntentDataSource(
 					dataSourceLabel,
 					intentName,
-					"genesyscloud_intents_customerintents."+resourceLabel,
+					"genesyscloud_customer_intent."+resourceLabel,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data.genesyscloud_intents_customerintents."+dataSourceLabel, "id",
-						"genesyscloud_intents_customerintents."+resourceLabel, "id",
+						"data.genesyscloud_customer_intent."+dataSourceLabel, "id",
+						"genesyscloud_customer_intent."+resourceLabel, "id",
 					),
 				),
 			},
@@ -86,13 +86,13 @@ func TestAccDataSourceCustomerIntentNotFound(t *testing.T) {
 
 func generateCustomerIntentDataSource(dataSourceLabel string, name string, dependsOn string) string {
 	if dependsOn != "" {
-		return fmt.Sprintf(`data "genesyscloud_intents_customerintents" "%s" {
+		return fmt.Sprintf(`data "genesyscloud_customer_intent" "%s" {
 		name       = "%s"
 		depends_on = [%s]
 	}
 	`, dataSourceLabel, name, dependsOn)
 	}
-	return fmt.Sprintf(`data "genesyscloud_intents_customerintents" "%s" {
+	return fmt.Sprintf(`data "genesyscloud_customer_intent" "%s" {
 		name = "%s"
 	}
 	`, dataSourceLabel, name)

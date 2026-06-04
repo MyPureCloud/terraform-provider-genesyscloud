@@ -1,4 +1,4 @@
-package intents_customerintents
+package customer_intent
 
 import (
 	"sync"
@@ -10,8 +10,8 @@ import (
 )
 
 /*
-   The genesyscloud_intents_customerintents_init_test.go file is used to initialize the data sources and resources
-   used in testing the intents_customerintents resource.
+   The genesyscloud_customer_intent_init_test.go file is used to initialize the data sources and resources
+   used in testing the customer_intent resource.
 */
 
 // providerDataSources holds a map of all registered datasources
@@ -56,9 +56,9 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	// Run setup function before starting the test suite for the intents_customerintents package
+	// Run setup function before starting the test suite for the customer_intent package
 	initTestResources()
 
-	// Run the test suite for the intents_customerintents package
+	// Run the test suite for the customer_intent package
 	m.Run()
 }

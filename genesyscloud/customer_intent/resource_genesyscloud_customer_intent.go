@@ -1,4 +1,4 @@
-package intents_customerintents
+package customer_intent
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 )
 
 /*
-The resource_genesyscloud_intents_customerintents.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_customer_intent.go contains all of the methods that perform the core logic for a resource.
 */
 
 // getAllAuthCustomerIntent retrieves all of the customer intent via Terraform in the Genesys Cloud and is used for the exporter
@@ -42,7 +42,7 @@ func getAllAuthCustomerIntents(ctx context.Context, clientConfig *platformclient
 	return resources, nil
 }
 
-// createCustomerIntent is used by the intents_customerintents resource to create Genesys cloud customer intent
+// createCustomerIntent is used by the customer_intent resource to create Genesys cloud customer intent
 func createCustomerIntent(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCustomerIntentProxy(sdkConfig)
@@ -76,7 +76,7 @@ func createCustomerIntent(ctx context.Context, d *schema.ResourceData, meta inte
 	return readCustomerIntent(ctx, d, meta)
 }
 
-// readCustomerIntent is used by the intents_customerintents resource to read a customer intent from genesys cloud
+// readCustomerIntent is used by the customer_intent resource to read a customer intent from genesys cloud
 func readCustomerIntent(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCustomerIntentProxy(sdkConfig)
@@ -113,7 +113,7 @@ func readCustomerIntent(ctx context.Context, d *schema.ResourceData, meta interf
 	})
 }
 
-// updateCustomerIntent is used by the intents_customerintents resource to update a customer intent in Genesys Cloud
+// updateCustomerIntent is used by the customer_intent resource to update a customer intent in Genesys Cloud
 func updateCustomerIntent(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCustomerIntentProxy(sdkConfig)
@@ -159,7 +159,7 @@ func updateCustomerIntent(ctx context.Context, d *schema.ResourceData, meta inte
 	return readCustomerIntent(ctx, d, meta)
 }
 
-// deleteCustomerIntent is used by the intents_customerintents resource to delete a customer intent from Genesys cloud
+// deleteCustomerIntent is used by the customer_intent resource to delete a customer intent from Genesys cloud
 func deleteCustomerIntent(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCustomerIntentProxy(sdkConfig)

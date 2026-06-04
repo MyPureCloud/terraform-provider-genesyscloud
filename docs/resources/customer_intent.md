@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_intents_customerintents Resource - terraform-provider-genesyscloud"
+page_title: "genesyscloud_customer_intent Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud customer intent
 ---
-# genesyscloud_intents_customerintents (Resource)
+# genesyscloud_customer_intent (Resource)
 
 Genesys Cloud customer intent
 
@@ -20,7 +20,7 @@ resource "genesyscloud_intents_categories" "example_intent_category" {
   name = "Example Intent Category"
 }
 
-resource "genesyscloud_intents_customerintents" "example_customer_intent" {
+resource "genesyscloud_customer_intent" "example_customer_intent" {
   name        = "Example Customer Intent"
   description = "Example customer intent description"
   expiry_time = 24
@@ -28,7 +28,7 @@ resource "genesyscloud_intents_customerintents" "example_customer_intent" {
 }
 
 # Example with source intents
-resource "genesyscloud_intents_customerintents" "example_with_source_intents" {
+resource "genesyscloud_customer_intent" "example_with_source_intents" {
   name        = "Example Customer Intent with Source Intents"
   description = "Customer intent with mapped source intents"
   expiry_time = 48

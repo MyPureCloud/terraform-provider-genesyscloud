@@ -1,4 +1,4 @@
-package intents_customerintents
+package customer_intent
 
 import (
 	"log"

@@ -65,7 +65,7 @@ import (
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	intentsCategories "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
-	intentsCustomerintents "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
+	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/customer_intent"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
 	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
@@ -319,7 +319,7 @@ func registerResources() {
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
-	intentsCustomerintents.SetRegistrar(regInstance)                       //Registering customer intent
+	customerIntent.SetRegistrar(regInstance)                               //Registering customer intent
 	intentsCategories.SetRegistrar(regInstance)                            //Registering intent category
 	caseManagementCaseplan.SetRegistrar(regInstance)                       //Registering case management caseplan
 	caseManagementStageplan.SetRegistrar(regInstance)                      //Registering case management stageplan

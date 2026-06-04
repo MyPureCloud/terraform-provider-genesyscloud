@@ -40,7 +40,7 @@ data "genesyscloud_case_management_caseplan" "by_name" {
 					resource.TestCheckResourceAttr(resourcePath, "name", caseplanName),
 					resource.TestCheckResourceAttr(resourcePath, "reference_prefix", refPrefix),
 					resource.TestCheckResourceAttrPair(resourcePath, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
-					resource.TestCheckResourceAttrPair(resourcePath, "customer_intent.0.id", "genesyscloud_intents_customerintents.intent", "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "customer_intent.0.id", "genesyscloud_customer_intent.intent", "id"),
 					resource.TestCheckResourceAttrPair(resourcePath, "default_case_owner.0.id", "genesyscloud_user.owner", "id"),
 					resource.TestCheckResourceAttrPair(resourcePath, "data_schema.0.id", "genesyscloud_task_management_workitem_schema.schema", "id"),
 					resource.TestCheckResourceAttrPair(dataPath, "id", resourcePath, "id"),
@@ -448,7 +448,7 @@ resource "genesyscloud_case_management_caseplan" "cp" {
   default_ttl_seconds             = %[6]d
 
   customer_intent {
-    id = genesyscloud_intents_customerintents.intent.id
+    id = genesyscloud_customer_intent.intent.id
   }
 
   default_case_owner {
@@ -503,7 +503,7 @@ resource "genesyscloud_case_management_caseplan" "cp" {
   default_ttl_seconds             = %[6]d
 
   customer_intent {
-    id = genesyscloud_intents_customerintents.intent.id
+    id = genesyscloud_customer_intent.intent.id
   }
 
   default_case_owner {
