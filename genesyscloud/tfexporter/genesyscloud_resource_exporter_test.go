@@ -1449,10 +1449,10 @@ func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
 				},
 			},
 			stateAttrs: map[string]string{
-				"name":                      "my-resource",
-				"settings.#":                "1",
-				"settings.0.value":          "hello",
-				"settings.0.internal_id":    "abc-123",
+				"name":                   "my-resource",
+				"settings.#":             "1",
+				"settings.0.value":       "hello",
+				"settings.0.internal_id": "abc-123",
 			},
 			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
 				assert.Equal(t, "my-resource", configMap["name"])
@@ -1494,10 +1494,10 @@ func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
 				},
 			},
 			stateAttrs: map[string]string{
-				"name":                   "my-resource",
-				"config.#":               "1",
-				"config.0.new_setting":   "modern",
-				"config.0.old_setting":   "legacy",
+				"name":                 "my-resource",
+				"config.#":             "1",
+				"config.0.new_setting": "modern",
+				"config.0.old_setting": "legacy",
 			},
 			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
 				assert.Equal(t, "my-resource", configMap["name"])
@@ -1548,11 +1548,11 @@ func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
 				},
 			},
 			stateAttrs: map[string]string{
-				"name":                          "my-resource",
-				"outer.#":                       "1",
-				"outer.0.inner.#":               "1",
-				"outer.0.inner.0.keep_me":       "important",
-				"outer.0.inner.0.remove_me":     "ephemeral",
+				"name":                      "my-resource",
+				"outer.#":                   "1",
+				"outer.0.inner.#":           "1",
+				"outer.0.inner.0.keep_me":   "important",
+				"outer.0.inner.0.remove_me": "ephemeral",
 			},
 			checkConfigMap: func(t *testing.T, configMap util.JsonMap) {
 				assert.Equal(t, "my-resource", configMap["name"])
@@ -2045,8 +2045,8 @@ func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := &GenesysCloudResourceExporter{
-				ctx:             context.Background(),
-				exportComputed:  tt.exportComputed,
+				ctx:              context.Background(),
+				exportComputed:   tt.exportComputed,
 				exportDeprecated: tt.exportDeprecated,
 			}
 
