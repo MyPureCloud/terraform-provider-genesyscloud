@@ -4,8 +4,8 @@ import (
 	"sync"
 	"testing"
 
-	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	caseplanpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
 	stageplanpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
 	intentsCategories "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
@@ -13,8 +13,8 @@ import (
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
-	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
