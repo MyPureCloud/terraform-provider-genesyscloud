@@ -1,7 +1,6 @@
 package conversations_messaging_supportedcontent_default
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -20,7 +19,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerResources holds a map of all registered resources

@@ -1,7 +1,6 @@
 package journey_action_template
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -15,7 +14,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	err       error
 )
 
 /*

@@ -1,7 +1,6 @@
 package conversations_messaging_integrations_whatsapp
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -19,7 +18,6 @@ used in testing the conversations_messaging_integrations_whatsapp resource.
 */
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerDataSources holds a map of all registered datasources

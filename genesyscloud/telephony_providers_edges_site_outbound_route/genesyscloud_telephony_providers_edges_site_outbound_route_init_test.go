@@ -1,7 +1,6 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -70,7 +69,6 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	var err error
 	sdkConfig = provider.SdkConfigurationForTests()
 
 	// Run setup function before starting the test suite for telephony_providers_edges_site_outbound_route package

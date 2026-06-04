@@ -1,7 +1,6 @@
 package journey_segment
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	err       error
 )
 
 /*

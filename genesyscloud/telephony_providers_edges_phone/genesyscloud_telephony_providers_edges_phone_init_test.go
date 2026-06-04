@@ -1,7 +1,6 @@
 package telephony_providers_edges_phone
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -33,7 +32,6 @@ var (
 	providerResources map[string]*schema.Resource
 
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 type registerTestInstance struct {

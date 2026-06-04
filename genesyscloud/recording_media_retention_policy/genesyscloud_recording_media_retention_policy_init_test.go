@@ -1,7 +1,6 @@
 package recording_media_retention_policy
 
 import (
-	"log"
 	"sync"
 	"testing"
 

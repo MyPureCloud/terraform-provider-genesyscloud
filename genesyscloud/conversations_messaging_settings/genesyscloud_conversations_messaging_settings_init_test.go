@@ -1,7 +1,6 @@
 package conversations_messaging_settings
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 var (
 	providerDataSources map[string]*schema.Resource
 	sdkConfig           *platformclientv2.Configuration
-	authErr             error
 )
 
 // providerResources holds a map of all registered resources

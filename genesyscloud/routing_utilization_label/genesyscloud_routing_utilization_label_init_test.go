@@ -1,7 +1,6 @@
 package routing_utilization_label
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -15,7 +14,6 @@ var (
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
 	sdkConfig           *platformclientv2.Configuration
-	err                 error
 )
 
 type registerTestInstance struct {

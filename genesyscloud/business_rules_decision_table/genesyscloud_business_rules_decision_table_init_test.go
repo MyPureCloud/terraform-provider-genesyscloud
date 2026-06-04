@@ -1,7 +1,6 @@
 package business_rules_decision_table
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -23,7 +22,6 @@ var providerResources map[string]*schema.Resource
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 type registerTestInstance struct {

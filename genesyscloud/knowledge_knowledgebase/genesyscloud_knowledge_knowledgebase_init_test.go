@@ -1,7 +1,6 @@
 package knowledge_knowledgebase
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -12,7 +11,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerResources holds a map of all registered resources

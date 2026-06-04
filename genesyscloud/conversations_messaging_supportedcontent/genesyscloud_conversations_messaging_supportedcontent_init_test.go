@@ -1,7 +1,6 @@
 package conversations_messaging_supportedcontent
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -17,7 +16,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerDataSources holds a map of all registered datasources

@@ -1,7 +1,6 @@
 package station
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -31,7 +30,6 @@ var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 
 var sdkConfig *platformclientv2.Configuration
-var authErr error
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
