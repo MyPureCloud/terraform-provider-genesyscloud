@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"sync/atomic"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
@@ -49,8 +50,10 @@ func FetchPagesConcurrently[T any](
 	results := make(chan pageResult[T], remainingPages)
 	sem := make(chan struct{}, min(maxConcurrentPages, remainingPages))
 
-	log.Printf("[PAGINATION] Fetching pages 2-%d concurrently for %s", totalPages, resourceType)
+	poolSize := SdkClientPool.GetMaxClients()
+	log.Printf("[PAGINATION] Fetching pages 2-%d concurrently for %s (max_concurrent_pages=%d, token_pool_size=%d)", totalPages, resourceType, maxConcurrentPages, poolSize)
 
+	var peakActiveClients int64
 	var wg sync.WaitGroup
 	for pageNum := 2; pageNum <= totalPages; pageNum++ {
 		wg.Add(1)
@@ -70,6 +73,7 @@ func FetchPagesConcurrently[T any](
 				results <- pageResult[T]{pageNum: page, resp: firstResp, err: err}
 				return
 			}
+			recordPeakActiveClients(&peakActiveClients)
 			defer func() {
 				if err := SdkClientPool.release(clientConfig); err != nil {
 					log.Printf("[WARN] Error releasing client to pool after pagination page %d: %v", page, err)
@@ -113,8 +117,25 @@ func FetchPagesConcurrently[T any](
 		allEntities = append(allEntities, pages[pageNum]...)
 	}
 
-	log.Printf("[PAGINATION] Fetched %d resources across %d pages concurrently for %s", len(allEntities), totalPages, resourceType)
+	log.Printf("[PAGINATION] Fetched %d resources across %d pages concurrently for %s (peak_active_clients=%d)", len(allEntities), totalPages, resourceType, atomic.LoadInt64(&peakActiveClients))
 	return allEntities, responseOrDefault(lastResp, firstResp), nil
+}
+
+// recordPeakActiveClients updates peak with the pool's current active client count after an acquire.
+func recordPeakActiveClients(peak *int64) {
+	if SdkClientPool == nil || SdkClientPool.metrics == nil {
+		return
+	}
+	active := atomic.LoadInt64(&SdkClientPool.metrics.activeClients)
+	for {
+		current := atomic.LoadInt64(peak)
+		if active <= current {
+			return
+		}
+		if atomic.CompareAndSwapInt64(peak, current, active) {
+			return
+		}
+	}
 }
 
 func fetchRemainingPagesSequentially[T any](
