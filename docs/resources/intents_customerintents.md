@@ -8,35 +8,10 @@ description: |-
 
 Genesys Cloud customer intent
 
-~> **Note:** This resource was previously available as `genesyscloud_customer_intent` in earlier versions of the provider. It has been renamed in this version to `genesyscloud_intents_customerintents` to align with the Genesys Cloud API naming conventions. If you are upgrading from a prior version, update your configuration files and run `terraform state mv` to migrate existing state entries.
-
 ## API Usage
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/intents/customerintents]()
-* [GET /api/v2/intents/customerintents/{customerIntentId}]()
-* [PATCH /api/v2/intents/customerintents/{customerIntentId}]()
-* [DELETE /api/v2/intents/customerintents/{customerIntentId}]()
-* [GET /api/v2/intents/customerintents]()
-* [GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents]()
-* [POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/add]()
-* [POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/remove]()
-
-
-## Permissions and Scopes
-
-The following permissions are required to use this resource:
-
-* `externalContacts:customerIntentTaxonomy:add`
-* `externalContacts:customerIntentTaxonomy:delete`
-* `externalContacts:customerIntentTaxonomy:edit`
-* `externalContacts:customerIntentTaxonomy:view`
-
-The following OAuth scopes are required to use this resource:
-
-* `external-contacts`
-* `external-contacts:readonly`
-
+**No APIs**
 
 ## Example Usage
 
@@ -108,3 +83,4 @@ Optional:
 
 - `source_id` (String) ID of the source
 - `source_name` (String) Name of the source
+

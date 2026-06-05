@@ -1,15 +1,17 @@
 package integration_action
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -24,7 +26,24 @@ Note:  Look for opportunities to minimize boilerplate code using functions and G
 const (
 	reqTemplateFileName     = "requesttemplate.vm"
 	successTemplateFileName = "successtemplate.vm"
+
+	// staticActionIDPrefix is the prefix Genesys Cloud uses on the IDs of built-in
+	// (static) data actions that ship with each integration. Static actions cannot be
+	// created, updated, or deleted via the public API and are therefore exported as
+	// data sources rather than managed resources.
+	staticActionIDPrefix = "static"
 )
+
+// shouldExportIntegrationActionAsDataSource instructs the exporter to emit static
+// (built-in) integration actions as data source blocks instead of managed resource
+// blocks. The exporter framework calls this function for each action after its state
+// is fetched; returning true adds the resource to the replace_with_datasource list.
+func shouldExportIntegrationActionAsDataSource(_ context.Context, _ *platformclientv2.Configuration, configMap map[string]string) (bool, error) {
+	if id, ok := configMap["id"]; ok && strings.HasPrefix(id, staticActionIDPrefix) {
+		return true, nil
+	}
+	return false, nil
+}
 
 type ActionInput struct {
 	InputSchema *interface{} `json:"inputSchema,omitempty"`

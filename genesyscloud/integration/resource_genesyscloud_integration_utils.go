@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -88,11 +88,11 @@ func flattenConfigCredentials(credentials map[string]platformclientv2.Credential
 
 // updateIntegrationConfigFromResourceData takes the integrationsProxy to update updates the config of an integration
 // Returns a diag error and the name of the integration
-func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.ResourceData, p *integrationsProxy) (diag.Diagnostics, string) {
+func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.ResourceData, p *IntegrationsProxy) (diag.Diagnostics, string) {
 	if d.HasChange("config") {
 		if configInput := d.Get("config").([]interface{}); configInput != nil {
 
-			integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
+			integrationConfig, resp, err := p.GetIntegrationConfig(ctx, d.Id())
 			if err != nil {
 				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config error: %s", d.Id(), err), resp), ""
 			}
@@ -133,7 +133,7 @@ func updateIntegrationConfigFromResourceData(ctx context.Context, d *schema.Reso
 			diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 
 				// Get latest config version
-				integrationConfig, resp, err := p.getIntegrationConfig(ctx, d.Id())
+				integrationConfig, resp, err := p.GetIntegrationConfig(ctx, d.Id())
 				if err != nil {
 					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get the integration config for integration %s before updating its config. error: %s", d.Id(), err), resp)
 				}

@@ -2,20 +2,17 @@ package architect_flow
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -34,8 +31,9 @@ type getExportJobStatusByIdFunc func(a *architectFlowProxy, jobId string) (*plat
 type pollExportJobForDownloadUrlFunc func(a *architectFlowProxy, jobId string, timeoutInSeconds float64) (downloadUrl string, err error)
 
 type architectFlowProxy struct {
-	clientConfig *platformclientv2.Configuration
-	api          *platformclientv2.ArchitectApi
+	clientConfig    *platformclientv2.Configuration
+	customApiClient *customapi.Client
+	api             *platformclientv2.ArchitectApi
 
 	getArchitectFlowAttr            getArchitectFunc
 	getAllArchitectFlowsAttr        getAllArchitectFlowsFunc
@@ -57,8 +55,9 @@ var flowCache = rc.NewResourceCache[platformclientv2.Flow]()
 func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *architectFlowProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 	return &architectFlowProxy{
-		clientConfig: clientConfig,
-		api:          api,
+		clientConfig:    clientConfig,
+		customApiClient: customapi.NewClient(clientConfig, ResourceType),
+		api:             api,
 
 		getArchitectFlowAttr:            getArchitectFlowFn,
 		getAllArchitectFlowsAttr:        getAllArchitectFlowsFn,
@@ -318,49 +317,35 @@ func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId st
 
 // getAllArchitectFlowsFn is the implementation function for GetAllFlows
 func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	baseURL := p.clientConfig.BasePath + "/api/v2/flows"
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	params := url.Values{}
-	if name != "" {
-		params.Add("name", name)
-	}
-	for _, t := range varType {
-		params.Add("type", t)
-	}
-	params.Add("includeSchemas", "true")
-
-	client := &http.Client{}
 	var allFlows []platformclientv2.Flow
 
-	params.Set("pageSize", "100")
-	params.Set("pageNumber", "1")
-
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing URL: %v", err)
+	queryParams := customapi.QueryParams{}
+	queryParams.Set("pageSize", "100")
+	queryParams.Set("pageNumber", "1")
+	queryParams.Set("includeSchemas", "true")
+	if name != "" {
+		queryParams.Set("name", name)
 	}
-	u.RawQuery = params.Encode()
+	for _, t := range varType {
+		queryParams.Add("type", t)
+	}
 
-	flows, apiResp, err := makeFlowRequest(ctx, client, u.String(), p)
+	flows, apiResp, err := customapi.Do[platformclientv2.Flowentitylisting](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/flows", nil, queryParams)
 	if err != nil {
 		return nil, apiResp, err
 	}
-
 	if flows.Entities != nil {
 		allFlows = append(allFlows, *flows.Entities...)
 	}
 
 	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
 		ctx = provider.EnsureResourceContext(ctx, ResourceType)
-		params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
-		u.RawQuery = params.Encode()
-
-		pageFlows, _, err := makeFlowRequest(ctx, client, u.String(), p)
+		queryParams.Set("pageNumber", fmt.Sprintf("%d", pageNum))
+		pageFlows, _, err := customapi.Do[platformclientv2.Flowentitylisting](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/flows", nil, queryParams)
 		if err != nil {
 			return nil, apiResp, err
 		}
-
 		if pageFlows.Entities != nil {
 			allFlows = append(allFlows, *pageFlows.Entities...)
 		}
@@ -369,66 +354,10 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 	for _, flow := range allFlows {
 		rc.SetCache(p.flowCache, *flow.Id, flow)
 	}
-
 	return &allFlows, apiResp, nil
 }
 
-func makeFlowRequest(ctx context.Context, client *http.Client, reqURL string, p *architectFlowProxy) (*platformclientv2.Flowentitylisting, *platformclientv2.APIResponse, error) {
-	const maxRetries = 20
-
-	for attempt := 0; attempt <= maxRetries; attempt++ {
-		ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error making request: %v", err)
-		}
-
-		respBody, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			return nil, nil, fmt.Errorf("error reading response: %v", err)
-		}
-
-		apiResp := &platformclientv2.APIResponse{
-			StatusCode: resp.StatusCode,
-			Response:   resp,
-		}
-
-		if util.IsStatus429(apiResp) && attempt < maxRetries {
-			delay, doRetry := util.GetRetryAfterDelay(apiResp)
-			if !doRetry {
-				delay = min(time.Duration(1<<attempt)*time.Second, 30*time.Second)
-			}
-			log.Printf("Rate limited (429) on GET %s. Retrying in %v (attempt %d/%d)", reqURL, delay, attempt+1, maxRetries)
-			time.Sleep(delay)
-			continue
-		}
-
-		if resp.StatusCode >= 400 {
-			return nil, apiResp, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(respBody))
-		}
-
-		var flows platformclientv2.Flowentitylisting
-		if err := json.Unmarshal(respBody, &flows); err != nil {
-			return nil, apiResp, err
-		}
-
-		return &flows, apiResp, nil
-	}
-
-	return nil, nil, fmt.Errorf("exhausted %d retries on GET %s due to rate limiting", maxRetries, reqURL)
-}
-
-// generateDownloadUrlFn is the implementation function for the generateDownloadUrl method.
+// generateDownloadUrlFn is the implementation function for the generateDownloadUrl method
 func generateDownloadUrlFn(a *architectFlowProxy, flowId, flowVersion string) (downloadUrl string, err error) {
 	defer func() {
 		if err != nil {

@@ -4,8 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 func TestUnitBuildConditionalGroupActivation(t *testing.T) {
@@ -155,9 +154,16 @@ func TestUnitFlattenConditionalGroupActivation(t *testing.T) {
 		t.Fatalf("Expected 1 condition, got %v", rule["conditions"])
 	}
 
-	groups, ok := rule["groups"].(*schema.Set)
-	if !ok || groups.Len() != 1 {
+	groups, ok := rule["groups"].([]interface{})
+	if !ok || len(groups) != 1 {
 		t.Fatalf("Expected 1 group, got %v", rule["groups"])
+	}
+	groupMap, ok := groups[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected group to be map[string]interface{}, got %T", groups[0])
+	}
+	if groupMap["member_group_id"] != groupId || groupMap["member_group_type"] != groupType {
+		t.Errorf("Expected group id %q type %q, got %#v", groupId, groupType, groupMap)
 	}
 }
 

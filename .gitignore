@@ -62,3 +62,6 @@ public/data/dependency_tree*
 public/data/resource_permissions*
 
 tools/resource_metadata_exporter/build/*
+
+# Symlink to the GC Platform SDK Go module cache for Amazon Q SDK reference (avoids out-of-workspace prompts)
+.sdk-reference

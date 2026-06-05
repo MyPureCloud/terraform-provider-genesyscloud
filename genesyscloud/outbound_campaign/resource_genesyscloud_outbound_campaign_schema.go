@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -33,8 +34,17 @@ var supportedDiagnosticsSettingsDialingModes = []string{"power", "predictive"}
 
 // validateDiagnosticsSettingsDialingMode validates that diagnostics_settings is only used with power or predictive dialing modes
 func validateDiagnosticsSettingsDialingMode(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
-	diagnosticsSettings := diff.Get("diagnostics_settings").([]interface{})
-	if len(diagnosticsSettings) == 0 {
+	cfgVal, cfgDiags := diff.GetRawConfigAt(cty.GetAttrPath("diagnostics_settings"))
+	if cfgDiags.HasError() { // skip if raw config path cannot be resolved
+		return nil
+	}
+	if cfgVal.IsNull() || !cfgVal.IsKnown() { // diagnostics block omitted or unknown in config
+		return nil
+	}
+	if !cfgVal.Type().IsCollectionType() || !cfgVal.IsWhollyKnown() { // expect a fully known list/tuple from HCL
+		return nil
+	}
+	if cfgVal.LengthInt() == 0 { // empty diagnostics_settings list in config
 		return nil
 	}
 
@@ -142,6 +152,16 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Optional:     true,
 				Type:         schema.TypeFloat,
 				ValidateFunc: validation.FloatAtLeast(1),
+			},
+			`max_calls_per_agent_decimal`: {
+				Description: `The maximum number of calls that can be placed per agent on this campaign with decimal precision, as returned by the API. Use max_calls_per_agent to configure this value.`,
+				Computed:    true,
+				Type:        schema.TypeFloat,
+			},
+			`agent_owned_column`: {
+				Description: `Name of the contact list column containing the id of the agent who owns the record. Only applicable to preview campaigns.`,
+				Optional:    true,
+				Type:        schema.TypeString,
 			},
 			`dnc_list_ids`: {
 				Description: `DncLists for this Campaign to check before placing a call.`,
