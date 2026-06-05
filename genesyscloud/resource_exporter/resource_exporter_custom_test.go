@@ -128,9 +128,9 @@ func TestUnitRuleSetPropertyGroup(t *testing.T) {
 // clear route_id and domain_id. Leaving domain_id in place conflicts with self_reference_route
 // and causes terraform plan to fail.
 func TestUnitReplyEmailAddressSelfReferenceRouteExporterResolver(t *testing.T) {
-	resourceLabel := "procurementoperations_dell_com"
+	resourceLabel := "example_email_route"
 	configMap := map[string]interface{}{
-		"domain_id": "${data.genesyscloud_routing_email_domain.operations_dell_com.id}",
+		"domain_id": "${data.genesyscloud_routing_email_domain.example_email_domain.id}",
 		"route_id":  fmt.Sprintf("${genesyscloud_routing_email_route.%s.id}", resourceLabel),
 	}
 

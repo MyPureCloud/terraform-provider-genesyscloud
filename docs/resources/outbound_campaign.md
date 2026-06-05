@@ -107,6 +107,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 ### Optional
 
 - `abandon_rate` (Number) The targeted abandon rate percentage. Required for progressive, power, and predictive campaigns.
+- `agent_owned_column` (String) Name of the contact list column containing the id of the agent who owns the record. Only applicable to preview campaigns.
 - `always_running` (Boolean) Indicates (when true) that the campaign will remain on after contacts are depleted, allowing additional contacts to be appended/added to the contact list and processed by the still-running campaign. The campaign can still be turned off manually.
 - `auto_answer` (Boolean) The option manages the auto-answer callback calls
 - `call_analysis_language` (String) The language the edge will use to analyze the call.
@@ -138,6 +139,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `max_calls_per_agent_decimal` (Number) The maximum number of calls that can be placed per agent on this campaign with decimal precision, as returned by the API. Use max_calls_per_agent to configure this value.
 
 <a id="nestedblock--phone_columns"></a>
 ### Nested Schema for `phone_columns`
