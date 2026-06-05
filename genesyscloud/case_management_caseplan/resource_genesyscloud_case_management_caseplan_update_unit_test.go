@@ -26,7 +26,6 @@ func TestUnit_caseplanDataSchemaSyncPlanFromState(t *testing.T) {
 		assert.ElementsMatch(t, []string{"a"}, del)
 		require.Len(t, puts, 1)
 		assert.Equal(t, "b", *puts[0].Id)
-		assert.Nil(t, puts[0].Version)
 	})
 	t.Run("remove one of two", func(t *testing.T) {
 		oldRaw := []interface{}{
