@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -20,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -54,25 +53,24 @@ func getAllCredentials(ctx context.Context, clientConfig *platformclientv2.Confi
 	}
 
 	for _, cred := range *credentials {
-		log.Printf("Dealing with credential id : %s, credential name : %s", *cred.Id, util.StringOrNil(cred.Name))
+		tflog.Info(ctx, fmt.Sprintf("Dealing with credential id: %s, credential name: %s", *cred.Id, util.StringOrNil(cred.Name)))
 		if cred.Name != nil { // Credential is possible to have no name
 
-			// Export integration credential only if it matches the expected format: DEVTOOLING-310
-			regexPattern := regexp.MustCompile("Integration-.+")
-			if !regexPattern.MatchString(*cred.Name) {
-				log.Printf("integration credential name [%s] does not match the expected format [%s], not exporting integration credential id %s", *cred.Name, regexPattern.String(), *cred.Id)
-				continue
-			}
 			// Verify that the integration entity itself exist before exporting the integration credentials associated to it: DEVTOOLING-282
-			integrationId := strings.Split(*cred.Name, "Integration-")[1]
-			integration, resp, err := ip.getIntegrationById(ctx, integrationId)
+			integration, resp, err := ip.GetIntegrationByCredentialId(ctx, *cred.Id)
 			if err != nil {
 				if util.IsStatus404(resp) {
-					log.Printf("Integration id %s no longer exist, we are therefore not exporting the associated integration credential id %s", integrationId, *cred.Id)
+					tflog.Warn(ctx, fmt.Sprintf("The Integration associated with the Integration Credential %s no longer exist, we are therefore not exporting the Integration Credential", *cred.Id))
 					continue
 				} else {
-					log.Printf("Integration id %s exists but we got an unexpected error retrieving it: %v", integrationId, err)
+					tflog.Warn(ctx, fmt.Sprintf("The Integration associated with the Integration Credential %s exists but we got an unexpected error retrieving it: %v", *cred.Id, err))
 				}
+
+			}
+
+			if integration == nil {
+				log.Printf("Could not find integration associated with integration credential %s, we are therefore not exporting the associated integration credential", *cred.Id)
+				continue
 			}
 			// Block Label: DEVTOOLING-1135
 			resources[*cred.Id] = &resourceExporter.ResourceMeta{BlockLabel: "Integration-" + *integration.Name}

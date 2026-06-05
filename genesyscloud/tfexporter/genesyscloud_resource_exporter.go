@@ -41,7 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
 /*
@@ -147,6 +147,7 @@ type GenesysCloudResourceExporter struct {
 	// 1-byte alignment
 	// .. Booleans
 	addDependsOn         bool
+	exportDeprecated     bool
 	exportComputed       bool
 	ignoreCyclicDeps     bool
 	includeStateFile     bool
@@ -208,6 +209,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		splitFilesByResource: d.Get("split_files_by_resource").(bool),
 		logPermissionErrors:  d.Get("log_permission_errors").(bool),
 		exportComputed:       d.Get("export_computed").(bool),
+		exportDeprecated:     d.Get("export_deprecated").(bool),
 		addDependsOn:         computeDependsOn(d.Get("enable_dependency_resolution").(bool), exporterDependencyResolutionDecision),
 		filterType:           filterType,
 		includeStateFile:     d.Get("include_state_file").(bool),
@@ -734,13 +736,23 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			// 3. Convert the instance state to a map
 			configMap := maps.Clone(jsonResult)
 
-			// 4. Sanitize the config map
+			// 4. Remove schema-based excluded attributes (computed, read-only, deprecated) recursively
+			// We do this before sanitization to remove any attributes that need removed. The sanitization function
+			// will correctly handle these attributes and not add extra entries to dependency resolution
+			if resSchema := g.provider.ResourcesMap[resource.Type]; resSchema != nil {
+				schemaExcluded := g.collectSchemaBasedExcludedAttributes(resource.Type, resSchema.Schema, "")
+				if len(schemaExcluded) > 0 {
+					removeExcludedAttrsFromMap(configMap, schemaExcluded, "")
+				}
+			}
+
+			// 5. Sanitize the config map
 			unresolvableAttrs, _ := g.sanitizeConfigMap(resource, configMap, "", *g.exporters, g.includeStateFile, g.exportFormat, true)
 			if len(unresolvableAttrs) > 0 {
 				g.addUnresolvedAttrs(unresolvableAttrs)
 			}
 
-			// 5. Handle custom write attributes (i.e. exporting files like prompts, flows, scripts, etc)
+			// 6. Handle custom write attributes (i.e. exporting files like prompts, flows, scripts, etc)
 			if !result.isDataSource {
 				diagErr = g.customWriteAttributes(configMap, resource)
 				if diagErr != nil && diagErr.HasError() {
@@ -1879,20 +1891,6 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					instanceState.Attributes = attributes
 					blockType = "data"
 				}
-
-				for resAttribute, resSchema := range res.Schema {
-					// Remove any computed attributes if export computed exporter config not set
-					if resSchema.Computed == true && !exportComputed {
-						delete(instanceState.Attributes, resAttribute)
-						continue
-					}
-					// Remove any computed read-only attributes from being exported regardless of exporter config
-					// because they cannot be set by a user when reapplying the configuration in a different org
-					if resSchema.Computed == true && resSchema.Optional == false {
-						delete(instanceState.Attributes, resAttribute)
-						continue
-					}
-				}
 				tflog.Debug(g.ctx, fmt.Sprintf("Finished processing schema attributes for resource ID: %s", id))
 
 				tflog.Trace(g.ctx, fmt.Sprintf("Creating ResourceInfo for resource ID: %s", id))
@@ -2073,6 +2071,40 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	}
 
 	return resources, nil
+}
+
+// collectSchemaBasedExcludedAttributes handles determining if any attributes should be excluded based on schema characteristics (i.e. computed, deprecated, etc)
+func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(resourceType string, schemaMap map[string]*schema.Schema, prefix string) []string {
+	var excludedAttributes []string
+	for name, s := range schemaMap {
+		fullPath := name
+		if prefix != "" {
+			fullPath = prefix + "." + name
+		}
+		// Remove any computed attributes if export computed exporter config not set
+		if s.Computed == true && !g.exportComputed {
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
+			excludedAttributes = append(excludedAttributes, fullPath)
+			continue
+		}
+		// Remove any computed read-only attributes from being exported regardless of exporter config
+		// because they cannot be set by a user when reapplying the configuration in a different org
+		if s.Computed == true && s.Optional == false {
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
+			excludedAttributes = append(excludedAttributes, fullPath)
+			continue
+		}
+		// Remove deprecated attributes if export_deprecated is set to false
+		if s.Deprecated != "" && !g.exportDeprecated {
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a deprecated attribute", fullPath, resourceType))
+			excludedAttributes = append(excludedAttributes, fullPath)
+			continue
+		}
+		if elem, ok := s.Elem.(*schema.Resource); ok {
+			excludedAttributes = append(excludedAttributes, g.collectSchemaBasedExcludedAttributes(resourceType, elem.Schema, fullPath)...)
+		}
+	}
+	return excludedAttributes
 }
 
 func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
