@@ -82,13 +82,13 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 Required:
 
-- `media_type` (String) Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.
+- `media_type` (String) Media type of action. Valid values: webchat (deprecated), webMessagingOffer, contentOffer, architectFlow, openAction. Note: The 'webchat' media type is deprecated. ACD Chat v2.0 in Genesys Predictive Engagement is being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement.
 
 Optional:
 
 - `action_template_id` (String) Action template associated with the action map. For media type contentOffer.
 - `architect_flow_fields` (Block Set, Max: 1) Architect Flow Id and input contract. For media type architectFlow. (see [below for nested schema](#nestedblock--action--architect_flow_fields))
-- `is_pacing_enabled` (Boolean) Whether this action should be throttled. Defaults to `true`.
+- `is_pacing_enabled` (Boolean, Deprecated) *DEPRECATED: Web Chat is deprecated and being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement* Whether this action should be throttled. Defaults to `true`.
 - `open_action_fields` (Block Set, Max: 1) Admin-configurable fields of an open action. For media type openAction. (see [below for nested schema](#nestedblock--action--open_action_fields))
 - `web_messaging_offer_fields` (Block Set, Max: 1) Admin-configurable fields of a web messaging offer action. For media type webMessagingOffer. (see [below for nested schema](#nestedblock--action--web_messaging_offer_fields))
 
