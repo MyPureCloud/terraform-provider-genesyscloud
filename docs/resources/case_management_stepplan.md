@@ -6,15 +6,17 @@ description: |-
 ---
 # genesyscloud_case_management_stepplan (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Binds to the single stepplan under a stage (auto-created with the caseplan). Uses version "latest" for list/read/PATCH. Create/delete are no-ops on the API; destroy removes Terraform state only.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-versions-versionid-stageplans-stageplanid-stepplans)
-* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}/stepplans/{stepplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-casemanagement-caseplans-caseplanid-stageplans-stageplanid-stepplans-stepplanid-)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans/{stepplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-versions-versionid-stageplans-stageplanid-stepplans-stepplanid-)
-
+* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}/stepplans/{stepplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-casemanagement-caseplans--caseplanId--stageplans--stageplanId--stepplans--stepplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--stageplans--stageplanId--stepplans)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans/{stepplanId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--stageplans--stageplanId--stepplans--stepplanId-)
 
 
 ## Example Usage

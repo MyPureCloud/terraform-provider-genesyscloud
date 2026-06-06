@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_processautomation_trigger (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Process Automation Trigger
 
 ## API Usage
@@ -17,6 +19,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-processAutomation-triggers--triggerId-)
 * [GET /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-processAutomation-triggers--triggerId-)
 * [PUT /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-processAutomation-triggers--triggerId-)
+* [DELETE /api/v2/processAutomation/triggers/{triggersId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-processAutomation-triggers--triggersId-)
+* [GET /api/v2/processAutomation/triggers/{triggersId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-processAutomation-triggers--triggersId-)
+* [PUT /api/v2/processAutomation/triggers/{triggersId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-processAutomation-triggers--triggersId-)
 
 
 ## Example Usage

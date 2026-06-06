@@ -1,3 +1,9 @@
+<!-- sources
+genesyscloud/knowledge_document/genesyscloud_knowledge_document_proxy.go
+genesyscloud/knowledge_document/resource_genesyscloud_knowledge_document.go
+-->
+* [GET /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-dependencytracking-build)
+* [POST /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-dependencytracking-build)
 * [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)

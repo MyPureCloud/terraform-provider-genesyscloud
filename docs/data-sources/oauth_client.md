@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_oauth_client (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud OAuth Clients. Select an OAuth Client by name.
 
 ## API Usage

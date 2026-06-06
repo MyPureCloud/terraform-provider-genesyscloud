@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_speechandtextanalytics_dictionaryfeedback (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud dictionary feedback data source. Select an dictionary feedback by term
 
 ## API Usage

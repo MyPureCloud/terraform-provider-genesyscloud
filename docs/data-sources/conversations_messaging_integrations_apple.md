@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_integrations_apple (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud apple integration data source. Select an apple integration by name
 
 ## API Usage

@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/ai_studio_summary_setting/genesyscloud_ai_studio_summary_setting_proxy.go
+-->
 * [GET /api/v2/conversations/summaries/settings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-summaries-settings)
 * [POST /api/v2/conversations/summaries/settings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-conversations-summaries-settings)
 * [DELETE /api/v2/conversations/summaries/settings/{summarySettingId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-conversations-summaries-settings--summarySettingId-)

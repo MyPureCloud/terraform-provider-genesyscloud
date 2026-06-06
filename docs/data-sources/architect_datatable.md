@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_architect_datatable (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud Architect Datatables. Select an architect architect_datatable by name.
 
 ## API Usage
@@ -15,6 +17,7 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 * [GET /api/v2/flows/datatables](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables)
 * [POST /api/v2/flows/datatables](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-datatables)
 * [DELETE /api/v2/flows/datatables/{datatableId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows-datatables--datatableId-)
+* [GET /api/v2/flows/datatables/{datatableId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables--datatableId-)
 
 ## Permissions and Scopes
 

@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_supportedcontent_default (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud conversations messaging supportedcontent default
 
 ## API Usage

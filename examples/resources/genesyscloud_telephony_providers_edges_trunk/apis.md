@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/telephony_providers_edges_trunk/genesyscloud_telephony_providers_edges_trunk_proxy.go
+-->
 * [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
 * [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
 * [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)

@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_oauth_client (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud OAuth Clients. See this page for detailed configuration information: https://help.mypurecloud.com/articles/create-an-oauth-client/
 
 ## API Usage

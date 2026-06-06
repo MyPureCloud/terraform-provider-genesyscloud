@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_script (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud Scripts. Select a script by name.  This will only search on published scripts.  Unpublished scripts will not be returned
 
 ## API Usage

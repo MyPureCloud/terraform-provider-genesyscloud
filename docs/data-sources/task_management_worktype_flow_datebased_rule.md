@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_task_management_worktype_flow_datebased_rule (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management datebased rule data source. Select a task management datebased rule by name
 
 ## API Usage

@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/business_rules_decision_table/genesyscloud_business_rules_decision_table_proxy.go
+-->
 * [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables)
 * [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables-search)
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId-)

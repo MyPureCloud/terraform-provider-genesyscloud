@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_integration_custom_auth_action (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud integration custom auth action. Select the custom auth action by its associated integration's id.
 
 ## API Usage

@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_queue_conditional_group_routing (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud routing queue conditional group routing rules. **Important:** This resource requires the ENABLE_STANDALONE_CGR environment variable to be set. When enabled, the conditional_group_routing_rules attribute on genesyscloud_routing_queue will not be read or exported — this resource takes over management of conditional group routing rules. The two approaches are mutually exclusive to prevent duplicate data during org exports.
 
 ## API Usage

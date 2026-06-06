@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_integration_action_draft (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Integration Action Drafts. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
 
 ## API Usage

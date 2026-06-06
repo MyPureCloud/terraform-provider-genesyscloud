@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_email_route (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud Routing Email Route. Select a routing email route by pattern and domain ID.
 
 ## API Usage

@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/task_management_workitem/genesyscloud_task_management_workitem_proxy.go
+-->
 * [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workbins-query)
 * [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workitems)
 * [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workitems-query)

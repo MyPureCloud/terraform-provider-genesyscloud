@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/integration_custom_auth_action/genesyscloud_integration_custom_auth_action_proxy.go
+-->
 * [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions)
 * [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId-)
 * [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations-actions--actionId-)

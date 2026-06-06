@@ -1,2 +1,5 @@
+<!-- sources
+genesyscloud/orgauthorization_pairing/genesyscloud_orgauthorization_pairing_proxy.go
+-->
 * [POST /api/v2/orgauthorization/pairings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-orgauthorization-pairings)
 * [GET /api/v2/orgauthorization/pairings/{pairingId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-orgauthorization-pairings--pairingId-)

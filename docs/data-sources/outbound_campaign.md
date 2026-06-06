@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_outbound_campaign (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound campaign data source. Select an outbound campaign by name
 
 ## API Usage

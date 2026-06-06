@@ -6,18 +6,22 @@ description: |-
 ---
 # genesyscloud_integration_credential (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud integration credential. Select an integration credential by name
 
 ## API Usage
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations)
 * [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-credentials)
 * [GET /api/v2/integrations/credentials/listing](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials-listing)
 * [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials--credentialId-)
 * [PUT /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
+* [GET /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId--config-current)
 
 ## Permissions and Scopes
 

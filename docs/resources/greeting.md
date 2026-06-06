@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_greeting (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Greeting
 
 ## API Usage
@@ -17,8 +19,15 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-greetings--greetingId-)
 * [GET /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-greetings--greetingId-)
 * [PUT /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings/{greetingId}/downloads](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-greetings--greetingId--downloads)
+* [GET /api/v2/greetings/{greetingId}/groups/downloads](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-greetings--greetingId--groups-downloads)
 
 ## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `greetings:greeting:download`
+* `greetings:groupGreeting:download`
 
 The following OAuth scopes are required to use this resource:
 

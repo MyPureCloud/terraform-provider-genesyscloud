@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_journey_outcome (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 [DEPRECATED] Data source for Genesys Cloud Journey Outcome. Select a journey outcome by name. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 
 ## API Usage

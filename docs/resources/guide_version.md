@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_guide_version (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Guide Version
 
 ## API Usage
@@ -13,6 +15,8 @@ Genesys Cloud Guide Version
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides)
+* [GET /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId-)
+* [PATCH /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-guides--guideId-)
 * [POST /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guideId-)
 * [POST /api/v2/guides/{guideId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides--guideId--versions)
 * [GET /api/v2/guides/{guideId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId--versions--versionId-)
@@ -24,6 +28,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 The following permissions are required to use this resource:
 
+* `aiStudio:guide:edit`
 * `aiStudio:guide:view`
 * `aiStudio:guideVersion:add`
 * `aiStudio:guideVersion:edit`

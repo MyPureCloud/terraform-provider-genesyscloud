@@ -6,15 +6,18 @@ description: |-
 ---
 # genesyscloud_case_management_caseplan (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud case management caseplan
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans)
-* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-)
-* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-casemanagement-caseplans-caseplanid-)
+* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans)
+* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-casemanagement-caseplans)
+* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-casemanagement-caseplans--caseplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId-)
 
 
 ## Example Usage

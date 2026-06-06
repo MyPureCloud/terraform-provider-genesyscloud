@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_telephony_providers_edges_trunk (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Trunk. Created by assigning a trunk base settings to an edge or edge group
 
 ## API Usage

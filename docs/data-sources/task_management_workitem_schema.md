@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_task_management_workitem_schema (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management workitem schema data source. Select a workitem schema by its name.
 
 ## API Usage

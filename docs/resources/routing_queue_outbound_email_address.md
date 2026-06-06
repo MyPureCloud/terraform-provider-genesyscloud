@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_queue_outbound_email_address (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Queue Outbound Email Address
 
 ## API Usage

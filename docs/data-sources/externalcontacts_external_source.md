@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_externalcontacts_external_source (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud external contacts external source data source. Select an external source by name
 
 ## API Usage

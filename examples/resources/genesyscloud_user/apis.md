@@ -1,3 +1,7 @@
+<!-- sources
+genesyscloud/user/genesyscloud_user_proxy.go
+genesyscloud/user/resource_genesyscloud_user_utils.go
+-->
 * [DELETE /api/v2/routing/users/{userId}/utilization](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-users--userId--utilization)
 * [GET /api/v2/routing/users/{userId}/utilization](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-users--userId--utilization)
 * [PUT /api/v2/routing/users/{userId}/utilization](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-users--userId--utilization)
@@ -14,6 +18,9 @@
 * [GET /api/v2/users/{userId}/routinglanguages](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--routinglanguages)
 * [PATCH /api/v2/users/{userId}/routinglanguages/bulk](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId--routinglanguages-bulk)
 * [DELETE /api/v2/users/{userId}/routinglanguages/{languageId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId--routinglanguages--languageId-)
+* [GET /api/v2/users/{userId}/routingskills](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--routingskills)
+* [PATCH /api/v2/users/{userId}/routingskills/bulk](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId--routingskills-bulk)
 * [PUT /api/v2/users/{userId}/routingskills/bulk](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-users--userId--routingskills-bulk)
+* [DELETE /api/v2/users/{userId}/routingskills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId--routingskills--skillId-)
 * [GET /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-voicemail-userpolicies--userId-)
 * [PATCH /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-voicemail-userpolicies--userId-)

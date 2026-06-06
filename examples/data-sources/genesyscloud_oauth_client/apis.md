@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/oauth_client/resource_genesyscloud_oauth_client_proxy.go
+-->
 * [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-credentials)
 * [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials--credentialId-)

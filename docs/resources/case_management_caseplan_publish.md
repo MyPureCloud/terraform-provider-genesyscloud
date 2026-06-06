@@ -6,12 +6,15 @@ description: |-
 ---
 # genesyscloud_case_management_caseplan_publish (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Calls POST /api/v2/casemanagement/caseplans/{caseplanId}/publish. Use depends_on so this runs after stageplan and stepplan resources apply their PATCHes. Increment revision to publish again after later edits. Destroy only removes this from Terraform state (no unpublish API).
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--publish)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-casemanagement-caseplans--caseplanId--publish)
 
 
 ## Example Usage

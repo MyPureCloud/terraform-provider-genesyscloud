@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_utilization (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Org-wide Routing Utilization Settings.
 
 ## API Usage

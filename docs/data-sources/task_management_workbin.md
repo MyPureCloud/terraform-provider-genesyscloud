@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_task_management_workbin (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management workbin data source. Select an task management workbin by name
 
 ## API Usage

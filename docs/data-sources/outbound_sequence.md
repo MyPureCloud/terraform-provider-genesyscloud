@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_outbound_sequence (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound sequence data source. Select an outbound sequence by name
 
 ## API Usage

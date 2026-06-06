@@ -6,13 +6,23 @@ description: |-
 ---
 # genesyscloud_flow (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud Flows. Select a flow by name and type.
 
 ## API Usage
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows)
+* [POST /api/v2/flows/actions/unlock](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-actions-unlock)
+* [POST /api/v2/flows/export/jobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-export-jobs)
+* [GET /api/v2/flows/export/jobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-export-jobs--jobId-)
 * [GET /api/v2/flows/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-instances-settings-loglevels)
+* [POST /api/v2/flows/jobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-jobs)
+* [GET /api/v2/flows/jobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-jobs--jobId-)
+* [DELETE /api/v2/flows/{flowId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows--flowId-)
+* [GET /api/v2/flows/{flowId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows--flowId-)
 * [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows--flowId--instances-settings-loglevels)
 * [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows--flowId--instances-settings-loglevels)
 * [POST /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows--flowId--instances-settings-loglevels)
@@ -22,11 +32,18 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 The following permissions are required to use this resource:
 
+* `architect:flow:delete`
 * `architect:flow:search`
+* `architect:flow:unlock`
+* `architect:flow:view`
 * `architect:flowLogLevel:add`
 * `architect:flowLogLevel:delete`
 * `architect:flowLogLevel:edit`
 * `architect:flowLogLevel:view`
+* `architect:job:create`
+* `architect:job:view`
+* `architect:jobExport:create`
+* `architect:jobExport:view`
 
 The following OAuth scopes are required to use this resource:
 

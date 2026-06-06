@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/organization_presence_definition/genesyscloud_organization_presence_definition_proxy.go
+-->
 * [GET /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-presence-definitions)
 * [POST /api/v2/presence/definitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-presence-definitions)
 * [DELETE /api/v2/presence/definitions/{definitionId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-presence-definitions--definitionId-)

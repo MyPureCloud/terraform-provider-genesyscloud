@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_queue_conditional_group_activation (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud routing queue conditional group activation rules
 
 ## API Usage

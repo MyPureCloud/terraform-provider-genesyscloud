@@ -6,12 +6,16 @@ description: |-
 ---
 # genesyscloud_user (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud Users. Select a user by email or name. If both email & name are specified, the name won't be used for user lookup
 
 ## API Usage
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [DELETE /api/v2/routing/users/{userId}/utilization](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-users--userId--utilization)
+* [PUT /api/v2/routing/users/{userId}/utilization](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-users--userId--utilization)
 * [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools)
 * [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
 * [GET /api/v2/users](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users)
@@ -21,7 +25,15 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 * [GET /api/v2/users/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId-)
 * [PATCH /api/v2/users/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId-)
 * [POST /api/v2/users/{userId}/password](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-users--userId--password)
+* [PUT /api/v2/users/{userId}/profileskills](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-users--userId--profileskills)
+* [GET /api/v2/users/{userId}/routinglanguages](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--routinglanguages)
+* [PATCH /api/v2/users/{userId}/routinglanguages/bulk](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId--routinglanguages-bulk)
+* [DELETE /api/v2/users/{userId}/routinglanguages/{languageId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId--routinglanguages--languageId-)
+* [GET /api/v2/users/{userId}/routingskills](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--routingskills)
+* [PATCH /api/v2/users/{userId}/routingskills/bulk](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId--routingskills-bulk)
+* [DELETE /api/v2/users/{userId}/routingskills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId--routingskills--skillId-)
 * [GET /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-voicemail-userpolicies--userId-)
+* [PATCH /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-voicemail-userpolicies--userId-)
 
 ## Permissions and Scopes
 
@@ -34,12 +46,17 @@ The following permissions are required to use this resource:
 * `directory:user:edit`
 * `directory:user:setPassword`
 * `directory:user:view`
+* `directory:userProfile:edit`
+* `routing:language:assign`
+* `routing:skill:assign`
+* `routing:utilization:manage`
 * `telephony:extensionPool:view`
 * `telephony:plugin:all`
 * `voicemail:userPolicy:viewOther`
 
 The following OAuth scopes are required to use this resource:
 
+* `routing`
 * `telephony`
 * `telephony:readonly`
 * `users`

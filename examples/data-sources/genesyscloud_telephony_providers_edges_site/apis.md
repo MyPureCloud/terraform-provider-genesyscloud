@@ -1,3 +1,7 @@
+<!-- sources
+genesyscloud/telephony_providers_edges_site/genesyscloud_telephony_providers_edges_site_proxy.go
+genesyscloud/telephony_providers_edges_site/resource_genesyscloud_telephony_providers_edges_site_utils.go
+-->
 * [GET /api/v2/locations/{locationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-locations--locationId-)
 * [GET /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-organizations-me)
 * [PUT /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-organizations-me)

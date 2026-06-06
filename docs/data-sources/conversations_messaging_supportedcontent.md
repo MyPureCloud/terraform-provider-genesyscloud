@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_supportedcontent (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud supported content data source. Select an supported content by name
 
 ## API Usage

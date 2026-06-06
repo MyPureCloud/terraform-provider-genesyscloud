@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/group/genesyscloud_group_proxy.go
+-->
 * [GET /api/v2/groups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups)
 * [POST /api/v2/groups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-groups)
 * [POST /api/v2/groups/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-groups-search)

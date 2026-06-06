@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_integrations_whatsapp (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud conversations messaging integrations whatsapp
 
 ## API Usage

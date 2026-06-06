@@ -2,36 +2,49 @@
 page_title: "genesyscloud_greeting_user Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-Genesys Cloud Greetings (User)
+  Genesys Cloud Greetings (User)
 ---
 # genesyscloud_greeting_user (Resource)
+
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
 Genesys Cloud Greetings (User)
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/users/{userId}/greetings](https://apicentral.genesys.cloud/api-explorer#post-api-v2-users--userId--greetings)
-* [GET /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings--greetingId-)
-* [GET /api/v2/users/{userId}/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-users--userId--greetings)
-* [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
-* [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)
+* [DELETE /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-greetings--greetingId-)
+* [PUT /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-greetings--greetingId-)
+* [GET /api/v2/users](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users)
+* [GET /api/v2/users/{userId}/greetings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--greetings)
+* [POST /api/v2/users/{userId}/greetings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-users--userId--greetings)
+
+## Permissions and Scopes
+
+The following OAuth scopes are required to use this resource:
+
+* `greetings`
+* `greetings:readonly`
+* `users`
+* `users:readonly`
 
 
 ## Example Usage
 
 ```terraform
 resource "genesyscloud_user" "ExampleTestUser" {
-name = "Example Test User"
-email = "example.test.user@example.com"
+  name  = "Example Test User"
+  email = "example.test.user@example.com"
 }
 
 resource "genesyscloud_greeting_user" "Test_Greeting" {
-name = "Example Test Greeting"
-type = "NAME"
-owner_type = "USER"
-user_id = genesyscloud_user.ExampleTestUser.id
-audio_tts = "This is a test greeting"
+  name       = "Example Test Greeting"
+  type       = "NAME"
+  owner_type = "USER"
+  user_id    = genesyscloud_user.ExampleTestUser.id
+  audio_tts  = "This is a test greeting"
 }
 ```
 
@@ -62,3 +75,4 @@ Optional:
 - `duration_milliseconds` (Number) Greeting audio file duration in milliseconds.
 - `self_uri` (String) Greeting audio file self URI.
 - `size_bytes` (Number) Greeting audio file size in bytes.
+

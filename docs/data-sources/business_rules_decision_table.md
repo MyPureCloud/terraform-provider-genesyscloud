@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_business_rules_decision_table (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud business rules decision table data source. Select a business rules decision table by its name.
 
 ## API Usage

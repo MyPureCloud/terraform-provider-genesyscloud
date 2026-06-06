@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_workforcemanagement_businessunits (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud workforce management business units data source. Select a workforce management business unit by name
 
 ## API Usage
@@ -33,6 +35,9 @@ The following permissions are required to use this resource:
 * `wfm:agent:edit`
 * `wfm:agent:view`
 * `wfm:agentSchedule:view`
+* `wfm:agentSchedulingPreferences:edit`
+* `wfm:agentSchedulingPreferencesQuery:view`
+* `wfm:agentSchedulingPreferencesSettings:view`
 * `wfm:agentShiftTradeRequest:participate`
 * `wfm:agentTimeOffRequest:submit`
 * `wfm:businessUnit:add`
@@ -56,6 +61,9 @@ The following permissions are required to use this resource:
 * `wfm:schedule:edit`
 * `wfm:schedule:generate`
 * `wfm:schedule:view`
+* `wfm:schedulingPreferencesQuery:view`
+* `wfm:schedulingPreferencesSettings:edit`
+* `wfm:schedulingPreferencesSettings:view`
 * `wfm:serviceGoalTemplate:add`
 * `wfm:serviceGoalTemplate:delete`
 * `wfm:serviceGoalTemplate:edit`

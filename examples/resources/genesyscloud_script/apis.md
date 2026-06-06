@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/scripts/genesyscloud_scripts_proxy.go
+-->
 * [POST /api/v2/authorization/divisions/{divisionId}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionId-)
 * [POST /api/v2/authorization/divisions/{divisionId}/objects/{objectType}](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-authorization-divisions--divisionId--objects--objectType-)
 * [GET /api/v2/scripts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-scripts)

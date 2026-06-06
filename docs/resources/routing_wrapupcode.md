@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_wrapupcode (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Wrapup Code
 
 ## API Usage

@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/routing_settings/genesyscloud_routing_settings_proxy.go
+-->
 * [DELETE /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-settings)
 * [GET /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-settings)
 * [PUT /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-settings)

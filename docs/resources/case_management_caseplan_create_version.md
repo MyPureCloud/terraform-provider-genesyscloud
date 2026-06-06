@@ -6,13 +6,16 @@ description: |-
 ---
 # genesyscloud_case_management_caseplan_create_version (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Calls POST /api/v2/casemanagement/caseplans/{caseplanId}/versions (no body). Use after a publish when the caseplan has no draft; creates a new draft (latest becomes published+1). Increment revision to create another draft later. Destroy only removes this from Terraform state (no delete-version API).
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--versions)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId-)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-casemanagement-caseplans--caseplanId--versions)
 
 
 ## Example Usage
@@ -20,13 +23,13 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 ```terraform
 # Replace caseplan_id with genesyscloud_case_management_caseplan.<name>.id.
 # Run create_version after a publish when there is no open draft (see resource description).
-resource "genesyscloud_case_management_caseplan_publish" "example" {
+resource "genesyscloud_case_management_caseplan_publish" "example2" {
   caseplan_id = "00000000-0000-0000-0000-000000000001"
 }
 
 resource "genesyscloud_case_management_caseplan_create_version" "example" {
   caseplan_id = "00000000-0000-0000-0000-000000000001"
-  depends_on  = [genesyscloud_case_management_caseplan_publish.example]
+  depends_on  = [genesyscloud_case_management_caseplan_publish.example2]
 }
 ```
 

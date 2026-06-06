@@ -6,14 +6,20 @@ description: |-
 ---
 # genesyscloud_integration_action (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.
 
 ## API Usage
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations)
 * [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions)
+* [POST /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-actions)
+* [POST /api/v2/integrations/actions/drafts](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-actions-drafts)
 * [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId-)
 * [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations-actions--actionId-)
 * [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft)
 * [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft-function)
@@ -26,11 +32,13 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 The following permissions are required to use this resource:
 
 * `bridge:actions:view`
+* `integrations:action:add`
 * `integrations:action:delete`
 * `integrations:action:edit`
 * `integrations:action:view`
 * `integrations:actionFunction:edit`
 * `integrations:actionFunction:view`
+* `integrations:integration:view`
 
 The following OAuth scopes are required to use this resource:
 

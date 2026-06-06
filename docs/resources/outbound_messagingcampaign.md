@@ -6,22 +6,31 @@ description: |-
 ---
 # genesyscloud_outbound_messagingcampaign (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound messagingcampaign
 
 ## API Usage
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-digitalrulesets)
 * [GET /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-messagingcampaigns)
 * [POST /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-messagingcampaigns)
 * [DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
+* [POST /api/v2/routing/email/outbound/domains](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-email-outbound-domains)
+* [GET /api/v2/routing/email/outbound/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-outbound-domains--domainId-)
+* [PUT /api/v2/routing/email/outbound/domains/{domainId}/activation](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-email-outbound-domains--domainId--activation)
+* [POST /api/v2/routing/sms/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-sms-phonenumbers)
+* [GET /api/v2/routing/sms/phonenumbers/{phoneNumberId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-phonenumbers--phoneNumberId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `outbound:digitalRuleSet:view`
 * `outbound:emailCampaign:add`
 * `outbound:emailCampaign:delete`
 * `outbound:emailCampaign:edit`
@@ -34,11 +43,17 @@ The following permissions are required to use this resource:
 * `outbound:whatsAppCampaign:delete`
 * `outbound:whatsAppCampaign:edit`
 * `outbound:whatsAppCampaign:view`
+* `routing:email:manage`
+* `routing:email:view`
+* `sms:phoneNumber:add`
+* `sms:phoneNumber:view`
 
 The following OAuth scopes are required to use this resource:
 
 * `outbound`
 * `outbound:readonly`
+* `routing`
+* `routing:readonly`
 
 
 ## Example Usage

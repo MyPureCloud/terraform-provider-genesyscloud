@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_task_management_worktype_flow_oncreate_rule (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management oncreate Rule
 
 ## API Usage

@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/outbound_contact_list_contact/genesyscloud_outbound_contact_list_contact_proxy.go
+-->
 * [POST /api/v2/outbound/contactlists/{contactListId}/contacts](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlists--contactListId--contacts)
 * [POST /api/v2/outbound/contactlists/{contactListId}/contacts/search](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlists--contactListId--contacts-search)
 * [DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-contactlists--contactListId--contacts--contactId-)

@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_intents_categories (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud intent category data source. Select an intent category by name
 
 ## API Usage

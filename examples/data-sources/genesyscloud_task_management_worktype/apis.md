@@ -1,3 +1,6 @@
+<!-- sources
+genesyscloud/task_management_worktype/genesyscloud_task_management_worktype_proxy.go
+-->
 * [POST /api/v2/taskmanagement/worktypes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes)
 * [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes-query)
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-worktypes--worktypeId-)

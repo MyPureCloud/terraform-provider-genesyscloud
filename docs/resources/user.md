@@ -7,6 +7,8 @@ description: |-
 ---
 # genesyscloud_user (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud User.
 
 Export block label: "{email}"
@@ -31,7 +33,10 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/users/{userId}/routinglanguages](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--routinglanguages)
 * [PATCH /api/v2/users/{userId}/routinglanguages/bulk](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId--routinglanguages-bulk)
 * [DELETE /api/v2/users/{userId}/routinglanguages/{languageId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId--routinglanguages--languageId-)
+* [GET /api/v2/users/{userId}/routingskills](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--userId--routingskills)
+* [PATCH /api/v2/users/{userId}/routingskills/bulk](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-users--userId--routingskills-bulk)
 * [PUT /api/v2/users/{userId}/routingskills/bulk](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-users--userId--routingskills-bulk)
+* [DELETE /api/v2/users/{userId}/routingskills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-users--userId--routingskills--skillId-)
 * [GET /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-voicemail-userpolicies--userId-)
 * [PATCH /api/v2/voicemail/userpolicies/{userId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-voicemail-userpolicies--userId-)
 

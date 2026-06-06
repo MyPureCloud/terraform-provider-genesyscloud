@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_recording_media_retention_policy (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud media retention policy. Select a policy by name
 
 ## API Usage
@@ -15,6 +17,7 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 * [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations--formId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations--formId--versions)
 * [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-surveys)
+* [GET /api/v2/recording/mediaretentionpolicies](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-recording-mediaretentionpolicies)
 * [POST /api/v2/recording/mediaretentionpolicies](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-recording-mediaretentionpolicies)
 * [DELETE /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-recording-mediaretentionpolicies--policyId-)
 * [GET /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-recording-mediaretentionpolicies--policyId-)

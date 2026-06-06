@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_telephony_providers_edges_site_outbound_route (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Outbound Routes for a Genesys Cloud Site
 
 ## API Usage

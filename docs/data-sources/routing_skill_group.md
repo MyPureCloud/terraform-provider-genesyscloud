@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_routing_skill_group (Data Source)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
+
 Data source for Genesys Cloud Routing Skills Groups. Select a skill group by name.
 
 ## API Usage

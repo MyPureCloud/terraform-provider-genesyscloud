@@ -6,6 +6,8 @@ description: |-
 ---
 # genesyscloud_business_rules_decision_table (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
 
 ## API Usage
