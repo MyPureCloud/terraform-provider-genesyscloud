@@ -39,11 +39,6 @@ testexamples:
 testexamples-specific:
 	TF_ACC=1 TEST_RESOURCE_TYPES="$(RESOURCES)" go test ./examples -run TestAccExampleResourcesComplete -v -timeout 120m -parallel 1
 
-# Generate docs
-docs:
-	TF_UNIT=1 go test ./examples -run TestUnitExampleResourcesPlanOnly -v || exit 1
-	go generate
-
 coverageacc:
 	go tool cover -func coverage.out | grep "total:" | \
 	awk '{print ((int($$3) > 80) != 1) }'
@@ -63,22 +58,34 @@ clean:
 	rm -f -r ${PLUGINS_DIR}/${PLUGIN_PATH}
 	rm -f -r ./.terraform
 
+GOOS = $(shell go env GOOS)
+GOARCH = $(shell go env GOARCH)
+
+generate-dependencyTree:
+	go run ./tools/dependency_tree "public/data/" $(version)
+
+# Generate docs
+generate-apidocs:
+	go run ./apidocs --audit-only
+
+docs-only:
+	go generate
+
+docs-tests:
+	@echo "\n\nRunning Examples tests to ensure all examples are valid provider resources that conform to the established schema"
+	TF_UNIT=1 go test ./examples -run TestUnitExampleResourcesPlanOnly -v || exit 1
+
+docs: generate-apidocs docs-tests docs-only
+
+# Build
+
 build:
 	mkdir -p ${DIST_DIR}
 	go mod tidy
 	go build -o ${DIST_DIR} ./...
-
-GOOS = $(shell go env GOOS)
-GOARCH = $(shell go env GOARCH)
 
 sideload-only:
 	mkdir -p ${PLUGINS_DIR}/${PLUGIN_PATH}/${DEV_VERSION}/$(GOOS)_$(GOARCH)
 	cp ${BIN_PATH} ${PLUGINS_DIR}/${PLUGIN_PATH}/${DEV_VERSION}/$(GOOS)_$(GOARCH)/${BIN_NAME}
 
 sideload: build sideload-only
-
-generate-dependencyTree:
-	go run ./tools/dependency_tree "public/data/" $(version)
-
-generate-apidocs:
-	go run ./apidocs $(version)
