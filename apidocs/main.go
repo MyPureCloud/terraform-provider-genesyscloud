@@ -3,15 +3,16 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/examples"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -19,7 +20,6 @@ import (
 
 const (
 	swaggerURL              = "https://api.mypurecloud.com/api/v2/docs/swagger"
-	proxyFileGlob           = "genesyscloud/*/genesyscloud_*_proxy.go"
 	resourceExampleFolder   = "examples/resources"
 	resourceDocsFolder      = "docs/resources"
 	dataSourceExampleFolder = "examples/data-sources"
@@ -65,181 +65,331 @@ type PermissionsData struct {
 	Resources []ResourcePermissions `json:"resources"`
 }
 
-// Method to insert the contents of each resource's apis.md file into the markdown documentation
+// docsFolderProcessor represents a structure to pass to the processDocsFolder function
+type docsFolderProcessor struct {
+	docsFolder      string
+	examplesFolder  string
+	apiDocsTag      string
+	auditOnly       bool
+	ignoredExamples []string
+	swaggerSpec     *SwaggerSpec
+	opMap           map[string]APIEndpoint
+	allPerms        []ResourcePermissions
+	missingExamples *[]string
+	errors          *[]string
+}
+
+// apidocs is a build tool that performs two coupled responsibilities:
+//
+//  1. Proxy Audit (source mutation): Scans proxy source files for SDK and custom API calls,
+//     detects API endpoints via the Swagger spec's operation ID map, and updates
+//     examples/resources/*/apis.md and examples/data-sources/*/apis.md with any missing endpoints.
+//
+//  2. Doc Injection (post-processing): Reads each apis.md, enriches it with permissions and
+//     OAuth scopes from the Swagger spec, and injects the result into the generated docs
+//     (docs/resources/, docs/data-sources/) by replacing the **No APIs** placeholder that
+//     tfplugindocs writes from templates/resources.md.tmpl.
+//
+// These two steps are kept in a single tool because they share the Swagger spec (expensive to
+// fetch), the operation ID map, and must run in sequence (audit before injection). The tool is
+// designed to run as part of `go generate` after tfplugindocs, but the proxy audit step can
+// also run standalone via `make generate-apidocs` to update apis.md files without regenerating
+// full documentation via the -audit-only flag.
 func main() {
-	fmt.Println("Updating APIs in docs...")
+	auditOnly := flag.Bool("audit-only", false, "Only run proxy audit to update apis.md files; skip doc injection and permissions JSON")
+	flag.Parse()
+
+	fmt.Println("Beginning to process API docs from examples directories ...")
 	const (
 		apiDocsTag     = "**No APIs**"
 		outputDir      = "public/data"
 		outputFilename = "resource_permissions"
 	)
 
-	// Get version from command line args or use default
+	// Get version from positional args (after flags)
 	version := "latest"
-	if len(os.Args) > 1 {
-		version = os.Args[1]
+	if flag.NArg() > 0 {
+		version = flag.Arg(0)
 	}
 
 	missingExamples := []string{}
+	var errors []string
 	ignoredExamples := examples.GetIgnoredResources()
 
 	// Slice to collect all resource permissions
 	var allResourcePermissions []ResourcePermissions
 
 	// Fetch Swagger specification once for all resources
-	fmt.Println("Fetching Swagger specification...")
+	fmt.Println("Loading Swagger specification...")
 	swaggerSpec, err := fetchSwaggerSpec(swaggerURL)
 	if err != nil {
-		log.Printf("Warning: Failed to fetch Swagger spec: %v. Continuing without permission/scope information.", err)
+		fmt.Fprintf(os.Stderr, "Warning: Failed to fetch Swagger spec: %v. Continuing without permission/scope information.\n", err)
 		swaggerSpec = nil
-	} else {
-		fmt.Println("Swagger specification loaded successfully")
 	}
 
 	// Build operationId map for proxy auditing
 	var opMap map[string]APIEndpoint
 	if swaggerSpec != nil {
 		opMap = buildOperationIdMap(swaggerSpec)
-		fmt.Printf("Built operation ID map with %d entries\n", len(opMap))
+		fmt.Printf("\nBuilt operation ID map from Swagger spec with %d entries\n", len(opMap))
 	}
 
 	// Process resources
-	fmt.Println("\nProcessing resources...")
-	allResourcePermissions = processDocsFolder(resourceDocsFolder, resourceExampleFolder, apiDocsTag, ignoredExamples, swaggerSpec, opMap, allResourcePermissions, &missingExamples)
+	fmt.Println("\nProcessing example resources directory...")
+	processResourceDocs := docsFolderProcessor{
+		docsFolder:      resourceDocsFolder,
+		examplesFolder:  resourceExampleFolder,
+		apiDocsTag:      apiDocsTag,
+		auditOnly:       *auditOnly,
+		ignoredExamples: ignoredExamples,
+		swaggerSpec:     swaggerSpec,
+		opMap:           opMap,
+		allPerms:        allResourcePermissions,
+		missingExamples: &missingExamples,
+		errors:          &errors,
+	}
+	allResourcePermissions = processDocsFolder(processResourceDocs)
+	fmt.Printf("Processed all resources\n")
 
 	// Process data sources
-	fmt.Println("\nProcessing data sources...")
-	allResourcePermissions = processDocsFolder(dataSourceDocsFolder, dataSourceExampleFolder, apiDocsTag, ignoredExamples, swaggerSpec, opMap, allResourcePermissions, &missingExamples)
-
-	fmt.Println()
-	fmt.Printf("The following resources were explicitly ignored, and so no docs were generated: %v", ignoredExamples)
-	fmt.Println()
-	fmt.Printf("The following resources/data-sources did not have any examples, and so docs without examples or APIs were generated: %v", missingExamples)
+	fmt.Println("\nProcessing example data sources directory...")
+	processDataSourceDocs := docsFolderProcessor{
+		docsFolder:      dataSourceDocsFolder,
+		examplesFolder:  dataSourceExampleFolder,
+		apiDocsTag:      apiDocsTag,
+		auditOnly:       *auditOnly,
+		ignoredExamples: ignoredExamples,
+		swaggerSpec:     swaggerSpec,
+		opMap:           opMap,
+		allPerms:        allResourcePermissions,
+		missingExamples: &missingExamples,
+		errors:          &errors,
+	}
+	allResourcePermissions = processDocsFolder(processDataSourceDocs)
+	fmt.Printf("Processed all data sources\n")
 
 	// Write permissions data to JSON file
-	if len(allResourcePermissions) > 0 {
+	if !*auditOnly && len(allResourcePermissions) > 0 {
 		fmt.Println()
 		fmt.Println("Writing permissions data to JSON file...")
 		if err := writePermissionsJSON(allResourcePermissions, outputDir, outputFilename, version); err != nil {
-			log.Printf("Error writing permissions JSON: %v", err)
+			fmt.Fprintf(os.Stderr, "Error: Failed to write permissions JSON: %v\n", err)
 		} else {
 			outputFile := fmt.Sprintf("%s-%s.json", outputFilename, version)
 			fmt.Printf("Permissions data written to: %s/%s\n", outputDir, outputFile)
 		}
 	}
+
+	fmt.Println("-----")
+	if len(ignoredExamples) > 0 {
+		fmt.Printf("Ignored resources (no docs generated): %v\n", ignoredExamples)
+	}
+	if len(missingExamples) > 0 {
+		fmt.Printf("Resources/data-sources without examples: %v\n", missingExamples)
+	}
+
+	// Surface collected errors
+	if len(errors) > 0 {
+		fmt.Println()
+		fmt.Println("========================================")
+		fmt.Printf("ERRORS: %d issue(s) found during processing:\n", len(errors))
+		fmt.Println("========================================")
+		for i, e := range errors {
+			fmt.Printf("\n%d. %s\n", i+1, e)
+		}
+		fmt.Println()
+		os.Exit(1)
+	}
 }
 
-// processDocsFolder iterates over doc files in a folder, audits proxy files,
-// updates apis.md, and enhances docs with permissions and notes.
-func processDocsFolder(docsFolder, examplesFolder, apiDocsTag string, ignoredExamples []string, swaggerSpec *SwaggerSpec, opMap map[string]APIEndpoint, allPerms []ResourcePermissions, missingExamples *[]string) []ResourcePermissions {
-	files, err := ioutil.ReadDir(docsFolder)
+// processDocsFolder iterates over generated doc files in docs/resources/ or docs/data-sources/.
+// It uses the doc folder as the iteration source (rather than examples/) because:
+//   - It needs to delete doc files for ignored resources
+//   - It ensures only resources with generated docs get API content injected
+//
+// For each doc file, it derives the resource name, runs the proxy audit against
+// the corresponding examples/*/apis.md, then injects enriched content back into the doc file.
+func processDocsFolder(docs docsFolderProcessor) []ResourcePermissions {
+	// In audit-only mode, only iterate examples directories directly for proxy audit
+	if docs.auditOnly {
+		return processAuditOnly(docs)
+	}
+
+	files, err := os.ReadDir(docs.docsFolder)
 	if err != nil {
-		log.Printf("Warning: Failed to read folder %s: %v", docsFolder, err)
-		return allPerms
+		fmt.Fprintf(os.Stderr, "Warning: Failed to read folder %s: %v\n", docs.docsFolder, err)
+		return docs.allPerms
 	}
 
 	for _, file := range files {
 		shortResourceName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 		resourceName := fmt.Sprintf("genesyscloud_%s", shortResourceName)
-		fullFilePath := fmt.Sprintf("%s/%s", docsFolder, file.Name())
+		fullFilePath := fmt.Sprintf("%s/%s", docs.docsFolder, file.Name())
 
-		if lists.ItemInSlice(resourceName, ignoredExamples) {
+		if lists.ItemInSlice(resourceName, docs.ignoredExamples) {
 			os.Remove(fullFilePath)
 			continue
 		}
 
-		examplesDir := fmt.Sprintf("%s/%s", examplesFolder, resourceName)
+		examplesDir := fmt.Sprintf("%s/%s", docs.examplesFolder, resourceName)
 		if _, err := os.Stat(examplesDir); os.IsNotExist(err) {
-			log.Printf("No examples found! %s", resourceName)
-			*missingExamples = append(*missingExamples, shortResourceName)
+			*docs.missingExamples = append(*docs.missingExamples, shortResourceName)
 		}
 
 		// Audit proxy and update apis.md with detected endpoints
 		apiFileName := fmt.Sprintf("%s/apis.md", examplesDir)
-		if opMap != nil {
-			updateApisMdFromProxy(resourceName, examplesDir, apiFileName, opMap)
+		if docs.opMap != nil {
+			updateApisMdFromProxy(resourceName, apiFileName, docs.opMap, docs.errors)
 		}
 
 		// Read the (potentially updated) apis.md file
-		apiFileBytes, err := ioutil.ReadFile(apiFileName)
+		apiFileBytes, err := os.ReadFile(apiFileName)
 		if err != nil {
-			fmt.Printf("Missing APIs file: %s\n", apiFileName)
+			*docs.errors = append(*docs.errors, fmt.Sprintf("Missing APIs file: %s", apiFileName))
 			continue
 		}
 
 		// Read optional notes.md file for addendum content
 		notesContent := readNotesFile(examplesDir)
 
-		// Build the full content: endpoints + permissions + notes
-		enhancedContent := string(apiFileBytes)
-		if swaggerSpec != nil {
+		// Build the full document content: endpoints + permissions + notes
+
+		// Start with APIs endpoints listing
+		enhancedContent := stripSourcesComment(string(apiFileBytes))
+
+		// Add Permissions/Scopes
+		if docs.swaggerSpec != nil {
 			endpoints := parseAPIEndpoints(string(apiFileBytes))
 			if len(endpoints) > 0 {
 				// Extract and collect permissions and scopes for writing to API docs
-				permissionsAndScopes := extractPermissionsAndScopes(endpoints, swaggerSpec)
+				permissionsAndScopes := extractPermissionsAndScopes(endpoints, docs.swaggerSpec)
 				if permissionsAndScopes != "" {
 					enhancedContent = enhancedContent + "\n" + permissionsAndScopes
 				}
 
 				// Extract and collect resource permissions for writing to JSON file
-				resourcePerms := extractResourcePermissions(resourceName, shortResourceName, endpoints, swaggerSpec)
+				resourcePerms := extractResourcePermissions(resourceName, shortResourceName, endpoints, docs.swaggerSpec)
 				if len(resourcePerms.Permissions) > 0 || len(resourcePerms.Scopes) > 0 {
-					allPerms = append(allPerms, resourcePerms)
+					docs.allPerms = append(docs.allPerms, resourcePerms)
 				}
 			}
 		}
 
+		// Add Notes
 		if notesContent != "" {
 			enhancedContent = enhancedContent + "\n" + notesContent
 		}
 
-		// Open the doc file and replace the placeholder
-		docFile, err := os.OpenFile(fullFilePath, os.O_RDWR, 0666)
+		// Write document contents
+		changed, err := writeDocFile(fullFilePath, docs.apiDocsTag, enhancedContent)
 		if err != nil {
-			fmt.Printf("Couldn't open file: %s\n", file.Name())
+			*docs.errors = append(*docs.errors, fmt.Sprintf("Failed to write doc file %s: %v", fullFilePath, err))
 			continue
 		}
-		defer docFile.Close()
-
-		docFileBytes, err := ioutil.ReadAll(docFile)
-		if err != nil {
-			fmt.Printf("Couldn't read bytes from %s\n", file.Name())
-			continue
+		if changed {
+			fmt.Printf("Updated APIs in doc file: %s\n", file.Name())
 		}
 
-		// Replace the **No APIs** line with the enhanced content
-		newBytes := bytes.Replace(docFileBytes, []byte(apiDocsTag), []byte(enhancedContent), 1)
-		docFile.Truncate(0)
-		docFile.WriteAt(newBytes, 0)
-		fmt.Printf("Updated APIs in doc file: %s\n", file.Name())
 	}
 
-	return allPerms
+	return docs.allPerms
 }
 
-// updateApisMdFromProxy scans the proxy file for a resource, detects API endpoints,
-// and updates the apis.md file with any missing endpoints.
-func updateApisMdFromProxy(resourceName, examplesDir, apisMdFile string, opMap map[string]APIEndpoint) {
-	pkgName := strings.TrimPrefix(resourceName, "genesyscloud_")
-
-	// Find the source file to scan for API calls
-	sourceFile := findSourceFile(pkgName, examplesDir)
-	if sourceFile == "" {
-		return
-	}
-
-	proxyContent, err := ioutil.ReadFile(sourceFile)
+// processAuditOnly iterates over examples directories directly (not docs/) to run
+// only the proxy audit step. This is needed because in audit-only mode, the docs/
+// directory may not exist (tfplugindocs hasn't run yet).
+func processAuditOnly(docs docsFolderProcessor) []ResourcePermissions {
+	files, err := os.ReadDir(docs.examplesFolder)
 	if err != nil {
-		log.Printf("Warning: could not read %s: %v", sourceFile, err)
+		fmt.Fprintf(os.Stderr, "Warning: Failed to read folder %s: %v\n", docs.examplesFolder, err)
+		return docs.allPerms
+	}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+		resourceName := file.Name()
+		if lists.ItemInSlice(resourceName, docs.ignoredExamples) {
+			continue
+		}
+		apiFileName := filepath.Join(docs.examplesFolder, resourceName, "apis.md")
+		if docs.opMap != nil {
+			updateApisMdFromProxy(resourceName, apiFileName, docs.opMap, docs.errors)
+		}
+	}
+
+	return docs.allPerms
+}
+
+func writeDocFile(fullFilePath, apiDocsTag, enhancedContent string) (bool, error) {
+	// Open the doc file and replace the placeholder
+	docFile, err := os.OpenFile(fullFilePath, os.O_RDWR, 0666)
+	if err != nil {
+		return false, err
+	}
+	defer docFile.Close()
+
+	docFileBytes, err := io.ReadAll(docFile)
+	if err != nil {
+		return false, err
+	}
+
+	// Replace the **No APIs** line with the enhanced content
+	newBytes := bytes.Replace(docFileBytes, []byte(apiDocsTag), []byte(enhancedContent), 1)
+	if bytes.Equal(docFileBytes, newBytes) {
+		return false, nil
+	}
+
+	docFile.Truncate(0)
+	_, err = docFile.WriteAt(newBytes, 0)
+	return true, err
+}
+
+// updateApisMdFromProxy reads source file paths from the <!-- sources --> comment in apis.md,
+// scans those files for API endpoints, and updates apis.md with any missing endpoints.
+func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]APIEndpoint, errors *[]string) {
+	// Read current apis.md
+	var currentContent string
+	if data, err := os.ReadFile(apisMdFile); err == nil {
+		currentContent = string(data)
+	} else {
 		return
 	}
 
-	detectedEndpoints := detectEndpointsFromProxy(string(proxyContent), opMap)
+	// Parse source files from the <!-- sources --> comment
+	sourceFiles := parseSourcesComment(currentContent)
+	if len(sourceFiles) == 0 {
+		pkgName := strings.TrimPrefix(resourceName, "genesyscloud_")
+		assumedPath := filepath.Join("genesyscloud", pkgName, fmt.Sprintf("genesyscloud_%s_proxy.go", pkgName))
+		*errors = append(*errors, fmt.Sprintf(
+			"%s is missing a <!-- sources --> comment. Add the following to the top of the file:\n"+
+				"  <!-- sources\n  %s\n  -->\n"+
+				"  If this resource does not use standard API proxy files, use NO_SOURCES instead:\n"+
+				"  <!-- sources\n  NO_SOURCES\n  -->",
+			apisMdFile, assumedPath))
+		return
+	}
 
-	// Read current apis.md (may not exist yet)
-	var currentContent string
-	if data, err := ioutil.ReadFile(apisMdFile); err == nil {
-		currentContent = string(data)
+	// Check for NO_SOURCES sentinel — skip proxy auditing entirely
+	if len(sourceFiles) == 1 && sourceFiles[0] == noSourcesSentinel {
+		return
+	}
+
+	// Validate and read all source files
+	var allDetected []APIEndpoint
+	for _, sf := range sourceFiles {
+		if _, err := os.Stat(sf); err != nil {
+			*errors = append(*errors, fmt.Sprintf(
+				"Source file defined in %s does not exist: %s", apisMdFile, sf))
+			continue
+		}
+		proxyContent, err := os.ReadFile(sf)
+		if err != nil {
+			*errors = append(*errors, fmt.Sprintf("Failed to read source file %s: %v", sf, err))
+			continue
+		}
+		allDetected = append(allDetected, detectEndpointsFromProxy(string(proxyContent), opMap)...)
 	}
 
 	// Parse what's already documented
@@ -253,7 +403,7 @@ func updateApisMdFromProxy(resourceName, examplesDir, apisMdFile string, opMap m
 	// Find missing endpoints
 	var missing []APIEndpoint
 	seen := make(map[string]bool)
-	for _, ep := range detectedEndpoints {
+	for _, ep := range allDetected {
 		key := ep.Method + " " + ep.Path
 		if !documentedSet[key] && !seen[key] {
 			seen[key] = true
@@ -281,23 +431,27 @@ func updateApisMdFromProxy(resourceName, examplesDir, apisMdFile string, opMap m
 		return strings.ToUpper(allEndpoints[i].Method) < strings.ToUpper(allEndpoints[j].Method)
 	})
 
+	// Rebuild the file preserving the sources comment
 	var buf strings.Builder
-	for i, ep := range allEndpoints {
-		anchor := buildAnchor(ep.Method, ep.Path)
-		if i > 0 {
-			buf.WriteString("\n")
-		}
-		buf.WriteString(fmt.Sprintf("* [%s %s](https://developer.genesys.cloud/devapps/api-explorer#%s)", strings.ToUpper(ep.Method), ep.Path, anchor))
+	buf.WriteString("<!-- sources\n")
+	for _, sf := range sourceFiles {
+		buf.WriteString(sf + "\n")
 	}
-	buf.WriteString("\n")
+	buf.WriteString("-->\n")
+	for _, ep := range allEndpoints {
+		anchor := buildAnchor(ep.Method, ep.Path)
+		buf.WriteString(fmt.Sprintf("* [%s %s](https://developer.genesys.cloud/devapps/api-explorer#%s)\n", strings.ToUpper(ep.Method), ep.Path, anchor))
+	}
 
-	ioutil.WriteFile(apisMdFile, []byte(buf.String()), 0644)
+	if err := os.WriteFile(apisMdFile, []byte(buf.String()), 0644); err != nil {
+		*errors = append(*errors, fmt.Sprintf("Failed to write %s: %v", apisMdFile, err))
+	}
 }
 
 // readNotesFile reads the optional notes.md file from a resource's examples directory.
 func readNotesFile(examplesDir string) string {
 	notesFile := filepath.Join(examplesDir, "notes.md")
-	data, err := ioutil.ReadFile(notesFile)
+	data, err := os.ReadFile(notesFile)
 	if err != nil {
 		return ""
 	}
@@ -340,63 +494,49 @@ func writePermissionsJSON(permissions []ResourcePermissions, outputDir, filename
 	outputPath := filepath.Join(outputDir, versionedFilename)
 
 	// Write to file
-	if err := ioutil.WriteFile(outputPath, jsonData, 0644); err != nil {
+	if err := os.WriteFile(outputPath, jsonData, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
 	return nil
 }
 
-// findSourceFile locates the proxy or source file for a given resource package name.
-// It tries multiple strategies to handle naming inconsistencies.
-func findSourceFile(pkgName, examplesDir string) string {
-	// Strategy 0: Check for a .source file that explicitly points to the source
-	sourcePointer := filepath.Join(examplesDir, ".source")
-	if data, err := ioutil.ReadFile(sourcePointer); err == nil {
-		relPath := strings.TrimSpace(string(data))
-		resolved := filepath.Join(examplesDir, relPath)
-		if _, err := os.Stat(resolved); err == nil {
-			return resolved
+// parseSourcesComment extracts source file paths from the <!-- sources --> comment block
+// at the top of an apis.md file. Returns nil if no comment is found.
+// If the comment contains "NO_SOURCES" the resource is explicitly opted out of proxy auditing.
+func parseSourcesComment(content string) []string {
+	re := regexp.MustCompile(`(?s)<!--\s*sources\s*\n(.+?)-->`)
+	match := re.FindStringSubmatch(content)
+	if len(match) < 2 {
+		return nil
+	}
+
+	var sources []string
+	for _, line := range strings.Split(strings.TrimSpace(match[1]), "\n") {
+		line = strings.TrimSpace(line)
+		// Strip comment lines (e.g., "# comment" or "// comment" )
+		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+			continue
+		}
+		// Strip inline comments (e.g., "path/to/file.go # TODO: extract to proxy")
+		if idx := strings.Index(line, " #"); idx != -1 {
+			line = strings.TrimSpace(line[:idx])
+		}
+		// Add source to list of sources
+		if line != "" {
+			sources = append(sources, line)
 		}
 	}
-
-	// Strategy 1: Exact package match with standard proxy naming
-	candidates := []string{
-		filepath.Join("genesyscloud", pkgName, fmt.Sprintf("genesyscloud_%s_proxy.go", pkgName)),
-		filepath.Join("genesyscloud", pkgName, fmt.Sprintf("resource_genesyscloud_%s_proxy.go", pkgName)),
-	}
-	for _, c := range candidates {
-		if _, err := os.Stat(c); err == nil {
-			return c
-		}
-	}
-
-	// Strategy 2: Find a proxy file inside a matching sub-package directory
-	// Handles cases like script->scripts, routing_sms_address->routing_sms_addresses
-	matches, _ := filepath.Glob(filepath.Join("genesyscloud", pkgName+"*", "*_proxy.go"))
-	if len(matches) > 0 {
-		return matches[0]
-	}
-
-	// Strategy 3: Find proxy file where the package dir contains the name without underscores
-	// Handles cases like external_contacts_organization -> externalcontacts_organization
-	compactName := strings.ReplaceAll(pkgName, "_", "")
-	allProxies, _ := filepath.Glob(filepath.Join("genesyscloud", "*", "*_proxy.go"))
-	for _, p := range allProxies {
-		dir := filepath.Base(filepath.Dir(p))
-		if strings.ReplaceAll(dir, "_", "") == compactName {
-			return p
-		}
-	}
-
-	// Strategy 4: Legacy data source file in root package
-	legacyFile := filepath.Join("genesyscloud", fmt.Sprintf("data_source_genesyscloud_%s.go", pkgName))
-	if _, err := os.Stat(legacyFile); err == nil {
-		return legacyFile
-	}
-
-	return ""
+	return sources
 }
+
+// stripSourcesComment removes the <!-- sources ... --> comment block from content.
+func stripSourcesComment(content string) string {
+	re := regexp.MustCompile(`(?s)<!--\s*sources\s*\n.+?-->\n?`)
+	return re.ReplaceAllString(content, "")
+}
+
+const noSourcesSentinel = "NO_SOURCES"
 
 // buildOperationIdMap creates a map from operationId -> APIEndpoint using the Swagger spec
 func buildOperationIdMap(spec *SwaggerSpec) map[string]APIEndpoint {
@@ -417,8 +557,7 @@ func buildOperationIdMap(spec *SwaggerSpec) map[string]APIEndpoint {
 
 // detectEndpointsFromProxy extracts API endpoints from a proxy file by:
 // 1. Matching SDK method calls (e.g., p.scriptsApi.GetScripts(...)) and looking up operationId
-// 2. Matching raw HTTP calls with explicit /api/v2/ paths
-// 3. Matching BasePath + "/api/v2/..." concatenation patterns
+// 2. Matching custom_api_client calls (e.g., customapi.Do[T](ctx, c, customapi.MethodGet, "/api/v2/...", ...))
 func detectEndpointsFromProxy(content string, opMap map[string]APIEndpoint) []APIEndpoint {
 	var endpoints []APIEndpoint
 	seen := make(map[string]bool)
@@ -446,31 +585,17 @@ func detectEndpointsFromProxy(content string, opMap map[string]APIEndpoint) []AP
 		}
 	}
 
-	// Pattern 2: Raw HTTP calls with explicit paths like "/api/v2/scripts/" + scriptId
-	rawPathRe := regexp.MustCompile(`"(/api/v2/[^"]+)"`)
-	rawMatches := rawPathRe.FindAllStringSubmatch(content, -1)
-	for _, match := range rawMatches {
-		if len(match) >= 2 {
-			rawPath := match[1]
-			httpMethod := detectHTTPMethodNearPath(content, match[0])
-			if httpMethod != "" {
-				normalizedPath := normalizeRawPath(rawPath, swaggerPaths)
-				key := httpMethod + " " + normalizedPath
-				if !seen[key] {
-					seen[key] = true
-					endpoints = append(endpoints, APIEndpoint{Method: httpMethod, Path: normalizedPath})
-				}
-			}
-		}
-	}
-
-	// Pattern 3: BasePath + "/api/v2/..." concatenation patterns
-	basePathRe := regexp.MustCompile(`BasePath\s*\+\s*"(/api/v2/[^"]+)"`)
-	basePathMatches := basePathRe.FindAllStringSubmatch(content, -1)
-	for _, match := range basePathMatches {
-		if len(match) >= 2 {
-			rawPath := match[1]
-			httpMethod := detectHTTPMethodNearPath(content, match[0])
+	// Pattern 2: custom_api_client calls like:
+	//   customapi.Do[T](ctx, c, customapi.MethodGet, "/api/v2/path", ...)
+	//   customapi.DoNoResponse(ctx, c, customapi.MethodDelete, "/api/v2/path/" + id, ...)
+	//   customapi.DoRaw(ctx, c, customapi.MethodGet, "/api/v2/path", ...)
+	//   customapi.DoWithAcceptHeader(ctx, c, customapi.MethodGet, "/api/v2/path", ...)
+	customApiRe := regexp.MustCompile(`customapi\.Do(?:NoResponse|Raw|WithAcceptHeader|\[[^\]]*\])\([^,]+,[^,]+,\s*customapi\.(Method\w+),\s*"(/api/v2/[^"]+)"`)
+	customMatches := customApiRe.FindAllStringSubmatch(content, -1)
+	for _, match := range customMatches {
+		if len(match) >= 3 {
+			httpMethod := customApiMethodToHTTP(match[1])
+			rawPath := match[2]
 			if httpMethod != "" {
 				normalizedPath := normalizeRawPath(rawPath, swaggerPaths)
 				key := httpMethod + " " + normalizedPath
@@ -485,40 +610,22 @@ func detectEndpointsFromProxy(content string, opMap map[string]APIEndpoint) []AP
 	return endpoints
 }
 
-// detectHTTPMethodNearPath looks for HTTP method indicators near a raw path usage
-func detectHTTPMethodNearPath(content, pathMatch string) string {
-	idx := strings.Index(content, pathMatch)
-	if idx == -1 {
+// customApiMethodToHTTP converts a customapi.Method* constant name to an HTTP method string.
+func customApiMethodToHTTP(methodConst string) string {
+	switch methodConst {
+	case "MethodGet":
+		return "GET"
+	case "MethodPost":
+		return "POST"
+	case "MethodPut":
+		return "PUT"
+	case "MethodPatch":
+		return "PATCH"
+	case "MethodDelete":
+		return "DELETE"
+	default:
 		return ""
 	}
-
-	start := idx - 200
-	if start < 0 {
-		start = 0
-	}
-	end := idx + len(pathMatch) + 200
-	if end > len(content) {
-		end = len(content)
-	}
-	context := content[start:end]
-
-	if strings.Contains(context, "http.MethodDelete") || strings.Contains(context, "\"DELETE\"") {
-		return "DELETE"
-	}
-	if strings.Contains(context, "http.MethodPost") || strings.Contains(context, "\"POST\"") {
-		return "POST"
-	}
-	if strings.Contains(context, "http.MethodPut") || strings.Contains(context, "\"PUT\"") {
-		return "PUT"
-	}
-	if strings.Contains(context, "http.MethodPatch") || strings.Contains(context, "\"PATCH\"") {
-		return "PATCH"
-	}
-	if strings.Contains(context, "http.MethodGet") || strings.Contains(context, "\"GET\"") {
-		return "GET"
-	}
-
-	return ""
 }
 
 // normalizeRawPath converts raw paths with variable concatenation into Swagger-style parameterized paths.
@@ -548,21 +655,62 @@ func normalizeRawPath(path string, swaggerPaths map[string]bool) string {
 	return path
 }
 
-// fetchSwaggerSpec downloads and parses the Swagger specification
+const swaggerCacheFile = "apidocs/swagger_cache.json"
+
+// fetchSwaggerSpec downloads and parses the Swagger specification, using a local cache.
+// It sends an If-Modified-Since header based on the cache file's mtime. If the server
+// returns 304 Not Modified, the cached version is used.
 func fetchSwaggerSpec(url string) (*SwaggerSpec, error) {
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch swagger spec: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if info, err := os.Stat(swaggerCacheFile); err == nil {
+		req.Header.Set("If-Modified-Since", info.ModTime().UTC().Format(http.TimeFormat))
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// Network failure — fall back to cache if available
+		spec, cacheErr := loadCachedSpec(swaggerCacheFile)
+		if cacheErr != nil {
+			return nil, fmt.Errorf("failed to fetch swagger spec and no cache available: %w", err)
+		}
+		fmt.Println("Network error, using cached Swagger spec")
+		return spec, nil
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	if resp.StatusCode == http.StatusNotModified {
+		fmt.Println("Swagger spec not modified, using cached version")
+		return loadCachedSpec(swaggerCacheFile)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		spec, cacheErr := loadCachedSpec(swaggerCacheFile)
+		if cacheErr != nil {
+			return nil, fmt.Errorf("unexpected status code %d and no cache available", resp.StatusCode)
+		}
+		fmt.Fprintf(os.Stderr, "Warning: Unexpected status code %d fetching Swagger spec, using cached version\n", resp.StatusCode)
+		return spec, nil
+	}
+
+	fmt.Println("Swagger spec updated, downloading fresh copy...")
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Write to cache
+	if err := os.MkdirAll(filepath.Dir(swaggerCacheFile), 0755); err == nil {
+		_ = os.WriteFile(swaggerCacheFile, body, 0644)
+		// Set mtime from Last-Modified header if present
+		if lm := resp.Header.Get("Last-Modified"); lm != "" {
+			if t, err := time.Parse(http.TimeFormat, lm); err == nil {
+				_ = os.Chtimes(swaggerCacheFile, t, t)
+			}
+		}
 	}
 
 	var spec SwaggerSpec
@@ -570,6 +718,19 @@ func fetchSwaggerSpec(url string) (*SwaggerSpec, error) {
 		return nil, fmt.Errorf("failed to parse swagger spec: %w", err)
 	}
 
+	return &spec, nil
+}
+
+// loadCachedSpec reads and parses the cached swagger spec file.
+func loadCachedSpec(cacheFile string) (*SwaggerSpec, error) {
+	data, err := os.ReadFile(cacheFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read cached swagger spec: %w", err)
+	}
+	var spec SwaggerSpec
+	if err := json.Unmarshal(data, &spec); err != nil {
+		return nil, fmt.Errorf("failed to parse cached swagger spec: %w", err)
+	}
 	return &spec, nil
 }
 
