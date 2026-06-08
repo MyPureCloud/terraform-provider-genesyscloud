@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -121,6 +122,17 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 		max := MaxClients
 		if v, ok := providerConfig.GetOk(AttrTokenPoolSize); ok {
 			max = v.(int)
+		}
+
+		// Scale HTTP connection limits with token pool size so concurrent exports can use all tokens.
+		if transport, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport.MaxIdleConns = max * 2
+			transport.MaxIdleConnsPerHost = max
+			transport.MaxConnsPerHost = max
+			log.Printf("HTTP transport configured for token_pool_size=%d: MaxIdleConnsPerHost=%d, MaxConnsPerHost=%d",
+				max, max, max)
+		} else {
+			log.Printf("WARN: Could not configure HTTP transport (not *http.Transport)")
 		}
 
 		// Get timeouts from provider config
@@ -401,6 +413,16 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 	}
 
 	return nil, fmt.Errorf("failed to acquire client after %d attempts", maxRetries)
+}
+
+// Acquire acquires a client from the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Acquire(ctx context.Context) (*platformclientv2.Configuration, error) {
+	return p.acquire(ctx)
+}
+
+// Release releases a client back to the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Release(c *platformclientv2.Configuration) error {
+	return p.release(c)
 }
 
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {

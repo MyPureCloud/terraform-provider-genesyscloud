@@ -2090,9 +2090,37 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 	tflog.Trace(g.ctx, fmt.Sprintf("Released mutex lock for resource ID: %s", resID))
 	tflog.Trace(g.ctx, fmt.Sprintf("Created resource data for ID: %s", resID))
 
+	refreshMeta := meta
+	if provider.SdkClientPool != nil {
+		pooledClientConfig, acquireErr := provider.SdkClientPool.Acquire(ctx)
+		if acquireErr != nil {
+			tflog.Error(g.ctx, fmt.Sprintf("Failed to acquire pooled client for resource ID %s: %v", resID, acquireErr))
+			return nil, diag.FromErr(acquireErr)
+		}
+		defer func() {
+			if releaseErr := provider.SdkClientPool.Release(pooledClientConfig); releaseErr != nil {
+				tflog.Warn(g.ctx, fmt.Sprintf("Error releasing client to pool for resource ID %s: %v", resID, releaseErr))
+			}
+		}()
+
+		originalProviderMeta := meta.(*provider.ProviderMeta)
+		refreshMeta = &provider.ProviderMeta{
+			ClientConfig:          pooledClientConfig,
+			Version:               originalProviderMeta.Version,
+			Registry:              originalProviderMeta.Registry,
+			Platform:              originalProviderMeta.Platform,
+			Domain:                originalProviderMeta.Domain,
+			AuthorizationProducts: originalProviderMeta.AuthorizationProducts,
+			Organization:          originalProviderMeta.Organization,
+			DefaultCountryCode:    originalProviderMeta.DefaultCountryCode,
+			MaxClients:            originalProviderMeta.MaxClients,
+			CustomRetryTimeout:    originalProviderMeta.CustomRetryTimeout,
+		}
+	}
+
 	if resource.Importer != nil && resource.Importer.StateContext != nil {
 		tflog.Trace(g.ctx, fmt.Sprintf("Resource has importer with StateContext, calling for ID: %s", resID))
-		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, meta)
+		resourceDataArr, err := resource.Importer.StateContext(ctx, resourceData, refreshMeta)
 		if err != nil {
 			tflog.Error(g.ctx, fmt.Sprintf("Error with resource Importer for id %s: %v", resID, err))
 			return nil, diag.FromErr(err)
@@ -2108,9 +2136,9 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 		tflog.Debug(g.ctx, fmt.Sprintf("Resource has no importer or StateContext for ID: %s", resID))
 	}
 
-	// resourceStateMutex is not needed to wrap this, as it operates on its own copy of state and is safe to call concurrently.
-	// In fact, wrapping it with the resourceStateMutex causes performance bottlenecks (DEVTOOLING-1655)
-	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, meta)
+	// resourceStateMutex is not needed to wrap RefreshWithoutUpgrade, as it operates on its own copy of state
+	// and is safe to call concurrently. Using a pooled client per resource allows concurrent API calls (DEVTOOLING-1655).
+	state, err := resource.RefreshWithoutUpgrade(ctx, instanceState, refreshMeta)
 
 	if err != nil {
 		tflog.Error(g.ctx, fmt.Sprintf("Error during RefreshWithoutUpgrade for resource %s: %v", resID, err))
