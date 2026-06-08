@@ -95,7 +95,7 @@ resource "genesyscloud_case_management_caseplan" "cp" {
   default_ttl_seconds             = 604800
 
   customer_intent {
-    id = genesyscloud_customer_intent.intent.id
+    id = genesyscloud_intents_customerintents.intent.id
   }
 
   default_case_owner {
