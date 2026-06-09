@@ -85,7 +85,7 @@ func ProviderSchema() map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", DefaultMaxClients),
-			Description:  "Max number of OAuth tokens in the token pool (1-50). Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
+			Description:  "Max number of OAuth tokens in the token pool (1-300). Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
 			ValidateFunc: validation.IntBetween(MinClients, MaxClients),
 		},
 		AttrTokenAcquireTimeout: {

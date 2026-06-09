@@ -29,9 +29,9 @@ const (
 	// Default pool settings
 	DefaultMaxClients = 10
 	MinClients        = 1
-	MaxClients        = 50
+	MaxClients        = 300 // Genesys Cloud OAuth clients support up to 300 concurrent operations
 
-	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
+	AbsoluteDynamicMaxClients = 300 // Maximum clients the pool can grow to dynamically
 
 	DefaultMaxConcurrentPages = 50
 	MaxConcurrentPages        = 75
