@@ -114,6 +114,9 @@ func FetchPagesConcurrently[T any](
 
 	allEntities := append([]T{}, firstPage...)
 	for pageNum := 2; pageNum <= totalPages; pageNum++ {
+		if pages[pageNum] == nil {
+			continue
+		}
 		allEntities = append(allEntities, pages[pageNum]...)
 	}
 
