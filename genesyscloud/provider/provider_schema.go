@@ -14,6 +14,7 @@ const (
 	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
 	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
 	customRetryTimeoutEnvVar     = "GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT"
+	maxTokenPoolSizeEnvVar       = "GENESYSCLOUD_TOKEN_POOL_SIZE"
 
 	// Provider attribute keys
 	AttrTokenPoolSize       = "token_pool_size"
@@ -84,8 +85,8 @@ func ProviderSchema() map[string]*schema.Schema {
 		AttrTokenPoolSize: {
 			Type:         schema.TypeInt,
 			Optional:     true,
-			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", DefaultMaxClients),
-			Description:  "Max number of OAuth tokens in the token pool (1-300). Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
+			DefaultFunc:  schema.EnvDefaultFunc(maxTokenPoolSizeEnvVar, DefaultMaxClients),
+			Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool (%d-%d). Can be set with the `%s` environment variable.", MinClients, MaxClients, maxTokenPoolSizeEnvVar),
 			ValidateFunc: validation.IntBetween(MinClients, MaxClients),
 		},
 		AttrTokenAcquireTimeout: {

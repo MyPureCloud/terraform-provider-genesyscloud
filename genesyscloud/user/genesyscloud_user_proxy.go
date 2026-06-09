@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"sync"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
@@ -257,6 +256,8 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 		var users []platformclientv2.User
 		const pageSize = 100
+		// DEVTOOLING-862: inactive GetUsers requests return 400 beyond 10,000 users (100 pages at pageSize).
+		const maxInactiveUserPages = 10_000 / pageSize
 		expandedAttributes := []string{
 			// Expands
 			"skills",
@@ -280,7 +281,13 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 			totalPages = *usersList.PageCount
 		}
 
-		var inactiveLimitWarnOnce sync.Once
+		// The API may report a PageCount above the inactive cap, but pages beyond 100 always
+		// return 400. Cap pagination here so concurrent fetches do not spawn hundreds of
+		// goroutines that each hit a doomed API call.
+		if userStatus == "inactive" && totalPages > maxInactiveUserPages {
+			log.Printf("WARNING!!: Inactive user PageCount (%d) exceeds the API limit of %d pages (10,000 users). Pagination will stop at page %d.", totalPages, maxInactiveUserPages, maxInactiveUserPages)
+			totalPages = maxInactiveUserPages
+		}
 
 		users, apiResponse, err = provider.FetchPagesConcurrently(ctx, ResourceType, users, apiResponse, totalPages, p.clientConfig,
 			func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.User, *platformclientv2.APIResponse, error) {
@@ -288,11 +295,10 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 				pageProxy := newUserProxy(clientConfig)
 				pageUsersList, pageResp, pageErr := pageProxy.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", nil, userStatus)
 
-				// DEVTOOLING-862 - inactive users are capped at 10,000 by the API; pages beyond that return 400.
+				// Safety net only: with the page cap above, inactive requests within range should not
+				// return 400. If one does, treat it as end-of-results rather than failing the export.
 				if userStatus == "inactive" && pageResp != nil && pageResp.StatusCode == http.StatusBadRequest {
-					inactiveLimitWarnOnce.Do(func() {
-						log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API.  No further exports of inactive users will occur.")
-					})
+					log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API. No further exports of inactive users will occur.")
 					return []platformclientv2.User{}, pageResp, nil
 				}
 
