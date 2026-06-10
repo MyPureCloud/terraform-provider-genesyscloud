@@ -14,7 +14,7 @@ Data source for Genesys Cloud current organization
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-organizations-me)
+* [GET /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-organizations-me)
 
 ## Permissions and Scopes
 

@@ -14,8 +14,8 @@ Genesys Cloud conversations messaging integrations open data source. Select an c
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-open)
-* [GET /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-open--integrationId-)
+* [GET /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-open)
+* [GET /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-open--integrationId-)
 
 ## Permissions and Scopes
 

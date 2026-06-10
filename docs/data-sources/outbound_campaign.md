@@ -14,8 +14,8 @@ Genesys Cloud outbound campaign data source. Select an outbound campaign by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaigns)
-* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaigns--campaignId-)
+* [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns)
+* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns--campaignId-)
 
 ## Permissions and Scopes
 

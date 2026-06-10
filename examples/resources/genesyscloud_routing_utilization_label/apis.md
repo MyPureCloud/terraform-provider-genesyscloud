@@ -1,11 +1,11 @@
 <!-- sources
 genesyscloud/routing_utilization_label/genesyscloud_routing_utilization_label_proxy.go
 -->
-* [GET /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization-labels)
-* [POST /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-utilization-labels)
-* [DELETE /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-utilization-labels--id-)
-* [GET /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization-labels--id-)
-* [PUT /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-utilization-labels--id-)
-* [DELETE /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-utilization-labels--labelId-)
-* [GET /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization-labels--labelId-)
-* [PUT /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-utilization-labels--labelId-)
+* [GET /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels)
+* [POST /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-utilization-labels)
+* [DELETE /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-utilization-labels--id-)
+* [GET /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels--id-)
+* [PUT /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-utilization-labels--id-)
+* [DELETE /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-utilization-labels--labelId-)
+* [GET /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels--labelId-)
+* [PUT /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-utilization-labels--labelId-)

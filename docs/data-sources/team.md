@@ -14,9 +14,9 @@ Genesys Cloud team data source. Select an team by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-teams)
-* [GET /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-teams--teamId-)
-* [GET /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-teams--teamId--members)
+* [GET /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams)
+* [GET /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId-)
+* [GET /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId--members)
 
 ## Permissions and Scopes
 

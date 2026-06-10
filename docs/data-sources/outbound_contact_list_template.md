@@ -14,8 +14,8 @@ Data source for Genesys Cloud Outbound Contact Lists Templates. Select a contact
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/contactlisttemplates](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlisttemplates)
-* [GET /api/v2/outbound/contactlisttemplates/{contactListTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlisttemplates--contactListTemplateId-)
+* [GET /api/v2/outbound/contactlisttemplates](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlisttemplates)
+* [GET /api/v2/outbound/contactlisttemplates/{contactListTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlisttemplates--contactListTemplateId-)
 
 ## Permissions and Scopes
 

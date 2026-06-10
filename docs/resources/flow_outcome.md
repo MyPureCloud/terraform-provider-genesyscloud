@@ -16,10 +16,10 @@ the resource will manage the existing outcome instead of failing during creation
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-outcomes)
-* [POST /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-outcomes)
-* [GET /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-outcomes--flowOutcomeId-)
-* [PUT /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-flows-outcomes--flowOutcomeId-)
+* [GET /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-outcomes)
+* [POST /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-flows-outcomes)
+* [GET /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-outcomes--flowOutcomeId-)
+* [PUT /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-flows-outcomes--flowOutcomeId-)
 
 ## Permissions and Scopes
 

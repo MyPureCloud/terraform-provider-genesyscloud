@@ -14,8 +14,8 @@ Genesys Cloud conversations messaging integrations whatsapp data source. Select 
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/conversations/messaging/integrations/whatsapp](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-whatsapp)
-* [GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
+* [GET /api/v2/conversations/messaging/integrations/whatsapp](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-whatsapp)
+* [GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
 
 ## Permissions and Scopes
 

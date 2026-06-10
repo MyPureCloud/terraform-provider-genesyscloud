@@ -14,8 +14,8 @@ Genesys Cloud supported content data source. Select an supported content by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/conversations/messaging/supportedcontent](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-supportedcontent)
-* [GET /api/v2/conversations/messaging/supportedcontent/{supportedContentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-supportedcontent--supportedContentId-)
+* [GET /api/v2/conversations/messaging/supportedcontent](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-supportedcontent)
+* [GET /api/v2/conversations/messaging/supportedcontent/{supportedContentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-supportedcontent--supportedContentId-)
 
 ## Permissions and Scopes
 

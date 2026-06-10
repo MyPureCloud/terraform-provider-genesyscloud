@@ -14,7 +14,7 @@ Data source for Genesys Cloud DID. The identifier is the E.164 phone number.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/telephony/providers/edges/dids](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-dids)
+* [GET /api/v2/telephony/providers/edges/dids](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-dids)
 
 ## Permissions and Scopes
 

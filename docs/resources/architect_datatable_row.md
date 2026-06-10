@@ -14,13 +14,13 @@ Genesys Cloud Architect Datatable Row
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/flows/datatables](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables)
-* [GET /api/v2/flows/datatables/{datatableId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables--datatableId-)
-* [GET /api/v2/flows/datatables/{datatableId}/rows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables--datatableId--rows)
-* [POST /api/v2/flows/datatables/{datatableId}/rows](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-datatables--datatableId--rows)
-* [DELETE /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows-datatables--datatableId--rows--rowId-)
-* [GET /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-datatables--datatableId--rows--rowId-)
-* [PUT /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-flows-datatables--datatableId--rows--rowId-)
+* [GET /api/v2/flows/datatables](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-datatables)
+* [GET /api/v2/flows/datatables/{datatableId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-datatables--datatableId-)
+* [GET /api/v2/flows/datatables/{datatableId}/rows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-datatables--datatableId--rows)
+* [POST /api/v2/flows/datatables/{datatableId}/rows](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-flows-datatables--datatableId--rows)
+* [DELETE /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-flows-datatables--datatableId--rows--rowId-)
+* [GET /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-datatables--datatableId--rows--rowId-)
+* [PUT /api/v2/flows/datatables/{datatableId}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-flows-datatables--datatableId--rows--rowId-)
 
 ## Permissions and Scopes
 

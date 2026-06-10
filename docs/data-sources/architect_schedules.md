@@ -14,8 +14,8 @@ Data source for Genesys Cloud Schedule. Select a schedule by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedules)
-* [GET /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedules--scheduleId-)
+* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedules)
+* [GET /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedules--scheduleId-)
 
 ## Permissions and Scopes
 

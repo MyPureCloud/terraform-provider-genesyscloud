@@ -14,8 +14,8 @@ Genesys Cloud outbound digitalruleset data source. Select an outbound digitalrul
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-digitalrulesets)
-* [GET /api/v2/outbound/digitalrulesets/{digitalRuleSetId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-digitalrulesets--digitalRuleSetId-)
+* [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-digitalrulesets)
+* [GET /api/v2/outbound/digitalrulesets/{digitalRuleSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-digitalrulesets--digitalRuleSetId-)
 
 ## Permissions and Scopes
 

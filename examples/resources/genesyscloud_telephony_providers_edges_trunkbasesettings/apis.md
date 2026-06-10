@@ -1,8 +1,8 @@
 <!-- sources
 genesyscloud/telephony_providers_edges_trunkbasesettings/genesyscloud_telephony_providers_edges_trunkbasesettings_proxy.go
 -->
-* [GET /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunkbasesettings)
-* [POST /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-trunkbasesettings)
-* [DELETE /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
-* [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
-* [PUT /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
+* [GET /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-trunkbasesettings)
+* [POST /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-trunkbasesettings)
+* [DELETE /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
+* [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
+* [PUT /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)

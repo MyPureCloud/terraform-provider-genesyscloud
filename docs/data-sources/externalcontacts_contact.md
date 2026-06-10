@@ -14,10 +14,10 @@ Data source for Genesys Cloud external contacts. Select a contact by any string 
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-contacts)
-* [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-contacts--contactId-)
-* [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-organizations--externalOrganizationId-)
-* [GET /api/v2/externalcontacts/scan/contacts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-scan-contacts)
+* [GET /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-contacts)
+* [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-contacts--contactId-)
+* [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
+* [GET /api/v2/externalcontacts/scan/contacts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-contacts)
 
 ## Permissions and Scopes
 

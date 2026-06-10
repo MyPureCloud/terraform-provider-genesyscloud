@@ -14,9 +14,9 @@ Data source for Genesys Cloud Routing Queues. Select a queue by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues)
-* [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId-)
-* [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId--wrapupcodes)
+* [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues)
+* [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId-)
+* [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId--wrapupcodes)
 
 ## Permissions and Scopes
 

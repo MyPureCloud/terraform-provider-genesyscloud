@@ -14,9 +14,9 @@ Data source for Genesys Cloud Routing Email Route. Select a routing email route 
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-domains)
-* [GET /api/v2/routing/email/domains/{domainName}/routes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-domains--domainName--routes)
-* [GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-domains--domainName--routes--routeId-)
+* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains)
+* [GET /api/v2/routing/email/domains/{domainName}/routes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainName--routes)
+* [GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainName--routes--routeId-)
 
 ## Permissions and Scopes
 

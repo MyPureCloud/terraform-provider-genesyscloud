@@ -14,14 +14,14 @@ An organization's routing settings
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [DELETE /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-settings)
-* [GET /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-settings)
-* [PUT /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-settings)
-* [GET /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-settings-contactcenter)
-* [GET /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-settings-contactcenter)
-* [PATCH /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-routing-settings-contactcenter)
-* [GET /api/v2/routing/settings/transcription](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-settings-transcription)
-* [PUT /api/v2/routing/settings/transcription](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-settings-transcription)
+* [DELETE /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-settings)
+* [GET /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-settings)
+* [PUT /api/v2/routing/settings](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-settings)
+* [GET /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-settings-contactcenter)
+* [GET /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-settings-contactcenter)
+* [PATCH /api/v2/routing/settings/contactcenter](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-settings-contactcenter)
+* [GET /api/v2/routing/settings/transcription](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-settings-transcription)
+* [PUT /api/v2/routing/settings/transcription](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-settings-transcription)
 
 ## Permissions and Scopes
 

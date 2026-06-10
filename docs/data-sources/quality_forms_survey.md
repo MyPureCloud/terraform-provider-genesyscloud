@@ -14,9 +14,9 @@ Data source for Genesys Cloud Survey Forms. Select a form by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-surveys)
-* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-surveys--formId-)
-* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-surveys--formId--versions)
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys)
+* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys--formId-)
+* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys--formId--versions)
 
 ## Permissions and Scopes
 

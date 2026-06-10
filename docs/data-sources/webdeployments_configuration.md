@@ -14,10 +14,10 @@ Data source for Genesys Cloud Web Deployments Configurations. Select a configura
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions--versionId-)
+* [GET /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions-draft)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
 
 ## Permissions and Scopes
 

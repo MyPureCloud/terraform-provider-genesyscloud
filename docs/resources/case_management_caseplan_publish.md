@@ -14,16 +14,16 @@ Calls POST /api/v2/casemanagement/caseplans/{caseplanId}/publish. Use depends_on
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans)
-* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-casemanagement-caseplans)
-* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-casemanagement-caseplans--caseplanId-)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId-)
-* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-casemanagement-caseplans--caseplanId-)
-* [PUT /api/v2/casemanagement/caseplans/{caseplanId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-casemanagement-caseplans--caseplanId--intakesettings)
-* [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-casemanagement-caseplans--caseplanId--publish)
-* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-casemanagement-caseplans--caseplanId--versions)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--dataschemas)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--intakesettings)
+* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans)
+* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans)
+* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-casemanagement-caseplans--caseplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
+* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-casemanagement-caseplans--caseplanId-)
+* [PUT /api/v2/casemanagement/caseplans/{caseplanId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-casemanagement-caseplans--caseplanId--intakesettings)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--publish)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--versions)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--dataschemas)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--intakesettings)
 
 ## Permissions and Scopes
 

@@ -14,9 +14,9 @@ Genesys Cloud Single Sign-on ADFS Identity Provider. See this page for detailed 
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [DELETE /api/v2/identityproviders/adfs](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-identityproviders-adfs)
-* [GET /api/v2/identityproviders/adfs](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-identityproviders-adfs)
-* [PUT /api/v2/identityproviders/adfs](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-identityproviders-adfs)
+* [DELETE /api/v2/identityproviders/adfs](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-identityproviders-adfs)
+* [GET /api/v2/identityproviders/adfs](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-identityproviders-adfs)
+* [PUT /api/v2/identityproviders/adfs](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-identityproviders-adfs)
 
 ## Permissions and Scopes
 

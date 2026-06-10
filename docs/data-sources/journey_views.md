@@ -14,8 +14,8 @@ Data source for Genesys Cloud Journey Views. Select a Journey View by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/views](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-views)
-* [GET /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-views--viewId-)
+* [GET /api/v2/journey/views](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-views)
+* [GET /api/v2/journey/views/{viewId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-views--viewId-)
 
 ## Permissions and Scopes
 

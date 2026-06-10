@@ -14,9 +14,9 @@ Data source for Genesys Cloud Routing Skills Groups. Select a skill group by nam
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups)
-* [GET /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups--skillGroupId-)
-* [GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups--skillGroupId--members-divisions)
+* [GET /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skillgroups)
+* [GET /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skillgroups--skillGroupId-)
+* [GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skillgroups--skillGroupId--members-divisions)
 
 ## Permissions and Scopes
 

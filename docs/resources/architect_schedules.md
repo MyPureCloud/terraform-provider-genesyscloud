@@ -14,11 +14,11 @@ Genesys Cloud Architect Schedules
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedules)
-* [POST /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-schedules)
-* [DELETE /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-schedules--scheduleId-)
-* [GET /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedules--scheduleId-)
-* [PUT /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-schedules--scheduleId-)
+* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedules)
+* [POST /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-schedules)
+* [DELETE /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-architect-schedules--scheduleId-)
+* [GET /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedules--scheduleId-)
+* [PUT /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-architect-schedules--scheduleId-)
 
 ## Permissions and Scopes
 

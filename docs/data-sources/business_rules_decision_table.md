@@ -14,10 +14,10 @@ Genesys Cloud business rules decision table data source. Select a business rules
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables-search)
-* [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId-)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables-search)
+* [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
 
 ## Permissions and Scopes
 

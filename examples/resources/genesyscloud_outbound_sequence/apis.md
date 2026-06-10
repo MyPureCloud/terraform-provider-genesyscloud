@@ -1,8 +1,8 @@
 <!-- sources
 genesyscloud/outbound_sequence/genesyscloud_outbound_sequence_proxy.go
 -->
-* [GET /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-sequences)
-* [POST /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-sequences)
-* [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-sequences--sequenceId-)
-* [GET /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-sequences--sequenceId-)
-* [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-sequences--sequenceId-)
+* [GET /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-sequences)
+* [POST /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-sequences)
+* [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-sequences--sequenceId-)
+* [GET /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-sequences--sequenceId-)
+* [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-sequences--sequenceId-)

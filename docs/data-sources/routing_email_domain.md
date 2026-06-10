@@ -14,8 +14,8 @@ Data source for Genesys Cloud Email Domains. Select an email domain by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-domains)
-* [GET /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-domains--domainId-)
+* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains)
+* [GET /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainId-)
 
 ## Permissions and Scopes
 

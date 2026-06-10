@@ -14,8 +14,8 @@ Genesys Cloud workforce management business units data source. Select a workforc
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/workforcemanagement/businessunits](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-workforcemanagement-businessunits)
-* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [GET /api/v2/workforcemanagement/businessunits](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-workforcemanagement-businessunits)
+* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-workforcemanagement-businessunits--businessUnitId-)
 
 ## Permissions and Scopes
 

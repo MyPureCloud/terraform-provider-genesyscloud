@@ -14,8 +14,8 @@ Genesys Cloud integration facebook data source. Select an integration facebook b
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/conversations/messaging/integrations/facebook](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-facebook)
-* [GET /api/v2/conversations/messaging/integrations/facebook/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-facebook--integrationId-)
+* [GET /api/v2/conversations/messaging/integrations/facebook](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-facebook)
+* [GET /api/v2/conversations/messaging/integrations/facebook/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-facebook--integrationId-)
 
 ## Permissions and Scopes
 

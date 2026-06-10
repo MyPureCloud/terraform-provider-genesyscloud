@@ -14,9 +14,9 @@ Genesys Cloud Single Sign-on Salesforce Identity Provider. See this page for det
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [DELETE /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-identityproviders-salesforce)
-* [GET /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-identityproviders-salesforce)
-* [PUT /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-identityproviders-salesforce)
+* [DELETE /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-identityproviders-salesforce)
+* [GET /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-identityproviders-salesforce)
+* [PUT /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-identityproviders-salesforce)
 
 ## Permissions and Scopes
 

@@ -14,10 +14,10 @@ Genesys Cloud Routing Skill
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills)
-* [POST /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skills)
-* [DELETE /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-skills--skillId-)
-* [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skills)
+* [POST /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-skills)
+* [DELETE /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skills--skillId-)
 
 ## Permissions and Scopes
 

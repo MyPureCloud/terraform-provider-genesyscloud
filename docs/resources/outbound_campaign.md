@@ -14,11 +14,11 @@ Genesys Cloud outbound campaign
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaigns)
-* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-campaigns)
-* [DELETE /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-campaigns--campaignId-)
-* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-campaigns--campaignId-)
-* [PUT /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-campaigns--campaignId-)
+* [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns)
+* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-campaigns)
+* [DELETE /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-campaigns--campaignId-)
+* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns--campaignId-)
+* [PUT /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-campaigns--campaignId-)
 
 ## Permissions and Scopes
 

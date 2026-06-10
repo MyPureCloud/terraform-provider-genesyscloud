@@ -14,10 +14,10 @@ Data source for Genesys Cloud Outbound Contact Lists. Select a contact list by n
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/contactlists](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlists)
-* [GET /api/v2/outbound/contactlists/{contactListId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlists--contactListId-)
-* [GET /api/v2/outbound/contactlists/{contactListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlists--contactListId--export)
-* [GET /api/v2/outbound/contactlists/{contactListId}/importstatus](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlists--contactListId--importstatus)
+* [GET /api/v2/outbound/contactlists](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists)
+* [GET /api/v2/outbound/contactlists/{contactListId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId-)
+* [GET /api/v2/outbound/contactlists/{contactListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId--export)
+* [GET /api/v2/outbound/contactlists/{contactListId}/importstatus](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId--importstatus)
 
 ## Permissions and Scopes
 

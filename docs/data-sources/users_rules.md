@@ -14,8 +14,8 @@ Data source for Genesys Cloud Users Rules. Select a Users Rule by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/users/rules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users-rules)
-* [GET /api/v2/users/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users-rules--ruleId-)
+* [GET /api/v2/users/rules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-users-rules)
+* [GET /api/v2/users/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-users-rules--ruleId-)
 
 ## Permissions and Scopes
 

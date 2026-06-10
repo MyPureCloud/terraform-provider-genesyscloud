@@ -14,8 +14,8 @@ Data source for Genesys Cloud Schedule Groups. Select a schedule group by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/schedulegroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedulegroups)
-* [GET /api/v2/architect/schedulegroups/{scheduleGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedulegroups--scheduleGroupId-)
+* [GET /api/v2/architect/schedulegroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedulegroups)
+* [GET /api/v2/architect/schedulegroups/{scheduleGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedulegroups--scheduleGroupId-)
 
 ## Permissions and Scopes
 

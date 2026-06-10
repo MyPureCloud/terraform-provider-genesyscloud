@@ -14,12 +14,12 @@ Data source for Genesys Cloud Action Map. Select a journey action map by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/schedulegroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedulegroups)
-* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedules)
-* [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows)
-* [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps)
-* [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps--actionMapId-)
-* [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-segments)
+* [GET /api/v2/architect/schedulegroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedulegroups)
+* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedules)
+* [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows)
+* [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-actionmaps)
+* [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-actionmaps--actionMapId-)
+* [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-segments)
 
 ## Permissions and Scopes
 

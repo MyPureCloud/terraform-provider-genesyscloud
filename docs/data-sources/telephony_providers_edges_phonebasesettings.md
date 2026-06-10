@@ -14,9 +14,9 @@ Data source for Genesys Cloud Phone Base Settings. Select a phone base settings 
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/telephony/providers/edges/phonebasesettings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phonebasesettings)
-* [GET /api/v2/telephony/providers/edges/phonebasesettings/template](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phonebasesettings-template)
-* [GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
+* [GET /api/v2/telephony/providers/edges/phonebasesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-phonebasesettings)
+* [GET /api/v2/telephony/providers/edges/phonebasesettings/template](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-phonebasesettings-template)
+* [GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
 
 ## Permissions and Scopes
 

@@ -14,10 +14,10 @@ Data source for Genesys Cloud Phone. Select a phone by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/stations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-stations)
-* [GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
-* [GET /api/v2/telephony/providers/edges/phones](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phones)
-* [GET /api/v2/telephony/providers/edges/phones/{phoneId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phones--phoneId-)
+* [GET /api/v2/stations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-stations)
+* [GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
+* [GET /api/v2/telephony/providers/edges/phones](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-phones)
+* [GET /api/v2/telephony/providers/edges/phones/{phoneId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-phones--phoneId-)
 
 ## Permissions and Scopes
 

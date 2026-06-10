@@ -14,8 +14,8 @@ Data source for Genesys Cloud Routing Utilization Labels. Select a label by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization-labels)
-* [GET /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization-labels--labelId-)
+* [GET /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels)
+* [GET /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels--labelId-)
 
 ## Permissions and Scopes
 

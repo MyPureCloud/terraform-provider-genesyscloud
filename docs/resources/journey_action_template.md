@@ -14,11 +14,11 @@ Genesys Cloud Journey Action Template
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/actiontemplates](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actiontemplates)
-* [POST /api/v2/journey/actiontemplates](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-actiontemplates)
-* [DELETE /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-actiontemplates--actionTemplateId-)
-* [GET /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actiontemplates--actionTemplateId-)
-* [PATCH /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-journey-actiontemplates--actionTemplateId-)
+* [GET /api/v2/journey/actiontemplates](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-actiontemplates)
+* [POST /api/v2/journey/actiontemplates](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-journey-actiontemplates)
+* [DELETE /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-actiontemplates--actionTemplateId-)
+* [GET /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-actiontemplates--actionTemplateId-)
+* [PATCH /api/v2/journey/actiontemplates/{actionTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-journey-actiontemplates--actionTemplateId-)
 
 ## Permissions and Scopes
 

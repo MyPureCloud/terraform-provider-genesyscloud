@@ -14,21 +14,21 @@ Genesys Cloud Site
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/locations/{locationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-locations--locationId-)
-* [GET /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-organizations-me)
-* [PUT /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-organizations-me)
-* [GET /api/v2/telephony/mediaregions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-mediaregions)
-* [GET /api/v2/telephony/providers/edges/sites](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites)
-* [POST /api/v2/telephony/providers/edges/sites](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-sites)
-* [DELETE /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-sites--siteId-)
-* [GET /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId-)
-* [PUT /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-sites--siteId-)
-* [GET /api/v2/telephony/providers/edges/sites/{siteId}/numberplans](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--numberplans)
-* [PUT /api/v2/telephony/providers/edges/sites/{siteId}/numberplans](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-sites--siteId--numberplans)
-* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
-* [POST /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
-* [DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
-* [PUT /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
+* [GET /api/v2/locations/{locationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-locations--locationId-)
+* [GET /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-organizations-me)
+* [PUT /api/v2/organizations/me](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-organizations-me)
+* [GET /api/v2/telephony/mediaregions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-mediaregions)
+* [GET /api/v2/telephony/providers/edges/sites](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites)
+* [POST /api/v2/telephony/providers/edges/sites](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-sites)
+* [DELETE /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-sites--siteId-)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites--siteId-)
+* [PUT /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-sites--siteId-)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}/numberplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites--siteId--numberplans)
+* [PUT /api/v2/telephony/providers/edges/sites/{siteId}/numberplans](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-sites--siteId--numberplans)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
+* [POST /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
+* [DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
+* [PUT /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 
 ## Permissions and Scopes
 

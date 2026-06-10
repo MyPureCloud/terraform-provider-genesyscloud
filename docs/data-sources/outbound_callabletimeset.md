@@ -14,8 +14,8 @@ Data source for Genesys Clound Outbound Callable Timesets. Select a callable tim
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-callabletimesets)
-* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets)
+* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
 
 ## Permissions and Scopes
 

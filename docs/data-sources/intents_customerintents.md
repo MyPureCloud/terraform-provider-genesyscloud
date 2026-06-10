@@ -14,9 +14,9 @@ Genesys Cloud customer intent data source. Select a customer intent by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/intents/customerintents](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-customerintents)
-* [GET /api/v2/intents/customerintents/{customerIntentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-customerintents--customerIntentId-)
-* [GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-customerintents--customerIntentId--sourceintents)
+* [GET /api/v2/intents/customerintents](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-intents-customerintents)
+* [GET /api/v2/intents/customerintents/{customerIntentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-intents-customerintents--customerIntentId-)
+* [GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-intents-customerintents--customerIntentId--sourceintents)
 
 ## Permissions and Scopes
 

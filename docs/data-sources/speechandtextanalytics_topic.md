@@ -14,9 +14,9 @@ Data source for Genesys Cloud Speech & Text Analytics Topics. Select a topic by 
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics)
-* [GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics-publishjobs--jobId-)
-* [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics--topicId-)
+* [GET /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics)
+* [GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics-publishjobs--jobId-)
+* [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics--topicId-)
 
 ## Permissions and Scopes
 

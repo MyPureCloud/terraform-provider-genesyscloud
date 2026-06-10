@@ -14,11 +14,11 @@ Genesys Cloud Edge Group. NOTE: This resource is being kept here for backwards c
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-edgegroups)
-* [POST /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-edgegroups)
-* [DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
-* [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
-* [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [GET /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-edgegroups)
+* [POST /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-edgegroups)
+* [DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
 
 ## Permissions and Scopes
 

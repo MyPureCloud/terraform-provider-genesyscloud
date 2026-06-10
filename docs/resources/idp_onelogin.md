@@ -14,9 +14,9 @@ Genesys Cloud Single Sign-on OneLogin Identity Provider. See this page for detai
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [DELETE /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-identityproviders-onelogin)
-* [GET /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-identityproviders-onelogin)
-* [PUT /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-identityproviders-onelogin)
+* [DELETE /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-identityproviders-onelogin)
+* [GET /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-identityproviders-onelogin)
+* [PUT /api/v2/identityproviders/onelogin](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-identityproviders-onelogin)
 
 ## Permissions and Scopes
 

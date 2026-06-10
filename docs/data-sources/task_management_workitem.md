@@ -14,7 +14,7 @@ Genesys Cloud task management workitem data source. Select an task management wo
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-workitems--workitemId-)
+* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-workitems--workitemId-)
 
 ## Permissions and Scopes
 

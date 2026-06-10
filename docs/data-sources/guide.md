@@ -14,8 +14,8 @@ Data source for Genesys Cloud Guide. Select a guide by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides)
-* [GET /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId-)
+* [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-guides)
+* [GET /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-guides--guideId-)
 
 ## Permissions and Scopes
 

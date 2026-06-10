@@ -14,10 +14,10 @@ Genesys Cloud case management caseplan data source. Select an case management ca
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId-)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--dataschemas)
-* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--intakesettings)
+* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--dataschemas)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--intakesettings)
 
 ## Permissions and Scopes
 

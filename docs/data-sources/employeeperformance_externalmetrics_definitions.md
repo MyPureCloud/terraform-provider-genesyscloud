@@ -14,8 +14,8 @@ Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Se
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions)
-* [GET /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
+* [GET /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-employeeperformance-externalmetrics-definitions)
+* [GET /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 
 ## Permissions and Scopes
 

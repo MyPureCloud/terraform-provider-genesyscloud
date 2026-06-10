@@ -14,8 +14,8 @@ Genesys Cloud apple integration data source. Select an apple integration by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-apple)
-* [GET /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-apple--integrationId-)
+* [GET /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple)
+* [GET /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple--integrationId-)
 
 ## Permissions and Scopes
 

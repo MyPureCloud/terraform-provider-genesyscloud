@@ -14,8 +14,8 @@ Genesys Cloud outbound callanalysisresponseset data source. Select an outbound c
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/callanalysisresponsesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-callanalysisresponsesets)
-* [GET /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
+* [GET /api/v2/outbound/callanalysisresponsesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callanalysisresponsesets)
+* [GET /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callanalysisresponsesets--callAnalysisSetId-)
 
 ## Permissions and Scopes
 

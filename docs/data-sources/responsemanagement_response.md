@@ -14,9 +14,9 @@ Data source for Genesys Cloud Responsemanagement Response. Select a Responsemana
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-responsemanagement-libraries)
-* [GET /api/v2/responsemanagement/responses](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-responsemanagement-responses)
-* [GET /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-responsemanagement-responses--responseId-)
+* [GET /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-libraries)
+* [GET /api/v2/responsemanagement/responses](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses)
+* [GET /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses--responseId-)
 
 ## Permissions and Scopes
 

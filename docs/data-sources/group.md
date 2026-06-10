@@ -14,10 +14,10 @@ Data source for Genesys Cloud Groups. Select a group by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/groups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups)
-* [GET /api/v2/groups/{groupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups--groupId-)
-* [GET /api/v2/groups/{groupId}/individuals](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-groups--groupId--individuals)
-* [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-voicemail-groups--groupId--policy)
+* [GET /api/v2/groups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-groups)
+* [GET /api/v2/groups/{groupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-groups--groupId-)
+* [GET /api/v2/groups/{groupId}/individuals](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-groups--groupId--individuals)
+* [GET /api/v2/voicemail/groups/{groupId}/policy](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-voicemail-groups--groupId--policy)
 
 ## Permissions and Scopes
 

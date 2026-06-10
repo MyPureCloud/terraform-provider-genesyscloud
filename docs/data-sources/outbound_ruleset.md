@@ -14,8 +14,8 @@ Data source for Genesys Cloud Outbound Ruleset. Select an Outbound Ruleset by na
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/rulesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-rulesets)
-* [GET /api/v2/outbound/rulesets/{ruleSetId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-rulesets--ruleSetId-)
+* [GET /api/v2/outbound/rulesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-rulesets)
+* [GET /api/v2/outbound/rulesets/{ruleSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-rulesets--ruleSetId-)
 
 ## Permissions and Scopes
 

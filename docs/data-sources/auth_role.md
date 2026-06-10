@@ -14,9 +14,9 @@ Data source for Genesys Cloud Roles. Select a role by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/authorization/permissions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-permissions)
-* [GET /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-roles)
-* [GET /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-authorization-roles--roleId-)
+* [GET /api/v2/authorization/permissions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-permissions)
+* [GET /api/v2/authorization/roles](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-roles)
+* [GET /api/v2/authorization/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-roles--roleId-)
 
 ## Permissions and Scopes
 

@@ -14,7 +14,7 @@ Genesys Cloud task management worktype data source. Select a task management wor
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
+* [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId-)
 
 ## Permissions and Scopes
 

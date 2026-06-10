@@ -14,9 +14,9 @@ Data source for Genesys Cloud Site Outbound Routes. Select a Site Outbound Route
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId-)
-* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
-* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites--siteId-)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites--siteId--outboundroutes)
+* [GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-sites--siteId--outboundroutes--outboundRouteId-)
 
 ## Permissions and Scopes
 

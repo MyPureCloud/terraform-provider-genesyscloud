@@ -14,8 +14,8 @@ description: |-
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-outcomes)
-* [GET /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-outcomes--outcomeId-)
+* [GET /api/v2/journey/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-outcomes)
+* [GET /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-outcomes--outcomeId-)
 
 ## Permissions and Scopes
 

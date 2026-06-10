@@ -14,8 +14,8 @@ Data source for Genesys Cloud Learning Modules. Select a Learning Module by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-learning-modules)
-* [GET /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-learning-modules--moduleId-)
+* [GET /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules)
+* [GET /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules--moduleId-)
 
 ## Permissions and Scopes
 

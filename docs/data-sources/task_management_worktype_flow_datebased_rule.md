@@ -14,8 +14,8 @@ Genesys Cloud task management datebased rule data source. Select a task manageme
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules)
-* [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
+* [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules)
+* [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 
 ## Permissions and Scopes
 

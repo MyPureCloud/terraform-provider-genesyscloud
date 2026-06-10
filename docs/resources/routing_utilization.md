@@ -14,9 +14,9 @@ Genesys Cloud Org-wide Routing Utilization Settings.
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [DELETE /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-utilization)
-* [GET /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-utilization)
-* [PUT /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-utilization)
+* [DELETE /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-utilization)
+* [GET /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization)
+* [PUT /api/v2/routing/utilization](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-utilization)
 
 ## Permissions and Scopes
 

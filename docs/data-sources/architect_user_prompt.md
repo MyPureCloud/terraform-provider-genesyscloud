@@ -14,9 +14,9 @@ Data source for Genesys Cloud User Prompts. Select a user prompt by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/prompts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts)
-* [GET /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts--promptId-)
-* [GET /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-prompts--promptId--resources)
+* [GET /api/v2/architect/prompts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-prompts)
+* [GET /api/v2/architect/prompts/{promptId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-prompts--promptId-)
+* [GET /api/v2/architect/prompts/{promptId}/resources](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-prompts--promptId--resources)
 
 ## Permissions and Scopes
 

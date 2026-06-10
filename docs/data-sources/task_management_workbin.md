@@ -14,7 +14,7 @@ Genesys Cloud task management workbin data source. Select an task management wor
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-workbins--workbinId-)
+* [GET /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-workbins--workbinId-)
 
 ## Permissions and Scopes
 

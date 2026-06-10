@@ -1,9 +1,9 @@
 <!-- sources
 genesyscloud/task_management_workitem/genesyscloud_task_management_workitem_proxy.go
 -->
-* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workbins-query)
-* [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workitems)
-* [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workitems-query)
-* [DELETE /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-workitems--workitemId-)
-* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-workitems--workitemId-)
-* [PATCH /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-workitems--workitemId-)
+* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workbins-query)
+* [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workitems)
+* [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workitems-query)
+* [DELETE /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-workitems--workitemId-)
+* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-workitems--workitemId-)
+* [PATCH /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-workitems--workitemId-)

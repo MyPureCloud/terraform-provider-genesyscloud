@@ -14,9 +14,9 @@ Data source for Genesys Cloud Outbound DNC Lists. Select a DNC list by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/dnclists](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-dnclists)
-* [GET /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-dnclists--dncListId-)
-* [GET /api/v2/outbound/dnclists/{dncListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-dnclists--dncListId--export)
+* [GET /api/v2/outbound/dnclists](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists)
+* [GET /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists--dncListId-)
+* [GET /api/v2/outbound/dnclists/{dncListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists--dncListId--export)
 
 ## Permissions and Scopes
 

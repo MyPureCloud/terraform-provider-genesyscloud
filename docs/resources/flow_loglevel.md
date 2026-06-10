@@ -14,11 +14,11 @@ Genesys Cloud flow log level
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/flows/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-instances-settings-loglevels)
-* [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows--flowId--instances-settings-loglevels)
-* [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows--flowId--instances-settings-loglevels)
-* [POST /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows--flowId--instances-settings-loglevels)
-* [PUT /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-flows--flowId--instances-settings-loglevels)
+* [GET /api/v2/flows/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-instances-settings-loglevels)
+* [DELETE /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-flows--flowId--instances-settings-loglevels)
+* [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows--flowId--instances-settings-loglevels)
+* [POST /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-flows--flowId--instances-settings-loglevels)
+* [PUT /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-flows--flowId--instances-settings-loglevels)
 
 ## Permissions and Scopes
 

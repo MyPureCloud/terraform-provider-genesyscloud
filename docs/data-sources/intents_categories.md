@@ -14,8 +14,8 @@ Genesys Cloud intent category data source. Select an intent category by name
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/intents/categories](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-categories)
-* [GET /api/v2/intents/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-intents-categories--categoryId-)
+* [GET /api/v2/intents/categories](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-intents-categories)
+* [GET /api/v2/intents/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-intents-categories--categoryId-)
 
 ## Permissions and Scopes
 

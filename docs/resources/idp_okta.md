@@ -14,9 +14,9 @@ Genesys Cloud Single Sign-on Okta Identity Provider. See this page for detailed 
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [DELETE /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-identityproviders-okta)
-* [GET /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-identityproviders-okta)
-* [PUT /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-identityproviders-okta)
+* [DELETE /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-identityproviders-okta)
+* [GET /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-identityproviders-okta)
+* [PUT /api/v2/identityproviders/okta](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-identityproviders-okta)
 
 ## Permissions and Scopes
 

@@ -14,13 +14,13 @@ Genesys Cloud Skill Group
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups)
-* [POST /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skillgroups)
-* [DELETE /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-skillgroups--skillGroupId-)
-* [GET /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups--skillGroupId-)
-* [PATCH /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-routing-skillgroups--skillGroupId-)
-* [GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-skillgroups--skillGroupId--members-divisions)
-* [POST /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-skillgroups--skillGroupId--members-divisions)
+* [GET /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skillgroups)
+* [POST /api/v2/routing/skillgroups](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-skillgroups)
+* [DELETE /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-skillgroups--skillGroupId-)
+* [GET /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skillgroups--skillGroupId-)
+* [PATCH /api/v2/routing/skillgroups/{skillGroupId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-skillgroups--skillGroupId-)
+* [GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skillgroups--skillGroupId--members-divisions)
+* [POST /api/v2/routing/skillgroups/{skillGroupId}/members/divisions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-skillgroups--skillGroupId--members-divisions)
 
 ## Permissions and Scopes
 

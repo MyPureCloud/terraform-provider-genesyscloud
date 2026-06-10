@@ -14,8 +14,8 @@ Data source for Genesys Cloud Outbound Attempt Limits. Select an attempt limit b
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/attemptlimits](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-attemptlimits)
-* [GET /api/v2/outbound/attemptlimits/{attemptLimitsId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-attemptlimits--attemptLimitsId-)
+* [GET /api/v2/outbound/attemptlimits](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-attemptlimits)
+* [GET /api/v2/outbound/attemptlimits/{attemptLimitsId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-attemptlimits--attemptLimitsId-)
 
 ## Permissions and Scopes
 

@@ -14,13 +14,13 @@ Genesys Cloud Speech & Text Analytics Topic.
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics)
-* [POST /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-topics)
-* [POST /api/v2/speechandtextanalytics/topics/publishjobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-topics-publishjobs)
-* [GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics-publishjobs--jobId-)
-* [DELETE /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-speechandtextanalytics-topics--topicId-)
-* [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-topics--topicId-)
-* [PUT /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-speechandtextanalytics-topics--topicId-)
+* [GET /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics)
+* [POST /api/v2/speechandtextanalytics/topics](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-speechandtextanalytics-topics)
+* [POST /api/v2/speechandtextanalytics/topics/publishjobs](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-speechandtextanalytics-topics-publishjobs)
+* [GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics-publishjobs--jobId-)
+* [DELETE /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-speechandtextanalytics-topics--topicId-)
+* [GET /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-topics--topicId-)
+* [PUT /api/v2/speechandtextanalytics/topics/{topicId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-speechandtextanalytics-topics--topicId-)
 
 ## Permissions and Scopes
 

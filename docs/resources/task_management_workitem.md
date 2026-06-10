@@ -14,12 +14,12 @@ Genesys Cloud task management workitem
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workbins-query)
-* [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workitems)
-* [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-workitems-query)
-* [DELETE /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-workitems--workitemId-)
-* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-workitems--workitemId-)
-* [PATCH /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-workitems--workitemId-)
+* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workbins-query)
+* [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workitems)
+* [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workitems-query)
+* [DELETE /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-workitems--workitemId-)
+* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-workitems--workitemId-)
+* [PATCH /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-workitems--workitemId-)
 
 ## Permissions and Scopes
 

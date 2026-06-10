@@ -14,12 +14,12 @@ Data source for Genesys Cloud integration action. Select an integration action b
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations)
-* [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions)
-* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId-)
-* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft)
-* [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--draft-function)
-* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--function)
+* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations)
+* [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions)
+* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft)
+* [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft-function)
+* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--function)
 
 ## Permissions and Scopes
 

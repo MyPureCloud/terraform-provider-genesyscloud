@@ -14,8 +14,8 @@ Genesys Cloud external contacts external source data source. Select an external 
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/externalcontacts/externalsources](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-externalsources)
-* [GET /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-externalcontacts-externalsources--externalSourceId-)
+* [GET /api/v2/externalcontacts/externalsources](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-externalsources)
+* [GET /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-externalsources--externalSourceId-)
 
 ## Permissions and Scopes
 

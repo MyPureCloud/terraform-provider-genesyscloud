@@ -1,12 +1,12 @@
 <!-- sources
 genesyscloud/quality_forms_evaluation/genesyscloud_quality_forms_evaluation_proxy.go
 -->
-* [GET /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations)
-* [POST /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-quality-forms-evaluations)
-* [GET /api/v2/quality/forms/evaluations/bulk/contexts](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations-bulk-contexts)
-* [DELETE /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-quality-forms-evaluations--formId-)
-* [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations--formId-)
-* [PUT /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-quality-forms-evaluations--formId-)
-* [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-forms-evaluations--formId--versions)
-* [POST /api/v2/quality/publishedforms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-quality-publishedforms-evaluations)
-* [GET /api/v2/quality/publishedforms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-quality-publishedforms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations)
+* [POST /api/v2/quality/forms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-quality-forms-evaluations)
+* [GET /api/v2/quality/forms/evaluations/bulk/contexts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations-bulk-contexts)
+* [DELETE /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-quality-forms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId-)
+* [PUT /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-quality-forms-evaluations--formId-)
+* [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId--versions)
+* [POST /api/v2/quality/publishedforms/evaluations](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-quality-publishedforms-evaluations)
+* [GET /api/v2/quality/publishedforms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-publishedforms-evaluations--formId-)
