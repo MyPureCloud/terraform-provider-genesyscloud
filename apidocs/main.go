@@ -474,7 +474,7 @@ func readNotesFile(examplesDir string) string {
 
 // buildAnchor generates a URL-safe anchor from an endpoint method and path.
 func buildAnchor(method, path string) string {
-	anchor := strings.ToLower(method) + "-" + strings.ReplaceAll(strings.ReplaceAll(path, "/", "-"), "{", "-")
+	anchor := strings.ToLower(method) + strings.ReplaceAll(strings.ReplaceAll(path, "/", "-"), "{", "-")
 	anchor = strings.ReplaceAll(anchor, "}", "-")
 	return anchor
 }
@@ -648,15 +648,29 @@ func customApiMethodToHTTP(methodConst string) string {
 // normalizeRawPath converts raw paths with variable concatenation into Swagger-style parameterized paths.
 // It looks up the trailing-slash path in the Swagger spec's known paths to find the correct parameter name.
 // e.g., "/api/v2/scripts/" becomes "/api/v2/scripts/{scriptId}" by matching against the spec.
+// It also corrects casing mismatches by performing case-insensitive lookups.
 func normalizeRawPath(path string, swaggerPaths map[string]bool) string {
-	if !strings.HasSuffix(path, "/") {
+	// Exact match — return as-is
+	if swaggerPaths[path] {
 		return path
 	}
 
-	// Look for a Swagger path that starts with this prefix and has exactly one more {param} segment
+	// Case-insensitive match for non-trailing-slash paths
+	if !strings.HasSuffix(path, "/") {
+		lowerPath := strings.ToLower(path)
+		for swaggerPath := range swaggerPaths {
+			if strings.ToLower(swaggerPath) == lowerPath {
+				return swaggerPath
+			}
+		}
+		return path
+	}
+
+	// Trailing-slash: look for a Swagger path that starts with this prefix and has exactly one more {param} segment
+	lowerPath := strings.ToLower(path)
 	for swaggerPath := range swaggerPaths {
-		if strings.HasPrefix(swaggerPath, path) {
-			remainder := strings.TrimPrefix(swaggerPath, path)
+		if strings.HasPrefix(strings.ToLower(swaggerPath), lowerPath) {
+			remainder := swaggerPath[len(path):]
 			// Match if remainder is a single path parameter like "{scriptId}"
 			if strings.HasPrefix(remainder, "{") && strings.HasSuffix(remainder, "}") && !strings.Contains(remainder, "/") {
 				return swaggerPath

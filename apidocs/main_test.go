@@ -228,23 +228,23 @@ func TestDetectEndpointsFromProxy(t *testing.T) {
 			expected: []string{"GET /api/v2/scripts/{scriptId}"},
 		},
 		{
-			name: "custom_api_client Do with typed response",
-			content: `result, resp, err := customapi.Do[platformclientv2.Guide](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/scripts/", nil, nil)`,
+			name:     "custom_api_client Do with typed response",
+			content:  `result, resp, err := customapi.Do[platformclientv2.Guide](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/scripts/", nil, nil)`,
 			expected: []string{"GET /api/v2/scripts/{scriptId}"},
 		},
 		{
-			name: "custom_api_client DoNoResponse",
-			content: `resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/scripts/" + id, nil, nil)`,
+			name:     "custom_api_client DoNoResponse",
+			content:  `resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/scripts/" + id, nil, nil)`,
 			expected: []string{"DELETE /api/v2/scripts/{scriptId}"},
 		},
 		{
-			name: "custom_api_client DoRaw",
-			content: `raw, resp, err := customapi.DoRaw(ctx, p.customApiClient, customapi.MethodPost, "/api/v2/scripts/published", body, nil)`,
+			name:     "custom_api_client DoRaw",
+			content:  `raw, resp, err := customapi.DoRaw(ctx, p.customApiClient, customapi.MethodPost, "/api/v2/scripts/published", body, nil)`,
 			expected: []string{"POST /api/v2/scripts/published"},
 		},
 		{
-			name: "custom_api_client DoWithAcceptHeader",
-			content: `raw, resp, err := customapi.DoWithAcceptHeader(ctx, p.customApiClient, customapi.MethodGet, "/api/v2/scripts", nil, nil, "text/csv")`,
+			name:     "custom_api_client DoWithAcceptHeader",
+			content:  `raw, resp, err := customapi.DoWithAcceptHeader(ctx, p.customApiClient, customapi.MethodGet, "/api/v2/scripts", nil, nil, "text/csv")`,
 			expected: []string{"GET /api/v2/scripts"},
 		},
 		{
@@ -284,7 +284,6 @@ resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDele
 		})
 	}
 }
-
 
 func TestNormalizeRawPath(t *testing.T) {
 	swaggerPaths := map[string]bool{
@@ -1378,8 +1377,8 @@ func TestBuildAnchor(t *testing.T) {
 		path     string
 		expected string
 	}{
-		{"GET", "/api/v2/scripts", "get--api-v2-scripts"},
-		{"DELETE", "/api/v2/scripts/{scriptId}", "delete--api-v2-scripts--scriptId-"},
+		{"GET", "/api/v2/scripts", "get-api-v2-scripts"},
+		{"DELETE", "/api/v2/scripts/{scriptId}", "delete-api-v2-scripts--scriptId-"},
 	}
 
 	for _, tt := range tests {
