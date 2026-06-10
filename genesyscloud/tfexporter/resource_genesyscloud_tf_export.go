@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -195,6 +196,14 @@ func ResourceTfExport() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ForceNew:    true,
+			},
+			"max_concurrent_pages": {
+				Description:  "Maximum pages to fetch in parallel when listing resources. A value of 1 keeps sequential pagination. Higher values help exports with many pages; for few pages, sequential is often as fast or faster. Increase token_pool_size with this value so each parallel page can acquire its own OAuth token.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      1,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(provider.DefaultMaxConcurrentPages, provider.MaxConcurrentPages),
 			},
 		},
 	}

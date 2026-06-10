@@ -10,6 +10,28 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
 )
 
+const (
+	// DefaultMaxConcurrentPages is sequential pagination (no parallel page fetches).
+	DefaultMaxConcurrentPages = 1
+	// MaxConcurrentPages is the upper limit for genesyscloud_tf_export.max_concurrent_pages.
+	MaxConcurrentPages = 75
+)
+
+type maxConcurrentPagesContextKey struct{}
+
+// WithMaxConcurrentPages stores a per-request page concurrency limit in context.
+// Set by genesyscloud_tf_export; defaults to sequential pagination when unset.
+func WithMaxConcurrentPages(ctx context.Context, maxConcurrentPages int) context.Context {
+	return context.WithValue(ctx, maxConcurrentPagesContextKey{}, maxConcurrentPages)
+}
+
+func resolveMaxConcurrentPages(ctx context.Context) int {
+	if v, ok := ctx.Value(maxConcurrentPagesContextKey{}).(int); ok && v > 0 {
+		return v
+	}
+	return DefaultMaxConcurrentPages
+}
+
 // FetchPageFunc fetches a single page of entities using the supplied SDK client configuration.
 type FetchPageFunc[T any] func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]T, *platformclientv2.APIResponse, error)
 
@@ -38,7 +60,7 @@ func FetchPagesConcurrently[T any](
 		return fetchRemainingPagesSequentially(ctx, firstPage, firstResp, totalPages, primaryClientConfig, fetchPage)
 	}
 
-	maxConcurrentPages := SdkClientPool.GetMaxConcurrentPages()
+	maxConcurrentPages := resolveMaxConcurrentPages(ctx)
 	if maxConcurrentPages <= 1 {
 		return fetchRemainingPagesSequentially(ctx, firstPage, firstResp, totalPages, primaryClientConfig, fetchPage)
 	}
