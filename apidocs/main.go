@@ -61,8 +61,9 @@ type ResourcePermissions struct {
 
 // PermissionsData represents the complete permissions data structure
 type PermissionsData struct {
-	Version   string                `json:"version"`
-	Resources []ResourcePermissions `json:"resources"`
+	Version     string                `json:"version"`
+	Resources   []ResourcePermissions `json:"resources"`
+	DataSources []ResourcePermissions `json:"data_sources"`
 }
 
 // docsFolderProcessor represents a structure to pass to the processDocsFolder function
@@ -71,6 +72,7 @@ type docsFolderProcessor struct {
 	examplesFolder  string
 	apiDocsTag      string
 	auditOnly       bool
+	isDataSource    bool
 	ignoredExamples []string
 	swaggerSpec     *SwaggerSpec
 	opMap           map[string]APIEndpoint
@@ -116,8 +118,9 @@ func main() {
 	var errors []string
 	ignoredExamples := examples.GetIgnoredResources()
 
-	// Slice to collect all resource permissions
-	var allResourcePermissions []ResourcePermissions
+	// Slices to collect permissions separately for resources and data sources
+	var resourcePermissions []ResourcePermissions
+	var dataSourcePermissions []ResourcePermissions
 
 	// Fetch Swagger specification once for all resources
 	fmt.Println("Loading Swagger specification...")
@@ -141,14 +144,15 @@ func main() {
 		examplesFolder:  resourceExampleFolder,
 		apiDocsTag:      apiDocsTag,
 		auditOnly:       *auditOnly,
+		isDataSource:    false,
 		ignoredExamples: ignoredExamples,
 		swaggerSpec:     swaggerSpec,
 		opMap:           opMap,
-		allPerms:        allResourcePermissions,
+		allPerms:        resourcePermissions,
 		missingExamples: &missingExamples,
 		errors:          &errors,
 	}
-	allResourcePermissions = processDocsFolder(processResourceDocs)
+	resourcePermissions = processDocsFolder(processResourceDocs)
 	fmt.Printf("Processed all resources\n")
 
 	// Process data sources
@@ -158,21 +162,22 @@ func main() {
 		examplesFolder:  dataSourceExampleFolder,
 		apiDocsTag:      apiDocsTag,
 		auditOnly:       *auditOnly,
+		isDataSource:    true,
 		ignoredExamples: ignoredExamples,
 		swaggerSpec:     swaggerSpec,
 		opMap:           opMap,
-		allPerms:        allResourcePermissions,
+		allPerms:        dataSourcePermissions,
 		missingExamples: &missingExamples,
 		errors:          &errors,
 	}
-	allResourcePermissions = processDocsFolder(processDataSourceDocs)
+	dataSourcePermissions = processDocsFolder(processDataSourceDocs)
 	fmt.Printf("Processed all data sources\n")
 
 	// Write permissions data to JSON file
-	if !*auditOnly && len(allResourcePermissions) > 0 {
+	if !*auditOnly && (len(resourcePermissions) > 0 || len(dataSourcePermissions) > 0) {
 		fmt.Println()
 		fmt.Println("Writing permissions data to JSON file...")
-		if err := writePermissionsJSON(allResourcePermissions, outputDir, outputFilename, version); err != nil {
+		if err := writePermissionsJSON(resourcePermissions, dataSourcePermissions, outputDir, outputFilename, version); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: Failed to write permissions JSON: %v\n", err)
 		} else {
 			outputFile := fmt.Sprintf("%s-%s.json", outputFilename, version)
@@ -239,7 +244,7 @@ func processDocsFolder(docs docsFolderProcessor) []ResourcePermissions {
 		// Audit proxy and update apis.md with detected endpoints
 		apiFileName := fmt.Sprintf("%s/apis.md", examplesDir)
 		if docs.opMap != nil {
-			updateApisMdFromProxy(resourceName, apiFileName, docs.opMap, docs.errors)
+			updateApisMdFromProxy(resourceName, apiFileName, docs.opMap, docs.isDataSource, docs.errors)
 		}
 
 		// Read the (potentially updated) apis.md file
@@ -315,7 +320,7 @@ func processAuditOnly(docs docsFolderProcessor) []ResourcePermissions {
 		}
 		apiFileName := filepath.Join(docs.examplesFolder, resourceName, "apis.md")
 		if docs.opMap != nil {
-			updateApisMdFromProxy(resourceName, apiFileName, docs.opMap, docs.errors)
+			updateApisMdFromProxy(resourceName, apiFileName, docs.opMap, docs.isDataSource, docs.errors)
 		}
 	}
 
@@ -348,7 +353,7 @@ func writeDocFile(fullFilePath, apiDocsTag, enhancedContent string) (bool, error
 
 // updateApisMdFromProxy reads source file paths from the <!-- sources --> comment in apis.md,
 // scans those files for API endpoints, and updates apis.md with any missing endpoints.
-func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]APIEndpoint, errors *[]string) {
+func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]APIEndpoint, isDataSource bool, errors *[]string) {
 	// Read current apis.md
 	var currentContent string
 	if data, err := os.ReadFile(apisMdFile); err == nil {
@@ -420,6 +425,10 @@ func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]API
 
 	// Combine documented and missing, then sort by path first, then method
 	allEndpoints := append(documentedEndpoints, missing...)
+	// For data sources, only keep GET endpoints
+	if isDataSource {
+		allEndpoints = filterGETEndpoints(allEndpoints)
+	}
 	if len(allEndpoints) == 0 {
 		return
 	}
@@ -466,16 +475,19 @@ func buildAnchor(method, path string) string {
 }
 
 // writePermissionsJSON writes the permissions data to a JSON file
-func writePermissionsJSON(permissions []ResourcePermissions, outputDir, filename, version string) error {
-	// Sort by resource type
-	sort.Slice(permissions, func(i, j int) bool {
-		return permissions[i].ResourceType < permissions[j].ResourceType
+func writePermissionsJSON(resources, dataSources []ResourcePermissions, outputDir, filename, version string) error {
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].ResourceType < resources[j].ResourceType
+	})
+	sort.Slice(dataSources, func(i, j int) bool {
+		return dataSources[i].ResourceType < dataSources[j].ResourceType
 	})
 
 	// Create the data structure
 	data := PermissionsData{
-		Version:   version,
-		Resources: permissions,
+		Version:     version,
+		Resources:   resources,
+		DataSources: dataSources,
 	}
 
 	// Marshal to JSON with indentation
@@ -826,6 +838,17 @@ func extractPermissionsAndScopes(endpoints []APIEndpoint, spec *SwaggerSpec) str
 	}
 
 	return result.String()
+}
+
+// filterGETEndpoints returns only endpoints with GET method.
+func filterGETEndpoints(endpoints []APIEndpoint) []APIEndpoint {
+	var filtered []APIEndpoint
+	for _, ep := range endpoints {
+		if strings.ToUpper(ep.Method) == "GET" || strings.ToLower(ep.Method) == "get" {
+			filtered = append(filtered, ep)
+		}
+	}
+	return filtered
 }
 
 // extractResourcePermissions extracts permissions and scopes for a resource and returns structured data

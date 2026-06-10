@@ -22,6 +22,15 @@ func TestPermissionsDataStructure(t *testing.T) {
 				Endpoints:    []string{"GET /api/v2/test"},
 			},
 		},
+		DataSources: []ResourcePermissions{
+			{
+				ResourceType: "genesyscloud_test_resource",
+				ResourceName: "test_resource",
+				Permissions:  []string{"test:permission:view"},
+				Scopes:       []string{"test-scope"},
+				Endpoints:    []string{"GET /api/v2/test"},
+			},
+		},
 	}
 
 	jsonData, err := json.MarshalIndent(testData, "", "  ")
@@ -39,6 +48,9 @@ func TestPermissionsDataStructure(t *testing.T) {
 	}
 	if len(decoded.Resources) != 1 {
 		t.Errorf("Expected 1 resource, got %d", len(decoded.Resources))
+	}
+	if len(decoded.DataSources) != 1 {
+		t.Errorf("Expected 1 data source, got %d", len(decoded.DataSources))
 	}
 	resource := decoded.Resources[0]
 	if resource.ResourceType != "genesyscloud_test_resource" {
@@ -58,7 +70,16 @@ func TestPermissionsDataStructure(t *testing.T) {
 func TestWritePermissionsJSON(t *testing.T) {
 	tempDir := t.TempDir()
 
-	testData := []ResourcePermissions{
+	resources := []ResourcePermissions{
+		{
+			ResourceType: "genesyscloud_test_resource",
+			ResourceName: "test_resource",
+			Permissions:  []string{"test:permission:view"},
+			Scopes:       []string{"test-scope"},
+			Endpoints:    []string{"GET /api/v2/test"},
+		},
+	}
+	dataSources := []ResourcePermissions{
 		{
 			ResourceType: "genesyscloud_test_resource",
 			ResourceName: "test_resource",
@@ -68,7 +89,7 @@ func TestWritePermissionsJSON(t *testing.T) {
 		},
 	}
 
-	err := writePermissionsJSON(testData, tempDir, "test_permissions", "1.0.0")
+	err := writePermissionsJSON(resources, dataSources, tempDir, "test_permissions", "1.0.0")
 	if err != nil {
 		t.Fatalf("Failed to write permissions JSON: %v", err)
 	}
@@ -92,6 +113,9 @@ func TestWritePermissionsJSON(t *testing.T) {
 	}
 	if len(decoded.Resources) != 1 {
 		t.Errorf("Expected 1 resource, got %d", len(decoded.Resources))
+	}
+	if len(decoded.DataSources) != 1 {
+		t.Errorf("Expected 1 data source, got %d", len(decoded.DataSources))
 	}
 }
 
@@ -411,7 +435,7 @@ func (p *proxy) doStuff() {
 	}
 
 	var errors []string
-	updateApisMdFromProxy("genesyscloud_script", apisMdFile, opMap, &errors)
+	updateApisMdFromProxy("genesyscloud_script", apisMdFile, opMap, false, &errors)
 
 	result, err := os.ReadFile(apisMdFile)
 	if err != nil {
@@ -462,7 +486,7 @@ func TestUpdateApisMdFromProxy_NoSourcesSkips(t *testing.T) {
 	}
 
 	var errors []string
-	updateApisMdFromProxy("genesyscloud_tf_export", apisMdFile, opMap, &errors)
+	updateApisMdFromProxy("genesyscloud_tf_export", apisMdFile, opMap, false, &errors)
 
 	// File should be unchanged
 	result, _ := os.ReadFile(apisMdFile)
@@ -489,7 +513,7 @@ func TestUpdateApisMdFromProxy_MissingComment(t *testing.T) {
 
 	opMap := map[string]APIEndpoint{}
 	var errors []string
-	updateApisMdFromProxy("genesyscloud_test_resource", apisMdFile, opMap, &errors)
+	updateApisMdFromProxy("genesyscloud_test_resource", apisMdFile, opMap, false, &errors)
 
 	if len(errors) != 1 {
 		t.Fatalf("Expected 1 error, got %d", len(errors))
@@ -515,7 +539,7 @@ func TestUpdateApisMdFromProxy_InvalidSourceFile(t *testing.T) {
 
 	opMap := map[string]APIEndpoint{}
 	var errors []string
-	updateApisMdFromProxy("genesyscloud_test_resource", apisMdFile, opMap, &errors)
+	updateApisMdFromProxy("genesyscloud_test_resource", apisMdFile, opMap, false, &errors)
 
 	if len(errors) != 1 {
 		t.Fatalf("Expected 1 error, got %d", len(errors))
