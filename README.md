@@ -170,6 +170,57 @@ $ make testunit
 
 If you want to go off of an example, we recommend using the [external contacts](https://github.com/MyPureCloud/terraform-provider-genesyscloud/tree/main/genesyscloud/external_contacts) package.
 
+### Custom API Client
+
+When a proxy function needs to call a Genesys Cloud API endpoint that doesn't have a generated SDK method, use the `custom_api_client` package (`genesyscloud/custom_api_client`) instead of calling `APIClient.CallAPI()` directly or constructing raw `http.Client` requests. This package handles authorization headers, content-type negotiation, query parameter encoding, error handling, and SDK debug logging context automatically.
+
+```go
+import customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+```
+
+**Available functions:**
+
+| Function | Use case |
+|----------|----------|
+| `Do[T]` | Typed JSON response — unmarshals into `T` |
+| `DoNoResponse` | No response body (DELETE, PUT with no return) |
+| `DoRaw` | Raw `[]byte` response for custom unmarshaling |
+| `DoWithAcceptHeader` | Non-JSON responses (e.g., `text/csv`) |
+
+**Example — adding to a proxy struct:**
+
+```go
+type myProxy struct {
+    clientConfig    *platformclientv2.Configuration
+    myApi           *platformclientv2.MyApi
+    customApiClient *customapi.Client
+}
+
+func newMyProxy(clientConfig *platformclientv2.Configuration) *myProxy {
+    return &myProxy{
+        clientConfig:    clientConfig,
+        myApi:           platformclientv2.NewMyApiWithConfig(clientConfig),
+        customApiClient: customapi.NewClient(clientConfig, ResourceType),
+    }
+}
+```
+
+**Example — making a call:**
+
+```go
+// Typed response
+result, resp, err := customapi.Do[platformclientv2.MyEntity](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/my/endpoint", nil, nil)
+
+// With query params
+qp := customapi.NewQueryParams(map[string]string{"pageSize": "100", "pageNumber": "1"})
+result, resp, err := customapi.Do[platformclientv2.MyListing](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/my/endpoint", nil, qp)
+
+// Delete with no response
+resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/my/endpoint/"+id, nil, nil)
+```
+
+See the [package documentation](genesyscloud/custom_api_client/custom_api_client.go) for full details and additional examples.
+
 ### Documentation Generation
 
 The provider documentation is automatically generated from resource schemas and example files. Understanding this process is crucial when adding new resources.

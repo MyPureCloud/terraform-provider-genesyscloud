@@ -196,6 +196,13 @@ func ResourceTfExport() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 			},
+			"export_deprecated": {
+				Description: "Export attributes that are marked as being Deprecated. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
 		},
 	}
 }
