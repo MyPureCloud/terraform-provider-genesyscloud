@@ -316,11 +316,7 @@ func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId st
 	return p.api.GetFlowsJob(jobId, []string{"messages"})
 }
 
-// getAllArchitectFlowsFn is the implementation function for GetAllFlows
-func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
-	baseURL := p.clientConfig.BasePath + "/api/v2/flows"
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
+func buildFlowListURL(basePath string, name string, varType []string, pageSize, pageNum int) (string, error) {
 	params := url.Values{}
 	if name != "" {
 		params.Add("name", name)
@@ -329,41 +325,69 @@ func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name str
 		params.Add("type", t)
 	}
 	params.Add("includeSchemas", "true")
+	params.Set("pageSize", fmt.Sprintf("%d", pageSize))
+	params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
 
+	u, err := url.Parse(basePath + "/api/v2/flows")
+	if err != nil {
+		return "", fmt.Errorf("error parsing URL: %w", err)
+	}
+	u.RawQuery = params.Encode()
+	return u.String(), nil
+}
+
+// getAllArchitectFlowsFn is the implementation function for GetAllFlows
+func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	const pageSize = 100
 	client := &http.Client{}
 	var allFlows []platformclientv2.Flow
 
-	params.Set("pageSize", "100")
-	params.Set("pageNumber", "1")
-
-	u, err := url.Parse(baseURL)
+	firstPageURL, err := buildFlowListURL(p.clientConfig.BasePath, name, varType, pageSize, 1)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing URL: %v", err)
+		return nil, nil, err
 	}
-	u.RawQuery = params.Encode()
 
-	flows, apiResp, err := makeFlowRequest(ctx, client, u.String(), p)
+	flows, apiResp, err := makeFlowRequest(ctx, client, firstPageURL, p)
 	if err != nil {
 		return nil, apiResp, err
 	}
 
-	if flows.Entities != nil {
-		allFlows = append(allFlows, *flows.Entities...)
+	if flows.Entities == nil || len(*flows.Entities) == 0 {
+		return &allFlows, apiResp, nil
 	}
 
-	for pageNum := 2; pageNum <= *flows.PageCount; pageNum++ {
-		ctx = provider.EnsureResourceContext(ctx, ResourceType)
-		params.Set("pageNumber", fmt.Sprintf("%d", pageNum))
-		u.RawQuery = params.Encode()
+	allFlows = append(allFlows, *flows.Entities...)
 
-		pageFlows, _, err := makeFlowRequest(ctx, client, u.String(), p)
-		if err != nil {
-			return nil, apiResp, err
-		}
+	totalPages := 1
+	if flows.PageCount != nil {
+		totalPages = *flows.PageCount
+	}
 
-		if pageFlows.Entities != nil {
-			allFlows = append(allFlows, *pageFlows.Entities...)
-		}
+	allFlows, apiResp, err = provider.FetchPagesConcurrently(ctx, ResourceType, allFlows, apiResp, totalPages, p.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newArchitectFlowProxy(clientConfig)
+			pageURL, pageErr := buildFlowListURL(pageProxy.clientConfig.BasePath, name, varType, pageSize, pageNum)
+			if pageErr != nil {
+				return nil, apiResp, pageErr
+			}
+
+			pageFlows, pageResp, pageErr := makeFlowRequest(ctx, client, pageURL, pageProxy)
+			if pageErr != nil {
+				return nil, pageResp, fmt.Errorf("failed to get page of architect flows: %w", pageErr)
+			}
+
+			if pageFlows.Entities == nil || len(*pageFlows.Entities) == 0 {
+				return []platformclientv2.Flow{}, pageResp, nil
+			}
+
+			return *pageFlows.Entities, pageResp, nil
+		},
+	)
+	if err != nil {
+		return nil, apiResp, err
 	}
 
 	for _, flow := range allFlows {

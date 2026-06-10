@@ -281,7 +281,6 @@ func NewThreadSafeGenesysCloudResourceExporter(d *schema.ResourceData, ctx conte
 		exporter.maxConcurrentOps = maxClients.(int)
 	}
 
-
 	return exporter
 }
 
