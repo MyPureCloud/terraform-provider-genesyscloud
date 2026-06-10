@@ -3,6 +3,7 @@ package business_rules_decision_table
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -308,6 +309,10 @@ func createDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTable
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	_, resp, err := p.businessRulesApi.PostBusinessrulesDecisiontableVersionRows(tableId, version, *row)
+	if err != nil && (resp == nil || resp.StatusCode == 0) {
+		// No HTTP response (transport/timeout/retry-exhaustion): not captured by the SDK error log or the 429/5xx file mirror.
+		log.Printf("[ERROR] decision table row POST (table %s v%d) failed with no SDK response: %v", tableId, version, err)
+	}
 	return resp, err
 }
 
@@ -323,7 +328,12 @@ func getDecisionTableRowsFn(ctx context.Context, p *BusinessRulesDecisionTablePr
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.businessRulesApi.GetBusinessrulesDecisiontableVersionRows(tableId, version, pageNumber, pageSize)
+	rows, resp, err := p.businessRulesApi.GetBusinessrulesDecisiontableVersionRows(tableId, version, pageNumber, pageSize)
+	if err != nil && (resp == nil || resp.StatusCode == 0) {
+		// No HTTP response (transport/timeout/retry-exhaustion): not captured by the SDK error log or the 429/5xx file mirror.
+		log.Printf("[ERROR] decision table rows GET (table %s v%d page %s) failed with no SDK response: %v", tableId, version, pageNumber, err)
+	}
+	return rows, resp, err
 }
 
 func createDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {

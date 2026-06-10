@@ -2,6 +2,7 @@ package business_rules_decision_table
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -92,14 +93,21 @@ func createBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Adding %d rows to decision table %s version %d", len(rows), tableId, tableVersion)
 	err = addRowsToVersion(ctx, proxy, tableId, tableVersion, rows)
 	if err != nil {
-		proxy.deleteBusinessRulesDecisionTable(ctx, tableId)
+		rollbackDecisionTable(tableId, proxy)
+		if errors.Is(err, context.DeadlineExceeded) || ctx.Err() != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf(
+				"create of decision table %s timed out after %s while adding %d rows (one POST per row); "+
+					"the partially-created table has been rolled back (deleted). Increase the create timeout in the "+
+					"resource's Terraform timeouts block (e.g. timeouts { create = \"180m\" }) and re-apply: %s",
+				tableId, d.Timeout(schema.TimeoutCreate), len(rows), err), nil)
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add rows: %s", err), nil)
 	}
 	log.Printf("Successfully added %d rows to decision table %s version %d", len(rows), tableId, tableVersion)
 
 	// Publish the version
 	if err := publishDecisionTableVersion(ctx, proxy, tableId, tableVersion); err != nil {
-		proxy.deleteBusinessRulesDecisionTable(ctx, tableId)
+		rollbackDecisionTable(tableId, proxy)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish version: %s", err), nil)
 	}
 	log.Printf("Successfully published decision table %s version %d", tableId, tableVersion)
@@ -107,6 +115,20 @@ func createBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceDat
 	d.SetId(tableId)
 	log.Printf("Created business rules decision table %s", tableId)
 	return readBusinessRulesDecisionTable(ctx, d, meta)
+}
+
+// rollbackDecisionTable deletes a partially-created decision table on a fresh,
+// detached context. The create request context may already be expired/cancelled
+// (e.g. on a create timeout), which would prevent the cleanup DELETE from being
+// sent and leave the table orphaned in the org.
+func rollbackDecisionTable(tableId string, proxy *BusinessRulesDecisionTableProxy) {
+	cleanupCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	if _, derr := proxy.deleteBusinessRulesDecisionTable(cleanupCtx, tableId); derr != nil {
+		log.Printf("[WARN] rollback delete failed for decision table %s: %s", tableId, derr)
+		return
+	}
+	log.Printf("Rolled back (deleted) partially-created decision table %s", tableId)
 }
 
 // readBusinessRulesDecisionTable reads a Genesys Cloud business rules decision table

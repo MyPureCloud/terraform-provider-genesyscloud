@@ -262,7 +262,10 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Read: schema.DefaultTimeout(8 * time.Minute),
+			Create: schema.DefaultTimeout(120 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+			Update: schema.DefaultTimeout(120 * time.Minute),
+			Delete: schema.DefaultTimeout(8 * time.Minute),
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
