@@ -17,6 +17,7 @@ Export block label: "{type}_{name}"
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/architect/dependencytracking/consumedresources](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-dependencytracking-consumedresources)
 * [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows)
 * [POST /api/v2/flows/actions/unlock](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-actions-unlock)
 * [POST /api/v2/flows/export/jobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-export-jobs)
@@ -35,6 +36,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 The following permissions are required to use this resource:
 
+* `architect:dependencyTracking:view`
 * `architect:flow:delete`
 * `architect:flow:search`
 * `architect:flow:unlock`

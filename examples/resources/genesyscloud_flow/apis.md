@@ -1,6 +1,8 @@
 <!-- sources
 genesyscloud/architect_flow/resource_genesyscloud_architect_flow_proxy.go
+genesyscloud/dependent_consumers/genesyscloud_dependent_consumer_proxy.go
 -->
+* [GET /api/v2/architect/dependencytracking/consumedresources](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-dependencytracking-consumedresources)
 * [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows)
 * [POST /api/v2/flows/actions/unlock](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-actions-unlock)
 * [POST /api/v2/flows/export/jobs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-export-jobs)
