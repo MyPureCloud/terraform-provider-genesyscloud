@@ -397,6 +397,11 @@ func updateApisMdFromProxy(resourceName, apisMdFile string, opMap map[string]API
 		allDetected = append(allDetected, detectEndpointsFromProxy(string(proxyContent), opMap)...)
 	}
 
+	// For data sources, only consider GET endpoints
+	if isDataSource {
+		allDetected = filterGETEndpoints(allDetected)
+	}
+
 	// Parse what's already documented
 	documentedEndpoints := parseAPIEndpoints(currentContent)
 	documentedSet := make(map[string]bool)
