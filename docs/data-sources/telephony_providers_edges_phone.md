@@ -15,24 +15,15 @@ Data source for Genesys Cloud Phone. Select a phone by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/stations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-stations)
-* [DELETE /api/v2/stations/{stationId}/associateduser](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-stations--stationId--associateduser)
 * [GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phonebasesettings--phoneBaseId-)
 * [GET /api/v2/telephony/providers/edges/phones](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phones)
-* [POST /api/v2/telephony/providers/edges/phones](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-phones)
-* [DELETE /api/v2/telephony/providers/edges/phones/{phoneId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-phones--phoneId-)
 * [GET /api/v2/telephony/providers/edges/phones/{phoneId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-phones--phoneId-)
-* [PUT /api/v2/telephony/providers/edges/phones/{phoneId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-phones--phoneId-)
-* [PUT /api/v2/users/{userId}/station/associatedstation/{stationId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-users--userId--station-associatedstation--stationId-)
-* [PUT /api/v2/users/{userId}/station/defaultstation/{stationId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-users--userId--station-defaultstation--stationId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `telephony:otherStationAssociation:edit`
-* `telephony:phone:assign`
 * `telephony:plugin:all`
-* `telephony:station:disassociate`
 
 The following OAuth scopes are required to use this resource:
 
@@ -40,7 +31,6 @@ The following OAuth scopes are required to use this resource:
 * `stations:readonly`
 * `telephony`
 * `telephony:readonly`
-* `users`
 
 
 ## Example Usage

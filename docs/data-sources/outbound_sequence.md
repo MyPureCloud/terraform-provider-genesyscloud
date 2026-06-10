@@ -15,18 +15,12 @@ Genesys Cloud outbound sequence data source. Select an outbound sequence by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-sequences)
-* [POST /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-sequences)
-* [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-sequences--sequenceId-)
 * [GET /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-sequences--sequenceId-)
-* [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-sequences--sequenceId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `outbound:campaignSequence:add`
-* `outbound:campaignSequence:delete`
-* `outbound:campaignSequence:edit`
 * `outbound:campaignSequence:view`
 
 The following OAuth scopes are required to use this resource:

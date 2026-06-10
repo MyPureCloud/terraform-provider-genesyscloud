@@ -15,18 +15,12 @@ Data source for Genesys Cloud Outbound File Specification Template. Select a fil
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/filespecificationtemplates](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-filespecificationtemplates)
-* [POST /api/v2/outbound/filespecificationtemplates](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-filespecificationtemplates)
-* [DELETE /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-filespecificationtemplates--fileSpecificationTemplateId-)
 * [GET /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-filespecificationtemplates--fileSpecificationTemplateId-)
-* [PUT /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-filespecificationtemplates--fileSpecificationTemplateId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `outbound:fileSpecificationTemplate:add`
-* `outbound:fileSpecificationTemplate:delete`
-* `outbound:fileSpecificationTemplate:edit`
 * `outbound:fileSpecificationTemplate:view`
 
 The following OAuth scopes are required to use this resource:

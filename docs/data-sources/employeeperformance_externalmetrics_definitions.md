@@ -15,18 +15,12 @@ Data source for Genesys Cloud Employeeperformance Externalmetrics Definition. Se
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions)
-* [POST /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-employeeperformance-externalmetrics-definitions)
-* [DELETE /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 * [GET /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
-* [PATCH /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `employeePerformance:externalMetricDefinition:add`
-* `employeePerformance:externalMetricDefinition:delete`
-* `employeePerformance:externalMetricDefinition:edit`
 * `employeePerformance:externalMetricDefinition:view`
 
 The following OAuth scopes are required to use this resource:

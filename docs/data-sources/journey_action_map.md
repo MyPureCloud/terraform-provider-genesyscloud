@@ -15,34 +15,20 @@ Data source for Genesys Cloud Action Map. Select a journey action map by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/architect/schedulegroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedulegroups)
-* [DELETE /api/v2/architect/schedulegroups/{scheduleGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-schedulegroups--scheduleGroupId-)
 * [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-schedules)
-* [DELETE /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-schedules--scheduleId-)
 * [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows)
-* [DELETE /api/v2/flows/{flowId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows--flowId-)
 * [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps)
-* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-actionmaps)
-* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-actionmaps--actionMapId-)
 * [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-actionmaps--actionMapId-)
-* [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-journey-actionmaps--actionMapId-)
 * [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-segments)
-* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-segments--segmentId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `architect:flow:delete`
 * `architect:flow:view`
-* `journey:actionmap:add`
-* `journey:actionmap:delete`
-* `journey:actionmap:edit`
 * `journey:actionmap:view`
-* `journey:segment:delete`
 * `journey:segment:view`
-* `routing:schedule:delete`
 * `routing:schedule:view`
-* `routing:scheduleGroup:delete`
 * `routing:scheduleGroup:view`
 
 The following OAuth scopes are required to use this resource:

@@ -14,33 +14,19 @@ Data source for Genesys Cloud OAuth Clients. Select an OAuth Client by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations-credentials)
-* [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials--credentialId-)
-* [PUT /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/oauth/clients](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-oauth-clients)
-* [POST /api/v2/oauth/clients](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-oauth-clients)
-* [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-oauth-clients--clientId-)
 * [GET /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-oauth-clients--clientId-)
-* [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-oauth-clients--clientId-)
 * [GET /api/v2/tokens/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-tokens-me)
 * [GET /api/v2/users/me](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users-me)
 * [GET /api/v2/users/{subjectId}/roles](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-users--subjectId--roles)
-* [PUT /api/v2/users/{subjectId}/roles](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-users--subjectId--roles)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `authorization:grant:add`
 * `authorization:grant:view`
-* `integrations:integration:add`
-* `integrations:integration:delete`
-* `integrations:integration:edit`
 * `integrations:integration:view`
-* `oauth:client:add`
-* `oauth:client:delete`
-* `oauth:client:edit`
 * `oauth:client:view`
 
 The following OAuth scopes are required to use this resource:

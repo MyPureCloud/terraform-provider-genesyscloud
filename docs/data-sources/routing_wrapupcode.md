@@ -15,18 +15,12 @@ Data source for Genesys Cloud Wrap-up Code. Select a wrap-up code by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/routing/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-wrapupcodes)
-* [POST /api/v2/routing/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-wrapupcodes)
-* [DELETE /api/v2/routing/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-wrapupcodes--codeId-)
 * [GET /api/v2/routing/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-wrapupcodes--codeId-)
-* [PUT /api/v2/routing/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-wrapupcodes--codeId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `routing:wrapupCode:add`
-* `routing:wrapupCode:delete`
-* `routing:wrapupCode:edit`
 * `routing:wrapupCode:view`
 
 The following OAuth scopes are required to use this resource:

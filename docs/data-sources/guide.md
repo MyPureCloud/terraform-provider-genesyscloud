@@ -15,15 +15,12 @@ Data source for Genesys Cloud Guide. Select a guide by name.
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides)
-* [POST /api/v2/guides](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-guides)
-* [DELETE /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-guides--guideId-)
 * [GET /api/v2/guides/{guideId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-guides--guideId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `aiStudio:guide:add`
 * `aiStudio:guide:view`
 
 The following OAuth scopes are required to use this resource:

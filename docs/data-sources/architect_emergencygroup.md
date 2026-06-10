@@ -15,18 +15,12 @@ Data source for Genesys Cloud Emergency Groups. Select an emergency group by nam
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-emergencygroups)
-* [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-emergencygroups)
-* [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-emergencygroups--emergencyGroupId-)
 * [GET /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-emergencygroups--emergencyGroupId-)
-* [PUT /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-emergencygroups--emergencyGroupId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `routing:emergencyGroup:add`
-* `routing:emergencyGroup:delete`
-* `routing:emergencyGroup:edit`
 * `routing:emergencyGroup:view`
 
 The following OAuth scopes are required to use this resource:

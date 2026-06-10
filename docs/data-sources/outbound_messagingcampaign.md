@@ -16,14 +16,8 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 * [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-digitalrulesets)
 * [GET /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-messagingcampaigns)
-* [POST /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-messagingcampaigns)
-* [DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
-* [PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-messagingcampaigns--messagingCampaignId-)
-* [POST /api/v2/routing/email/outbound/domains](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-email-outbound-domains)
 * [GET /api/v2/routing/email/outbound/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-email-outbound-domains--domainId-)
-* [PUT /api/v2/routing/email/outbound/domains/{domainId}/activation](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-email-outbound-domains--domainId--activation)
-* [POST /api/v2/routing/sms/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-sms-phonenumbers)
 * [GET /api/v2/routing/sms/phonenumbers/{phoneNumberId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-sms-phonenumbers--phoneNumberId-)
 
 ## Permissions and Scopes
@@ -31,21 +25,11 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 The following permissions are required to use this resource:
 
 * `outbound:digitalRuleSet:view`
-* `outbound:emailCampaign:add`
-* `outbound:emailCampaign:delete`
-* `outbound:emailCampaign:edit`
 * `outbound:emailCampaign:view`
-* `outbound:messagingCampaign:add`
-* `outbound:messagingCampaign:delete`
-* `outbound:messagingCampaign:edit`
 * `outbound:messagingCampaign:view`
-* `outbound:whatsAppCampaign:add`
-* `outbound:whatsAppCampaign:delete`
-* `outbound:whatsAppCampaign:edit`
 * `outbound:whatsAppCampaign:view`
 * `routing:email:manage`
 * `routing:email:view`
-* `sms:phoneNumber:add`
 * `sms:phoneNumber:view`
 
 The following OAuth scopes are required to use this resource:

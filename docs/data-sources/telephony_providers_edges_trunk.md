@@ -15,12 +15,10 @@ Data source for Genesys Cloud Trunk. Select a trunk by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
-* [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
 * [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
 * [GET /api/v2/telephony/providers/edges/trunks](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunks)
 * [GET /api/v2/telephony/providers/edges/trunks/{trunkId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunks--trunkId-)
 * [GET /api/v2/telephony/providers/edges/{edgeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges--edgeId-)
-* [PUT /api/v2/telephony/providers/edges/{edgeId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges--edgeId-)
 
 ## Permissions and Scopes
 

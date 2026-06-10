@@ -16,7 +16,6 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 * [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions)
 * [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId-)
-* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations-actions--actionId-)
 * [GET /api/v2/integrations/actions/{actionId}/templates/{fileName}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-actions--actionId--templates--fileName-)
 * [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations-credentials--credentialId-)
 * [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
@@ -27,7 +26,6 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 The following permissions are required to use this resource:
 
 * `bridge:actions:view`
-* `integrations:action:edit`
 * `integrations:action:view`
 * `integrations:integration:view`
 

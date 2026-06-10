@@ -15,18 +15,12 @@ Data source for Genesys Cloud Outbound Contact List Filters. Select a contact li
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/contactlistfilters](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlistfilters)
-* [POST /api/v2/outbound/contactlistfilters](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-contactlistfilters)
-* [DELETE /api/v2/outbound/contactlistfilters/{contactListFilterId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-contactlistfilters--contactListFilterId-)
 * [GET /api/v2/outbound/contactlistfilters/{contactListFilterId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-contactlistfilters--contactListFilterId-)
-* [PUT /api/v2/outbound/contactlistfilters/{contactListFilterId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-contactlistfilters--contactListFilterId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `outbound:contactListFilter:add`
-* `outbound:contactListFilter:delete`
-* `outbound:contactListFilter:edit`
 * `outbound:contactListFilter:view`
 
 The following OAuth scopes are required to use this resource:

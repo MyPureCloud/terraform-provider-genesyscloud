@@ -15,18 +15,12 @@ Genesys Cloud outbound digitalruleset data source. Select an outbound digitalrul
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-digitalrulesets)
-* [POST /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-outbound-digitalrulesets)
-* [DELETE /api/v2/outbound/digitalrulesets/{digitalRuleSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-outbound-digitalrulesets--digitalRuleSetId-)
 * [GET /api/v2/outbound/digitalrulesets/{digitalRuleSetId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-outbound-digitalrulesets--digitalRuleSetId-)
-* [PUT /api/v2/outbound/digitalrulesets/{digitalRuleSetId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-outbound-digitalrulesets--digitalRuleSetId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `outbound:digitalRuleSet:add`
-* `outbound:digitalRuleSet:delete`
-* `outbound:digitalRuleSet:edit`
 * `outbound:digitalRuleSet:view`
 
 The following OAuth scopes are required to use this resource:

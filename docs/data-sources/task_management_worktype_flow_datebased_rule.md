@@ -15,18 +15,12 @@ Genesys Cloud task management datebased rule data source. Select a task manageme
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules)
-* [POST /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules)
-* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
-* [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `workitems:flowRuleDateBased:add`
-* `workitems:flowRuleDateBased:delete`
-* `workitems:flowRuleDateBased:edit`
 * `workitems:flowRuleDateBased:view`
 
 The following OAuth scopes are required to use this resource:

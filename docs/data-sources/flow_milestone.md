@@ -15,18 +15,12 @@ Genesys Cloud flow milestone data source. Select a flow milestone by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/flows/milestones](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-milestones)
-* [POST /api/v2/flows/milestones](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-milestones)
-* [DELETE /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-flows-milestones--milestoneId-)
 * [GET /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-milestones--milestoneId-)
-* [PUT /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-flows-milestones--milestoneId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `architect:flowMilestone:add`
-* `architect:flowMilestone:delete`
-* `architect:flowMilestone:edit`
 * `architect:flowMilestone:view`
 
 The following OAuth scopes are required to use this resource:

@@ -15,18 +15,12 @@ Genesys Cloud ai studio summary setting data source. Select an ai studio summary
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/conversations/summaries/settings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-summaries-settings)
-* [POST /api/v2/conversations/summaries/settings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-conversations-summaries-settings)
-* [DELETE /api/v2/conversations/summaries/settings/{summarySettingId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-conversations-summaries-settings--summarySettingId-)
 * [GET /api/v2/conversations/summaries/settings/{summarySettingId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-summaries-settings--summarySettingId-)
-* [PUT /api/v2/conversations/summaries/settings/{summarySettingId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-conversations-summaries-settings--summarySettingId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `aiStudio:summaryConfig:add`
-* `aiStudio:summaryConfig:delete`
-* `aiStudio:summaryConfig:edit`
 * `aiStudio:summaryConfig:view`
 
 The following OAuth scopes are required to use this resource:

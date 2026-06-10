@@ -15,16 +15,12 @@ Genesys Cloud flow outcome data source. Select a flow outcome by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-outcomes)
-* [POST /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-flows-outcomes)
 * [GET /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-flows-outcomes--flowOutcomeId-)
-* [PUT /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-flows-outcomes--flowOutcomeId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `architect:flowOutcome:add`
-* `architect:flowOutcome:edit`
 * `architect:flowOutcome:view`
 
 The following OAuth scopes are required to use this resource:

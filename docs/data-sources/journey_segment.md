@@ -15,18 +15,12 @@ Data source for Genesys Cloud Journey Segment. Select a journey segment by name
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-segments)
-* [POST /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-journey-segments)
-* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-journey-segments--segmentId-)
 * [GET /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-journey-segments--segmentId-)
-* [PATCH /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-journey-segments--segmentId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `journey:segment:add`
-* `journey:segment:delete`
-* `journey:segment:edit`
 * `journey:segment:view`
 
 The following OAuth scopes are required to use this resource:

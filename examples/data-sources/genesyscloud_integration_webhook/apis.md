@@ -2,9 +2,5 @@
 genesyscloud/integration/genesyscloud_integration_proxy.go
 -->
 * [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations)
-* [POST /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-integrations)
-* [DELETE /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-integrations--integrationId-)
 * [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId-)
-* [PATCH /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-integrations--integrationId-)
 * [GET /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-integrations--integrationId--config-current)
-* [PUT /api/v2/integrations/{integrationId}/config/current](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-integrations--integrationId--config-current)

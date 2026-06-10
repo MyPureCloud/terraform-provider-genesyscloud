@@ -15,18 +15,12 @@ Genesys Cloud dictionary feedback data source. Select an dictionary feedback by 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/speechandtextanalytics/dictionaryfeedback](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-dictionaryfeedback)
-* [POST /api/v2/speechandtextanalytics/dictionaryfeedback](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-speechandtextanalytics-dictionaryfeedback)
-* [DELETE /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-speechandtextanalytics-dictionaryfeedback--dictionaryFeedbackId-)
 * [GET /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-speechandtextanalytics-dictionaryfeedback--dictionaryFeedbackId-)
-* [PUT /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-speechandtextanalytics-dictionaryfeedback--dictionaryFeedbackId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `speechAndTextAnalytics:dictionaryterm:add`
-* `speechAndTextAnalytics:dictionaryterm:delete`
-* `speechAndTextAnalytics:dictionaryterm:edit`
 * `speechAndTextAnalytics:dictionaryterm:view`
 
 The following OAuth scopes are required to use this resource:

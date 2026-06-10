@@ -14,19 +14,12 @@ Genesys Cloud task management worktype data source. Select a task management wor
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/taskmanagement/worktypes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes)
-* [POST /api/v2/taskmanagement/worktypes/query](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-taskmanagement-worktypes-query)
-* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-taskmanagement-worktypes--worktypeId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
-* [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-worktypes--worktypeId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `workitems:worktype:add`
-* `workitems:worktype:delete`
-* `workitems:worktype:edit`
 * `workitems:worktype:view`
 
 The following OAuth scopes are required to use this resource:

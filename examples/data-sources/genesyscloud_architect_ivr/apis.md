@@ -2,7 +2,4 @@
 genesyscloud/architect_ivr/genesyscloud_architect_ivr_proxy.go
 -->
 * [GET /api/v2/architect/ivrs](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-ivrs)
-* [POST /api/v2/architect/ivrs](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-ivrs)
-* [DELETE /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-ivrs--ivrId-)
 * [GET /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-ivrs--ivrId-)
-* [PUT /api/v2/architect/ivrs/{ivrId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-architect-ivrs--ivrId-)

@@ -16,19 +16,13 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 * [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions)
 * [GET /api/v2/webdeployments/deployments](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-deployments)
-* [POST /api/v2/webdeployments/deployments](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-webdeployments-deployments)
-* [DELETE /api/v2/webdeployments/deployments/{deploymentId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-webdeployments-deployments--deploymentId-)
 * [GET /api/v2/webdeployments/deployments/{deploymentId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-deployments--deploymentId-)
-* [PUT /api/v2/webdeployments/deployments/{deploymentId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-webdeployments-deployments--deploymentId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `webDeployments:configuration:view`
-* `webDeployments:deployment:add`
-* `webDeployments:deployment:delete`
-* `webDeployments:deployment:edit`
 * `webDeployments:deployment:view`
 
 The following OAuth scopes are required to use this resource:

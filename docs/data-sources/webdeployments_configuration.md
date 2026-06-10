@@ -15,21 +15,14 @@ Data source for Genesys Cloud Web Deployments Configurations. Select a configura
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations)
-* [POST /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-webdeployments-configurations)
-* [DELETE /api/v2/webdeployments/configurations/{configurationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-webdeployments-configurations--configurationId-)
 * [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions)
 * [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
 * [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-webdeployments-configurations--configurationId--versions--versionId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `webDeployments:configuration:add`
-* `webDeployments:configuration:delete`
-* `webDeployments:configuration:edit`
 * `webDeployments:configuration:view`
 
 The following OAuth scopes are required to use this resource:

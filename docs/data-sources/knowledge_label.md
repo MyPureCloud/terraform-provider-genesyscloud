@@ -15,24 +15,16 @@ Data source for Genesys Cloud Knowledge Base Label. Select a label by name.
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-dependencytracking-build)
-* [POST /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-dependencytracking-build)
 * [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels)
-* [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels)
-* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
-* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `architect:dependencyTracking:rebuild`
 * `architect:dependencyTracking:view`
 * `knowledge:knowledgebase:view`
-* `knowledge:label:add`
-* `knowledge:label:delete`
-* `knowledge:label:edit`
 * `knowledge:label:view`
 
 The following OAuth scopes are required to use this resource:

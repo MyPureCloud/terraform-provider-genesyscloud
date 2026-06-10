@@ -15,18 +15,12 @@ Genesys Cloud conversations messaging integrations open data source. Select an c
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-open)
-* [POST /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-conversations-messaging-integrations-open)
-* [DELETE /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-conversations-messaging-integrations-open--integrationId-)
 * [GET /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-integrations-open--integrationId-)
-* [PATCH /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-conversations-messaging-integrations-open--integrationId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `messaging:integration:add`
-* `messaging:integration:delete`
-* `messaging:integration:edit`
 * `messaging:integration:view`
 
 The following OAuth scopes are required to use this resource:

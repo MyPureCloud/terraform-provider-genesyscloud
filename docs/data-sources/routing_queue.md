@@ -15,25 +15,14 @@ Data source for Genesys Cloud Routing Queues. Select a queue by name.
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues)
-* [POST /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-queues)
-* [DELETE /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-queues--queueId-)
 * [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId-)
-* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-queues--queueId-)
-* [POST /api/v2/routing/queues/{queueId}/members](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-queues--queueId--members)
-* [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-routing-queues--queueId--members--memberId-)
 * [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId--wrapupcodes)
-* [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-queues--queueId--wrapupcodes)
-* [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-queues--queueId--wrapupcodes--codeId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `routing:queue:add`
-* `routing:queue:delete`
-* `routing:queue:edit`
 * `routing:queue:view`
-* `routing:queueMember:manage`
 
 The following OAuth scopes are required to use this resource:
 

@@ -14,10 +14,7 @@ Data source for Genesys Cloud process automation trigger. Select a trigger by na
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/processAutomation/triggers](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-processAutomation-triggers)
-* [DELETE /api/v2/processAutomation/triggers/{triggersId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-processAutomation-triggers--triggersId-)
 * [GET /api/v2/processAutomation/triggers/{triggersId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-processAutomation-triggers--triggersId-)
-* [PUT /api/v2/processAutomation/triggers/{triggersId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-processAutomation-triggers--triggersId-)
 * [GET /api/v2/processautomation/triggers](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-processautomation-triggers)
 
 ## Permissions and Scopes

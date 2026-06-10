@@ -17,13 +17,11 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--statuses)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
-* [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-taskmanagement-worktypes--worktypeId--statuses--statusId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `workitems:status:edit`
 * `workitems:status:view`
 * `workitems:worktype:view`
 

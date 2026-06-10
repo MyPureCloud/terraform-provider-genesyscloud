@@ -2,7 +2,4 @@
 genesyscloud/employeeperformance_externalmetrics_definitions/genesyscloud_employeeperformance_externalmetrics_definitions_proxy.go
 -->
 * [GET /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions)
-* [POST /api/v2/employeeperformance/externalmetrics/definitions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-employeeperformance-externalmetrics-definitions)
-* [DELETE /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
 * [GET /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-employeeperformance-externalmetrics-definitions--metricId-)
-* [PATCH /api/v2/employeeperformance/externalmetrics/definitions/{metricId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-employeeperformance-externalmetrics-definitions--metricId-)

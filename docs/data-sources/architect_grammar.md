@@ -15,18 +15,12 @@ Data source for Genesys Cloud Architect Grammar. Select an Architect Grammar by 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/architect/grammars](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-grammars)
-* [POST /api/v2/architect/grammars](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-architect-grammars)
-* [DELETE /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-architect-grammars--grammarId-)
 * [GET /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-architect-grammars--grammarId-)
-* [PATCH /api/v2/architect/grammars/{grammarId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-architect-grammars--grammarId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `architect:grammar:add`
-* `architect:grammar:delete`
-* `architect:grammar:edit`
 * `architect:grammar:view`
 
 The following OAuth scopes are required to use this resource:

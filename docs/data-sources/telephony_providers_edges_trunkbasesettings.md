@@ -15,10 +15,7 @@ Data source for Genesys Cloud Trunk Base Settings. Select a trunk base settings 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunkbasesettings)
-* [POST /api/v2/telephony/providers/edges/trunkbasesettings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-telephony-providers-edges-trunkbasesettings)
-* [DELETE /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
 * [GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
-* [PUT /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-telephony-providers-edges-trunkbasesettings--trunkBaseSettingsId-)
 
 ## Permissions and Scopes
 

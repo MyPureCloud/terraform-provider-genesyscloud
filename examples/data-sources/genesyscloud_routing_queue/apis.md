@@ -3,12 +3,5 @@ genesyscloud/routing_queue/genesyscloud_routing_queue_proxy.go
 genesyscloud/routing_queue/resource_genesyscloud_routing_queue_members.go
 -->
 * [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues)
-* [POST /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-queues)
-* [DELETE /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-queues--queueId-)
 * [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId-)
-* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-routing-queues--queueId-)
-* [POST /api/v2/routing/queues/{queueId}/members](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-queues--queueId--members)
-* [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-routing-queues--queueId--members--memberId-)
 * [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-routing-queues--queueId--wrapupcodes)
-* [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-routing-queues--queueId--wrapupcodes)
-* [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-routing-queues--queueId--wrapupcodes--codeId-)

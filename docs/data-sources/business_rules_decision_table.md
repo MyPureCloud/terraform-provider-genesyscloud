@@ -14,36 +14,18 @@ Genesys Cloud business rules decision table data source. Select a business rules
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables)
 * [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables-search)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId-)
 * [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId-)
-* [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-businessrules-decisiontables--tableId-)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables--tableId--versions)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put--api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `businessrules:businessRulesSchema:view`
-* `businessrules:decisionTable:add`
-* `businessrules:decisionTable:delete`
-* `businessrules:decisionTable:edit`
-* `businessrules:decisionTable:publish`
 * `businessrules:decisionTable:search`
 * `businessrules:decisionTable:view`
-* `businessrules:decisionTableRow:add`
-* `businessrules:decisionTableRow:delete`
-* `businessrules:decisionTableRow:edit`
 * `businessrules:decisionTableRow:view`
-* `routing:queue:view`
 
 The following OAuth scopes are required to use this resource:
 

@@ -15,19 +15,13 @@ Genesys Cloud conversations messaging settings data source. Select an conversati
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/conversations/messaging/settings](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-settings)
-* [POST /api/v2/conversations/messaging/settings](https://developer.genesys.cloud/devapps/api-explorer#post--api-v2-conversations-messaging-settings)
 * [GET /api/v2/conversations/messaging/settings/default](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-settings-default)
-* [DELETE /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#delete--api-v2-conversations-messaging-settings--messageSettingId-)
 * [GET /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-conversations-messaging-settings--messageSettingId-)
-* [PATCH /api/v2/conversations/messaging/settings/{messageSettingId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-conversations-messaging-settings--messageSettingId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
-* `messaging:setting:add`
-* `messaging:setting:delete`
-* `messaging:setting:edit`
 * `messaging:setting:view`
 
 The following OAuth scopes are required to use this resource:

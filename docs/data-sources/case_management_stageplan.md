@@ -14,7 +14,6 @@ Looks up the composite Terraform id for a stageplan by caseplan_id and stage_num
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch--api-v2-casemanagement-caseplans--caseplanId--stageplans--stageplanId-)
 * [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--stageplans)
 * [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}](https://developer.genesys.cloud/devapps/api-explorer#get--api-v2-casemanagement-caseplans--caseplanId--versions--versionId--stageplans--stageplanId-)
 
@@ -22,7 +21,6 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 The following permissions are required to use this resource:
 
-* `caseManagement:stageplan:edit`
 * `caseManagement:stageplan:view`
 
 The following OAuth scopes are required to use this resource:
