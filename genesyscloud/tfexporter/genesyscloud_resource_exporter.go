@@ -154,14 +154,6 @@ type GenesysCloudResourceExporter struct {
 	splitFilesByResource bool
 }
 
-func exportContextWithPagination(ctx context.Context, d *schema.ResourceData) context.Context {
-	maxConcurrentPages := 1
-	if v, ok := d.GetOk("max_concurrent_pages"); ok {
-		maxConcurrentPages = v.(int)
-	}
-	return provider.WithMaxConcurrentPages(ctx, maxConcurrentPages)
-}
-
 func configureExporterType(ctx context.Context, d *schema.ResourceData, gre *GenesysCloudResourceExporter, filterType ExporterFilterType) {
 	switch filterType {
 	case LegacyInclude:
@@ -236,8 +228,6 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		}
 	}
 
-	gre.ctx = exportContextWithPagination(gre.ctx, d)
-
 	err := gre.setUpExportDirPath()
 	if err != nil {
 		return nil, err
@@ -291,7 +281,6 @@ func NewThreadSafeGenesysCloudResourceExporter(d *schema.ResourceData, ctx conte
 		exporter.maxConcurrentOps = maxClients.(int)
 	}
 
-	exporter.ctx = exportContextWithPagination(exporter.ctx, d)
 
 	return exporter
 }

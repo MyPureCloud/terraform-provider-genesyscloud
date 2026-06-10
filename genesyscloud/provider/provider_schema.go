@@ -20,6 +20,7 @@ const (
 	AttrTokenPoolSize       = "token_pool_size"
 	AttrTokenAcquireTimeout = "token_acquire_timeout"
 	AttrTokenInitTimeout    = "token_init_timeout"
+	AttrMaxConcurrentPages  = "max_concurrent_pages"
 	AttrSdkClientPoolDebug  = "sdk_client_pool_debug"
 	AttrCustomRetryTimeout  = "custom_retry_timeout"
 
@@ -101,6 +102,13 @@ func ProviderSchema() map[string]*schema.Schema {
 			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_INIT_TIMEOUT", DefaultInitTimeout.String()),
 			Description:  "Timeout for initializing the token pool. Can be set with the `GENESYSCLOUD_TOKEN_INIT_TIMEOUT` environment variable.",
 			ValidateFunc: validateDuration,
+		},
+		AttrMaxConcurrentPages: {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_MAX_CONCURRENT_PAGES", DefaultMaxConcurrentPages),
+			Description:  "Maximum pages to fetch in parallel when listing resources. A value of 1 keeps sequential pagination. Higher values help exports with many pages; for few pages, sequential is often as fast or faster. Increase token_pool_size with this value so each parallel page can acquire its own OAuth token. Can be set with the `GENESYSCLOUD_MAX_CONCURRENT_PAGES` environment variable.",
+			ValidateFunc: validation.IntBetween(DefaultMaxConcurrentPages, MaxConcurrentPages),
 		},
 		AttrCustomRetryTimeout: {
 			Type:        schema.TypeString,

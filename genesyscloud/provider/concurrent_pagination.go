@@ -13,14 +13,13 @@ import (
 const (
 	// DefaultMaxConcurrentPages is sequential pagination (no parallel page fetches).
 	DefaultMaxConcurrentPages = 1
-	// MaxConcurrentPages is the upper limit for genesyscloud_tf_export.max_concurrent_pages.
+	// MaxConcurrentPages is the upper limit for provider max_concurrent_pages.
 	MaxConcurrentPages = 75
 )
 
 type maxConcurrentPagesContextKey struct{}
 
-// WithMaxConcurrentPages stores a per-request page concurrency limit in context.
-// Set by genesyscloud_tf_export; defaults to sequential pagination when unset.
+// WithMaxConcurrentPages stores a per-request page concurrency limit in context (used in tests).
 func WithMaxConcurrentPages(ctx context.Context, maxConcurrentPages int) context.Context {
 	return context.WithValue(ctx, maxConcurrentPagesContextKey{}, maxConcurrentPages)
 }
@@ -29,7 +28,10 @@ func resolveMaxConcurrentPages(ctx context.Context) int {
 	if v, ok := ctx.Value(maxConcurrentPagesContextKey{}).(int); ok && v > 0 {
 		return v
 	}
-	return DefaultMaxConcurrentPages
+	if SdkClientPool == nil {
+		return DefaultMaxConcurrentPages
+	}
+	return SdkClientPool.GetMaxConcurrentPages()
 }
 
 // FetchPageFunc fetches a single page of entities using the supplied SDK client configuration.

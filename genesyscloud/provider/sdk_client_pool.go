@@ -56,11 +56,12 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	AcquireTimeout time.Duration
-	InitTimeout    time.Duration
-	MaxClients     int
-	DebugLogging   bool
-	Version        string
+	AcquireTimeout     time.Duration
+	InitTimeout        time.Duration
+	MaxClients         int
+	MaxConcurrentPages int
+	DebugLogging       bool
+	Version            string
 }
 
 type poolMetrics struct {
@@ -152,13 +153,18 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			initTimeout = parsed
 		}
 
+		maxConcurrentPages := providerConfig.Get(AttrMaxConcurrentPages).(int)
+
 		config := &SDKClientPoolConfig{
-			MaxClients:     max,
-			AcquireTimeout: acquireTimeout,
-			InitTimeout:    initTimeout,
-			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
-			Version:        version,
+			MaxClients:         max,
+			MaxConcurrentPages: maxConcurrentPages,
+			AcquireTimeout:     acquireTimeout,
+			InitTimeout:        initTimeout,
+			DebugLogging:       providerConfig.Get(AttrSdkClientPoolDebug).(bool),
+			Version:            version,
 		}
+
+		log.Printf("[PAGINATION] Provider max_concurrent_pages=%d", maxConcurrentPages)
 
 		SdkClientPool = &SDKClientPool{
 			Pool:    make(chan *platformclientv2.Configuration, max),
@@ -453,6 +459,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 func (p *SDKClientPool) GetMaxClients() int {
 	return p.config.MaxClients
+}
+
+func (p *SDKClientPool) GetMaxConcurrentPages() int {
+	return p.config.MaxConcurrentPages
 }
 
 func cleanupConfiguration(config *platformclientv2.Configuration) error {

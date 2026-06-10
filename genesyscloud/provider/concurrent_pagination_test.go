@@ -132,8 +132,9 @@ func newTestPaginationPool(maxClients int) *SDKClientPool {
 	pool := &SDKClientPool{
 		Pool: make(chan *platformclientv2.Configuration, maxClients),
 		config: &SDKClientPoolConfig{
-			MaxClients:     maxClients,
-			AcquireTimeout: time.Second,
+			MaxClients:         maxClients,
+			MaxConcurrentPages: maxClients,
+			AcquireTimeout:     time.Second,
 		},
 		metrics: &poolMetrics{},
 		done:    make(chan struct{}),
