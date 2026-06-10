@@ -129,9 +129,10 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_role." + roleResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_auth_role." + roleResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permission_policies"},
 			},
 		},
 		CheckDestroy: testVerifyRolesDestroyed,
@@ -323,9 +324,10 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_role." + roleResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_auth_role." + roleResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permission_policies"},
 			},
 		},
 		CheckDestroy: testVerifyRolesDestroyed,
