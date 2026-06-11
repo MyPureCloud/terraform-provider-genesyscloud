@@ -15,11 +15,11 @@
         "ai-studio:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/summaries/settings",
         "POST /api/v2/conversations/summaries/settings",
-        "GET /api/v2/conversations/summaries/settings/{summarySettingId}",
-        "PUT /api/v2/conversations/summaries/settings/{summarySettingId}",
         "DELETE /api/v2/conversations/summaries/settings/{summarySettingId}",
-        "GET /api/v2/conversations/summaries/settings"
+        "GET /api/v2/conversations/summaries/settings/{summarySettingId}",
+        "PUT /api/v2/conversations/summaries/settings/{summarySettingId}"
       ]
     },
     {
@@ -38,9 +38,9 @@
       "endpoints": [
         "GET /api/v2/flows/datatables",
         "POST /api/v2/flows/datatables",
+        "DELETE /api/v2/flows/datatables/{datatableId}",
         "GET /api/v2/flows/datatables/{datatableId}",
-        "PUT /api/v2/flows/datatables/{datatableId}",
-        "DELETE /api/v2/flows/datatables/{datatableId}"
+        "PUT /api/v2/flows/datatables/{datatableId}"
       ]
     },
     {
@@ -61,11 +61,13 @@
         "architect:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/flows/datatables",
+        "GET /api/v2/flows/datatables/{datatableId}",
         "GET /api/v2/flows/datatables/{datatableId}/rows",
-        "GET /api/v2/flows/datatables/{datatableId}/rows/{rowId}",
         "POST /api/v2/flows/datatables/{datatableId}/rows",
-        "PUT /api/v2/flows/datatables/{datatableId}/rows/{rowId}",
-        "DELETE /api/v2/flows/datatables/{datatableId}/rows/{rowId}"
+        "DELETE /api/v2/flows/datatables/{datatableId}/rows/{rowId}",
+        "GET /api/v2/flows/datatables/{datatableId}/rows/{rowId}",
+        "PUT /api/v2/flows/datatables/{datatableId}/rows/{rowId}"
       ]
     },
     {
@@ -83,9 +85,9 @@
       ],
       "endpoints": [
         "GET /api/v2/architect/emergencygroups",
-        "GET /api/v2/architect/emergencygroups/{emergencyGroupId}",
         "POST /api/v2/architect/emergencygroups",
         "DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}",
+        "GET /api/v2/architect/emergencygroups/{emergencyGroupId}",
         "PUT /api/v2/architect/emergencygroups/{emergencyGroupId}"
       ]
     },
@@ -124,9 +126,9 @@
       "endpoints": [
         "GET /api/v2/architect/grammars",
         "POST /api/v2/architect/grammars/{grammarId}/languages",
+        "DELETE /api/v2/architect/grammars/{grammarId}/languages/{languageCode}",
         "GET /api/v2/architect/grammars/{grammarId}/languages/{languageCode}",
         "PATCH /api/v2/architect/grammars/{grammarId}/languages/{languageCode}",
-        "DELETE /api/v2/architect/grammars/{grammarId}/languages/{languageCode}",
         "POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/dtmf",
         "POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/voice"
       ]
@@ -147,9 +149,9 @@
       "endpoints": [
         "GET /api/v2/architect/ivrs",
         "POST /api/v2/architect/ivrs",
+        "DELETE /api/v2/architect/ivrs/{ivrId}",
         "GET /api/v2/architect/ivrs/{ivrId}",
-        "PUT /api/v2/architect/ivrs/{ivrId}",
-        "DELETE /api/v2/architect/ivrs/{ivrId}"
+        "PUT /api/v2/architect/ivrs/{ivrId}"
       ]
     },
     {
@@ -213,7 +215,9 @@
         "DELETE /api/v2/architect/prompts/{promptId}",
         "GET /api/v2/architect/prompts/{promptId}",
         "PUT /api/v2/architect/prompts/{promptId}",
+        "GET /api/v2/architect/prompts/{promptId}/resources",
         "POST /api/v2/architect/prompts/{promptId}/resources",
+        "DELETE /api/v2/architect/prompts/{promptId}/resources/{languageCode}",
         "GET /api/v2/architect/prompts/{promptId}/resources/{languageCode}",
         "PUT /api/v2/architect/prompts/{promptId}/resources/{languageCode}"
       ]
@@ -232,12 +236,12 @@
         "authorization:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/authorization/divisions/home",
-        "POST /api/v2/authorization/divisions",
-        "GET /api/v2/authorization/divisions/{divisionId}",
         "GET /api/v2/authorization/divisions",
-        "PUT /api/v2/authorization/divisions/{divisionId}",
-        "DELETE /api/v2/authorization/divisions/{divisionId}"
+        "POST /api/v2/authorization/divisions",
+        "GET /api/v2/authorization/divisions/home",
+        "DELETE /api/v2/authorization/divisions/{divisionId}",
+        "GET /api/v2/authorization/divisions/{divisionId}",
+        "PUT /api/v2/authorization/divisions/{divisionId}"
       ]
     },
     {
@@ -254,12 +258,13 @@
         "authorization:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/authorization/roles",
+        "GET /api/v2/authorization/permissions",
         "GET /api/v2/authorization/roles",
-        "GET /api/v2/authorization/roles/{roleId}",
-        "PUT /api/v2/authorization/roles/{roleId}",
+        "POST /api/v2/authorization/roles",
         "PUT /api/v2/authorization/roles/default",
-        "DELETE /api/v2/authorization/roles/{roleId}"
+        "DELETE /api/v2/authorization/roles/{roleId}",
+        "GET /api/v2/authorization/roles/{roleId}",
+        "PUT /api/v2/authorization/roles/{roleId}"
       ]
     },
     {
@@ -285,18 +290,18 @@
       ],
       "endpoints": [
         "POST /api/v2/businessrules/decisiontables",
+        "GET /api/v2/businessrules/decisiontables/search",
+        "DELETE /api/v2/businessrules/decisiontables/{tableId}",
         "GET /api/v2/businessrules/decisiontables/{tableId}",
         "PATCH /api/v2/businessrules/decisiontables/{tableId}",
-        "DELETE /api/v2/businessrules/decisiontables/{tableId}",
-        "GET /api/v2/businessrules/decisiontables/search",
-        "GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}",
         "POST /api/v2/businessrules/decisiontables/{tableId}/versions",
-        "PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish",
         "DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}",
+        "GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}",
+        "PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish",
         "GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows",
         "POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows",
-        "PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}",
-        "DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}"
+        "DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}",
+        "PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}"
       ]
     },
     {
@@ -313,11 +318,135 @@
         "business-rules:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/businessrules/schemas",
         "GET /api/v2/businessrules/schemas",
+        "POST /api/v2/businessrules/schemas",
+        "DELETE /api/v2/businessrules/schemas/{schemaId}",
         "GET /api/v2/businessrules/schemas/{schemaId}",
-        "PUT /api/v2/businessrules/schemas/{schemaId}",
-        "DELETE /api/v2/businessrules/schemas/{schemaId}"
+        "PUT /api/v2/businessrules/schemas/{schemaId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_caseplan",
+      "resource_name": "case_management_caseplan",
+      "permissions": [
+        "caseManagement:caseplan:add",
+        "caseManagement:caseplan:delete",
+        "caseManagement:caseplan:edit",
+        "caseManagement:caseplan:publish",
+        "caseManagement:caseplan:view",
+        "caseManagement:caseplanDataSchemas:view",
+        "caseManagement:caseplanIntakeSettings:edit",
+        "caseManagement:caseplanIntakeSettings:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans",
+        "POST /api/v2/casemanagement/caseplans",
+        "DELETE /api/v2/casemanagement/caseplans/{caseplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}",
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}",
+        "PUT /api/v2/casemanagement/caseplans/{caseplanId}/intakesettings",
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/publish",
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/versions",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_caseplan_create_version",
+      "resource_name": "case_management_caseplan_create_version",
+      "permissions": [
+        "caseManagement:caseplan:add",
+        "caseManagement:caseplan:delete",
+        "caseManagement:caseplan:edit",
+        "caseManagement:caseplan:publish",
+        "caseManagement:caseplan:view",
+        "caseManagement:caseplanDataSchemas:view",
+        "caseManagement:caseplanIntakeSettings:edit",
+        "caseManagement:caseplanIntakeSettings:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans",
+        "POST /api/v2/casemanagement/caseplans",
+        "DELETE /api/v2/casemanagement/caseplans/{caseplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}",
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}",
+        "PUT /api/v2/casemanagement/caseplans/{caseplanId}/intakesettings",
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/publish",
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/versions",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_caseplan_publish",
+      "resource_name": "case_management_caseplan_publish",
+      "permissions": [
+        "caseManagement:caseplan:add",
+        "caseManagement:caseplan:delete",
+        "caseManagement:caseplan:edit",
+        "caseManagement:caseplan:publish",
+        "caseManagement:caseplan:view",
+        "caseManagement:caseplanDataSchemas:view",
+        "caseManagement:caseplanIntakeSettings:edit",
+        "caseManagement:caseplanIntakeSettings:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans",
+        "POST /api/v2/casemanagement/caseplans",
+        "DELETE /api/v2/casemanagement/caseplans/{caseplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}",
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}",
+        "PUT /api/v2/casemanagement/caseplans/{caseplanId}/intakesettings",
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/publish",
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/versions",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_stageplan",
+      "resource_name": "case_management_stageplan",
+      "permissions": [
+        "caseManagement:stageplan:edit",
+        "caseManagement:stageplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_stepplan",
+      "resource_name": "case_management_stepplan",
+      "permissions": [
+        "caseManagement:stepplan:edit",
+        "caseManagement:stepplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}/stepplans/{stepplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans/{stepplanId}"
       ]
     },
     {
@@ -334,11 +463,11 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/apple",
         "POST /api/v2/conversations/messaging/integrations/apple",
-        "GET /api/v2/conversations/messaging/integrations/apple/{integrationId}",
-        "PATCH /api/v2/conversations/messaging/integrations/apple/{integrationId}",
         "DELETE /api/v2/conversations/messaging/integrations/apple/{integrationId}",
-        "GET /api/v2/conversations/messaging/integrations/apple"
+        "GET /api/v2/conversations/messaging/integrations/apple/{integrationId}",
+        "PATCH /api/v2/conversations/messaging/integrations/apple/{integrationId}"
       ]
     },
     {
@@ -355,11 +484,11 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/instagram",
         "POST /api/v2/conversations/messaging/integrations/instagram",
-        "GET /api/v2/conversations/messaging/integrations/instagram/{integrationId}",
-        "PATCH /api/v2/conversations/messaging/integrations/instagram/{integrationId}",
         "DELETE /api/v2/conversations/messaging/integrations/instagram/{integrationId}",
-        "GET /api/v2/conversations/messaging/integrations/instagram"
+        "GET /api/v2/conversations/messaging/integrations/instagram/{integrationId}",
+        "PATCH /api/v2/conversations/messaging/integrations/instagram/{integrationId}"
       ]
     },
     {
@@ -376,11 +505,11 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/open",
         "POST /api/v2/conversations/messaging/integrations/open",
-        "GET /api/v2/conversations/messaging/integrations/open/{integrationId}",
-        "PATCH /api/v2/conversations/messaging/integrations/open/{integrationId}",
         "DELETE /api/v2/conversations/messaging/integrations/open/{integrationId}",
-        "GET /api/v2/conversations/messaging/integrations/open"
+        "GET /api/v2/conversations/messaging/integrations/open/{integrationId}",
+        "PATCH /api/v2/conversations/messaging/integrations/open/{integrationId}"
       ]
     },
     {
@@ -397,12 +526,12 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/whatsapp",
         "POST /api/v2/conversations/messaging/integrations/whatsapp/embeddedsignup",
-        "GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}",
         "PATCH /api/v2/conversations/messaging/integrations/whatsapp/embeddedsignup/{integrationId}",
-        "PATCH /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}",
         "DELETE /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}",
-        "GET /api/v2/conversations/messaging/integrations/whatsapp"
+        "GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}",
+        "PATCH /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}"
       ]
     },
     {
@@ -421,9 +550,10 @@
       "endpoints": [
         "GET /api/v2/conversations/messaging/settings",
         "POST /api/v2/conversations/messaging/settings",
+        "GET /api/v2/conversations/messaging/settings/default",
+        "DELETE /api/v2/conversations/messaging/settings/{messageSettingId}",
         "GET /api/v2/conversations/messaging/settings/{messageSettingId}",
-        "PATCH /api/v2/conversations/messaging/settings/{messageSettingId}",
-        "DELETE /api/v2/conversations/messaging/settings/{messageSettingId}"
+        "PATCH /api/v2/conversations/messaging/settings/{messageSettingId}"
       ]
     },
     {
@@ -439,9 +569,9 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/conversations/messaging/settings/default",
         "GET /api/v2/conversations/messaging/settings/default",
-        "PUT /api/v2/conversations/messaging/settings/default",
-        "DELETE /api/v2/conversations/messaging/settings/default"
+        "PUT /api/v2/conversations/messaging/settings/default"
       ]
     },
     {
@@ -458,11 +588,11 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/messaging/supportedcontent",
         "POST /api/v2/conversations/messaging/supportedcontent",
-        "GET /api/v2/conversations/messaging/supportedcontent/{supportedContentId}",
-        "PATCH /api/v2/conversations/messaging/supportedcontent/{supportedContentId}",
         "DELETE /api/v2/conversations/messaging/supportedcontent/{supportedContentId}",
-        "GET /api/v2/conversations/messaging/supportedcontent"
+        "GET /api/v2/conversations/messaging/supportedcontent/{supportedContentId}",
+        "PATCH /api/v2/conversations/messaging/supportedcontent/{supportedContentId}"
       ]
     },
     {
@@ -477,8 +607,8 @@
         "messaging:readonly"
       ],
       "endpoints": [
-        "PUT /api/v2/conversations/messaging/supportedcontent/default",
-        "GET /api/v2/conversations/messaging/supportedcontent/default"
+        "GET /api/v2/conversations/messaging/supportedcontent/default",
+        "PUT /api/v2/conversations/messaging/supportedcontent/default"
       ]
     },
     {
@@ -526,10 +656,12 @@
         "externalContacts:contact:delete",
         "externalContacts:contact:edit",
         "externalContacts:contact:view",
+        "externalContacts:externalOrganization:view",
         "relate:contact:add",
         "relate:contact:delete",
         "relate:contact:edit",
-        "relate:contact:view"
+        "relate:contact:view",
+        "relate:externalOrganization:view"
       ],
       "scopes": [
         "external-contacts",
@@ -538,9 +670,11 @@
       "endpoints": [
         "GET /api/v2/externalcontacts/contacts",
         "POST /api/v2/externalcontacts/contacts",
+        "DELETE /api/v2/externalcontacts/contacts/{contactId}",
         "GET /api/v2/externalcontacts/contacts/{contactId}",
         "PUT /api/v2/externalcontacts/contacts/{contactId}",
-        "DELETE /api/v2/externalcontacts/contacts/{contactId}"
+        "GET /api/v2/externalcontacts/organizations/{externalOrganizationId}",
+        "GET /api/v2/externalcontacts/scan/contacts"
       ]
     },
     {
@@ -561,9 +695,9 @@
       "endpoints": [
         "GET /api/v2/externalcontacts/externalsources",
         "POST /api/v2/externalcontacts/externalsources",
+        "DELETE /api/v2/externalcontacts/externalsources/{externalSourceId}",
         "GET /api/v2/externalcontacts/externalsources/{externalSourceId}",
-        "PUT /api/v2/externalcontacts/externalsources/{externalSourceId}",
-        "DELETE /api/v2/externalcontacts/externalsources/{externalSourceId}"
+        "PUT /api/v2/externalcontacts/externalsources/{externalSourceId}"
       ]
     },
     {
@@ -586,30 +720,49 @@
       "endpoints": [
         "GET /api/v2/externalcontacts/organizations",
         "POST /api/v2/externalcontacts/organizations",
+        "DELETE /api/v2/externalcontacts/organizations/{externalOrganizationId}",
         "GET /api/v2/externalcontacts/organizations/{externalOrganizationId}",
         "PUT /api/v2/externalcontacts/organizations/{externalOrganizationId}",
-        "DELETE /api/v2/externalcontacts/organizations/{externalOrganizationId}"
+        "GET /api/v2/externalcontacts/scan/organizations"
       ]
     },
     {
       "resource_type": "genesyscloud_flow",
       "resource_name": "flow",
       "permissions": [
+        "architect:dependencyTracking:view",
         "architect:flow:delete",
+        "architect:flow:search",
+        "architect:flow:unlock",
         "architect:flow:view",
+        "architect:flowLogLevel:add",
+        "architect:flowLogLevel:delete",
+        "architect:flowLogLevel:edit",
+        "architect:flowLogLevel:view",
         "architect:job:create",
-        "architect:job:view"
+        "architect:job:view",
+        "architect:jobExport:create",
+        "architect:jobExport:view"
       ],
       "scopes": [
         "architect",
         "architect:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/flows/jobs",
+        "GET /api/v2/architect/dependencytracking/consumedresources",
         "GET /api/v2/flows",
-        "GET /api/v2/flows/{flowId}",
+        "POST /api/v2/flows/actions/unlock",
+        "POST /api/v2/flows/export/jobs",
+        "GET /api/v2/flows/export/jobs/{jobId}",
+        "GET /api/v2/flows/instances/settings/loglevels",
+        "POST /api/v2/flows/jobs",
         "GET /api/v2/flows/jobs/{jobId}",
-        "DELETE /api/v2/flows/{flowId}"
+        "DELETE /api/v2/flows/{flowId}",
+        "GET /api/v2/flows/{flowId}",
+        "DELETE /api/v2/flows/{flowId}/instances/settings/loglevels",
+        "GET /api/v2/flows/{flowId}/instances/settings/loglevels",
+        "POST /api/v2/flows/{flowId}/instances/settings/loglevels",
+        "PUT /api/v2/flows/{flowId}/instances/settings/loglevels"
       ]
     },
     {
@@ -628,10 +781,10 @@
       ],
       "endpoints": [
         "GET /api/v2/flows/instances/settings/loglevels",
-        "POST /api/v2/flows/{flowId}/instances/settings/loglevels",
+        "DELETE /api/v2/flows/{flowId}/instances/settings/loglevels",
         "GET /api/v2/flows/{flowId}/instances/settings/loglevels",
-        "PUT /api/v2/flows/{flowId}/instances/settings/loglevels",
-        "DELETE /api/v2/flows/{flowId}/instances/settings/loglevels"
+        "POST /api/v2/flows/{flowId}/instances/settings/loglevels",
+        "PUT /api/v2/flows/{flowId}/instances/settings/loglevels"
       ]
     },
     {
@@ -677,17 +830,22 @@
     {
       "resource_type": "genesyscloud_greeting",
       "resource_name": "greeting",
-      "permissions": [],
+      "permissions": [
+        "greetings:greeting:download",
+        "greetings:groupGreeting:download"
+      ],
       "scopes": [
         "greetings",
         "greetings:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/greetings",
-        "GET /api/v2/greetings/{greetingId}",
         "GET /api/v2/greetings",
+        "POST /api/v2/greetings",
+        "DELETE /api/v2/greetings/{greetingId}",
+        "GET /api/v2/greetings/{greetingId}",
         "PUT /api/v2/greetings/{greetingId}",
-        "DELETE /api/v2/greetings/{greetingId}"
+        "GET /api/v2/greetings/{greetingId}/downloads",
+        "GET /api/v2/greetings/{greetingId}/groups/downloads"
       ]
     },
     {
@@ -696,14 +854,17 @@
       "permissions": [],
       "scopes": [
         "greetings",
-        "greetings:readonly"
+        "greetings:readonly",
+        "users",
+        "users:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/users/{userId}/greetings",
+        "DELETE /api/v2/greetings/{greetingId}",
         "GET /api/v2/greetings/{greetingId}",
-        "GET /api/v2/users/{userId}/greetings",
         "PUT /api/v2/greetings/{greetingId}",
-        "DELETE /api/v2/greetings/{greetingId}"
+        "GET /api/v2/users",
+        "GET /api/v2/users/{userId}/greetings",
+        "POST /api/v2/users/{userId}/greetings"
       ]
     },
     {
@@ -724,13 +885,14 @@
       ],
       "endpoints": [
         "GET /api/v2/groups",
-        "GET /api/v2/groups/{groupId}",
         "POST /api/v2/groups",
-        "PUT /api/v2/groups/{groupId}",
+        "POST /api/v2/groups/search",
         "DELETE /api/v2/groups/{groupId}",
+        "GET /api/v2/groups/{groupId}",
+        "PUT /api/v2/groups/{groupId}",
         "GET /api/v2/groups/{groupId}/individuals",
-        "POST /api/v2/groups/{groupId}/members",
         "DELETE /api/v2/groups/{groupId}/members",
+        "POST /api/v2/groups/{groupId}/members",
         "GET /api/v2/voicemail/groups/{groupId}/policy",
         "PATCH /api/v2/voicemail/groups/{groupId}/policy"
       ]
@@ -738,17 +900,25 @@
     {
       "resource_type": "genesyscloud_group_greeting",
       "resource_name": "group_greeting",
-      "permissions": [],
+      "permissions": [
+        "greetings:greeting:download",
+        "greetings:groupGreeting:download"
+      ],
       "scopes": [
         "greetings",
-        "greetings:readonly"
+        "greetings:readonly",
+        "groups",
+        "groups:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/groups/{groupId}/greetings",
+        "DELETE /api/v2/greetings/{greetingId}",
         "GET /api/v2/greetings/{greetingId}",
-        "GET /api/v2/groups/{groupId}/greetings",
         "PUT /api/v2/greetings/{greetingId}",
-        "DELETE /api/v2/greetings/{greetingId}"
+        "GET /api/v2/greetings/{greetingId}/downloads",
+        "GET /api/v2/greetings/{greetingId}/groups/downloads",
+        "GET /api/v2/groups",
+        "GET /api/v2/groups/{groupId}/greetings",
+        "POST /api/v2/groups/{groupId}/greetings"
       ]
     },
     {
@@ -764,8 +934,8 @@
         "authorization:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/authorization/subjects/{subjectId}",
         "GET /api/v2/authorization/divisions/home",
+        "GET /api/v2/authorization/subjects/{subjectId}",
         "POST /api/v2/authorization/subjects/{subjectId}/bulkadd",
         "DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}"
       ]
@@ -786,6 +956,7 @@
       "endpoints": [
         "GET /api/v2/guides",
         "POST /api/v2/guides",
+        "DELETE /api/v2/guides/{guideId}",
         "GET /api/v2/guides/{guideId}",
         "DELETE /api/v2/guides/{guideId}/jobs",
         "GET /api/v2/guides/{guideId}/jobs/{jobId}"
@@ -795,6 +966,8 @@
       "resource_type": "genesyscloud_guide_version",
       "resource_name": "guide_version",
       "permissions": [
+        "aiStudio:guide:edit",
+        "aiStudio:guide:view",
         "aiStudio:guideVersion:add",
         "aiStudio:guideVersion:edit",
         "aiStudio:guideVersion:view",
@@ -806,6 +979,10 @@
         "ai-studio:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/guides",
+        "GET /api/v2/guides/{guideId}",
+        "PATCH /api/v2/guides/{guideId}",
+        "POST /api/v2/guides/{guideId}",
         "POST /api/v2/guides/{guideId}/versions",
         "GET /api/v2/guides/{guideId}/versions/{versionId}",
         "PATCH /api/v2/guides/{guideId}/versions/{versionId}",
@@ -827,9 +1004,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/adfs",
         "GET /api/v2/identityproviders/adfs",
-        "PUT /api/v2/identityproviders/adfs",
-        "DELETE /api/v2/identityproviders/adfs"
+        "PUT /api/v2/identityproviders/adfs"
       ]
     },
     {
@@ -846,9 +1023,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/generic",
         "GET /api/v2/identityproviders/generic",
-        "PUT /api/v2/identityproviders/generic",
-        "DELETE /api/v2/identityproviders/generic"
+        "PUT /api/v2/identityproviders/generic"
       ]
     },
     {
@@ -865,9 +1042,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/gsuite",
         "GET /api/v2/identityproviders/gsuite",
-        "PUT /api/v2/identityproviders/gsuite",
-        "DELETE /api/v2/identityproviders/gsuite"
+        "PUT /api/v2/identityproviders/gsuite"
       ]
     },
     {
@@ -884,9 +1061,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/okta",
         "GET /api/v2/identityproviders/okta",
-        "PUT /api/v2/identityproviders/okta",
-        "DELETE /api/v2/identityproviders/okta"
+        "PUT /api/v2/identityproviders/okta"
       ]
     },
     {
@@ -903,9 +1080,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/onelogin",
         "GET /api/v2/identityproviders/onelogin",
-        "PUT /api/v2/identityproviders/onelogin",
-        "DELETE /api/v2/identityproviders/onelogin"
+        "PUT /api/v2/identityproviders/onelogin"
       ]
     },
     {
@@ -922,9 +1099,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/ping",
         "GET /api/v2/identityproviders/ping",
-        "PUT /api/v2/identityproviders/ping",
-        "DELETE /api/v2/identityproviders/ping"
+        "PUT /api/v2/identityproviders/ping"
       ]
     },
     {
@@ -941,9 +1118,9 @@
         "identity-providers:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/identityproviders/salesforce",
         "GET /api/v2/identityproviders/salesforce",
-        "PUT /api/v2/identityproviders/salesforce",
-        "DELETE /api/v2/identityproviders/salesforce"
+        "PUT /api/v2/identityproviders/salesforce"
       ]
     },
     {
@@ -962,13 +1139,13 @@
       "endpoints": [
         "GET /api/v2/integrations",
         "POST /api/v2/integrations",
-        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/types/{typeId}",
+        "GET /api/v2/integrations/types/{typeId}/configschemas/{configType}",
         "DELETE /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}",
         "PATCH /api/v2/integrations/{integrationId}",
         "GET /api/v2/integrations/{integrationId}/config/current",
-        "PUT /api/v2/integrations/{integrationId}/config/current",
-        "GET /api/v2/integrations/types/{typeId}",
-        "GET /api/v2/integrations/types/{typeId}/configschemas/{configType}"
+        "PUT /api/v2/integrations/{integrationId}/config/current"
       ]
     },
     {
@@ -981,7 +1158,8 @@
         "integrations:action:edit",
         "integrations:action:view",
         "integrations:actionFunction:edit",
-        "integrations:actionFunction:view"
+        "integrations:actionFunction:view",
+        "integrations:integration:view"
       ],
       "scopes": [
         "integrations",
@@ -989,16 +1167,20 @@
         "upload"
       ],
       "endpoints": [
+        "GET /api/v2/integrations",
         "GET /api/v2/integrations/actions",
         "POST /api/v2/integrations/actions",
-        "GET /api/v2/integrations/actions/{actionId}",
-        "GET /api/v2/integrations/actions/{actionId}/templates/{fileName}",
-        "PATCH /api/v2/integrations/actions/{actionId}",
+        "POST /api/v2/integrations/actions/drafts",
         "DELETE /api/v2/integrations/actions/{actionId}",
-        "POST /api/v2/integrations/actions/{actionId}/draft/function/upload",
+        "GET /api/v2/integrations/actions/{actionId}",
+        "PATCH /api/v2/integrations/actions/{actionId}",
+        "GET /api/v2/integrations/actions/{actionId}/draft",
         "GET /api/v2/integrations/actions/{actionId}/draft/function",
         "PUT /api/v2/integrations/actions/{actionId}/draft/function",
-        "POST /api/v2/integrations/actions/{actionId}/draft/publish"
+        "POST /api/v2/integrations/actions/{actionId}/draft/function/upload",
+        "POST /api/v2/integrations/actions/{actionId}/draft/publish",
+        "GET /api/v2/integrations/actions/{actionId}/function",
+        "GET /api/v2/integrations/actions/{actionId}/templates/{fileName}"
       ]
     },
     {
@@ -1018,10 +1200,10 @@
       "endpoints": [
         "GET /api/v2/integrations/actions/drafts",
         "POST /api/v2/integrations/actions/drafts",
+        "DELETE /api/v2/integrations/actions/{actionId}/draft",
         "GET /api/v2/integrations/actions/{actionId}/draft",
-        "GET /api/v2/integrations/actions/{actionId}/draft/templates/{fileName}",
         "PATCH /api/v2/integrations/actions/{actionId}/draft",
-        "DELETE /api/v2/integrations/actions/{actionId}/draft"
+        "GET /api/v2/integrations/actions/{actionId}/draft/templates/{fileName}"
       ]
     },
     {
@@ -1038,11 +1220,15 @@
         "integrations:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/integrations",
         "POST /api/v2/integrations/credentials",
+        "GET /api/v2/integrations/credentials/listing",
         "GET /api/v2/integrations/credentials/types",
+        "DELETE /api/v2/integrations/credentials/{credentialId}",
         "GET /api/v2/integrations/credentials/{credentialId}",
         "PUT /api/v2/integrations/credentials/{credentialId}",
-        "DELETE /api/v2/integrations/credentials/{credentialId}"
+        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}/config/current"
       ]
     },
     {
@@ -1061,13 +1247,14 @@
       "endpoints": [
         "GET /api/v2/integrations/actions",
         "GET /api/v2/integrations/actions/{actionId}",
-        "GET /api/v2/integrations/actions/{actionId}/templates/{fileName}",
         "PATCH /api/v2/integrations/actions/{actionId}",
-        "GET /api/v2/integrations/{integrationId}/config/current",
-        "GET /api/v2/integrations/credentials/{credentialId}",
+        "GET /api/v2/integrations/actions/{actionId}/draft",
         "PATCH /api/v2/integrations/actions/{actionId}/draft",
         "POST /api/v2/integrations/actions/{actionId}/draft/publish",
-        "GET /api/v2/integrations/actions/{actionId}/draft"
+        "GET /api/v2/integrations/actions/{actionId}/templates/{fileName}",
+        "GET /api/v2/integrations/credentials/{credentialId}",
+        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}/config/current"
       ]
     },
     {
@@ -1084,32 +1271,95 @@
         "messaging:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/facebook",
         "POST /api/v2/conversations/messaging/integrations/facebook",
-        "GET /api/v2/conversations/messaging/integrations/facebook/{integrationId}",
-        "PATCH /api/v2/conversations/messaging/integrations/facebook/{integrationId}",
         "DELETE /api/v2/conversations/messaging/integrations/facebook/{integrationId}",
-        "GET /api/v2/conversations/messaging/integrations/facebook"
+        "GET /api/v2/conversations/messaging/integrations/facebook/{integrationId}",
+        "PATCH /api/v2/conversations/messaging/integrations/facebook/{integrationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_intents_categories",
+      "resource_name": "intents_categories",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:add",
+        "externalContacts:customerIntentTaxonomy:delete",
+        "externalContacts:customerIntentTaxonomy:edit",
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/intents/categories",
+        "POST /api/v2/intents/categories",
+        "DELETE /api/v2/intents/categories/{categoryId}",
+        "GET /api/v2/intents/categories/{categoryId}",
+        "PATCH /api/v2/intents/categories/{categoryId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_intents_customerintents",
+      "resource_name": "intents_customerintents",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:add",
+        "externalContacts:customerIntentTaxonomy:delete",
+        "externalContacts:customerIntentTaxonomy:edit",
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/intents/customerintents",
+        "POST /api/v2/intents/customerintents",
+        "DELETE /api/v2/intents/customerintents/{customerIntentId}",
+        "GET /api/v2/intents/customerintents/{customerIntentId}",
+        "PATCH /api/v2/intents/customerintents/{customerIntentId}",
+        "GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents",
+        "POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/add",
+        "POST /api/v2/intents/customerintents/{customerIntentId}/sourceintents/bulk/remove"
       ]
     },
     {
       "resource_type": "genesyscloud_journey_action_map",
       "resource_name": "journey_action_map",
       "permissions": [
+        "architect:flow:delete",
+        "architect:flow:view",
         "journey:actionmap:add",
         "journey:actionmap:delete",
         "journey:actionmap:edit",
-        "journey:actionmap:view"
+        "journey:actionmap:view",
+        "journey:segment:delete",
+        "journey:segment:view",
+        "routing:schedule:delete",
+        "routing:schedule:view",
+        "routing:scheduleGroup:delete",
+        "routing:scheduleGroup:view"
       ],
       "scopes": [
+        "architect",
+        "architect:readonly",
         "journey",
         "journey:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/architect/schedulegroups",
+        "DELETE /api/v2/architect/schedulegroups/{scheduleGroupId}",
+        "GET /api/v2/architect/schedules",
+        "DELETE /api/v2/architect/schedules/{scheduleId}",
+        "GET /api/v2/flows",
+        "DELETE /api/v2/flows/{flowId}",
         "GET /api/v2/journey/actionmaps",
         "POST /api/v2/journey/actionmaps",
+        "DELETE /api/v2/journey/actionmaps/{actionMapId}",
         "GET /api/v2/journey/actionmaps/{actionMapId}",
         "PATCH /api/v2/journey/actionmaps/{actionMapId}",
-        "DELETE /api/v2/journey/actionmaps/{actionMapId}"
+        "GET /api/v2/journey/segments",
+        "DELETE /api/v2/journey/segments/{segmentId}"
       ]
     },
     {
@@ -1128,9 +1378,9 @@
       "endpoints": [
         "GET /api/v2/journey/actiontemplates",
         "POST /api/v2/journey/actiontemplates",
+        "DELETE /api/v2/journey/actiontemplates/{actionTemplateId}",
         "GET /api/v2/journey/actiontemplates/{actionTemplateId}",
-        "PATCH /api/v2/journey/actiontemplates/{actionTemplateId}",
-        "DELETE /api/v2/journey/actiontemplates/{actionTemplateId}"
+        "PATCH /api/v2/journey/actiontemplates/{actionTemplateId}"
       ]
     },
     {
@@ -1149,9 +1399,9 @@
       "endpoints": [
         "GET /api/v2/journey/outcomes",
         "POST /api/v2/journey/outcomes",
+        "DELETE /api/v2/journey/outcomes/{outcomeId}",
         "GET /api/v2/journey/outcomes/{outcomeId}",
-        "PATCH /api/v2/journey/outcomes/{outcomeId}",
-        "DELETE /api/v2/journey/outcomes/{outcomeId}"
+        "PATCH /api/v2/journey/outcomes/{outcomeId}"
       ]
     },
     {
@@ -1169,8 +1419,8 @@
       "endpoints": [
         "GET /api/v2/journey/outcomes/predictors",
         "POST /api/v2/journey/outcomes/predictors",
-        "GET /api/v2/journey/outcomes/predictors/{predictorId}",
-        "DELETE /api/v2/journey/outcomes/predictors/{predictorId}"
+        "DELETE /api/v2/journey/outcomes/predictors/{predictorId}",
+        "GET /api/v2/journey/outcomes/predictors/{predictorId}"
       ]
     },
     {
@@ -1189,9 +1439,9 @@
       "endpoints": [
         "GET /api/v2/journey/segments",
         "POST /api/v2/journey/segments",
+        "DELETE /api/v2/journey/segments/{segmentId}",
         "GET /api/v2/journey/segments/{segmentId}",
-        "PATCH /api/v2/journey/segments/{segmentId}",
-        "DELETE /api/v2/journey/segments/{segmentId}"
+        "PATCH /api/v2/journey/segments/{segmentId}"
       ]
     },
     {
@@ -1208,11 +1458,11 @@
         "journey:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/journey/views/{viewId}/schedules",
-        "GET /api/v2/journey/views/{viewId}/schedules",
-        "PUT /api/v2/journey/views/{viewId}/schedules",
+        "GET /api/v2/journey/views/schedules",
         "DELETE /api/v2/journey/views/{viewId}/schedules",
-        "GET /api/v2/journey/views/schedules"
+        "GET /api/v2/journey/views/{viewId}/schedules",
+        "POST /api/v2/journey/views/{viewId}/schedules",
+        "PUT /api/v2/journey/views/{viewId}/schedules"
       ]
     },
     {
@@ -1229,117 +1479,166 @@
         "journey:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/journey/views",
         "POST /api/v2/journey/views",
-        "POST /api/v2/journey/views/{viewId}/versions",
+        "DELETE /api/v2/journey/views/{viewId}",
         "GET /api/v2/journey/views/{viewId}",
-        "DELETE /api/v2/journey/views/{viewId}"
+        "POST /api/v2/journey/views/{viewId}/versions",
+        "PUT /api/v2/journey/views/{viewId}/versions/{versionId}"
       ]
     },
     {
       "resource_type": "genesyscloud_knowledge_category",
       "resource_name": "knowledge_category",
       "permissions": [
+        "architect:dependencyTracking:rebuild",
+        "architect:dependencyTracking:view",
         "knowledge:category:add",
         "knowledge:category:delete",
         "knowledge:category:edit",
-        "knowledge:category:view"
+        "knowledge:category:view",
+        "knowledge:knowledgebase:view"
       ],
       "scopes": [
+        "architect",
+        "architect:readonly",
         "knowledge",
         "knowledge:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "POST /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories",
         "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories",
+        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}",
-        "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}",
-        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}"
+        "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}"
       ]
     },
     {
       "resource_type": "genesyscloud_knowledge_document",
       "resource_name": "knowledge_document",
       "permissions": [
+        "architect:dependencyTracking:rebuild",
+        "architect:dependencyTracking:view",
+        "knowledge:category:view",
         "knowledge:document:add",
         "knowledge:document:delete",
         "knowledge:document:edit",
         "knowledge:document:view",
-        "knowledge:documentVersion:add"
+        "knowledge:documentVersion:add",
+        "knowledge:knowledgebase:view",
+        "knowledge:label:view"
       ],
       "scopes": [
+        "architect",
+        "architect:readonly",
         "knowledge",
         "knowledge:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "POST /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents",
         "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents",
+        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}",
         "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}",
-        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}",
-        "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions"
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations",
+        "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}"
       ]
     },
     {
       "resource_type": "genesyscloud_knowledge_document_variation",
       "resource_name": "knowledge_document_variation",
       "permissions": [
+        "architect:dependencyTracking:rebuild",
+        "architect:dependencyTracking:view",
         "knowledge:document:add",
         "knowledge:document:delete",
         "knowledge:document:edit",
-        "knowledge:document:view"
+        "knowledge:document:view",
+        "knowledge:documentVersion:add",
+        "knowledge:knowledgebase:view"
       ],
       "scopes": [
+        "architect",
+        "architect:readonly",
         "knowledge",
         "knowledge:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "POST /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations",
         "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations",
+        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}",
         "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}",
-        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}"
+        "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions"
       ]
     },
     {
       "resource_type": "genesyscloud_knowledge_knowledgebase",
       "resource_name": "knowledge_knowledgebase",
       "permissions": [
+        "architect:dependencyTracking:rebuild",
+        "architect:dependencyTracking:view",
         "knowledge:knowledgebase:add",
         "knowledge:knowledgebase:delete",
         "knowledge:knowledgebase:edit",
         "knowledge:knowledgebase:view"
       ],
       "scopes": [
+        "architect",
+        "architect:readonly",
         "knowledge",
         "knowledge:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}",
-        "POST /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/architect/dependencytracking/build",
+        "POST /api/v2/architect/dependencytracking/build",
         "GET /api/v2/knowledge/knowledgebases",
-        "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}",
-        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}"
+        "POST /api/v2/knowledge/knowledgebases",
+        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}",
+        "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}"
       ]
     },
     {
       "resource_type": "genesyscloud_knowledge_label",
       "resource_name": "knowledge_label",
       "permissions": [
+        "architect:dependencyTracking:rebuild",
+        "architect:dependencyTracking:view",
+        "knowledge:knowledgebase:view",
         "knowledge:label:add",
         "knowledge:label:delete",
         "knowledge:label:edit",
         "knowledge:label:view"
       ],
       "scopes": [
+        "architect",
+        "architect:readonly",
         "knowledge",
         "knowledge:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "POST /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels",
         "POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels",
+        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}",
         "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}",
-        "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}",
-        "DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}"
+        "PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}"
       ]
     },
     {
@@ -1349,6 +1648,7 @@
         "learning:module:add",
         "learning:module:delete",
         "learning:module:edit",
+        "learning:module:publish",
         "learning:module:view"
       ],
       "scopes": [
@@ -1360,7 +1660,8 @@
         "POST /api/v2/learning/modules",
         "DELETE /api/v2/learning/modules/{moduleId}",
         "GET /api/v2/learning/modules/{moduleId}",
-        "PUT /api/v2/learning/modules/{moduleId}"
+        "PUT /api/v2/learning/modules/{moduleId}",
+        "POST /api/v2/learning/modules/{moduleId}/publish"
       ]
     },
     {
@@ -1373,35 +1674,56 @@
       ],
       "scopes": [
         "locations",
-        "locations:readonly"
+        "locations:readonly",
+        "search:readonly"
       ],
       "endpoints": [
         "GET /api/v2/locations",
         "POST /api/v2/locations",
+        "POST /api/v2/locations/search",
+        "DELETE /api/v2/locations/{locationId}",
         "GET /api/v2/locations/{locationId}",
-        "PATCH /api/v2/locations/{locationId}",
-        "DELETE /api/v2/locations/{locationId}"
+        "PATCH /api/v2/locations/{locationId}"
       ]
     },
     {
       "resource_type": "genesyscloud_oauth_client",
       "resource_name": "oauth_client",
       "permissions": [
+        "authorization:grant:add",
+        "authorization:grant:view",
+        "integrations:integration:add",
+        "integrations:integration:delete",
+        "integrations:integration:edit",
+        "integrations:integration:view",
         "oauth:client:add",
         "oauth:client:delete",
         "oauth:client:edit",
         "oauth:client:view"
       ],
       "scopes": [
+        "authorization",
+        "authorization:readonly",
+        "integrations",
+        "integrations:readonly",
         "oauth",
-        "oauth:readonly"
+        "oauth:readonly",
+        "user-basic-info"
       ],
       "endpoints": [
+        "POST /api/v2/integrations/credentials",
+        "DELETE /api/v2/integrations/credentials/{credentialId}",
+        "GET /api/v2/integrations/credentials/{credentialId}",
+        "PUT /api/v2/integrations/credentials/{credentialId}",
         "GET /api/v2/oauth/clients",
-        "GET /api/v2/oauth/clients/{clientId}",
         "POST /api/v2/oauth/clients",
+        "DELETE /api/v2/oauth/clients/{clientId}",
+        "GET /api/v2/oauth/clients/{clientId}",
         "PUT /api/v2/oauth/clients/{clientId}",
-        "DELETE /api/v2/oauth/clients/{clientId}"
+        "GET /api/v2/tokens/me",
+        "GET /api/v2/users/me",
+        "GET /api/v2/users/{subjectId}/roles",
+        "PUT /api/v2/users/{subjectId}/roles"
       ]
     },
     {
@@ -1411,12 +1733,16 @@
         "directory:organization:admin"
       ],
       "scopes": [
+        "authorization",
+        "authorization:readonly",
         "organization",
         "organization:readonly"
       ],
       "endpoints": [
         "GET /api/v2/organizations/authentication/settings",
-        "PATCH /api/v2/organizations/authentication/settings"
+        "PATCH /api/v2/organizations/authentication/settings",
+        "GET /api/v2/tokens/timeout",
+        "PUT /api/v2/tokens/timeout"
       ]
     },
     {
@@ -1433,11 +1759,16 @@
         "presence:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/presence/definitions",
         "POST /api/v2/presence/definitions",
+        "DELETE /api/v2/presence/definitions/{definitionId}",
         "GET /api/v2/presence/definitions/{definitionId}",
         "PUT /api/v2/presence/definitions/{definitionId}",
-        "DELETE /api/v2/presence/definitions/{definitionId}",
-        "GET /api/v2/presence/definitions"
+        "GET /api/v2/presencedefinitions",
+        "POST /api/v2/presencedefinitions",
+        "DELETE /api/v2/presencedefinitions/{presenceId}",
+        "GET /api/v2/presencedefinitions/{presenceId}",
+        "PUT /api/v2/presencedefinitions/{presenceId}"
       ]
     },
     {
@@ -1473,9 +1804,9 @@
       "endpoints": [
         "GET /api/v2/outbound/attemptlimits",
         "POST /api/v2/outbound/attemptlimits",
+        "DELETE /api/v2/outbound/attemptlimits/{attemptLimitsId}",
         "GET /api/v2/outbound/attemptlimits/{attemptLimitsId}",
-        "PUT /api/v2/outbound/attemptlimits/{attemptLimitsId}",
-        "DELETE /api/v2/outbound/attemptlimits/{attemptLimitsId}"
+        "PUT /api/v2/outbound/attemptlimits/{attemptLimitsId}"
       ]
     },
     {
@@ -1515,9 +1846,9 @@
       "endpoints": [
         "GET /api/v2/outbound/callanalysisresponsesets",
         "POST /api/v2/outbound/callanalysisresponsesets",
+        "DELETE /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}",
         "GET /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}",
-        "PUT /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}",
-        "DELETE /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}"
+        "PUT /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}"
       ]
     },
     {
@@ -1534,10 +1865,10 @@
         "outbound:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/outbound/campaigns",
-        "GET /api/v2/outbound/campaigns/{campaignId}",
         "GET /api/v2/outbound/campaigns",
+        "POST /api/v2/outbound/campaigns",
         "DELETE /api/v2/outbound/campaigns/{campaignId}",
+        "GET /api/v2/outbound/campaigns/{campaignId}",
         "PUT /api/v2/outbound/campaigns/{campaignId}"
       ]
     },
@@ -1556,16 +1887,18 @@
       ],
       "endpoints": [
         "GET /api/v2/outbound/campaignrules",
-        "GET /api/v2/outbound/campaignrules/{campaignRuleId}",
         "POST /api/v2/outbound/campaignrules",
-        "PUT /api/v2/outbound/campaignrules/{campaignRuleId}",
-        "DELETE /api/v2/outbound/campaignrules/{campaignRuleId}"
+        "DELETE /api/v2/outbound/campaignrules/{campaignRuleId}",
+        "GET /api/v2/outbound/campaignrules/{campaignRuleId}",
+        "PUT /api/v2/outbound/campaignrules/{campaignRuleId}"
       ]
     },
     {
       "resource_type": "genesyscloud_outbound_contact_list",
       "resource_name": "outbound_contact_list",
       "permissions": [
+        "outbound:contact:delete",
+        "outbound:contact:view",
         "outbound:contactList:add",
         "outbound:contactList:delete",
         "outbound:contactList:edit",
@@ -1578,9 +1911,14 @@
       "endpoints": [
         "GET /api/v2/outbound/contactlists",
         "POST /api/v2/outbound/contactlists",
+        "DELETE /api/v2/outbound/contactlists/{contactListId}",
         "GET /api/v2/outbound/contactlists/{contactListId}",
         "PUT /api/v2/outbound/contactlists/{contactListId}",
-        "DELETE /api/v2/outbound/contactlists/{contactListId}"
+        "POST /api/v2/outbound/contactlists/{contactListId}/clear",
+        "POST /api/v2/outbound/contactlists/{contactListId}/contacts/search",
+        "GET /api/v2/outbound/contactlists/{contactListId}/export",
+        "POST /api/v2/outbound/contactlists/{contactListId}/export",
+        "GET /api/v2/outbound/contactlists/{contactListId}/importstatus"
       ]
     },
     {
@@ -1598,9 +1936,10 @@
       ],
       "endpoints": [
         "POST /api/v2/outbound/contactlists/{contactListId}/contacts",
+        "POST /api/v2/outbound/contactlists/{contactListId}/contacts/search",
+        "DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}",
         "GET /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}",
-        "PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}",
-        "DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}"
+        "PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}"
       ]
     },
     {
@@ -1619,9 +1958,9 @@
       "endpoints": [
         "GET /api/v2/outbound/contactlisttemplates",
         "POST /api/v2/outbound/contactlisttemplates",
+        "DELETE /api/v2/outbound/contactlisttemplates/{contactListTemplateId}",
         "GET /api/v2/outbound/contactlisttemplates/{contactListTemplateId}",
-        "PUT /api/v2/outbound/contactlisttemplates/{contactListTemplateId}",
-        "DELETE /api/v2/outbound/contactlisttemplates/{contactListTemplateId}"
+        "PUT /api/v2/outbound/contactlisttemplates/{contactListTemplateId}"
       ]
     },
     {
@@ -1640,9 +1979,9 @@
       "endpoints": [
         "GET /api/v2/outbound/contactlistfilters",
         "POST /api/v2/outbound/contactlistfilters",
+        "DELETE /api/v2/outbound/contactlistfilters/{contactListFilterId}",
         "GET /api/v2/outbound/contactlistfilters/{contactListFilterId}",
-        "PUT /api/v2/outbound/contactlistfilters/{contactListFilterId}",
-        "DELETE /api/v2/outbound/contactlistfilters/{contactListFilterId}"
+        "PUT /api/v2/outbound/contactlistfilters/{contactListFilterId}"
       ]
     },
     {
@@ -1659,17 +1998,20 @@
         "outbound:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/outbound/digitalrulesets",
         "POST /api/v2/outbound/digitalrulesets",
-        "GET /api/v2/outbound/digitalrulesets/{digitalRuleSetId}",
-        "PUT /api/v2/outbound/digitalrulesets/{digitalRuleSetId}",
         "DELETE /api/v2/outbound/digitalrulesets/{digitalRuleSetId}",
-        "GET /api/v2/outbound/digitalrulesets"
+        "GET /api/v2/outbound/digitalrulesets/{digitalRuleSetId}",
+        "PUT /api/v2/outbound/digitalrulesets/{digitalRuleSetId}"
       ]
     },
     {
       "resource_type": "genesyscloud_outbound_dnclist",
       "resource_name": "outbound_dnclist",
       "permissions": [
+        "outbound:dnc:add",
+        "outbound:dnc:delete",
+        "outbound:dnc:view",
         "outbound:dncList:add",
         "outbound:dncList:delete",
         "outbound:dncList:edit",
@@ -1682,9 +2024,13 @@
       "endpoints": [
         "GET /api/v2/outbound/dnclists",
         "POST /api/v2/outbound/dnclists",
+        "DELETE /api/v2/outbound/dnclists/{dncListId}",
         "GET /api/v2/outbound/dnclists/{dncListId}",
         "PUT /api/v2/outbound/dnclists/{dncListId}",
-        "DELETE /api/v2/outbound/dnclists/{dncListId}"
+        "GET /api/v2/outbound/dnclists/{dncListId}/export",
+        "POST /api/v2/outbound/dnclists/{dncListId}/export",
+        "DELETE /api/v2/outbound/dnclists/{dncListId}/phonenumbers",
+        "POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers"
       ]
     },
     {
@@ -1692,6 +2038,8 @@
       "resource_name": "outbound_filespecificationtemplate",
       "permissions": [
         "outbound:fileSpecificationTemplate:add",
+        "outbound:fileSpecificationTemplate:delete",
+        "outbound:fileSpecificationTemplate:edit",
         "outbound:fileSpecificationTemplate:view"
       ],
       "scopes": [
@@ -1701,15 +2049,19 @@
       "endpoints": [
         "GET /api/v2/outbound/filespecificationtemplates",
         "POST /api/v2/outbound/filespecificationtemplates",
+        "DELETE /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}",
+        "GET /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}",
+        "PUT /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}",
+        "DELETE /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}",
         "GET /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}",
-        "PUT /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}",
-        "DELETE /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}"
+        "PUT /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}"
       ]
     },
     {
       "resource_type": "genesyscloud_outbound_messagingcampaign",
       "resource_name": "outbound_messagingcampaign",
       "permissions": [
+        "outbound:digitalRuleSet:view",
         "outbound:emailCampaign:add",
         "outbound:emailCampaign:delete",
         "outbound:emailCampaign:edit",
@@ -1721,18 +2073,30 @@
         "outbound:whatsAppCampaign:add",
         "outbound:whatsAppCampaign:delete",
         "outbound:whatsAppCampaign:edit",
-        "outbound:whatsAppCampaign:view"
+        "outbound:whatsAppCampaign:view",
+        "routing:email:manage",
+        "routing:email:view",
+        "sms:phoneNumber:add",
+        "sms:phoneNumber:view"
       ],
       "scopes": [
         "outbound",
-        "outbound:readonly"
+        "outbound:readonly",
+        "routing",
+        "routing:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/outbound/messagingcampaigns",
-        "GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}",
+        "GET /api/v2/outbound/digitalrulesets",
         "GET /api/v2/outbound/messagingcampaigns",
+        "POST /api/v2/outbound/messagingcampaigns",
         "DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}",
-        "PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}"
+        "GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}",
+        "PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}",
+        "POST /api/v2/routing/email/outbound/domains",
+        "GET /api/v2/routing/email/outbound/domains/{domainId}",
+        "PUT /api/v2/routing/email/outbound/domains/{domainId}/activation",
+        "POST /api/v2/routing/sms/phonenumbers",
+        "GET /api/v2/routing/sms/phonenumbers/{phoneNumberId}"
       ]
     },
     {
@@ -1749,10 +2113,10 @@
         "outbound:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/outbound/rulesets",
-        "GET /api/v2/outbound/rulesets/{ruleSetId}",
         "GET /api/v2/outbound/rulesets",
+        "POST /api/v2/outbound/rulesets",
         "DELETE /api/v2/outbound/rulesets/{ruleSetId}",
+        "GET /api/v2/outbound/rulesets/{ruleSetId}",
         "PUT /api/v2/outbound/rulesets/{ruleSetId}"
       ]
     },
@@ -1770,10 +2134,10 @@
         "outbound:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/outbound/sequences",
-        "GET /api/v2/outbound/sequences/{sequenceId}",
         "GET /api/v2/outbound/sequences",
+        "POST /api/v2/outbound/sequences",
         "DELETE /api/v2/outbound/sequences/{sequenceId}",
+        "GET /api/v2/outbound/sequences/{sequenceId}",
         "PUT /api/v2/outbound/sequences/{sequenceId}"
       ]
     },
@@ -1798,15 +2162,40 @@
       "resource_name": "outbound_wrapupcodemappings",
       "permissions": [
         "outbound:wrapUpCodeMapping:edit",
-        "outbound:wrapUpCodeMapping:view"
+        "outbound:wrapUpCodeMapping:view",
+        "routing:wrapupCode:view"
       ],
       "scopes": [
         "outbound",
-        "outbound:readonly"
+        "outbound:readonly",
+        "routing",
+        "routing:readonly"
       ],
       "endpoints": [
         "GET /api/v2/outbound/wrapupcodemappings",
-        "PUT /api/v2/outbound/wrapupcodemappings"
+        "PUT /api/v2/outbound/wrapupcodemappings",
+        "GET /api/v2/routing/wrapupcodes"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_processautomation_trigger",
+      "resource_name": "processautomation_trigger",
+      "permissions": [
+        "processautomation:trigger:add",
+        "processautomation:trigger:delete",
+        "processautomation:trigger:edit",
+        "processautomation:trigger:view"
+      ],
+      "scopes": [
+        "process-automation",
+        "process-automation:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/processautomation/triggers",
+        "POST /api/v2/processautomation/triggers",
+        "DELETE /api/v2/processautomation/triggers/{triggerId}",
+        "GET /api/v2/processautomation/triggers/{triggerId}",
+        "PUT /api/v2/processautomation/triggers/{triggerId}"
       ]
     },
     {
@@ -1824,13 +2213,14 @@
       ],
       "endpoints": [
         "GET /api/v2/quality/forms/evaluations",
-        "GET /api/v2/quality/forms/evaluations/{formId}",
         "POST /api/v2/quality/forms/evaluations",
-        "PUT /api/v2/quality/forms/evaluations/{formId}",
+        "GET /api/v2/quality/forms/evaluations/bulk/contexts",
         "DELETE /api/v2/quality/forms/evaluations/{formId}",
+        "GET /api/v2/quality/forms/evaluations/{formId}",
+        "PUT /api/v2/quality/forms/evaluations/{formId}",
+        "GET /api/v2/quality/forms/evaluations/{formId}/versions",
         "POST /api/v2/quality/publishedforms/evaluations",
-        "GET /api/v2/quality/publishedforms/evaluations/{formId}",
-        "GET /api/v2/quality/forms/evaluations/{formId}/versions"
+        "GET /api/v2/quality/publishedforms/evaluations/{formId}"
       ]
     },
     {
@@ -1839,6 +2229,7 @@
       "permissions": [
         "quality:surveyForm:add",
         "quality:surveyForm:delete",
+        "quality:surveyForm:disable",
         "quality:surveyForm:edit",
         "quality:surveyForm:view"
       ],
@@ -1848,13 +2239,14 @@
       ],
       "endpoints": [
         "GET /api/v2/quality/forms/surveys",
-        "GET /api/v2/quality/forms/surveys/{formId}",
         "POST /api/v2/quality/forms/surveys",
-        "PUT /api/v2/quality/forms/surveys/{formId}",
         "DELETE /api/v2/quality/forms/surveys/{formId}",
+        "GET /api/v2/quality/forms/surveys/{formId}",
+        "PATCH /api/v2/quality/forms/surveys/{formId}",
+        "PUT /api/v2/quality/forms/surveys/{formId}",
+        "GET /api/v2/quality/forms/surveys/{formId}/versions",
         "POST /api/v2/quality/publishedforms/surveys",
-        "GET /api/v2/quality/publishedforms/surveys/{formId}",
-        "GET /api/v2/quality/forms/surveys/{formId}/versions"
+        "GET /api/v2/quality/publishedforms/surveys/{formId}"
       ]
     },
     {
@@ -1875,14 +2267,14 @@
         "recordings:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/recording/mediaretentionpolicies",
-        "POST /api/v2/recording/mediaretentionpolicies",
-        "GET /api/v2/recording/mediaretentionpolicies/{policyId}",
-        "PUT /api/v2/recording/mediaretentionpolicies/{policyId}",
-        "DELETE /api/v2/recording/mediaretentionpolicies/{policyId}",
         "GET /api/v2/quality/forms/evaluations/{formId}",
         "GET /api/v2/quality/forms/evaluations/{formId}/versions",
-        "GET /api/v2/quality/forms/surveys"
+        "GET /api/v2/quality/forms/surveys",
+        "GET /api/v2/recording/mediaretentionpolicies",
+        "POST /api/v2/recording/mediaretentionpolicies",
+        "DELETE /api/v2/recording/mediaretentionpolicies/{policyId}",
+        "GET /api/v2/recording/mediaretentionpolicies/{policyId}",
+        "PUT /api/v2/recording/mediaretentionpolicies/{policyId}"
       ]
     },
     {
@@ -1901,15 +2293,16 @@
       "endpoints": [
         "GET /api/v2/responsemanagement/libraries",
         "POST /api/v2/responsemanagement/libraries",
+        "DELETE /api/v2/responsemanagement/libraries/{libraryId}",
         "GET /api/v2/responsemanagement/libraries/{libraryId}",
-        "PUT /api/v2/responsemanagement/libraries/{libraryId}",
-        "DELETE /api/v2/responsemanagement/libraries/{libraryId}"
+        "PUT /api/v2/responsemanagement/libraries/{libraryId}"
       ]
     },
     {
       "resource_type": "genesyscloud_responsemanagement_response",
       "resource_name": "responsemanagement_response",
       "permissions": [
+        "responses:library:view",
         "responses:response:add",
         "responses:response:delete",
         "responses:response:edit",
@@ -1920,11 +2313,12 @@
         "response-management:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/responsemanagement/libraries",
         "GET /api/v2/responsemanagement/responses",
         "POST /api/v2/responsemanagement/responses",
+        "DELETE /api/v2/responsemanagement/responses/{responseId}",
         "GET /api/v2/responsemanagement/responses/{responseId}",
-        "PUT /api/v2/responsemanagement/responses/{responseId}",
-        "DELETE /api/v2/responsemanagement/responses/{responseId}"
+        "PUT /api/v2/responsemanagement/responses/{responseId}"
       ]
     },
     {
@@ -1933,6 +2327,7 @@
       "permissions": [
         "responseAssets:asset:add",
         "responseAssets:asset:delete",
+        "responseAssets:asset:edit",
         "responseAssets:asset:view"
       ],
       "scopes": [
@@ -1940,9 +2335,11 @@
         "response-management:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/responsemanagement/responseassets/{responseAssetId}",
+        "POST /api/v2/responsemanagement/responseassets/search",
         "POST /api/v2/responsemanagement/responseassets/uploads",
-        "DELETE /api/v2/responsemanagement/responseassets/{responseAssetId}"
+        "DELETE /api/v2/responsemanagement/responseassets/{responseAssetId}",
+        "GET /api/v2/responsemanagement/responseassets/{responseAssetId}",
+        "PUT /api/v2/responsemanagement/responseassets/{responseAssetId}"
       ]
     },
     {
@@ -1959,8 +2356,8 @@
       "endpoints": [
         "GET /api/v2/routing/email/domains",
         "POST /api/v2/routing/email/domains",
-        "GET /api/v2/routing/email/domains/{domainId}",
         "DELETE /api/v2/routing/email/domains/{domainId}",
+        "GET /api/v2/routing/email/domains/{domainId}",
         "PATCH /api/v2/routing/email/domains/{domainId}"
       ]
     },
@@ -1976,11 +2373,12 @@
         "routing:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/routing/email/domains",
         "GET /api/v2/routing/email/domains/{domainName}/routes",
         "POST /api/v2/routing/email/domains/{domainName}/routes",
+        "DELETE /api/v2/routing/email/domains/{domainName}/routes/{routeId}",
         "GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}",
-        "PUT /api/v2/routing/email/domains/{domainName}/routes/{routeId}",
-        "DELETE /api/v2/routing/email/domains/{domainName}/routes/{routeId}"
+        "PUT /api/v2/routing/email/domains/{domainName}/routes/{routeId}"
       ]
     },
     {
@@ -1996,8 +2394,8 @@
       "endpoints": [
         "GET /api/v2/routing/languages",
         "POST /api/v2/routing/languages",
-        "GET /api/v2/routing/languages/{languageId}",
-        "DELETE /api/v2/routing/languages/{languageId}"
+        "DELETE /api/v2/routing/languages/{languageId}",
+        "GET /api/v2/routing/languages/{languageId}"
       ]
     },
     {
@@ -2016,12 +2414,14 @@
         "routing:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/routing/queues",
         "POST /api/v2/routing/queues",
-        "GET /api/v2/routing/queues/{queueId}/members",
+        "DELETE /api/v2/routing/queues/{queueId}",
         "GET /api/v2/routing/queues/{queueId}",
+        "PUT /api/v2/routing/queues/{queueId}",
+        "GET /api/v2/routing/queues/{queueId}/members",
         "POST /api/v2/routing/queues/{queueId}/members",
         "PATCH /api/v2/routing/queues/{queueId}/members/{memberId}",
-        "DELETE /api/v2/routing/queues/{queueId}",
         "GET /api/v2/routing/queues/{queueId}/wrapupcodes",
         "POST /api/v2/routing/queues/{queueId}/wrapupcodes",
         "DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}"
@@ -2088,10 +2488,10 @@
         "routing:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/routing/settings",
         "GET /api/v2/routing/settings",
         "PUT /api/v2/routing/settings",
         "GET /api/v2/routing/settings/contactcenter",
-        "DELETE /api/v2/routing/settings",
         "GET /api/v2/routing/settings/contactcenter",
         "PATCH /api/v2/routing/settings/contactcenter",
         "GET /api/v2/routing/settings/transcription",
@@ -2114,8 +2514,31 @@
       "endpoints": [
         "GET /api/v2/routing/skills",
         "POST /api/v2/routing/skills",
-        "GET /api/v2/routing/skills/{skillId}",
-        "DELETE /api/v2/routing/skills/{skillId}"
+        "DELETE /api/v2/routing/skills/{skillId}",
+        "GET /api/v2/routing/skills/{skillId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_skill_group",
+      "resource_name": "routing_skill_group",
+      "permissions": [
+        "routing:skillGroup:add",
+        "routing:skillGroup:delete",
+        "routing:skillGroup:edit",
+        "routing:skillGroup:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/skillgroups",
+        "POST /api/v2/routing/skillgroups",
+        "DELETE /api/v2/routing/skillgroups/{skillGroupId}",
+        "GET /api/v2/routing/skillgroups/{skillGroupId}",
+        "PATCH /api/v2/routing/skillgroups/{skillGroupId}",
+        "GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions",
+        "POST /api/v2/routing/skillgroups/{skillGroupId}/members/divisions"
       ]
     },
     {
@@ -2149,9 +2572,9 @@
         "routing:readonly"
       ],
       "endpoints": [
+        "DELETE /api/v2/routing/utilization",
         "GET /api/v2/routing/utilization",
-        "PUT /api/v2/routing/utilization",
-        "DELETE /api/v2/routing/utilization"
+        "PUT /api/v2/routing/utilization"
       ]
     },
     {
@@ -2166,11 +2589,14 @@
         "routing:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/routing/utilization/labels",
         "GET /api/v2/routing/utilization/labels",
-        "GET /api/v2/routing/utilization/labels/{id}",
+        "POST /api/v2/routing/utilization/labels",
         "DELETE /api/v2/routing/utilization/labels/{id}",
-        "PUT /api/v2/routing/utilization/labels/{id}"
+        "GET /api/v2/routing/utilization/labels/{id}",
+        "PUT /api/v2/routing/utilization/labels/{id}",
+        "DELETE /api/v2/routing/utilization/labels/{labelId}",
+        "GET /api/v2/routing/utilization/labels/{labelId}",
+        "PUT /api/v2/routing/utilization/labels/{labelId}"
       ]
     },
     {
@@ -2188,10 +2614,10 @@
       ],
       "endpoints": [
         "GET /api/v2/routing/wrapupcodes",
-        "GET /api/v2/routing/wrapupcodes/{codeId}",
         "POST /api/v2/routing/wrapupcodes",
-        "PUT /api/v2/routing/wrapupcodes/{codeId}",
-        "DELETE /api/v2/routing/wrapupcodes/{codeId}"
+        "DELETE /api/v2/routing/wrapupcodes/{codeId}",
+        "GET /api/v2/routing/wrapupcodes/{codeId}",
+        "PUT /api/v2/routing/wrapupcodes/{codeId}"
       ]
     },
     {
@@ -2199,18 +2625,24 @@
       "resource_name": "script",
       "permissions": [
         "scripter:publishedScript:add",
+        "scripter:publishedScript:view",
         "scripter:script:view"
       ],
       "scopes": [
+        "authorization",
         "scripts",
         "scripts:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/scripts/{scriptId}/export",
+        "POST /api/v2/authorization/divisions/{divisionId}",
+        "POST /api/v2/authorization/divisions/{divisionId}/objects/{objectType}",
         "GET /api/v2/scripts",
-        "GET /api/v2/scripts/{scriptId}",
+        "GET /api/v2/scripts/published",
+        "POST /api/v2/scripts/published",
         "GET /api/v2/scripts/uploads/{uploadId}/status",
-        "POST /api/v2/scripts/published"
+        "DELETE /api/v2/scripts/{scriptId}",
+        "GET /api/v2/scripts/{scriptId}",
+        "POST /api/v2/scripts/{scriptId}/export"
       ]
     },
     {
@@ -2227,11 +2659,11 @@
         "speech-and-text-analytics:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/speechandtextanalytics/dictionaryfeedback",
         "POST /api/v2/speechandtextanalytics/dictionaryfeedback",
-        "GET /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}",
-        "PUT /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}",
         "DELETE /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}",
-        "GET /api/v2/speechandtextanalytics/dictionaryfeedback"
+        "GET /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}",
+        "PUT /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}"
       ]
     },
     {
@@ -2241,6 +2673,7 @@
         "speechAndTextAnalytics:topic:add",
         "speechAndTextAnalytics:topic:delete",
         "speechAndTextAnalytics:topic:edit",
+        "speechAndTextAnalytics:topic:publish",
         "speechAndTextAnalytics:topic:view"
       ],
       "scopes": [
@@ -2250,9 +2683,11 @@
       "endpoints": [
         "GET /api/v2/speechandtextanalytics/topics",
         "POST /api/v2/speechandtextanalytics/topics",
+        "POST /api/v2/speechandtextanalytics/topics/publishjobs",
+        "GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}",
+        "DELETE /api/v2/speechandtextanalytics/topics/{topicId}",
         "GET /api/v2/speechandtextanalytics/topics/{topicId}",
-        "PUT /api/v2/speechandtextanalytics/topics/{topicId}",
-        "DELETE /api/v2/speechandtextanalytics/topics/{topicId}"
+        "PUT /api/v2/speechandtextanalytics/topics/{topicId}"
       ]
     },
     {
@@ -2270,10 +2705,10 @@
       ],
       "endpoints": [
         "POST /api/v2/taskmanagement/workbins",
-        "GET /api/v2/taskmanagement/workbins/{workbinId}",
-        "PATCH /api/v2/taskmanagement/workbins/{workbinId}",
+        "POST /api/v2/taskmanagement/workbins/query",
         "DELETE /api/v2/taskmanagement/workbins/{workbinId}",
-        "POST /api/v2/taskmanagement/workbins/query"
+        "GET /api/v2/taskmanagement/workbins/{workbinId}",
+        "PATCH /api/v2/taskmanagement/workbins/{workbinId}"
       ]
     },
     {
@@ -2292,12 +2727,12 @@
         "workitems:readonly"
       ],
       "endpoints": [
+        "POST /api/v2/taskmanagement/workbins/query",
         "POST /api/v2/taskmanagement/workitems",
-        "GET /api/v2/taskmanagement/workitems/{workitemId}",
-        "PATCH /api/v2/taskmanagement/workitems/{workitemId}",
-        "DELETE /api/v2/taskmanagement/workitems/{workitemId}",
         "POST /api/v2/taskmanagement/workitems/query",
-        "POST /api/v2/taskmanagement/workbins/query"
+        "DELETE /api/v2/taskmanagement/workitems/{workitemId}",
+        "GET /api/v2/taskmanagement/workitems/{workitemId}",
+        "PATCH /api/v2/taskmanagement/workitems/{workitemId}"
       ]
     },
     {
@@ -2314,11 +2749,11 @@
         "workitems:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/taskmanagement/workitems/schemas",
         "GET /api/v2/taskmanagement/workitems/schemas",
+        "POST /api/v2/taskmanagement/workitems/schemas",
+        "DELETE /api/v2/taskmanagement/workitems/schemas/{schemaId}",
         "GET /api/v2/taskmanagement/workitems/schemas/{schemaId}",
-        "PUT /api/v2/taskmanagement/workitems/schemas/{schemaId}",
-        "DELETE /api/v2/taskmanagement/workitems/schemas/{schemaId}"
+        "PUT /api/v2/taskmanagement/workitems/schemas/{schemaId}"
       ]
     },
     {
@@ -2336,10 +2771,10 @@
       ],
       "endpoints": [
         "POST /api/v2/taskmanagement/worktypes",
-        "GET /api/v2/taskmanagement/worktypes/{worktypeId}",
-        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}",
+        "POST /api/v2/taskmanagement/worktypes/query",
         "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}",
-        "POST /api/v2/taskmanagement/worktypes/query"
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}",
+        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}"
       ]
     },
     {
@@ -2358,9 +2793,9 @@
       "endpoints": [
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules",
         "POST /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules",
+        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}",
-        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}",
-        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}"
+        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}"
       ]
     },
     {
@@ -2379,9 +2814,9 @@
       "endpoints": [
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules",
         "POST /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules",
+        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules/{ruleId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules/{ruleId}",
-        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules/{ruleId}",
-        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules/{ruleId}"
+        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules/{ruleId}"
       ]
     },
     {
@@ -2400,9 +2835,9 @@
       "endpoints": [
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules",
         "POST /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules",
+        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}",
-        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}",
-        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}"
+        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}"
       ]
     },
     {
@@ -2412,18 +2847,20 @@
         "workitems:status:add",
         "workitems:status:delete",
         "workitems:status:edit",
-        "workitems:status:view"
+        "workitems:status:view",
+        "workitems:worktype:view"
       ],
       "scopes": [
         "workitems",
         "workitems:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses",
         "POST /api/v2/taskmanagement/worktypes/{worktypeId}/statuses",
+        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}",
-        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}",
-        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}"
+        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}"
       ]
     },
     {
@@ -2433,18 +2870,20 @@
         "workitems:status:add",
         "workitems:status:delete",
         "workitems:status:edit",
-        "workitems:status:view"
+        "workitems:status:view",
+        "workitems:worktype:view"
       ],
       "scopes": [
         "workitems",
         "workitems:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses",
         "POST /api/v2/taskmanagement/worktypes/{worktypeId}/statuses",
+        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}",
         "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}",
-        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}",
-        "DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}"
+        "PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}"
       ]
     },
     {
@@ -2462,14 +2901,14 @@
         "groups:readonly"
       ],
       "endpoints": [
-        "PATCH /api/v2/teams/{teamId}",
-        "DELETE /api/v2/teams/{teamId}",
-        "POST /api/v2/teams",
-        "GET /api/v2/teams/{teamId}",
         "GET /api/v2/teams",
+        "POST /api/v2/teams",
+        "DELETE /api/v2/teams/{teamId}",
+        "GET /api/v2/teams/{teamId}",
+        "PATCH /api/v2/teams/{teamId}",
         "DELETE /api/v2/teams/{teamId}/members",
-        "POST /api/v2/teams/{teamId}/members",
-        "GET /api/v2/teams/{teamId}/members"
+        "GET /api/v2/teams/{teamId}/members",
+        "POST /api/v2/teams/{teamId}/members"
       ]
     },
     {
@@ -2485,9 +2924,9 @@
       "endpoints": [
         "GET /api/v2/telephony/providers/edges/didpools",
         "POST /api/v2/telephony/providers/edges/didpools",
+        "DELETE /api/v2/telephony/providers/edges/didpools/{didPoolId}",
         "GET /api/v2/telephony/providers/edges/didpools/{didPoolId}",
-        "PUT /api/v2/telephony/providers/edges/didpools/{didPoolId}",
-        "DELETE /api/v2/telephony/providers/edges/didpools/{didPoolId}"
+        "PUT /api/v2/telephony/providers/edges/didpools/{didPoolId}"
       ]
     },
     {
@@ -2501,11 +2940,11 @@
         "telephony:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/telephony/providers/edges/edgegroups",
-        "PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
-        "GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
         "GET /api/v2/telephony/providers/edges/edgegroups",
-        "DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}"
+        "POST /api/v2/telephony/providers/edges/edgegroups",
+        "DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
+        "GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
+        "PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}"
       ]
     },
     {
@@ -2524,28 +2963,38 @@
       "endpoints": [
         "GET /api/v2/telephony/providers/edges/extensionpools",
         "POST /api/v2/telephony/providers/edges/extensionpools",
+        "DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}",
         "GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}",
-        "PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}",
-        "DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}"
+        "PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}"
       ]
     },
     {
       "resource_type": "genesyscloud_telephony_providers_edges_phone",
       "resource_name": "telephony_providers_edges_phone",
       "permissions": [
-        "telephony:plugin:all"
+        "telephony:otherStationAssociation:edit",
+        "telephony:phone:assign",
+        "telephony:plugin:all",
+        "telephony:station:disassociate"
       ],
       "scopes": [
+        "stations",
+        "stations:readonly",
         "telephony",
-        "telephony:readonly"
+        "telephony:readonly",
+        "users"
       ],
       "endpoints": [
+        "GET /api/v2/stations",
+        "DELETE /api/v2/stations/{stationId}/associateduser",
+        "GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}",
         "GET /api/v2/telephony/providers/edges/phones",
         "POST /api/v2/telephony/providers/edges/phones",
         "DELETE /api/v2/telephony/providers/edges/phones/{phoneId}",
         "GET /api/v2/telephony/providers/edges/phones/{phoneId}",
         "PUT /api/v2/telephony/providers/edges/phones/{phoneId}",
-        "GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}"
+        "PUT /api/v2/users/{userId}/station/associatedstation/{stationId}",
+        "PUT /api/v2/users/{userId}/station/defaultstation/{stationId}"
       ]
     },
     {
@@ -2561,8 +3010,9 @@
       "endpoints": [
         "GET /api/v2/telephony/providers/edges/phonebasesettings",
         "POST /api/v2/telephony/providers/edges/phonebasesettings",
-        "GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}",
+        "GET /api/v2/telephony/providers/edges/phonebasesettings/template",
         "DELETE /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}",
+        "GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}",
         "PUT /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}"
       ]
     },
@@ -2570,14 +3020,23 @@
       "resource_type": "genesyscloud_telephony_providers_edges_site",
       "resource_name": "telephony_providers_edges_site",
       "permissions": [
+        "directory:organization:admin",
         "telephony:plugin:all",
         "telephony:sites:view"
       ],
       "scopes": [
+        "locations",
+        "locations:readonly",
+        "organization",
+        "organization:readonly",
         "telephony",
         "telephony:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/locations/{locationId}",
+        "GET /api/v2/organizations/me",
+        "PUT /api/v2/organizations/me",
+        "GET /api/v2/telephony/mediaregions",
         "GET /api/v2/telephony/providers/edges/sites",
         "POST /api/v2/telephony/providers/edges/sites",
         "DELETE /api/v2/telephony/providers/edges/sites/{siteId}",
@@ -2595,7 +3054,8 @@
       "resource_type": "genesyscloud_telephony_providers_edges_site_outbound_route",
       "resource_name": "telephony_providers_edges_site_outbound_route",
       "permissions": [
-        "telephony:plugin:all"
+        "telephony:plugin:all",
+        "telephony:sites:view"
       ],
       "scopes": [
         "telephony",
@@ -2603,9 +3063,11 @@
       ],
       "endpoints": [
         "GET /api/v2/telephony/providers/edges/sites",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}",
         "GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes",
         "POST /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes",
         "DELETE /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}",
         "PUT /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}"
       ]
     },
@@ -2620,13 +3082,13 @@
         "telephony:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/telephony/providers/edges/{edgeId}",
-        "PUT /api/v2/telephony/providers/edges/{edgeId}",
         "GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
         "PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
+        "GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}",
         "GET /api/v2/telephony/providers/edges/trunks",
         "GET /api/v2/telephony/providers/edges/trunks/{trunkId}",
-        "GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}"
+        "GET /api/v2/telephony/providers/edges/{edgeId}",
+        "PUT /api/v2/telephony/providers/edges/{edgeId}"
       ]
     },
     {
@@ -2642,8 +3104,8 @@
       "endpoints": [
         "GET /api/v2/telephony/providers/edges/trunkbasesettings",
         "POST /api/v2/telephony/providers/edges/trunkbasesettings",
-        "GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}",
         "DELETE /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}",
+        "GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}",
         "PUT /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}"
       ]
     },
@@ -2678,24 +3140,28 @@
         "voicemail:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/users",
-        "GET /api/v2/users/{userId}",
-        "PATCH /api/v2/users/{userId}",
-        "DELETE /api/v2/users/{userId}",
-        "POST /api/v2/users/search",
-        "PUT /api/v2/users/{userId}/routingskills/bulk",
-        "DELETE /api/v2/users/{userId}/routinglanguages/{languageId}",
-        "PATCH /api/v2/users/{userId}/routinglanguages/bulk",
-        "GET /api/v2/users/{userId}/routinglanguages",
-        "PUT /api/v2/users/{userId}/profileskills",
-        "POST /api/v2/users/{userId}/password",
+        "DELETE /api/v2/routing/users/{userId}/utilization",
         "GET /api/v2/routing/users/{userId}/utilization",
         "PUT /api/v2/routing/users/{userId}/utilization",
-        "DELETE /api/v2/routing/users/{userId}/utilization",
-        "GET /api/v2/voicemail/userpolicies/{userId}",
-        "PATCH /api/v2/voicemail/userpolicies/{userId}",
         "GET /api/v2/telephony/providers/edges/extensionpools",
-        "GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}"
+        "GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}",
+        "GET /api/v2/users",
+        "POST /api/v2/users",
+        "POST /api/v2/users/search",
+        "DELETE /api/v2/users/{userId}",
+        "GET /api/v2/users/{userId}",
+        "PATCH /api/v2/users/{userId}",
+        "POST /api/v2/users/{userId}/password",
+        "PUT /api/v2/users/{userId}/profileskills",
+        "GET /api/v2/users/{userId}/routinglanguages",
+        "PATCH /api/v2/users/{userId}/routinglanguages/bulk",
+        "DELETE /api/v2/users/{userId}/routinglanguages/{languageId}",
+        "GET /api/v2/users/{userId}/routingskills",
+        "PATCH /api/v2/users/{userId}/routingskills/bulk",
+        "PUT /api/v2/users/{userId}/routingskills/bulk",
+        "DELETE /api/v2/users/{userId}/routingskills/{skillId}",
+        "GET /api/v2/voicemail/userpolicies/{userId}",
+        "PATCH /api/v2/voicemail/userpolicies/{userId}"
       ]
     },
     {
@@ -2711,8 +3177,8 @@
         "authorization:readonly"
       ],
       "endpoints": [
-        "GET /api/v2/authorization/subjects/{subjectId}",
         "GET /api/v2/authorization/divisions/home",
+        "GET /api/v2/authorization/subjects/{subjectId}",
         "POST /api/v2/authorization/subjects/{subjectId}/bulkadd",
         "DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}"
       ]
@@ -2766,6 +3232,7 @@
       "resource_type": "genesyscloud_webdeployments_deployment",
       "resource_name": "webdeployments_deployment",
       "permissions": [
+        "webDeployments:configuration:view",
         "webDeployments:deployment:add",
         "webDeployments:deployment:delete",
         "webDeployments:deployment:edit",
@@ -2776,6 +3243,7 @@
         "webdeployments:readonly"
       ],
       "endpoints": [
+        "GET /api/v2/webdeployments/configurations/{configurationId}/versions",
         "GET /api/v2/webdeployments/deployments",
         "POST /api/v2/webdeployments/deployments",
         "DELETE /api/v2/webdeployments/deployments/{deploymentId}",
@@ -2869,11 +3337,1958 @@
         "workforce-management:readonly"
       ],
       "endpoints": [
-        "POST /api/v2/workforcemanagement/businessunits",
         "GET /api/v2/workforcemanagement/businessunits",
+        "POST /api/v2/workforcemanagement/businessunits",
+        "DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}",
         "GET /api/v2/workforcemanagement/businessunits/{businessUnitId}",
-        "PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}",
-        "DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}"
+        "PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}"
+      ]
+    }
+  ],
+  "data_sources": [
+    {
+      "resource_type": "genesyscloud_ai_studio_summary_setting",
+      "resource_name": "ai_studio_summary_setting",
+      "permissions": [
+        "aiStudio:summaryConfig:view"
+      ],
+      "scopes": [
+        "ai-studio",
+        "ai-studio:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/summaries/settings",
+        "GET /api/v2/conversations/summaries/settings/{summarySettingId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_datatable",
+      "resource_name": "architect_datatable",
+      "permissions": [
+        "architect:datatable:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/flows/datatables",
+        "GET /api/v2/flows/datatables/{datatableId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_emergencygroup",
+      "resource_name": "architect_emergencygroup",
+      "permissions": [
+        "routing:emergencyGroup:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/emergencygroups",
+        "GET /api/v2/architect/emergencygroups/{emergencyGroupId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_grammar",
+      "resource_name": "architect_grammar",
+      "permissions": [
+        "architect:grammar:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/grammars",
+        "GET /api/v2/architect/grammars/{grammarId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_ivr",
+      "resource_name": "architect_ivr",
+      "permissions": [
+        "routing:callRoute:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/ivrs",
+        "GET /api/v2/architect/ivrs/{ivrId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_schedulegroups",
+      "resource_name": "architect_schedulegroups",
+      "permissions": [
+        "routing:scheduleGroup:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/schedulegroups",
+        "GET /api/v2/architect/schedulegroups/{scheduleGroupId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_schedules",
+      "resource_name": "architect_schedules",
+      "permissions": [
+        "routing:schedule:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/schedules",
+        "GET /api/v2/architect/schedules/{scheduleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_architect_user_prompt",
+      "resource_name": "architect_user_prompt",
+      "permissions": [
+        "architect:userPrompt:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/prompts",
+        "GET /api/v2/architect/prompts/{promptId}",
+        "GET /api/v2/architect/prompts/{promptId}/resources"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_auth_division",
+      "resource_name": "auth_division",
+      "permissions": [],
+      "scopes": [
+        "authorization",
+        "authorization:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/authorization/divisions",
+        "GET /api/v2/authorization/divisions/{divisionId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_auth_division_home",
+      "resource_name": "auth_division_home",
+      "permissions": [],
+      "scopes": [
+        "authorization",
+        "authorization:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/authorization/divisions/home"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_auth_role",
+      "resource_name": "auth_role",
+      "permissions": [
+        "authorization:role:view"
+      ],
+      "scopes": [
+        "authorization",
+        "authorization:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/authorization/permissions",
+        "GET /api/v2/authorization/roles",
+        "GET /api/v2/authorization/roles/{roleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_authorization_product",
+      "resource_name": "authorization_product",
+      "permissions": [],
+      "scopes": [
+        "authorization",
+        "authorization:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/authorization/products"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_business_rules_decision_table",
+      "resource_name": "business_rules_decision_table",
+      "permissions": [
+        "businessrules:decisionTable:search",
+        "businessrules:decisionTable:view",
+        "businessrules:decisionTableRow:view"
+      ],
+      "scopes": [
+        "business-rules",
+        "business-rules:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/businessrules/decisiontables/search",
+        "GET /api/v2/businessrules/decisiontables/{tableId}",
+        "GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}",
+        "GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_business_rules_schema",
+      "resource_name": "business_rules_schema",
+      "permissions": [
+        "businessrules:businessRulesSchema:view"
+      ],
+      "scopes": [
+        "business-rules",
+        "business-rules:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/businessrules/schemas",
+        "GET /api/v2/businessrules/schemas/{schemaId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_caseplan",
+      "resource_name": "case_management_caseplan",
+      "permissions": [
+        "caseManagement:caseplan:view",
+        "caseManagement:caseplanDataSchemas:view",
+        "caseManagement:caseplanIntakeSettings:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_stageplan",
+      "resource_name": "case_management_stageplan",
+      "permissions": [
+        "caseManagement:stageplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_stepplan",
+      "resource_name": "case_management_stepplan",
+      "permissions": [
+        "caseManagement:stepplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans/{stepplanId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_conversations_messaging_integrations_apple",
+      "resource_name": "conversations_messaging_integrations_apple",
+      "permissions": [
+        "messaging:integration:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/apple",
+        "GET /api/v2/conversations/messaging/integrations/apple/{integrationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_conversations_messaging_integrations_instagram",
+      "resource_name": "conversations_messaging_integrations_instagram",
+      "permissions": [
+        "messaging:integration:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/instagram",
+        "GET /api/v2/conversations/messaging/integrations/instagram/{integrationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_conversations_messaging_integrations_open",
+      "resource_name": "conversations_messaging_integrations_open",
+      "permissions": [
+        "messaging:integration:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/open",
+        "GET /api/v2/conversations/messaging/integrations/open/{integrationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_conversations_messaging_integrations_whatsapp",
+      "resource_name": "conversations_messaging_integrations_whatsapp",
+      "permissions": [
+        "messaging:integration:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/whatsapp",
+        "GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_conversations_messaging_settings",
+      "resource_name": "conversations_messaging_settings",
+      "permissions": [
+        "messaging:setting:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/settings",
+        "GET /api/v2/conversations/messaging/settings/default",
+        "GET /api/v2/conversations/messaging/settings/{messageSettingId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_conversations_messaging_supportedcontent",
+      "resource_name": "conversations_messaging_supportedcontent",
+      "permissions": [
+        "messaging:supportedContent:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/supportedcontent",
+        "GET /api/v2/conversations/messaging/supportedcontent/{supportedContentId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_employeeperformance_externalmetrics_definitions",
+      "resource_name": "employeeperformance_externalmetrics_definitions",
+      "permissions": [
+        "employeePerformance:externalMetricDefinition:view"
+      ],
+      "scopes": [
+        "employee-performance",
+        "employee-performance:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/employeeperformance/externalmetrics/definitions",
+        "GET /api/v2/employeeperformance/externalmetrics/definitions/{metricId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_externalcontacts_contact",
+      "resource_name": "externalcontacts_contact",
+      "permissions": [
+        "externalContacts:contact:view",
+        "externalContacts:externalOrganization:view",
+        "relate:contact:view",
+        "relate:externalOrganization:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/externalcontacts/contacts",
+        "GET /api/v2/externalcontacts/contacts/{contactId}",
+        "GET /api/v2/externalcontacts/organizations/{externalOrganizationId}",
+        "GET /api/v2/externalcontacts/scan/contacts"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_externalcontacts_external_source",
+      "resource_name": "externalcontacts_external_source",
+      "permissions": [
+        "externalContacts:contact:view",
+        "externalContacts:externalOrganization:view",
+        "externalContacts:externalSource:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/externalcontacts/externalsources",
+        "GET /api/v2/externalcontacts/externalsources/{externalSourceId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_externalcontacts_organization",
+      "resource_name": "externalcontacts_organization",
+      "permissions": [
+        "externalContacts:externalOrganization:view",
+        "relate:externalOrganization:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/externalcontacts/organizations/{externalOrganizationId}",
+        "GET /api/v2/externalcontacts/scan/organizations"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_flow",
+      "resource_name": "flow",
+      "permissions": [
+        "architect:flow:search",
+        "architect:flow:view",
+        "architect:flowLogLevel:view",
+        "architect:job:view",
+        "architect:jobExport:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/flows",
+        "GET /api/v2/flows/export/jobs/{jobId}",
+        "GET /api/v2/flows/instances/settings/loglevels",
+        "GET /api/v2/flows/jobs/{jobId}",
+        "GET /api/v2/flows/{flowId}",
+        "GET /api/v2/flows/{flowId}/instances/settings/loglevels"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_flow_milestone",
+      "resource_name": "flow_milestone",
+      "permissions": [
+        "architect:flowMilestone:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/flows/milestones",
+        "GET /api/v2/flows/milestones/{milestoneId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_flow_outcome",
+      "resource_name": "flow_outcome",
+      "permissions": [
+        "architect:flowOutcome:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/flows/outcomes",
+        "GET /api/v2/flows/outcomes/{flowOutcomeId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_group",
+      "resource_name": "group",
+      "permissions": [
+        "voicemail:groupPolicy:view"
+      ],
+      "scopes": [
+        "groups",
+        "groups:readonly",
+        "voicemail",
+        "voicemail:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/groups",
+        "GET /api/v2/groups/{groupId}",
+        "GET /api/v2/groups/{groupId}/individuals",
+        "GET /api/v2/voicemail/groups/{groupId}/policy"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_guide",
+      "resource_name": "guide",
+      "permissions": [
+        "aiStudio:guide:view"
+      ],
+      "scopes": [
+        "ai-studio",
+        "ai-studio:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/guides",
+        "GET /api/v2/guides/{guideId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_integration",
+      "resource_name": "integration",
+      "permissions": [
+        "integrations:integration:view"
+      ],
+      "scopes": [
+        "integrations",
+        "integrations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/integrations",
+        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}/config/current"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_integration_action",
+      "resource_name": "integration_action",
+      "permissions": [
+        "bridge:actions:view",
+        "integrations:action:view",
+        "integrations:actionFunction:view",
+        "integrations:integration:view"
+      ],
+      "scopes": [
+        "integrations",
+        "integrations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/integrations",
+        "GET /api/v2/integrations/actions",
+        "GET /api/v2/integrations/actions/{actionId}",
+        "GET /api/v2/integrations/actions/{actionId}/draft",
+        "GET /api/v2/integrations/actions/{actionId}/draft/function",
+        "GET /api/v2/integrations/actions/{actionId}/function"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_integration_credential",
+      "resource_name": "integration_credential",
+      "permissions": [
+        "integrations:integration:view"
+      ],
+      "scopes": [
+        "integrations",
+        "integrations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/integrations",
+        "GET /api/v2/integrations/credentials/listing",
+        "GET /api/v2/integrations/credentials/{credentialId}",
+        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}/config/current"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_integration_custom_auth_action",
+      "resource_name": "integration_custom_auth_action",
+      "permissions": [
+        "bridge:actions:view",
+        "integrations:action:view",
+        "integrations:integration:view"
+      ],
+      "scopes": [
+        "integrations",
+        "integrations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/integrations/actions",
+        "GET /api/v2/integrations/actions/{actionId}",
+        "GET /api/v2/integrations/actions/{actionId}/templates/{fileName}",
+        "GET /api/v2/integrations/credentials/{credentialId}",
+        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}/config/current"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_integration_facebook",
+      "resource_name": "integration_facebook",
+      "permissions": [
+        "messaging:integration:view"
+      ],
+      "scopes": [
+        "messaging",
+        "messaging:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/conversations/messaging/integrations/facebook",
+        "GET /api/v2/conversations/messaging/integrations/facebook/{integrationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_integration_webhook",
+      "resource_name": "integration_webhook",
+      "permissions": [
+        "integrations:integration:view"
+      ],
+      "scopes": [
+        "integrations",
+        "integrations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/integrations",
+        "GET /api/v2/integrations/{integrationId}",
+        "GET /api/v2/integrations/{integrationId}/config/current"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_intents_categories",
+      "resource_name": "intents_categories",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/intents/categories",
+        "GET /api/v2/intents/categories/{categoryId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_intents_customerintents",
+      "resource_name": "intents_customerintents",
+      "permissions": [
+        "externalContacts:customerIntentTaxonomy:view"
+      ],
+      "scopes": [
+        "external-contacts",
+        "external-contacts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/intents/customerintents",
+        "GET /api/v2/intents/customerintents/{customerIntentId}",
+        "GET /api/v2/intents/customerintents/{customerIntentId}/sourceintents"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_journey_action_map",
+      "resource_name": "journey_action_map",
+      "permissions": [
+        "architect:flow:view",
+        "journey:actionmap:view",
+        "journey:segment:view",
+        "routing:schedule:view",
+        "routing:scheduleGroup:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly",
+        "journey",
+        "journey:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/schedulegroups",
+        "GET /api/v2/architect/schedules",
+        "GET /api/v2/flows",
+        "GET /api/v2/journey/actionmaps",
+        "GET /api/v2/journey/actionmaps/{actionMapId}",
+        "GET /api/v2/journey/segments"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_journey_action_template",
+      "resource_name": "journey_action_template",
+      "permissions": [
+        "journey:actiontemplate:view"
+      ],
+      "scopes": [
+        "journey",
+        "journey:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/journey/actiontemplates",
+        "GET /api/v2/journey/actiontemplates/{actionTemplateId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_journey_outcome",
+      "resource_name": "journey_outcome",
+      "permissions": [
+        "journey:outcome:view"
+      ],
+      "scopes": [
+        "journey",
+        "journey:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/journey/outcomes",
+        "GET /api/v2/journey/outcomes/{outcomeId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_journey_segment",
+      "resource_name": "journey_segment",
+      "permissions": [
+        "journey:segment:view"
+      ],
+      "scopes": [
+        "journey",
+        "journey:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/journey/segments",
+        "GET /api/v2/journey/segments/{segmentId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_journey_views",
+      "resource_name": "journey_views",
+      "permissions": [
+        "journey:views:view"
+      ],
+      "scopes": [
+        "journey",
+        "journey:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/journey/views",
+        "GET /api/v2/journey/views/{viewId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_knowledge_category",
+      "resource_name": "knowledge_category",
+      "permissions": [
+        "architect:dependencyTracking:view",
+        "knowledge:category:view",
+        "knowledge:knowledgebase:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly",
+        "knowledge",
+        "knowledge:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_knowledge_document",
+      "resource_name": "knowledge_document",
+      "permissions": [
+        "architect:dependencyTracking:view",
+        "knowledge:category:view",
+        "knowledge:document:view",
+        "knowledge:knowledgebase:view",
+        "knowledge:label:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly",
+        "knowledge",
+        "knowledge:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_knowledge_document_variation",
+      "resource_name": "knowledge_document_variation",
+      "permissions": [
+        "architect:dependencyTracking:view",
+        "knowledge:document:view",
+        "knowledge:knowledgebase:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly",
+        "knowledge",
+        "knowledge:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations/{documentVariationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_knowledge_knowledgebase",
+      "resource_name": "knowledge_knowledgebase",
+      "permissions": [
+        "architect:dependencyTracking:view",
+        "knowledge:knowledgebase:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly",
+        "knowledge",
+        "knowledge:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_knowledge_label",
+      "resource_name": "knowledge_label",
+      "permissions": [
+        "architect:dependencyTracking:view",
+        "knowledge:knowledgebase:view",
+        "knowledge:label:view"
+      ],
+      "scopes": [
+        "architect",
+        "architect:readonly",
+        "knowledge",
+        "knowledge:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/architect/dependencytracking/build",
+        "GET /api/v2/knowledge/knowledgebases",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels",
+        "GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_learning_modules",
+      "resource_name": "learning_modules",
+      "permissions": [
+        "learning:module:view"
+      ],
+      "scopes": [
+        "learning",
+        "learning:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/learning/modules",
+        "GET /api/v2/learning/modules/{moduleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_location",
+      "resource_name": "location",
+      "permissions": [],
+      "scopes": [
+        "locations",
+        "locations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/locations",
+        "GET /api/v2/locations/{locationId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_oauth_client",
+      "resource_name": "oauth_client",
+      "permissions": [
+        "authorization:grant:view",
+        "integrations:integration:view",
+        "oauth:client:view"
+      ],
+      "scopes": [
+        "authorization",
+        "authorization:readonly",
+        "integrations",
+        "integrations:readonly",
+        "oauth",
+        "oauth:readonly",
+        "user-basic-info"
+      ],
+      "endpoints": [
+        "GET /api/v2/integrations/credentials/{credentialId}",
+        "GET /api/v2/oauth/clients",
+        "GET /api/v2/oauth/clients/{clientId}",
+        "GET /api/v2/tokens/me",
+        "GET /api/v2/users/me",
+        "GET /api/v2/users/{subjectId}/roles"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_organizations_me",
+      "resource_name": "organizations_me",
+      "permissions": [],
+      "scopes": [
+        "organization",
+        "organization:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/organizations/me"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_attempt_limit",
+      "resource_name": "outbound_attempt_limit",
+      "permissions": [
+        "outbound:attemptLimits:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/attemptlimits",
+        "GET /api/v2/outbound/attemptlimits/{attemptLimitsId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_callabletimeset",
+      "resource_name": "outbound_callabletimeset",
+      "permissions": [
+        "outbound:callableTimeSet:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/callabletimesets",
+        "GET /api/v2/outbound/callabletimesets/{callableTimeSetId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_callanalysisresponseset",
+      "resource_name": "outbound_callanalysisresponseset",
+      "permissions": [
+        "outbound:responseSet:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/callanalysisresponsesets",
+        "GET /api/v2/outbound/callanalysisresponsesets/{callAnalysisSetId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_campaign",
+      "resource_name": "outbound_campaign",
+      "permissions": [
+        "outbound:campaign:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/campaigns",
+        "GET /api/v2/outbound/campaigns/{campaignId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_campaignrule",
+      "resource_name": "outbound_campaignrule",
+      "permissions": [
+        "outbound:campaignRule:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/campaignrules",
+        "GET /api/v2/outbound/campaignrules/{campaignRuleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_contact_list",
+      "resource_name": "outbound_contact_list",
+      "permissions": [
+        "outbound:contact:view",
+        "outbound:contactList:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/contactlists",
+        "GET /api/v2/outbound/contactlists/{contactListId}",
+        "GET /api/v2/outbound/contactlists/{contactListId}/export",
+        "GET /api/v2/outbound/contactlists/{contactListId}/importstatus"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_contact_list_template",
+      "resource_name": "outbound_contact_list_template",
+      "permissions": [
+        "outbound:contactListTemplate:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/contactlisttemplates",
+        "GET /api/v2/outbound/contactlisttemplates/{contactListTemplateId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_contactlistfilter",
+      "resource_name": "outbound_contactlistfilter",
+      "permissions": [
+        "outbound:contactListFilter:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/contactlistfilters",
+        "GET /api/v2/outbound/contactlistfilters/{contactListFilterId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_digitalruleset",
+      "resource_name": "outbound_digitalruleset",
+      "permissions": [
+        "outbound:digitalRuleSet:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/digitalrulesets",
+        "GET /api/v2/outbound/digitalrulesets/{digitalRuleSetId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_dnclist",
+      "resource_name": "outbound_dnclist",
+      "permissions": [
+        "outbound:dnc:view",
+        "outbound:dncList:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/dnclists",
+        "GET /api/v2/outbound/dnclists/{dncListId}",
+        "GET /api/v2/outbound/dnclists/{dncListId}/export"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_filespecificationtemplate",
+      "resource_name": "outbound_filespecificationtemplate",
+      "permissions": [
+        "outbound:fileSpecificationTemplate:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/filespecificationtemplates",
+        "GET /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_messagingcampaign",
+      "resource_name": "outbound_messagingcampaign",
+      "permissions": [
+        "outbound:digitalRuleSet:view",
+        "outbound:emailCampaign:view",
+        "outbound:messagingCampaign:view",
+        "outbound:whatsAppCampaign:view",
+        "routing:email:manage",
+        "routing:email:view",
+        "sms:phoneNumber:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly",
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/digitalrulesets",
+        "GET /api/v2/outbound/messagingcampaigns",
+        "GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}",
+        "GET /api/v2/routing/email/outbound/domains/{domainId}",
+        "GET /api/v2/routing/sms/phonenumbers/{phoneNumberId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_ruleset",
+      "resource_name": "outbound_ruleset",
+      "permissions": [
+        "outbound:ruleSet:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/rulesets",
+        "GET /api/v2/outbound/rulesets/{ruleSetId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_outbound_sequence",
+      "resource_name": "outbound_sequence",
+      "permissions": [
+        "outbound:campaignSequence:view"
+      ],
+      "scopes": [
+        "outbound",
+        "outbound:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/outbound/sequences",
+        "GET /api/v2/outbound/sequences/{sequenceId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_processautomation_trigger",
+      "resource_name": "processautomation_trigger",
+      "permissions": [
+        "processautomation:trigger:edit",
+        "processautomation:trigger:view"
+      ],
+      "scopes": [
+        "process-automation",
+        "process-automation:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/processautomation/triggers",
+        "GET /api/v2/processautomation/triggers/{triggerId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_quality_forms_evaluation",
+      "resource_name": "quality_forms_evaluation",
+      "permissions": [
+        "quality:evaluationForm:view"
+      ],
+      "scopes": [
+        "quality",
+        "quality:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/quality/forms/evaluations",
+        "GET /api/v2/quality/forms/evaluations/bulk/contexts",
+        "GET /api/v2/quality/forms/evaluations/{formId}",
+        "GET /api/v2/quality/forms/evaluations/{formId}/versions"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_quality_forms_survey",
+      "resource_name": "quality_forms_survey",
+      "permissions": [
+        "quality:surveyForm:view"
+      ],
+      "scopes": [
+        "quality",
+        "quality:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/quality/forms/surveys",
+        "GET /api/v2/quality/forms/surveys/{formId}",
+        "GET /api/v2/quality/forms/surveys/{formId}/versions"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_recording_media_retention_policy",
+      "resource_name": "recording_media_retention_policy",
+      "permissions": [
+        "quality:evaluationForm:view",
+        "quality:surveyForm:view",
+        "recording:retentionPolicy:view"
+      ],
+      "scopes": [
+        "quality",
+        "quality:readonly",
+        "recordings",
+        "recordings:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/quality/forms/evaluations/{formId}",
+        "GET /api/v2/quality/forms/evaluations/{formId}/versions",
+        "GET /api/v2/quality/forms/surveys",
+        "GET /api/v2/recording/mediaretentionpolicies",
+        "GET /api/v2/recording/mediaretentionpolicies/{policyId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_responsemanagement_library",
+      "resource_name": "responsemanagement_library",
+      "permissions": [
+        "responses:library:view"
+      ],
+      "scopes": [
+        "response-management",
+        "response-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/responsemanagement/libraries",
+        "GET /api/v2/responsemanagement/libraries/{libraryId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_responsemanagement_response",
+      "resource_name": "responsemanagement_response",
+      "permissions": [
+        "responses:library:view",
+        "responses:response:view"
+      ],
+      "scopes": [
+        "response-management",
+        "response-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/responsemanagement/libraries",
+        "GET /api/v2/responsemanagement/responses",
+        "GET /api/v2/responsemanagement/responses/{responseId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_responsemanagement_responseasset",
+      "resource_name": "responsemanagement_responseasset",
+      "permissions": [
+        "responseAssets:asset:view"
+      ],
+      "scopes": [
+        "response-management",
+        "response-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/responsemanagement/responseassets/{responseAssetId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_email_domain",
+      "resource_name": "routing_email_domain",
+      "permissions": [
+        "routing:email:manage",
+        "routing:email:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/email/domains",
+        "GET /api/v2/routing/email/domains/{domainId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_email_route",
+      "resource_name": "routing_email_route",
+      "permissions": [
+        "routing:email:manage",
+        "routing:email:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/email/domains",
+        "GET /api/v2/routing/email/domains/{domainName}/routes",
+        "GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_language",
+      "resource_name": "routing_language",
+      "permissions": [],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/languages",
+        "GET /api/v2/routing/languages/{languageId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_queue",
+      "resource_name": "routing_queue",
+      "permissions": [
+        "routing:queue:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/queues",
+        "GET /api/v2/routing/queues/{queueId}",
+        "GET /api/v2/routing/queues/{queueId}/wrapupcodes"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_skill",
+      "resource_name": "routing_skill",
+      "permissions": [
+        "routing:skill:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/skills",
+        "GET /api/v2/routing/skills/{skillId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_skill_group",
+      "resource_name": "routing_skill_group",
+      "permissions": [
+        "routing:skillGroup:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/skillgroups",
+        "GET /api/v2/routing/skillgroups/{skillGroupId}",
+        "GET /api/v2/routing/skillgroups/{skillGroupId}/members/divisions"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_sms_address",
+      "resource_name": "routing_sms_address",
+      "permissions": [
+        "sms:phoneNumber:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/sms/addresses",
+        "GET /api/v2/routing/sms/addresses/{addressId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_utilization_label",
+      "resource_name": "routing_utilization_label",
+      "permissions": [
+        "routing:utilization:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/utilization/labels",
+        "GET /api/v2/routing/utilization/labels/{labelId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_routing_wrapupcode",
+      "resource_name": "routing_wrapupcode",
+      "permissions": [
+        "routing:wrapupCode:view"
+      ],
+      "scopes": [
+        "routing",
+        "routing:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/routing/wrapupcodes",
+        "GET /api/v2/routing/wrapupcodes/{codeId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_script",
+      "resource_name": "script",
+      "permissions": [
+        "scripter:publishedScript:view",
+        "scripter:script:view"
+      ],
+      "scopes": [
+        "scripts",
+        "scripts:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/scripts",
+        "GET /api/v2/scripts/published",
+        "GET /api/v2/scripts/uploads/{uploadId}/status",
+        "GET /api/v2/scripts/{scriptId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_speechandtextanalytics_dictionaryfeedback",
+      "resource_name": "speechandtextanalytics_dictionaryfeedback",
+      "permissions": [
+        "speechAndTextAnalytics:dictionaryterm:view"
+      ],
+      "scopes": [
+        "speech-and-text-analytics",
+        "speech-and-text-analytics:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/speechandtextanalytics/dictionaryfeedback",
+        "GET /api/v2/speechandtextanalytics/dictionaryfeedback/{dictionaryFeedbackId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_speechandtextanalytics_topic",
+      "resource_name": "speechandtextanalytics_topic",
+      "permissions": [
+        "speechAndTextAnalytics:topic:publish",
+        "speechAndTextAnalytics:topic:view"
+      ],
+      "scopes": [
+        "speech-and-text-analytics",
+        "speech-and-text-analytics:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/speechandtextanalytics/topics",
+        "GET /api/v2/speechandtextanalytics/topics/publishjobs/{jobId}",
+        "GET /api/v2/speechandtextanalytics/topics/{topicId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_station",
+      "resource_name": "station",
+      "permissions": [],
+      "scopes": [
+        "stations",
+        "stations:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/stations"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_workbin",
+      "resource_name": "task_management_workbin",
+      "permissions": [
+        "workitems:workbin:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/workbins/{workbinId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_workitem",
+      "resource_name": "task_management_workitem",
+      "permissions": [
+        "workitems:workitem:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/workitems/{workitemId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_workitem_schema",
+      "resource_name": "task_management_workitem_schema",
+      "permissions": [
+        "workitems:workitemSchema:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/workitems/schemas",
+        "GET /api/v2/taskmanagement/workitems/schemas/{schemaId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_worktype",
+      "resource_name": "task_management_worktype",
+      "permissions": [
+        "workitems:worktype:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_worktype_flow_datebased_rule",
+      "resource_name": "task_management_worktype_flow_datebased_rule",
+      "permissions": [
+        "workitems:flowRuleDateBased:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_worktype_flow_onattributechange_rule",
+      "resource_name": "task_management_worktype_flow_onattributechange_rule",
+      "permissions": [
+        "workitems:flowRuleOnAttributeChange:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/onattributechange/rules/{ruleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_worktype_flow_oncreate_rule",
+      "resource_name": "task_management_worktype_flow_oncreate_rule",
+      "permissions": [
+        "workitems:flowRuleOnCreate:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/oncreate/rules/{ruleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_worktype_status",
+      "resource_name": "task_management_worktype_status",
+      "permissions": [
+        "workitems:status:view",
+        "workitems:worktype:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_task_management_worktype_status_transition",
+      "resource_name": "task_management_worktype_status_transition",
+      "permissions": [
+        "workitems:status:view",
+        "workitems:worktype:view"
+      ],
+      "scopes": [
+        "workitems",
+        "workitems:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses",
+        "GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses/{statusId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_team",
+      "resource_name": "team",
+      "permissions": [
+        "groups:team:view"
+      ],
+      "scopes": [
+        "groups",
+        "groups:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/teams",
+        "GET /api/v2/teams/{teamId}",
+        "GET /api/v2/teams/{teamId}/members"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_did",
+      "resource_name": "telephony_providers_edges_did",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/dids"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_did_pool",
+      "resource_name": "telephony_providers_edges_did_pool",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/didpools",
+        "GET /api/v2/telephony/providers/edges/didpools/{didPoolId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_edge_group",
+      "resource_name": "telephony_providers_edges_edge_group",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/edgegroups",
+        "GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_extension_pool",
+      "resource_name": "telephony_providers_edges_extension_pool",
+      "permissions": [
+        "telephony:extensionPool:view"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/extensionpools",
+        "GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_linebasesettings",
+      "resource_name": "telephony_providers_edges_linebasesettings",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/linebasesettings"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_phone",
+      "resource_name": "telephony_providers_edges_phone",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "stations",
+        "stations:readonly",
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/stations",
+        "GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}",
+        "GET /api/v2/telephony/providers/edges/phones",
+        "GET /api/v2/telephony/providers/edges/phones/{phoneId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_phonebasesettings",
+      "resource_name": "telephony_providers_edges_phonebasesettings",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/phonebasesettings",
+        "GET /api/v2/telephony/providers/edges/phonebasesettings/template",
+        "GET /api/v2/telephony/providers/edges/phonebasesettings/{phoneBaseId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_site",
+      "resource_name": "telephony_providers_edges_site",
+      "permissions": [
+        "telephony:plugin:all",
+        "telephony:sites:view"
+      ],
+      "scopes": [
+        "locations",
+        "locations:readonly",
+        "organization",
+        "organization:readonly",
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/locations/{locationId}",
+        "GET /api/v2/organizations/me",
+        "GET /api/v2/telephony/mediaregions",
+        "GET /api/v2/telephony/providers/edges/sites",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}/numberplans",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_site_outbound_route",
+      "resource_name": "telephony_providers_edges_site_outbound_route",
+      "permissions": [
+        "telephony:plugin:all",
+        "telephony:sites:view"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes",
+        "GET /api/v2/telephony/providers/edges/sites/{siteId}/outboundroutes/{outboundRouteId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_trunk",
+      "resource_name": "telephony_providers_edges_trunk",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}",
+        "GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}",
+        "GET /api/v2/telephony/providers/edges/trunks",
+        "GET /api/v2/telephony/providers/edges/trunks/{trunkId}",
+        "GET /api/v2/telephony/providers/edges/{edgeId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_telephony_providers_edges_trunkbasesettings",
+      "resource_name": "telephony_providers_edges_trunkbasesettings",
+      "permissions": [
+        "telephony:plugin:all"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/trunkbasesettings",
+        "GET /api/v2/telephony/providers/edges/trunkbasesettings/{trunkBaseSettingsId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_user",
+      "resource_name": "user",
+      "permissions": [
+        "telephony:extensionPool:view",
+        "telephony:plugin:all",
+        "voicemail:userPolicy:viewOther"
+      ],
+      "scopes": [
+        "telephony",
+        "telephony:readonly",
+        "users",
+        "users:readonly",
+        "voicemail",
+        "voicemail:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/telephony/providers/edges/extensionpools",
+        "GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}",
+        "GET /api/v2/users",
+        "GET /api/v2/users/{userId}",
+        "GET /api/v2/users/{userId}/routinglanguages",
+        "GET /api/v2/users/{userId}/routingskills",
+        "GET /api/v2/voicemail/userpolicies/{userId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_users_rules",
+      "resource_name": "users_rules",
+      "permissions": [
+        "users:rules:view"
+      ],
+      "scopes": [
+        "users-rules",
+        "users-rules:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/users/rules",
+        "GET /api/v2/users/rules/{ruleId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_webdeployments_configuration",
+      "resource_name": "webdeployments_configuration",
+      "permissions": [
+        "webDeployments:configuration:view"
+      ],
+      "scopes": [
+        "webdeployments",
+        "webdeployments:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/webdeployments/configurations",
+        "GET /api/v2/webdeployments/configurations/{configurationId}/versions",
+        "GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft",
+        "GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_webdeployments_deployment",
+      "resource_name": "webdeployments_deployment",
+      "permissions": [
+        "webDeployments:configuration:view",
+        "webDeployments:deployment:view"
+      ],
+      "scopes": [
+        "webdeployments",
+        "webdeployments:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/webdeployments/configurations/{configurationId}/versions",
+        "GET /api/v2/webdeployments/deployments",
+        "GET /api/v2/webdeployments/deployments/{deploymentId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_workforcemanagement_businessunits",
+      "resource_name": "workforcemanagement_businessunits",
+      "permissions": [
+        "coaching:appointment:add",
+        "coaching:appointment:edit",
+        "learning:assignment:add",
+        "learning:assignment:reschedule",
+        "wfm:activityCode:add",
+        "wfm:activityCode:delete",
+        "wfm:activityCode:edit",
+        "wfm:activityCode:view",
+        "wfm:agent:edit",
+        "wfm:agent:view",
+        "wfm:agentSchedule:view",
+        "wfm:agentSchedulingPreferences:edit",
+        "wfm:agentSchedulingPreferencesQuery:view",
+        "wfm:agentSchedulingPreferencesSettings:view",
+        "wfm:agentShiftTradeRequest:participate",
+        "wfm:agentTimeOffRequest:submit",
+        "wfm:businessUnit:add",
+        "wfm:businessUnit:delete",
+        "wfm:businessUnit:edit",
+        "wfm:businessUnit:view",
+        "wfm:historicalAdherence:view",
+        "wfm:intraday:view",
+        "wfm:managementUnit:add",
+        "wfm:managementUnit:delete",
+        "wfm:managementUnit:edit",
+        "wfm:managementUnit:view",
+        "wfm:planningGroup:add",
+        "wfm:planningGroup:delete",
+        "wfm:planningGroup:edit",
+        "wfm:planningGroup:view",
+        "wfm:publishedSchedule:view",
+        "wfm:realtimeAdherence:view",
+        "wfm:schedule:add",
+        "wfm:schedule:delete",
+        "wfm:schedule:edit",
+        "wfm:schedule:generate",
+        "wfm:schedule:view",
+        "wfm:schedulingPreferencesQuery:view",
+        "wfm:schedulingPreferencesSettings:edit",
+        "wfm:schedulingPreferencesSettings:view",
+        "wfm:serviceGoalTemplate:add",
+        "wfm:serviceGoalTemplate:delete",
+        "wfm:serviceGoalTemplate:edit",
+        "wfm:serviceGoalTemplate:view",
+        "wfm:shiftTradeRequest:edit",
+        "wfm:shiftTradeRequest:view",
+        "wfm:shortTermForecast:add",
+        "wfm:shortTermForecast:delete",
+        "wfm:shortTermForecast:edit",
+        "wfm:shortTermForecast:view",
+        "wfm:shrinkage:view",
+        "wfm:staffingGroup:add",
+        "wfm:staffingGroup:delete",
+        "wfm:staffingGroup:edit",
+        "wfm:staffingGroup:view",
+        "wfm:timeOffLimit:add",
+        "wfm:timeOffLimit:delete",
+        "wfm:timeOffLimit:edit",
+        "wfm:timeOffLimit:view",
+        "wfm:timeOffPlan:add",
+        "wfm:timeOffPlan:delete",
+        "wfm:timeOffPlan:edit",
+        "wfm:timeOffPlan:view",
+        "wfm:timeOffRequest:add",
+        "wfm:timeOffRequest:edit",
+        "wfm:timeOffRequest:view",
+        "wfm:workPlan:add",
+        "wfm:workPlan:delete",
+        "wfm:workPlan:edit",
+        "wfm:workPlan:view",
+        "wfm:workPlanRotation:add",
+        "wfm:workPlanRotation:delete",
+        "wfm:workPlanRotation:edit",
+        "wfm:workPlanRotation:view"
+      ],
+      "scopes": [
+        "coaching",
+        "learning",
+        "workforce-management",
+        "workforce-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/workforcemanagement/businessunits",
+        "GET /api/v2/workforcemanagement/businessunits/{businessUnitId}"
       ]
     }
   ]
