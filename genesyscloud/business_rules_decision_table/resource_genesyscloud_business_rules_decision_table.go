@@ -173,12 +173,9 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 
 		// Set name and description from the table (version endpoint doesn't provide these)
 		resourcedata.SetNillableValue(d, "name", table.Name)
-		// Only set description when there is a real value; SetNillableValue's nil branch
-		// (d.Set(key, nil)) would coerce an absent description to "" for a TypeString,
-		// causing a null -> "" inconsistency. Leaving it unset preserves null.
-		if table.Description != nil && *table.Description != "" {
-			_ = d.Set("description", *table.Description)
-		}
+		// Preserve null for an absent description; SetNillableValue would coerce it
+		// to "" for a TypeString and cause a null -> "" plan inconsistency.
+		resourcedata.SetStringValueIfNotNil(d, "description", table.Description)
 		resourcedata.SetNillableReferenceDivision(d, "division_id", tableVersion.Division)
 		resourcedata.SetNillableValue(d, "version", &versionToRead)
 
