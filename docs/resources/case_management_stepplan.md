@@ -30,18 +30,6 @@ The following OAuth scopes are required to use this resource:
 * `case-management`
 * `case-management:readonly`
 
-## Permissions and Scopes
-
-The following permissions are required to use this resource:
-
-* `caseManagement:stepplan:edit`
-* `caseManagement:stepplan:view`
-
-The following OAuth scopes are required to use this resource:
-
-* `case-management`
-* `case-management:readonly`
-
 
 ## Example Usage
 

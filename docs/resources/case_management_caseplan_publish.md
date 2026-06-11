@@ -43,16 +43,6 @@ The following OAuth scopes are required to use this resource:
 * `case-management`
 * `case-management:readonly`
 
-## Permissions and Scopes
-
-The following permissions are required to use this resource:
-
-* `caseManagement:caseplan:publish`
-
-The following OAuth scopes are required to use this resource:
-
-* `case-management`
-
 
 ## Example Usage
 
