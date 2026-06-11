@@ -101,16 +101,15 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 		}
 
 		resourcedata.SetNillableValue(d, "name", campaignRule.Name)
-		if campaignRule.CampaignRuleEntities != nil {
-			d.Set("campaign_rule_entities", flattenCampaignRuleEntities(campaignRule.CampaignRuleEntities))
-		}
+		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "campaign_rule_entities", campaignRule.CampaignRuleEntities, flattenCampaignRuleEntities)
+		resourcedata.SetNillableValue(d, "campaign_rule_processing", campaignRule.CampaignRuleProcessing)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "condition_groups", campaignRule.ConditionGroups, flattenCampaignRuleConditionGroups)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "campaign_rule_conditions", campaignRule.CampaignRuleConditions, flattenCampaignRuleConditions)
-		if campaignRule.CampaignRuleActions != nil {
-			d.Set("campaign_rule_actions", flattenCampaignRuleAction(campaignRule.CampaignRuleActions, flattenCampaignRuleActionEntities))
-		} else {
-			d.Set("campaign_rule_actions", nil)
-		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "campaign_rule_actions", campaignRule.CampaignRuleActions, func(actions *[]platformclientv2.Campaignruleaction) []interface{} {
+			return flattenCampaignRuleAction(actions, flattenCampaignRuleActionEntities)
+		})
 		resourcedata.SetNillableValue(d, "match_any_conditions", campaignRule.MatchAnyConditions)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "execution_settings", campaignRule.ExecutionSettings, flattenExecutionSettings)
 		resourcedata.SetNillableValue(d, "enabled", campaignRule.Enabled)
 
 		log.Printf("Read Outbound Campaign Rule %s %s", d.Id(), *campaignRule.Name)

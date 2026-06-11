@@ -711,7 +711,8 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
 	subTypeMap := make(map[string]platformclientv2.Messagesubtypesettings)
 	baseMediaSettings := platformclientv2.Messagesubtypesettings{
-		EnableAutoAnswer: platformclientv2.Bool(true),
+		EnableAutoAnswer:        platformclientv2.Bool(true),
+		EnableInactivityTimeout: platformclientv2.Bool(false),
 	}
 	subTypeMap["instagram"] = baseMediaSettings
 	return platformclientv2.Messagemediasettings{

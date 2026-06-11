@@ -5,7 +5,6 @@ import (
 )
 
 func SetRegistrar(l registrar.Registrar) {
-
 	registerDataSources(l)
 	registerResources(l)
 	registerExporters(l)

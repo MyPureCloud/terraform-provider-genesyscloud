@@ -222,19 +222,28 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
+		// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
+		// updated, or deleted via the public API. Export them as data sources so that other
+		// resources (e.g. Architect flows) can reference them by name + integration_id.
+		ExportAsDataFunc: shouldExportIntegrationActionAsDataSource,
 	}
 }
 
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source
 func DataSourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud integration action. Select an integration action by name",
+		Description: "Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration action",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"integration_id": {
+				Description: "The ID of the integration that owns the action. Optional, used to disambiguate static (built-in) data actions whose names may not be unique across integration instances.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}
