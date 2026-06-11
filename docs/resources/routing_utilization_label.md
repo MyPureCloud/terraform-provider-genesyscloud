@@ -6,17 +6,23 @@ description: |-
 ---
 # genesyscloud_routing_utilization_label (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Utilization Label.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* These endpoints are not yet publicly available and are subject to change.
-* [POST /api/v2/routing/utilization/labels](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
-* [GET /api/v2/routing/utilization/labels](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
-* [GET /api/v2/routing/utilization/labels/{id}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
-* [DELETE /api/v2/routing/utilization/labels/{id}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
-* [PUT /api/v2/routing/utilization/labels/{id}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-utilization)
+* [GET /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels)
+* [POST /api/v2/routing/utilization/labels](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-utilization-labels)
+* [DELETE /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-utilization-labels--id-)
+* [GET /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels--id-)
+* [PUT /api/v2/routing/utilization/labels/{id}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-utilization-labels--id-)
+* [DELETE /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-utilization-labels--labelId-)
+* [GET /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-utilization-labels--labelId-)
+* [PUT /api/v2/routing/utilization/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-utilization-labels--labelId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
