@@ -13,6 +13,16 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 * [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--publish)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `caseManagement:caseplan:publish`
+
+The following OAuth scopes are required to use this resource:
+
+* `case-management`
+
 
 ## Example Usage
 

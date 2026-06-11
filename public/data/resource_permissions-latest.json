@@ -321,6 +321,88 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_case_management_caseplan",
+      "resource_name": "case_management_caseplan",
+      "permissions": [
+        "caseManagement:caseplan:add",
+        "caseManagement:caseplan:delete",
+        "caseManagement:caseplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans",
+        "POST /api/v2/casemanagement/caseplans",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}",
+        "DELETE /api/v2/casemanagement/caseplans/{caseplanId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_caseplan_create_version",
+      "resource_name": "case_management_caseplan_create_version",
+      "permissions": [
+        "caseManagement:caseplan:edit",
+        "caseManagement:caseplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/versions",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_caseplan_publish",
+      "resource_name": "case_management_caseplan_publish",
+      "permissions": [
+        "caseManagement:caseplan:publish"
+      ],
+      "scopes": [
+        "case-management"
+      ],
+      "endpoints": [
+        "POST /api/v2/casemanagement/caseplans/{caseplanId}/publish"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_stageplan",
+      "resource_name": "case_management_stageplan",
+      "permissions": [
+        "caseManagement:stageplan:edit",
+        "caseManagement:stageplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans",
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_case_management_stepplan",
+      "resource_name": "case_management_stepplan",
+      "permissions": [
+        "caseManagement:stepplan:edit",
+        "caseManagement:stepplan:view"
+      ],
+      "scopes": [
+        "case-management",
+        "case-management:readonly"
+      ],
+      "endpoints": [
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans",
+        "PATCH /api/v2/casemanagement/caseplans/{caseplanId}/stageplans/{stageplanId}/stepplans/{stepplanId}",
+        "GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans/{stepplanId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_conversations_messaging_integrations_apple",
       "resource_name": "conversations_messaging_integrations_apple",
       "permissions": [
@@ -691,6 +773,22 @@
       ]
     },
     {
+      "resource_type": "genesyscloud_greeting_user",
+      "resource_name": "greeting_user",
+      "permissions": [],
+      "scopes": [
+        "greetings",
+        "greetings:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/users/{userId}/greetings",
+        "GET /api/v2/greetings/{greetingId}",
+        "GET /api/v2/users/{userId}/greetings",
+        "PUT /api/v2/greetings/{greetingId}",
+        "DELETE /api/v2/greetings/{greetingId}"
+      ]
+    },
+    {
       "resource_type": "genesyscloud_group",
       "resource_name": "group",
       "permissions": [
@@ -717,6 +815,22 @@
         "DELETE /api/v2/groups/{groupId}/members",
         "GET /api/v2/voicemail/groups/{groupId}/policy",
         "PATCH /api/v2/voicemail/groups/{groupId}/policy"
+      ]
+    },
+    {
+      "resource_type": "genesyscloud_group_greeting",
+      "resource_name": "group_greeting",
+      "permissions": [],
+      "scopes": [
+        "greetings",
+        "greetings:readonly"
+      ],
+      "endpoints": [
+        "POST /api/v2/groups/{groupId}/greetings",
+        "GET /api/v2/greetings/{greetingId}",
+        "GET /api/v2/groups/{groupId}/greetings",
+        "PUT /api/v2/greetings/{greetingId}",
+        "DELETE /api/v2/greetings/{greetingId}"
       ]
     },
     {

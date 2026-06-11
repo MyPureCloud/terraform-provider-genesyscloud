@@ -16,6 +16,19 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans-caseplanid-)
 * [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-casemanagement-caseplans-caseplanid-)
 
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `caseManagement:caseplan:add`
+* `caseManagement:caseplan:delete`
+* `caseManagement:caseplan:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `case-management`
+* `case-management:readonly`
+
 
 ## Example Usage
 
