@@ -7,31 +7,50 @@ description: |-
 ---
 # genesyscloud_knowledge_document (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Knowledge document.
 
 Export block label: "{parent knowledge base name}_{title}"
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-dependencytracking-build)
+* [POST /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-dependencytracking-build)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/categories/{categoryId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--categories--categoryId-)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents)
 * [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents)
+* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
 * [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
 * [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
-* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/variations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--variations)
 * [POST /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/documents/{documentId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-knowledge-knowledgebases--knowledgeBaseId--documents--documentId--versions)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--labels)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}/labels/{labelId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId--labels--labelId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `architect:dependencyTracking:rebuild`
+* `architect:dependencyTracking:view`
+* `knowledge:category:view`
 * `knowledge:document:add`
 * `knowledge:document:delete`
 * `knowledge:document:edit`
 * `knowledge:document:view`
 * `knowledge:documentVersion:add`
+* `knowledge:knowledgebase:view`
+* `knowledge:label:view`
 
 The following OAuth scopes are required to use this resource:
 
+* `architect`
+* `architect:readonly`
 * `knowledge`
 * `knowledge:readonly`
 

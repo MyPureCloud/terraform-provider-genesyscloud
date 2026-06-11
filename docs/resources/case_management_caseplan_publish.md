@@ -6,12 +6,42 @@ description: |-
 ---
 # genesyscloud_case_management_caseplan_publish (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Calls POST /api/v2/casemanagement/caseplans/{caseplanId}/publish. Use depends_on so this runs after stageplan and stepplan resources apply their PATCHes. Increment revision to publish again after later edits. Destroy only removes this from Terraform state (no unpublish API).
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans)
+* [POST /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans)
+* [DELETE /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-casemanagement-caseplans--caseplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
+* [PATCH /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-casemanagement-caseplans--caseplanId-)
+* [PUT /api/v2/casemanagement/caseplans/{caseplanId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-casemanagement-caseplans--caseplanId--intakesettings)
 * [POST /api/v2/casemanagement/caseplans/{caseplanId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--publish)
+* [POST /api/v2/casemanagement/caseplans/{caseplanId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-casemanagement-caseplans--caseplanId--versions)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--dataschemas)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--intakesettings)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `caseManagement:caseplan:add`
+* `caseManagement:caseplan:delete`
+* `caseManagement:caseplan:edit`
+* `caseManagement:caseplan:publish`
+* `caseManagement:caseplan:view`
+* `caseManagement:caseplanDataSchemas:view`
+* `caseManagement:caseplanIntakeSettings:edit`
+* `caseManagement:caseplanIntakeSettings:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `case-management`
+* `case-management:readonly`
 
 ## Permissions and Scopes
 

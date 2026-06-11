@@ -6,16 +6,34 @@ description: |-
 ---
 # genesyscloud_processautomation_trigger (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Process Automation Trigger
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/processAutomation/triggers](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-processautomation-triggers)
-* [POST /api/v2/processAutomation/triggers](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-processautomation-triggers)
-* [GET /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-processautomation-triggers--triggerId-)
-* [PUT /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-processautomation-triggers--triggerId-)
-* [DELETE /api/v2/processAutomation/triggers/{triggerId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-processautomation-triggers--triggerId-)
+* [GET /api/v2/processautomation/triggers](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-processautomation-triggers)
+* [POST /api/v2/processautomation/triggers](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-processautomation-triggers)
+* [DELETE /api/v2/processautomation/triggers/{triggerId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-processautomation-triggers--triggerId-)
+* [GET /api/v2/processautomation/triggers/{triggerId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-processautomation-triggers--triggerId-)
+* [PUT /api/v2/processautomation/triggers/{triggerId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-processautomation-triggers--triggerId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `processautomation:trigger:add`
+* `processautomation:trigger:delete`
+* `processautomation:trigger:edit`
+* `processautomation:trigger:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `process-automation`
+* `process-automation:readonly`
+
 
 ## Example Usage
 

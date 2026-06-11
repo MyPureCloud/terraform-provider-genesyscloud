@@ -1,1 +1,3 @@
-* The export resource calls GET APIs on all exported resource types. See the list of GET APIs on each resource.
+<!-- sources
+NO_SOURCES
+-->
