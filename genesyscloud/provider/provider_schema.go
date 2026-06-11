@@ -86,7 +86,7 @@ func ProviderSchema() map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			DefaultFunc:  schema.EnvDefaultFunc(maxTokenPoolSizeEnvVar, DefaultMaxClients),
-			Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool (%d-%d). Can be set with the `%s` environment variable.", MinClients, MaxClients, maxTokenPoolSizeEnvVar),
+			Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool (%d-%d). Each token is minted at provider startup via the OAuth client-credentials endpoint; larger values increase startup time and can trigger OAuth rate limiting during pool prefill. Match this to max_concurrent_pages rather than setting it higher than needed. Can be set with the `%s` environment variable.", MinClients, MaxClients, maxTokenPoolSizeEnvVar),
 			ValidateFunc: validation.IntBetween(MinClients, MaxClients),
 		},
 		AttrTokenAcquireTimeout: {

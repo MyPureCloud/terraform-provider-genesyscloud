@@ -46,7 +46,7 @@ If you encounter any stack traces, please report them so we can address the unde
 - `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.
 - `token_acquire_timeout` (String) Timeout for acquiring a token from the pool. Can be set with the `GENESYSCLOUD_TOKEN_ACQUIRE_TIMEOUT` environment variable.
 - `token_init_timeout` (String) Timeout for initializing the token pool. Can be set with the `GENESYSCLOUD_TOKEN_INIT_TIMEOUT` environment variable.
-- `token_pool_size` (Number) Max number of OAuth tokens in the token pool (1-50). Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
+- `token_pool_size` (Number) Max number of OAuth tokens in the token pool (1-50). Each token is minted at provider startup via the OAuth client-credentials endpoint; larger values increase startup time and can trigger OAuth rate limiting during pool prefill. Match this to max_concurrent_pages rather than setting it higher than needed. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
 
 <a id="nestedblock--gateway"></a>
 ### Nested Schema for `gateway`
