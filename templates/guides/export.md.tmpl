@@ -102,6 +102,19 @@ In its standard setup, this Terraform configuration exports only the dependencie
 
 On the other hand, Terraform also provides the `exclude_attributes` option for instances where certain fields need to be omitted from an export. This, along with the ability to automatically export additional dependencies, contributes to Terraform’s flexible framework for managing resource exports. It allows for granular control over the inclusion or exclusion of elements in the export, ensuring that your exported configuration aligns precisely with your requirements.
 
+## Excluding Deprecated Attributes:
+
+Some resource attributes have been deprecated in favor of newer alternatives. By default, these deprecated attributes are still included in exports for backward compatibility. To produce cleaner exports that omit deprecated fields, set `export_deprecated` to `false`:
+
+```hcl
+resource "genesyscloud_tf_export" "export" {
+  directory          = "./genesyscloud"
+  export_deprecated = false
+}
+```
+
+~> **Note:** The default value of `export_deprecated` (`true`) will likely switch to `false` in a future release.
+
 ## Export State File Comparison:
 
 In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.

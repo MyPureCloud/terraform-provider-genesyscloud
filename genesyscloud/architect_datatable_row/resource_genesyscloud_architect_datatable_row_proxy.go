@@ -2,12 +2,10 @@ package architect_datatable_row
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"log"
-	"net/http"
 
 	"github.com/mitchellh/mapstructure"
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
@@ -26,6 +24,7 @@ type deleteArchitectDatatableRowFunc func(ctx context.Context, p *architectDatat
 type architectDatatableRowProxy struct {
 	clientConfig                     *platformclientv2.Configuration
 	architectApi                     *platformclientv2.ArchitectApi
+	customApiClient                  *customapi.Client
 	createArchitectDatatableRowAttr  createArchitectDatatableRowFunc
 	getArchitectDatatableAttr        getArchitectDatatableFunc
 	getAllArchitectDatatableAttr     getAllArchitectDatatableFunc
@@ -47,6 +46,7 @@ func newArchitectDatatableRowProxy(clientConfig *platformclientv2.Configuration)
 	return &architectDatatableRowProxy{
 		clientConfig:                     clientConfig,
 		architectApi:                     api,
+		customApiClient:                  customapi.NewClient(clientConfig, ResourceType),
 		dataTableRowCache:                dataTableRowCache,
 		dataTableCache:                   dataTableCache,
 		getArchitectDatatableAttr:        getArchitectDatatableFn,
@@ -149,38 +149,9 @@ func getArchitectDatatableFn(ctx context.Context, p *architectDatatableRowProxy,
 		return eg, nil, nil
 	}
 
-	apiClient := &p.architectApi.Configuration.APIClient
+	queryParams := customapi.NewQueryParams(map[string]string{"expand": expanded})
 
-	// create path and map variables
-	path := p.architectApi.Configuration.BasePath + "/api/v2/flows/datatables/" + datatableId
-
-	headerParams := make(map[string]string)
-	queryParams := make(map[string]string)
-
-	// oauth required
-	if p.architectApi.Configuration.AccessToken != "" {
-		headerParams["Authorization"] = "Bearer " + p.architectApi.Configuration.AccessToken
-	}
-	// add default headers if any
-	for key := range p.architectApi.Configuration.DefaultHeader {
-		headerParams[key] = p.architectApi.Configuration.DefaultHeader[key]
-	}
-
-	queryParams["expand"] = apiClient.ParameterToString(expanded, "")
-
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	var successPayload *Datatable
-	response, err := apiClient.CallAPI(path, http.MethodGet, nil, headerParams, queryParams, nil, "", nil, "")
-	if err != nil {
-		// Nothing special to do here, but do avoid processing the response
-	} else if response.Error != nil {
-		err = errors.New(response.ErrorMessage)
-	} else {
-		err = json.Unmarshal(response.RawBody, &successPayload)
-	}
-	return successPayload, response, err
+	return customapi.Do[Datatable](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/flows/datatables/"+datatableId, nil, queryParams)
 }
 
 func getAllArchitectDatatableRowsFn(ctx context.Context, p *architectDatatableRowProxy, tableId string) (*[]map[string]interface{}, *platformclientv2.APIResponse, error) {
