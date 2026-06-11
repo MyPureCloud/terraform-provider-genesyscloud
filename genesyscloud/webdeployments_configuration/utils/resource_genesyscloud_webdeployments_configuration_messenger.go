@@ -132,11 +132,26 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 
 	if launchers, ok := cfg["launcher_button"].([]interface{}); ok && len(launchers) > 0 && launchers[0] != nil {
 		launcher := launchers[0].(map[string]interface{})
+		launcherSettings := &platformclientv2.Launcherbuttonsettings{}
+
 		if visibility, ok := launcher["visibility"].(string); ok {
-			messengerSettings.LauncherButton = &platformclientv2.Launcherbuttonsettings{
-				Visibility: &visibility,
+			launcherSettings.Visibility = &visibility
+		}
+
+		if displayType, ok := launcher["display_type"].(string); ok && displayType != "" {
+			launcherSettings.DisplayType = &displayType
+		}
+
+		if icons, ok := launcher["icon"].([]interface{}); ok && len(icons) > 0 && icons[0] != nil {
+			icon := icons[0].(map[string]interface{})
+			if url, ok := icon["url"].(string); ok {
+				launcherSettings.Icon = &platformclientv2.Launcherbuttonicon{
+					Url: &url,
+				}
 			}
 		}
+
+		messengerSettings.LauncherButton = launcherSettings
 	}
 
 	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 && screens[0] != nil {
@@ -205,9 +220,21 @@ func flattenLauncherButton(settings *platformclientv2.Launcherbuttonsettings) []
 		return nil
 	}
 
-	return []interface{}{map[string]interface{}{
+	ret := map[string]interface{}{
 		"visibility": settings.Visibility,
-	}}
+	}
+
+	if settings.DisplayType != nil {
+		ret["display_type"] = *settings.DisplayType
+	}
+
+	if settings.Icon != nil {
+		ret["icon"] = []interface{}{map[string]interface{}{
+			"url": settings.Icon.Url,
+		}}
+	}
+
+	return []interface{}{ret}
 }
 
 func flattenHomeScreen(settings *platformclientv2.Messengerhomescreen) []interface{} {

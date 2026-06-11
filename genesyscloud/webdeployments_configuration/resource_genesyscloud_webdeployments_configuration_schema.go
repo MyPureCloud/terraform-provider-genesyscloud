@@ -32,21 +32,21 @@ var (
 	customI18nLabel = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"language": {
-				Description: "Language of localized labels in messenger homescreen or push notification (eg. en-us, de-de)",
+				Description: "Language of localized labels in messenger homescreen, push notification, or messenger launcher button (eg. en-us, de-de)",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"localized_labels": {
-				Description: "Contains localized labels used in messenger homescreen or push notification. PushNotificationTitle and PushNotificationBody are required when notifications are enabled.",
+				Description: "Contains localized labels used in messenger homescreen, push notification, or messenger launcher button. PushNotificationTitle and PushNotificationBody are required when notifications are enabled.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"key": {
-							Description:  "Contains localized label key used in messenger homescreen or push notification.",
+							Description:  "Contains localized label key used in messenger homescreen, push notification, or messenger launcher button.",
 							Type:         schema.TypeString,
 							Required:     true,
-							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle", "PushNotificationTitle", "PushNotificationBody"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle", "PushNotificationTitle", "PushNotificationBody", "MessengerLauncherButtonText"}, false),
 						},
 						"value": {
 							Description: "Contains localized label value used in messenger homescreen or push notification",
@@ -102,6 +102,31 @@ var (
 					"Off",
 					"OnDemand",
 				}, false),
+			},
+			"display_type": {
+				Description: "The display type for the launcher button. Valid values: Icon, Text, IconAndText",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"Icon",
+					"Text",
+					"IconAndText",
+				}, false),
+			},
+			"icon": {
+				Description: "Icon settings for the launcher button",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"url": {
+							Description: "URL for the custom launcher icon",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
 			},
 		},
 	}
