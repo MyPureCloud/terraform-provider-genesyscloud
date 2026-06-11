@@ -255,7 +255,7 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	//Inner function to get user based on status
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 		var users []platformclientv2.User
-		const pageSize = 100
+		const pageSize = 500
 		// DEVTOOLING-862: inactive GetUsers requests return 400 beyond 10,000 users (100 pages at pageSize).
 		const maxInactiveUserPages = 10_000 / pageSize
 		expandedAttributes := []string{
