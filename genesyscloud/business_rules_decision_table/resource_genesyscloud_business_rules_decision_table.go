@@ -2,9 +2,11 @@ package business_rules_decision_table
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -171,7 +173,12 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 
 		// Set name and description from the table (version endpoint doesn't provide these)
 		resourcedata.SetNillableValue(d, "name", table.Name)
-		resourcedata.SetNillableValue(d, "description", table.Description)
+		// Only set description when there is a real value; SetNillableValue's nil branch
+		// (d.Set(key, nil)) would coerce an absent description to "" for a TypeString,
+		// causing a null -> "" inconsistency. Leaving it unset preserves null.
+		if table.Description != nil && *table.Description != "" {
+			_ = d.Set("description", *table.Description)
+		}
 		resourcedata.SetNillableReferenceDivision(d, "division_id", tableVersion.Division)
 		resourcedata.SetNillableValue(d, "version", &versionToRead)
 
@@ -222,6 +229,50 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 	})
 }
 
+// decisionTableDuplicateRowCode is the API error code returned when a row being
+// added duplicates a row that already exists on the table version.
+const decisionTableDuplicateRowCode = "decision.table.duplicate.row"
+
+// isDuplicateRowAtIndex reports whether resp is a 409 duplicate-row error whose
+// reported duplicate index matches the 1-based position of the row currently
+// being added. This indicates the row was already created server-side by a prior
+// attempt - typically a POST that returned 504 at the gateway but succeeded on
+// the backend, whose non-idempotent retry then collides with the ghost row. In
+// that case the add is safe to treat as a no-op and continue.
+//
+// The index guard is what keeps this from masking a genuine duplicate in config:
+// a real config duplicate reports the index of the earlier (first) occurrence,
+// which will not equal the position of the row currently being added.
+func isDuplicateRowAtIndex(resp *platformclientv2.APIResponse, rowNumber int) bool {
+	if resp == nil || resp.StatusCode != http.StatusConflict || len(resp.RawBody) == 0 {
+		return false
+	}
+
+	var apiErr struct {
+		Code          string `json:"code"`
+		MessageParams struct {
+			DuplicateRows string `json:"duplicateRows"`
+		} `json:"messageParams"`
+	}
+	if err := json.Unmarshal(resp.RawBody, &apiErr); err != nil || apiErr.Code != decisionTableDuplicateRowCode {
+		return false
+	}
+
+	var dups []struct {
+		Id    string `json:"id"`
+		Index int    `json:"index"`
+	}
+	if err := json.Unmarshal([]byte(apiErr.MessageParams.DuplicateRows), &dups); err != nil {
+		return false
+	}
+	for _, d := range dups {
+		if d.Index == rowNumber {
+			return true
+		}
+	}
+	return false
+}
+
 // addRowsToVersion adds all rows to a specific decision table version
 func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, terraformRows []interface{}) error {
 	// Get the table version to extract column mapping
@@ -244,8 +295,15 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 		}
 
 		// Add the row to the version
-		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
+		resp, err := proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
 		if err != nil {
+			if isDuplicateRowAtIndex(resp, i+1) {
+				// A prior attempt (e.g. a POST that returned 504 at the gateway but
+				// succeeded server-side) already created this row; the non-idempotent
+				// retry collided with that ghost row. Treat as added and continue.
+				log.Printf("[WARN] row %d already exists on decision table %s version %d (409 %s at matching index); treating as added and continuing", i+1, tableId, version, decisionTableDuplicateRowCode)
+				continue
+			}
 			return fmt.Errorf("failed to add row %d: %s", i+1, err)
 		}
 

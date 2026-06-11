@@ -148,15 +148,21 @@ func valueSchemaFunc() *schema.Resource {
 func defaultsToSchemaFunc() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			// value/values/special are mutually exclusive; a column sets exactly one.
+			// Computed lets the provider own the unused siblings (which the legacy SDK
+			// materializes as empty) so plan(null) -> apply("") is not flagged as an
+			// inconsistency and does not produce a phantom ForceNew diff.
 			"value": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.",
 			},
 
 			"values": {
 				Type:        schema.TypeList,
 				Optional:    true,
+				Computed:    true,
 				Description: "A default list of string values for this column. Used for stringList data types.",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -166,6 +172,7 @@ func defaultsToSchemaFunc() *schema.Resource {
 			"special": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				Computed:     true,
 				Description:  "A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.",
 				ValidateFunc: validation.StringInSlice([]string{"Wildcard", "Null", "Empty", "CurrentTime"}, false),
 			},
