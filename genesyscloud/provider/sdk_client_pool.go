@@ -941,8 +941,6 @@ func WrapResourceWithType(resourceType string, resource *schema.Resource) {
 		return
 	}
 
-	log.Printf("[DEBUG] WrapResourceWithType: Wrapping resource type=%q", resourceType)
-
 	// Wrap CreateContext
 	if resource.CreateContext != nil {
 		originalCreate := resource.CreateContext
