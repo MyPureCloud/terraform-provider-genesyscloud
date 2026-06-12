@@ -2135,6 +2135,9 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 			}
 		}()
 
+		// Export refresh runs concurrently per resource, but meta is a single shared
+		// ProviderMeta. Copy it and swap in the acquired ClientConfig so each goroutine
+		// uses its own pooled OAuth token without mutating the shared meta object.
 		originalProviderMeta := meta.(*provider.ProviderMeta)
 		refreshMeta = &provider.ProviderMeta{
 			ClientConfig:          pooledClientConfig,

@@ -164,8 +164,6 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			Version:            version,
 		}
 
-		log.Printf("[PAGINATION] Provider max_concurrent_pages=%d", maxConcurrentPages)
-
 		SdkClientPool = &SDKClientPool{
 			Pool:    make(chan *platformclientv2.Configuration, max),
 			config:  config,
