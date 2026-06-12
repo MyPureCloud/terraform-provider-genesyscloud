@@ -438,8 +438,6 @@ func newSDKDebugRequest(request *http.Request, count int) *sdkDebugRequest {
 		if storedCtx := getContextForRequest(); storedCtx != nil {
 			if rc, ok := storedCtx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
 				resourceCtx = rc
-				// Inject the context into the request so it's available for the response hook
-				*request = *request.WithContext(storedCtx)
 			}
 		}
 	}
@@ -501,6 +499,15 @@ func newSDKDebugResponse(response *http.Response) *sdkDebugResponse {
 	if ctx := response.Request.Context(); ctx != nil {
 		if rc, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
 			resourceCtx = rc
+		}
+	}
+
+	// If not found in request context, try goroutine-local storage
+	if resourceCtx == nil {
+		if storedCtx := getContextForRequest(); storedCtx != nil {
+			if rc, ok := storedCtx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
+				resourceCtx = rc
+			}
 		}
 	}
 
