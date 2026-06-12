@@ -151,7 +151,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allQueues []platformclientv2.Queue
-	const pageSize = 100
+	const pageSize = 500
 
 	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
 	if getErr != nil {

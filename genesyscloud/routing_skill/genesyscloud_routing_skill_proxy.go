@@ -75,7 +75,7 @@ func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name strin
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allRoutingSkills []platformclientv2.Routingskill
-	const pageSize = 100
+	const pageSize = 500
 
 	routingSkills, resp, err := p.routingApi.GetRoutingSkills(pageSize, 1, name, nil)
 	if err != nil {

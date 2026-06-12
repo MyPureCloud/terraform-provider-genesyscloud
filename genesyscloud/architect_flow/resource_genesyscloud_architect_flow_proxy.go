@@ -333,7 +333,7 @@ func buildFlowListQueryParams(name string, varType []string, pageSize, pageNum i
 func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	const pageSize = 100
+	const pageSize = 500
 	var allFlows []platformclientv2.Flow
 
 	flows, apiResp, err := customapi.Do[platformclientv2.Flowentitylisting](

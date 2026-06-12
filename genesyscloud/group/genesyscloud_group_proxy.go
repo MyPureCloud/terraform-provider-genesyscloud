@@ -209,7 +209,7 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allGroups []platformclientv2.Group
-	const pageSize = 100
+	const pageSize = 500
 
 	groups, resp, getErr := p.groupsApi.GetGroups(pageSize, 1, nil, nil, "")
 	if getErr != nil {

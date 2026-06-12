@@ -155,7 +155,7 @@ func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platform
 
 	var allPublishedScripts []platformclientv2.Script
 	var resp *platformclientv2.APIResponse
-	const pageSize = 100
+	const pageSize = 500
 
 	data, resp, err := p.scriptsApi.GetScriptsPublished(pageSize, 1, "", "", "", "", "", "")
 	if err != nil {
