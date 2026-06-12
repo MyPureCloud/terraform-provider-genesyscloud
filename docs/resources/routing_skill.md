@@ -6,15 +6,19 @@ description: |-
 ---
 # genesyscloud_routing_skill (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Skill
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/skills](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-skills)
-* [POST /api/v2/routing/skills](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-skills)
-* [GET /api/v2/routing/skills/{skillId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-skills--skillId-)
-* [DELETE /api/v2/routing/skills/{skillId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skills)
+* [POST /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-skills)
+* [DELETE /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-skills--skillId-)
+* [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skills--skillId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

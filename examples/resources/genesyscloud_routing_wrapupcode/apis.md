@@ -1,5 +1,8 @@
-* [GET /api/v2/routing/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-wrapupcodes)
-* [GET /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-wrapupcodes--codeId-)
-* [POST /api/v2/routing/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-wrapupcodes)
-* [PUT /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-wrapupcodes--codeId-)
-* [DELETE /api/v2/routing/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-wrapupcodes--codeId-)
+<!-- sources
+genesyscloud/routing_wrapupcode/genesyscloud_routing_wrapupcode_proxy.go
+-->
+* [GET /api/v2/routing/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-wrapupcodes)
+* [POST /api/v2/routing/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-wrapupcodes)
+* [DELETE /api/v2/routing/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-wrapupcodes--codeId-)
+* [GET /api/v2/routing/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-wrapupcodes--codeId-)
+* [PUT /api/v2/routing/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-wrapupcodes--codeId-)
