@@ -6,9 +6,12 @@ description: |-
 ---
 # genesyscloud_conversations_settings (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud organization conversations settings
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/conversations/settings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-settings)

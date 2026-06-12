@@ -6,19 +6,23 @@ description: |-
 ---
 # genesyscloud_webdeployments_configuration (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Web Deployment Configuration
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/webdeployments/configurations](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations)
-* [POST /api/v2/webdeployments/configurations](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations)
-* [DELETE /api/v2/webdeployments/configurations/{configurationId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#delete-api-v2-webdeployments-configurations--configurationId-)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#put-api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
+* [GET /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations)
+* [POST /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-webdeployments-configurations)
+* [DELETE /api/v2/webdeployments/configurations/{configurationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-webdeployments-configurations--configurationId-)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions-draft)
+* [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-webdeployments-configurations--configurationId--versions-draft)
+* [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
