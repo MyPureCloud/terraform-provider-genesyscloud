@@ -156,14 +156,14 @@ func defaultsToSchemaFunc() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Computed:    true,
-				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.",
+				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property. Mutually exclusive with 'values' and 'special'; set only one per column (enforced by the API).",
 			},
 
 			"values": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Computed:    true,
-				Description: "A default list of string values for this column. Used for stringList data types.",
+				Description: "A default list of string values for this column. Used for stringList data types. Mutually exclusive with 'value' and 'special'; set only one per column (enforced by the API).",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -173,7 +173,7 @@ func defaultsToSchemaFunc() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				Description:  "A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.",
+				Description:  "A default special value enum for this column. Valid values: Wildcard, Null, Empty, CurrentTime. Mutually exclusive with 'value' and 'values'; set only one per column (enforced by the API).",
 				ValidateFunc: validation.StringInSlice([]string{"Wildcard", "Null", "Empty", "CurrentTime"}, false),
 			},
 		},
@@ -194,7 +194,7 @@ func inputColumnSchemaFunc() *schema.Resource {
 				Required:    true,
 				MaxItems:    1,
 				Elem:        &schema.Resource{Schema: defaultsToSchemaFunc().Schema},
-				Description: "Default value configuration. Only one of 'value' or 'special' should be set.",
+				Description: "Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API).",
 			},
 			"expression": {
 				Type:        schema.TypeList,
@@ -221,7 +221,7 @@ func outputColumnSchemaFunc() *schema.Resource {
 				Required:    true,
 				MaxItems:    1,
 				Elem:        &schema.Resource{Schema: defaultsToSchemaFunc().Schema},
-				Description: "Default value configuration. Only one of 'value' or 'special' should be set.",
+				Description: "Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API).",
 			},
 			"value": {
 				Type:        schema.TypeList,

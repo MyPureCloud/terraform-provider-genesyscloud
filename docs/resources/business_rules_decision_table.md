@@ -392,7 +392,7 @@ Required:
 
 Required:
 
-- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--inputs--defaults_to))
+- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API). (see [below for nested schema](#nestedblock--columns--inputs--defaults_to))
 - `expression` (Block List, Min: 1, Max: 1) The input column condition expression, comprising the left side and comparator of a logical condition in the form of left|comparator|right, where each row of the decision table will provide the right side to form a complete condition. (see [below for nested schema](#nestedblock--columns--inputs--expression))
 
 Read-Only:
@@ -404,9 +404,9 @@ Read-Only:
 
 Optional:
 
-- `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
-- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
-- `values` (List of String) A default list of string values for this column. Used for stringList data types.
+- `special` (String) A default special value enum for this column. Valid values: Wildcard, Null, Empty, CurrentTime. Mutually exclusive with 'value' and 'values'; set only one per column (enforced by the API).
+- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property. Mutually exclusive with 'values' and 'special'; set only one per column (enforced by the API).
+- `values` (List of String) A default list of string values for this column. Used for stringList data types. Mutually exclusive with 'value' and 'special'; set only one per column (enforced by the API).
 
 
 <a id="nestedblock--columns--inputs--expression"></a>
@@ -456,7 +456,7 @@ Required:
 
 Required:
 
-- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--outputs--defaults_to))
+- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API). (see [below for nested schema](#nestedblock--columns--outputs--defaults_to))
 - `value` (Block List, Min: 1, Max: 1) The output data of this column that will be provided by each row. (see [below for nested schema](#nestedblock--columns--outputs--value))
 
 Read-Only:
@@ -468,9 +468,9 @@ Read-Only:
 
 Optional:
 
-- `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
-- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
-- `values` (List of String) A default list of string values for this column. Used for stringList data types.
+- `special` (String) A default special value enum for this column. Valid values: Wildcard, Null, Empty, CurrentTime. Mutually exclusive with 'value' and 'values'; set only one per column (enforced by the API).
+- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property. Mutually exclusive with 'values' and 'special'; set only one per column (enforced by the API).
+- `values` (List of String) A default list of string values for this column. Used for stringList data types. Mutually exclusive with 'value' and 'special'; set only one per column (enforced by the API).
 
 
 <a id="nestedblock--columns--outputs--value"></a>
