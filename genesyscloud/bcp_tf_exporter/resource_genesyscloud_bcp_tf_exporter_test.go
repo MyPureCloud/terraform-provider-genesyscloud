@@ -500,9 +500,6 @@ func TestUnitBcpTfExporter_WarningScenarios(t *testing.T) {
 			"filename":  filename,
 		})
 
-		// Set providerResources to nil to simulate unregistered resource
-		providerResources = nil
-
 		diags := createBcpTfExporter(context.Background(), d, nil)
 		assert.False(t, diags.HasError())
 

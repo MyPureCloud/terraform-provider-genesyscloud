@@ -41,21 +41,25 @@ type BcpResourceDependency struct {
 
 type BcpExportData map[string][]BcpResource
 
-var (
-	providerResources     map[string]*schema.Resource
-	providerResourcesOnce sync.Once
-)
-
 func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	directory := d.Get("directory").(string)
 	filename := d.Get("filename").(string)
 	logPermissionErrorsFilename := d.Get("log_permissions_filename").(string)
+	maxWorkers := d.Get("max_workers").(int)
 
 	validatedDir, validatedFilename, err := validatePath(directory, filename)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	if logPermissionErrorsFilename != "" {
+		_, err = validateFilename(logPermissionErrorsFilename)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	providerResources, _ := registrar.GetResources()
 	exporters := resourceExporter.GetResourceExporters()
 	tfExporterState.ActivateExporterState()
 	filteredExporters := filterExporters(ctx, exporters, d)
@@ -68,6 +72,14 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	})
 
 	for resourceType, exporter := range filteredExporters {
+
+		// Handle context cancellation
+		select {
+		case <-ctx.Done():
+			return diag.FromErr(fmt.Errorf("export cancelled: %v", ctx.Err()))
+		default:
+		}
+
 		tflog.Debug(ctx, "Processing resource type", map[string]interface{}{
 			"resource_type": resourceType,
 		})
@@ -104,46 +116,75 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		resourceMap := exporter.GetSanitizedResourceMap()
 		var resources []BcpResource
 
-		if providerResources == nil {
-			providerResourcesOnce.Do(func() {
-				providerResources, _ = registrar.GetResources()
-			})
+		type workItem struct {
+			id      string
+			resMeta *resourceExporter.ResourceMeta
+		}
+		items := make([]workItem, 0, len(resourceMap))
+		for id, resMeta := range resourceMap {
+			items = append(items, workItem{id: id, resMeta: resMeta})
 		}
 
-		for id, resMeta := range resourceMap {
-			resource, exists := providerResources[resourceType]
-			if !exists {
-				tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
-					"resource_type": resourceType,
-					"id":            id,
-				})
-				continue
+		// process items with bounded concurrency
+		workerCount := min(maxWorkers, len(items), 1)
+		sem := make(chan struct{}, workerCount)
+
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+
+		for _, item := range items {
+			select {
+			case <-ctx.Done():
+				wg.Wait()
+				return diag.FromErr(ctx.Err())
+			default:
 			}
 
-			var instanceState *terraform.InstanceState
-			if meta != nil {
-				var err error
-				instanceState, err = getResourceState(ctx, resource, id, resMeta, meta)
-				if err != nil {
-					tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
+			wg.Add(1)
+			sem <- struct{}{} // acquire slot
+
+			go func(id string, resMeta *resourceExporter.ResourceMeta) {
+				defer wg.Done()
+				defer func() { <-sem }() // release slot
+
+				resource, exists := providerResources[resourceType]
+				if !exists {
+					tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
 						"resource_type": resourceType,
 						"id":            id,
-						"error":         err.Error(),
 					})
-					continue
+					return
 				}
-			}
 
-			name := getResourceName(instanceState, resMeta)
-			deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, meta, instanceState)
+				var instanceState *terraform.InstanceState
+				if meta != nil {
+					var err error
+					instanceState, err = getResourceState(ctx, resource, id, resMeta, meta)
+					if err != nil {
+						tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
+							"resource_type": resourceType,
+							"id":            id,
+							"error":         err.Error(),
+						})
+						return
+					}
+				}
 
-			resources = append(resources, BcpResource{
-				ID:           id,
-				Name:         name,
-				BlockLabel:   resMeta.BlockLabel,
-				Dependencies: deps,
-			})
+				name := getResourceName(instanceState, resMeta)
+
+				deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, meta, instanceState)
+				mu.Lock()
+				resources = append(resources, BcpResource{
+					ID:           id,
+					Name:         name,
+					BlockLabel:   resMeta.BlockLabel,
+					Dependencies: deps,
+				})
+				mu.Unlock()
+			}(item.id, item.resMeta)
 		}
+
+		wg.Wait()
 
 		if len(resources) > 0 {
 			// Sort resources by ID for deterministic output
@@ -156,6 +197,7 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 				"resource_count": len(resources),
 			})
 		}
+
 	}
 
 	if err := os.MkdirAll(validatedDir, 0755); err != nil {
@@ -197,29 +239,41 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	return nil
 }
 
-// Add path validation
-func validatePath(dir, filename string) (string, string, error) {
-	// Clean and validate directory path
-	if strings.Contains(dir, "..") {
-		return "", "", fmt.Errorf("directory path contains invalid traversal sequences")
+// Add validations
+func validateFilename(filename string) (string, error) {
+	if filename == "" {
+		return "", fmt.Errorf("filename is required")
 	}
-
 	// Validate filename
 	if strings.Contains(filename, "..") || strings.Contains(filename, "/") {
-		return "", "", fmt.Errorf("filename contains invalid characters")
+		return "", fmt.Errorf("filename contains invalid characters")
 	}
 
 	// Safety check for path traversal
 	cleanFilePath := filepath.Clean(filename)
 	cleanBaseFilePath := filepath.Base(cleanFilePath)
 	if cleanBaseFilePath != cleanFilePath {
-		return "", "", fmt.Errorf("filename contains invalid path traversal sequences")
+		return "", fmt.Errorf("filename contains invalid path traversal sequences")
+	}
+
+	return cleanFilePath, nil
+}
+
+func validatePath(dir, filename string) (string, string, error) {
+	// Clean and validate directory path
+	if strings.Contains(dir, "..") {
+		return "", "", fmt.Errorf("directory path contains invalid traversal sequences")
 	}
 
 	// Explicit base path validation of dir
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid directory path: %v", err)
+	}
+
+	cleanBaseFilePath, err := validateFilename(filename)
+	if err != nil {
+		return "", "", err
 	}
 
 	return absDir, cleanBaseFilePath, nil
@@ -321,11 +375,11 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		BlockLabel: resMeta.BlockLabel,
 	}
 
-	proxy := GetBcpExporterProxy(nil)
+	var proxy *bcpExporterProxy
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-			proxy = GetBcpExporterProxy(clientConfig)
+			proxy = getBcpExporterProxy(clientConfig)
 			resources, dependsMap, err := proxy.GetFlowDependencies(ctx, resourceKeys)
 			if err != nil {
 				return nil, nil, []string{}, diag.Errorf("Failed to retrieve dependencies for flow %s: %s", resourceKeys.State.ID, err)
@@ -432,11 +486,19 @@ func extractSpecificDependencies(ctx context.Context, providerResources map[stri
 	ctyType := resource.CoreConfigSchema().ImpliedType()
 	stateVal, err := schema.StateValueFromInstanceState(instanceState, ctyType)
 	if err != nil {
+		tflog.Warn(ctx, "Failed to convert instance state", map[string]interface{}{
+			"resource_type": resourceType,
+			"error":         err.Error(),
+		})
 		return bcpResourceDependencies
 	}
 
 	resourceData, err := schema.StateValueToJSONMap(stateVal, ctyType)
 	if err != nil {
+		tflog.Warn(ctx, "Failed to unmarshal JSON", map[string]interface{}{
+			"resource_type": resourceType,
+			"error":         err.Error(),
+		})
 		return bcpResourceDependencies
 	}
 
@@ -570,8 +632,16 @@ func isValidGUID(s string) bool {
 	if len(s) != 36 {
 		return false
 	}
-	if s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
-		return false
+	for i, c := range s {
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+		} else {
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+				return false
+			}
+		}
 	}
 	return true
 }
