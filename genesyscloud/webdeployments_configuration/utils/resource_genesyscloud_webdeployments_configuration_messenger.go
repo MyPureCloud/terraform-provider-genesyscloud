@@ -144,7 +144,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 
 		if icons, ok := launcher["icon"].([]interface{}); ok && len(icons) > 0 && icons[0] != nil {
 			icon := icons[0].(map[string]interface{})
-			launcherIcon := &platformclientv2.Launcherbuttonicon{}
+			launcherIcon := &platformclientv2.Icon{}
 			if url, ok := icon["url"].(string); ok {
 				launcherIcon.Url = &url
 			}

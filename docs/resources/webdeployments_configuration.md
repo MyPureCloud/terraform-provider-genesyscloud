@@ -57,6 +57,10 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
       key   = "MessengerHomeHeaderSubTitle"
       value = "Custom Header Subtitle"
     }
+    localized_labels {
+      key   = "MessengerLauncherButtonText"
+      value = "Chat with us"
+    }
   }
   position {
     alignment    = "Auto"
@@ -66,7 +70,11 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
   messenger {
     enabled = true
     launcher_button {
-      visibility = "OnDemand"
+      visibility   = "OnDemand"
+      display_type = "IconAndText"
+      icon {
+        url = "https://my-domain/images/launcher-icon.png"
+      }
     }
     home_screen {
       enabled  = true
@@ -291,16 +299,16 @@ Required:
 
 Optional:
 
-- `language` (String) Language of localized labels in messenger homescreen or push notification (eg. en-us, de-de)
-- `localized_labels` (Block List) Contains localized labels used in messenger homescreen or push notification. PushNotificationTitle and PushNotificationBody are required when notifications are enabled. (see [below for nested schema](#nestedblock--custom_i18n_labels--localized_labels))
+- `language` (String) Language of localized labels in messenger homescreen, push notification, or messenger launcher button (eg. en-us, de-de)
+- `localized_labels` (Block List) Contains localized labels used in messenger homescreen, push notification, or messenger launcher button. PushNotificationTitle and PushNotificationBody are required when notifications are enabled. (see [below for nested schema](#nestedblock--custom_i18n_labels--localized_labels))
 
 <a id="nestedblock--custom_i18n_labels--localized_labels"></a>
 ### Nested Schema for `custom_i18n_labels.localized_labels`
 
 Required:
 
-- `key` (String) Contains localized label key used in messenger homescreen or push notification.
-- `value` (String) Contains localized label value used in messenger homescreen or push notification
+- `key` (String) Contains localized label key used in messenger homescreen, push notification, or messenger launcher button.
+- `value` (String) Contains localized label value used in messenger homescreen, push notification, or messenger launcher button.
 
 
 
@@ -508,7 +516,17 @@ Optional:
 
 Optional:
 
+- `display_type` (String) The display type for the launcher button. Valid values: Icon, Text, IconAndText
+- `icon` (Block List, Max: 1) Icon settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button--icon))
 - `visibility` (String) The visibility settings for the button.Valid values: On, Off, OnDemand
+
+<a id="nestedblock--messenger--launcher_button--icon"></a>
+### Nested Schema for `messenger.launcher_button.icon`
+
+Optional:
+
+- `url` (String) URL for the custom launcher icon
+
 
 
 <a id="nestedblock--messenger--styles"></a>
