@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -343,23 +344,6 @@ func buildUpdateRequest(d *schema.ResourceData) *platformclientv2.Updatedecision
 
 	if d.HasChange("description") {
 		updateRequest.Description = platformclientv2.String(d.Get("description").(string))
-	}
-
-	return updateRequest
-}
-
-// convertSDKRowToUpdateRequest converts an SDK row to update request format
-func convertSDKRowToUpdateRequest(sdkRow platformclientv2.Createdecisiontablerowrequest) *platformclientv2.Putdecisiontablerowrequest {
-	updateRequest := &platformclientv2.Putdecisiontablerowrequest{}
-
-	// Copy inputs if they exist
-	if sdkRow.Inputs != nil {
-		updateRequest.Inputs = sdkRow.Inputs
-	}
-
-	// Copy outputs if they exist
-	if sdkRow.Outputs != nil {
-		updateRequest.Outputs = sdkRow.Outputs
 	}
 
 	return updateRequest
@@ -977,85 +961,67 @@ func valuesEqual(val1, val2 interface{}) bool {
 
 // applyRowChanges applies the detected changes to the draft version
 func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange) error {
-	// Get the table version to extract column mapping
+	limAdd, limUpd, limRem := getBulkChunkLimits()
+	return applyRowChangesWithLimits(ctx, proxy, tableId, version, changes, limAdd, limUpd, limRem)
+}
+
+// applyRowChangesWithLimits applies row changes using explicit bulk chunk sizes (used in tests).
+func applyRowChangesWithLimits(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, limAdd, limUpd, limRem int) error {
 	tableVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
 	if err != nil {
 		return fmt.Errorf("failed to get table version for column mapping: %s", err)
 	}
 
-	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
-	// Track successfully added rows for potential rollback
-	var addedRows []string
-
-	// Delete rows first
-	for _, rowId := range changes.deletes {
-		log.Printf("Deleting row %s", rowId)
-		_, err := proxy.deleteDecisionTableRow(ctx, tableId, version, rowId)
-		if err != nil {
-			return fmt.Errorf("failed to delete row %s: %s", rowId, err)
+	start := 0
+	if len(changes.deletes) > 0 {
+		for _, chunk := range chunks.ChunkBy(changes.deletes, limRem) {
+			log.Printf("Bulk deleting %d rows", len(chunk))
+			_, err := proxy.bulkRemoveDecisionTableRows(ctx, tableId, version, chunk)
+			if err != nil {
+				return fmt.Errorf("failed to bulk delete rows (batch %d-%d of %d): %s", start, start+len(chunk)-1, len(changes.deletes), err)
+			}
+			log.Printf("Successfully bulk deleted %d rows", len(chunk))
+			start += len(chunk)
 		}
-		log.Printf("Successfully deleted row %s", rowId)
 	}
 
-	// Update existing rows
+	updatePayloads := make([]platformclientv2.Row, 0, len(changes.updates))
 	for _, row := range changes.updates {
-		rowId := row["row_id"].(string)
-		log.Printf("Updating row %s", rowId)
-
-		// Convert to SDK format using column order mapping (same as creation)
-		sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
+		body, err := buildBulkUpdateRowFromProviderMap(row, inputColumnIds, outputColumnIds)
 		if err != nil {
-			return fmt.Errorf("failed to convert row for update: %s", err)
+			return fmt.Errorf("failed to build bulk update row: %s", err)
 		}
-
-		// Convert SDK row to update request format
-		updateRequest := convertSDKRowToUpdateRequest(sdkRow)
-
-		// Update the row
-		updatedRow, _, err := proxy.updateDecisionTableRow(ctx, tableId, version, rowId, updateRequest)
-		if err != nil {
-			return fmt.Errorf("failed to update row %s: %s", rowId, err)
-		}
-
-		// Log the returned row data for debugging
-		if updatedRow != nil {
-			rowIdStr := "unknown"
-			rowIndexStr := "unknown"
-			if updatedRow.Id != nil {
-				rowIdStr = *updatedRow.Id
+		updatePayloads = append(updatePayloads, body)
+	}
+	if len(updatePayloads) > 0 {
+		start = 0
+		for _, chunk := range chunks.ChunkBy(updatePayloads, limUpd) {
+			log.Printf("Bulk updating %d rows", len(chunk))
+			_, err := proxy.bulkUpdateDecisionTableRows(ctx, tableId, version, chunk)
+			if err != nil {
+				return fmt.Errorf("failed to bulk update rows (batch %d-%d of %d): %s", start, start+len(chunk)-1, len(updatePayloads), err)
 			}
-			if updatedRow.RowIndex != nil {
-				rowIndexStr = fmt.Sprintf("%d", *updatedRow.RowIndex)
-			}
-			log.Printf("Successfully updated row %s: returned row_id=%s, row_index=%s",
-				rowId, rowIdStr, rowIndexStr)
-		} else {
-			log.Printf("Successfully updated row %s (no row data returned)", rowId)
+			log.Printf("Successfully bulk updated %d rows", len(chunk))
+			start += len(chunk)
 		}
 	}
 
-	// Add new rows using column order mapping
+	addRows := make([]platformclientv2.Createdecisiontablerowrequest, 0, len(changes.adds))
 	for i, row := range changes.adds {
-		log.Printf("Adding new row %d/%d", i+1, len(changes.adds))
 		sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}
-		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
-		if err != nil {
-			// If adding a row fails, we can't easily rollback individual rows
-			// The version cleanup will handle the overall rollback
-			return fmt.Errorf("failed to add new row %d/%d: %s", i+1, len(changes.adds), err)
-		}
-
-		// Track successfully added rows (if we had row IDs, we'd store them here)
-		addedRows = append(addedRows, fmt.Sprintf("row_%d", i+1))
-		log.Printf("Successfully added row %d/%d", i+1, len(changes.adds))
+		sdkRow.RowIndex = nil
+		addRows = append(addRows, sdkRow)
+	}
+	if err := bulkAddConvertedRows(ctx, proxy, tableId, version, addRows, limAdd); err != nil {
+		return err
 	}
 
-	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(addedRows))
+	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(changes.adds))
 	return nil
 }
 
@@ -1078,4 +1044,35 @@ func normalizeLiteralValue(value, literalType string) string {
 	default:
 		return value
 	}
+}
+
+// bulkAddConvertedRows bulk-adds pre-converted SDK rows in chunks. Each row must have RowIndex nilled.
+func bulkAddConvertedRows(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, sdkRows []platformclientv2.Createdecisiontablerowrequest, chunkLimit int) error {
+	start := 0
+	for _, chunk := range chunks.ChunkBy(sdkRows, chunkLimit) {
+		log.Printf("Bulk adding %d new rows", len(chunk))
+		_, err := proxy.bulkAddDecisionTableRows(ctx, tableId, version, chunk)
+		if err != nil {
+			return fmt.Errorf("failed to bulk add rows (batch %d-%d of %d): %s", start, start+len(chunk)-1, len(sdkRows), err)
+		}
+		log.Printf("Successfully bulk added %d rows to decision table %s version %d", len(chunk), tableId, version)
+		start += len(chunk)
+	}
+	return nil
+}
+
+func buildBulkUpdateRowFromProviderMap(row map[string]interface{}, inputColumnIds, outputColumnIds []string) (platformclientv2.Row, error) {
+	sdkRow, err := convertDecisionTableRowFromProviderToSDK(row, inputColumnIds, outputColumnIds)
+	if err != nil {
+		return platformclientv2.Row{}, err
+	}
+	rowID, ok := row["row_id"].(string)
+	if !ok || rowID == "" {
+		return platformclientv2.Row{}, fmt.Errorf("row_id is required for row update")
+	}
+	return platformclientv2.Row{
+		RowId:   platformclientv2.String(rowID),
+		Inputs:  sdkRow.Inputs,
+		Outputs: sdkRow.Outputs,
+	}, nil
 }

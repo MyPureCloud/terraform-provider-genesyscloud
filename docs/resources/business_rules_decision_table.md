@@ -24,9 +24,9 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
 * [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/add](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-add)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/remove](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-remove)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/update](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-update)
 
 ## Permissions and Scopes
 

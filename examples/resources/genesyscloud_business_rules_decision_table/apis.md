@@ -1,5 +1,6 @@
 <!-- sources
 genesyscloud/business_rules_decision_table/genesyscloud_business_rules_decision_table_proxy.go
+genesyscloud/business_rules_decision_table/decision_table_bulk_http.go
 -->
 * [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables)
 * [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables-search)
@@ -11,6 +12,6 @@ genesyscloud/business_rules_decision_table/genesyscloud_business_rules_decision_
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
 * [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/add](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-add)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/remove](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-remove)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/bulk/update](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows-bulk-update)
