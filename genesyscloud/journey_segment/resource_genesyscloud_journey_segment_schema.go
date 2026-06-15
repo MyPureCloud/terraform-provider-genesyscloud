@@ -46,7 +46,7 @@ var (
 		"color": {
 			Description: "The hexadecimal color value of the segment.",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			ValidateFunc: validation.StringMatch(func() *regexp.Regexp {
 				r, _ := regexp.Compile("^#[a-fA-F\\d]{6}$")
 				return r
