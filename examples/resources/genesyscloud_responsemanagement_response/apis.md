@@ -1,5 +1,9 @@
+<!-- sources
+genesyscloud/responsemanagement_response/genesyscloud_responsemanagement_response_proxy.go
+-->
+* [GET /api/v2/responsemanagement/libraries](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-libraries)
 * [GET /api/v2/responsemanagement/responses](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses)
 * [POST /api/v2/responsemanagement/responses](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-responsemanagement-responses)
+* [DELETE /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-responses--responseId-)
 * [GET /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responses--responseId-)
 * [PUT /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-responsemanagement-responses--responseId-)
-* [DELETE /api/v2/responsemanagement/responses/{responseId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-responses--responseId-)

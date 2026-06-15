@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 const (
@@ -940,8 +940,6 @@ func WrapResourceWithType(resourceType string, resource *schema.Resource) {
 	if resource == nil {
 		return
 	}
-
-	log.Printf("[DEBUG] WrapResourceWithType: Wrapping resource type=%q", resourceType)
 
 	// Wrap CreateContext
 	if resource.CreateContext != nil {

@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_task_management_workbin (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management workbin
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/taskmanagement/workbins](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins)
-* [GET /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-workbins--workbinId-)
-* [PATCH /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-workbins--workbinId-)
-* [DELETE /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-workbins--workbinId-)
-* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins-query)
+* [POST /api/v2/taskmanagement/workbins](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workbins)
+* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workbins-query)
+* [DELETE /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-workbins--workbinId-)
+* [GET /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-workbins--workbinId-)
+* [PATCH /api/v2/taskmanagement/workbins/{workbinId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-workbins--workbinId-)
 
 ## Permissions and Scopes
 

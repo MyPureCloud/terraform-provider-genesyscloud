@@ -6,18 +6,22 @@ description: |-
 ---
 # genesyscloud_architect_grammar_language (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud architect grammar language
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/grammars](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars)
-* [POST /api/v2/architect/grammars/{grammarId}/languages](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages)
-* [GET /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [PATCH /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [DELETE /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-architect-grammars--grammarId--languages--languageCode-)
-* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/dtmf](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-dtmf)
-* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/voice](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-voice)
+* [GET /api/v2/architect/grammars](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-grammars)
+* [POST /api/v2/architect/grammars/{grammarId}/languages](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-grammars--grammarId--languages)
+* [DELETE /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-architect-grammars--grammarId--languages--languageCode-)
+* [GET /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-grammars--grammarId--languages--languageCode-)
+* [PATCH /api/v2/architect/grammars/{grammarId}/languages/{languageCode}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-architect-grammars--grammarId--languages--languageCode-)
+* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/dtmf](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-dtmf)
+* [POST /api/v2/architect/grammars/{grammarId}/languages/{languageCode}/files/voice](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-grammars--grammarId--languages--languageCode--files-voice)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
