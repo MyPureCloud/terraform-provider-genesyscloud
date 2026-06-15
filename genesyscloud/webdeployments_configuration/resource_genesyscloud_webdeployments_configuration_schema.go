@@ -49,7 +49,7 @@ var (
 							ValidateFunc: validation.StringInSlice([]string{"MessengerHomeHeaderTitle", "MessengerHomeHeaderSubTitle", "PushNotificationTitle", "PushNotificationBody", "MessengerLauncherButtonText"}, false),
 						},
 						"value": {
-							Description: "Contains localized label value used in messenger homescreen or push notification",
+							Description: "Contains localized label value used in messenger homescreen, push notification, or messenger launcher button.",
 							Type:        schema.TypeString,
 							Required:    true,
 						},
@@ -123,7 +123,7 @@ var (
 						"url": {
 							Description: "URL for the custom launcher icon",
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
 						},
 					},
 				},

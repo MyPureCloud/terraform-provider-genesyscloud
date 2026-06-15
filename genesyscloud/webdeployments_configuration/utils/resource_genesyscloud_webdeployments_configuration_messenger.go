@@ -144,11 +144,11 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 
 		if icons, ok := launcher["icon"].([]interface{}); ok && len(icons) > 0 && icons[0] != nil {
 			icon := icons[0].(map[string]interface{})
+			launcherIcon := &platformclientv2.Launcherbuttonicon{}
 			if url, ok := icon["url"].(string); ok {
-				launcherSettings.Icon = &platformclientv2.Launcherbuttonicon{
-					Url: &url,
-				}
+				launcherIcon.Url = &url
 			}
+			launcherSettings.Icon = launcherIcon
 		}
 
 		messengerSettings.LauncherButton = launcherSettings
@@ -220,8 +220,10 @@ func flattenLauncherButton(settings *platformclientv2.Launcherbuttonsettings) []
 		return nil
 	}
 
-	ret := map[string]interface{}{
-		"visibility": settings.Visibility,
+	ret := map[string]interface{}{}
+
+	if settings.Visibility != nil {
+		ret["visibility"] = *settings.Visibility
 	}
 
 	if settings.DisplayType != nil {
@@ -229,9 +231,11 @@ func flattenLauncherButton(settings *platformclientv2.Launcherbuttonsettings) []
 	}
 
 	if settings.Icon != nil {
-		ret["icon"] = []interface{}{map[string]interface{}{
-			"url": settings.Icon.Url,
-		}}
+		iconMap := map[string]interface{}{}
+		if settings.Icon.Url != nil {
+			iconMap["url"] = *settings.Icon.Url
+		}
+		ret["icon"] = []interface{}{iconMap}
 	}
 
 	return []interface{}{ret}
