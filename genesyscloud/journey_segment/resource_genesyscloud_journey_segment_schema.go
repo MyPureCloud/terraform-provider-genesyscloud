@@ -47,6 +47,7 @@ var (
 			Description: "The hexadecimal color value of the segment.",
 			Type:        schema.TypeString,
 			Optional:    true,
+			Computed:    true,
 			ValidateFunc: validation.StringMatch(func() *regexp.Regexp {
 				r, _ := regexp.Compile("^#[a-fA-F\\d]{6}$")
 				return r
@@ -56,6 +57,7 @@ var (
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 		},
 		"context": {
 			Description: "The context of the segment.",
