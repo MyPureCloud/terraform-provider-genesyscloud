@@ -6,14 +6,16 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_supportedcontent_default (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud conversations messaging supportedcontent default
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [PUT /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-conversations-messaging-supportedcontent-default)
 * [GET /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-supportedcontent-default)
-
+* [PUT /api/v2/conversations/messaging/supportedcontent/default](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-conversations-messaging-supportedcontent-default)
 
 ## Permissions and Scopes
 

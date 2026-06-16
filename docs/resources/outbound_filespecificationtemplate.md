@@ -6,22 +6,30 @@ description: |-
 ---
 # genesyscloud_outbound_filespecificationtemplate (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Outbound File Specification Template
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/filespecificationtemplates](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-filespecificationtemplates)
 * [POST /api/v2/outbound/filespecificationtemplates](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-filespecificationtemplates)
+* [DELETE /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-filespecificationtemplates--fileSpecificationTemplateId-)
+* [GET /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-filespecificationtemplates--fileSpecificationTemplateId-)
+* [PUT /api/v2/outbound/filespecificationtemplates/{fileSpecificationTemplateId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-filespecificationtemplates--fileSpecificationTemplateId-)
+* [DELETE /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-filespecificationtemplates--filespecificationtemplateId-)
 * [GET /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-filespecificationtemplates--filespecificationtemplateId-)
 * [PUT /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-filespecificationtemplates--filespecificationtemplateId-)
-* [DELETE /api/v2/outbound/filespecificationtemplates/{filespecificationtemplateId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-filespecificationtemplates--filespecificationtemplateId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `outbound:fileSpecificationTemplate:add`
+* `outbound:fileSpecificationTemplate:delete`
+* `outbound:fileSpecificationTemplate:edit`
 * `outbound:fileSpecificationTemplate:view`
 
 The following OAuth scopes are required to use this resource:

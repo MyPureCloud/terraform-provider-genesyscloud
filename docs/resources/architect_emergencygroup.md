@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_architect_emergencygroup (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Architect Emergency Group
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/architect/emergencygroups](https://developer.genesys.cloud/routing/architect/#get-api-v2-architect-emergencygroups)
-* [GET /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#get-api-v2-architect-emergencygroups--emergencyGroupId-)
-* [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/routing/architect/#post-api-v2-architect-emergencygroups)
-* [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#delete-api-v2-architect-emergencygroups--emergencyGroupId-)
-* [PUT /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-architect-emergencygroups--emergencyGroupId-)
+* [GET /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-emergencygroups)
+* [POST /api/v2/architect/emergencygroups](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-emergencygroups)
+* [DELETE /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-architect-emergencygroups--emergencyGroupId-)
+* [GET /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-emergencygroups--emergencyGroupId-)
+* [PUT /api/v2/architect/emergencygroups/{emergencyGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-architect-emergencygroups--emergencyGroupId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
