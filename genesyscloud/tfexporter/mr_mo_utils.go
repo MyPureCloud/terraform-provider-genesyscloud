@@ -286,7 +286,7 @@ func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, gener
 
 	return &MrMoExportByTypeResponse{
 		Config: util.JsonMap{
-			"resources": g.resourceTypesMaps,
+			"resource": g.resourceTypesMaps,
 		},
 		ResourceDataList: resourceDataList,
 	}, diags
