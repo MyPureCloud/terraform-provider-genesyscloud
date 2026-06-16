@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 func TestUnitGetRetryAfterDelay_IntegerFormat(t *testing.T) {

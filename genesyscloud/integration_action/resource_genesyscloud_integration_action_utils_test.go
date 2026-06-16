@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 func strPtr(s string) *string { return &s }

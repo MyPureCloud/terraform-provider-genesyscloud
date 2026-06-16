@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_telephony_providers_edges_extension_pool (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Extension Pool
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-extensionpools)
-* [POST /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-extensionpools)
-* [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
-* [PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
-* [DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [GET /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools)
+* [POST /api/v2/telephony/providers/edges/extensionpools](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-extensionpools)
+* [DELETE /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [GET /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
+* [PUT /api/v2/telephony/providers/edges/extensionpools/{extensionPoolId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-extensionpools--extensionPoolId-)
 
 ## Permissions and Scopes
 

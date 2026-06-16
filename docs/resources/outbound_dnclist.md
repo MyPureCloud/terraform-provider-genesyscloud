@@ -6,20 +6,31 @@ description: |-
 ---
 # genesyscloud_outbound_dnclist (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Outbound DNC List
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/dnclists](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists)
 * [POST /api/v2/outbound/dnclists](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-dnclists)
+* [DELETE /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-dnclists--dncListId-)
 * [GET /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists--dncListId-)
 * [PUT /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-dnclists--dncListId-)
-* [DELETE /api/v2/outbound/dnclists/{dncListId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-dnclists--dncListId-)
+* [GET /api/v2/outbound/dnclists/{dncListId}/export](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-dnclists--dncListId--export)
+* [POST /api/v2/outbound/dnclists/{dncListId}/export](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-dnclists--dncListId--export)
+* [DELETE /api/v2/outbound/dnclists/{dncListId}/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-dnclists--dncListId--phonenumbers)
+* [POST /api/v2/outbound/dnclists/{dncListId}/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-dnclists--dncListId--phonenumbers)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `outbound:dnc:add`
+* `outbound:dnc:delete`
+* `outbound:dnc:view`
 * `outbound:dncList:add`
 * `outbound:dncList:delete`
 * `outbound:dncList:edit`
