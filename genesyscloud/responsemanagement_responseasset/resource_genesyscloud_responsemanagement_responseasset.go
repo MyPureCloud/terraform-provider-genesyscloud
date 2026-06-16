@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -117,9 +118,20 @@ func updateRespManagementRespAsset(ctx context.Context, d *schema.ResourceData, 
 	divisionId := d.Get("division_id").(string)
 
 	var bodyRequest platformclientv2.Responseassetrequest
+
+	// Normalize the asset name for cross-platform compatibility.
+	// Convert backslashes to forward slashes (Windows paths use \ which the API rejects).
 	if name != "" {
+		name = strings.ReplaceAll(name, "\\", "/")
+		if len(name) >= 3 && name[1] == ':' && name[2] == '/' {
+			name = name[3:]
+		}
 		bodyRequest.Name = &name
 	} else {
+		fileName = strings.ReplaceAll(fileName, "\\", "/")
+		if len(fileName) >= 3 && fileName[1] == ':' && fileName[2] == '/' {
+			fileName = fileName[3:]
+		}
 		bodyRequest.Name = &fileName
 	}
 	if divisionId != "" {

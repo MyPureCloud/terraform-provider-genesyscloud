@@ -124,6 +124,14 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 		name = localFilePath
 	}
 
+	// Normalize the asset name for cross-platform compatibility.
+	// Convert backslashes to forward slashes (Windows paths use \ which the API rejects).
+	name = strings.ReplaceAll(name, "\\", "/")
+	// Strip Windows drive letter prefix (e.g., "C:/") if present.
+	if len(name) >= 3 && name[1] == ':' && name[2] == '/' {
+		name = name[3:]
+	}
+
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
 		Name: &name,
 	}
