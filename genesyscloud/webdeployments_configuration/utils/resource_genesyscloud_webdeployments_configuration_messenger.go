@@ -134,7 +134,7 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 		launcher := launchers[0].(map[string]interface{})
 		launcherSettings := &platformclientv2.Launcherbuttonsettings{}
 
-		if visibility, ok := launcher["visibility"].(string); ok {
+		if visibility, ok := launcher["visibility"].(string); ok && visibility != "" {
 			launcherSettings.Visibility = &visibility
 		}
 
