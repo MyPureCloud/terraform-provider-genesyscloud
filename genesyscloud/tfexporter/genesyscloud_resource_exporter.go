@@ -2123,7 +2123,7 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 	tflog.Trace(g.ctx, fmt.Sprintf("Created resource data for ID: %s", resID))
 
 	refreshMeta := meta
-	if provider.SdkClientPool != nil {
+	if provider.SdkClientPool != nil && os.Getenv("ENABLE_SDK_CLIENT_POOL") == "true" {
 		pooledClientConfig, acquireErr := provider.SdkClientPool.Acquire(ctx)
 		if acquireErr != nil {
 			tflog.Error(g.ctx, fmt.Sprintf("Failed to acquire pooled client for resource ID %s: %v", resID, acquireErr))
