@@ -258,6 +258,7 @@ func getRegionMap() map[string]string {
 		"me-central-1":   "mec1.pure.cloud",
 		"mx-central-1":   "mxc1.pure.cloud",
 		"ap-southeast-1": "apse1.pure.cloud",
+		"eusc-de-east-1": "edee1.eusc-pure.cloud",
 	}
 }
 
