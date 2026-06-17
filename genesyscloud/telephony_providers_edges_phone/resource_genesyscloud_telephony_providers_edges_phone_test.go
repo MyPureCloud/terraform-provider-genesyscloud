@@ -1,6 +1,7 @@
 package telephony_providers_edges_phone
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -184,6 +185,86 @@ func TestAccResourcePhoneBasic(t *testing.T) {
 				ResourceName:      "genesyscloud_telephony_providers_edges_phone." + phoneResourceLabel2,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: TestVerifyWebRtcPhoneDestroyed,
+	})
+}
+
+func TestAccWebRtcPhoneAlreadyAssigned(t *testing.T) {
+	var (
+		phoneResourceLabel             = "phone_duplicate_user"
+		phoneName                      = "test-phone_" + uuid.NewString()
+		stateActive                    = "active"
+		phoneBaseSettingsResourceLabel = "phoneBaseSettings_duplicate_user"
+		phoneBaseSettingsName          = "phoneBaseSettings " + uuid.NewString()
+		userResourceLabel              = "user_duplicate"
+		userName                       = "test_webrtc_user_" + uuid.NewString()
+		userEmail                      = userName + "@test.com"
+		userTitle                      = "Senior Director"
+		userDepartment                 = "Development"
+	)
+
+	userResource := user.GenerateUserResource(
+		userResourceLabel,
+		userEmail,
+		userName,
+		util.NullValue,
+		strconv.Quote(userTitle),
+		strconv.Quote(userDepartment),
+		util.NullValue,
+		util.NullValue,
+		"",
+		"",
+	)
+
+	siteId, err := edgeSite.GetOrganizationDefaultSiteId(sdkConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config := gcloud.GenerateOrganizationMe() + userResource +
+		phoneBaseSettings.GeneratePhoneBaseSettingsResourceWithCustomAttrs(
+			phoneBaseSettingsResourceLabel,
+			phoneBaseSettingsName,
+			"phoneBaseSettings description",
+			"inin_webrtc_softphone.json",
+		) + GeneratePhoneResourceWithCustomAttrs(&PhoneConfig{
+		phoneResourceLabel,
+		phoneName,
+		stateActive,
+		fmt.Sprintf("\"%s\"", siteId),
+		"genesyscloud_telephony_providers_edges_phonebasesettings." + phoneBaseSettingsResourceLabel + ".id",
+		"genesyscloud_user." + userResourceLabel + ".id",
+		"",
+	},
+		generatePhoneCapabilities(
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			true,
+			"mac",
+			[]string{strconv.Quote("audio/opus")},
+		),
+		generatePhoneProperties(uuid.NewString()),
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("genesyscloud_telephony_providers_edges_phone."+phoneResourceLabel, "web_rtc_user_id", "genesyscloud_user."+userResourceLabel, "id"),
+					checkWebRtcPhoneAlreadyAssignedOnDuplicateCreate("genesyscloud_telephony_providers_edges_phone."+phoneResourceLabel, "genesyscloud_user."+userResourceLabel),
+				),
 			},
 		},
 		CheckDestroy: TestVerifyWebRtcPhoneDestroyed,
@@ -607,6 +688,45 @@ func createDidPoolForEdgesPhoneTest(config *platformclientv2.Configuration, numb
 		return "", fmt.Errorf("failed to create did pool: %v", err)
 	}
 	return *didPool.Id, nil
+}
+
+// checkWebRtcPhoneAlreadyAssignedOnDuplicateCreate reproduces the Genesys Cloud API error
+// returned when PostTelephonyProvidersEdgesPhones is called for a user who already has a WebRTC phone.
+func checkWebRtcPhoneAlreadyAssignedOnDuplicateCreate(phoneResourcePath, userResourcePath string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		phoneResource, ok := state.RootModule().Resources[phoneResourcePath]
+		if !ok {
+			return fmt.Errorf("failed to find phone resource %s in state", phoneResourcePath)
+		}
+		userResource, ok := state.RootModule().Resources[userResourcePath]
+		if !ok {
+			return fmt.Errorf("failed to find user resource %s in state", userResourcePath)
+		}
+
+		pp := getPhoneProxy(sdkConfig)
+		ctx := context.Background()
+
+		existingPhone, _, err := pp.getPhoneById(ctx, phoneResource.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to read existing phone %s: %w", phoneResource.Primary.ID, err)
+		}
+
+		duplicateName := "duplicate-phone_" + uuid.NewString()
+		duplicatePhone := *existingPhone
+		duplicatePhone.Id = nil
+		duplicatePhone.Name = &duplicateName
+		duplicatePhone.WebRtcUser = &platformclientv2.Domainentityref{Id: &userResource.Primary.ID}
+
+		_, _, createErr := pp.createPhone(ctx, &duplicatePhone)
+		if createErr == nil {
+			return fmt.Errorf("expected duplicate WebRTC phone create to fail, but API call succeeded")
+		}
+		if !isWebRtcPhoneAlreadyAssignedError(createErr) {
+			return fmt.Errorf("expected 'web rtc phone has already been assigned' error, got: %v", createErr)
+		}
+
+		return nil
+	}
 }
 
 // Check if flow is published, then check if flow name and type are correct
