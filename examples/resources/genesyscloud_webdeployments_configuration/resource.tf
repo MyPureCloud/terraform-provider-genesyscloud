@@ -14,6 +14,10 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
       key   = "MessengerHomeHeaderSubTitle"
       value = "Custom Header Subtitle"
     }
+    localized_labels {
+      key   = "MessengerLauncherButtonText"
+      value = "Chat with us"
+    }
   }
   position {
     alignment    = "Auto"
@@ -23,7 +27,11 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
   messenger {
     enabled = true
     launcher_button {
-      visibility = "OnDemand"
+      visibility   = "OnDemand"
+      display_type = "IconAndText"
+      icon {
+        url = "https://my-domain/images/launcher-icon.png"
+      }
     }
     home_screen {
       enabled  = true

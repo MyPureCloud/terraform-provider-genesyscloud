@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_journey_outcome (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 [DEPRECATED] Genesys Cloud Journey Outcome. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/outcomes](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-outcomes)
-* [POST /api/v2/journey/outcomes](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#post-api-v2-journey-outcomes)
-* [GET /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-outcomes--outcomeId-)
-* [PATCH /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-outcomes--outcomeId-)
-* [DELETE /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-outcomes--outcomeId-)
+* [GET /api/v2/journey/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-outcomes)
+* [POST /api/v2/journey/outcomes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-journey-outcomes)
+* [DELETE /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-outcomes--outcomeId-)
+* [GET /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-outcomes--outcomeId-)
+* [PATCH /api/v2/journey/outcomes/{outcomeId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-journey-outcomes--outcomeId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

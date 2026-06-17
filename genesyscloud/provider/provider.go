@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 func init() {
@@ -258,6 +258,7 @@ func getRegionMap() map[string]string {
 		"me-central-1":   "mec1.pure.cloud",
 		"mx-central-1":   "mxc1.pure.cloud",
 		"ap-southeast-1": "apse1.pure.cloud",
+		"eusc-de-east-1": "edee1.eusc-pure.cloud",
 	}
 }
 

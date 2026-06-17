@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_outbound_callabletimeset (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound callabletimeset
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets)
-* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#post-api-v2-outbound-callabletimesets)
-* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
-* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
-* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets)
+* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-callabletimesets)
+* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
 
 ## Permissions and Scopes
 
