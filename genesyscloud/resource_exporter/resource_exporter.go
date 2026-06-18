@@ -284,6 +284,44 @@ func (r *ResourceExporter) GetSanitizedResourceMapSize() int {
 	return len(r.SanitizedResourceMap)
 }
 
+// CloneResourceExporter returns a shallow copy of template with fresh per-call mutable state.
+// Read-only fields (func pointers, RefAttrs, schema refs) are shared; SanitizedResourceMap,
+// FilterResource, and ExcludedAttributes are not aliased with the registry singleton.
+func CloneResourceExporter(template *ResourceExporter) *ResourceExporter {
+	if template == nil {
+		return nil
+	}
+
+	clone := &ResourceExporter{
+		GetResourcesFunc:        template.GetResourcesFunc,
+		IsSingleton:             template.IsSingleton,
+		ExportId:                template.ExportId,
+		RefAttrs:                template.RefAttrs,
+		ThirdPartyRefAttrs:      template.ThirdPartyRefAttrs,
+		AllowZeroValues:         template.AllowZeroValues,
+		AllowZeroValuesInMap:    template.AllowZeroValuesInMap,
+		AllowEmptyArrays:        template.AllowEmptyArrays,
+		CustomAttributeResolver: template.CustomAttributeResolver,
+		RemoveIfMissing:         template.RemoveIfMissing,
+		RemoveIfSelfReferential: template.RemoveIfSelfReferential,
+		UnResolvableAttributes:  template.UnResolvableAttributes,
+		JsonEncodeAttributes:    template.JsonEncodeAttributes,
+		EncodedRefAttrs:         template.EncodedRefAttrs,
+		CustomFileWriter:        template.CustomFileWriter,
+		ExportAsDataFunc:        template.ExportAsDataFunc,
+		DataSourceResolver:      template.DataSourceResolver,
+		CustomValidateExports:   template.CustomValidateExports,
+		SanitizedResourceMap:    nil,
+		FilterResource:          nil,
+	}
+
+	if len(template.ExcludedAttributes) > 0 {
+		clone.ExcludedAttributes = append([]string(nil), template.ExcludedAttributes...)
+	}
+
+	return clone
+}
+
 func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {
 	if r.RefAttrs == nil {
 		return nil

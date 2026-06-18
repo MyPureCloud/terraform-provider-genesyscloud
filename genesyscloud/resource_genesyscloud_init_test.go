@@ -1,7 +1,6 @@
 package genesyscloud
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -36,7 +35,6 @@ var (
 	sdkConfig           *platformclientv2.Configuration
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
-	err                 error
 	mu                  sync.Mutex
 )
 
@@ -95,9 +93,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 }
 
 func initTestResources() {
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 	regInstance := &registerTestInstance{}

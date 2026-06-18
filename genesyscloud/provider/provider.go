@@ -506,3 +506,15 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 
 	return sdkConfig, nil
 }
+
+// SdkConfigurationForTests returns a Genesys Cloud SDK configuration for package TestMain.
+// It authorizes when credentials are available; otherwise it returns the default configuration
+// so unit tests can run without live API credentials.
+func SdkConfigurationForTests() *platformclientv2.Configuration {
+	config, err := AuthorizeSdk()
+	if err != nil {
+		log.Printf("using default SDK configuration for tests: %v", err)
+		return platformclientv2.GetDefaultConfiguration()
+	}
+	return config
+}

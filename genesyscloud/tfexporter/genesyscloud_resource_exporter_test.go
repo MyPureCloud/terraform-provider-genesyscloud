@@ -806,6 +806,7 @@ func TestUnitGetResourceStateRemovesComputedAttributes(t *testing.T) {
 				tc.resourceId,
 				resMeta,
 				providerMeta,
+				mockResourceType,
 			)
 
 			if err != nil {

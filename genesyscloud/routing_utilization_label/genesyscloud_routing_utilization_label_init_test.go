@@ -1,7 +1,6 @@
 package routing_utilization_label
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -15,7 +14,6 @@ var (
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
 	sdkConfig           *platformclientv2.Configuration
-	err                 error
 )
 
 type registerTestInstance struct {
@@ -41,9 +39,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
