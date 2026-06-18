@@ -376,12 +376,12 @@ var (
 		Schema: map[string]*schema.Schema{
 			`sms_content_template_id`: {
 				Description: `A string of sms contentTemplateId.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`email_content_template_id`: {
 				Description: `A string of email contentTemplateId.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -529,6 +529,26 @@ func OutboundDigitalrulesetExporter() *resourceExporter.ResourceExporter {
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
+			"rules.actions.set_content_template_action_settings.sms_content_template_id": {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			"rules.actions.set_content_template_action_settings.email_content_template_id": {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"contact_list_id": {
+				ResolverFunc: resourceExporter.OmitUnresolvedGuidAttributeResolver("contact_list_id"),
+			},
+			"rules.actions.set_content_template_action_settings.sms_content_template_id": {
+				ResolverFunc: resourceExporter.OmitUnresolvedGuidAttributeResolver("sms_content_template_id"),
+			},
+			"rules.actions.set_content_template_action_settings.email_content_template_id": {
+				ResolverFunc: resourceExporter.OmitUnresolvedGuidAttributeResolver("email_content_template_id"),
+			},
+		},
+		RemoveIfMissing: map[string][]string{
+			"rules.actions.set_content_template_action_settings": {"sms_content_template_id", "email_content_template_id"},
 		},
 		AllowZeroValues: []string{
 			"rules.order",

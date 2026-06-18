@@ -104,6 +104,32 @@ func isValidGuid(id string) bool {
 	return matched
 }
 
+// OmitUnresolvedGuidAttributeResolver removes attribute values that could not be resolved to a Terraform reference.
+// Optional reference attributes that still contain a raw GUID after export resolution are omitted from the config.
+func OmitUnresolvedGuidAttributeResolver(attributeKey string) func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
+	return func(configMap map[string]interface{}, _ map[string]*ResourceExporter, _ string) error {
+		val, ok := configMap[attributeKey]
+		if !ok {
+			return nil
+		}
+
+		strVal, ok := val.(string)
+		if !ok || strVal == "" {
+			return nil
+		}
+
+		if strings.HasPrefix(strVal, "${") {
+			return nil
+		}
+
+		if isValidGuid(strVal) {
+			delete(configMap, attributeKey)
+		}
+
+		return nil
+	}
+}
+
 // MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.
 // This allows the exporter to use the standard reference resolution pipeline (including data source replacement).
 //
