@@ -125,12 +125,7 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 	}
 
 	// Normalize the asset name for cross-platform compatibility.
-	// Convert backslashes to forward slashes (Windows paths use \ which the API rejects).
-	name = strings.ReplaceAll(name, "\\", "/")
-	// Strip Windows drive letter prefix (e.g., "C:/") if present.
-	if len(name) >= 3 && name[1] == ':' && name[2] == '/' {
-		name = name[3:]
-	}
+	name = normalizeAssetName(name)
 
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
 		Name: &name,
@@ -254,6 +249,12 @@ func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Normalize the asset name for cross-platform compatibility.
+	if respAsset.Name != nil {
+		normalized := normalizeAssetName(*respAsset.Name)
+		respAsset.Name = &normalized
+	}
 
 	return p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 }
