@@ -1,18 +1,16 @@
 package knowledge_knowledgebase
 
 import (
-	"log"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerResources holds a map of all registered resources
@@ -42,10 +40,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for package knowledge_knowledgebase: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerResources = make(map[string]*schema.Resource)
 	providerDataSources = make(map[string]*schema.Resource)

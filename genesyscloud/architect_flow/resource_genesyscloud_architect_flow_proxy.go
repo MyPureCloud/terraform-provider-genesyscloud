@@ -12,7 +12,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 var internalProxy *architectFlowProxy
@@ -307,7 +307,7 @@ func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*pla
 	if resourceCtx == nil {
 		ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	}
-	return p.api.PostFlowsJobs()
+	return p.api.PostFlowsJobs(nil)
 }
 
 func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {

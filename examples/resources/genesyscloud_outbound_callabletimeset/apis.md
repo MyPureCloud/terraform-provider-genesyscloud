@@ -1,5 +1,8 @@
-* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets)
-* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#post-api-v2-outbound-callabletimesets)
-* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
-* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
-* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
+<!-- sources
+genesyscloud/outbound_callabletimeset/genesyscloud_outbound_callabletimeset_proxy.go
+-->
+* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets)
+* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-callabletimesets)
+* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-callabletimesets--callableTimeSetId-)

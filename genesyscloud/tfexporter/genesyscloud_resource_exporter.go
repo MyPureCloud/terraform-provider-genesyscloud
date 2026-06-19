@@ -41,7 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 /*
@@ -105,7 +105,8 @@ type GenesysCloudResourceExporter struct {
 	flowResourcesList   []string
 
 	// resourceExportedForMrMo stores the schema.ResourceData object of the resource that was exported to Mr Mo
-	resourceExportedForMrMo *schema.ResourceData
+	resourceExportedForMrMo  *schema.ResourceData
+	resourcesExportedForMrMo *map[string][]*schema.ResourceData
 
 	meta                  interface{}
 	provider              *schema.Provider
@@ -739,10 +740,12 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 			// 4. Remove schema-based excluded attributes (computed, read-only, deprecated) recursively
 			// We do this before sanitization to remove any attributes that need removed. The sanitization function
 			// will correctly handle these attributes and not add extra entries to dependency resolution
-			if resSchema := g.provider.ResourcesMap[resource.Type]; resSchema != nil {
-				schemaExcluded := g.collectSchemaBasedExcludedAttributes(resource.Type, resSchema.Schema, "")
-				if len(schemaExcluded) > 0 {
-					removeExcludedAttrsFromMap(configMap, schemaExcluded, "")
+			if g.provider != nil {
+				if resSchema := g.provider.ResourcesMap[resource.Type]; resSchema != nil {
+					schemaExcluded := g.collectSchemaBasedExcludedAttributes(resource.Type, resSchema.Schema, "")
+					if len(schemaExcluded) > 0 {
+						removeExcludedAttrsFromMap(configMap, schemaExcluded, "")
+					}
 				}
 			}
 
@@ -1836,7 +1839,7 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 				tflog.Trace(g.ctx, fmt.Sprintf("Retrieved CTY type for resource ctyType: %v", ctyType))
 
 				tflog.Trace(g.ctx, fmt.Sprintf("Calling getResourceState for resource ID: %s", id))
-				instanceState, err := g.getResourceState(resourceCtx, res, id, resMeta, meta)
+				instanceState, err := g.getResourceState(resourceCtx, res, id, resMeta, meta, resType)
 
 				if err != nil {
 					tflog.Error(g.ctx, fmt.Sprintf("Error while fetching read context type %s and instance %s : %v", resType, id, err))
@@ -2107,7 +2110,7 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 	return excludedAttributes
 }
 
-func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}) (*terraform.InstanceState, diag.Diagnostics) {
+func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, resType string) (*terraform.InstanceState, diag.Diagnostics) {
 	tflog.Trace(g.ctx, fmt.Sprintf("Starting to get resource state for ID: %s, BlockLabel: %s", resID, resMeta.BlockLabel))
 
 	// If defined, pass the full ID through the import method to generate a readable state
@@ -2163,6 +2166,14 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 
 	if mrmo.IsActive() {
 		g.resourceExportedForMrMo = resource.Data(state)
+		if g.resourcesExportedForMrMo == nil {
+			tmp := make(map[string][]*schema.ResourceData, 0)
+			g.resourcesExportedForMrMo = &tmp
+		}
+		if (*g.resourcesExportedForMrMo)[resType] == nil {
+			(*g.resourcesExportedForMrMo)[resType] = make([]*schema.ResourceData, 0)
+		}
+		(*g.resourcesExportedForMrMo)[resType] = append((*g.resourcesExportedForMrMo)[resType], resource.Data(state))
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))

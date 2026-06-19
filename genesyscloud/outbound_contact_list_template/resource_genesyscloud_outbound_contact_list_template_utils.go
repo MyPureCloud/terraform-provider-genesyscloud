@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 type outboundContactListTemplateRawResponse struct {
@@ -124,7 +124,7 @@ func buildSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(contactPho
 			sdkContactPhoneNumberColumn.VarType = &varType
 		}
 		if callableTimeColumnName, ok := contactPhoneNumberColumnMap["callable_time_column_name"].(string); ok && callableTimeColumnName != "" {
-			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumnName
+			sdkContactPhoneNumberColumn.CallableTimeColumnName = &callableTimeColumnName
 		} else if callableTimeColumn := contactPhoneNumberColumnMap["callable_time_column"].(string); callableTimeColumn != "" {
 			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumn
 		}
@@ -159,7 +159,9 @@ func flattenSdkOutboundContactListTemplateContactPhoneNumberColumnSlice(
 		}
 
 		var tz string
-		if contactPhoneNumberColumn.CallableTimeColumn != nil && *contactPhoneNumberColumn.CallableTimeColumn != "" {
+		if contactPhoneNumberColumn.CallableTimeColumnName != nil && *contactPhoneNumberColumn.CallableTimeColumnName != "" {
+			tz = *contactPhoneNumberColumn.CallableTimeColumnName
+		} else if contactPhoneNumberColumn.CallableTimeColumn != nil && *contactPhoneNumberColumn.CallableTimeColumn != "" {
 			tz = *contactPhoneNumberColumn.CallableTimeColumn
 		} else if callableTimeColumnNameIndex != nil && key != "" {
 			if v, ok := callableTimeColumnNameIndex[key]; ok && v != "" {
@@ -199,7 +201,7 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 			sdkContactEmailAddressColumn.VarType = &varType
 		}
 		if contactableTimeColumnName, ok := contactEmailAddressColumnMap["contactable_time_column_name"].(string); ok && contactableTimeColumnName != "" {
-			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumnName
+			sdkContactEmailAddressColumn.ContactableTimeColumnName = &contactableTimeColumnName
 		} else if contactableTimeColumn := contactEmailAddressColumnMap["contactable_time_column"].(string); contactableTimeColumn != "" {
 			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
 		}
@@ -234,7 +236,9 @@ func flattenSdkOutboundContactListTemplateContactEmailAddressColumnSlice(
 		}
 
 		var tz string
-		if contactEmailAddressColumn.ContactableTimeColumn != nil && *contactEmailAddressColumn.ContactableTimeColumn != "" {
+		if contactEmailAddressColumn.ContactableTimeColumnName != nil && *contactEmailAddressColumn.ContactableTimeColumnName != "" {
+			tz = *contactEmailAddressColumn.ContactableTimeColumnName
+		} else if contactEmailAddressColumn.ContactableTimeColumn != nil && *contactEmailAddressColumn.ContactableTimeColumn != "" {
 			tz = *contactEmailAddressColumn.ContactableTimeColumn
 		} else if contactableTimeColumnNameIndex != nil && key != "" {
 			if v, ok := contactableTimeColumnNameIndex[key]; ok && v != "" {

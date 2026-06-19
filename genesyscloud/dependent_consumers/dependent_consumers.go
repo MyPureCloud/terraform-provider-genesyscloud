@@ -37,7 +37,6 @@ func SetDependentObjectMaps() map[string]string {
 		dependentConsumerMap["IVRCONFIGURATION"] = "genesyscloud_architect_ivr"
 		dependentConsumerMap["KNOWLEDGEBASE"] = "genesyscloud_knowledge_knowledgebase"
 		dependentConsumerMap["KNOWLEDGEBASEDOCUMENT"] = "genesyscloud_knowledge_document"
-		dependentConsumerMap["LANGUAGE"] = "genesyscloud_routing_language"
 		dependentConsumerMap["OAUTHCLIENT"] = "genesyscloud_oauth_client"
 		dependentConsumerMap["OUTBOUNDCALLFLOW"] = "genesyscloud_flow"
 		dependentConsumerMap["QUEUE"] = "genesyscloud_routing_queue"

@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -29,8 +29,19 @@ func validateExportInput(input ExportInput) error {
 	return nil
 }
 
+// validateExportByTypeInput validates the export input
+func validateExportByTypeInput(input ExportByTypeInput) error {
+	if input.ResourceType == "" {
+		return errors.New("'ResourceType' is a required field")
+	}
+	if input.GenerateOutputFiles && input.Directory == "" {
+		return errors.New("'Directory' is a required field when 'GenerateOutputFiles' is set to true")
+	}
+	return nil
+}
+
 // generateDefaults generates the default values for the export input
-func generateDefaults(input *ExportInput) {
+func generateDefaults(input *BaseExportInput) {
 	// Setting Directory to a default value if GenerateOutputFiles is false
 	// This is a precaution to ensure that, if output folder are unexpectedly generated, they will be written
 	// to a uniquely named folder in the temp directory.
@@ -65,7 +76,7 @@ func CreateClientConfig(creds Credentials) (_ *platformclientv2.Configuration, e
 }
 
 // createExportResourceData generates the export resource config that the genesyscloud tf exporter will use
-func createExportResourceData(s map[string]*schema.Schema, input ExportInput) *schema.ResourceData {
+func createExportResourceData(s map[string]*schema.Schema, input BaseExportInput) *schema.ResourceData {
 	config := map[string]any{
 		"directory":                          input.Directory,
 		"include_state_file":                 input.IncludeStateFile,

@@ -1,7 +1,6 @@
 package genesyscloud
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -29,14 +28,13 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 var (
 	sdkConfig           *platformclientv2.Configuration
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
-	err                 error
 	mu                  sync.Mutex
 )
 
@@ -95,9 +93,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 }
 
 func initTestResources() {
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 	regInstance := &registerTestInstance{}

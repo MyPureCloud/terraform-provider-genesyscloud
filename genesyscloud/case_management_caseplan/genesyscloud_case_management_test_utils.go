@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -32,16 +32,16 @@ func AccSubstrSchema(s string) string {
 // AccCustomerIntentDepsHCL returns intent_category + customer_intent resources wired for a caseplan test stack.
 func AccCustomerIntentDepsHCL(namePrefix, categoryDescription string) string {
 	return fmt.Sprintf(`
-resource "genesyscloud_intent_category" "cat" {
+resource "genesyscloud_intents_categories" "cat" {
   name        = "%[1]s_cat"
   description = "%[2]s"
 }
 
-resource "genesyscloud_customer_intent" "intent" {
+resource "genesyscloud_intents_customerintents" "intent" {
   name        = "%[1]s_intent"
   description = "acc"
   expiry_time = 24
-  category_id = genesyscloud_intent_category.cat.id
+  category_id = genesyscloud_intents_categories.cat.id
 }
 `, namePrefix, categoryDescription)
 }

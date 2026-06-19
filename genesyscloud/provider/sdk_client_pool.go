@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 const (
@@ -797,6 +797,34 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 	}
 }
 
+// resolveClientConfigForContext selects an SDK client for the current operation.
+// Priority: export ctx config, legacy MRMO global config, then SdkClientPool.
+// The returned release func is a no-op when the config was not acquired from the pool.
+func resolveClientConfigForContext(ctx context.Context) (*platformclientv2.Configuration, func(), diag.Diagnostics) {
+	if clientConfig, ok := ExportClientConfigFromContext(ctx); ok {
+		return clientConfig, func() {}, nil
+	}
+
+	if mrmo.IsActive() {
+		clientConfig, err := mrmo.GetClientConfig()
+		if err != nil {
+			return nil, nil, diag.FromErr(err)
+		}
+		return clientConfig, func() {}, nil
+	}
+
+	clientConfig, err := SdkClientPool.acquire(ctx)
+	if err != nil {
+		return nil, nil, diag.FromErr(err)
+	}
+
+	return clientConfig, func() {
+		if err := SdkClientPool.release(clientConfig); err != nil {
+			log.Printf("[WARN] Error releasing client to pool: %v", err)
+		}
+	}, nil
+}
+
 // Inject a pooled SDK client connection into a resource method's meta argument
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
@@ -808,31 +836,11 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 			ctx = autoInjectResourceContext(ctx, r)
 		}
 
-		if mrmo.IsActive() {
-			clientConfig, err := mrmo.GetClientConfig()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			newMeta := *meta.(*ProviderMeta)
-			newMeta.ClientConfig = clientConfig
-			return method(ctx, r, &newMeta)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return diags
 		}
-
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		// Ensure client is always released, even on panic
-		released := false
-		defer func() {
-			if !released {
-				if err := SdkClientPool.release(clientConfig); err != nil {
-					log.Printf("[WARN] Error releasing client to pool: %v", err)
-				}
-				released = true
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {
@@ -845,15 +853,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 		newMeta := *meta.(*ProviderMeta)
 		newMeta.ClientConfig = clientConfig
 
-		result := method(ctx, r, &newMeta)
-
-		// Release client after successful execution
-		if err := SdkClientPool.release(clientConfig); err != nil {
-			log.Printf("[WARN] Error releasing client to pool: %v", err)
-		}
-		released = true
-
-		return result
+		return method(ctx, r, &newMeta)
 	}
 }
 
@@ -941,8 +941,6 @@ func WrapResourceWithType(resourceType string, resource *schema.Resource) {
 		return
 	}
 
-	log.Printf("[DEBUG] WrapResourceWithType: Wrapping resource type=%q", resourceType)
-
 	// Wrap CreateContext
 	if resource.CreateContext != nil {
 		originalCreate := resource.CreateContext
@@ -1010,30 +1008,12 @@ func extractResourceIdAndName(d *schema.ResourceData) (resourceId, resourceName 
 
 // GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
-	if mrmo.IsActive() {
-		clientConfig, err := mrmo.GetClientConfig()
-		if err != nil {
-			log.Printf("[WARN] Error getting client config: %s", err.Error())
-			log.Printf("[DEBUG] Returning error from GetAllWithPooledClient")
-			return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-				return nil, diag.FromErr(err)
-			}
-		}
-		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-			return method(ctx, clientConfig)
-		}
-	}
-
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return nil, diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return nil, diags
 		}
-		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {
@@ -1048,15 +1028,11 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return nil, nil, nil, diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return nil, nil, nil, diags
 		}
-		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {

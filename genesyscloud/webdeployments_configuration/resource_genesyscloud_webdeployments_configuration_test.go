@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -231,7 +231,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.language", "en-us"),
-					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "4"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "5"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.key", "MessengerHomeHeaderTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.value", "My Messenger Home Header Title"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.key", "MessengerHomeHeaderSubTitle"),
@@ -240,6 +240,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.value", "New Message"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.key", "PushNotificationBody"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.value", "You have a new message"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.4.key", "MessengerLauncherButtonText"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.4.value", "Chat with us"),
 
 					resource.TestCheckResourceAttr(resourcePath, "position.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "position.0.alignment", "Auto"),
@@ -249,6 +251,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.visibility", "OnDemand"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.display_type", "IconAndText"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.icon.0.url", "https://my-domain/images/launcher-icon.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.styles.0.primary_color", "#B0B0B0"),
@@ -377,6 +381,8 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.visibility", "OnDemand"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.display_type", "IconAndText"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.icon.0.url", "https://my-domain/images/launcher-icon.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.styles.0.primary_color", "#B0B0B0"),
@@ -999,6 +1005,10 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 				key = "PushNotificationBody"
 				value = "You have a new message"
 			}
+			localized_labels {
+				key = "MessengerLauncherButtonText"
+				value = "Chat with us"
+			}
 		}
 		position {
 			alignment = "Auto"
@@ -1009,6 +1019,10 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 			enabled = true
 			launcher_button {
 				visibility = "OnDemand"
+				display_type = "IconAndText"
+				icon {
+					url = "https://my-domain/images/launcher-icon.png"
+				}
 			}
 			home_screen {
 				enabled = true

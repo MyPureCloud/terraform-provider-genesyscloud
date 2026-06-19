@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_journey_segment (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Journey Segment
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/segments](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-segments)
-* [POST /api/v2/journey/segments](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#post-api-v2-journey-segments)
-* [GET /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-segments--segmentId-)
-* [PATCH /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-segments--segmentId-)
-* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-segments--segmentId-)
+* [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-segments)
+* [POST /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-journey-segments)
+* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-segments--segmentId-)
+* [GET /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-segments--segmentId-)
+* [PATCH /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-journey-segments--segmentId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
