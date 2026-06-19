@@ -6,6 +6,7 @@ import (
 	"log"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -25,6 +26,15 @@ const (
 )
 
 var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
+var orgWrapupCodeCache = rc.NewOrgCache(rc.OrgCacheConfig[platformclientv2.Wrapupcode]{
+	Name: "WRAPUP-CACHE",
+	KeyFunc: func(wrapupcode platformclientv2.Wrapupcode) string {
+		if wrapupcode.Id != nil {
+			return *wrapupcode.Id
+		}
+		return ""
+	},
+})
 var internalProxy *RoutingQueueProxy
 
 type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
@@ -61,13 +71,11 @@ type RoutingQueueProxy struct {
 	updateRoutingQueueMemberAttr updateRoutingQueueMemberFunc
 
 	RoutingQueueCache rc.CacheInterface[platformclientv2.Queue]
-	wrapupCodeCache   rc.CacheInterface[platformclientv2.Wrapupcode]
 }
 
 // newRoutingQueuesProxy initializes the routing queue proxy with all the data needed to communicate with Genesys Cloud
 func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *RoutingQueueProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	wrapupCodeCache := rc.NewResourceCache[platformclientv2.Wrapupcode]()
 
 	return &RoutingQueueProxy{
 		clientConfig: clientConfig,
@@ -88,7 +96,6 @@ func newRoutingQueuesProxy(clientConfig *platformclientv2.Configuration) *Routin
 		updateRoutingQueueMemberAttr: updateRoutingQueueMemberFn,
 
 		RoutingQueueCache: routingQueueCache,
-		wrapupCodeCache:   wrapupCodeCache,
 	}
 }
 
@@ -260,36 +267,61 @@ func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID str
 }
 
 func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	if !tfexporter_state.IsExporterActive() {
+		return getAllRoutingQueueWrapupCodesLegacy(ctx, p, queueId)
+	}
+
+	if err := orgWrapupCodeCache.EnsureLoaded(ctx, func(ctx context.Context) ([]platformclientv2.Wrapupcode, error) {
+		return fetchAllOrgWrapupCodes(ctx, p.routingApi)
+	}); err != nil {
+		log.Printf("[WRAPUP-CACHE] Failed to load org cache, falling back to per-queue fetch: %v", err)
+		return getAllRoutingQueueWrapupCodesLegacy(ctx, p, queueId)
+	}
+
+	assignments, apiResponse, apiCalls, err := fetchQueueWrapupCodeAssignments(ctx, p.routingApi, queueId)
+	if err != nil {
+		return nil, apiResponse, err
+	}
+
+	if len(assignments) == 0 {
+		empty := []platformclientv2.Wrapupcode{}
+		return &empty, apiResponse, nil
+	}
+
+	var result []platformclientv2.Wrapupcode
+	cacheHits := 0
+	for _, entity := range assignments {
+		if entity.Id == nil {
+			continue
+		}
+		if wrapupcode, ok := orgWrapupCodeCache.Get(*entity.Id); ok {
+			result = append(result, *wrapupcode)
+			cacheHits++
+			continue
+		}
+		log.Printf("[WRAPUP-CACHE] WARNING: Wrapup code %s not found in org cache", *entity.Id)
+		result = append(result, entity)
+	}
+
+	log.Printf("[WRAPUP-CACHE] Queue %s: Retrieved %d wrapup codes (%d cache hits, %d assignment API calls, org cache size %d)",
+		queueId, len(result), cacheHits, apiCalls, orgWrapupCodeCache.Size())
+
+	return &result, apiResponse, nil
+}
+
+func fetchAllOrgWrapupCodes(ctx context.Context, api *platformclientv2.RoutingApi) ([]platformclientv2.Wrapupcode, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allWrapupcodes []platformclientv2.Wrapupcode
 	const pageSize = 100
+	pageNum := 1
 
-	wrapupcodes, apiResponse, err := p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, 1, "")
-	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to get page 1 of routing wrapupcodes: %w", err)
-	}
-
-	if wrapupcodes.Total != nil {
-		if rc.GetCacheSize(p.wrapupCodeCache) == *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
-			return rc.GetCache(p.wrapupCodeCache), nil, nil
-		} else if rc.GetCacheSize(p.wrapupCodeCache) != *wrapupcodes.Total && rc.GetCacheSize(p.wrapupCodeCache) != 0 {
-			// The cache is populated but not with the right data, clear the cache so it can be re populated
-			p.wrapupCodeCache = rc.NewResourceCache[platformclientv2.Wrapupcode]()
-		}
-	}
-
-	if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
-		return &allWrapupcodes, apiResponse, nil
-	}
-
-	allWrapupcodes = append(allWrapupcodes, *wrapupcodes.Entities...)
-
-	for pageNum := 2; pageNum <= *wrapupcodes.PageCount; pageNum++ {
-		wrapupcodes, apiResponse, err = p.routingApi.GetRoutingQueueWrapupcodes(queueId, pageSize, pageNum, "")
+	for {
+		wrapupcodes, _, err := api.GetRoutingWrapupcodes(pageSize, pageNum, "", "", "", []string{}, []string{})
 		if err != nil {
-			return nil, apiResponse, fmt.Errorf("failed to get routing wrapupcode : %v", err)
+			return nil, fmt.Errorf("failed to load org wrapup codes page %d: %w", pageNum, err)
 		}
 
 		if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
@@ -297,14 +329,63 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 		}
 
 		allWrapupcodes = append(allWrapupcodes, *wrapupcodes.Entities...)
+
+		if wrapupcodes.PageCount == nil || pageNum >= *wrapupcodes.PageCount {
+			break
+		}
+		pageNum++
 	}
 
-	// Cache the routing wrapupcodes resource into the p.routingWrapupcodesCache for later use
-	for _, wrapupcode := range allWrapupcodes {
-		rc.SetCache(p.wrapupCodeCache, *wrapupcode.Id, wrapupcode)
+	return allWrapupcodes, nil
+}
+
+func fetchQueueWrapupCodeAssignments(ctx context.Context, api *platformclientv2.RoutingApi, queueId string) ([]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, int, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	var assignments []platformclientv2.Wrapupcode
+	const pageSize = 100
+	apiCalls := 0
+
+	wrapupcodes, apiResponse, err := api.GetRoutingQueueWrapupcodes(queueId, pageSize, 1, "")
+	apiCalls++
+	if err != nil {
+		return nil, apiResponse, apiCalls, fmt.Errorf("failed to get queue wrapup code assignments: %w", err)
 	}
 
-	return &allWrapupcodes, apiResponse, nil
+	if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
+		return assignments, apiResponse, apiCalls, nil
+	}
+
+	assignments = append(assignments, *wrapupcodes.Entities...)
+
+	if wrapupcodes.PageCount != nil {
+		for pageNum := 2; pageNum <= *wrapupcodes.PageCount; pageNum++ {
+			wrapupcodes, apiResponse, err = api.GetRoutingQueueWrapupcodes(queueId, pageSize, pageNum, "")
+			apiCalls++
+			if err != nil {
+				return nil, apiResponse, apiCalls, fmt.Errorf("failed to get queue wrapup code assignments page %d: %w", pageNum, err)
+			}
+
+			if wrapupcodes.Entities == nil || len(*wrapupcodes.Entities) == 0 {
+				break
+			}
+
+			assignments = append(assignments, *wrapupcodes.Entities...)
+		}
+	}
+
+	return assignments, apiResponse, apiCalls, nil
+}
+
+func getAllRoutingQueueWrapupCodesLegacy(ctx context.Context, p *RoutingQueueProxy, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	assignments, apiResponse, _, err := fetchQueueWrapupCodeAssignments(ctx, p.routingApi, queueId)
+	if err != nil {
+		return nil, apiResponse, err
+	}
+
+	return &assignments, apiResponse, nil
 }
 
 func createRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Wrapupcodereference) ([]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
@@ -320,12 +401,7 @@ func deleteRoutingQueueWrapupCodeFn(ctx context.Context, p *RoutingQueueProxy, q
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
-	resp, err := p.routingApi.DeleteRoutingQueueWrapupcode(queueId, codeId)
-	if err != nil {
-		return resp, err
-	}
-	rc.DeleteCacheItem(p.wrapupCodeCache, codeId)
-	return resp, nil
+	return p.routingApi.DeleteRoutingQueueWrapupcode(queueId, codeId)
 }
 
 func addOrRemoveMembersFn(ctx context.Context, p *RoutingQueueProxy, queueId string, body []platformclientv2.Writableentity, delete bool) (*platformclientv2.APIResponse, error) {
