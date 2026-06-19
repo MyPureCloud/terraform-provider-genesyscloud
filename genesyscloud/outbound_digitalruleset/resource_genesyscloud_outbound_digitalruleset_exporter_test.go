@@ -39,8 +39,12 @@ func TestOutboundDigitalrulesetExporter_UnresolvedReferenceResolvers(t *testing.
 		"rules.actions.set_content_template_action_settings.sms_content_template_id",
 		"rules.actions.set_content_template_action_settings.email_content_template_id",
 	} {
-		if _, ok := exporter.CustomAttributeResolver[path]; !ok {
+		resolver, ok := exporter.CustomAttributeResolver[path]
+		if !ok {
 			t.Fatalf("expected CustomAttributeResolver for %q", path)
+		}
+		if !resolver.OmitUnresolvedRef {
+			t.Fatalf("expected OmitUnresolvedRef for %q", path)
 		}
 	}
 }

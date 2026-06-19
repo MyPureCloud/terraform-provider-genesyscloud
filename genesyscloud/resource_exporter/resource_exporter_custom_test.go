@@ -22,16 +22,13 @@ type propertyGroupTest struct {
 	ExpectedResult       string
 }
 
-func TestUnitOmitUnresolvedGuidAttributeResolver(t *testing.T) {
+func TestUnitOmitUnresolvedGuidFromConfigMap(t *testing.T) {
 	guid := uuid.NewString()
 	configMap := map[string]interface{}{
 		"contact_list_id": guid,
 	}
 
-	resolver := OmitUnresolvedGuidAttributeResolver("contact_list_id")
-	if err := resolver(configMap, nil, ""); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	OmitUnresolvedGuidFromConfigMap(configMap, "contact_list_id")
 	if _, ok := configMap["contact_list_id"]; ok {
 		t.Fatal("expected unresolved GUID to be omitted from config map")
 	}
@@ -39,9 +36,7 @@ func TestUnitOmitUnresolvedGuidAttributeResolver(t *testing.T) {
 	configMap = map[string]interface{}{
 		"contact_list_id": "${genesyscloud_outbound_contact_list.example.id}",
 	}
-	if err := resolver(configMap, nil, ""); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	OmitUnresolvedGuidFromConfigMap(configMap, "contact_list_id")
 	if configMap["contact_list_id"] == nil {
 		t.Fatal("expected resolved reference to be kept in config map")
 	}

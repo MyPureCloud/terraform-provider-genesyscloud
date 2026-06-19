@@ -104,29 +104,33 @@ func isValidGuid(id string) bool {
 	return matched
 }
 
-// OmitUnresolvedGuidAttributeResolver removes attribute values that could not be resolved to a Terraform reference.
+// OmitUnresolvedRefResolver marks an attribute for omission when export_omit_unresolved_refs is enabled
+// and the attribute value could not be resolved to a Terraform reference.
+func OmitUnresolvedRefResolver() *RefAttrCustomResolver {
+	return &RefAttrCustomResolver{
+		OmitUnresolvedRef: true,
+	}
+}
+
+// OmitUnresolvedGuidFromConfigMap removes an attribute value that could not be resolved to a Terraform reference.
 // Optional reference attributes that still contain a raw GUID after export resolution are omitted from the config.
-func OmitUnresolvedGuidAttributeResolver(attributeKey string) func(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
-	return func(configMap map[string]interface{}, _ map[string]*ResourceExporter, _ string) error {
-		val, ok := configMap[attributeKey]
-		if !ok {
-			return nil
-		}
+func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attributeKey string) {
+	val, ok := configMap[attributeKey]
+	if !ok {
+		return
+	}
 
-		strVal, ok := val.(string)
-		if !ok || strVal == "" {
-			return nil
-		}
+	strVal, ok := val.(string)
+	if !ok || strVal == "" {
+		return
+	}
 
-		if strings.HasPrefix(strVal, "${") {
-			return nil
-		}
+	if strings.HasPrefix(strVal, "${") {
+		return
+	}
 
-		if isValidGuid(strVal) {
-			delete(configMap, attributeKey)
-		}
-
-		return nil
+	if isValidGuid(strVal) {
+		delete(configMap, attributeKey)
 	}
 }
 

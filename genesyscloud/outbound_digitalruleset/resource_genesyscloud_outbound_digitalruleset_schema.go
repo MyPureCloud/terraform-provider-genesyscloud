@@ -537,15 +537,9 @@ func OutboundDigitalrulesetExporter() *resourceExporter.ResourceExporter {
 			},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"contact_list_id": {
-				ResolverFunc: resourceExporter.OmitUnresolvedGuidAttributeResolver("contact_list_id"),
-			},
-			"rules.actions.set_content_template_action_settings.sms_content_template_id": {
-				ResolverFunc: resourceExporter.OmitUnresolvedGuidAttributeResolver("sms_content_template_id"),
-			},
-			"rules.actions.set_content_template_action_settings.email_content_template_id": {
-				ResolverFunc: resourceExporter.OmitUnresolvedGuidAttributeResolver("email_content_template_id"),
-			},
+			"contact_list_id": resourceExporter.OmitUnresolvedRefResolver(),
+			"rules.actions.set_content_template_action_settings.sms_content_template_id":   resourceExporter.OmitUnresolvedRefResolver(),
+			"rules.actions.set_content_template_action_settings.email_content_template_id": resourceExporter.OmitUnresolvedRefResolver(),
 		},
 		RemoveIfMissing: map[string][]string{
 			"rules.actions.set_content_template_action_settings": {"sms_content_template_id", "email_content_template_id"},

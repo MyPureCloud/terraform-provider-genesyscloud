@@ -203,6 +203,13 @@ func ResourceTfExport() *schema.Resource {
 				Default:     true,
 				ForceNew:    true,
 			},
+			"export_omit_unresolved_refs": {
+				Description: "Omit optional reference attributes that could not be resolved to Terraform references during export. When disabled, unresolved references are left as raw GUIDs. Defaults to false to match existing functionality. This attribute's default value will likely switch to true in a future release.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				ForceNew:    true,
+			},
 		},
 	}
 }
