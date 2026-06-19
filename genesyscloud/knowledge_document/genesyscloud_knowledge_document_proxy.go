@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 var internalProxy *knowledgeDocumentProxy
@@ -28,7 +28,7 @@ type getKnowledgeKnowledgebaseLabelFunc func(ctx context.Context, p *knowledgeDo
 type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type GetAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
-type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
+type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
 type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
@@ -124,7 +124,7 @@ func (p *knowledgeDocumentProxy) GetAllKnowledgeDocumentEntities(ctx context.Con
 	return p.GetAllKnowledgeDocumentEntitiesAttr(ctx, p, knowledgeBase)
 }
 
-func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	return p.createKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, body)
 }
 
@@ -501,7 +501,7 @@ func cacheKnowledgeCategoryEntities(p *knowledgeDocumentProxy, knowledgeBaseId s
 	return &entities, nil
 }
 
-func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 

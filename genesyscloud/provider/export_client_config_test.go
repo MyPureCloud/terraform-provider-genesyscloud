@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

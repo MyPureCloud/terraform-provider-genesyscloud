@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestUnitGenerateDownloadUrlFn(t *testing.T) {
