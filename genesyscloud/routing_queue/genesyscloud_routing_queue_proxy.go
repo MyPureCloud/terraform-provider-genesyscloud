@@ -269,7 +269,7 @@ func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID str
 func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	if !tfexporter_state.IsExporterActive() {
+	if !tfexporter_state.IsExporterActive() || true {
 		return getAllRoutingQueueWrapupCodesLegacy(ctx, p, queueId)
 	}
 
@@ -343,7 +343,7 @@ func fetchQueueWrapupCodeAssignments(ctx context.Context, api *platformclientv2.
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var assignments []platformclientv2.Wrapupcode
-	const pageSize = 100
+	const pageSize = 500
 	apiCalls := 0
 
 	wrapupcodes, apiResponse, err := api.GetRoutingQueueWrapupcodes(queueId, pageSize, 1, "")
