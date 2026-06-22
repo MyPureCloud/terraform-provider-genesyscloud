@@ -75,3 +75,59 @@ func TestUnitGetRoutingEmailDomainIdByName_SubdomainPrefixMatch(t *testing.T) {
 		t.Fatalf("expected id %q, got %q", fullID, gotID)
 	}
 }
+
+func TestUnitFlattenGraphApiSettings(t *testing.T) {
+	integrationID := "6572c166-70dc-4ea7-b410-cabe2ee3e4c6"
+	status := "Active"
+
+	flat := flattenGraphApiSettings(&platformclientv2.Graphapisettings{
+		Integration: &platformclientv2.Domainentityref{Id: &integrationID},
+		Status:      &status,
+	})
+	if len(flat) != 1 {
+		t.Fatalf("expected 1 flattened block, got %d", len(flat))
+	}
+
+	settingsMap, ok := flat[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected map[string]interface{}, got %T", flat[0])
+	}
+	if settingsMap["integration_id"] != integrationID {
+		t.Fatalf("expected integration_id %q, got %v", integrationID, settingsMap["integration_id"])
+	}
+	if settingsMap["status"] != status {
+		t.Fatalf("expected status %q, got %v", status, settingsMap["status"])
+	}
+
+	if flattenGraphApiSettings(nil) != nil {
+		t.Fatalf("expected nil for nil settings")
+	}
+}
+
+func TestUnitFlattenImapSettings(t *testing.T) {
+	integrationID := "imap-integration-id"
+	status := "AwaitingFolders"
+
+	flat := flattenImapSettings(&platformclientv2.Imapsettings{
+		Integration: &platformclientv2.Domainentityref{Id: &integrationID},
+		Status:      &status,
+	})
+	if len(flat) != 1 {
+		t.Fatalf("expected 1 flattened block, got %d", len(flat))
+	}
+
+	settingsMap, ok := flat[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected map[string]interface{}, got %T", flat[0])
+	}
+	if settingsMap["integration_id"] != integrationID {
+		t.Fatalf("expected integration_id %q, got %v", integrationID, settingsMap["integration_id"])
+	}
+	if settingsMap["status"] != status {
+		t.Fatalf("expected status %q, got %v", status, settingsMap["status"])
+	}
+
+	if flattenImapSettings(nil) != nil {
+		t.Fatalf("expected nil for nil settings")
+	}
+}

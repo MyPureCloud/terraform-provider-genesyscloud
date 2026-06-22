@@ -60,7 +60,7 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Created routing email domain %s", *domain.Id)
 
 	// Other settings must be updated in a PATCH update
-	if d.HasChanges("mail_from_domain", "custom_smtp_server_id") {
+	if d.HasChanges("mail_from_domain", "custom_smtp_server_id", "graph_api_settings", "imap_settings") {
 		return updateRoutingEmailDomain(ctx, d, meta)
 	} else {
 		return readRoutingEmailDomain(ctx, d, meta)
@@ -85,6 +85,8 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 		resourcedata.SetNillableValue(d, "subdomain", domain.SubDomain)
 		resourcedata.SetNillableReference(d, "custom_smtp_server_id", domain.CustomSMTPServer)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "graph_api_settings", domain.GraphApiSettings, flattenGraphApiSettings)
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "imap_settings", domain.ImapSettings, flattenImapSettings)
 
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
@@ -121,14 +123,24 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Updating routing email domain %s", d.Id())
 
-	_, resp, err := proxy.updateRoutingEmailDomain(ctx, d.Id(), &platformclientv2.Inbounddomainpatchrequest{
+	patchRequest := &platformclientv2.Inbounddomainpatchrequest{
 		MailFromSettings: &platformclientv2.Mailfromresult{
 			MailFromDomain: &mailFromDomain,
 		},
 		CustomSMTPServer: &platformclientv2.Domainentityref{
 			Id: &customSMTPServer,
 		},
-	})
+	}
+
+	if graphApiSettings := expandGraphApiSettings(d); graphApiSettings != nil {
+		patchRequest.GraphApiSettings = graphApiSettings
+	}
+
+	if imapSettings := expandImapSettings(d); imapSettings != nil {
+		patchRequest.ImapSettings = imapSettings
+	}
+
+	_, resp, err := proxy.updateRoutingEmailDomain(ctx, d.Id(), patchRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update routing email domain %s error: %s", d.Id(), err), resp)
 	}

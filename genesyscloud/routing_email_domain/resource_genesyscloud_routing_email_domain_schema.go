@@ -18,6 +18,36 @@ func SetRegistrar(regInstance registrar.Registrar) {
 }
 
 func ResourceRoutingEmailDomain() *schema.Resource {
+	imapSettingsResource := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"integration_id": {
+				Description: "The IMAP server integration to use for ingesting emails.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"status": {
+				Description: "IMAP server status.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+		},
+	}
+
+	graphApiSettingsResource := &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"integration_id": {
+				Description: "The Graph API server integration to use for emails.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"status": {
+				Description: "Graph API server status.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+		},
+	}
+
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Email Domain",
 
@@ -53,6 +83,20 @@ func ResourceRoutingEmailDomain() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"imap_settings": {
+				Description: "The IMAP server integration and settings to use for processing inbound emails.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        imapSettingsResource,
+			},
+			"graph_api_settings": {
+				Description: "The Graph API server integration and settings to use for processing inbound and outbound emails.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        graphApiSettingsResource,
+			},
 		},
 	}
 }
@@ -75,8 +119,14 @@ func DataSourceRoutingEmailDomain() *schema.Resource {
 func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingEmailDomains),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"graph_api_settings.integration_id": {RefType: "genesyscloud_integration"},
+			"imap_settings.integration_id":      {RefType: "genesyscloud_integration"},
+		},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
+			"graph_api_settings":    ResourceRoutingEmailDomain().Schema["graph_api_settings"],
+			"imap_settings":         ResourceRoutingEmailDomain().Schema["imap_settings"],
 		},
 		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
 			// Data source expects the domain's full ID (e.g. "subdomain.mypurecloud.com").
