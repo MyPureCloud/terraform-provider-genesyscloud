@@ -1,7 +1,3 @@
-resource "genesyscloud_intents_categories" "example_intent_category" {
-  name = "Example Intent Category"
-}
-
 resource "genesyscloud_intents_customerintents" "example_customer_intent" {
   name        = "Example Customer Intent"
   description = "Example customer intent description"

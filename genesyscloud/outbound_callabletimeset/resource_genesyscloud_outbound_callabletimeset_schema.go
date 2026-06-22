@@ -56,6 +56,11 @@ var timeSlotResource = &schema.Resource{
 			Type:        schema.TypeSet,
 			Elem:        campaignTimeslotResource,
 		},
+		`name`: {
+			Description: `The name for the callable time.`,
+			Optional:    true,
+			Type:        schema.TypeString,
+		},
 		`time_zone_id`: {
 			Description: `The time zone for the time slots; for example, Africa/Abidjan`,
 			Required:    true,

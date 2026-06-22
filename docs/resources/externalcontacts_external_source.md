@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_externalcontacts_external_source (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud external contacts external source
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/externalcontacts/externalsources](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-externalsources)
 * [POST /api/v2/externalcontacts/externalsources](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-externalcontacts-externalsources)
+* [DELETE /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-externalcontacts-externalsources--externalSourceId-)
 * [GET /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-externalsources--externalSourceId-)
 * [PUT /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-externalcontacts-externalsources--externalSourceId-)
-* [DELETE /api/v2/externalcontacts/externalsources/{externalSourceId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-externalcontacts-externalsources--externalSourceId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -6,18 +6,20 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_integrations_whatsapp (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud conversations messaging integrations whatsapp
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/conversations/messaging/integrations/whatsapp/embeddedsignup](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-integrations-whatsapp-embeddedsignup)
-* [GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
-* [PATCH /api/v2/conversations/messaging/integrations/whatsapp/embeddedsignup/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-whatsapp-embeddedsignup--integrationId-)
-* [PATCH /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
-* [DELETE /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
 * [GET /api/v2/conversations/messaging/integrations/whatsapp](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-whatsapp)
-
+* [POST /api/v2/conversations/messaging/integrations/whatsapp/embeddedsignup](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-integrations-whatsapp-embeddedsignup)
+* [PATCH /api/v2/conversations/messaging/integrations/whatsapp/embeddedsignup/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-whatsapp-embeddedsignup--integrationId-)
+* [DELETE /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
+* [GET /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
+* [PATCH /api/v2/conversations/messaging/integrations/whatsapp/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-whatsapp--integrationId-)
 
 ## Permissions and Scopes
 

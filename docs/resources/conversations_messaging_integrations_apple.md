@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_integrations_apple (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud apple integration
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple)
 * [POST /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-integrations-apple)
+* [DELETE /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-apple--integrationId-)
 * [GET /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple--integrationId-)
 * [PATCH /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-apple--integrationId-)
-* [DELETE /api/v2/conversations/messaging/integrations/apple/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-apple--integrationId-)
-* [GET /api/v2/conversations/messaging/integrations/apple](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-apple)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
