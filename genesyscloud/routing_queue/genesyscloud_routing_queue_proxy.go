@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
@@ -26,6 +27,25 @@ const (
 )
 
 var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
+
+// routingQueueListCache stores paginated queue list results keyed by name:hasPeer during export.
+var routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
+
+func routingQueueListCacheKey(name string, hasPeer bool) string {
+	return name + ":" + strconv.FormatBool(hasPeer)
+}
+
+func invalidateRoutingQueueListCache() {
+	if tfexporter_state.IsExporterActive() {
+		routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
+	}
+}
+
+func storeRoutingQueueInCache(cache rc.CacheInterface[platformclientv2.Queue], queue *platformclientv2.Queue) {
+	if queue != nil && queue.Id != nil {
+		rc.SetCache(cache, *queue.Id, *queue)
+	}
+}
 
 // queueWrapupCodesCache stores paginated wrapup code assignments per queue during export.
 var queueWrapupCodesCache = rc.NewResourceCache[[]platformclientv2.Wrapupcode]()
@@ -167,6 +187,12 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
+	listKey := routingQueueListCacheKey(name, hasPeer)
+	if cached := rc.GetCacheItem(routingQueueListCache, listKey); cached != nil {
+		log.Printf("[QUEUE-CACHE] list name=%q hasPeer=%t: cache hit (%d queues)", name, hasPeer, len(*cached))
+		return cached, nil, nil
+	}
+
 	var allQueues []platformclientv2.Queue
 	const pageSize = 100
 
@@ -175,37 +201,33 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 		return nil, resp, fmt.Errorf("failed to get first page of queues: %v", getErr)
 	}
 
-	// Check if the routing queue cache is populated with all the data, if it is, return that instead
-	// If the size of the cache is the same as the total number of queues, the cache is up-to-date
-	if rc.GetCacheSize(p.RoutingQueueCache) == *queues.Total && rc.GetCacheSize(p.RoutingQueueCache) != 0 {
-		return rc.GetCache(p.RoutingQueueCache), nil, nil
-	} else if rc.GetCacheSize(p.RoutingQueueCache) != *queues.Total && rc.GetCacheSize(p.RoutingQueueCache) != 0 {
-		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.RoutingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
-	}
-
 	if queues.Entities == nil || len(*queues.Entities) == 0 {
+		rc.SetCache(routingQueueListCache, listKey, allQueues)
 		return &allQueues, resp, nil
 	}
 
 	allQueues = append(allQueues, *queues.Entities...)
 
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr = p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
-		if getErr != nil {
-			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
-		}
+	if queues.PageCount != nil {
+		for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
+			queues, resp, getErr = p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
+			if getErr != nil {
+				return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
+			}
 
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
+			if queues.Entities == nil || len(*queues.Entities) == 0 {
+				break
+			}
 
-		allQueues = append(allQueues, *queues.Entities...)
+			allQueues = append(allQueues, *queues.Entities...)
+		}
 	}
 
-	for _, queue := range allQueues {
-		rc.SetCache(p.RoutingQueueCache, *queue.Id, queue)
+	for i := range allQueues {
+		storeRoutingQueueInCache(p.RoutingQueueCache, &allQueues[i])
 	}
+	rc.SetCache(routingQueueListCache, listKey, allQueues)
+	log.Printf("[QUEUE-CACHE] list name=%q hasPeer=%t: cached %d queues", name, hasPeer, len(allQueues))
 
 	return &allQueues, resp, nil
 }
@@ -230,7 +252,17 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 			return queue, nil, nil
 		}
 	}
-	return p.routingApi.GetRoutingQueue(queueId, nil)
+
+	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if checkCache {
+		storeRoutingQueueInCache(p.RoutingQueueCache, queue)
+	}
+
+	return queue, resp, nil
 }
 
 func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (string, *platformclientv2.APIResponse, bool, error) {
@@ -273,6 +305,7 @@ func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID str
 		return resp, err
 	}
 	rc.DeleteCacheItem(p.RoutingQueueCache, queueID)
+	invalidateRoutingQueueListCache()
 	return resp, nil
 }
 

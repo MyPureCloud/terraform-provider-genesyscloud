@@ -534,6 +534,65 @@ func TestUnitGetRoutingQueueMembersPerQueueCacheHit(t *testing.T) {
 	assert.Equal(t, "user-2", *members[1].Id)
 }
 
+func TestUnitGetAllRoutingQueuesListCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	listKey := routingQueueListCacheKey("", false)
+	cached := []platformclientv2.Queue{
+		{Id: platformclientv2.String("queue-list-1"), Name: platformclientv2.String("Queue 1")},
+	}
+	rc.SetCache(routingQueueListCache, listKey, cached)
+
+	queues, _, err := GetAllRoutingQueuesFn(context.Background(), &RoutingQueueProxy{RoutingQueueCache: routingQueueCache}, "", false)
+	require.NoError(t, err)
+	require.Len(t, *queues, 1)
+	assert.Equal(t, "queue-list-1", *(*queues)[0].Id)
+}
+
+func TestUnitRoutingQueueCacheMergesNonPeerAndPeerQueues(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	nonPeer := []platformclientv2.Queue{
+		{Id: platformclientv2.String("non-peer-queue"), Name: platformclientv2.String("Non Peer")},
+	}
+	peer := []platformclientv2.Queue{
+		{Id: platformclientv2.String("peer-queue"), Name: platformclientv2.String("Peer"), PeerId: platformclientv2.String("peer-id")},
+	}
+
+	rc.SetCache(routingQueueListCache, routingQueueListCacheKey("", false), nonPeer)
+	for i := range nonPeer {
+		storeRoutingQueueInCache(routingQueueCache, &nonPeer[i])
+	}
+
+	rc.SetCache(routingQueueListCache, routingQueueListCacheKey("", true), peer)
+	for i := range peer {
+		storeRoutingQueueInCache(routingQueueCache, &peer[i])
+	}
+
+	nonPeerCached := rc.GetCacheItem(routingQueueCache, "non-peer-queue")
+	peerCached := rc.GetCacheItem(routingQueueCache, "peer-queue")
+	require.NotNil(t, nonPeerCached)
+	require.NotNil(t, peerCached)
+	assert.Equal(t, "Non Peer", *nonPeerCached.Name)
+	assert.Equal(t, "peer-id", *peerCached.PeerId)
+}
+
+func TestUnitStoreRoutingQueueInCache(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-write-through-test"
+	queue := platformclientv2.Queue{
+		Id:   platformclientv2.String(queueID),
+		Name: platformclientv2.String("Write Through Queue"),
+	}
+
+	storeRoutingQueueInCache(routingQueueCache, &queue)
+
+	cached := rc.GetCacheItem(routingQueueCache, queueID)
+	require.NotNil(t, cached)
+	assert.Equal(t, "Write Through Queue", *cached.Name)
+}
+
 func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue platformclientv2.Createqueuerequest) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"id":                                tId,
