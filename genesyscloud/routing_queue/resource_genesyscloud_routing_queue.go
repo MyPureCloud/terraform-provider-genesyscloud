@@ -182,6 +182,12 @@ func syncStateOnPartialFailure(ctx context.Context, d *schema.ResourceData, meta
 
 // setRoutingQueueStateFromQueue maps a Genesys Cloud queue API object onto Terraform resource state.
 func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, currentQueue *platformclientv2.Queue, proxy *RoutingQueueProxy, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	const (
+		groupTypeSkill = "SKILLGROUP"
+		groupTypeTeam  = "TEAM"
+		groupTypeGroup = "GROUP"
+	)
+
 	resourcedata.SetNillableValue(d, "name", currentQueue.Name)
 	resourcedata.SetNillableValue(d, "description", currentQueue.Description)
 	resourcedata.SetNillableValue(d, "skill_evaluation_method", currentQueue.SkillEvaluationMethod)
@@ -289,13 +295,9 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		_ = d.Set("members", members)
 	}
 
-	skillGroup := "SKILLGROUP"
-	team := "TEAM"
-	group := "GROUP"
-
-	_ = d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, &skillGroup))
-	_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, &team))
-	_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, &group))
+	_ = d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, platformclientv2.String(groupTypeSkill)))
+	_ = d.Set("teams", flattenQueueMemberGroupsList(currentQueue, platformclientv2.String(groupTypeTeam)))
+	_ = d.Set("groups", flattenQueueMemberGroupsList(currentQueue, platformclientv2.String(groupTypeGroup)))
 
 	if exists := featureToggles.CSGToggleExists(); !exists {
 		_ = d.Set("conditional_group_routing_rules", flattenConditionalGroupRoutingRules(currentQueue))

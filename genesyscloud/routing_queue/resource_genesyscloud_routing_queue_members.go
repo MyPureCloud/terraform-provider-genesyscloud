@@ -68,9 +68,10 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 func fetchRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, int, diag.Diagnostics) {
 	var members []platformclientv2.Queuemember
 	apiCalls := 0
+	const pageSize = 100
 
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, 100, sdkConfig)
+		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, pageSize, sdkConfig)
 		apiCalls++
 		if err != nil || resp.StatusCode != http.StatusOK {
 			return nil, apiCalls, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
