@@ -42,22 +42,7 @@ func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bo
 }
 
 func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
-	proxy := GetRoutingQueueProxy(sdkConfig)
 	var members []platformclientv2.Queuemember
-
-	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
-	queue, resp, err := proxy.getRoutingQueueById(ctx, queueID, true)
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
-	}
-
-	if queue.MemberCount == nil {
-		log.Printf("no members belong to queue %s", queueID)
-		return members, nil
-	}
-
-	queueMembers := *queue.MemberCount
-	log.Printf("%d members belong to queue %s", queueMembers, queueID)
 
 	for pageNum := 1; ; pageNum++ {
 		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, 100, sdkConfig)
@@ -66,17 +51,13 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 		}
 
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
-			membersFound := len(members)
-			log.Printf("%d queue members found for queue %s", membersFound, queueID)
-
-			if membersFound != queueMembers {
-				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
-			}
-			return members, nil
+			break
 		}
 
 		members = append(members, *users.Entities...)
 	}
+
+	return members, nil
 }
 
 func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (diags diag.Diagnostics) {

@@ -107,6 +107,8 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
+	_ = d.Set("ignore_members", true)
+
 	diag := createRoutingQueue(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
@@ -293,6 +295,8 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
+
+	_ = d.Set("ignore_members", true)
 
 	diag := updateRoutingQueue(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
@@ -682,6 +686,8 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		OutboundMessagingAddresses:   &messagingAddress,
 		CannedResponseLibraries:      &cannedResponseLibraries,
 		LastAgentRoutingMode:         &lastAgentRoutingMode,
+		UserMemberCount:              platformclientv2.Int(0),
+		MemberCount:                  platformclientv2.Int(0),
 	}
 }
 
