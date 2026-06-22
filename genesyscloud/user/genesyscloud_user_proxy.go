@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -71,6 +72,25 @@ type userProxy struct {
 
 var userCache = rc.NewResourceCache[platformclientv2.User]()
 var extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+
+// userVoicemailPolicyCache stores voicemail user policies per user during export.
+var userVoicemailPolicyCache = rc.NewResourceCache[platformclientv2.Voicemailuserpolicy]()
+
+// userRoutingUtilizationCache stores raw routing utilization API responses per user during export.
+var userRoutingUtilizationCache = rc.NewResourceCache[[]byte]()
+
+func invalidateUserVoicemailPolicyCache(userID string) {
+	rc.DeleteCacheItem(userVoicemailPolicyCache, userID)
+}
+
+func invalidateUserRoutingUtilizationCache(userID string) {
+	rc.DeleteCacheItem(userRoutingUtilizationCache, userID)
+}
+
+func invalidateUserExportDetailCaches(userID string) {
+	invalidateUserVoicemailPolicyCache(userID)
+	invalidateUserRoutingUtilizationCache(userID)
+}
 
 /*
 The function newUserProxy sets up the user proxy by providing it
@@ -230,6 +250,7 @@ func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *
 		return nil, resp, err
 	}
 	rc.DeleteCacheItem(p.userCache, id)
+	invalidateUserExportDetailCaches(id)
 	return data, nil, nil
 }
 
@@ -318,7 +339,24 @@ func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id st
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.voicemailApi.GetVoicemailUserpolicy(id)
+	if tfexporter_state.IsExporterActive() {
+		if cached := rc.GetCacheItem(userVoicemailPolicyCache, id); cached != nil {
+			log.Printf("[USER-CACHE] User %s: voicemail policy cache hit", id)
+			return cached, nil, nil
+		}
+	}
+
+	policy, resp, err := p.voicemailApi.GetVoicemailUserpolicy(id)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if tfexporter_state.IsExporterActive() && policy != nil {
+		rc.SetCache(userVoicemailPolicyCache, id, *policy)
+		log.Printf("[USER-CACHE] User %s: cached voicemail policy", id)
+	}
+
+	return policy, resp, nil
 }
 
 func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
