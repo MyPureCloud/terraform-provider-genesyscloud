@@ -7,12 +7,15 @@ import (
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnitResourceRoutingQueueCreate(t *testing.T) {
@@ -490,6 +493,23 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUnitGetAllRoutingQueueWrapupCodesPerQueueCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-cache-test"
+	cached := []platformclientv2.Wrapupcode{
+		{Id: platformclientv2.String("wc-1"), Name: platformclientv2.String("Code 1")},
+		{Id: platformclientv2.String("wc-2"), Name: platformclientv2.String("Code 2")},
+	}
+	rc.SetCache(queueWrapupCodesCache, queueID, cached)
+
+	codes, _, err := getAllRoutingQueueWrapupCodesFn(context.Background(), &RoutingQueueProxy{}, queueID)
+	require.NoError(t, err)
+	require.Len(t, *codes, 2)
+	assert.Equal(t, "wc-1", *(*codes)[0].Id)
+	assert.Equal(t, "wc-2", *(*codes)[1].Id)
 }
 
 func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue platformclientv2.Createqueuerequest) map[string]interface{} {
