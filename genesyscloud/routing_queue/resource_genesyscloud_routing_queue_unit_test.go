@@ -516,6 +516,24 @@ func TestUnitGetAllRoutingQueueWrapupCodesPerQueueCacheHit(t *testing.T) {
 	assert.Equal(t, "wc-2", *(*codes)[1].Id)
 }
 
+func TestUnitGetRoutingQueueMembersPerQueueCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-member-cache-test"
+	cacheKey := queueMembersCacheKey(queueID, "user")
+	cached := []platformclientv2.Queuemember{
+		{Id: platformclientv2.String("user-1"), RingNumber: platformclientv2.Int(1)},
+		{Id: platformclientv2.String("user-2"), RingNumber: platformclientv2.Int(2)},
+	}
+	rc.SetCache(queueMembersCache, cacheKey, cached)
+
+	members, diagErr := getRoutingQueueMembers(queueID, "user", nil)
+	require.Nil(t, diagErr)
+	require.Len(t, members, 2)
+	assert.Equal(t, "user-1", *members[0].Id)
+	assert.Equal(t, "user-2", *members[1].Id)
+}
+
 func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue platformclientv2.Createqueuerequest) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"id":                                tId,

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -42,12 +44,36 @@ func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bo
 }
 
 func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
+	cacheKey := queueMembersCacheKey(queueID, memberBy)
+	if tfexporter_state.IsExporterActive() {
+		if cached := rc.GetCacheItem(queueMembersCache, cacheKey); cached != nil {
+			log.Printf("[MEMBER-CACHE] Queue %s (%s): cache hit (%d members)", queueID, memberBy, len(*cached))
+			return *cached, nil
+		}
+	}
+
+	members, apiCalls, diagErr := fetchRoutingQueueMembers(queueID, memberBy, sdkConfig)
+	if diagErr != nil {
+		return nil, diagErr
+	}
+
+	if tfexporter_state.IsExporterActive() {
+		rc.SetCache(queueMembersCache, cacheKey, members)
+		log.Printf("[MEMBER-CACHE] Queue %s (%s): cached %d members (%d API calls)", queueID, memberBy, len(members), apiCalls)
+	}
+
+	return members, nil
+}
+
+func fetchRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, int, diag.Diagnostics) {
 	var members []platformclientv2.Queuemember
+	apiCalls := 0
 
 	for pageNum := 1; ; pageNum++ {
 		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, 100, sdkConfig)
+		apiCalls++
 		if err != nil || resp.StatusCode != http.StatusOK {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
+			return nil, apiCalls, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
 		}
 
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
@@ -57,7 +83,7 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 		members = append(members, *users.Entities...)
 	}
 
-	return members, nil
+	return members, apiCalls, nil
 }
 
 func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (diags diag.Diagnostics) {

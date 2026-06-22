@@ -29,6 +29,22 @@ var routingQueueCache = rc.NewResourceCache[platformclientv2.Queue]()
 
 // queueWrapupCodesCache stores paginated wrapup code assignments per queue during export.
 var queueWrapupCodesCache = rc.NewResourceCache[[]platformclientv2.Wrapupcode]()
+
+// queueMembersCache stores paginated queue member listings per queue and memberBy during export.
+var queueMembersCache = rc.NewResourceCache[[]platformclientv2.Queuemember]()
+
+func queueMembersCacheKey(queueID, memberBy string) string {
+	if memberBy == "" {
+		return queueID
+	}
+	return queueID + ":" + memberBy
+}
+
+func invalidateQueueMembersCache(queueID string) {
+	rc.DeleteCacheItem(queueMembersCache, queueMembersCacheKey(queueID, "user"))
+	rc.DeleteCacheItem(queueMembersCache, queueMembersCacheKey(queueID, "group"))
+}
+
 var internalProxy *RoutingQueueProxy
 
 type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
@@ -352,7 +368,12 @@ func addOrRemoveMembersFn(ctx context.Context, p *RoutingQueueProxy, queueId str
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
-	return p.routingApi.PostRoutingQueueMembers(queueId, body, delete)
+	resp, err := p.routingApi.PostRoutingQueueMembers(queueId, body, delete)
+	if err != nil {
+		return resp, err
+	}
+	invalidateQueueMembersCache(queueId)
+	return resp, nil
 }
 
 func updateRoutingQueueMemberFn(ctx context.Context, p *RoutingQueueProxy, queueId, userId string, body platformclientv2.Queuemember) (*platformclientv2.APIResponse, error) {
@@ -360,5 +381,10 @@ func updateRoutingQueueMemberFn(ctx context.Context, p *RoutingQueueProxy, queue
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	delay.ConfigurableDelay(RoutingQueueDelayEnvVar)
-	return p.routingApi.PatchRoutingQueueMember(queueId, userId, body)
+	resp, err := p.routingApi.PatchRoutingQueueMember(queueId, userId, body)
+	if err != nil {
+		return resp, err
+	}
+	invalidateQueueMembersCache(queueId)
+	return resp, nil
 }
