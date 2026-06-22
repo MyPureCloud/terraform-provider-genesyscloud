@@ -154,21 +154,25 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	proxy := GetKnowledgeLabelProxy(sdkConfig)
 
 	log.Printf("Deleting knowledge label %s", id)
-	_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
-	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+
+	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
+	diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+		_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
+		if err != nil {
+			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+				log.Printf("Knowledge label %s in use by Bot flow with status unknown. Rebuilding dependency tracking and retrying.", knowledgeLabelId)
+				rebuildErr := rebuildDatabase()
+				if rebuildErr != nil {
+					log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+				}
+				return retry.RetryableError(fmt.Errorf("knowledge label %s still in use by Bot flow status unknown: %s", knowledgeLabelId, err))
 			}
-			time.Sleep(10 * time.Second)
-			_, resp, err = proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
-			}
-		} else {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp))
 		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
