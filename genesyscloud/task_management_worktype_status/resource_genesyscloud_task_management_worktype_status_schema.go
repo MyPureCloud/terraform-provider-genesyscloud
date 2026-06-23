@@ -124,8 +124,19 @@ func ResourceTaskManagementWorktypeStatus() *schema.Resource {
 func TaskManagementWorktypeStatusExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorktypeStatuss),
+		// Note: destination_status_ids and default_destination_status_id are declared in both RefAttrs
+		// and CustomAttributeResolver. RefAttrs ensures the exporter recognizes these fields as references
+		// for dependency graph ordering. The standard resolver will fail (bare status ID vs composite
+		// worktypeId/statusId key) and add to buildSecondDeps, but the CustomAttributeResolver runs
+		// afterward and performs suffix-based lookup to correctly resolve the references.
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
+			"worktype_id":                   {RefType: "genesyscloud_task_management_worktype"},
+			"destination_status_ids":        {RefType: ResourceType},
+			"default_destination_status_id": {RefType: ResourceType},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"destination_status_ids":        {ResolverFunc: WorktypeStatusArrayRefResolver("destination_status_ids")},
+			"default_destination_status_id": {ResolverFunc: WorktypeStatusRefResolver("default_destination_status_id")},
 		},
 	}
 }
