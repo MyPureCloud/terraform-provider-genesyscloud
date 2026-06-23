@@ -209,28 +209,49 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allGroups []platformclientv2.Group
-	const pageSize = 100
+	const pageSize = 500
 
 	groups, resp, getErr := p.groupsApi.GetGroups(pageSize, 1, nil, nil, "")
 	if getErr != nil {
-		return nil, resp, fmt.Errorf("failed to get first page of groups: %v", getErr)
+		return nil, resp, fmt.Errorf("failed to get first page of groups: %w", getErr)
+	}
+
+	if groups.Entities == nil || len(*groups.Entities) == 0 {
+		return &allGroups, resp, nil
 	}
 
 	allGroups = append(allGroups, *groups.Entities...)
 
-	for pageNum := 2; pageNum <= *groups.PageCount; pageNum++ {
-		groups, resp, getErr := p.groupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
-		if getErr != nil {
-			return nil, resp, fmt.Errorf("failed to get page of groups: %v", getErr)
-		}
-		allGroups = append(allGroups, *groups.Entities...)
+	totalPages := 1
+	if groups.PageCount != nil {
+		totalPages = *groups.PageCount
+	}
+
+	allGroups, resp, getErr = provider.FetchPagesConcurrently(ctx, ResourceType, allGroups, resp, totalPages, p.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Group, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newGroupProxy(clientConfig)
+			pageGroups, pageResp, pageErr := pageProxy.groupsApi.GetGroups(pageSize, pageNum, nil, nil, "")
+			if pageErr != nil {
+				return nil, pageResp, fmt.Errorf("failed to get page of groups: %w", pageErr)
+			}
+
+			if pageGroups.Entities == nil || len(*pageGroups.Entities) == 0 {
+				return []platformclientv2.Group{}, pageResp, nil
+			}
+
+			return *pageGroups.Entities, pageResp, nil
+		},
+	)
+	if getErr != nil {
+		return nil, resp, getErr
 	}
 
 	for _, group := range allGroups {
 		rc.SetCache(p.groupCache, *group.Id, group)
 	}
 
-	return &allGroups, nil, nil
+	return &allGroups, resp, nil
 }
 
 func updateGroupVoicemailPolicyFn(ctx context.Context, p *groupProxy, id string, policy *platformclientv2.Voicemailgrouppolicy) (*platformclientv2.Voicemailgrouppolicy, *platformclientv2.APIResponse, error) {
