@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"log"
 	"os"
 	"reflect"
@@ -13,6 +11,9 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -145,16 +146,24 @@ func filterMapSlice(unfilteredSlice []interface{}) interface{} {
 		return unfilteredSlice
 	}
 
-	switch unfilteredSlice[0].(type) {
-	case map[string]interface{}:
-		filteredSlice := make([]interface{}, 0)
-		for _, s := range unfilteredSlice {
-			filteredSlice = append(filteredSlice, filterMap(s.(map[string]interface{})))
+	var filteredSlice []interface{}
+	for _, s := range unfilteredSlice {
+		// Nested block lists from state can include nil entries
+		if s == nil {
+			continue
 		}
-		return filteredSlice
+		// Use a safe type assert; non-map elements are skipped rather than panicking.
+		if m, ok := s.(map[string]interface{}); ok {
+			if filteredSlice == nil {
+				filteredSlice = make([]interface{}, 0, len(unfilteredSlice))
+			}
+			filteredSlice = append(filteredSlice, filterMap(m))
+		}
 	}
-
-	return unfilteredSlice
+	if filteredSlice == nil {
+		return unfilteredSlice
+	}
+	return filteredSlice
 }
 
 func filterMap(m map[string]interface{}) map[string]interface{} {

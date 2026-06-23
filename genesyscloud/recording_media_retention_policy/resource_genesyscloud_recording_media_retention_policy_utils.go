@@ -1826,12 +1826,18 @@ func buildUserParams(params []interface{}) *[]platformclientv2.Userparam {
 	userParams := make([]platformclientv2.Userparam, 0)
 
 	for _, param := range params {
+		if param == nil {
+			continue // placeholder slots from optional nested blocks in config
+		}
 		paramMap, ok := param.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		key := paramMap["key"].(string)
-		value := paramMap["value"].(string)
+		key, _ := paramMap["key"].(string)
+		value, _ := paramMap["value"].(string)
+		if key == "" && value == "" {
+			continue // skip empty user_params blocks (no key/value in HCL)
+		}
 
 		userParams = append(userParams, platformclientv2.Userparam{
 			Key:   &key,
@@ -1839,6 +1845,9 @@ func buildUserParams(params []interface{}) *[]platformclientv2.Userparam {
 		})
 	}
 
+	if len(userParams) == 0 {
+		return nil
+	}
 	return &userParams
 }
 
