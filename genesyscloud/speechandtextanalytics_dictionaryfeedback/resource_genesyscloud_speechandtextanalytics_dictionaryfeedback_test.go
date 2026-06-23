@@ -2,6 +2,7 @@ package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"testing"
 
@@ -11,12 +12,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
 The resource_genesyscloud_speechandtextanalytics_dictionaryfeedback_test.go contains all of the test cases for running the resource
 tests for speechandtextanalytics_dictionaryfeedback.
 */
+
+// cleanupDictionaryFeedbackByTerm removes any existing dictionary feedback entries matching the given term and dialect
+func cleanupDictionaryFeedbackByTerm(term, dialect string) {
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		log.Printf("failed to authorize SDK for dictionary feedback cleanup: %v", err)
+		return
+	}
+	api := platformclientv2.NewSpeechTextAnalyticsApiWithConfig(sdkConfig)
+	feedbacks, _, err := api.GetSpeechandtextanalyticsDictionaryfeedback(dialect, term, "", 100)
+	if err != nil {
+		log.Printf("failed to list dictionary feedback for cleanup: %v", err)
+		return
+	}
+	if feedbacks.Entities == nil {
+		return
+	}
+	for _, fb := range *feedbacks.Entities {
+		if fb.Id != nil {
+			log.Printf("Cleaning up dictionary feedback %s (term=%s, dialect=%s)", *fb.Id, term, dialect)
+			_, err := api.DeleteSpeechandtextanalyticsDictionaryfeedbackDictionaryFeedbackId(*fb.Id)
+			if err != nil {
+				log.Printf("failed to delete dictionary feedback %s: %v", *fb.Id, err)
+			}
+		}
+	}
+}
 
 func TestAccResourceDictionaryFeedback(t *testing.T) {
 	//t.Parallel()
@@ -35,6 +64,9 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 		examplePhrase2 = "thanks for calling genesys"
 		examplePhrase3 = "Genesys is a platform"
 	)
+
+	// Clean up any leftover dictionary feedback from previous test runs
+	cleanupDictionaryFeedbackByTerm(term, dialect)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },

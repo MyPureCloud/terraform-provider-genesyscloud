@@ -23,7 +23,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 		relyingPartyID2     = "test-id2"
 		nameIDFormatDefault = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
 		nameIDFormatEmail   = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-		base64Img           = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvM"
+		base64Img           = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 		uri3                = "https://example.com"
 		slo_binding1        = "HTTP Redirect"
 		slo_binding2        = "HTTP Post"

@@ -1,7 +1,6 @@
 package conversations_messaging_integrations_apple
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/google/uuid"
@@ -48,24 +47,19 @@ func TestAccResourceAppleIntegrationBasic(t *testing.T) {
 			func() resource.TestStep {
 				step := resource.TestStep{
 					// Update - Behavior depends on business ID type:
-					// - Fake ID: Expects error (async creation incomplete)
+					// - Fake ID: May error (async creation incomplete) or succeed depending on region/timing
 					// - Real ID: Expects success (full CRUD validation)
 					Config: generateBasicAppleIntegrationResource(
 						resourceLabel,
 						updatedName,
 						businessId,
 					),
-				}
-				// Conditional test behavior based on business ID source
-				if !isUsingRealBusinessId() {
-					// Fake ID: Test error handling for incomplete integrations
-					step.ExpectError = regexp.MustCompile(`Create integration has not completed|INVALID_MESSAGES_FOR_BUSINESS_ID`)
-				} else {
-					// Real ID: Test successful update operation
-					step.Check = resource.ComposeTestCheckFunc(
+					// Always verify the update result, whether using fake or real ID.
+					// In some regions/environments the fake ID update now succeeds.
+					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", updatedName),
 						resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "messages_for_business_id", businessId),
-					)
+					),
 				}
 				return step
 			}(),

@@ -1479,6 +1479,7 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 
 func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	testSetup(t)
+
 	var (
 		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
 		resourceLabel = "export"
@@ -1493,12 +1494,72 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 		}
 	}(exportTestDir)
 
+	// Create both a published and unpublished survey form, then export
+	surveyFormConfig := `
+resource "genesyscloud_quality_forms_survey" "test-published-form" {
+	name      = "test-published-form"
+	published = true
+	language  = "en-US"
+	question_groups {
+		name = "Test Group"
+		questions {
+			text = "Was the customer satisfied?"
+			type = "multipleChoiceQuestion"
+			answer_options {
+				text  = "Yes"
+				value = 1
+			}
+			answer_options {
+				text  = "No"
+				value = 0
+			}
+		}
+	}
+	lifecycle {
+		ignore_changes = [question_groups[0].questions[0].type]
+	}
+}
+
+resource "genesyscloud_quality_forms_survey" "test-unpublished-form" {
+	name      = "test-unpublished-form"
+	published = false
+	language  = "en-US"
+	question_groups {
+		name = "Test Group"
+		questions {
+			text = "Was the agent helpful?"
+			type = "multipleChoiceQuestion"
+			answer_options {
+				text  = "Yes"
+				value = 1
+			}
+			answer_options {
+				text  = "No"
+				value = 0
+			}
+		}
+	}
+	lifecycle {
+		ignore_changes = [question_groups[0].questions[0].type]
+	}
+}
+`
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportByIncludeFilterResources(
+				// First create the survey forms
+				Config: surveyFormConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-published-form", "name", "test-published-form"),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-unpublished-form", "name", "test-unpublished-form"),
+				),
+			},
+			{
+				// Then export and validate
+				Config: surveyFormConfig + generateTfExportByIncludeFilterResources(
 					resourceLabel,
 					exportTestDir,
 					util.TrueValue, // include_state_file

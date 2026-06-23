@@ -441,10 +441,41 @@ func AssignRegion() string {
 
 	region := "us-west-2"
 
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+	switch v := os.Getenv("GENESYSCLOUD_REGION"); v {
+	case "tca":
 		region = "us-east-1"
-	} else if v == "us-east-1" {
+	case "us-east-1":
 		region = "us-west-2"
+	case "eu-west-1":
+		region = "eu-west-1"
+	case "eu-west-2":
+		region = "eu-west-2"
+	case "eu-central-1":
+		region = "eu-central-1"
+	case "eu-central-2":
+		region = "eu-central-2"
+	case "eusc-de-east-1":
+		region = "eu-central-1"
+	case "ap-southeast-2":
+		region = "ap-southeast-2"
+	case "ap-northeast-1":
+		region = "ap-northeast-1"
+	case "ap-northeast-2":
+		region = "ap-northeast-2"
+	case "ap-south-1":
+		region = "ap-south-1"
+	case "ca-central-1":
+		region = "ca-central-1"
+	case "sa-east-1":
+		region = "sa-east-1"
+	case "me-central-1":
+		region = "me-central-1"
+	case "ap-northeast-3":
+		region = "ap-northeast-3"
+	case "mx-central-1":
+		region = "mx-central-1"
+	case "ap-southeast-1":
+		region = "ap-southeast-1"
 	}
 	regionJSON := "[" + strconv.Quote(region) + "]"
 	return regionJSON
