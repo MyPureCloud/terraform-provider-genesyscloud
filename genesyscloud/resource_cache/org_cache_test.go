@@ -11,9 +11,8 @@ import (
 )
 
 func TestUnitOrgCacheInactiveExporter(t *testing.T) {
-	if tfexporter_state.IsExporterActive() {
-		t.Skip("exporter state already active in test process")
-	}
+	tfexporter_state.ResetExporterStateForTests()
+	t.Cleanup(tfexporter_state.ResetExporterStateForTests)
 
 	cache := NewOrgCache(OrgCacheConfig[int]{
 		Name:    "test-cache",
