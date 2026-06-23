@@ -995,6 +995,9 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 					"export_computed": {
 						Type: schema.TypeBool,
 					},
+					"export_omit_unresolved_refs": {
+						Type: schema.TypeBool,
+					},
 					"use_legacy_architect_flow_exporter": {
 						Type: schema.TypeBool,
 					},
@@ -1009,6 +1012,7 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 					"export_dir_path":                    "/tmp/test",
 					"ignore_cyclic_dependencies":         false,
 					"export_computed":                    false,
+					"export_omit_unresolved_refs":        false,
 					"use_legacy_architect_flow_exporter": false,
 				})
 
@@ -1115,6 +1119,9 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 					"export_computed": {
 						Type: schema.TypeBool,
 					},
+					"export_omit_unresolved_refs": {
+						Type: schema.TypeBool,
+					},
 					"use_legacy_architect_flow_exporter": {
 						Type: schema.TypeBool,
 					},
@@ -1129,6 +1136,7 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 					"export_dir_path":                    "/tmp/test",
 					"ignore_cyclic_dependencies":         false,
 					"export_computed":                    false,
+					"export_omit_unresolved_refs":        false,
 					"use_legacy_architect_flow_exporter": false,
 				})
 
@@ -1215,6 +1223,9 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 					"export_computed": {
 						Type: schema.TypeBool,
 					},
+					"export_omit_unresolved_refs": {
+						Type: schema.TypeBool,
+					},
 					"use_legacy_architect_flow_exporter": {
 						Type: schema.TypeBool,
 					},
@@ -1229,6 +1240,7 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap(t *testing.T) {
 					"export_dir_path":                    "/tmp/test",
 					"ignore_cyclic_dependencies":         false,
 					"export_computed":                    false,
+					"export_omit_unresolved_refs":        false,
 					"use_legacy_architect_flow_exporter": false,
 				})
 
@@ -1315,6 +1327,9 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileW
 		"export_computed": {
 			Type: schema.TypeBool,
 		},
+		"export_omit_unresolved_refs": {
+			Type: schema.TypeBool,
+		},
 		"use_legacy_architect_flow_exporter": {
 			Type: schema.TypeBool,
 		},
@@ -1330,6 +1345,7 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_WithCustomFileW
 		"directory":                          "/tmp/test_export",
 		"ignore_cyclic_dependencies":         false,
 		"export_computed":                    false,
+		"export_omit_unresolved_refs":        false,
 		"use_legacy_architect_flow_exporter": false,
 	})
 
@@ -1598,6 +1614,7 @@ func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
 				"ignore_cyclic_dependencies":         {Type: schema.TypeBool},
 				"export_computed":                    {Type: schema.TypeBool},
 				"export_deprecated":                  {Type: schema.TypeBool},
+				"export_omit_unresolved_refs":        {Type: schema.TypeBool},
 				"use_legacy_architect_flow_exporter": {Type: schema.TypeBool},
 			}, map[string]interface{}{
 				"export_format":                      "hcl",
@@ -1611,6 +1628,7 @@ func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
 				"ignore_cyclic_dependencies":         false,
 				"export_computed":                    tt.exportComputed,
 				"export_deprecated":                  tt.exportDeprecated,
+				"export_omit_unresolved_refs":        false,
 				"use_legacy_architect_flow_exporter": false,
 			})
 
@@ -1643,6 +1661,68 @@ func TestUnitBuildResourceConfigMapExcludesSchemaBasedAttributes(t *testing.T) {
 			tt.checkConfigMap(t, resourceMaps[resourceType][resourceLabel])
 		})
 	}
+}
+
+func TestUnitSanitizeConfigMapOmitUnresolvedRefs(t *testing.T) {
+	resourceType := "test_resource"
+	guid := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
+	exporter := &resourceExporter.ResourceExporter{
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"contact_list_id": {RefType: "genesyscloud_outbound_contact_list"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"contact_list_id": resourceExporter.OmitUnresolvedRefResolver(),
+		},
+	}
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		resourceType:                         exporter,
+		"genesyscloud_outbound_contact_list": {SanitizedResourceMap: map[string]*resourceExporter.ResourceMeta{}},
+	}
+
+	resource := resourceExporter.ResourceInfo{
+		Type:       resourceType,
+		BlockLabel: "test_label",
+		BlockType:  "resource",
+		State:      &terraform.InstanceState{ID: "ruleset-id"},
+	}
+
+	g := setupGenesysCloudResourceExporter(t)
+
+	t.Run("keeps unresolved GUID when export_omit_unresolved_refs is false", func(t *testing.T) {
+		g.exportOmitUnresolvedRefs = false
+		configMap := map[string]interface{}{
+			"name":            "test",
+			"contact_list_id": guid,
+		}
+		_, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+		require.True(t, ok)
+		assert.Equal(t, guid, configMap["contact_list_id"])
+	})
+
+	t.Run("omits unresolved GUID when export_omit_unresolved_refs is true", func(t *testing.T) {
+		g.exportOmitUnresolvedRefs = true
+		configMap := map[string]interface{}{
+			"name":            "test",
+			"contact_list_id": guid,
+		}
+		_, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+		require.True(t, ok)
+		_, exists := configMap["contact_list_id"]
+		assert.False(t, exists)
+	})
+
+	t.Run("keeps resolved reference when export_omit_unresolved_refs is true", func(t *testing.T) {
+		g.exportOmitUnresolvedRefs = true
+		resolvedRef := "${genesyscloud_outbound_contact_list.example.id}"
+		configMap := map[string]interface{}{
+			"name":            "test",
+			"contact_list_id": resolvedRef,
+		}
+		_, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+		require.True(t, ok)
+		assert.Equal(t, resolvedRef, configMap["contact_list_id"])
+	})
 }
 
 func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
@@ -2092,6 +2172,9 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateEr
 		"export_computed": {
 			Type: schema.TypeBool,
 		},
+		"export_omit_unresolved_refs": {
+			Type: schema.TypeBool,
+		},
 		"use_legacy_architect_flow_exporter": {
 			Type: schema.TypeBool,
 		},
@@ -2106,6 +2189,7 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateEr
 		"export_dir_path":                    "/tmp/test",
 		"ignore_cyclic_dependencies":         false,
 		"export_computed":                    false,
+		"export_omit_unresolved_refs":        false,
 		"use_legacy_architect_flow_exporter": false,
 	})
 
