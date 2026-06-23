@@ -268,10 +268,7 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 		return nil, resp, err
 	}
 
-	if checkCache {
-		storeRoutingQueueInCache(p.RoutingQueueCache, queue)
-	}
-
+	storeRoutingQueueInCache(p.RoutingQueueCache, queue)
 	return queue, resp, nil
 }
 
