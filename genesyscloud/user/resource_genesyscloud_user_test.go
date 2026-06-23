@@ -112,8 +112,8 @@ func TestAccResourceUserBasic(t *testing.T) {
 					strconv.Quote(stateInactive),
 					strconv.Quote(title2),
 					strconv.Quote(department2),
-					util.NullValue,  // No manager
-					util.FalseValue, // AcdAutoAnswer - cannot be true when user is inactive
+					util.NullValue, // No manager
+					util.TrueValue, // AcdAutoAnswer
 					strconv.Quote(profileSkill1),
 					strconv.Quote(cert1),
 				),
@@ -124,7 +124,7 @@ func TestAccResourceUserBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "title", title2),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "department", department2),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "manager", ""),
-					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "acd_auto_answer", "false"),
+					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "acd_auto_answer", "true"),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "profile_skills.0", profileSkill1),
 					resource.TestCheckResourceAttr(ResourceType+"."+userResourceLabel1, "certifications.0", cert1),
 					provider.TestDefaultHomeDivision(ResourceType+"."+userResourceLabel1),

@@ -371,9 +371,9 @@ func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded 
 		}
 		outboundAPI := platformclientv2.NewOutboundApi()
 
-		// Retry for up to 30 seconds to allow for eventual consistency
+		// Retry for up to 60 seconds to allow for eventual consistency
 		var lastErr error
-		deadline := time.Now().Add(30 * time.Second)
+		deadline := time.Now().Add(60 * time.Second)
 		for time.Now().Before(deadline) {
 			dncListDivisionViews, _, err := outboundAPI.GetOutboundDnclistsDivisionview(r.Primary.ID, true, true)
 			if err != nil {

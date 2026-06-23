@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -438,44 +440,31 @@ func interfaceToString(val interface{}) string {
 }
 
 func AssignRegion() string {
+	// Dynamically fetch valid media regions from the API
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err == nil {
+		telephonyApi := platformclientv2.NewTelephonyApiWithConfig(sdkConfig)
+		mediaRegions, _, err := telephonyApi.GetTelephonyMediaregions()
+		if err == nil && mediaRegions != nil {
+			// Try to use a "home" region first, then fall back to any available core region
+			if mediaRegions.AwsHomeRegion != nil && *mediaRegions.AwsHomeRegion != "" {
+				regionJSON := "[" + strconv.Quote(*mediaRegions.AwsHomeRegion) + "]"
+				return regionJSON
+			}
+			if mediaRegions.AwsCoreRegions != nil && len(*mediaRegions.AwsCoreRegions) > 0 {
+				regionJSON := "[" + strconv.Quote((*mediaRegions.AwsCoreRegions)[0]) + "]"
+				return regionJSON
+			}
+		}
+	}
 
+	// Fallback: static mapping if API call fails
 	region := "us-west-2"
-
 	switch v := os.Getenv("GENESYSCLOUD_REGION"); v {
 	case "tca":
 		region = "us-east-1"
 	case "us-east-1":
 		region = "us-west-2"
-	case "eu-west-1":
-		region = "eu-west-1"
-	case "eu-west-2":
-		region = "eu-west-2"
-	case "eu-central-1":
-		region = "eu-central-1"
-	case "eu-central-2":
-		region = "eu-central-2"
-	case "eusc-de-east-1":
-		region = "eu-central-1"
-	case "ap-southeast-2":
-		region = "ap-southeast-2"
-	case "ap-northeast-1":
-		region = "ap-northeast-1"
-	case "ap-northeast-2":
-		region = "ap-northeast-2"
-	case "ap-south-1":
-		region = "ap-south-1"
-	case "ca-central-1":
-		region = "ca-central-1"
-	case "sa-east-1":
-		region = "sa-east-1"
-	case "me-central-1":
-		region = "me-central-1"
-	case "ap-northeast-3":
-		region = "ap-northeast-3"
-	case "mx-central-1":
-		region = "mx-central-1"
-	case "ap-southeast-1":
-		region = "ap-southeast-1"
 	}
 	regionJSON := "[" + strconv.Quote(region) + "]"
 	return regionJSON

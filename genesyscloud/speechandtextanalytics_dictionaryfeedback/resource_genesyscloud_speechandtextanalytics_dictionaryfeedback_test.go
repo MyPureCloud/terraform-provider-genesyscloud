@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -39,9 +40,13 @@ func cleanupDictionaryFeedbackByTerm(term, dialect string) {
 	for _, fb := range *feedbacks.Entities {
 		if fb.Id != nil {
 			log.Printf("Cleaning up dictionary feedback %s (term=%s, dialect=%s)", *fb.Id, term, dialect)
-			_, err := api.DeleteSpeechandtextanalyticsDictionaryfeedbackDictionaryFeedbackId(*fb.Id)
-			if err != nil {
-				log.Printf("failed to delete dictionary feedback %s: %v", *fb.Id, err)
+			for attempt := 0; attempt < 5; attempt++ {
+				_, err := api.DeleteSpeechandtextanalyticsDictionaryfeedbackDictionaryFeedbackId(*fb.Id)
+				if err == nil {
+					break
+				}
+				log.Printf("attempt %d: failed to delete dictionary feedback %s: %v", attempt+1, *fb.Id, err)
+				time.Sleep(3 * time.Second)
 			}
 		}
 	}
