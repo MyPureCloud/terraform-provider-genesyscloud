@@ -104,6 +104,36 @@ func isValidGuid(id string) bool {
 	return matched
 }
 
+// OmitUnresolvedRefResolver marks an attribute for omission when export_omit_unresolved_refs is enabled
+// and the attribute value could not be resolved to a Terraform reference.
+func OmitUnresolvedRefResolver() *RefAttrCustomResolver {
+	return &RefAttrCustomResolver{
+		OmitUnresolvedRef: true,
+	}
+}
+
+// OmitUnresolvedGuidFromConfigMap removes an attribute value that could not be resolved to a Terraform reference.
+// Optional reference attributes that still contain a raw GUID after export resolution are omitted from the config.
+func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attributeKey string) {
+	val, ok := configMap[attributeKey]
+	if !ok {
+		return
+	}
+
+	strVal, ok := val.(string)
+	if !ok || strVal == "" {
+		return
+	}
+
+	if strings.HasPrefix(strVal, "${") {
+		return
+	}
+
+	if isValidGuid(strVal) {
+		delete(configMap, attributeKey)
+	}
+}
+
 // MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.
 // This allows the exporter to use the standard reference resolution pipeline (including data source replacement).
 //
