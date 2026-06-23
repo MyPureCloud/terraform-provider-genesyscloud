@@ -156,7 +156,7 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Deleting knowledge label %s", id)
 
 	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
-	diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 		_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
 		if err != nil {
 			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {

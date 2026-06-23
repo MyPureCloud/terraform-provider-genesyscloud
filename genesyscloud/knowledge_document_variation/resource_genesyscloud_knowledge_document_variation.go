@@ -284,7 +284,7 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 	log.Printf("Deleting knowledge document variation %s", ids.knowledgeDocumentVariationID)
 
 	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
-	diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 		resp, err := variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
 		if err != nil {
 			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {

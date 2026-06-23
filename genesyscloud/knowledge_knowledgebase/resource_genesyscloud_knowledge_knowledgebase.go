@@ -184,7 +184,7 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 
 	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
 	// The dependency tracking system may need multiple rebuild cycles to clear ghost entries.
-	diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
 		_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
 		if err != nil {
 			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
