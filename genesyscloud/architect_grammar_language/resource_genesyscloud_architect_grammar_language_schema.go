@@ -41,6 +41,11 @@ func ResourceArchitectGrammarLanguage() *schema.Resource {
 				Description: "The name of the file as defined by the user. Note: Changes to files stored in S3 will not be detected by Terraform due to a technical limitation in the Terraform Plugin SDK.",
 				Required:    true,
 				Type:        schema.TypeString,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// Suppress diff when the only difference is path separators (backslash vs forward slash)
+					// or a Windows drive letter prefix, since these are normalized before sending to the API.
+					return normalizeAssetPath(old) == normalizeAssetPath(new)
+				},
 			},
 			`file_type`: {
 				Description:  "The extension of the file.",
