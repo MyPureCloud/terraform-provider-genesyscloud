@@ -14,6 +14,8 @@ import (
 )
 
 func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
+	// Reached end of life, not supported anymore
+	t.Skip("Reached end of life, not supported anymore")
 	t.Parallel()
 	var (
 		resourcePath        = "genesyscloud_journey_outcome_predictor.test_predictor"

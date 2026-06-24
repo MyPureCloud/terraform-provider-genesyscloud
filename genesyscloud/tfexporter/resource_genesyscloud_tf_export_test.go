@@ -1481,10 +1481,12 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	testSetup(t)
 
 	var (
-		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
-		resourceLabel = "export"
-		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		exportTestDir   = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
+		resourceLabel   = "export"
+		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+		publishedName   = "test-published-form-" + uuid.NewString()
+		unpublishedName = "test-unpublished-form-" + uuid.NewString()
 	)
 
 	// Clean up
@@ -1495,9 +1497,9 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	}(exportTestDir)
 
 	// Create both a published and unpublished survey form, then export
-	surveyFormConfig := `
+	surveyFormConfig := fmt.Sprintf(`
 resource "genesyscloud_quality_forms_survey" "test-published-form" {
-	name      = "test-published-form"
+	name      = "%s"
 	published = true
 	language  = "en-US"
 	question_groups {
@@ -1521,7 +1523,7 @@ resource "genesyscloud_quality_forms_survey" "test-published-form" {
 }
 
 resource "genesyscloud_quality_forms_survey" "test-unpublished-form" {
-	name      = "test-unpublished-form"
+	name      = "%s"
 	published = false
 	language  = "en-US"
 	question_groups {
@@ -1543,7 +1545,7 @@ resource "genesyscloud_quality_forms_survey" "test-unpublished-form" {
 		ignore_changes = [question_groups[0].questions[0].type]
 	}
 }
-`
+`, publishedName, unpublishedName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1553,8 +1555,8 @@ resource "genesyscloud_quality_forms_survey" "test-unpublished-form" {
 				// First create the survey forms
 				Config: surveyFormConfig,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-published-form", "name", "test-published-form"),
-					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-unpublished-form", "name", "test-unpublished-form"),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-published-form", "name", publishedName),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-unpublished-form", "name", unpublishedName),
 				),
 			},
 			{

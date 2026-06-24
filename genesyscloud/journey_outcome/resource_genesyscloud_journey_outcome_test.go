@@ -17,6 +17,8 @@ import (
 )
 
 func TestAccResourceJourneyOutcome(t *testing.T) {
+	// Reached end of life, not supported anymore
+	t.Skip("Reached end of life, not supported anymore")
 	runResourceJourneyOutcomeTestCase(t, "basic")
 }
 
