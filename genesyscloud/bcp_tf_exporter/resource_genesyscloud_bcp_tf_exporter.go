@@ -114,77 +114,29 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		resourceMap := exporter.GetSanitizedResourceMap()
-		var resources []BcpResource
-
-		type workItem struct {
-			id      string
-			resMeta *resourceExporter.ResourceMeta
-		}
 		items := make([]workItem, 0, len(resourceMap))
 		for id, resMeta := range resourceMap {
 			items = append(items, workItem{id: id, resMeta: resMeta})
 		}
 
-		// process items with bounded concurrency
-		workerCount := min(maxWorkers, len(items), 1)
-		sem := make(chan struct{}, workerCount)
-
-		var mu sync.Mutex
-		var wg sync.WaitGroup
-
-		for _, item := range items {
-			select {
-			case <-ctx.Done():
-				wg.Wait()
-				return diag.FromErr(ctx.Err())
-			default:
-			}
-
-			wg.Add(1)
-			sem <- struct{}{} // acquire slot
-
-			go func(id string, resMeta *resourceExporter.ResourceMeta) {
-				defer wg.Done()
-				defer func() { <-sem }() // release slot
-
-				resource, exists := providerResources[resourceType]
-				if !exists {
-					tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
-						"resource_type": resourceType,
-						"id":            id,
-					})
-					return
-				}
-
-				var instanceState *terraform.InstanceState
-				if meta != nil {
-					var err error
-					instanceState, err = getResourceState(ctx, resource, id, resMeta, meta)
-					if err != nil {
-						tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
-							"resource_type": resourceType,
-							"id":            id,
-							"error":         err.Error(),
-						})
-						return
-					}
-				}
-
-				name := getResourceName(instanceState, resMeta)
-
-				deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, meta, instanceState)
-				mu.Lock()
-				resources = append(resources, BcpResource{
-					ID:           id,
-					Name:         name,
-					BlockLabel:   resMeta.BlockLabel,
-					Dependencies: deps,
-				})
-				mu.Unlock()
-			}(item.id, item.resMeta)
+		// Flow resources are processed sequentially to avoid data races on the
+		// proxy singleton and redundant concurrent API calls for dependency
+		// resolution. The dependent consumers API is the bottleneck, so
+		// parallelism provides negligible benefit.
+		//
+		// If flow processing performance becomes a concern, consider:
+		// 1. Batch-resolving all flow dependencies in a single pass before
+		//    processing individual items (requires API batch support or
+		//    pre-fetching into a cache map keyed by flow ID).
+		// 2. Using a dedicated, concurrency-safe proxy instance per goroutine
+		//    with a bounded worker pool (requires refactoring getBcpExporterProxy
+		//    away from the singleton pattern for flows).
+		var resources []BcpResource
+		if resourceType == architectFlow.ResourceType {
+			resources = processFlowResourcesSequentially(ctx, items, providerResources, resourceType, exporter, meta)
+		} else {
+			resources = processResourcesConcurrently(ctx, items, providerResources, resourceType, exporter, meta, maxWorkers)
 		}
-
-		wg.Wait()
 
 		if len(resources) > 0 {
 			// Sort resources by ID for deterministic output
@@ -294,6 +246,98 @@ func deleteBcpTfExporter(_ context.Context, d *schema.ResourceData, _ interface{
 		return diag.FromErr(err)
 	}
 	return nil
+}
+
+type workItem struct {
+	id      string
+	resMeta *resourceExporter.ResourceMeta
+}
+
+func processItem(ctx context.Context, item workItem, providerResources map[string]*schema.Resource, resourceType string, exporter *resourceExporter.ResourceExporter, meta interface{}) (*BcpResource, bool) {
+	resource, exists := providerResources[resourceType]
+	if !exists {
+		tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
+			"resource_type": resourceType,
+			"id":            item.id,
+		})
+		return nil, false
+	}
+
+	var instanceState *terraform.InstanceState
+	if meta != nil {
+		var err error
+		instanceState, err = getResourceState(ctx, resource, item.id, item.resMeta, meta)
+		if err != nil {
+			tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
+				"resource_type": resourceType,
+				"id":            item.id,
+				"error":         err.Error(),
+			})
+			return nil, false
+		}
+	}
+
+	name := getResourceName(instanceState, item.resMeta)
+	deps := getResourceDependencies(ctx, providerResources, resourceType, item.id, item.resMeta, exporter, meta, instanceState)
+	return &BcpResource{
+		ID:           item.id,
+		Name:         name,
+		BlockLabel:   item.resMeta.BlockLabel,
+		Dependencies: deps,
+	}, true
+}
+
+func processFlowResourcesSequentially(ctx context.Context, items []workItem, providerResources map[string]*schema.Resource, resourceType string, exporter *resourceExporter.ResourceExporter, meta interface{}) []BcpResource {
+	var resources []BcpResource
+	for _, item := range items {
+		select {
+		case <-ctx.Done():
+			return resources
+		default:
+		}
+		if r, ok := processItem(ctx, item, providerResources, resourceType, exporter, meta); ok {
+			resources = append(resources, *r)
+		}
+	}
+	return resources
+}
+
+func calcWorkerCount(maxWorkers, itemCount int) int {
+	return max(min(maxWorkers, itemCount), 1)
+}
+
+func processResourcesConcurrently(ctx context.Context, items []workItem, providerResources map[string]*schema.Resource, resourceType string, exporter *resourceExporter.ResourceExporter, meta interface{}, maxWorkers int) []BcpResource {
+	var resources []BcpResource
+	workerCount := calcWorkerCount(maxWorkers, len(items))
+	sem := make(chan struct{}, workerCount)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for _, item := range items {
+		select {
+		case <-ctx.Done():
+			wg.Wait()
+			return resources
+		default:
+		}
+
+		wg.Add(1)
+		sem <- struct{}{} // acquire slot
+
+		go func(wi workItem) {
+			defer wg.Done()
+			defer func() { <-sem }() // release slot
+
+			if r, ok := processItem(ctx, wi, providerResources, resourceType, exporter, meta); ok {
+				mu.Lock()
+				resources = append(resources, *r)
+				mu.Unlock()
+			}
+		}(item)
+	}
+
+	wg.Wait()
+	return resources
 }
 
 func filterExporters(ctx context.Context, exporters map[string]*resourceExporter.ResourceExporter, d *schema.ResourceData) map[string]*resourceExporter.ResourceExporter {
