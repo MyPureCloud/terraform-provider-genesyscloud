@@ -11,10 +11,15 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestAccResourceRoutingSmsAddresses(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" && v != "us-west-2" && v != "us-east-1" && v != "dca" {
+		t.Skipf("Skipping: Twilio SMS address creation not supported in %s", v)
+		return
+	}
+
 	var (
 		resourceLabel = "AD-123"
 		name          = "name-1"

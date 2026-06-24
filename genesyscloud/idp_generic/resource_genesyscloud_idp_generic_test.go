@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestAccResourceIdpGeneric(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAccResourceIdpGeneric(t *testing.T) {
 		relyingPartyID2     = "test-id2"
 		nameIDFormatDefault = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
 		nameIDFormatEmail   = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
-		base64Img           = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvM"
+		base64Img           = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxIiBoZWlnaHQ9IjEiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJlZCIvPjwvc3ZnPg=="
 		uri3                = "https://example.com"
 		slo_binding1        = "HTTP Redirect"
 		slo_binding2        = "HTTP Post"

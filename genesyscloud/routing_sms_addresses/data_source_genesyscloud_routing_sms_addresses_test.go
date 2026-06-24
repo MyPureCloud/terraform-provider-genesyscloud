@@ -13,6 +13,11 @@ import (
 )
 
 func TestAccDataSourceSmsAddress(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v != "tca" && v != "us-west-2" && v != "us-east-1" && v != "dca" {
+		t.Skipf("Skipping: Twilio SMS address creation not supported in %s", v)
+		return
+	}
+
 	var (
 		addressResLabel  = "address"
 		addressDataLabel = "address_data"

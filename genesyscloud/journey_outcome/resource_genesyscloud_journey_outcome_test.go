@@ -13,10 +13,12 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestAccResourceJourneyOutcome(t *testing.T) {
+	// Reached end of life, not supported anymore
+	t.Skip("Reached end of life, not supported anymore")
 	runResourceJourneyOutcomeTestCase(t, "basic")
 }
 

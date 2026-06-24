@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -123,6 +123,9 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 	if name == "" {
 		name = localFilePath
 	}
+
+	// Normalize the asset name for cross-platform compatibility.
+	name = normalizeAssetName(name)
 
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
 		Name: &name,
@@ -246,6 +249,12 @@ func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Normalize the asset name for cross-platform compatibility.
+	if respAsset.Name != nil {
+		normalized := normalizeAssetName(*respAsset.Name)
+		respAsset.Name = &normalized
+	}
 
 	return p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 }

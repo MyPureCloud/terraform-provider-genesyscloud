@@ -23,6 +23,26 @@ type propertyGroupTest struct {
 	ExpectedResult       string
 }
 
+func TestUnitOmitUnresolvedGuidFromConfigMap(t *testing.T) {
+	guid := uuid.NewString()
+	configMap := map[string]interface{}{
+		"contact_list_id": guid,
+	}
+
+	OmitUnresolvedGuidFromConfigMap(configMap, "contact_list_id")
+	if _, ok := configMap["contact_list_id"]; ok {
+		t.Fatal("expected unresolved GUID to be omitted from config map")
+	}
+
+	configMap = map[string]interface{}{
+		"contact_list_id": "${genesyscloud_outbound_contact_list.example.id}",
+	}
+	OmitUnresolvedGuidFromConfigMap(configMap, "contact_list_id")
+	if configMap["contact_list_id"] == nil {
+		t.Fatal("expected resolved reference to be kept in config map")
+	}
+}
+
 // TestUnitExporterCustomMemberGroup uses a table based approach to test the three different types of groups that can be resolved.
 // We currently support SKILLGROUP and GROUP.  Team has not been implemented yet so the custom resolver should return keep the original id associated the config map.
 func TestUnitExporterCustomMemberGroup(t *testing.T) {
