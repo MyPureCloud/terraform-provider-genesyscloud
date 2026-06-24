@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -68,6 +68,9 @@ func buildCallableTimes(callabletime *schema.Set) *[]platformclientv2.Callableti
 		if timeSlots := callabletimeMap["time_slots"]; timeSlots != nil {
 			sdkCallabletime.TimeSlots = buildCampaignTimeslots(timeSlots.(*schema.Set))
 		}
+		if name := callabletimeMap["name"].(string); name != "" {
+			sdkCallabletime.Name = &name
+		}
 		if timeZoneId := callabletimeMap["time_zone_id"].(string); timeZoneId != "" {
 			sdkCallabletime.TimeZoneId = &timeZoneId
 		}
@@ -115,6 +118,9 @@ func flattenCallableTimes(callabletimes []platformclientv2.Callabletime) *schema
 		}
 		if callabletime.TimeZoneId != nil {
 			callabletimeMap["time_zone_id"] = *callabletime.TimeZoneId
+		}
+		if callabletime.Name != nil {
+			callabletimeMap["name"] = *callabletime.Name
 		}
 
 		callabletimeSet.Add(callabletimeMap)

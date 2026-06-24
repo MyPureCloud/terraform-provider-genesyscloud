@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -46,7 +46,11 @@ func IsActive() bool {
 	return os.Getenv(MRMO_CXASCODE_INTEGRATION_ENABLED) != ""
 }
 
-// Activate activates MRMO with the provided client configuration
+// Activate activates MRMO with the provided client configuration.
+//
+// Legacy: standalone export callers should prefer provider.ContextWithExportClientConfig
+// so concurrent ExportByType calls do not share this process-wide pointer. Activate remains
+// for backward compatibility and for IsActive()-gated resource behavior when the env var is set.
 func Activate(config *platformclientv2.Configuration) error {
 	if config == nil {
 		return ErrConfigNil

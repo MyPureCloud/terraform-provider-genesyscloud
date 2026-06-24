@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 const documentIDSeparator = ","
@@ -51,7 +51,7 @@ func buildDocumentAlternatives(requestIn map[string]any) *[]platformclientv2.Kno
 	return &alternativesOut
 }
 
-func buildKnowledgeDocumentCreateRequest(ctx context.Context, d *schema.ResourceData, proxy *knowledgeDocumentProxy, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentcreaterequest, diag.Diagnostics) {
+func buildKnowledgeDocumentCreateRequest(ctx context.Context, d *schema.ResourceData, proxy *knowledgeDocumentProxy, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentreq, diag.Diagnostics) {
 	logSuffix := "Knowledge Base: " + strconv.Quote(knowledgeBaseId)
 	log.Println("Building Knowledgedocumentcreaterequest object. ", logSuffix)
 
@@ -59,7 +59,7 @@ func buildKnowledgeDocumentCreateRequest(ctx context.Context, d *schema.Resource
 	title := requestIn["title"].(string)
 	visible := requestIn["visible"].(bool)
 
-	requestOut := platformclientv2.Knowledgedocumentcreaterequest{
+	requestOut := platformclientv2.Knowledgedocumentreq{
 		Title:        &title,
 		Visible:      &visible,
 		Alternatives: buildDocumentAlternatives(requestIn),

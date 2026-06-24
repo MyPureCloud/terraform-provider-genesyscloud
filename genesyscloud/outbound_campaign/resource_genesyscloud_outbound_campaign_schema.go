@@ -153,6 +153,16 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Type:         schema.TypeFloat,
 				ValidateFunc: validation.FloatAtLeast(1),
 			},
+			`max_calls_per_agent_decimal`: {
+				Description: `The maximum number of calls that can be placed per agent on this campaign with decimal precision, as returned by the API. Use max_calls_per_agent to configure this value.`,
+				Computed:    true,
+				Type:        schema.TypeFloat,
+			},
+			`agent_owned_column`: {
+				Description: `Name of the contact list column containing the id of the agent who owns the record. Only applicable to preview campaigns.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			`dnc_list_ids`: {
 				Description: `DncLists for this Campaign to check before placing a call.`,
 				Optional:    true,

@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -89,6 +89,11 @@ type RefAttrCustomResolver struct {
 	// ResolverWithClientConfigFunc is like ResolverFunc but with access to the SDK client config
 	// for resolvers that need to make API calls (e.g. resolving a GUID to a human-readable name).
 	ResolverWithClientConfigFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) error
+
+	// OmitUnresolvedRef marks optional reference attributes that should be omitted from export when
+	// the genesyscloud_tf_export export_omit_unresolved_refs attribute is true and the value could
+	// not be resolved to a Terraform reference.
+	OmitUnresolvedRef bool
 }
 
 type CustomFileWriterSettings struct {
@@ -282,6 +287,44 @@ func (r *ResourceExporter) GetSanitizedResourceMapSize() int {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 	return len(r.SanitizedResourceMap)
+}
+
+// CloneResourceExporter returns a shallow copy of template with fresh per-call mutable state.
+// Read-only fields (func pointers, RefAttrs, schema refs) are shared; SanitizedResourceMap,
+// FilterResource, and ExcludedAttributes are not aliased with the registry singleton.
+func CloneResourceExporter(template *ResourceExporter) *ResourceExporter {
+	if template == nil {
+		return nil
+	}
+
+	clone := &ResourceExporter{
+		GetResourcesFunc:        template.GetResourcesFunc,
+		IsSingleton:             template.IsSingleton,
+		ExportId:                template.ExportId,
+		RefAttrs:                template.RefAttrs,
+		ThirdPartyRefAttrs:      template.ThirdPartyRefAttrs,
+		AllowZeroValues:         template.AllowZeroValues,
+		AllowZeroValuesInMap:    template.AllowZeroValuesInMap,
+		AllowEmptyArrays:        template.AllowEmptyArrays,
+		CustomAttributeResolver: template.CustomAttributeResolver,
+		RemoveIfMissing:         template.RemoveIfMissing,
+		RemoveIfSelfReferential: template.RemoveIfSelfReferential,
+		UnResolvableAttributes:  template.UnResolvableAttributes,
+		JsonEncodeAttributes:    template.JsonEncodeAttributes,
+		EncodedRefAttrs:         template.EncodedRefAttrs,
+		CustomFileWriter:        template.CustomFileWriter,
+		ExportAsDataFunc:        template.ExportAsDataFunc,
+		DataSourceResolver:      template.DataSourceResolver,
+		CustomValidateExports:   template.CustomValidateExports,
+		SanitizedResourceMap:    nil,
+		FilterResource:          nil,
+	}
+
+	if len(template.ExcludedAttributes) > 0 {
+		clone.ExcludedAttributes = append([]string(nil), template.ExcludedAttributes...)
+	}
+
+	return clone
 }
 
 func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings {

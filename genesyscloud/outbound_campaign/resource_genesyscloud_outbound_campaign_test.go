@@ -32,7 +32,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -192,7 +192,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Cloud",
 		false,
-		"[\"us-east-1\"]",
+		util.AssignRegion(),
 		util.NullValue,
 		util.NullValue,
 	) + fmt.Sprintf(`
@@ -611,7 +611,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Cloud",
 		false,
-		"[\"us-east-1\"]",
+		util.AssignRegion(),
 		util.NullValue,
 		util.NullValue,
 	) + "\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"

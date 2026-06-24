@@ -9,7 +9,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 var internalProxy *knowledgebaseProxy
@@ -143,13 +143,13 @@ func getKnowledgebaseByIdFn(ctx context.Context, p *knowledgebaseProxy, knowledg
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	path := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s", knowledgebaseId)
-	return customapi.Do[knowledgebaseResponse](ctx, p.customApiClient, "GET", path, nil, nil)
+	return customapi.Do[knowledgebaseResponse](ctx, p.customApiClient, customapi.MethodGet, path, nil, nil)
 }
 
 func createKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *knowledgebaseCreateRequest) (*knowledgebaseResponse, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return customapi.Do[knowledgebaseResponse](ctx, p.customApiClient, "POST", "/api/v2/knowledge/knowledgebases", knowledgebaseRequest, nil)
+	return customapi.Do[knowledgebaseResponse](ctx, p.customApiClient, customapi.MethodPost, "/api/v2/knowledge/knowledgebases", knowledgebaseRequest, nil)
 }
 
 func updateKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string, updateBody *platformclientv2.Knowledgebaseupdaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 // SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
@@ -102,6 +102,36 @@ func isValidGuid(id string) bool {
 		return false
 	}
 	return matched
+}
+
+// OmitUnresolvedRefResolver marks an attribute for omission when export_omit_unresolved_refs is enabled
+// and the attribute value could not be resolved to a Terraform reference.
+func OmitUnresolvedRefResolver() *RefAttrCustomResolver {
+	return &RefAttrCustomResolver{
+		OmitUnresolvedRef: true,
+	}
+}
+
+// OmitUnresolvedGuidFromConfigMap removes an attribute value that could not be resolved to a Terraform reference.
+// Optional reference attributes that still contain a raw GUID after export resolution are omitted from the config.
+func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attributeKey string) {
+	val, ok := configMap[attributeKey]
+	if !ok {
+		return
+	}
+
+	strVal, ok := val.(string)
+	if !ok || strVal == "" {
+		return
+	}
+
+	if strings.HasPrefix(strVal, "${") {
+		return
+	}
+
+	if isValidGuid(strVal) {
+		delete(configMap, attributeKey)
+	}
 }
 
 // MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.

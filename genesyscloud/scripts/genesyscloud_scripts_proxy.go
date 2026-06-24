@@ -18,7 +18,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -155,7 +155,7 @@ func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platform
 
 	var allPublishedScripts []platformclientv2.Script
 	var resp *platformclientv2.APIResponse
-	const pageSize = 100
+	const pageSize = 500
 
 	data, resp, err := p.scriptsApi.GetScriptsPublished(pageSize, 1, "", "", "", "", "", "")
 	if err != nil {
@@ -167,16 +167,29 @@ func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platform
 
 	allPublishedScripts = append(allPublishedScripts, *data.Entities...)
 
-	pageCount := *data.PageCount
-	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		data, resp, err = p.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", "", "", "", "", "")
-		if err != nil {
-			return nil, resp, err
-		}
-		if data.Entities == nil || len(*data.Entities) == 0 {
-			continue
-		}
-		allPublishedScripts = append(allPublishedScripts, *data.Entities...)
+	totalPages := 1
+	if data.PageCount != nil {
+		totalPages = *data.PageCount
+	}
+
+	allPublishedScripts, resp, err = provider.FetchPagesConcurrently(ctx, ResourceType, allPublishedScripts, resp, totalPages, p.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Script, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newScriptsProxy(clientConfig)
+			pageData, pageResp, pageErr := pageProxy.scriptsApi.GetScriptsPublished(pageSize, pageNum, "", "", "", "", "", "")
+			if pageErr != nil {
+				return nil, pageResp, fmt.Errorf("failed to get page of published scripts: %w", pageErr)
+			}
+
+			if pageData.Entities == nil || len(*pageData.Entities) == 0 {
+				return []platformclientv2.Script{}, pageResp, nil
+			}
+
+			return *pageData.Entities, pageResp, nil
+		},
+	)
+	if err != nil {
+		return nil, resp, err
 	}
 
 	for _, script := range allPublishedScripts {

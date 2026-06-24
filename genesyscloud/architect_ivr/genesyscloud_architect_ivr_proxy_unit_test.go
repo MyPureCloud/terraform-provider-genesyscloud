@@ -12,7 +12,7 @@ import (
 	utillists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestUnitUploadIvrDnisChunksSuccess(t *testing.T) {

@@ -1,7 +1,6 @@
 package telephony_providers_edges_site_outbound_route
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -13,7 +12,7 @@ import (
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -70,11 +69,7 @@ func initTestResources() {
 
 // TestMain is a "setup" function called by the testing framework when run the test
 func TestMain(m *testing.M) {
-	var err error
-	sdkConfig, err = provider.AuthorizeSdk()
-	if err != nil {
-		log.Fatalf("failed to authorize sdk: %s", err.Error())
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	// Run setup function before starting the test suite for telephony_providers_edges_site_outbound_route package
 	initTestResources()

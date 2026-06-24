@@ -4,7 +4,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func buildAppConversations(conversations []interface{}) *platformclientv2.Conversationappsettings {
@@ -132,11 +132,26 @@ func buildMessengerSettings(d *schema.ResourceData) *platformclientv2.Messengers
 
 	if launchers, ok := cfg["launcher_button"].([]interface{}); ok && len(launchers) > 0 && launchers[0] != nil {
 		launcher := launchers[0].(map[string]interface{})
-		if visibility, ok := launcher["visibility"].(string); ok {
-			messengerSettings.LauncherButton = &platformclientv2.Launcherbuttonsettings{
-				Visibility: &visibility,
-			}
+		launcherSettings := &platformclientv2.Launcherbuttonsettings{}
+
+		if visibility, ok := launcher["visibility"].(string); ok && visibility != "" {
+			launcherSettings.Visibility = &visibility
 		}
+
+		if displayType, ok := launcher["display_type"].(string); ok && displayType != "" {
+			launcherSettings.DisplayType = &displayType
+		}
+
+		if icons, ok := launcher["icon"].([]interface{}); ok && len(icons) > 0 && icons[0] != nil {
+			icon := icons[0].(map[string]interface{})
+			launcherIcon := &platformclientv2.Icon{}
+			if url, ok := icon["url"].(string); ok {
+				launcherIcon.Url = &url
+			}
+			launcherSettings.Icon = launcherIcon
+		}
+
+		messengerSettings.LauncherButton = launcherSettings
 	}
 
 	if screens, ok := cfg["home_screen"].([]interface{}); ok && len(screens) > 0 && screens[0] != nil {
@@ -205,9 +220,25 @@ func flattenLauncherButton(settings *platformclientv2.Launcherbuttonsettings) []
 		return nil
 	}
 
-	return []interface{}{map[string]interface{}{
-		"visibility": settings.Visibility,
-	}}
+	ret := map[string]interface{}{}
+
+	if settings.Visibility != nil {
+		ret["visibility"] = *settings.Visibility
+	}
+
+	if settings.DisplayType != nil {
+		ret["display_type"] = *settings.DisplayType
+	}
+
+	if settings.Icon != nil {
+		iconMap := map[string]interface{}{}
+		if settings.Icon.Url != nil {
+			iconMap["url"] = *settings.Icon.Url
+		}
+		ret["icon"] = []interface{}{iconMap}
+	}
+
+	return []interface{}{ret}
 }
 
 func flattenHomeScreen(settings *platformclientv2.Messengerhomescreen) []interface{} {

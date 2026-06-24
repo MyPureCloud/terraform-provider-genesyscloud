@@ -7,11 +7,15 @@ description: |-
 ---
 # genesyscloud_tf_export (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
 		The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
+
 
 * The export resource calls GET APIs on all exported resource types. See the list of GET APIs on each resource.
 
@@ -136,6 +140,7 @@ resource "genesyscloud_tf_export" "exclude_filter" {
 - `export_computed` (Boolean) Export attributes that are marked as being Computed and Optional. Does not attempt to export attributes that are explicitly marked as read-only by the provider. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release. Defaults to `true`.
 - `export_deprecated` (Boolean) Export attributes that are marked as being Deprecated. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release. Defaults to `true`.
 - `export_format` (String) Export the config as hcl or json or json_hcl. Defaults to `json`.
+- `export_omit_unresolved_refs` (Boolean) Omit optional reference attributes that could not be resolved to Terraform references during export. When disabled, unresolved references are left as raw GUIDs. Defaults to false to match existing functionality. This attribute's default value will likely switch to true in a future release. Defaults to `false`.
 - `ignore_cyclic_deps` (Boolean) Ignore Cyclic Dependencies when building the flows and do not throw an error. Defaults to `true`.
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
 - `include_filter_resources_by_id` (List of String) Include only resources that match a {resourceType}::{resourceId} value.  See export guide for additional information.

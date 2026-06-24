@@ -16,30 +16,36 @@ func TestMrmoValidateExportInput(t *testing.T) {
 		{
 			name: "Valid input with all required fields",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: false,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: false,
+					Directory:           "",
+				},
+				EntityId: "test-id-123",
 			},
 			expectError: false,
 		},
 		{
 			name: "Valid input with GenerateOutputFiles true and Directory set",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: true,
-				Directory:           "/tmp/test",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: true,
+					Directory:           "/tmp/test",
+				},
+				EntityId: "test-id-123",
 			},
 			expectError: false,
 		},
 		{
 			name: "Missing ResourceType",
 			input: ExportInput{
-				ResourceType:        "",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: false,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "",
+					GenerateOutputFiles: false,
+					Directory:           "",
+				},
+				EntityId: "test-id-123",
 			},
 			expectError: true,
 			errorMsg:    "'ResourceType' is a required field",
@@ -47,10 +53,12 @@ func TestMrmoValidateExportInput(t *testing.T) {
 		{
 			name: "Missing EntityId",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "",
-				GenerateOutputFiles: false,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: false,
+					Directory:           "",
+				},
+				EntityId: "",
 			},
 			expectError: true,
 			errorMsg:    "'EntityId' is a required field",
@@ -58,10 +66,12 @@ func TestMrmoValidateExportInput(t *testing.T) {
 		{
 			name: "GenerateOutputFiles true but Directory empty",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: true,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: true,
+					Directory:           "",
+				},
+				EntityId: "test-id-123",
 			},
 			expectError: true,
 			errorMsg:    "'Directory' is a required field when 'GenerateOutputFiles' is set to true",
@@ -69,10 +79,12 @@ func TestMrmoValidateExportInput(t *testing.T) {
 		{
 			name: "Both ResourceType and EntityId missing",
 			input: ExportInput{
-				ResourceType:        "",
-				EntityId:            "",
-				GenerateOutputFiles: false,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "",
+					GenerateOutputFiles: false,
+					Directory:           "",
+				},
+				EntityId: "",
 			},
 			expectError: true,
 			errorMsg:    "'ResourceType' is a required field", // Should return first error encountered
@@ -80,10 +92,12 @@ func TestMrmoValidateExportInput(t *testing.T) {
 		{
 			name: "All fields missing",
 			input: ExportInput{
-				ResourceType:        "",
-				EntityId:            "",
-				GenerateOutputFiles: true,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "",
+					GenerateOutputFiles: true,
+					Directory:           "",
+				},
+				EntityId: "",
 			},
 			expectError: true,
 			errorMsg:    "'ResourceType' is a required field", // Should return first error encountered
@@ -121,10 +135,12 @@ func TestMrmoGenerateDefaults(t *testing.T) {
 		{
 			name: "GenerateOutputFiles false and Directory empty - should set default",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: false,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: false,
+					Directory:           "",
+				},
+				EntityId: "test-id-123",
 			},
 			expectedChange: true,
 			validateDir: func(dir string) bool {
@@ -135,10 +151,12 @@ func TestMrmoGenerateDefaults(t *testing.T) {
 		{
 			name: "GenerateOutputFiles false and Directory set - should not change",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: false,
-				Directory:           "/existing/path",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: false,
+					Directory:           "/existing/path",
+				},
+				EntityId: "test-id-123",
 			},
 			expectedChange: false,
 			validateDir: func(dir string) bool {
@@ -148,10 +166,12 @@ func TestMrmoGenerateDefaults(t *testing.T) {
 		{
 			name: "GenerateOutputFiles true and Directory empty - should not change",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: true,
-				Directory:           "",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: true,
+					Directory:           "",
+				},
+				EntityId: "test-id-123",
 			},
 			expectedChange: false,
 			validateDir: func(dir string) bool {
@@ -161,10 +181,12 @@ func TestMrmoGenerateDefaults(t *testing.T) {
 		{
 			name: "GenerateOutputFiles true and Directory set - should not change",
 			input: ExportInput{
-				ResourceType:        "genesyscloud_flow",
-				EntityId:            "test-id-123",
-				GenerateOutputFiles: true,
-				Directory:           "/existing/path",
+				BaseExportInput: BaseExportInput{
+					ResourceType:        "genesyscloud_flow",
+					GenerateOutputFiles: true,
+					Directory:           "/existing/path",
+				},
+				EntityId: "test-id-123",
 			},
 			expectedChange: false,
 			validateDir: func(dir string) bool {
@@ -177,7 +199,7 @@ func TestMrmoGenerateDefaults(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			originalDir := tt.input.Directory
 
-			generateDefaults(&tt.input)
+			generateDefaults(&tt.input.BaseExportInput)
 
 			if tt.expectedChange {
 				if tt.input.Directory == originalDir {
@@ -199,21 +221,25 @@ func TestMrmoGenerateDefaults(t *testing.T) {
 func TestMrmoGenerateDefaults_UniqueDirectories(t *testing.T) {
 	// Test that multiple calls generate unique directory names
 	input1 := ExportInput{
-		ResourceType:        "genesyscloud_flow",
-		EntityId:            "test-id-1",
-		GenerateOutputFiles: false,
-		Directory:           "",
+		BaseExportInput: BaseExportInput{
+			ResourceType:        "genesyscloud_flow",
+			GenerateOutputFiles: false,
+			Directory:           "",
+		},
+		EntityId: "test-id-1",
 	}
 
 	input2 := ExportInput{
-		ResourceType:        "genesyscloud_flow",
-		EntityId:            "test-id-2",
-		GenerateOutputFiles: false,
-		Directory:           "",
+		BaseExportInput: BaseExportInput{
+			ResourceType:        "genesyscloud_flow",
+			GenerateOutputFiles: false,
+			Directory:           "",
+		},
+		EntityId: "test-id-2",
 	}
 
-	generateDefaults(&input1)
-	generateDefaults(&input2)
+	generateDefaults(&input1.BaseExportInput)
+	generateDefaults(&input2.BaseExportInput)
 
 	if input1.Directory == input2.Directory {
 		t.Errorf("Expected unique directories but got same value: '%s'", input1.Directory)

@@ -69,21 +69,21 @@ func TestAccResourceCaseManagementCaseplanIntakeSettings(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, false, 0),
+				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, false, 1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.property", "acc_note_text"),
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.required", "false"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "0"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "1"),
 				),
 			},
 			{
-				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, true, 1),
+				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, true, 2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.property", "acc_note_text"),
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.required", "true"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "2"),
 				),
 			},
 			{

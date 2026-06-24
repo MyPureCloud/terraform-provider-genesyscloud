@@ -15,7 +15,7 @@ import (
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -54,6 +54,7 @@ var internalProxy *integrationActionsProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllIntegrationActionsFunc func(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error)
+type getAllIntegrationsFunc func(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error)
 type createIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, action *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error)
 type getIntegrationActionByIdFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*IntegrationAction, *platformclientv2.APIResponse, error)
 type getIntegrationActionDraftByIdFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
@@ -75,6 +76,7 @@ type integrationActionsProxy struct {
 	integrationsApi                              *platformclientv2.IntegrationsApi
 	customApiClient                              *customapi.Client
 	getAllIntegrationActionsAttr                 getAllIntegrationActionsFunc
+	getAllIntegrationsAttr                       getAllIntegrationsFunc
 	createIntegrationActionAttr                  createIntegrationActionFunc
 	getIntegrationActionByIdAttr                 getIntegrationActionByIdFunc
 	getIntegrationActionDraftByIdAttr            getIntegrationActionDraftByIdFunc
@@ -98,6 +100,7 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 		integrationsApi:                              api,
 		customApiClient:                              customapi.NewClient(clientConfig, ResourceType),
 		getAllIntegrationActionsAttr:                 getAllIntegrationActionsFn,
+		getAllIntegrationsAttr:                       getAllIntegrationsFn,
 		createIntegrationActionAttr:                  createIntegrationActionFn,
 		createIntegrationActionDraftAttr:             createIntegrationActionDraftFn,
 		uploadIntegrationActionDraftFunctionAttr:     uploadIntegrationActionDraftFunctionFn,
@@ -126,6 +129,13 @@ func getIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 // getAllIntegrationActions retrieves all Genesys Cloud Integration Actions
 func (p *integrationActionsProxy) getAllIntegrationActions(ctx context.Context) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {
 	return p.getAllIntegrationActionsAttr(ctx, p)
+}
+
+// getAllIntegrations retrieves all Genesys Cloud Integrations. It is used by the exporter
+// to map an action's integrationId to the parent integration's name so that block labels
+// for static (built-in) data actions remain unique across integration instances.
+func (p *integrationActionsProxy) getAllIntegrations(ctx context.Context) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	return p.getAllIntegrationsAttr(ctx, p)
 }
 
 // createIntegrationAction creates a Genesys Cloud Integration Action
@@ -213,6 +223,29 @@ func getAllIntegrationActionsFn(ctx context.Context, p *integrationActionsProxy)
 		actions = append(actions, *actionsList.Entities...)
 	}
 	return &actions, resp, nil
+}
+
+// getAllIntegrationsFn is the implementation for retrieving all integrations in Genesys Cloud.
+// This is intentionally local to the integration_action package (rather than reaching across
+// into the integration package's proxy) to keep the dependency direction one-way.
+func getAllIntegrationsFn(ctx context.Context, p *integrationActionsProxy) (*[]platformclientv2.Integration, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	integrations := []platformclientv2.Integration{}
+	var resp *platformclientv2.APIResponse
+	for pageNum := 1; ; pageNum++ {
+		const pageSize = 100
+		page, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
+		if err != nil {
+			return nil, resp, err
+		}
+		resp = response
+		if page.Entities == nil || len(*page.Entities) == 0 {
+			break
+		}
+		integrations = append(integrations, *page.Entities...)
+	}
+	return &integrations, resp, nil
 }
 
 // createIntegrationActionDraftFn is the implementation for retrieving all integration actions in Genesys Cloud

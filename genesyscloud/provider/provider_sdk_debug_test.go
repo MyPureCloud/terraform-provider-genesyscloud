@@ -2,11 +2,15 @@ package provider
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestSdkDebugStatusNeedsErrorMirror covers sdkDebugStatusNeedsErrorMirror status boundaries (429, 5xx, 501 excluded, etc.).
@@ -259,4 +263,118 @@ type errReader struct {
 // Read always returns (0, err) for the configured errReader.err.
 func (e errReader) Read(_ []byte) (int, error) {
 	return 0, e.err
+}
+
+// TestNewSDKDebugRequest_CanceledStoredContext verifies that a canceled context
+// in goroutine-local storage does not get injected into the HTTP request.
+// This reproduces the bug where Terraform's r.read() defers cancel() on its
+// timeout context, leaving a canceled context in contextStorage that would
+// poison subsequent HTTP requests on the same goroutine.
+func TestNewSDKDebugRequest_CanceledStoredContext(t *testing.T) {
+	// Create a context with resource metadata and cancel it (simulating defer cancel() in r.read())
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx = context.WithValue(ctx, resourceContextKey{}, &ResourceContext{
+		ResourceType: "genesyscloud_outbound_contact_list",
+		ResourceId:   "test-id-123",
+		ResourceName: "test-contact-list",
+	})
+	cancel() // Simulate Terraform's defer cancel()
+
+	// Store the canceled context in goroutine-local storage (simulates what autoInjectResourceContext does)
+	setContextForRequest(ctx)
+
+	// Create a bare HTTP request (simulates what the SDK does — no context attached)
+	request := &http.Request{
+		Method: "GET",
+		URL:    &url.URL{Path: "/api/v2/outbound/attemptlimits"},
+		Header: make(http.Header),
+	}
+
+	// Call the request hook
+	debugReq := newSDKDebugRequest(request, 0)
+
+	// The hook should still extract resource metadata for logging
+	assert.Equal(t, "genesyscloud_outbound_contact_list", debugReq.ResourceType)
+	assert.Equal(t, "test-id-123", debugReq.ResourceId)
+	assert.Equal(t, "test-contact-list", debugReq.ResourceName)
+
+	// The request's context must NOT be canceled — this is the critical assertion
+	assert.NoError(t, request.Context().Err(), "request context should not be canceled; the logging hook must not inject a canceled context into the HTTP request")
+
+	// Clean up goroutine-local storage
+	goroutineID := getGoroutineID()
+	contextStorage.Delete(goroutineID)
+}
+
+// TestNewSDKDebugRequest_ValidStoredContext verifies that when the stored context
+// is still valid, resource metadata is still extracted for logging.
+func TestNewSDKDebugRequest_ValidStoredContext(t *testing.T) {
+	// Create a valid (non-canceled) context with resource metadata
+	ctx := context.WithValue(context.Background(), resourceContextKey{}, &ResourceContext{
+		ResourceType: "genesyscloud_auth_division",
+		ResourceId:   "div-456",
+		ResourceName: "Marketing",
+	})
+
+	// Store in goroutine-local storage
+	setContextForRequest(ctx)
+
+	// Create a bare HTTP request
+	request := &http.Request{
+		Method: "GET",
+		URL:    &url.URL{Path: "/api/v2/authorization/divisions"},
+		Header: make(http.Header),
+	}
+
+	// Call the request hook
+	debugReq := newSDKDebugRequest(request, 0)
+
+	// Metadata should be extracted
+	assert.Equal(t, "genesyscloud_auth_division", debugReq.ResourceType)
+	assert.Equal(t, "div-456", debugReq.ResourceId)
+	assert.Equal(t, "Marketing", debugReq.ResourceName)
+
+	// Request context should not be canceled
+	assert.NoError(t, request.Context().Err())
+
+	// Clean up
+	goroutineID := getGoroutineID()
+	contextStorage.Delete(goroutineID)
+}
+
+// TestNewSDKDebugResponse_FallsBackToGoroutineLocalStorage verifies that the
+// response hook can find resource metadata from goroutine-local storage when
+// the request context doesn't have it (which is now the case since we no longer
+// inject context into requests).
+func TestNewSDKDebugResponse_FallsBackToGoroutineLocalStorage(t *testing.T) {
+	// Store resource context in goroutine-local storage
+	ctx := context.WithValue(context.Background(), resourceContextKey{}, &ResourceContext{
+		ResourceType: "genesyscloud_outbound_attempt_limit",
+		ResourceId:   "attempt-789",
+		ResourceName: "MyAttemptLimit",
+	})
+	setContextForRequest(ctx)
+
+	// Create a response whose request has NO resource context (bare context)
+	response := &http.Response{
+		StatusCode: 200,
+		Request: &http.Request{
+			Method: "GET",
+			URL:    &url.URL{Path: "/api/v2/outbound/attemptlimits"},
+			Header: make(http.Header),
+		},
+		Body: io.NopCloser(strings.NewReader(`{"id":"attempt-789","name":"MyAttemptLimit"}`)),
+	}
+
+	// Call the response hook
+	debugResp := newSDKDebugResponse(response)
+
+	// The response hook should find metadata via goroutine-local storage fallback
+	assert.Equal(t, "genesyscloud_outbound_attempt_limit", debugResp.ResourceType)
+	assert.Equal(t, "attempt-789", debugResp.ResourceId)
+	assert.Equal(t, "MyAttemptLimit", debugResp.ResourceName)
+
+	// Clean up
+	goroutineID := getGoroutineID()
+	contextStorage.Delete(goroutineID)
 }

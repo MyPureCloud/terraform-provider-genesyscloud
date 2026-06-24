@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_routing_email_domain (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Email Domain
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/email/domains](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains)
-* [POST /api/v2/routing/email/domains](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-email-domains)
-* [GET /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainId-)
-* [DELETE /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-email-domains--domainId-)
-* [PATCH /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-email-domains--domainId-)
+* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains)
+* [POST /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-email-domains)
+* [DELETE /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-email-domains--domainId-)
+* [GET /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainId-)
+* [PATCH /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-email-domains--domainId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

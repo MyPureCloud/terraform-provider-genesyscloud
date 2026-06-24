@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func getAllRoutingEmailDomains(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -53,6 +53,22 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating routing email domain %s", domainID)
 	domain, resp, err := proxy.createRoutingEmailDomain(ctx, &sdkDomain)
 	if err != nil {
+		// Handle the "already exists" race condition where the API creates the domain
+		// but returns a 400 error due to eventual consistency in some regions.
+		if util.IsStatus400(resp) && strings.Contains(fmt.Sprintf("%s", err), "domain already exists") {
+			log.Printf("Routing email domain %s reported as already existing. Attempting to adopt existing domain into state.", domainID)
+			time.Sleep(2 * time.Second)
+			existingID, _, _, lookupErr := proxy.getRoutingEmailDomainIdByName(ctx, domainID)
+			if lookupErr == nil && existingID != "" {
+				d.SetId(existingID)
+				log.Printf("Adopted existing routing email domain %s into state", existingID)
+				if d.HasChanges("mail_from_domain", "custom_smtp_server_id") {
+					return updateRoutingEmailDomain(ctx, d, meta)
+				}
+				return readRoutingEmailDomain(ctx, d, meta)
+			}
+			log.Printf("Failed to look up existing routing email domain %s: %v", domainID, lookupErr)
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create routing email domain %s error: %s", domainID, err), resp)
 	}
 

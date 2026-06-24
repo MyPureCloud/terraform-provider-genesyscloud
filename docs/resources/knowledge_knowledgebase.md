@@ -6,20 +6,28 @@ description: |-
 ---
 # genesyscloud_knowledge_knowledgebase (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Knowledge Base
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/api/rest/v2/knowledge#get-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
-* [POST /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/api/rest/v2/knowledge/#post-api-v2-knowledge-knowledgebases)
-* [GET /api/v2/knowledge/knowledgebases](https://developer.mypurecloud.com/api/rest/v2/knowledge/#get-api-v2-knowledge-knowledgebases)
-* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
-* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.mypurecloud.com/api/rest/v2/knowledge/#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [GET /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-dependencytracking-build)
+* [POST /api/v2/architect/dependencytracking/build](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-architect-dependencytracking-build)
+* [GET /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases)
+* [POST /api/v2/knowledge/knowledgebases](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-knowledge-knowledgebases)
+* [DELETE /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [GET /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+* [PATCH /api/v2/knowledge/knowledgebases/{knowledgeBaseId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-knowledge-knowledgebases--knowledgeBaseId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `architect:dependencyTracking:rebuild`
+* `architect:dependencyTracking:view`
 * `knowledge:knowledgebase:add`
 * `knowledge:knowledgebase:delete`
 * `knowledge:knowledgebase:edit`
@@ -27,6 +35,8 @@ The following permissions are required to use this resource:
 
 The following OAuth scopes are required to use this resource:
 
+* `architect`
+* `architect:readonly`
 * `knowledge`
 * `knowledge:readonly`
 
