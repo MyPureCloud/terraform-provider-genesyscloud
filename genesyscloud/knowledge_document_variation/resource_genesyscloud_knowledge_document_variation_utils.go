@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func buildDocumentContentListBlocks(blocksIn map[string]interface{}, listDepth int) (*[]platformclientv2.Documentlistcontentblock, error) {
@@ -424,7 +424,7 @@ func buildDocumentBodyBlocks(blocksIn map[string]interface{}, listDepth int, tab
 	return &blocksOut, nil
 }
 
-func buildVariationBody(bodyIn map[string]interface{}) (*platformclientv2.Documentbodyrequest, error) {
+func buildVariationBody(bodyIn map[string]interface{}) (*platformclientv2.Documentbody, error) {
 	bodySlice, ok := bodyIn["body"].([]interface{})
 	if !ok || len(bodySlice) == 0 {
 		return nil, nil
@@ -439,7 +439,7 @@ func buildVariationBody(bodyIn map[string]interface{}) (*platformclientv2.Docume
 	if err != nil {
 		return nil, err
 	}
-	bodyOut := platformclientv2.Documentbodyrequest{
+	bodyOut := platformclientv2.Documentbody{
 		Blocks: bodyBlocksOut,
 	}
 	return &bodyOut, nil
@@ -1302,7 +1302,7 @@ func flattenDocumentBodyBlocks(blocksIn []platformclientv2.Documentbodyblock, li
 	return blocksOut, nil
 }
 
-func flattenVariationBody(bodyIn platformclientv2.Documentbodyresponse) ([]interface{}, error) {
+func flattenVariationBody(bodyIn platformclientv2.Documentbody) ([]interface{}, error) {
 	bodyOut := make(map[string]interface{})
 
 	if bodyIn.Blocks != nil {

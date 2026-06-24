@@ -15,11 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	tfExporterState "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
@@ -56,6 +57,7 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	exporters := resourceExporter.GetResourceExporters()
+	tfExporterState.ActivateExporterState()
 	filteredExporters := filterExporters(ctx, exporters, d)
 	exportData := make(BcpExportData)
 

@@ -6,20 +6,25 @@ description: |-
 ---
 # genesyscloud_routing_queue (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Queue
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-- [POST /api/v2/routing/queues](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues)
-- [GET /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--members)
-- [GET /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId-)
-- [POST /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--members)
-- [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-queues--queueId--members--memberId-)
-- [DELETE /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId-)
-- [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--wrapupcodes)
-- [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
-- [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
+* [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues)
+* [POST /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues)
+* [DELETE /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-queues--queueId-)
+* [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId-)
+* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-queues--queueId-)
+* [GET /api/v2/routing/queues/{queueId}/members](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId--members)
+* [POST /api/v2/routing/queues/{queueId}/members](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues--queueId--members)
+* [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-queues--queueId--members--memberId-)
+* [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId--wrapupcodes)
+* [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues--queueId--wrapupcodes)
+* [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
 
 ## Permissions and Scopes
 
@@ -36,6 +41,7 @@ The following OAuth scopes are required to use this resource:
 
 * `routing`
 * `routing:readonly`
+
 ## Schema Migration: Routing Queue V1 to V2
 
 ### Migration Details
@@ -150,7 +156,6 @@ resource "genesyscloud_routing_queue" "example" {
 #### Action Required
 
 The state will be automatically upgraded when you run terraform init with version 1.60.0 or later of the provider. After this, you will have to update your config to remove these attributes from the `media_settings_call`, `media_settings_email`, `media_settings_chat`, and `media_settings_message` config blocks as they are no longer supported.
-
 
 ## Example Usage
 
@@ -374,19 +379,19 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 
 ### Optional
 
-- `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW. Only set when ACW is MANDATORY_TIMEOUT, MANDATORY_FORCED_TIMEOUT or AGENT_REQUESTED.
+- `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW (Min: 1 sec, Max: 60 min). Can only be used when ACW is AGENT_REQUESTED, MANDATORY_TIMEOUT or MANDATORY_FORCED_TIMEOUT.
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
-- `agent_owned_routing` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--agent_owned_routing))
+- `agent_owned_routing` (Block List, Max: 1) The Agent Owned Routing settings for the queue. (see [below for nested schema](#nestedblock--agent_owned_routing))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
 - `bullseye_rings` (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
 - `calling_party_number` (String) The phone number to use for caller identification for outbound calls from this queue.
-- `canned_response_libraries` (Block List, Max: 1) Agent Owned Routing. (see [below for nested schema](#nestedblock--canned_response_libraries))
+- `canned_response_libraries` (Block List, Max: 1) Canned response library IDs and mode with which they are associated with the queue. (see [below for nested schema](#nestedblock--canned_response_libraries))
 - `conditional_group_activation` (Block List, Max: 1) The Conditional Group Activation settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_activation))
 - `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Important:** conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing. When ENABLE_STANDALONE_CGR is set, this attribute will not be read or exported. The two approaches are mutually exclusive to prevent duplicate data during org exports. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
-- `direct_routing` (Block List, Max: 1) Used by the System to set Direct Routing settings for a system Direct Routing queue. (see [below for nested schema](#nestedblock--direct_routing))
+- `direct_routing` (Block List, Max: 1) The Direct Routing settings for the queue. (see [below for nested schema](#nestedblock--direct_routing))
 - `division_id` (String) The division to which this queue will belong. If not set, the home division will be used.
 - `email_in_queue_flow_id` (String) The in-queue flow ID to use for email conversations waiting in queue.
 - `enable_audio_monitoring` (Boolean) Indicates whether audio monitoring is enabled for this queue.
@@ -428,9 +433,9 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 
 Optional:
 
-- `enable_agent_owned_callbacks` (Boolean) Enable Agent Owned Callbacks
-- `max_owned_callback_delay_hours` (Number) Max Owned Call Back Delay Hours >= 7
-- `max_owned_callback_hours` (Number) Auto End Delay Seconds Must be >= 7
+- `enable_agent_owned_callbacks` (Boolean) Indicates if Agent Owned Callbacks are enabled for the queue.
+- `max_owned_callback_delay_hours` (Number) The max amount of time a callback can be scheduled out into the future (in hours). Allowable range 1 - 720 hour(s) (inclusive).
+- `max_owned_callback_hours` (Number) The max amount of time a callback can be owned (in hours). Allowable range 1 - 168 hour(s) (inclusive).
 
 
 <a id="nestedblock--bullseye_rings"></a>
@@ -578,12 +583,12 @@ Required:
 
 Optional:
 
-- `agent_wait_seconds` (Number) The queue default time a Direct Routing interaction will wait for an agent before it goes to configured backup. Defaults to `60`.
-- `backup_queue_id` (String) Direct Routing default backup queue id (if none supplied this queue will be used as backup).
+- `agent_wait_seconds` (Number) Time (in seconds) that a Direct Routing interaction will wait for Direct Routing agent before going to selected backup. Valid range [60, 864000]. Defaults to `60`.
+- `backup_queue_id` (String) ID of another queue to be used as the default backup if an agent does not have their Backup Settings configured. If not set, the current queue will be used as backup, but with Direct Routing criteria removed from the conversation.
 - `call_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for calls. Defaults to `true`.
 - `email_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for emails. Defaults to `true`.
 - `message_use_agent_address_outbound` (Boolean) Boolean indicating if user Direct Routing addresses should be used outbound on behalf of queue in place of Queue address for messages. Defaults to `true`.
-- `wait_for_agent` (Boolean) Boolean indicating if Direct Routing interactions should wait for the targeted agent by default. Defaults to `false`.
+- `wait_for_agent` (Boolean) Flag indicating if Direct Routing interactions should wait for Direct Routing agent or go immediately to selected backup. Defaults to `false`.
 
 
 <a id="nestedblock--media_settings_call"></a>
@@ -592,19 +597,11 @@ Optional:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
+- `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_call--sub_type_settings))
-
-<a id="nestedblock--media_settings_call--sub_type_settings"></a>
-### Nested Schema for `media_settings_call.sub_type_settings`
-
-Required:
-
-- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
-- `media_type` (String) The name of the social media company
-
 
 
 <a id="nestedblock--media_settings_callback"></a>
@@ -616,10 +613,10 @@ Optional:
 - `answering_machine_flow_id` (String) The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.
 - `answering_machine_reaction_type` (String) The action to take if an answering machine is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
-- `auto_dial_delay_seconds` (Number) Auto Dial Delay Seconds.
-- `auto_end_delay_seconds` (Number) Auto End Delay Seconds.
-- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_auto_dial_and_end` (Boolean) Auto Dial and End Defaults to `false`.
+- `auto_dial_delay_seconds` (Number) Time in seconds after agent connects to callback before outgoing call is auto-dialed. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.
+- `auto_end_delay_seconds` (Number) Time in seconds after agent disconnects from the outgoing call before the encasing callback is auto-ended. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
+- `enable_auto_dial_and_end` (Boolean) Flag to enable Auto-Dial and Auto-End automation for callbacks on this queue. Defaults to `false`.
 - `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
 - `live_voice_reaction_type` (String) The action to take if a live voice is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
 - `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
@@ -629,16 +626,6 @@ Optional:
 - `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_callback--sub_type_settings))
-
-<a id="nestedblock--media_settings_callback--sub_type_settings"></a>
-### Nested Schema for `media_settings_callback.sub_type_settings`
-
-Required:
-
-- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
-- `media_type` (String) The name of the social media company
-
 
 
 <a id="nestedblock--media_settings_chat"></a>
@@ -647,19 +634,11 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
+- `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_chat--sub_type_settings))
-
-<a id="nestedblock--media_settings_chat--sub_type_settings"></a>
-### Nested Schema for `media_settings_chat.sub_type_settings`
-
-Required:
-
-- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
-- `media_type` (String) The name of the social media company
-
 
 
 <a id="nestedblock--media_settings_email"></a>
@@ -668,19 +647,11 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
+- `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
+- `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_email--sub_type_settings))
-
-<a id="nestedblock--media_settings_email--sub_type_settings"></a>
-### Nested Schema for `media_settings_email.sub_type_settings`
-
-Required:
-
-- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
-- `media_type` (String) The name of the social media company
-
 
 
 <a id="nestedblock--media_settings_message"></a>
@@ -689,12 +660,12 @@ Required:
 Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
-- `enable_auto_answer` (Boolean) Auto-Answer for digital channels(Email, Message) Defaults to `false`.
-- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. Defaults to `false`.
+- `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
+- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the "sub_type_settings" configuration for each media type
 - `inactivity_timeout_settings` (Block List, Max: 1) Inactivity timeout settings for messages. (see [below for nested schema](#nestedblock--media_settings_message--inactivity_timeout_settings))
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
-- `sub_type_settings` (Block List) Auto-Answer for digital channels(Email, Message) (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
+- `sub_type_settings` (Block List) Map of media subtype to media subtype specific settings. (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
 
 <a id="nestedblock--media_settings_message--inactivity_timeout_settings"></a>
 ### Nested Schema for `media_settings_message.inactivity_timeout_settings`
@@ -715,7 +686,11 @@ Optional:
 Required:
 
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.
-- `media_type` (String) The name of the social media company
+- `media_type` (String) The media subtype key (e.g. webmessaging, instagram, whatsapp).
+
+Optional:
+
+- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for the given subtype.
 
 
 

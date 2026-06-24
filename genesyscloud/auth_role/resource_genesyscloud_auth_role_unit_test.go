@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 // TestFlattenWildcardActionSetSuppression verifies that when the user's config has
@@ -275,5 +275,169 @@ func TestFlattenNoConfiguredPolicies(t *testing.T) {
 	actionList := actionSet.List()
 	if len(actionList) != 4 {
 		t.Fatalf("Expected action_set to have 4 elements, got %d: %v", len(actionList), actionList)
+	}
+}
+
+// TestFlattenWildcardWithConditionsPreserved verifies that when the API does not return
+// conditions for a policy (due to wildcard expansion), but the user's config has conditions,
+// the conditions are preserved from the config to prevent a perpetual diff.
+func TestFlattenWildcardWithConditionsPreserved(t *testing.T) {
+	// Simulate API response: expanded actions, NO conditions returned
+	domain := "analytics"
+	entityName := "userObservation"
+	actions := []string{"view", "edit"}
+	apiPolicies := []platformclientv2.Domainpermissionpolicy{
+		{
+			Domain:                &domain,
+			EntityName:            &entityName,
+			ActionSet:             &actions,
+			ResourceConditionNode: nil, // API dropped conditions during expansion
+		},
+	}
+
+	// Simulate user's config: action_set = ["*"] with conditions
+	conditionTerms := schema.NewSet(schema.HashResource(rolePermPolicyCondTerms), []interface{}{
+		map[string]interface{}{
+			"variable_name": "Conversation.queues",
+			"operator":      "EQ",
+			"operands": schema.NewSet(schema.HashResource(rolePermPolicyCondOperands), []interface{}{
+				map[string]interface{}{
+					"type":     "VARIABLE",
+					"queue_id": "",
+					"user_id":  "",
+					"value":    "",
+				},
+			}),
+		},
+	})
+
+	configConditions := []interface{}{
+		map[string]interface{}{
+			"conjunction": "AND",
+			"terms":       conditionTerms,
+		},
+	}
+
+	configuredPolicies := []interface{}{
+		map[string]interface{}{
+			"domain":      "analytics",
+			"entity_name": "userObservation",
+			"action_set":  schema.NewSet(schema.HashString, []interface{}{"*"}),
+			"conditions":  configConditions,
+		},
+	}
+
+	// Run the flatten function with wildcard suppression
+	result := flattenRolePermissionPoliciesWithWildcardSuppress(apiPolicies, configuredPolicies)
+
+	// Verify the result
+	policies := result.List()
+	if len(policies) != 1 {
+		t.Fatalf("Expected 1 policy, got %d", len(policies))
+	}
+
+	policyMap := policies[0].(map[string]interface{})
+
+	// Check action_set is preserved as wildcard
+	actionSet := policyMap["action_set"].(*schema.Set)
+	actionList := actionSet.List()
+	if len(actionList) != 1 || actionList[0].(string) != "*" {
+		t.Errorf("Expected action_set to be ['*'], got %v", actionList)
+	}
+
+	// Check conditions are preserved from config
+	conditions, hasConditions := policyMap["conditions"]
+	if !hasConditions {
+		t.Fatal("Expected conditions to be preserved from config, but they are missing")
+	}
+
+	condList, ok := conditions.([]interface{})
+	if !ok || len(condList) == 0 {
+		t.Fatal("Expected conditions to be a non-empty list")
+	}
+
+	condMap := condList[0].(map[string]interface{})
+	if condMap["conjunction"] != "AND" {
+		t.Errorf("Expected conjunction 'AND', got '%s'", condMap["conjunction"])
+	}
+}
+
+// TestFlattenWildcardWithConditionsFromAPI verifies that when the API DOES return
+// conditions, they are kept as-is (not overwritten by config conditions).
+func TestFlattenWildcardWithConditionsFromAPI(t *testing.T) {
+	// Simulate API response: expanded actions WITH conditions returned
+	domain := "analytics"
+	entityName := "userObservation"
+	actions := []string{"view", "edit"}
+	conjunction := "AND"
+	varName := "Conversation.queues"
+	operator := "EQ"
+	varType := "VARIABLE"
+	apiPolicies := []platformclientv2.Domainpermissionpolicy{
+		{
+			Domain:     &domain,
+			EntityName: &entityName,
+			ActionSet:  &actions,
+			ResourceConditionNode: &platformclientv2.Domainresourceconditionnode{
+				Conjunction: &conjunction,
+				Terms: &[]platformclientv2.Domainresourceconditionnode{
+					{
+						VariableName: &varName,
+						Operator:     &operator,
+						Operands: &[]platformclientv2.Domainresourceconditionvalue{
+							{VarType: &varType},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Simulate user's config: action_set = ["*"] with conditions
+	configuredPolicies := []interface{}{
+		map[string]interface{}{
+			"domain":      "analytics",
+			"entity_name": "userObservation",
+			"action_set":  schema.NewSet(schema.HashString, []interface{}{"*"}),
+			"conditions": []interface{}{
+				map[string]interface{}{
+					"conjunction": "AND",
+				},
+			},
+		},
+	}
+
+	// Run the flatten function with wildcard suppression
+	result := flattenRolePermissionPoliciesWithWildcardSuppress(apiPolicies, configuredPolicies)
+
+	// Verify the result
+	policies := result.List()
+	if len(policies) != 1 {
+		t.Fatalf("Expected 1 policy, got %d", len(policies))
+	}
+
+	policyMap := policies[0].(map[string]interface{})
+
+	// Check action_set is preserved as wildcard
+	actionSet := policyMap["action_set"].(*schema.Set)
+	actionList := actionSet.List()
+	if len(actionList) != 1 || actionList[0].(string) != "*" {
+		t.Errorf("Expected action_set to be ['*'], got %v", actionList)
+	}
+
+	// Check conditions are present (from API, not overwritten)
+	conditions, hasConditions := policyMap["conditions"]
+	if !hasConditions {
+		t.Fatal("Expected conditions to be present from API response")
+	}
+
+	condList, ok := conditions.([]interface{})
+	if !ok || len(condList) == 0 {
+		t.Fatal("Expected conditions to be a non-empty list")
+	}
+
+	condMap := condList[0].(map[string]interface{})
+	if condMap["conjunction"] != "AND" {
+		t.Errorf("Expected conjunction 'AND', got '%s'", condMap["conjunction"])
 	}
 }

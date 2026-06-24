@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_telephony_providers_edges_edge_group (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Edge Group. NOTE: This resource is being kept here for backwards compatibility with older Genesys Cloud Organization. You may get an error if you try to create an edge group with a Genesys Cloud Organization created in 2022 or later.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-edgegroups)
-* [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
-* [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
-* [GET /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-edgegroups)
-* [DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [GET /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-edgegroups)
+* [POST /api/v2/telephony/providers/edges/edgegroups](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-edgegroups)
+* [DELETE /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [GET /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+* [PUT /api/v2/telephony/providers/edges/edgegroups/{edgeGroupId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-edgegroups--edgeGroupId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -6,15 +6,19 @@ description: |-
 ---
 # genesyscloud_routing_language (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Language
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/languages](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-languages)
-* [POST /api/v2/routing/languages](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-languages)
-* [GET /api/v2/routing/languages/{languageId}](https://developer.mypurecloud.com/api/rest/v2/languages/#get-api-v2-routing-languages--languageId-)
-* [DELETE /api/v2/routing/languages/{languageId}](https://developer.mypurecloud.com/api/rest/v2/languages/#delete-api-v2-routing-languages--languageId-)
+* [GET /api/v2/routing/languages](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-languages)
+* [POST /api/v2/routing/languages](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-languages)
+* [DELETE /api/v2/routing/languages/{languageId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-languages--languageId-)
+* [GET /api/v2/routing/languages/{languageId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-languages--languageId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

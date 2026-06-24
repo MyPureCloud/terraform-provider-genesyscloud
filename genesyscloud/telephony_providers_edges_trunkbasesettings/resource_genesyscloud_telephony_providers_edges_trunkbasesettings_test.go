@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestAccResourceTrunkBaseSettings(t *testing.T) {
@@ -141,7 +141,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 			"genesyscloud_location."+locationResourceLabel+".id",
 			"Cloud",
 			false,
-			"[\"us-east-1\"]",
+			util.AssignRegion(),
 			util.NullValue,
 			util.NullValue,
 		)
@@ -223,7 +223,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 					"genesyscloud_location."+locationResourceLabel+".id",
 					"Cloud",
 					false,
-					"[\"us-east-1\"]",
+					util.AssignRegion(),
 					util.NullValue,
 					util.NullValue,
 				),

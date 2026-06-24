@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 const variationIdSeparator = " "
@@ -283,21 +283,24 @@ func deleteKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 
 	log.Printf("Deleting knowledge document variation %s", ids.knowledgeDocumentVariationID)
 
-	resp, err := variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
-	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
+		resp, err := variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
+		if err != nil {
+			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+				log.Printf("Knowledge document variation %s in use by Bot flow with status unknown. Rebuilding dependency tracking and retrying.", ids.knowledgeDocumentVariationID)
+				rebuildErr := rebuildDatabase()
+				if rebuildErr != nil {
+					log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+				}
+				return retry.RetryableError(fmt.Errorf("knowledge document variation %s still in use by Bot flow status unknown: %s", ids.knowledgeDocumentVariationID, err))
 			}
-			time.Sleep(10 * time.Second)
-			resp, err = variationProxy.deleteVariationRequest(ctx, ids.knowledgeDocumentVariationID, ids.knowledgeDocumentID, ids.knowledgeBaseID)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
-			}
-		} else {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document variation %s error: %s", ids.knowledgeDocumentVariationID, err), resp))
 		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	if published {

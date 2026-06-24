@@ -26,6 +26,9 @@ import (
 	bcpTfExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/bcp_tf_exporter"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
+	caseManagementCaseplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
+	caseManagementStageplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
+	caseManagementStepplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stepplan"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
@@ -42,7 +45,9 @@ import (
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
 	greeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting"
+	greetingUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting_user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	groupGreeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_greeting"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
@@ -217,6 +222,18 @@ func GetResourceExporterByResourceType(resourceType string) *resourceExporter.Re
 	return resourceExporters[resourceType]
 }
 
+// GetClonedResourceExporterByResourceType returns a per-call copy of the registry exporter
+// so MRMO export does not mutate shared singleton state.
+func GetClonedResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
+	return resourceExporter.CloneResourceExporter(GetResourceExporterByResourceType(resourceType))
+}
+
+// ResourceTypeSupportsExport reports whether the provider has a ResourceExporter for the
+// given type (required for MRMO ExportByType and bulk export paths).
+func ResourceTypeSupportsExport(resourceType string) bool {
+	return GetResourceExporterByResourceType(resourceType) != nil
+}
+
 func GetResourceTypeNames() []string {
 	if !resourceMapsAreRegistered() {
 		registerResources()
@@ -250,7 +267,9 @@ func registerResources() {
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
+	groupGreeting.SetRegistrar(regInstance)                                //Registering group greeting
 	greeting.SetRegistrar(regInstance)                                     //Registering greeting
+	greetingUser.SetRegistrar(regInstance)                                 //Registering greeting user
 	groupRoles.SetRegistrar(regInstance)                                   //Registering group roles
 	guide.SetRegistrar(regInstance)                                        //Registering guide
 	guideVersion.SetRegistrar(regInstance)                                 //Registering Guide Version
@@ -302,6 +321,9 @@ func registerResources() {
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
 	intentsCustomerintents.SetRegistrar(regInstance)                       //Registering customer intent
 	intentsCategories.SetRegistrar(regInstance)                            //Registering intent category
+	caseManagementCaseplan.SetRegistrar(regInstance)                       //Registering case management caseplan
+	caseManagementStageplan.SetRegistrar(regInstance)                      //Registering case management stageplan
+	caseManagementStepplan.SetRegistrar(regInstance)                       //Registering case management stepplan
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset

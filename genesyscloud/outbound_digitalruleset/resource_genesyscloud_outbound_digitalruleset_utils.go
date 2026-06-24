@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -920,7 +920,7 @@ func flattenDigitalActions(digitalActions *[]platformclientv2.Digitalaction) []i
 
 func validateDigitalRulesetData(ctx context.Context, diff *schema.ResourceDiff, i interface{}) error {
 	rulesList := diff.Get("rules").([]interface{})
-	for _, rule := range rulesList {
+	for ruleIndex, rule := range rulesList {
 		ruleMap := rule.(map[string]interface{})
 		conditionsList := ruleMap["conditions"].([]interface{})
 		for _, condition := range conditionsList {
@@ -935,7 +935,37 @@ func validateDigitalRulesetData(ctx context.Context, diff *schema.ResourceDiff, 
 				return err
 			}
 		}
+
+		actionsList := ruleMap["actions"].([]interface{})
+		for actionIndex, action := range actionsList {
+			actionMap := action.(map[string]interface{})
+			settings, ok := actionMap["set_content_template_action_settings"]
+			if !ok {
+				continue
+			}
+
+			settingsSet := settings.(*schema.Set)
+			if err := validateSetContentTemplateActionSettings(settingsSet, ruleIndex, actionIndex); err != nil {
+				return err
+			}
+		}
 	}
+	return nil
+}
+
+func validateSetContentTemplateActionSettings(settings *schema.Set, ruleIndex, actionIndex int) error {
+	if settings == nil || settings.Len() == 0 {
+		return nil
+	}
+
+	settingsMap := settings.List()[0].(map[string]interface{})
+	smsID, _ := settingsMap["sms_content_template_id"].(string)
+	emailID, _ := settingsMap["email_content_template_id"].(string)
+
+	if smsID == "" && emailID == "" {
+		return fmt.Errorf("rules.%d.actions.%d.set_content_template_action_settings requires at least one of sms_content_template_id or email_content_template_id", ruleIndex, actionIndex)
+	}
+
 	return nil
 }
 

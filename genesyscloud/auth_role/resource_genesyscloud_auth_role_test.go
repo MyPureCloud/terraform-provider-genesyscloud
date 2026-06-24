@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestAccResourceAuthRoleDefault(t *testing.T) {
@@ -129,9 +129,10 @@ func TestAccResourceAuthRoleBasic(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_role." + roleResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_auth_role." + roleResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permission_policies"},
 			},
 		},
 		CheckDestroy: testVerifyRolesDestroyed,
@@ -323,9 +324,10 @@ func TestAccResourceAuthRoleConditions(t *testing.T) {
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_auth_role." + roleResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "genesyscloud_auth_role." + roleResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"permission_policies"},
 			},
 		},
 		CheckDestroy: testVerifyRolesDestroyed,

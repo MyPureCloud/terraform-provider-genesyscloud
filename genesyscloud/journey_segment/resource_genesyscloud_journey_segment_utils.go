@@ -6,14 +6,14 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func flattenJourneySegment(d *schema.ResourceData, journeySegment *platformclientv2.Journeysegment) {
 	d.Set("is_active", *journeySegment.IsActive)
 	d.Set("display_name", *journeySegment.DisplayName)
 	resourcedata.SetNillableValue(d, "description", journeySegment.Description)
-	d.Set("color", *journeySegment.Color)
+	resourcedata.SetNillableValue(d, "color", journeySegment.Color)
 	resourcedata.SetNillableValue(d, "should_display_to_agent", journeySegment.ShouldDisplayToAgent)
 	resourcedata.SetNillableValue(d, "context", lists.FlattenAsList(journeySegment.Context, flattenContext))
 	resourcedata.SetNillableValue(d, "journey", lists.FlattenAsList(journeySegment.Journey, flattenJourney))
@@ -24,7 +24,7 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 	isActive := journeySegment.Get("is_active").(bool)
 	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
-	color := journeySegment.Get("color").(string)
+	color := resourcedata.GetNillableValue[string](journeySegment, "color")
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkRequestContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkRequestJourney, false)
@@ -34,7 +34,7 @@ func buildSdkJourneySegment(journeySegment *schema.ResourceData) *platformclient
 		IsActive:                 &isActive,
 		DisplayName:              &displayName,
 		Description:              description,
-		Color:                    &color,
+		Color:                    color,
 		ShouldDisplayToAgent:     shouldDisplayToAgent,
 		Context:                  sdkContext,
 		Journey:                  journey,
@@ -46,7 +46,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	isActive := journeySegment.Get("is_active").(bool)
 	displayName := journeySegment.Get("display_name").(string)
 	description := resourcedata.GetNillableValue[string](journeySegment, "description")
-	color := journeySegment.Get("color").(string)
+	color := resourcedata.GetNillableValue[string](journeySegment, "color")
 	shouldDisplayToAgent := resourcedata.GetNillableBool(journeySegment, "should_display_to_agent")
 	sdkContext := resourcedata.BuildSdkListFirstElement(journeySegment, "context", buildSdkPatchContext, false)
 	journey := resourcedata.BuildSdkListFirstElement(journeySegment, "journey", buildSdkPatchJourney, false)
@@ -55,7 +55,7 @@ func buildSdkPatchSegment(journeySegment *schema.ResourceData) *platformclientv2
 	sdkPatchSegment.SetField("IsActive", &isActive)
 	sdkPatchSegment.SetField("DisplayName", &displayName)
 	sdkPatchSegment.SetField("Description", description)
-	sdkPatchSegment.SetField("Color", &color)
+	sdkPatchSegment.SetField("Color", color)
 	sdkPatchSegment.SetField("ShouldDisplayToAgent", shouldDisplayToAgent)
 	sdkPatchSegment.SetField("Context", sdkContext)
 	sdkPatchSegment.SetField("Journey", journey)

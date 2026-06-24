@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 // Build Functions
@@ -44,7 +44,7 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
-		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
+		queueMediaSettings.Message = buildSdkMediaSettingsMessage(d, mediaSettingsMessage)
 	}
 
 	return queueMediaSettings
@@ -140,7 +140,7 @@ func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailme
 		return nil
 	}
 
-	return &platformclientv2.Emailmediasettings{
+	emailSetting := &platformclientv2.Emailmediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		EnableAutoAnswer:       platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
 		ServiceLevel: &platformclientv2.Servicelevel{
@@ -148,6 +148,11 @@ func buildSdkMediaEmailSetting(settings []interface{}) *platformclientv2.Emailme
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
 	}
+
+	emailSetting.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", false)
+	emailSetting.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", false)
+
+	return emailSetting
 }
 
 func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasettings {
@@ -159,7 +164,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 		return nil
 	}
 
-	return &platformclientv2.Mediasettings{
+	mediaSetting := &platformclientv2.Mediasettings{
 		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
 		EnableAutoAnswer:       platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
 		ServiceLevel: &platformclientv2.Servicelevel{
@@ -167,9 +172,14 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
 		},
 	}
+
+	mediaSetting.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", false)
+	mediaSetting.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", false)
+
+	return mediaSetting
 }
 
-func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemediasettings {
+func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platformclientv2.Messagemediasettings {
 	if len(settings) == 0 {
 		return nil
 	}
@@ -204,12 +214,10 @@ func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemedia
 	}
 
 	if subTypeSettingsList, ok := settingsMap["sub_type_settings"].([]interface{}); ok {
-		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
+		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(d, subTypeSettingsList)
 	}
 
-	if enableInactivityTimeout, ok := settingsMap["enable_inactivity_timeout"].(bool); ok {
-		messageMediaSettings.EnableInactivityTimeout = &enableInactivityTimeout
-	}
+	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableBool(d, "media_settings_message.0.enable_inactivity_timeout")
 
 	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
 		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
@@ -287,21 +295,22 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	return &callbackSettings
 }
 
-func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
+func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
 
 	returnObj := make(map[string]platformclientv2.Messagesubtypesettings)
 
-	for _, subTypeItem := range subTypeList {
+	for i, subTypeItem := range subTypeList {
 		if subTypeItem == nil {
 			continue
 		}
 		subTypeMap := subTypeItem.(map[string]interface{})
 		mediaType := subTypeMap["media_type"].(string)
 		enableAutoAnswer := subTypeMap["enable_auto_answer"].(bool)
-		baseMediaSettings := platformclientv2.Messagesubtypesettings{
+		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		returnObj[mediaType] = baseMediaSettings
+		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableBool(d, fmt.Sprintf("media_settings_message.0.sub_type_settings.%d.enable_inactivity_timeout", i))
+		returnObj[mediaType] = subTypeSetting
 	}
 
 	if len(returnObj) > 0 {
@@ -692,6 +701,8 @@ func flattenMediaEmailSetting(settings *platformclientv2.Emailmediasettings) []i
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
 	return []interface{}{settingsMap}
 }
 
@@ -702,6 +713,8 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
 	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
 	return []interface{}{settingsMap}
 }
 
@@ -759,6 +772,7 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 		subTypeMap := make(map[string]interface{})
 		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
 		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
 		subTypeList = append(subTypeList, subTypeMap)
 	}
 	return subTypeList

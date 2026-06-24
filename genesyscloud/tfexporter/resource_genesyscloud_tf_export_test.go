@@ -37,6 +37,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
@@ -1478,11 +1479,14 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 
 func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	testSetup(t)
+
 	var (
-		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
-		resourceLabel = "export"
-		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		exportTestDir   = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
+		resourceLabel   = "export"
+		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+		publishedName   = "test-published-form-" + uuid.NewString()
+		unpublishedName = "test-unpublished-form-" + uuid.NewString()
 	)
 
 	// Clean up
@@ -1492,12 +1496,72 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 		}
 	}(exportTestDir)
 
+	// Create both a published and unpublished survey form, then export
+	surveyFormConfig := fmt.Sprintf(`
+resource "genesyscloud_quality_forms_survey" "test-published-form" {
+	name      = "%s"
+	published = true
+	language  = "en-US"
+	question_groups {
+		name = "Test Group"
+		questions {
+			text = "Was the customer satisfied?"
+			type = "multipleChoiceQuestion"
+			answer_options {
+				text  = "Yes"
+				value = 1
+			}
+			answer_options {
+				text  = "No"
+				value = 0
+			}
+		}
+	}
+	lifecycle {
+		ignore_changes = [question_groups[0].questions[0].type]
+	}
+}
+
+resource "genesyscloud_quality_forms_survey" "test-unpublished-form" {
+	name      = "%s"
+	published = false
+	language  = "en-US"
+	question_groups {
+		name = "Test Group"
+		questions {
+			text = "Was the agent helpful?"
+			type = "multipleChoiceQuestion"
+			answer_options {
+				text  = "Yes"
+				value = 1
+			}
+			answer_options {
+				text  = "No"
+				value = 0
+			}
+		}
+	}
+	lifecycle {
+		ignore_changes = [question_groups[0].questions[0].type]
+	}
+}
+`, publishedName, unpublishedName)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportByIncludeFilterResources(
+				// First create the survey forms
+				Config: surveyFormConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-published-form", "name", publishedName),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_survey.test-unpublished-form", "name", unpublishedName),
+				),
+			},
+			{
+				// Then export and validate
+				Config: surveyFormConfig + generateTfExportByIncludeFilterResources(
 					resourceLabel,
 					exportTestDir,
 					util.TrueValue, // include_state_file
@@ -2439,4 +2503,332 @@ resource "genesyscloud_integration_credential" "%s" {
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+// TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences exercises the
+// end-to-end exporter pipeline for a decision table that references routing
+// queues in both columns (column defaults) AND rows (row literal values).
+//
+// It is the regression test for the queue-in-rows resolution bug: the exporter
+// registered a QueueIdResolver for row literal paths under the keys
+// "rows.*.inputs.*.literal.value" and "rows.*.outputs.*.literal.value", but the
+// export framework matches resolver keys by exact string against a dot-only
+// path it constructs while walking the config. Wildcard segments never appear in
+// that runtime path, so the resolver silently never fired and exported decision
+// tables wrote raw queue UUIDs into row cells instead of
+// ${genesyscloud_routing_queue.<label>.id} references — meaning the exported
+// HCL could not be applied to another org without manual fix-up.
+//
+// The four assertions below cover the four queue-bearing locations on the
+// resource. The column assertions guard the previously-working paths; the row
+// assertions are the ones that fail against the pre-fix code.
+func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing.T) {
+	testSetup(t)
+
+	if !businessRulesDecisionTableExportFtEnabled(t) {
+		t.Skip("Business rules decision table feature toggle is not enabled in this test org; skipping export round-trip test")
+	}
+
+	var (
+		// Schema name is capped at 50 chars by the platform, so keep the suffix
+		// short. The first 8 hex chars of a UUID give us enough uniqueness for
+		// concurrent test runs without overflowing the schema-name limit.
+		uniqueSuffix = uuid.NewString()[:8]
+
+		// Use snake_case names so the sanitized resource block labels equal the
+		// raw names; that makes the expected ${...} reference strings predictable
+		// without going through the sanitizer at assertion time.
+		schemaName    = "tf_test_dt_export_schema_" + uniqueSuffix
+		queueAName    = "tf_test_dt_export_queue_a_" + uniqueSuffix
+		queueBName    = "tf_test_dt_export_queue_b_" + uniqueSuffix
+		tableName     = "tf_test_dt_export_table_" + uniqueSuffix
+		exportTestDir = testrunner.GetTestTempPath(".terraform_dt_export_" + uuid.NewString())
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	baseConfig := buildDecisionTableQueueExportBaseConfig(schemaName, queueAName, queueBName, tableName)
+
+	expectedQueueARef := fmt.Sprintf("${genesyscloud_routing_queue.%s.id}", queueAName)
+	expectedQueueBRef := fmt.Sprintf("${genesyscloud_routing_queue.%s.id}", queueBName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the schema, queues, and decision table.
+				Config: baseConfig,
+			},
+			{
+				// Step 2: run the export — include the queue, schema, and decision
+				// table so the QueueIdResolver has a populated SanitizedResourceMap
+				// to resolve row UUIDs against.
+				Config: baseConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					"dt_export",
+					exportTestDir,
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format
+					util.TrueValue,        // enable_dependency_resolution
+					[]string{
+						strconv.Quote("genesyscloud_business_rules_decision_table::" + tableName),
+						strconv.Quote("genesyscloud_routing_queue::" + queueAName),
+						strconv.Quote("genesyscloud_routing_queue::" + queueBName),
+						strconv.Quote("genesyscloud_business_rules_schema::" + schemaName),
+					},
+					[]string{
+						"genesyscloud_business_rules_decision_table.test_table",
+						"genesyscloud_routing_queue.queue_a",
+						"genesyscloud_routing_queue.queue_b",
+						"genesyscloud_business_rules_schema.test_schema",
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Column defaults — these worked before the fix because their
+					// resolver paths had no wildcards. Asserting them ensures the
+					// fix didn't regress the existing behavior.
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"columns", "0", "inputs", "0", "defaults_to", "0", "value"},
+						expectedQueueARef,
+					),
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"columns", "0", "outputs", "0", "defaults_to", "0", "value"},
+						expectedQueueBRef,
+					),
+					// Row literals — these are the regression assertions. Against
+					// the pre-fix exporter they hold raw UUIDs.
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"rows", "0", "inputs", "0", "literal", "0", "value"},
+						expectedQueueARef,
+					),
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"rows", "0", "outputs", "0", "literal", "0", "value"},
+						expectedQueueBRef,
+					),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// businessRulesDecisionTableExportFtEnabled mirrors the skip-check used by the
+// resource's own acceptance tests so this test bails cleanly on orgs without
+// the decision table feature toggle. Inlined here to avoid exporting a
+// test-only helper from the business_rules_decision_table package.
+//
+// The tfexporter package's TestMain does not authorize the SDK (unlike the
+// business_rules_decision_table package), so we authorize explicitly here -
+// otherwise the probe runs against an unauthenticated client and every org
+// looks like it has the feature disabled.
+func businessRulesDecisionTableExportFtEnabled(t *testing.T) bool {
+	t.Helper()
+	if _, err := provider.AuthorizeSdk(); err != nil {
+		t.Logf("Failed to authorize SDK for decision table feature probe: %v", err)
+		return false
+	}
+	businessRulesAPI := platformclientv2.NewBusinessRulesApi()
+	_, resp, err := businessRulesAPI.GetBusinessrulesDecisiontables("", "", nil, "")
+	if err != nil {
+		t.Logf("Decision table probe error: %v", err)
+		return false
+	}
+	if resp == nil || resp.StatusCode != 200 {
+		status := 0
+		if resp != nil {
+			status = resp.StatusCode
+		}
+		t.Logf("Decision table probe returned status %d", status)
+		return false
+	}
+	return true
+}
+
+// buildDecisionTableQueueExportBaseConfig produces a minimal decision table
+// scenario: a schema with two businessRulesQueue properties, two queues, and a
+// single-row table whose columns and row reference both queues. Two queues
+// (rather than one) are used so the test can independently verify the inputs
+// and outputs branches resolve to the correct queue reference rather than
+// accidentally matching the same value at both ends.
+func buildDecisionTableQueueExportBaseConfig(schemaName, queueAName, queueBName, tableName string) string {
+	return fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+
+resource "genesyscloud_routing_queue" "queue_a" {
+  name        = "%[2]s"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  description = "Queue A for decision table export round-trip test"
+}
+
+resource "genesyscloud_routing_queue" "queue_b" {
+  name        = "%[3]s"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  description = "Queue B for decision table export round-trip test"
+}
+
+resource "genesyscloud_business_rules_schema" "test_schema" {
+  enabled     = true
+  name        = "%[1]s"
+  description = "Schema for decision table export round-trip test"
+  properties = jsonencode({
+    "transfer_queue" : {
+      "allOf" : [{ "$ref" : "#/definitions/businessRulesQueue" }],
+      "title" : "transfer_queue",
+      "description" : "Input column queue reference"
+    },
+    "second_queue" : {
+      "allOf" : [{ "$ref" : "#/definitions/businessRulesQueue" }],
+      "title" : "second_queue",
+      "description" : "Output column queue reference"
+    }
+  })
+}
+
+resource "genesyscloud_business_rules_decision_table" "test_table" {
+  name        = "%[4]s"
+  description = "Decision table for export round-trip test"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  schema_id   = genesyscloud_business_rules_schema.test_schema.id
+
+  columns {
+    inputs {
+      defaults_to {
+        value = genesyscloud_routing_queue.queue_a.id
+      }
+      expression {
+        contractual {
+          schema_property_key = "transfer_queue"
+          contractual {
+            schema_property_key = "queue"
+            contractual {
+              schema_property_key = "id"
+            }
+          }
+        }
+        comparator = "Equals"
+      }
+    }
+
+    outputs {
+      defaults_to {
+        value = genesyscloud_routing_queue.queue_b.id
+      }
+      value {
+        schema_property_key = "second_queue"
+        properties {
+          schema_property_key = "queue"
+          properties {
+            schema_property_key = "id"
+          }
+        }
+      }
+    }
+  }
+
+  rows {
+    inputs {
+      literal {
+        value = genesyscloud_routing_queue.queue_a.id
+        type  = "string"
+      }
+    }
+    outputs {
+      literal {
+        value = genesyscloud_routing_queue.queue_b.id
+        type  = "string"
+      }
+    }
+  }
+}
+`, schemaName, queueAName, queueBName, tableName)
+}
+
+// assertDecisionTableQueueReference walks the exported JSON config and asserts
+// that the value at the given nested path on the named decision table equals
+// expectedRef AND is not a raw UUID. The path is the sequence of JSON keys
+// and array indices (as strings) under
+// resource.genesyscloud_business_rules_decision_table.<tableName>.
+//
+// The not-a-UUID check is deliberately separate from the equality check so
+// failures surface the symptom clearly: "we found a raw UUID where a reference
+// was expected" is far more diagnostic than "got X, want Y" for this class of
+// bug.
+func assertDecisionTableQueueReference(filename, tableName string, path []string, expectedRef string) resource.TestCheckFunc {
+	uuidPattern := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	return func(state *terraform.State) error {
+		if _, err := os.Stat(filename); err != nil {
+			return fmt.Errorf("export file not found at %s: %v", filename, err)
+		}
+		exportData, err := util.LoadJsonFileToMap(filename)
+		if err != nil {
+			return fmt.Errorf("failed to load export file %s: %v", filename, err)
+		}
+
+		resources, ok := exportData["resource"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf(`exported config missing top-level "resource" map`)
+		}
+		tables, ok := resources["genesyscloud_business_rules_decision_table"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("no genesyscloud_business_rules_decision_table resources exported")
+		}
+		table, ok := tables[tableName].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("decision table %q was not exported (found tables: %v)", tableName, keysOf(tables))
+		}
+
+		var current interface{} = table
+		for i, segment := range path {
+			switch typed := current.(type) {
+			case map[string]interface{}:
+				current, ok = typed[segment]
+				if !ok {
+					return fmt.Errorf("path segment %q (index %d) not found under decision table %q; remaining path: %v", segment, i, tableName, path[i:])
+				}
+			case []interface{}:
+				idx, parseErr := strconv.Atoi(segment)
+				if parseErr != nil {
+					return fmt.Errorf("path segment %q (index %d) is not a valid array index but the current node is an array", segment, i)
+				}
+				if idx < 0 || idx >= len(typed) {
+					return fmt.Errorf("array index %d out of bounds (len=%d) at path segment %d", idx, len(typed), i)
+				}
+				current = typed[idx]
+			default:
+				return fmt.Errorf("cannot descend into %T at path segment %q (index %d)", current, segment, i)
+			}
+		}
+
+		got, ok := current.(string)
+		if !ok {
+			return fmt.Errorf("value at path %v is %T, expected string", path, current)
+		}
+		if uuidPattern.MatchString(got) {
+			return fmt.Errorf("value at path %v on table %q is a raw UUID %q — the QueueIdResolver did not resolve it to a ${genesyscloud_routing_queue.<label>.id} reference. This is the queue-in-rows regression.", path, tableName, got)
+		}
+		if got != expectedRef {
+			return fmt.Errorf("value at path %v on table %q: got %q, want %q", path, tableName, got, expectedRef)
+		}
+		return nil
+	}
+}
+
+// keysOf returns the keys of a string-keyed map, used purely for error
+// messages so failures hint at what was exported when the expected table
+// is missing.
+func keysOf(m map[string]interface{}) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }

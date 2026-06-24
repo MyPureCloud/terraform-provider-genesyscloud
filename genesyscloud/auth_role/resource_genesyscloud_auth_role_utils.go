@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) (*platformclientv2.APIResponse, error) {
@@ -182,6 +182,7 @@ func flattenRolePermissionPoliciesWithWildcardSuppress(policies []platformclient
 
 // suppressWildcardDiffForPolicy checks if a flattened policy from the API matches a configured policy
 // that uses a wildcard in action_set. If so, it replaces the expanded action list with ["*"].
+// It also preserves the conditions block from the config if the API does not return it after expansion.
 func suppressWildcardDiffForPolicy(policyMap map[string]interface{}, configuredPolicies []interface{}) {
 	domain, _ := policyMap["domain"].(string)
 	entityName, _ := policyMap["entity_name"].(string)
@@ -208,6 +209,15 @@ func suppressWildcardDiffForPolicy(policyMap map[string]interface{}, configuredP
 					// The user configured a wildcard — preserve it in state to suppress the diff
 					wildcardSet := schema.NewSet(schema.HashString, []interface{}{"*"})
 					policyMap["action_set"] = wildcardSet
+
+					// If the API didn't return conditions but the config has them, preserve from config.
+					// This can happen when the backend drops conditions during wildcard expansion.
+					if _, hasConditionsInState := policyMap["conditions"]; !hasConditionsInState {
+						if configConditions, hasConfigConditions := configMap["conditions"]; hasConfigConditions {
+							policyMap["conditions"] = configConditions
+						}
+					}
+
 					return
 				}
 			}

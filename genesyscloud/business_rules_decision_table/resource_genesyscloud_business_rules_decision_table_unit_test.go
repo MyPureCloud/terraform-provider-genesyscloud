@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -2177,55 +2178,133 @@ func TestUnitBusinessRulesDecisionTableExporter(t *testing.T) {
 	assert.Equal(t, "genesyscloud_auth_division", exporter.RefAttrs["division_id"].RefType, "division_id should reference auth_division")
 	assert.Equal(t, "genesyscloud_business_rules_schema", exporter.RefAttrs["schema_id"].RefType, "schema_id should reference business_rules_schema")
 
-	// Test CustomAttributeResolver configuration
+	// Test CustomAttributeResolver configuration.
+	//
+	// The exporter framework matches resolver keys by exact string against the
+	// dot-separated attribute path it builds in sanitizeConfigMap — no array
+	// indices, no "*" wildcards. Any key containing those segments will silently
+	// never fire (this is exactly how the queue-in-rows resolution bug shipped:
+	// the keys were registered as "rows.*.inputs.*.literal.value" and never
+	// matched). These assertions lock in the correct path shape so a regression
+	// to the wildcard form fails the test instead of passing it.
 	assert.NotNil(t, exporter.CustomAttributeResolver, "CustomAttributeResolver should not be nil")
-	assert.Contains(t, exporter.CustomAttributeResolver, "columns.outputs.defaults_to.value", "outputs defaults_to.value should have custom resolver")
-	assert.Contains(t, exporter.CustomAttributeResolver, "columns.inputs.defaults_to.value", "inputs defaults_to.value should have custom resolver")
-	assert.Contains(t, exporter.CustomAttributeResolver, "rows.*.inputs.*.literal.value", "row inputs literal.value should have custom resolver")
-	assert.Contains(t, exporter.CustomAttributeResolver, "rows.*.outputs.*.literal.value", "row outputs literal.value should have custom resolver")
+	expectedResolverPaths := []string{
+		"columns.outputs.defaults_to.value",
+		"columns.inputs.defaults_to.value",
+		"rows.inputs.literal.value",
+		"rows.outputs.literal.value",
+	}
+	for _, path := range expectedResolverPaths {
+		assert.Contains(t, exporter.CustomAttributeResolver, path, "%q should have a custom resolver registered", path)
+		if resolver, ok := exporter.CustomAttributeResolver[path]; ok {
+			assert.NotNil(t, resolver.ResolverFunc, "resolver function should be set for %q", path)
+		}
+	}
 
-	// Test that resolver functions are set
-	assert.NotNil(t, exporter.CustomAttributeResolver["columns.outputs.defaults_to.value"].ResolverFunc, "outputs resolver function should be set")
-	assert.NotNil(t, exporter.CustomAttributeResolver["columns.inputs.defaults_to.value"].ResolverFunc, "inputs resolver function should be set")
-	assert.NotNil(t, exporter.CustomAttributeResolver["rows.*.inputs.*.literal.value"].ResolverFunc, "row inputs resolver function should be set")
-	assert.NotNil(t, exporter.CustomAttributeResolver["rows.*.outputs.*.literal.value"].ResolverFunc, "row outputs resolver function should be set")
+	// Guard: no key may contain "*" or numeric path segments — those would never
+	// match the framework's runtime lookup. See sanitizeConfigMap in
+	// genesyscloud/tfexporter/genesyscloud_resource_exporter.go.
+	for path := range exporter.CustomAttributeResolver {
+		assert.NotContains(t, path, "*", "resolver path %q must not contain wildcard segments — they never match at runtime", path)
+		for _, segment := range strings.Split(path, ".") {
+			if _, err := strconv.Atoi(segment); err == nil {
+				t.Errorf("resolver path %q contains numeric segment %q — array indices are not part of the runtime path", path, segment)
+			}
+		}
+	}
 }
 
-// Test the queue ID resolver function
-func TestUnitQueueIdResolver(t *testing.T) {
-	// Test with a valid queue ID
-	queueID := "test-queue-id"
-	queueName := "test-queue"
+// TestUnitQueueIdResolver_RewritesUUIDToReference exercises the resolver the way
+// the exporter framework actually invokes it — with a configMap representing a
+// single literal block (keys "value" / "type") and a populated exporters map
+// containing a genesyscloud_routing_queue entry whose SanitizedResourceMap
+// holds the UUID we want resolved. It asserts the resolver actually rewrites
+// the value to a Terraform reference, which the previous tautological test did
+// not do.
+func TestUnitQueueIdResolver_RewritesUUIDToReference(t *testing.T) {
+	const (
+		queueUUID  = "11111111-2222-3333-4444-555555555555"
+		queueLabel = "My_Queue"
+	)
 
-	// Create a mock resource map with queue information
-	resourceMap := map[string]interface{}{
-		"genesyscloud_routing_queue": map[string]interface{}{
-			queueID: map[string]interface{}{
-				"name": queueName,
+	configMap := map[string]interface{}{
+		"value": queueUUID,
+		"type":  "string",
+	}
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		"genesyscloud_routing_queue": {
+			SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+				queueUUID: &resourceExporter.ResourceMeta{BlockLabel: queueLabel},
 			},
 		},
 	}
 
-	// Create mock exporters map (required by the function signature)
-	exporters := map[string]*resourceExporter.ResourceExporter{}
+	err := QueueIdResolver(configMap, exporters, "genesyscloud_business_rules_decision_table")
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("${genesyscloud_routing_queue.%s.id}", queueLabel), configMap["value"],
+		"resolver should rewrite a known queue UUID into a ${genesyscloud_routing_queue.<label>.id} reference")
+	assert.Equal(t, "string", configMap["type"], "resolver must not modify the literal type field")
+}
 
-	// Test queue ID resolution
-	err := QueueIdResolver(resourceMap, exporters, queueID)
-	assert.NoError(t, err, "Queue ID resolution should succeed")
+// TestUnitQueueIdResolver_LeavesNonMatchingValuesAlone covers the negative
+// paths: empty value, non-UUID-shaped string, UUID-shaped string with no
+// matching queue, and missing queue exporter. None of these should rewrite
+// the value or return an error.
+func TestUnitQueueIdResolver_LeavesNonMatchingValuesAlone(t *testing.T) {
+	const knownQueueUUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+	exportersWithQueue := map[string]*resourceExporter.ResourceExporter{
+		"genesyscloud_routing_queue": {
+			SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+				knownQueueUUID: &resourceExporter.ResourceMeta{BlockLabel: "Known_Queue"},
+			},
+		},
+	}
 
-	// Test with non-queue value (should succeed)
-	nonQueueValue := "priority_high"
-	err2 := QueueIdResolver(resourceMap, exporters, nonQueueValue)
-	assert.NoError(t, err2, "Non-queue value should be handled without error")
+	cases := []struct {
+		name      string
+		configMap map[string]interface{}
+		exporters map[string]*resourceExporter.ResourceExporter
+		wantValue interface{}
+	}{
+		{
+			name:      "empty value is a no-op",
+			configMap: map[string]interface{}{"value": "", "type": "string"},
+			exporters: exportersWithQueue,
+			wantValue: "",
+		},
+		{
+			name:      "missing value key is a no-op",
+			configMap: map[string]interface{}{"type": "string"},
+			exporters: exportersWithQueue,
+			wantValue: nil,
+		},
+		{
+			name:      "non-UUID string is untouched",
+			configMap: map[string]interface{}{"value": "Premium Support", "type": "string"},
+			exporters: exportersWithQueue,
+			wantValue: "Premium Support",
+		},
+		{
+			name:      "UUID-shaped string with no matching queue is untouched",
+			configMap: map[string]interface{}{"value": "ffffffff-0000-0000-0000-000000000000", "type": "string"},
+			exporters: exportersWithQueue,
+			wantValue: "ffffffff-0000-0000-0000-000000000000",
+		},
+		{
+			name:      "no routing_queue exporter registered is a no-op",
+			configMap: map[string]interface{}{"value": knownQueueUUID, "type": "string"},
+			exporters: map[string]*resourceExporter.ResourceExporter{},
+			wantValue: knownQueueUUID,
+		},
+	}
 
-	// Test with empty value
-	emptyValue := ""
-	err3 := QueueIdResolver(resourceMap, exporters, emptyValue)
-	assert.NoError(t, err3, "Empty value should be handled without error")
-
-	// Test with nil resource map
-	err4 := QueueIdResolver(nil, exporters, queueID)
-	assert.NoError(t, err4, "Should handle nil resource map without error")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := QueueIdResolver(tc.configMap, tc.exporters, "genesyscloud_business_rules_decision_table")
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantValue, tc.configMap["value"])
+		})
+	}
 }
 
 // Test the data source functionality

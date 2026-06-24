@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -112,7 +112,7 @@ func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySetti
 	var allSummarySettings []platformclientv2.Summarysetting
 	const pageSize = 100
 
-	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", 1, pageSize)
+	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings(1, pageSize, name, "", "", "")
 	if err != nil {
 		return nil, resp, err
 	}
@@ -125,7 +125,7 @@ func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySetti
 	}
 
 	for pageNum := 2; pageNum <= *summarySettings.PageCount; pageNum++ {
-		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", pageNum, pageSize)
+		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings(pageNum, pageSize, name, "", "", "")
 		if err != nil {
 			return nil, resp, err
 		}

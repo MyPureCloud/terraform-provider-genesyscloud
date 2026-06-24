@@ -6,15 +6,19 @@ description: |-
 ---
 # genesyscloud_outbound_contact_list_contact (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 [DEPRECATED] Genesys Cloud Outbound Contact List Contact
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-- [POST /api/v2/outbound/contactlists/{contactListId}/contacts](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-contactlists--contactListId--contacts)
-- [GET /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
-- [PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
-- [DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
+* [POST /api/v2/outbound/contactlists/{contactListId}/contacts](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-contactlists--contactListId--contacts)
+* [POST /api/v2/outbound/contactlists/{contactListId}/contacts/search](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-contactlists--contactListId--contacts-search)
+* [DELETE /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
+* [GET /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
+* [PUT /api/v2/outbound/contactlists/{contactListId}/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-contactlists--contactListId--contacts--contactId-)
 
 ## Permissions and Scopes
 
@@ -29,6 +33,7 @@ The following OAuth scopes are required to use this resource:
 
 * `outbound`
 * `outbound:readonly`
+
 ## Migrating from genesyscloud_outbound_contact_list_contact
 
 ### Deprecation Notice
@@ -55,7 +60,6 @@ The exporter functionality has been removed from this resource in favor of the `
    ```
 3. Ensure your CSV file contains all required columns defined in `column_names`
 4. Run `terraform plan` to verify the changes
-
 
 ## Example Usage
 
