@@ -30,13 +30,6 @@ The following OAuth scopes are required to use this resource:
 * `users`
 * `users:readonly`
 
-## Permissions and Scopes
-
-The following OAuth scopes are required to use this resource:
-
-* `greetings`
-* `greetings:readonly`
-
 
 ## Example Usage
 
