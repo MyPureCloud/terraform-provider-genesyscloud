@@ -269,6 +269,11 @@ func buildVideoSettings(d *schema.ResourceData) *platformclientv2.Videosettings 
 		videoSettings.Enabled = &v
 	}
 
+	if v, ok := cfg["channels"]; ok {
+		channels := lists.InterfaceListToStrings(v.([]interface{}))
+		videoSettings.Channels = &channels
+	}
+
 	if v, ok := cfg["agent"]; ok && v != nil {
 		videoSettings.Agent = buildAgentVideoSettings(v.([]interface{}))
 	}
@@ -345,6 +350,10 @@ func FlattenVideoSettings(videoSettings *platformclientv2.Videosettings) []inter
 	result := map[string]interface{}{}
 	if videoSettings.Enabled != nil {
 		result["enabled"] = videoSettings.Enabled
+	}
+
+	if videoSettings.Channels != nil {
+		result["channels"] = *videoSettings.Channels
 	}
 
 	if videoSettings.Agent != nil {

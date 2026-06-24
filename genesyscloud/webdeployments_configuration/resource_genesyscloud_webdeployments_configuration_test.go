@@ -175,6 +175,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 		channels       = []string{strconv.Quote("Webmessaging")}
 		channelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
 
+		videoChannels       = []string{strconv.Quote("Webmessaging")}
+		videoChannelsUpdate = []string{strconv.Quote("Webmessaging"), strconv.Quote("Voice")}
+
 		authenticationSettings1 = authSettings{
 			enabled:             true,
 			integrationId:       uuid.NewString(),
@@ -214,6 +217,17 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						[]string{strconv.Quote("selector-one")},
 						generatePauseCriteria("/sensitive", "Includes"),
 						generatePauseCriteria("/login", "Equals"),
+					),
+					generateVideoSettings(
+						util.TrueValue,
+						videoChannels,
+						util.TrueValue,
+						util.TrueValue,
+						util.TrueValue,
+						"BLUR",
+						util.TrueValue,
+						util.TrueValue,
+						util.TrueValue,
 					),
 					generateAuthenticationSettings(authenticationSettings1),
 				),
@@ -305,6 +319,20 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.pause_criteria.1.url_fragment", "/login"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.pause_criteria.1.condition", "Equals"),
 
+					resource.TestCheckResourceAttr(resourcePath, "video.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.channels.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.channels.0", "Webmessaging"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_camera", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_screen_share", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_microphone", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.background", "BLUR"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_camera", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_screen_share", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_microphone", util.TrueValue),
+
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -371,6 +399,17 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 						generatePauseCriteria("/sensitive", "Includes"),
 						generatePauseCriteria("/login", "Equals"),
 					),
+					generateVideoSettings(
+						util.TrueValue,
+						videoChannelsUpdate,
+						util.TrueValue,
+						util.FalseValue,
+						util.TrueValue,
+						"NONE",
+						util.TrueValue,
+						util.FalseValue,
+						util.TrueValue,
+					),
 					generateAuthenticationSettings(authenticationSettings2),
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -414,6 +453,22 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.pause_criteria.0.condition", "Includes"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.pause_criteria.1.url_fragment", "/login"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.pause_criteria.1.condition", "Equals"),
+
+					resource.TestCheckResourceAttr(resourcePath, "video.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.channels.#", "2"),
+					util.ValidateStringInArray(resourcePath, "video.0.channels", "Webmessaging"),
+					util.ValidateStringInArray(resourcePath, "video.0.channels", "Voice"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_camera", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_screen_share", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_microphone", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.background", "NONE"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_camera", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_screen_share", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_microphone", util.TrueValue),
+
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "journey_events.0.excluded_query_parameters.#", "1"),
@@ -1158,6 +1213,26 @@ func generatePauseCriteria(urlFragment, condition string) string {
 	url_fragment = "%s"
 	condition = "%s"
 }`, urlFragment, condition)
+}
+
+func generateVideoSettings(enabled string, channels []string, agentAllowCamera, agentAllowScreenShare, agentAllowMicrophone, agentBackground, userAllowCamera, userAllowScreenShare, userAllowMicrophone string) string {
+	return fmt.Sprintf(`
+	video {
+		enabled = %s
+		channels = [ %s ]
+		agent {
+			allow_camera = %s
+			allow_screen_share = %s
+			allow_microphone = %s
+			background = "%s"
+		}
+		user {
+			allow_camera = %s
+			allow_screen_share = %s
+			allow_microphone = %s
+		}
+	}
+`, enabled, strings.Join(channels, ", "), agentAllowCamera, agentAllowScreenShare, agentAllowMicrophone, agentBackground, userAllowCamera, userAllowScreenShare, userAllowMicrophone)
 }
 
 func generateSupportCenterSettings(supportCenter scConfig) string {
