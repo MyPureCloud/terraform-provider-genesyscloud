@@ -119,10 +119,6 @@ func DataSourceRoutingEmailDomain() *schema.Resource {
 func RoutingEmailDomainExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingEmailDomains),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"graph_api_settings.integration_id": {RefType: "genesyscloud_integration"},
-			"imap_settings.integration_id":      {RefType: "genesyscloud_integration"},
-		},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"custom_smtp_server_id": ResourceRoutingEmailDomain().Schema["custom_smtp_server_id"],
 			"graph_api_settings":    ResourceRoutingEmailDomain().Schema["graph_api_settings"],

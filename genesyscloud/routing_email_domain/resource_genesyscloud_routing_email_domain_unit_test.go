@@ -4,9 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
+
+func routingEmailDomainTestSchema() map[string]*schema.Schema {
+	return ResourceRoutingEmailDomain().Schema
+}
 
 func TestUnitRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *testing.T) {
 	instanceID := "delltechnologies.mypurecloud.com"
@@ -129,5 +134,161 @@ func TestUnitFlattenImapSettings(t *testing.T) {
 
 	if flattenImapSettings(nil) != nil {
 		t.Fatalf("expected nil for nil settings")
+	}
+}
+
+func TestUnitExpandGraphApiSettings(t *testing.T) {
+	integrationID := "6572c166-70dc-4ea7-b410-cabe2ee3e4c6"
+	resourceSchema := routingEmailDomainTestSchema()
+
+	tests := []struct {
+		name    string
+		data    map[string]interface{}
+		wantNil bool
+		wantID  string
+	}{
+		{
+			name: "block absent",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty block list",
+			data: map[string]interface{}{
+				"domain_id":          "example.com",
+				"subdomain":          false,
+				"graph_api_settings": []interface{}{},
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"graph_api_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": "",
+					},
+				},
+			},
+			wantNil: true,
+		},
+		{
+			name: "valid integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"graph_api_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": integrationID,
+					},
+				},
+			},
+			wantNil: false,
+			wantID:  integrationID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := schema.TestResourceDataRaw(t, resourceSchema, tt.data)
+			got := expandGraphApiSettings(d)
+
+			if tt.wantNil {
+				if got != nil {
+					t.Fatalf("expected nil, got %+v", got)
+				}
+				return
+			}
+
+			if got == nil || got.Integration == nil || got.Integration.Id == nil {
+				t.Fatalf("expected Graph API settings with integration id, got %+v", got)
+			}
+			if *got.Integration.Id != tt.wantID {
+				t.Fatalf("expected integration id %q, got %q", tt.wantID, *got.Integration.Id)
+			}
+		})
+	}
+}
+
+func TestUnitExpandImapSettings(t *testing.T) {
+	integrationID := "imap-integration-id"
+	resourceSchema := routingEmailDomainTestSchema()
+
+	tests := []struct {
+		name    string
+		data    map[string]interface{}
+		wantNil bool
+		wantID  string
+	}{
+		{
+			name: "block absent",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty block list",
+			data: map[string]interface{}{
+				"domain_id":     "example.com",
+				"subdomain":     false,
+				"imap_settings": []interface{}{},
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"imap_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": "",
+					},
+				},
+			},
+			wantNil: true,
+		},
+		{
+			name: "valid integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"imap_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": integrationID,
+					},
+				},
+			},
+			wantNil: false,
+			wantID:  integrationID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := schema.TestResourceDataRaw(t, resourceSchema, tt.data)
+			got := expandImapSettings(d)
+
+			if tt.wantNil {
+				if got != nil {
+					t.Fatalf("expected nil, got %+v", got)
+				}
+				return
+			}
+
+			if got == nil || got.Integration == nil || got.Integration.Id == nil {
+				t.Fatalf("expected IMAP settings with integration id, got %+v", got)
+			}
+			if *got.Integration.Id != tt.wantID {
+				t.Fatalf("expected integration id %q, got %q", tt.wantID, *got.Integration.Id)
+			}
+		})
 	}
 }
