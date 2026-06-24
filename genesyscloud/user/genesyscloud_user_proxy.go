@@ -11,7 +11,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -254,8 +254,10 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 
 	//Inner function to get user based on status
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
-		users := []platformclientv2.User{}
-		const pageSize = 100
+		var users []platformclientv2.User
+		const pageSize = 500
+		// DEVTOOLING-862: inactive GetUsers requests return 400 beyond 10,000 users (100 pages at pageSize).
+		const maxInactiveUserPages = 10_000 / pageSize
 		expandedAttributes := []string{
 			// Expands
 			"skills",
@@ -269,23 +271,50 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 		if err != nil {
 			return nil, apiResponse, err
 		}
-		users = append(users, *usersList.Entities...)
 
-		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
-			usersList, apiResponse, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", nil, userStatus)
-
-			//DEVTOOLING-862 - This is a blocker for the BCP team as before this if check was put in the code would fail when it hit 10K of inactive users.
-			//The BCP team (Cesar Branco has asked to write a warning to the log) and just return what we currently have.
-			//Long-term solution is working with Joe Fruland to change the backend API.
-			if userStatus == "inactive" && apiResponse != nil && apiResponse.StatusCode == http.StatusBadRequest {
-				log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API.  No further exports of inactive users will occur.")
-				return &users, apiResponse, nil
-			}
-
-			if err != nil {
-				return nil, apiResponse, err
-			}
+		if usersList.Entities != nil && len(*usersList.Entities) > 0 {
 			users = append(users, *usersList.Entities...)
+		}
+
+		totalPages := 1
+		if usersList.PageCount != nil {
+			totalPages = *usersList.PageCount
+		}
+
+		// The API may report a PageCount above the inactive cap, but pages beyond 100 always
+		// return 400. Cap pagination here so concurrent fetches do not spawn hundreds of
+		// goroutines that each hit a doomed API call.
+		if userStatus == "inactive" && totalPages > maxInactiveUserPages {
+			log.Printf("WARNING!!: Inactive user PageCount (%d) exceeds the API limit of %d pages (10,000 users). Pagination will stop at page %d.", totalPages, maxInactiveUserPages, maxInactiveUserPages)
+			totalPages = maxInactiveUserPages
+		}
+
+		users, apiResponse, err = provider.FetchPagesConcurrently(ctx, ResourceType, users, apiResponse, totalPages, p.clientConfig,
+			func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.User, *platformclientv2.APIResponse, error) {
+				ctx = provider.EnsureResourceContext(ctx, ResourceType)
+				pageProxy := newUserProxy(clientConfig)
+				pageUsersList, pageResp, pageErr := pageProxy.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", nil, userStatus)
+
+				// Safety net only: with the page cap above, inactive requests within range should not
+				// return 400. If one does, treat it as end-of-results rather than failing the export.
+				if userStatus == "inactive" && pageResp != nil && pageResp.StatusCode == http.StatusBadRequest {
+					log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API. No further exports of inactive users will occur.")
+					return []platformclientv2.User{}, pageResp, nil
+				}
+
+				if pageErr != nil {
+					return nil, pageResp, pageErr
+				}
+
+				if pageUsersList.Entities == nil || len(*pageUsersList.Entities) == 0 {
+					return []platformclientv2.User{}, pageResp, nil
+				}
+
+				return *pageUsersList.Entities, pageResp, nil
+			},
+		)
+		if err != nil {
+			return nil, apiResponse, err
 		}
 
 		return &users, apiResponse, nil

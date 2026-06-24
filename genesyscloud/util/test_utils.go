@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -438,12 +440,30 @@ func interfaceToString(val interface{}) string {
 }
 
 func AssignRegion() string {
+	// Dynamically fetch valid media regions from the API
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err == nil {
+		telephonyApi := platformclientv2.NewTelephonyApiWithConfig(sdkConfig)
+		mediaRegions, _, err := telephonyApi.GetTelephonyMediaregions()
+		if err == nil && mediaRegions != nil {
+			// Try to use a "home" region first, then fall back to any available core region
+			if mediaRegions.AwsHomeRegion != nil && *mediaRegions.AwsHomeRegion != "" {
+				regionJSON := "[" + strconv.Quote(*mediaRegions.AwsHomeRegion) + "]"
+				return regionJSON
+			}
+			if mediaRegions.AwsCoreRegions != nil && len(*mediaRegions.AwsCoreRegions) > 0 {
+				regionJSON := "[" + strconv.Quote((*mediaRegions.AwsCoreRegions)[0]) + "]"
+				return regionJSON
+			}
+		}
+	}
 
+	// Fallback: static mapping if API call fails
 	region := "us-west-2"
-
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+	switch v := os.Getenv("GENESYSCLOUD_REGION"); v {
+	case "tca":
 		region = "us-east-1"
-	} else if v == "us-east-1" {
+	case "us-east-1":
 		region = "us-west-2"
 	}
 	regionJSON := "[" + strconv.Quote(region) + "]"

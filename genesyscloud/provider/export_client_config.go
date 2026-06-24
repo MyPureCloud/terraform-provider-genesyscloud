@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 type exportClientConfigKey struct{}

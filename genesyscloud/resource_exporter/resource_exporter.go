@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -89,6 +89,11 @@ type RefAttrCustomResolver struct {
 	// ResolverWithClientConfigFunc is like ResolverFunc but with access to the SDK client config
 	// for resolvers that need to make API calls (e.g. resolving a GUID to a human-readable name).
 	ResolverWithClientConfigFunc func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) error
+
+	// OmitUnresolvedRef marks optional reference attributes that should be omitted from export when
+	// the genesyscloud_tf_export export_omit_unresolved_refs attribute is true and the value could
+	// not be resolved to a Terraform reference.
+	OmitUnresolvedRef bool
 }
 
 type CustomFileWriterSettings struct {

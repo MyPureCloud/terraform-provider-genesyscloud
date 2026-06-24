@@ -85,6 +85,11 @@ func ResourceResponseManagementResponseAsset() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 				ForceNew:    true,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					// Suppress diff when the only difference is path separators (backslash vs forward slash)
+					// or a Windows drive letter prefix, since these are normalized before sending to the API.
+					return normalizeAssetName(old) == normalizeAssetName(new)
+				},
 			},
 		},
 	}

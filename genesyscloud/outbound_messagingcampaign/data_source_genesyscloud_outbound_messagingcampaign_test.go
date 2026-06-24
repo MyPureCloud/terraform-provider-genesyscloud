@@ -16,7 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
@@ -26,7 +26,7 @@ Endpoint `POST /api/v2/routing/sms/phonenumbers` creates an active/valid phone n
 func TestAccDataSourceOutboundMessagingCampaign(t *testing.T) {
 	v := os.Getenv("GENESYSCLOUD_REGION")
 	switch v {
-	case "mx-central-1", "ap-southeast-1":
+	case "mx-central-1", "ap-southeast-1", "eusc-de-east-1":
 		t.Skipf("sms number not configured in %s org", v)
 		return
 	}

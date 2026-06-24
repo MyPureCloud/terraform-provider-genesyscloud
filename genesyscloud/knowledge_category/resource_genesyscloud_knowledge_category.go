@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func getAllKnowledgeCategories(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -150,21 +150,25 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	proxy := GetKnowledgeCategoryProxy(sdkConfig)
 
 	log.Printf("Deleting knowledge category %s", id)
-	_, resp, err := proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
-	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge category database: %v", rebuildErr)
+
+	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
+		_, resp, err := proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
+		if err != nil {
+			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+				log.Printf("Knowledge category %s in use by Bot flow with status unknown. Rebuilding dependency tracking and retrying.", knowledgeCategoryId)
+				rebuildErr := rebuildDatabase()
+				if rebuildErr != nil {
+					log.Printf("Failed to rebuild knowledge category database: %v", rebuildErr)
+				}
+				return retry.RetryableError(fmt.Errorf("knowledge category %s still in use by Bot flow status unknown: %s", knowledgeCategoryId, err))
 			}
-			time.Sleep(10 * time.Second)
-			_, resp, err = proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
-			}
-		} else {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp))
 		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
