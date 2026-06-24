@@ -32,17 +32,17 @@ type getTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWo
 
 // taskManagementWorktypeStatusProxy contains all the methods that call genesys cloud APIs.
 type taskManagementWorktypeStatusProxy struct {
-	clientConfig                                *platformclientv2.Configuration
-	taskManagementApi                           *platformclientv2.TaskManagementApi
-	worktypeProxy                               *taskManagementWorktype.TaskManagementWorktypeProxy
-	createTaskManagementWorktypeStatusAttr      createTaskManagementWorktypeStatusFunc
-	getAllTaskManagementWorktypeStatusAttr      getAllTaskManagementWorktypeStatusFunc
-	getTaskManagementWorktypeStatusIdByNameAttr getTaskManagementWorktypeStatusIdByNameFunc
-	getTaskManagementWorktypeStatusByIdAttr     getTaskManagementWorktypeStatusByIdFunc
-	updateTaskManagementWorktypeStatusAttr      updateTaskManagementWorktypeStatusFunc
+	clientConfig                                       *platformclientv2.Configuration
+	taskManagementApi                                  *platformclientv2.TaskManagementApi
+	worktypeProxy                                      *taskManagementWorktype.TaskManagementWorktypeProxy
+	createTaskManagementWorktypeStatusAttr             createTaskManagementWorktypeStatusFunc
+	getAllTaskManagementWorktypeStatusAttr             getAllTaskManagementWorktypeStatusFunc
+	getTaskManagementWorktypeStatusIdByNameAttr        getTaskManagementWorktypeStatusIdByNameFunc
+	getTaskManagementWorktypeStatusByIdAttr            getTaskManagementWorktypeStatusByIdFunc
+	updateTaskManagementWorktypeStatusAttr             updateTaskManagementWorktypeStatusFunc
 	patchTaskManagementWorktypeStatusAutoTerminateAttr patchTaskManagementWorktypeStatusAutoTerminateFunc
-	deleteTaskManagementWorktypeStatusAttr      deleteTaskManagementWorktypeStatusFunc
-	getTaskManagementWorktypeAttr               getTaskManagementWorktypeFunc
+	deleteTaskManagementWorktypeStatusAttr             deleteTaskManagementWorktypeStatusFunc
+	getTaskManagementWorktypeAttr                      getTaskManagementWorktypeFunc
 }
 
 // newTaskManagementWorktypeStatusProxy initializes the task management worktype status proxy with all of the data needed to communicate with Genesys Cloud
@@ -50,17 +50,17 @@ func newTaskManagementWorktypeStatusProxy(clientConfig *platformclientv2.Configu
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
 	taskmanagementProxy := taskManagementWorktype.GetTaskManagementWorktypeProxy(clientConfig)
 	return &taskManagementWorktypeStatusProxy{
-		clientConfig:                                clientConfig,
-		taskManagementApi:                           api,
-		worktypeProxy:                               taskmanagementProxy,
-		createTaskManagementWorktypeStatusAttr:      createTaskManagementWorktypeStatusFn,
-		getAllTaskManagementWorktypeStatusAttr:      getAllTaskManagementWorktypeStatusFn,
-		getTaskManagementWorktypeStatusIdByNameAttr: getTaskManagementWorktypeStatusIdByNameFn,
-		getTaskManagementWorktypeStatusByIdAttr:     getTaskManagementWorktypeStatusByIdFn,
-		updateTaskManagementWorktypeStatusAttr:      updateTaskManagementWorktypeStatusFn,
+		clientConfig:                                       clientConfig,
+		taskManagementApi:                                  api,
+		worktypeProxy:                                      taskmanagementProxy,
+		createTaskManagementWorktypeStatusAttr:             createTaskManagementWorktypeStatusFn,
+		getAllTaskManagementWorktypeStatusAttr:             getAllTaskManagementWorktypeStatusFn,
+		getTaskManagementWorktypeStatusIdByNameAttr:        getTaskManagementWorktypeStatusIdByNameFn,
+		getTaskManagementWorktypeStatusByIdAttr:            getTaskManagementWorktypeStatusByIdFn,
+		updateTaskManagementWorktypeStatusAttr:             updateTaskManagementWorktypeStatusFn,
 		patchTaskManagementWorktypeStatusAutoTerminateAttr: patchTaskManagementWorktypeStatusAutoTerminateFn,
-		deleteTaskManagementWorktypeStatusAttr:      deleteTaskManagementWorktypeStatusFn,
-		getTaskManagementWorktypeAttr:               getTaskManagementWorktypeFn,
+		deleteTaskManagementWorktypeStatusAttr:             deleteTaskManagementWorktypeStatusFn,
+		getTaskManagementWorktypeAttr:                      getTaskManagementWorktypeFn,
 	}
 }
 
