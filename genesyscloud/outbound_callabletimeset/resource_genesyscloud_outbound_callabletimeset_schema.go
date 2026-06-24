@@ -59,6 +59,7 @@ var timeSlotResource = &schema.Resource{
 		`name`: {
 			Description: `The name for the callable time.`,
 			Optional:    true,
+			Computed:    true,
 			Type:        schema.TypeString,
 		},
 		`time_zone_id`: {

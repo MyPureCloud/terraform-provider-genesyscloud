@@ -35,6 +35,9 @@ func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 		examplePhrase3 = "Genesys is a platform"
 	)
 
+	// Clean up any leftover dictionary feedback from previous test runs
+	cleanupDictionaryFeedbackByTerm(term, dialect)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
