@@ -1,13 +1,12 @@
 package station
 
 import (
-	"log"
 	"sync"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	edgePhone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_phone"
@@ -31,7 +30,6 @@ var providerDataSources map[string]*schema.Resource
 var providerResources map[string]*schema.Resource
 
 var sdkConfig *platformclientv2.Configuration
-var authErr error
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -59,10 +57,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatal(authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)

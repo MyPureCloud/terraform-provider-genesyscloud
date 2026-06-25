@@ -1,19 +1,17 @@
 package conversations_messaging_settings
 
 import (
-	"log"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 var (
 	providerDataSources map[string]*schema.Resource
 	sdkConfig           *platformclientv2.Configuration
-	authErr             error
 )
 
 // providerResources holds a map of all registered resources
@@ -45,10 +43,7 @@ func initTestResources() {
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for package conversations_messaging_settings: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	regInstance := &registerTestInstance{}
 

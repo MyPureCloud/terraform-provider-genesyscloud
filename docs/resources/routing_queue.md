@@ -661,7 +661,7 @@ Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
-- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the "sub_type_settings" configuration for each media type Defaults to `false`.
+- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the "sub_type_settings" configuration for each media type
 - `inactivity_timeout_settings` (Block List, Max: 1) Inactivity timeout settings for messages. (see [below for nested schema](#nestedblock--media_settings_message--inactivity_timeout_settings))
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.

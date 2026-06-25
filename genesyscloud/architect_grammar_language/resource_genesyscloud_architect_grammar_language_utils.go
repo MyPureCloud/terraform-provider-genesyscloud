@@ -17,13 +17,24 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 /*
 The resource_genesyscloud_architect_grammar_language_utils.go file contains various helper methods to marshal
 and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 */
+
+// normalizeAssetPath converts Windows-style path separators to forward slashes
+// and strips drive letter prefixes (e.g., "C:/") to ensure cross-platform
+// compatibility with the Genesys Cloud API.
+func normalizeAssetPath(name string) string {
+	name = strings.ReplaceAll(name, "\\", "/")
+	if len(name) >= 3 && name[1] == ':' && name[2] == '/' {
+		name = name[3:]
+	}
+	return name
+}
 
 // getArchitectGrammarLanguageFromResourceData maps data from schema ResourceData into a Genesys Cloud platformclientv2.Grammarlanguage
 func getArchitectGrammarLanguageFromResourceData(d *schema.ResourceData) platformclientv2.Grammarlanguage {
@@ -220,6 +231,10 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 		fileDataMapKey string
 		filePath       = filepath.Join(d.subDirectory, d.exportFileName)
 	)
+
+	// Normalize the export file path by converting backslashes to forward slashes
+	// for consistent cross-platform path handling.
+	filePath = normalizeAssetPath(filePath)
 
 	switch d.fileType {
 	case Voice:

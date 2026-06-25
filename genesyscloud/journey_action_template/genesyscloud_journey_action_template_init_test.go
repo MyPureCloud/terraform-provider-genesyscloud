@@ -1,7 +1,6 @@
 package journey_action_template
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -10,12 +9,11 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	err       error
 )
 
 /*
@@ -54,9 +52,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

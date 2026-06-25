@@ -1,11 +1,10 @@
 package conversations_messaging_supportedcontent_default
 
 import (
-	"log"
 	"sync"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -20,7 +19,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerResources holds a map of all registered resources
@@ -41,10 +39,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for package conversations_messaging_supportedcontent_default: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerResources = make(map[string]*schema.Resource)
 

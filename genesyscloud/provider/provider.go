@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func init() {
@@ -505,4 +505,16 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	}
 
 	return sdkConfig, nil
+}
+
+// SdkConfigurationForTests returns a Genesys Cloud SDK configuration for package TestMain.
+// It authorizes when credentials are available; otherwise it returns the default configuration
+// so unit tests can run without live API credentials.
+func SdkConfigurationForTests() *platformclientv2.Configuration {
+	config, err := AuthorizeSdk()
+	if err != nil {
+		log.Printf("using default SDK configuration for tests: %v", err)
+		return platformclientv2.GetDefaultConfiguration()
+	}
+	return config
 }

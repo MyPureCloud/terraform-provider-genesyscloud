@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 const (
@@ -28,9 +29,9 @@ const (
 	// Default pool settings
 	DefaultMaxClients = 10
 	MinClients        = 1
-	MaxClients        = 20
+	MaxClients        = 50
 
-	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
+	AbsoluteDynamicMaxClients = 50
 
 	// Logging intervals
 	MetricsLoggingInterval = 5 * time.Minute
@@ -55,11 +56,12 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	AcquireTimeout time.Duration
-	InitTimeout    time.Duration
-	MaxClients     int
-	DebugLogging   bool
-	Version        string
+	AcquireTimeout     time.Duration
+	InitTimeout        time.Duration
+	MaxClients         int
+	MaxConcurrentPages int
+	DebugLogging       bool
+	Version            string
 }
 
 type poolMetrics struct {
@@ -119,6 +121,17 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			max = v.(int)
 		}
 
+		// Scale HTTP connection limits with token pool size so concurrent exports can use all tokens.
+		if transport, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport.MaxIdleConns = max * 2
+			transport.MaxIdleConnsPerHost = max
+			transport.MaxConnsPerHost = max
+			log.Printf("HTTP transport configured for token_pool_size=%d: MaxIdleConnsPerHost=%d, MaxConnsPerHost=%d",
+				max, max, max)
+		} else {
+			log.Printf("WARN: Could not configure HTTP transport (not *http.Transport)")
+		}
+
 		// Get timeouts from provider config
 		acquireTimeout := DefaultAcquireTimeout
 		if v, ok := providerConfig.GetOk(AttrTokenAcquireTimeout); ok {
@@ -140,12 +153,15 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			initTimeout = parsed
 		}
 
+		maxConcurrentPages := providerConfig.Get(AttrMaxConcurrentPages).(int)
+
 		config := &SDKClientPoolConfig{
-			MaxClients:     max,
-			AcquireTimeout: acquireTimeout,
-			InitTimeout:    initTimeout,
-			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
-			Version:        version,
+			MaxClients:         max,
+			MaxConcurrentPages: maxConcurrentPages,
+			AcquireTimeout:     acquireTimeout,
+			InitTimeout:        initTimeout,
+			DebugLogging:       providerConfig.Get(AttrSdkClientPoolDebug).(bool),
+			Version:            version,
 		}
 
 		SdkClientPool = &SDKClientPool{
@@ -398,6 +414,16 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 	return nil, fmt.Errorf("failed to acquire client after %d attempts", maxRetries)
 }
 
+// Acquire acquires a client from the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Acquire(ctx context.Context) (*platformclientv2.Configuration, error) {
+	return p.acquire(ctx)
+}
+
+// Release releases a client back to the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Release(c *platformclientv2.Configuration) error {
+	return p.release(c)
+}
+
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 	if c == nil {
 		return fmt.Errorf("attempted to release a nil configuration ?!?")
@@ -431,6 +457,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 func (p *SDKClientPool) GetMaxClients() int {
 	return p.config.MaxClients
+}
+
+func (p *SDKClientPool) GetMaxConcurrentPages() int {
+	return p.config.MaxConcurrentPages
 }
 
 func cleanupConfiguration(config *platformclientv2.Configuration) error {
@@ -797,6 +827,34 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 	}
 }
 
+// resolveClientConfigForContext selects an SDK client for the current operation.
+// Priority: export ctx config, legacy MRMO global config, then SdkClientPool.
+// The returned release func is a no-op when the config was not acquired from the pool.
+func resolveClientConfigForContext(ctx context.Context) (*platformclientv2.Configuration, func(), diag.Diagnostics) {
+	if clientConfig, ok := ExportClientConfigFromContext(ctx); ok {
+		return clientConfig, func() {}, nil
+	}
+
+	if mrmo.IsActive() {
+		clientConfig, err := mrmo.GetClientConfig()
+		if err != nil {
+			return nil, nil, diag.FromErr(err)
+		}
+		return clientConfig, func() {}, nil
+	}
+
+	clientConfig, err := SdkClientPool.acquire(ctx)
+	if err != nil {
+		return nil, nil, diag.FromErr(err)
+	}
+
+	return clientConfig, func() {
+		if err := SdkClientPool.release(clientConfig); err != nil {
+			log.Printf("[WARN] Error releasing client to pool: %v", err)
+		}
+	}, nil
+}
+
 // Inject a pooled SDK client connection into a resource method's meta argument
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
@@ -808,31 +866,11 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 			ctx = autoInjectResourceContext(ctx, r)
 		}
 
-		if mrmo.IsActive() {
-			clientConfig, err := mrmo.GetClientConfig()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			newMeta := *meta.(*ProviderMeta)
-			newMeta.ClientConfig = clientConfig
-			return method(ctx, r, &newMeta)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return diags
 		}
-
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		// Ensure client is always released, even on panic
-		released := false
-		defer func() {
-			if !released {
-				if err := SdkClientPool.release(clientConfig); err != nil {
-					log.Printf("[WARN] Error releasing client to pool: %v", err)
-				}
-				released = true
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {
@@ -845,15 +883,7 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 		newMeta := *meta.(*ProviderMeta)
 		newMeta.ClientConfig = clientConfig
 
-		result := method(ctx, r, &newMeta)
-
-		// Release client after successful execution
-		if err := SdkClientPool.release(clientConfig); err != nil {
-			log.Printf("[WARN] Error releasing client to pool: %v", err)
-		}
-		released = true
-
-		return result
+		return method(ctx, r, &newMeta)
 	}
 }
 
@@ -1008,30 +1038,12 @@ func extractResourceIdAndName(d *schema.ResourceData) (resourceId, resourceName 
 
 // GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
-	if mrmo.IsActive() {
-		clientConfig, err := mrmo.GetClientConfig()
-		if err != nil {
-			log.Printf("[WARN] Error getting client config: %s", err.Error())
-			log.Printf("[DEBUG] Returning error from GetAllWithPooledClient")
-			return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-				return nil, diag.FromErr(err)
-			}
-		}
-		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-			return method(ctx, clientConfig)
-		}
-	}
-
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return nil, diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return nil, diags
 		}
-		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {
@@ -1046,15 +1058,11 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return nil, nil, nil, diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return nil, nil, nil, diags
 		}
-		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {

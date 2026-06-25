@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 type outboundContactListRawResponse struct {
@@ -106,7 +106,7 @@ func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumber
 			sdkContactPhoneNumberColumn.VarType = &varType
 		}
 		if callableTimeColumnName, ok := contactPhoneNumberColumnMap["callable_time_column_name"].(string); ok && callableTimeColumnName != "" {
-			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumnName
+			sdkContactPhoneNumberColumn.CallableTimeColumnName = &callableTimeColumnName
 		} else if callableTimeColumn := contactPhoneNumberColumnMap["callable_time_column"].(string); callableTimeColumn != "" {
 			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumn
 		}
@@ -135,8 +135,11 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 		if contactPhoneNumberColumn.VarType != nil {
 			contactPhoneNumberColumnMap["type"] = *contactPhoneNumberColumn.VarType
 		}
-		if contactPhoneNumberColumn.CallableTimeColumn != nil {
+		if contactPhoneNumberColumn.CallableTimeColumnName != nil {
 			// Keep legacy + new fields in sync while users migrate.
+			contactPhoneNumberColumnMap["callable_time_column_name"] = *contactPhoneNumberColumn.CallableTimeColumnName
+			contactPhoneNumberColumnMap["callable_time_column"] = *contactPhoneNumberColumn.CallableTimeColumnName
+		} else if contactPhoneNumberColumn.CallableTimeColumn != nil {
 			contactPhoneNumberColumnMap["callable_time_column_name"] = *contactPhoneNumberColumn.CallableTimeColumn
 			contactPhoneNumberColumnMap["callable_time_column"] = *contactPhoneNumberColumn.CallableTimeColumn
 		} else if callableTimeColumnNameIndex != nil && key != "" {
@@ -221,7 +224,7 @@ func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddre
 
 		// Safely handle contactable_time_column
 		if contactableTimeColumnName, ok := contactEmailAddressColumnMap["contactable_time_column_name"].(string); ok && contactableTimeColumnName != "" {
-			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumnName
+			sdkContactEmailAddressColumn.ContactableTimeColumnName = &contactableTimeColumnName
 		} else if contactableTimeColumn, ok := contactEmailAddressColumnMap["contactable_time_column"].(string); ok && contactableTimeColumn != "" {
 			sdkContactEmailAddressColumn.ContactableTimeColumn = &contactableTimeColumn
 		}
@@ -250,8 +253,10 @@ func flattenSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAdd
 		if contactEmailAddressColumn.VarType != nil {
 			contactEmailAddressColumnMap["type"] = *contactEmailAddressColumn.VarType
 		}
-		if contactEmailAddressColumn.ContactableTimeColumn != nil {
-			// Keep legacy + new fields in sync while users migrate.
+		if contactEmailAddressColumn.ContactableTimeColumnName != nil {
+			contactEmailAddressColumnMap["contactable_time_column_name"] = *contactEmailAddressColumn.ContactableTimeColumnName
+			contactEmailAddressColumnMap["contactable_time_column"] = *contactEmailAddressColumn.ContactableTimeColumnName
+		} else if contactEmailAddressColumn.ContactableTimeColumn != nil {
 			contactEmailAddressColumnMap["contactable_time_column_name"] = *contactEmailAddressColumn.ContactableTimeColumn
 			contactEmailAddressColumnMap["contactable_time_column"] = *contactEmailAddressColumn.ContactableTimeColumn
 		} else if contactableTimeColumnNameIndex != nil && key != "" {

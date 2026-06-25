@@ -1,7 +1,6 @@
 package outbound_sequence
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -35,7 +34,6 @@ var providerResources map[string]*schema.Resource
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 type registerTestInstance struct {
@@ -70,10 +68,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for the package outbound_sequence: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)

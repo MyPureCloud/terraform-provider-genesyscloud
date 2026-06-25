@@ -21,7 +21,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
 func TestAccResourceOutboundCampaignRuleBasic(t *testing.T) {
@@ -416,7 +416,7 @@ func TestAccResourceOutboundCampaignRuleConditionGroups(t *testing.T) {
 			util.NullValue,
 		)
 
-		entityCampaignIds  = []string{"genesyscloud_outbound_campaign." + campaign1ResourceLabel + ".id"}
+		entityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceLabel + ".id"}
 		entitySequenceIds = []string{"genesyscloud_outbound_sequence." + sequenceResourceLabel + ".id"}
 
 		actionType                = "turnOnCampaign"
@@ -425,25 +425,25 @@ func TestAccResourceOutboundCampaignRuleConditionGroups(t *testing.T) {
 		actionUseTriggeringEntity = util.FalseValue
 
 		// Condition group 1: match any — campaignProgress, campaignAgents
-		condProgressOp, condProgressVal   = "lessThan", "0.5"
-		condAgentsOp, condAgentsVal       = "greaterThan", "0"
-		group1Cond1 = generateConditionGroupConditionBlock("campaignProgress", generateCampaignRuleParameters(condProgressOp, condProgressVal, "", "", "", "", "", "", "", "", "", "", "", ""))
-		group1Cond2 = generateConditionGroupConditionBlock("campaignAgents", generateCampaignRuleParameters(condAgentsOp, condAgentsVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		condProgressOp, condProgressVal = "lessThan", "0.5"
+		condAgentsOp, condAgentsVal     = "greaterThan", "0"
+		group1Cond1                     = generateConditionGroupConditionBlock("campaignProgress", generateCampaignRuleParameters(condProgressOp, condProgressVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		group1Cond2                     = generateConditionGroupConditionBlock("campaignAgents", generateCampaignRuleParameters(condAgentsOp, condAgentsVal, "", "", "", "", "", "", "", "", "", "", "", ""))
 
 		// Condition group 2: match all — campaignRecordsAttempted, campaignValidAttempts
 		condAttemptedOp, condAttemptedVal = "greaterThanEqualTo", "10"
-		condValidOp, condValidVal          = "lessThan", "1.0"
-		group2Cond1 = generateConditionGroupConditionBlock("campaignRecordsAttempted", generateCampaignRuleParameters(condAttemptedOp, condAttemptedVal, "", "", "", "", "", "", "", "", "", "", "", ""))
-		group2Cond2 = generateConditionGroupConditionBlock("campaignValidAttempts", generateCampaignRuleParameters(condValidOp, condValidVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		condValidOp, condValidVal         = "lessThan", "1.0"
+		group2Cond1                       = generateConditionGroupConditionBlock("campaignRecordsAttempted", generateCampaignRuleParameters(condAttemptedOp, condAttemptedVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		group2Cond2                       = generateConditionGroupConditionBlock("campaignValidAttempts", generateCampaignRuleParameters(condValidOp, condValidVal, "", "", "", "", "", "", "", "", "", "", "", ""))
 
 		// Update: different condition types and execution_settings
 		condRightPartyOp, condRightPartyVal = "greaterThan", "5"
 		condBusinessOp, condBusinessVal     = "equals", "0"
-		group1Cond1Upd = generateConditionGroupConditionBlock("campaignRightPartyContacts", generateCampaignRuleParameters(condRightPartyOp, condRightPartyVal, "", "", "", "", "", "", "", "", "", "", "", ""))
-		group1Cond2Upd = generateConditionGroupConditionBlock("campaignBusinessSuccess", generateCampaignRuleParameters(condBusinessOp, condBusinessVal, "", "", "", "", "", "", "", "", "", "", "", ""))
-		execFrequency                        = "onEachTrigger"
-		execFrequencyUpd                     = "oncePerDay"
-		execTimeZoneUpd                      = "Africa/Abidjan"
+		group1Cond1Upd                      = generateConditionGroupConditionBlock("campaignRightPartyContacts", generateCampaignRuleParameters(condRightPartyOp, condRightPartyVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		group1Cond2Upd                      = generateConditionGroupConditionBlock("campaignBusinessSuccess", generateCampaignRuleParameters(condBusinessOp, condBusinessVal, "", "", "", "", "", "", "", "", "", "", "", ""))
+		execFrequency                       = "onEachTrigger"
+		execFrequencyUpd                    = "oncePerDay"
+		execTimeZoneUpd                     = "Africa/Abidjan"
 	)
 
 	resource.Test(t, resource.TestCase{
