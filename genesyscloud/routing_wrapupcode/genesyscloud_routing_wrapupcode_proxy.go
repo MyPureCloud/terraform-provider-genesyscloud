@@ -131,7 +131,7 @@ func getRoutingWrapupcodeByIdFn(ctx context.Context, p *routingWrapupcodeProxy, 
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	if wrapupcode := rc.GetCacheItem(p.routingWrapupcodesCache, id); wrapupcode != nil { // Get the wrapupcode from the cache, if not there in the cache then call p.getRoutingWrapupcodeByIdAttr()
+	if wrapupcode := rc.GetCacheItem(p.routingWrapupcodesCache, id); wrapupcode != nil {
 		return wrapupcode, nil, nil
 	}
 
@@ -140,7 +140,9 @@ func getRoutingWrapupcodeByIdFn(ctx context.Context, p *routingWrapupcodeProxy, 
 		return nil, response, err
 	}
 
-	rc.SetCache(p.routingWrapupcodesCache, id, *wrapupcode)
+	if wrapupcode != nil {
+		rc.SetCache(p.routingWrapupcodesCache, id, *wrapupcode)
+	}
 	return wrapupcode, response, nil
 }
 
@@ -153,7 +155,9 @@ func updateRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, i
 		return nil, response, err
 	}
 
-	rc.SetCache(p.routingWrapupcodesCache, id, *wrapupcode)
+	if wrapupcode != nil {
+		rc.SetCache(p.routingWrapupcodesCache, id, *wrapupcode)
+	}
 	return wrapupcode, response, nil
 }
 

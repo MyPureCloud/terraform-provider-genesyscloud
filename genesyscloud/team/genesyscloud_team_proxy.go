@@ -166,8 +166,7 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	cacheKey := name
-	if cached := rc.GetCacheItem(teamListCache, cacheKey); cached != nil {
+	if cached := rc.GetCacheItem(teamListCache, name); cached != nil {
 		log.Printf("[TEAM-CACHE] list name=%q: cache hit (%d teams)", name, len(*cached))
 		return cached, nil, nil
 	}
@@ -210,7 +209,7 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 		storeTeamInCache(&team)
 	}
 
-	rc.SetCache(teamListCache, cacheKey, allTeams)
+	rc.SetCache(teamListCache, name, allTeams)
 	log.Printf("[TEAM-CACHE] list name=%q: cached %d teams", name, len(allTeams))
 
 	return &allTeams, response, nil

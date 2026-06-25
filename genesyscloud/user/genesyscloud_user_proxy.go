@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -368,11 +367,9 @@ func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id st
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	if tfexporter_state.IsExporterActive() {
-		if cached := rc.GetCacheItem(userVoicemailPolicyCache, id); cached != nil {
-			log.Printf("[USER-CACHE] User %s: voicemail policy cache hit", id)
-			return cached, nil, nil
-		}
+	if cached := rc.GetCacheItem(userVoicemailPolicyCache, id); cached != nil {
+		log.Printf("[USER-CACHE] User %s: voicemail policy cache hit", id)
+		return cached, nil, nil
 	}
 
 	policy, resp, err := p.voicemailApi.GetVoicemailUserpolicy(id)
@@ -380,7 +377,7 @@ func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id st
 		return nil, resp, err
 	}
 
-	if tfexporter_state.IsExporterActive() && policy != nil {
+	if policy != nil {
 		rc.SetCache(userVoicemailPolicyCache, id, *policy)
 		log.Printf("[USER-CACHE] User %s: cached voicemail policy", id)
 	}

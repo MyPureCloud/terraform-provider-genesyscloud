@@ -11,7 +11,6 @@ import (
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -45,11 +44,9 @@ func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bo
 
 func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
 	cacheKey := queueMembersCacheKey(queueID, memberBy)
-	if tfexporter_state.IsExporterActive() {
-		if cached := rc.GetCacheItem(queueMembersCache, cacheKey); cached != nil {
-			log.Printf("[MEMBER-CACHE] Queue %s (%s): cache hit (%d members)", queueID, memberBy, len(*cached))
-			return *cached, nil
-		}
+	if cached := rc.GetCacheItem(queueMembersCache, cacheKey); cached != nil {
+		log.Printf("[MEMBER-CACHE] Queue %s (%s): cache hit (%d members)", queueID, memberBy, len(*cached))
+		return *cached, nil
 	}
 
 	members, apiCalls, diagErr := fetchRoutingQueueMembers(queueID, memberBy, sdkConfig)
@@ -57,11 +54,8 @@ func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platform
 		return nil, diagErr
 	}
 
-	if tfexporter_state.IsExporterActive() {
-		rc.SetCache(queueMembersCache, cacheKey, members)
-		log.Printf("[MEMBER-CACHE] Queue %s (%s): cached %d members (%d API calls)", queueID, memberBy, len(members), apiCalls)
-	}
-
+	rc.SetCache(queueMembersCache, cacheKey, members)
+	log.Printf("[MEMBER-CACHE] Queue %s (%s): cached %d members (%d API calls)", queueID, memberBy, len(members), apiCalls)
 	return members, nil
 }
 

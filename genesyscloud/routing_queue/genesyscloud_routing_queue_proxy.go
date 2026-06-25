@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -36,9 +35,7 @@ func routingQueueListCacheKey(name string, hasPeer bool) string {
 }
 
 func invalidateRoutingQueueListCache() {
-	if tfexporter_state.IsExporterActive() {
-		routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
-	}
+	routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
 }
 
 func storeRoutingQueueInCache(cache rc.CacheInterface[platformclientv2.Queue], queue *platformclientv2.Queue) {
@@ -319,11 +316,9 @@ func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID str
 func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, queueId string) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	if tfexporter_state.IsExporterActive() {
-		if cached := rc.GetCacheItem(queueWrapupCodesCache, queueId); cached != nil {
-			log.Printf("[WRAPUP-CACHE] Queue %s: cache hit (%d wrapup codes)", queueId, len(*cached))
-			return cached, nil, nil
-		}
+	if cached := rc.GetCacheItem(queueWrapupCodesCache, queueId); cached != nil {
+		log.Printf("[WRAPUP-CACHE] Queue %s: cache hit (%d wrapup codes)", queueId, len(*cached))
+		return cached, nil, nil
 	}
 
 	assignments, apiResponse, apiCalls, err := fetchQueueWrapupCodeAssignments(ctx, p.routingApi, queueId)
@@ -331,11 +326,8 @@ func getAllRoutingQueueWrapupCodesFn(ctx context.Context, p *RoutingQueueProxy, 
 		return nil, apiResponse, err
 	}
 
-	if tfexporter_state.IsExporterActive() {
-		rc.SetCache(queueWrapupCodesCache, queueId, assignments)
-		log.Printf("[WRAPUP-CACHE] Queue %s: cached %d wrapup codes (%d API calls)", queueId, len(assignments), apiCalls)
-	}
-
+	rc.SetCache(queueWrapupCodesCache, queueId, assignments)
+	log.Printf("[WRAPUP-CACHE] Queue %s: cached %d wrapup codes (%d API calls)", queueId, len(assignments), apiCalls)
 	return &assignments, apiResponse, nil
 }
 

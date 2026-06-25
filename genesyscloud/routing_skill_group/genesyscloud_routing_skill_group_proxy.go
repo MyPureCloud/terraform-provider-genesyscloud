@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
-// Export-time resource caching (resource_cache + tfexporter_state) is intentionally not used here.
+// Export-time resource caching is intentionally not used here.
 // GET /api/v2/routing/skillgroups returns Skillgroupdefinition entities, while
 // GET /api/v2/routing/skillgroups/{id} returns Skillgroup with additional fields such as
 // skillConditions and status. A shared per-ID cache cannot safely merge or substitute between
