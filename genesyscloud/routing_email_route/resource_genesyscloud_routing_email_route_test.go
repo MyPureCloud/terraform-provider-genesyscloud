@@ -269,6 +269,114 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 	})
 }
 
+func TestAccResourceRoutingEmailRouteSignature(t *testing.T) {
+	var (
+		domainResourceLabel = "routing-domain-sig"
+		domainId            = fmt.Sprintf("terraformroutes.%s.com", strings.ReplaceAll(uuid.NewString(), "-", ""))
+		routeResourceLabel  = "email-route-sig"
+		routePattern        = "terraformsig" + strings.ReplaceAll(uuid.NewString(), "-", "")[:8]
+		fromName            = "Sig Terraform"
+		fromEmail           = "sig@test.com"
+
+		// initial signature values
+		sigEnabled1       = true
+		sigCannedRespId1  = uuid.NewString()
+		sigAlwaysIncl1    = false
+		sigInclusionType1 = "Always"
+
+		// updated signature values
+		sigEnabled2       = false
+		sigCannedRespId2  = uuid.NewString()
+		sigAlwaysIncl2    = true
+		sigInclusionType2 = "FirstResponseOnly"
+	)
+
+	CleanupRoutingEmailDomains()
+
+	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.ReplaceAll(uuid.NewString(), "-", ""))
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		Steps: []resource.TestStep{
+			{
+				// Create route with a signature block
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
+					domainId,
+					util.FalseValue,
+					util.NullValue,
+				) + GenerateRoutingEmailRouteResource(
+					routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					routePattern,
+					fromName,
+					fmt.Sprintf("from_email = \"%s\"", fromEmail),
+					generateRoutingSignature(sigEnabled1, sigCannedRespId1, sigAlwaysIncl1, sigInclusionType1),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "pattern", routePattern),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "from_name", fromName),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "from_email", fromEmail),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.enabled", fmt.Sprintf("%t", sigEnabled1)),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.canned_response_id", sigCannedRespId1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.always_included", fmt.Sprintf("%t", sigAlwaysIncl1)),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.inclusion_type", sigInclusionType1),
+				),
+			},
+			{
+				// Update signature values
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
+					domainId,
+					util.FalseValue,
+					util.NullValue,
+				) + GenerateRoutingEmailRouteResource(
+					routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					routePattern,
+					fromName,
+					fmt.Sprintf("from_email = \"%s\"", fromEmail),
+					generateRoutingSignature(sigEnabled2, sigCannedRespId2, sigAlwaysIncl2, sigInclusionType2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.enabled", fmt.Sprintf("%t", sigEnabled2)),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.canned_response_id", sigCannedRespId2),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.always_included", fmt.Sprintf("%t", sigAlwaysIncl2)),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.inclusion_type", sigInclusionType2),
+				),
+			},
+			{
+				// Remove signature block entirely
+				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
+					domainResourceLabel,
+					domainId,
+					util.FalseValue,
+					util.NullValue,
+				) + GenerateRoutingEmailRouteResource(
+					routeResourceLabel,
+					"genesyscloud_routing_email_domain."+domainResourceLabel+".id",
+					routePattern,
+					fromName,
+					fmt.Sprintf("from_email = \"%s\"", fromEmail),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "pattern", routePattern),
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_email_route."+routeResourceLabel, "signature.0.enabled"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:        "genesyscloud_routing_email_route." + routeResourceLabel,
+				ImportState:         true,
+				ImportStateVerify:   true,
+				ImportStateIdPrefix: domainId + "/",
+			},
+		},
+		CheckDestroy: testVerifyRoutingEmailRouteDestroyed,
+	})
+}
+
 func generateRoutingEmailQueueSettings(
 	queueId string,
 	priority string,
@@ -312,6 +420,21 @@ func generateRoutingReplyEmail(
         }
 	`, domainID, routeID)
 	}
+}
+
+func generateRoutingSignature(
+	enabled bool,
+	cannedResponseId string,
+	alwaysIncluded bool,
+	inclusionType string) string {
+	return fmt.Sprintf(`
+        signature {
+            enabled            = %t
+            canned_response_id = "%s"
+            always_included    = %t
+            inclusion_type     = "%s"
+        }
+	`, enabled, cannedResponseId, alwaysIncluded, inclusionType)
 }
 
 func testVerifyRoutingEmailRouteDestroyed(state *terraform.State) error {
