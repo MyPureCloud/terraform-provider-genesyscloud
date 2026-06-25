@@ -51,14 +51,16 @@ func createKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
 	coreLanguage := d.Get("core_language").(string)
+	contentSearchEnabled := d.Get("content_search_enabled").(bool)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	knowledgebaseProxy := GetKnowledgebaseProxy(sdkConfig)
 
-	knowledgebaseRequest := &platformclientv2.Knowledgebasecreaterequest{
-		Name:         &name,
-		Description:  &description,
-		CoreLanguage: &coreLanguage,
+	knowledgebaseRequest := &knowledgebaseCreateRequest{
+		Name:                 &name,
+		Description:          &description,
+		CoreLanguage:         &coreLanguage,
+		ContentSearchEnabled: &contentSearchEnabled,
 	}
 
 	log.Printf("Creating knowledge base %s", name)
@@ -93,6 +95,7 @@ func readKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "description", knowledgeBase.Description)
 		resourcedata.SetNillableValue(d, "core_language", knowledgeBase.CoreLanguage)
 		resourcedata.SetNillableValue(d, "published", knowledgeBase.Published)
+		resourcedata.SetNillableValue(d, "content_search_enabled", knowledgeBase.ContentSearchEnabled)
 		log.Printf("Read knowledge base %s %s", d.Id(), *knowledgeBase.Name)
 		return cc.CheckState(d)
 	})
