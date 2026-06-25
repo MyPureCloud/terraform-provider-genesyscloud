@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
@@ -120,6 +120,67 @@ status_transition_delay_seconds = "%s"
 		%s
 	}
 `, resourceLabel, workTypeId, statusId, defaultDestinationStatusId, destinationStatusId, delaySeconds, strings.Join(attrs, "\n"))
+}
+
+func GenerateWorkTypeStatusResourceTransitionWithoutAutoTransition(
+	resourceLabel,
+	workTypeId,
+	statusId,
+	destinationStatusId string,
+	attrs ...string,
+) string {
+	return fmt.Sprintf(
+		`resource "genesyscloud_task_management_worktype_status_transition" "%s" {
+		worktype_id = %s
+		status_id = %s
+		destination_status_ids = [%s]
+		%s
+	}
+`, resourceLabel, workTypeId, statusId, destinationStatusId, strings.Join(attrs, "\n"))
+}
+
+func buildWorkitemStatusTransitionPatch(d *schema.ResourceData, workitemStatus *platformclientv2.Workitemstatus, destinationStatusIds *[]string, defaultDestinationStatusId *string, isCreate bool) *Workitemstatusupdate {
+	body := &Workitemstatusupdate{}
+	body.SetField("Name", workitemStatus.Name)
+	body.SetField("Description", workitemStatus.Description)
+	body.SetField("DestinationStatusIds", destinationStatusIds)
+
+	if defaultDestinationStatusId != nil {
+		body.SetField("DefaultDestinationStatusId", defaultDestinationStatusId)
+	} else {
+		setOptionalStringPatchField(d, body, "default_destination_status_id", "DefaultDestinationStatusId", isCreate)
+	}
+
+	setOptionalIntPatchField(d, body, "status_transition_delay_seconds", "StatusTransitionDelaySeconds", isCreate)
+	setOptionalStringPatchField(d, body, "status_transition_time", "StatusTransitionTime", isCreate)
+
+	return body
+}
+
+func setOptionalStringPatchField(d *schema.ResourceData, body *Workitemstatusupdate, key string, fieldName string, isCreate bool) {
+	if value, ok := d.GetOk(key); ok {
+		v := value.(string)
+		if v != "" {
+			body.SetField(fieldName, &v)
+			return
+		}
+	}
+
+	if !isCreate && d.HasChange(key) {
+		body.SetField(fieldName, nil)
+	}
+}
+
+func setOptionalIntPatchField(d *schema.ResourceData, body *Workitemstatusupdate, key string, fieldName string, isCreate bool) {
+	if value, ok := d.GetOk(key); ok {
+		v := value.(int)
+		body.SetField(fieldName, &v)
+		return
+	}
+
+	if !isCreate && d.HasChange(key) {
+		body.SetField(fieldName, nil)
+	}
 }
 
 func GenerateWorktypeStatusResourceWithDependsOn(

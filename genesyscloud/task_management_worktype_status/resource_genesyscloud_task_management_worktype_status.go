@@ -72,7 +72,6 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
 		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
-		AutoTerminateWorkitem:        platformclientv2.Bool(d.Get("auto_terminate_workitem").(bool)),
 	}
 
 	err := validateSchema(d)
@@ -123,6 +122,13 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	}
 
 	d.SetId(worktypeId + "/" + *workitemStatus.Id)
+
+	if autoTerminate := resourcedata.GetNillableBool(d, "auto_terminate_workitem"); autoTerminate != nil {
+		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusAutoTerminate(ctx, worktypeId, *workitemStatus.Id, *autoTerminate)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s auto_terminate_workitem: %s", worktypeId, *workitemStatus.Id, err), resp)
+		}
+	}
 
 	// Check if we need to set this status as the default status on the worktype
 	if d.Get("default").(bool) {
@@ -210,7 +216,6 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
 		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
 		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
-		AutoTerminateWorkitem:        platformclientv2.Bool(d.Get("auto_terminate_workitem").(bool)),
 	}
 
 	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
@@ -239,6 +244,13 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		if err == nil {
 			return nil
 		}
+		// When only auto_terminate_workitem changed, the SDK update omits false and the API may return no change.
+		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "No change for the record is obtained") && d.HasChange("auto_terminate_workitem") {
+			workitemStatus, resp, err = proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
+			if err == nil {
+				return nil
+			}
+		}
 		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
 		// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
@@ -252,6 +264,26 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 
 	if diags.HasError() {
 		return
+	}
+
+	if autoTerminate := resourcedata.GetNillableBool(d, "auto_terminate_workitem"); autoTerminate != nil && d.HasChange("auto_terminate_workitem") {
+		diags = append(diags, util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+			workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusAutoTerminate(ctx, worktypeId, statusId, *autoTerminate)
+			if err == nil {
+				return nil
+			}
+			builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s auto_terminate_workitem: %s", worktypeId, statusId, err), resp)
+			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
+				return retry.RetryableError(builtDiagErr)
+			}
+			if util.IsStatus409(resp) {
+				return retry.RetryableError(builtDiagErr)
+			}
+			return retry.NonRetryableError(builtDiagErr)
+		})...)
+		if diags.HasError() {
+			return
+		}
 	}
 
 	// Check if we need to set this status as the default status on the worktype
