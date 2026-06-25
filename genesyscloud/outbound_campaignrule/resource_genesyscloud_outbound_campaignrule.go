@@ -41,6 +41,10 @@ func createOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 
+	if err := validateCampaignRuleBeforeAPICall(d); err != nil {
+		return diag.FromErr(err)
+	}
+
 	rule := getCampaignruleFromResourceData(d)
 
 	log.Printf("Creating Outbound Campaign Rule %s", *rule.Name)
@@ -68,6 +72,10 @@ func updateOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, met
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundCampaignruleProxy(sdkConfig)
 	enabled := d.Get("enabled").(bool)
+
+	if err := validateCampaignRuleBeforeAPICall(d); err != nil {
+		return diag.FromErr(err)
+	}
 
 	rule := getCampaignruleFromResourceData(d)
 	if enabled {
@@ -111,6 +119,7 @@ func readOutboundCampaignRule(ctx context.Context, d *schema.ResourceData, meta 
 		resourcedata.SetNillableValue(d, "match_any_conditions", campaignRule.MatchAnyConditions)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "execution_settings", campaignRule.ExecutionSettings, flattenExecutionSettings)
 		resourcedata.SetNillableValue(d, "enabled", campaignRule.Enabled)
+		resourcedata.SetNillableValue(d, "time_zone_id", campaignRule.TimeZoneId)
 
 		log.Printf("Read Outbound Campaign Rule %s %s", d.Id(), *campaignRule.Name)
 		return cc.CheckState(d)

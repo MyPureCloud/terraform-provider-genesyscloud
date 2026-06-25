@@ -1,6 +1,7 @@
 package outbound_campaignrule
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -9,6 +10,66 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
+
+// validateCampaignRuleBeforeAPICall validates that OBR-723 blocks (for_duration, date_time_parameters, etc.)
+// are not used in legacy campaign_rule_conditions. This runs at apply-time in Create/Update.
+// Uses a separate helper (validateNoTimeBasedConditionsInLegacyFromResourceData) because
+// ResourceData returns *schema.Set for TypeSet fields, unlike CustomizeDiff which uses []interface{}.
+func validateCampaignRuleBeforeAPICall(d *schema.ResourceData) error {
+	processing := d.Get("campaign_rule_processing").(string)
+	if processing == "v2" {
+		return nil // v2 mode allows all blocks
+	}
+
+	// Reuse the same validation as CustomizeDiff for legacy conditions
+	conditions := d.Get("campaign_rule_conditions").([]interface{})
+	return validateNoTimeBasedConditionsInLegacyFromResourceData(conditions)
+}
+
+// validateNoTimeBasedConditionsInLegacyFromResourceData is the apply-time version that handles
+// ResourceData types (*schema.Set for parameters) vs CustomizeDiff types ([]interface{}).
+func validateNoTimeBasedConditionsInLegacyFromResourceData(conditions []interface{}) error {
+	v2OnlyConditionTypes := map[string]bool{
+		"timeOfDay":        true,
+		"dayOfWeek":        true,
+		"dayOfMonth":       true,
+		"specificDate":     true,
+		"weekDayOfMonth":   true,
+		"campaignRunTime":  true,
+		"campaignWaitTime": true,
+	}
+
+	for i, c := range conditions {
+		if c == nil {
+			continue
+		}
+		condMap := c.(map[string]interface{})
+		condType, _ := condMap["condition_type"].(string)
+
+		if v2OnlyConditionTypes[condType] {
+			return fmt.Errorf("campaign_rule_conditions[%d]: condition_type %q requires campaign_rule_processing = \"v2\" with condition_groups", i, condType)
+		}
+		if v, ok := condMap["date_time_parameters"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			return fmt.Errorf("campaign_rule_conditions[%d]: date_time_parameters is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
+		}
+		if v, ok := condMap["campaign_run_time_settings"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			return fmt.Errorf("campaign_rule_conditions[%d]: campaign_run_time_settings is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
+		}
+		if v, ok := condMap["campaign_wait_time_settings"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			return fmt.Errorf("campaign_rule_conditions[%d]: campaign_wait_time_settings is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
+		}
+
+		// Check for_duration in parameters
+		params := condMap["parameters"].(*schema.Set)
+		if params != nil && params.Len() > 0 {
+			paramsMap := params.List()[0].(map[string]interface{})
+			if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+				return fmt.Errorf("campaign_rule_conditions[%d]: for_duration is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
+			}
+		}
+	}
+	return nil
+}
 
 func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Campaignrule {
 	matchAnyConditions := d.Get("match_any_conditions").(bool)
@@ -34,6 +95,9 @@ func getCampaignruleFromResourceData(d *schema.ResourceData) platformclientv2.Ca
 		if firstElement := v.([]interface{})[0]; firstElement != nil {
 			campaignRule.ExecutionSettings = buildExecutionSettings(firstElement.(map[string]interface{}))
 		}
+	}
+	if v, ok := d.GetOk("time_zone_id"); ok && v.(string) != "" {
+		campaignRule.TimeZoneId = platformclientv2.String(v.(string))
 	}
 
 	return campaignRule
@@ -86,6 +150,24 @@ func buildCampaignRuleConditions(campaignRuleConditions []interface{}) *[]platfo
 		sdkCondition.Parameters = buildCampaignRuleParameters(conditionMap["parameters"].(*schema.Set))
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.Id, conditionMap, "id")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkCondition.ConditionType, conditionMap, "condition_type")
+
+		if v, ok := conditionMap["date_time_parameters"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			sdkCondition.DateTimeParameters = buildDateTimeParameters(v[0].(map[string]interface{}))
+		}
+		if v, ok := conditionMap["campaign_run_time_settings"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			m := v[0].(map[string]interface{})
+			includeWaiting := m["include_waiting_time"].(bool)
+			sdkCondition.CampaignRunTimeSettings = &platformclientv2.Campaignrulecampaignruntimesettings{
+				IncludeWaitingTime: &includeWaiting,
+			}
+		}
+		if v, ok := conditionMap["campaign_wait_time_settings"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			m := v[0].(map[string]interface{})
+			waitType := m["wait_type"].(string)
+			sdkCondition.CampaignWaitTimeSettings = &platformclientv2.Campaignrulecampaignwaittimesettings{
+				WaitType: &waitType,
+			}
+		}
 
 		campaignRuleConditionSlice = append(campaignRuleConditionSlice, sdkCondition)
 	}
@@ -191,6 +273,14 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 	sdkCampaignRuleParameters.EmailContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "email_content_template_id")
 	sdkCampaignRuleParameters.SmsContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "sms_content_template_id")
 
+	if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		durationMap := v[0].(map[string]interface{})
+		seconds := durationMap["seconds"].(int)
+		sdkCampaignRuleParameters.ForDuration = &platformclientv2.Duration{
+			Seconds: &seconds,
+		}
+	}
+
 	return &sdkCampaignRuleParameters
 }
 
@@ -289,6 +379,20 @@ func flattenCampaignRuleConditions(campaignRuleConditions *[]platformclientv2.Ca
 		resourcedata.SetMapValueIfNotNil(campaignRuleConditionsMap, "id", currentSdkCondition.Id)
 		resourcedata.SetMapValueIfNotNil(campaignRuleConditionsMap, "condition_type", currentSdkCondition.ConditionType)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(campaignRuleConditionsMap, "parameters", currentSdkCondition.Parameters, flattenRuleParameters)
+
+		if currentSdkCondition.DateTimeParameters != nil {
+			campaignRuleConditionsMap["date_time_parameters"] = flattenDateTimeParameters(currentSdkCondition.DateTimeParameters)
+		}
+		if currentSdkCondition.CampaignRunTimeSettings != nil {
+			m := make(map[string]interface{})
+			resourcedata.SetMapValueIfNotNil(m, "include_waiting_time", currentSdkCondition.CampaignRunTimeSettings.IncludeWaitingTime)
+			campaignRuleConditionsMap["campaign_run_time_settings"] = []interface{}{m}
+		}
+		if currentSdkCondition.CampaignWaitTimeSettings != nil {
+			m := make(map[string]interface{})
+			resourcedata.SetMapValueIfNotNil(m, "wait_type", currentSdkCondition.CampaignWaitTimeSettings.WaitType)
+			campaignRuleConditionsMap["campaign_wait_time_settings"] = []interface{}{m}
+		}
 
 		ruleConditionList = append(ruleConditionList, campaignRuleConditionsMap)
 	}
@@ -423,5 +527,242 @@ func flattenRuleParameters(params *platformclientv2.Campaignruleparameters) []in
 		paramsMap["email_messages_per_minute"] = strconv.Itoa(*params.EmailMessagesPerMinute)
 	}
 
+	if params.ForDuration != nil {
+		paramsMap["for_duration"] = flattenForDuration(params.ForDuration)
+	}
+
 	return []interface{}{paramsMap}
+}
+
+func buildDateTimeParameters(m map[string]interface{}) *platformclientv2.Campaignruledatetimeconditionparameters {
+	sdk := &platformclientv2.Campaignruledatetimeconditionparameters{}
+
+	if v, ok := m["inverted"].(bool); ok {
+		sdk.Inverted = &v
+	}
+
+	if v, ok := m["time_of_day"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		todMap := v[0].(map[string]interface{})
+		tod := &platformclientv2.Campaignruletimeofdayparameters{}
+		resourcedata.BuildSDKStringValueIfNotNil(&tod.ThresholdValue, todMap, "threshold_value")
+		if interval, ok := todMap["interval"].([]interface{}); ok && len(interval) > 0 && interval[0] != nil {
+			iMap := interval[0].(map[string]interface{})
+			min := iMap["min"].(string)
+			max := iMap["max"].(string)
+			tod.Interval = &platformclientv2.Campaignruletimeofdayinterval{Min: &min, Max: &max}
+		}
+		sdk.TimeOfDay = tod
+	}
+
+	if v, ok := m["day_of_week"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		dowMap := v[0].(map[string]interface{})
+		dow := &platformclientv2.Campaignruledayofweekparameters{}
+		if inSet, ok := dowMap["in_set"].([]interface{}); ok && len(inSet) > 0 {
+			ints := make([]int, len(inSet))
+			for i, val := range inSet {
+				ints[i] = val.(int)
+			}
+			dow.InSet = &ints
+		}
+		if interval, ok := dowMap["interval"].([]interface{}); ok && len(interval) > 0 && interval[0] != nil {
+			iMap := interval[0].(map[string]interface{})
+			min := iMap["min"].(int)
+			max := iMap["max"].(int)
+			dow.Interval = &platformclientv2.Campaignruledayofweekinterval{Min: &min, Max: &max}
+		}
+		sdk.DayOfWeek = dow
+	}
+
+	if v, ok := m["day_of_month"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		domMap := v[0].(map[string]interface{})
+		dom := &platformclientv2.Campaignruledayofmonthparameters{}
+		resourcedata.BuildSDKStringValueIfNotNil(&dom.ThresholdValue, domMap, "threshold_value")
+		if inSet, ok := domMap["in_set"].([]interface{}); ok && len(inSet) > 0 {
+			strs := make([]string, len(inSet))
+			for i, val := range inSet {
+				strs[i] = val.(string)
+			}
+			dom.InSet = &strs
+		}
+		if interval, ok := domMap["interval"].([]interface{}); ok && len(interval) > 0 && interval[0] != nil {
+			iMap := interval[0].(map[string]interface{})
+			min := iMap["min"].(string)
+			max := iMap["max"].(string)
+			dom.Interval = &platformclientv2.Campaignruledayofmonthinterval{Min: &min, Max: &max}
+		}
+		sdk.DayOfMonth = dom
+	}
+
+	if v, ok := m["specific_date"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		sdMap := v[0].(map[string]interface{})
+		sd := &platformclientv2.Campaignrulespecificdateparameters{}
+		if includeYear, ok := sdMap["include_year"].(bool); ok {
+			sd.IncludeYear = &includeYear
+		}
+		resourcedata.BuildSDKStringValueIfNotNil(&sd.ThresholdValue, sdMap, "threshold_value")
+		if interval, ok := sdMap["interval"].([]interface{}); ok && len(interval) > 0 && interval[0] != nil {
+			iMap := interval[0].(map[string]interface{})
+			min := iMap["min"].(string)
+			max := iMap["max"].(string)
+			sd.Interval = &platformclientv2.Campaignrulespecificdateinterval{Min: &min, Max: &max}
+		}
+		sdk.SpecificDate = sd
+	}
+
+	if v, ok := m["week_day_of_month"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		wdomMap := v[0].(map[string]interface{})
+		wdom := &platformclientv2.Campaignruleweekdayofmonthparameters{}
+		if tv, ok := wdomMap["threshold_value"].([]interface{}); ok && len(tv) > 0 && tv[0] != nil {
+			wdom.ThresholdValue = buildWeekDayOfMonth(tv[0].(map[string]interface{}))
+		}
+		if interval, ok := wdomMap["interval"].([]interface{}); ok && len(interval) > 0 && interval[0] != nil {
+			iMap := interval[0].(map[string]interface{})
+			sdkInterval := &platformclientv2.Campaignruleweekdayofmonthinterval{}
+			if minList, ok := iMap["min"].([]interface{}); ok && len(minList) > 0 && minList[0] != nil {
+				sdkInterval.Min = buildWeekDayOfMonth(minList[0].(map[string]interface{}))
+			}
+			if maxList, ok := iMap["max"].([]interface{}); ok && len(maxList) > 0 && maxList[0] != nil {
+				sdkInterval.Max = buildWeekDayOfMonth(maxList[0].(map[string]interface{}))
+			}
+			wdom.Interval = sdkInterval
+		}
+		sdk.WeekDayOfMonth = wdom
+	}
+
+	return sdk
+}
+
+func buildWeekDayOfMonth(m map[string]interface{}) *platformclientv2.Campaignruleweekdayofmonth {
+	sdk := &platformclientv2.Campaignruleweekdayofmonth{}
+	if v, ok := m["day_of_week"].(int); ok && v != 0 {
+		sdk.DayOfWeek = &v
+	}
+	if v, ok := m["month"].(int); ok && v != 0 {
+		sdk.Month = &v
+	}
+	if v, ok := m["occurrence"].(int); ok && v != 0 {
+		sdk.Occurrence = &v
+	}
+	return sdk
+}
+
+func flattenDateTimeParameters(sdk *platformclientv2.Campaignruledatetimeconditionparameters) []interface{} {
+	if sdk == nil {
+		return nil
+	}
+	m := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(m, "inverted", sdk.Inverted)
+
+	if sdk.TimeOfDay != nil {
+		tod := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(tod, "threshold_value", sdk.TimeOfDay.ThresholdValue)
+		if sdk.TimeOfDay.Interval != nil {
+			tod["interval"] = []interface{}{map[string]interface{}{
+				"min": nilToEmpty(sdk.TimeOfDay.Interval.Min),
+				"max": nilToEmpty(sdk.TimeOfDay.Interval.Max),
+			}}
+		}
+		m["time_of_day"] = []interface{}{tod}
+	}
+
+	if sdk.DayOfWeek != nil {
+		dow := make(map[string]interface{})
+		if sdk.DayOfWeek.InSet != nil {
+			dow["in_set"] = *sdk.DayOfWeek.InSet
+		}
+		if sdk.DayOfWeek.Interval != nil {
+			dow["interval"] = []interface{}{map[string]interface{}{
+				"min": derefInt(sdk.DayOfWeek.Interval.Min),
+				"max": derefInt(sdk.DayOfWeek.Interval.Max),
+			}}
+		}
+		m["day_of_week"] = []interface{}{dow}
+	}
+
+	if sdk.DayOfMonth != nil {
+		dom := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(dom, "threshold_value", sdk.DayOfMonth.ThresholdValue)
+		if sdk.DayOfMonth.InSet != nil {
+			dom["in_set"] = *sdk.DayOfMonth.InSet
+		}
+		if sdk.DayOfMonth.Interval != nil {
+			dom["interval"] = []interface{}{map[string]interface{}{
+				"min": nilToEmpty(sdk.DayOfMonth.Interval.Min),
+				"max": nilToEmpty(sdk.DayOfMonth.Interval.Max),
+			}}
+		}
+		m["day_of_month"] = []interface{}{dom}
+	}
+
+	if sdk.SpecificDate != nil {
+		sd := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(sd, "include_year", sdk.SpecificDate.IncludeYear)
+		resourcedata.SetMapValueIfNotNil(sd, "threshold_value", sdk.SpecificDate.ThresholdValue)
+		if sdk.SpecificDate.Interval != nil {
+			sd["interval"] = []interface{}{map[string]interface{}{
+				"min": nilToEmpty(sdk.SpecificDate.Interval.Min),
+				"max": nilToEmpty(sdk.SpecificDate.Interval.Max),
+			}}
+		}
+		m["specific_date"] = []interface{}{sd}
+	}
+
+	if sdk.WeekDayOfMonth != nil {
+		wdom := make(map[string]interface{})
+		if sdk.WeekDayOfMonth.ThresholdValue != nil {
+			wdom["threshold_value"] = []interface{}{flattenWeekDayOfMonth(sdk.WeekDayOfMonth.ThresholdValue)}
+		}
+		if sdk.WeekDayOfMonth.Interval != nil {
+			intervalMap := make(map[string]interface{})
+			if sdk.WeekDayOfMonth.Interval.Min != nil {
+				intervalMap["min"] = []interface{}{flattenWeekDayOfMonth(sdk.WeekDayOfMonth.Interval.Min)}
+			}
+			if sdk.WeekDayOfMonth.Interval.Max != nil {
+				intervalMap["max"] = []interface{}{flattenWeekDayOfMonth(sdk.WeekDayOfMonth.Interval.Max)}
+			}
+			wdom["interval"] = []interface{}{intervalMap}
+		}
+		m["week_day_of_month"] = []interface{}{wdom}
+	}
+
+	return []interface{}{m}
+}
+
+func flattenWeekDayOfMonth(sdk *platformclientv2.Campaignruleweekdayofmonth) map[string]interface{} {
+	m := make(map[string]interface{})
+	if sdk.DayOfWeek != nil {
+		m["day_of_week"] = *sdk.DayOfWeek
+	}
+	if sdk.Month != nil {
+		m["month"] = *sdk.Month
+	}
+	if sdk.Occurrence != nil {
+		m["occurrence"] = *sdk.Occurrence
+	}
+	return m
+}
+
+func flattenForDuration(sdk *platformclientv2.Duration) []interface{} {
+	if sdk == nil {
+		return nil
+	}
+	m := make(map[string]interface{})
+	if sdk.Seconds != nil {
+		m["seconds"] = *sdk.Seconds
+	}
+	return []interface{}{m}
+}
+
+func nilToEmpty(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func derefInt(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
 }
