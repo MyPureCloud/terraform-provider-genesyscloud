@@ -33,7 +33,7 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, "Failed to get routing email route", respCode)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route error: %s", err), respCode)
 	}
 
 	if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
