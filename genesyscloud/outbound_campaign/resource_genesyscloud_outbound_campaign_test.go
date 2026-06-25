@@ -192,7 +192,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Cloud",
 		false,
-		util.AssignRegion(),
+		"[\"us-east-1\"]",
 		util.NullValue,
 		util.NullValue,
 	) + fmt.Sprintf(`
@@ -611,7 +611,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Cloud",
 		false,
-		util.AssignRegion(),
+		"[\"us-east-1\"]",
 		util.NullValue,
 		util.NullValue,
 	) + "\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"
