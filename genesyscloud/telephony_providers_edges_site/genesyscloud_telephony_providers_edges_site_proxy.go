@@ -37,7 +37,7 @@ var internalProxy *SiteProxy
 
 var (
 	unmanagedSiteCache = rc.NewResourceCache[platformclientv2.Site]()
-	managedSiteCache = rc.NewResourceCache[platformclientv2.Site]()
+	managedSiteCache   = rc.NewResourceCache[platformclientv2.Site]()
 )
 
 // Type definitions for each func on our proxy so we can easily mock them out later

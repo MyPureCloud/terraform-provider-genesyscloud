@@ -59,7 +59,7 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newRoutingWrapupcodeProxy(clientConfig *platformclientv2.Configuration) *routingWrapupcodeProxy {
-	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)                 // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+	api := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 
 	return &routingWrapupcodeProxy{
 		clientConfig:                     clientConfig,

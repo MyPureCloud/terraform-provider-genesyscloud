@@ -72,7 +72,7 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *Int
 		updateIntegrationCredAttr:        updateIntegrationCredFn,
 		deleteIntegrationCredAttr:        deleteIntegrationCredFn,
 		getIntegrationByCredentialIdAttr: getIntegrationByCredentialIdFn,
-		integrationCache: integrationCache,
+		integrationCache:                 integrationCache,
 	}
 }
 

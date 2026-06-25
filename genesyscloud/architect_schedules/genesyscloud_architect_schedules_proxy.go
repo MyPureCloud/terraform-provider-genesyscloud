@@ -60,7 +60,7 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *architectSchedulesProxy {
-	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)    // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+	api := platformclientv2.NewArchitectApiWithConfig(clientConfig) // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
 
 	return &architectSchedulesProxy{
 		clientConfig:                      clientConfig,

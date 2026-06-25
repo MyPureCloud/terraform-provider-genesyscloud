@@ -21,9 +21,9 @@ import (
 var internalProxy *knowledgeDocumentProxy
 
 var (
-	knowledgeDocumentCache = rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
-	knowledgeLabelCache = rc.NewResourceCache[platformclientv2.Labelresponse]()
-	knowledgeCategoryCache = rc.NewResourceCache[platformclientv2.Categoryresponse]()
+	knowledgeDocumentCache  = rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
+	knowledgeLabelCache     = rc.NewResourceCache[platformclientv2.Labelresponse]()
+	knowledgeCategoryCache  = rc.NewResourceCache[platformclientv2.Categoryresponse]()
 	knowledgeVariationCache = rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
 )
 
