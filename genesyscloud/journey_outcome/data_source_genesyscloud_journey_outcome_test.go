@@ -1,9 +1,10 @@
 package journey_outcome
 
 import (
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func TestAccDataSourceJourneyOutcome(t *testing.T) {
+	// Reached end of life, not supported anymore
+	t.Skip("Reached end of life, not supported anymore")
 	runDataJourneyOutcomeTestCase(t, "find_by_name")
 }
 
