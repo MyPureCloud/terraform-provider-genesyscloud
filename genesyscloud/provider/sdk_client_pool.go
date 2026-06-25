@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,9 +29,9 @@ const (
 	// Default pool settings
 	DefaultMaxClients = 10
 	MinClients        = 1
-	MaxClients        = 20
+	MaxClients        = 50
 
-	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
+	AbsoluteDynamicMaxClients = 50
 
 	// Logging intervals
 	MetricsLoggingInterval = 5 * time.Minute
@@ -55,11 +56,12 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	AcquireTimeout time.Duration
-	InitTimeout    time.Duration
-	MaxClients     int
-	DebugLogging   bool
-	Version        string
+	AcquireTimeout     time.Duration
+	InitTimeout        time.Duration
+	MaxClients         int
+	MaxConcurrentPages int
+	DebugLogging       bool
+	Version            string
 }
 
 type poolMetrics struct {
@@ -119,6 +121,17 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			max = v.(int)
 		}
 
+		// Scale HTTP connection limits with token pool size so concurrent exports can use all tokens.
+		if transport, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport.MaxIdleConns = max * 2
+			transport.MaxIdleConnsPerHost = max
+			transport.MaxConnsPerHost = max
+			log.Printf("HTTP transport configured for token_pool_size=%d: MaxIdleConnsPerHost=%d, MaxConnsPerHost=%d",
+				max, max, max)
+		} else {
+			log.Printf("WARN: Could not configure HTTP transport (not *http.Transport)")
+		}
+
 		// Get timeouts from provider config
 		acquireTimeout := DefaultAcquireTimeout
 		if v, ok := providerConfig.GetOk(AttrTokenAcquireTimeout); ok {
@@ -140,12 +153,15 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			initTimeout = parsed
 		}
 
+		maxConcurrentPages := providerConfig.Get(AttrMaxConcurrentPages).(int)
+
 		config := &SDKClientPoolConfig{
-			MaxClients:     max,
-			AcquireTimeout: acquireTimeout,
-			InitTimeout:    initTimeout,
-			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
-			Version:        version,
+			MaxClients:         max,
+			MaxConcurrentPages: maxConcurrentPages,
+			AcquireTimeout:     acquireTimeout,
+			InitTimeout:        initTimeout,
+			DebugLogging:       providerConfig.Get(AttrSdkClientPoolDebug).(bool),
+			Version:            version,
 		}
 
 		SdkClientPool = &SDKClientPool{
@@ -398,6 +414,16 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 	return nil, fmt.Errorf("failed to acquire client after %d attempts", maxRetries)
 }
 
+// Acquire acquires a client from the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Acquire(ctx context.Context) (*platformclientv2.Configuration, error) {
+	return p.acquire(ctx)
+}
+
+// Release releases a client back to the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Release(c *platformclientv2.Configuration) error {
+	return p.release(c)
+}
+
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 	if c == nil {
 		return fmt.Errorf("attempted to release a nil configuration ?!?")
@@ -431,6 +457,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 func (p *SDKClientPool) GetMaxClients() int {
 	return p.config.MaxClients
+}
+
+func (p *SDKClientPool) GetMaxConcurrentPages() int {
+	return p.config.MaxConcurrentPages
 }
 
 func cleanupConfiguration(config *platformclientv2.Configuration) error {

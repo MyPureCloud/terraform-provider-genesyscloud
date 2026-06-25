@@ -14,6 +14,17 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
 
+// normalizeAssetName converts Windows-style path separators to forward slashes
+// and strips drive letter prefixes (e.g., "C:/") to ensure cross-platform
+// compatibility with the Genesys Cloud API, which rejects backslashes and colons.
+func normalizeAssetName(name string) string {
+	name = strings.ReplaceAll(name, "\\", "/")
+	if len(name) >= 3 && name[1] == ':' && name[2] == '/' {
+		name = name[3:]
+	}
+	return name
+}
+
 func responsemanagementResponseassetResolver(responseAssetId, exportDirectory, subDirectory string, configMap map[string]interface{}, meta interface{}, resource resourceExporter.ResourceInfo) error {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRespManagementRespAssetProxy(sdkConfig)

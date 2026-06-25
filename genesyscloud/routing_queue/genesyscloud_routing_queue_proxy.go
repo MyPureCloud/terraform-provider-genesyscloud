@@ -151,7 +151,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allQueues []platformclientv2.Queue
-	const pageSize = 100
+	const pageSize = 500
 
 	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
 	if getErr != nil {
@@ -173,17 +173,29 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 
 	allQueues = append(allQueues, *queues.Entities...)
 
-	for pageNum := 2; pageNum <= *queues.PageCount; pageNum++ {
-		queues, resp, getErr = p.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
-		if getErr != nil {
-			return nil, resp, fmt.Errorf("failed to get page of queues: %v", getErr)
-		}
+	totalPages := 1
+	if queues.PageCount != nil {
+		totalPages = *queues.PageCount
+	}
 
-		if queues.Entities == nil || len(*queues.Entities) == 0 {
-			break
-		}
+	allQueues, resp, getErr = provider.FetchPagesConcurrently(ctx, ResourceType, allQueues, resp, totalPages, p.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newRoutingQueuesProxy(clientConfig)
+			pageQueues, pageResp, err := pageProxy.routingApi.GetRoutingQueues(pageNum, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
+			if err != nil {
+				return nil, pageResp, fmt.Errorf("failed to get page of queues: %w", err)
+			}
 
-		allQueues = append(allQueues, *queues.Entities...)
+			if pageQueues.Entities == nil || len(*pageQueues.Entities) == 0 {
+				return []platformclientv2.Queue{}, pageResp, nil
+			}
+
+			return *pageQueues.Entities, pageResp, nil
+		},
+	)
+	if getErr != nil {
+		return nil, resp, getErr
 	}
 
 	for _, queue := range allQueues {

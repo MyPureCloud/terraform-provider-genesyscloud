@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -111,6 +112,106 @@ func ValidateStatusIds(statusResource1 string, key1 string, statusResource2 stri
 			return fmt.Errorf("%s not equal to %s\n %s = %s\n %s = %s", attr1, attr2, attr1, status1KeyValue, attr2, status2KeyValue)
 		}
 
+		return nil
+	}
+}
+
+// WorktypeStatusRefResolver resolves a bare status ID to a proper Terraform reference
+// findMetaByStatusSuffix searches the SanitizedResourceMap for a composite key ending with "/<statusId>".
+// Returns the ResourceMeta if found, nil otherwise.
+func findMetaByStatusSuffix(idMetaMap resourceExporter.ResourceIDMetaMap, statusId string) *resourceExporter.ResourceMeta {
+	suffix := "/" + statusId
+	for compositeId, meta := range idMetaMap {
+		if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
+			return meta
+		}
+	}
+	return nil
+}
+
+// WorktypeStatusRefResolver resolves a bare status ID to a proper Terraform reference
+// by searching the worktype_status SanitizedResourceMap for a composite key ending with "/<statusId>".
+// This is needed because the worktype_status resource uses composite IDs (worktypeId/statusId)
+// as map keys, but other resources store only the bare statusId in their state.
+func WorktypeStatusRefResolver(attrName string) func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
+	return func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
+		statusIdRaw, ok := configMap[attrName]
+		if !ok || statusIdRaw == nil {
+			return nil
+		}
+
+		statusId, ok := statusIdRaw.(string)
+		if !ok || statusId == "" {
+			return nil
+		}
+
+		// If already resolved to a reference, skip
+		if strings.HasPrefix(statusId, "${") {
+			return nil
+		}
+
+		exporter := exporters[ResourceType]
+		if exporter == nil {
+			return nil
+		}
+
+		if exporter.SanitizedResourceMap == nil {
+			return nil
+		}
+
+		if meta := findMetaByStatusSuffix(exporter.SanitizedResourceMap, statusId); meta != nil {
+			configMap[attrName] = fmt.Sprintf("${%s.%s.id}", ResourceType, meta.BlockLabel)
+		}
+
+		return nil
+	}
+}
+
+// WorktypeStatusArrayRefResolver resolves bare status IDs in a list attribute to proper Terraform references.
+// Used for attributes like destination_status_ids which are arrays of status IDs.
+func WorktypeStatusArrayRefResolver(attrName string) func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
+	return func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
+		arrRaw, ok := configMap[attrName]
+		if !ok || arrRaw == nil {
+			return nil
+		}
+
+		arr, ok := arrRaw.([]interface{})
+		if !ok || len(arr) == 0 {
+			return nil
+		}
+
+		exporter := exporters[ResourceType]
+		if exporter == nil {
+			return nil
+		}
+
+		if exporter.SanitizedResourceMap == nil {
+			return nil
+		}
+
+		resolved := make([]interface{}, 0, len(arr))
+		for _, item := range arr {
+			statusId, ok := item.(string)
+			if !ok || statusId == "" {
+				resolved = append(resolved, item)
+				continue
+			}
+
+			// If already resolved to a reference, keep it
+			if strings.HasPrefix(statusId, "${") {
+				resolved = append(resolved, statusId)
+				continue
+			}
+
+			if meta := findMetaByStatusSuffix(exporter.SanitizedResourceMap, statusId); meta != nil {
+				resolved = append(resolved, fmt.Sprintf("${%s.%s.id}", ResourceType, meta.BlockLabel))
+			} else {
+				resolved = append(resolved, statusId)
+			}
+		}
+
+		configMap[attrName] = resolved
 		return nil
 	}
 }
