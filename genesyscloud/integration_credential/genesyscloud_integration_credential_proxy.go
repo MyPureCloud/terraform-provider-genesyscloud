@@ -34,6 +34,8 @@ Each proxy implementation:
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *IntegrationCredsProxy
 
+var integrationCache = rc.NewResourceCache[platformclientv2.Integration]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllIntegrationCredsFunc func(ctx context.Context, p *IntegrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
 type createIntegrationCredFunc func(ctx context.Context, p *IntegrationCredsProxy, createCredential *platformclientv2.Credential) (*platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
@@ -70,7 +72,7 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *Int
 		updateIntegrationCredAttr:        updateIntegrationCredFn,
 		deleteIntegrationCredAttr:        deleteIntegrationCredFn,
 		getIntegrationByCredentialIdAttr: getIntegrationByCredentialIdFn,
-		integrationCache:                 rc.NewResourceCache[platformclientv2.Integration](),
+		integrationCache: integrationCache,
 	}
 }
 

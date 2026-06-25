@@ -24,6 +24,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectSchedulesProxy
 
+var schedulesCache = rc.NewResourceCache[platformclientv2.Schedule]() // Create Cache for architect schedules resource
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createArchitectSchedulesFunc func(ctx context.Context, p *architectSchedulesProxy, schedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error)
 type getAllArchitectSchedulesFunc func(ctx context.Context, p *architectSchedulesProxy) (*[]platformclientv2.Schedule, *platformclientv2.APIResponse, error)
@@ -59,7 +61,7 @@ seamlessly with the Genesys Cloud platform.
 */
 func newArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *architectSchedulesProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)    // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
-	schedulesCache := rc.NewResourceCache[platformclientv2.Schedule]() // Create Cache for architect schedules resource
+
 	return &architectSchedulesProxy{
 		clientConfig:                      clientConfig,
 		architectApi:                      api,

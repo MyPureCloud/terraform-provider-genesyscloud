@@ -20,6 +20,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *journeyViewScheduleProxy
 
+var journeyViewScheduleCache = rc.NewResourceCache[platformclientv2.Journeyviewschedule]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getJourneyViewScheduleByViewIdFunc func(ctx context.Context, p *journeyViewScheduleProxy, viewId string) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error)
 type createJourneyViewScheduleFunc func(ctx context.Context, p *journeyViewScheduleProxy, viewId string, journeyViewSchedule *platformclientv2.Journeyviewschedule) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error)
@@ -42,7 +44,7 @@ type journeyViewScheduleProxy struct {
 // newJourneyViewScheduleProxy initializes the journey view schedule proxy with all the data needed to communicate with Genesys Cloud
 func newJourneyViewScheduleProxy(clientConfig *platformclientv2.Configuration) *journeyViewScheduleProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	journeyViewScheduleCache := rc.NewResourceCache[platformclientv2.Journeyviewschedule]()
+
 	return &journeyViewScheduleProxy{
 		clientConfig:                       clientConfig,
 		journeyViewsApi:                    api,

@@ -23,6 +23,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *routingWrapupcodeProxy
 
+var routingWrapupcodesCache = rc.NewResourceCache[platformclientv2.Wrapupcode]() // Create Cache for routing wrapupcode resource
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createRoutingWrapupcodeFunc func(ctx context.Context, p *routingWrapupcodeProxy, wrapupcode *platformclientv2.Wrapupcoderequest) (*platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error)
 type getAllRoutingWrapupcodeFunc func(ctx context.Context, p *routingWrapupcodeProxy) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error)
@@ -58,7 +60,7 @@ seamlessly with the Genesys Cloud platform.
 */
 func newRoutingWrapupcodeProxy(clientConfig *platformclientv2.Configuration) *routingWrapupcodeProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)                 // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
-	routingWrapupcodesCache := rc.NewResourceCache[platformclientv2.Wrapupcode]() // Create Cache for routing wrapupcode resource
+
 	return &routingWrapupcodeProxy{
 		clientConfig:                     clientConfig,
 		routingApi:                       api,

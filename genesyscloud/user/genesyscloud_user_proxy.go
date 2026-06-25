@@ -415,7 +415,7 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 		allPools = *rc.GetCache(p.extensionPoolCache)
 	} else if rc.GetCacheSize(p.extensionPoolCache) != *extensionPoolList.Total || rc.GetCacheSize(p.extensionPoolCache) != 0 {
 		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+		extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
 
 		allPools = append(allPools, *extensionPoolList.Entities...)
 
