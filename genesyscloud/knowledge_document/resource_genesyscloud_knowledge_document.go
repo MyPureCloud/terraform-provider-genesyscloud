@@ -200,25 +200,29 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 
 	log.Printf("Deleting Knowledge document '%s'. Knowledge base ID: '%s'", knowledgeDocumentId, knowledgeBaseId)
-	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
-	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
+
+	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
+		resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
+		if err != nil {
+			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+				log.Printf("Knowledge document %s in use by Bot flow with status unknown. Rebuilding dependency tracking and retrying.", knowledgeDocumentId)
+				rebuildErr := rebuildDatabase()
+				if rebuildErr != nil {
+					log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
+				}
+				return retry.RetryableError(fmt.Errorf("knowledge document %s still in use by Bot flow status unknown: %s", knowledgeDocumentId, err))
 			}
-			time.Sleep(10 * time.Second)
-			resp, err = proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
-			}
-		} else {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp))
 		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		_, resp, err = proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, "")
+		_, resp, err := proxy.getKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId, nil, "")
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// Knowledge document deleted

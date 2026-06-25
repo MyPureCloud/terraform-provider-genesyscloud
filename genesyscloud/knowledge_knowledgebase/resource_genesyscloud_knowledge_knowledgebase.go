@@ -181,21 +181,26 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 	knowledgebaseProxy := GetKnowledgebaseProxy(sdkConfig)
 
 	log.Printf("Deleting knowledge base %s", name)
-	_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
-	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+
+	// Retry the delete operation to handle stale "Bot flow status unknown" dependency references.
+	// The dependency tracking system may need multiple rebuild cycles to clear ghost entries.
+	diagErr := util.WithRetries(ctx, 5*time.Minute, func() *retry.RetryError {
+		_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
+		if err != nil {
+			if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
+				log.Printf("Knowledge base %s in use by Bot flow with status unknown. Rebuilding dependency tracking and retrying.", name)
+				rebuildErr := rebuildDatabase()
+				if rebuildErr != nil {
+					log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+				}
+				return retry.RetryableError(fmt.Errorf("knowledge base %s still in use by Bot flow status unknown: %s", name, err))
 			}
-			time.Sleep(10 * time.Second)
-			_, resp, err = knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
-			}
-		} else {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge base %s error: %s", name, err), resp))
 		}
+		return nil
+	})
+	if diagErr != nil {
+		return diagErr
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
