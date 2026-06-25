@@ -210,6 +210,12 @@ func ResourceOutboundCampaign() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeInt,
 			},
+			`preview_auto_end`: {
+				Description: `When enabled, the preview will automatically end and the call will be placed after the preview timeout (preview_time_out_seconds). Only applicable to preview campaigns.`,
+				Optional:    true,
+				Default:     false,
+				Type:        schema.TypeBool,
+			},
 			`always_running`: {
 				Description: `Indicates (when true) that the campaign will remain on after contacts are depleted, allowing additional contacts to be appended/added to the contact list and processed by the still-running campaign. The campaign can still be turned off manually.`,
 				Optional:    true,
