@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -370,24 +369,14 @@ func checkPhoneNumbersAddedToDncList(resource string, numberOfPhoneNumbersAdded 
 			return fmt.Errorf("%s not found in state", resource)
 		}
 		outboundAPI := platformclientv2.NewOutboundApi()
-
-		// Retry for up to 60 seconds to allow for eventual consistency
-		var lastErr error
-		deadline := time.Now().Add(60 * time.Second)
-		for time.Now().Before(deadline) {
-			dncListDivisionViews, _, err := outboundAPI.GetOutboundDnclistsDivisionview(r.Primary.ID, true, true)
-			if err != nil {
-				lastErr = fmt.Errorf("error received when querying DNC list division view from API: %v", err)
-				time.Sleep(2 * time.Second)
-				continue
-			}
-			if numberOfPhoneNumbersAdded == *dncListDivisionViews.Size {
-				return nil
-			}
-			lastErr = fmt.Errorf("expected dnc list size to be: %v, got: %v", numberOfPhoneNumbersAdded, *dncListDivisionViews.Size)
-			time.Sleep(2 * time.Second)
+		dncListDivisionViews, _, err := outboundAPI.GetOutboundDnclistsDivisionview(r.Primary.ID, true, true)
+		if err != nil {
+			return fmt.Errorf("error received when querying DNC list division view from API: %v", err)
 		}
-		return lastErr
+		if numberOfPhoneNumbersAdded != *dncListDivisionViews.Size {
+			return fmt.Errorf("expected dnc list size to be: %v, got: %v", numberOfPhoneNumbersAdded, *dncListDivisionViews.Size)
+		}
+		return nil
 	}
 }
 

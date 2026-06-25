@@ -1479,7 +1479,6 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 
 func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	testSetup(t)
-
 	var (
 		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
 		resourceLabel = "export"
@@ -1493,73 +1492,6 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 			t.Logf("failed to remove dir %s: %s", path, err)
 		}
 	}(exportTestDir)
-
-	// Create both a published and unpublished survey form via SDK before the export test
-	sdkConfig, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Skipf("failed to authorize SDK: %v", err)
-	}
-	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
-
-	// Create published form
-	publishedForm, _, err := qualityAPI.PostQualityFormsSurveys(platformclientv2.Surveyform{
-		Name:      platformclientv2.String("test-published-form"),
-		Language:  platformclientv2.String("en-US"),
-		Published: platformclientv2.Bool(true),
-		QuestionGroups: &[]platformclientv2.Surveyquestiongroup{
-			{
-				Name: platformclientv2.String("Test Group"),
-				Questions: &[]platformclientv2.Surveyquestion{
-					{
-						Text:    platformclientv2.String("Was the customer satisfied?"),
-						VarType: platformclientv2.String("multipleChoiceQuestion"),
-						AnswerOptions: &[]platformclientv2.Answeroption{
-							{Text: platformclientv2.String("Yes"), Value: platformclientv2.Int(1)},
-							{Text: platformclientv2.String("No"), Value: platformclientv2.Int(0)},
-						},
-					},
-				},
-			},
-		},
-	})
-	if err != nil {
-		t.Skipf("failed to create published survey form: %v", err)
-	}
-	defer func() {
-		if publishedForm != nil && publishedForm.Id != nil {
-			qualityAPI.DeleteQualityFormsSurvey(*publishedForm.Id)
-		}
-	}()
-
-	// Create unpublished form
-	unpublishedForm, _, err := qualityAPI.PostQualityFormsSurveys(platformclientv2.Surveyform{
-		Name:      platformclientv2.String("test-unpublished-form"),
-		Language:  platformclientv2.String("en-US"),
-		Published: platformclientv2.Bool(false),
-		QuestionGroups: &[]platformclientv2.Surveyquestiongroup{
-			{
-				Name: platformclientv2.String("Test Group"),
-				Questions: &[]platformclientv2.Surveyquestion{
-					{
-						Text:    platformclientv2.String("Was the agent helpful?"),
-						VarType: platformclientv2.String("multipleChoiceQuestion"),
-						AnswerOptions: &[]platformclientv2.Answeroption{
-							{Text: platformclientv2.String("Yes"), Value: platformclientv2.Int(1)},
-							{Text: platformclientv2.String("No"), Value: platformclientv2.Int(0)},
-						},
-					},
-				},
-			},
-		},
-	})
-	if err != nil {
-		t.Skipf("failed to create unpublished survey form: %v", err)
-	}
-	defer func() {
-		if unpublishedForm != nil && unpublishedForm.Id != nil {
-			qualityAPI.DeleteQualityFormsSurvey(*unpublishedForm.Id)
-		}
-	}()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
