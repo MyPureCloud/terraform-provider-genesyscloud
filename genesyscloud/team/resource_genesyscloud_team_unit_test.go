@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 
 	"net/http"
 	"testing"
@@ -14,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 /** Unit Test **/
@@ -265,4 +268,52 @@ func buildTeamResourceMap(tId string, tName string, tDescription string, tDivisi
 		"division_id": tDivisionId,
 	}
 	return resourceDataMap
+}
+
+func TestUnitGetTeamByIdCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	teamID := "team-cache-test"
+	cached := platformclientv2.Team{
+		Id:   platformclientv2.String(teamID),
+		Name: platformclientv2.String("Cached Team"),
+	}
+	rc.SetCache(teamCache, teamID, cached)
+
+	team, _, err := getTeamByIdFn(context.Background(), &teamProxy{teamCache: teamCache}, teamID)
+	require.NoError(t, err)
+	require.NotNil(t, team)
+	assert.Equal(t, "Cached Team", *team.Name)
+}
+
+func TestUnitGetAllTeamListCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	cacheKey := ""
+	cached := []platformclientv2.Team{
+		{Id: platformclientv2.String("team-list-1"), Name: platformclientv2.String("Team 1")},
+	}
+	rc.SetCache(teamListCache, cacheKey, cached)
+
+	teams, _, err := getAllTeamFn(context.Background(), &teamProxy{}, "")
+	require.NoError(t, err)
+	require.Len(t, *teams, 1)
+	assert.Equal(t, "team-list-1", *(*teams)[0].Id)
+}
+
+func TestUnitGetTeamMembersCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	teamID := "team-members-cache-test"
+	cached := []platformclientv2.Userreferencewithname{
+		{Id: platformclientv2.String("user-1")},
+		{Id: platformclientv2.String("user-2")},
+	}
+	rc.SetCache(teamMembersCache, teamID, cached)
+
+	members, _, err := getMembersByIdFn(context.Background(), &teamProxy{}, teamID)
+	require.NoError(t, err)
+	require.NotNil(t, members)
+	require.Len(t, *members, 2)
+	assert.Equal(t, "user-1", *(*members)[0].Id)
 }

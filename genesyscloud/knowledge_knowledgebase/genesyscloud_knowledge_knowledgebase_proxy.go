@@ -13,6 +13,8 @@ import (
 
 var internalProxy *knowledgebaseProxy
 
+var knowledgebaseCache = rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
 type getAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgebaseProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type getKnowledgebaseByIdFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type createKnowledgebaseFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *platformclientv2.Knowledgebasecreaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
@@ -32,7 +34,7 @@ type knowledgebaseProxy struct {
 
 func newKnowledgebaseProxy(clientConfig *platformclientv2.Configuration) *knowledgebaseProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgebaseCache := rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
 	return &knowledgebaseProxy{
 		clientConfig:                    clientConfig,
 		KnowledgeApi:                    api,

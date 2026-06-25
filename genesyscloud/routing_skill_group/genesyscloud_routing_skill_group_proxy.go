@@ -11,6 +11,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
+// Export-time resource caching is intentionally not used here.
+// GET /api/v2/routing/skillgroups returns Skillgroupdefinition entities, while
+// GET /api/v2/routing/skillgroups/{id} returns Skillgroup with additional fields such as
+// skillConditions and status. A shared per-ID cache cannot safely merge or substitute between
+// these types without losing data required for read/export.
+
 type getAllRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, name string) (*[]platformclientv2.Skillgroupdefinition, *platformclientv2.APIResponse, error)
 type createRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, skillGroupWithMemberDivisions *platformclientv2.Skillgroupwithmemberdivisions) (*platformclientv2.Skillgroupwithmemberdivisions, *platformclientv2.APIResponse, error)
 type getRoutingSkillGroupsByIdFunc func(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error)
@@ -108,7 +114,7 @@ func getAllRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 		response       *platformclientv2.APIResponse
 	)
 
-	for i := 0; ; i++ {
+	for {
 		skillGroups, resp, getErr := p.routingApi.GetRoutingSkillgroups(pageSize, name, after, "")
 		response = resp
 		if getErr != nil {

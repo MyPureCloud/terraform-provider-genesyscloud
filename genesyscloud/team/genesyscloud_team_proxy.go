@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
@@ -19,6 +20,34 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *teamProxy
+
+var teamCache = rc.NewResourceCache[platformclientv2.Team]()
+
+// teamListCache stores paginated team list results keyed by name during export.
+var teamListCache = rc.NewResourceCache[[]platformclientv2.Team]()
+
+// teamMembersCache stores team member listings per team during export.
+var teamMembersCache = rc.NewResourceCache[[]platformclientv2.Userreferencewithname]()
+
+func invalidateTeamListCache() {
+	teamListCache = rc.NewResourceCache[[]platformclientv2.Team]()
+}
+
+func storeTeamInCache(team *platformclientv2.Team) {
+	if team != nil && team.Id != nil {
+		rc.SetCache(teamCache, *team.Id, *team)
+	}
+}
+
+func invalidateTeamMembersCache(teamID string) {
+	rc.DeleteCacheItem(teamMembersCache, teamID)
+}
+
+func invalidateTeamCaches(teamID string) {
+	rc.DeleteCacheItem(teamCache, teamID)
+	invalidateTeamMembersCache(teamID)
+	invalidateTeamListCache()
+}
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createTeamFunc func(ctx context.Context, p *teamProxy, team *platformclientv2.Team) (*platformclientv2.Team, *platformclientv2.APIResponse, error)
@@ -44,6 +73,7 @@ type teamProxy struct {
 	createMembersAttr   createMembersFunc
 	getMembersByIdAttr  getMembersByIdFunc
 	deleteMembersAttr   deleteMembersFunc
+	teamCache           rc.CacheInterface[platformclientv2.Team]
 }
 
 // newTeamProxy initializes the team proxy with all of the data needed to communicate with Genesys Cloud
@@ -61,6 +91,7 @@ func newTeamProxy(clientConfig *platformclientv2.Configuration) *teamProxy {
 		createMembersAttr:   createMembersFn,
 		getMembersByIdAttr:  getMembersByIdFn,
 		deleteMembersAttr:   deleteMembersFn,
+		teamCache:           teamCache,
 	}
 }
 
@@ -135,6 +166,11 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
+	if cached := rc.GetCacheItem(teamListCache, name); cached != nil {
+		log.Printf("[TEAM-CACHE] list name=%q: cache hit (%d teams)", name, len(*cached))
+		return cached, nil, nil
+	}
+
 	var (
 		after    string
 		err      error
@@ -143,8 +179,7 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 	)
 
 	const pageSize = 100
-	for i := 0; ; i++ {
-
+	for {
 		teams, resp, getErr := p.teamsApi.GetTeams(pageSize, name, after, "", "")
 		response = resp
 		if getErr != nil {
@@ -169,6 +204,14 @@ func getAllTeamFn(ctx context.Context, p *teamProxy, name string) (*[]platformcl
 			break
 		}
 	}
+
+	for _, team := range allTeams {
+		storeTeamInCache(&team)
+	}
+
+	rc.SetCache(teamListCache, name, allTeams)
+	log.Printf("[TEAM-CACHE] list name=%q: cached %d teams", name, len(allTeams))
+
 	return &allTeams, response, nil
 
 }
@@ -201,11 +244,17 @@ func getTeamByIdFn(ctx context.Context, p *teamProxy, id string) (team *platform
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
+	if cached := rc.GetCacheItem(p.teamCache, id); cached != nil {
+		log.Printf("[TEAM-CACHE] Team %s: cache hit", id)
+		return cached, nil, nil
+	}
+
 	team, resp, err = p.teamsApi.GetTeam(id, "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to retrieve team by id %s: %s", id, err)
 	}
 
+	storeTeamInCache(team)
 	return team, resp, nil
 }
 
@@ -218,6 +267,9 @@ func updateTeamFn(ctx context.Context, p *teamProxy, id string, team *platformcl
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to update team: %s", err)
 	}
+
+	invalidateTeamCaches(id)
+	storeTeamInCache(team)
 	return team, resp, nil
 }
 
@@ -230,6 +282,8 @@ func deleteTeamFn(ctx context.Context, p *teamProxy, id string) (resp *platformc
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete team: %s", err)
 	}
+
+	invalidateTeamCaches(id)
 	return resp, nil
 }
 
@@ -242,6 +296,8 @@ func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members p
 	if err != nil {
 		return nil, resp, fmt.Errorf("Failed to create members: %s", err)
 	}
+
+	invalidateTeamMembersCache(teamId)
 	return teamListingResponse, resp, nil
 }
 
@@ -249,6 +305,11 @@ func createMembersFn(ctx context.Context, p *teamProxy, teamId string, members p
 func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (*[]platformclientv2.Userreferencewithname, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	if cached := rc.GetCacheItem(teamMembersCache, teamId); cached != nil {
+		log.Printf("[TEAM-CACHE] Team %s: members cache hit (%d members)", teamId, len(*cached))
+		return cached, nil, nil
+	}
 
 	var (
 		after      string
@@ -280,6 +341,8 @@ func getMembersByIdFn(ctx context.Context, p *teamProxy, teamId string) (*[]plat
 			break
 		}
 	}
+
+	rc.SetCache(teamMembersCache, teamId, allMembers)
 	return &allMembers, response, nil
 }
 
@@ -292,5 +355,7 @@ func deleteMembersFn(ctx context.Context, p *teamProxy, teamId string, memberIds
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete members: %s", err)
 	}
+
+	invalidateTeamMembersCache(teamId)
 	return resp, nil
 }

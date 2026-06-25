@@ -72,6 +72,25 @@ type userProxy struct {
 var userCache = rc.NewResourceCache[platformclientv2.User]()
 var extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
 
+// userVoicemailPolicyCache stores voicemail user policies per user during export.
+var userVoicemailPolicyCache = rc.NewResourceCache[platformclientv2.Voicemailuserpolicy]()
+
+// userRoutingUtilizationCache stores raw routing utilization API responses per user during export.
+var userRoutingUtilizationCache = rc.NewResourceCache[[]byte]()
+
+func invalidateUserVoicemailPolicyCache(userID string) {
+	rc.DeleteCacheItem(userVoicemailPolicyCache, userID)
+}
+
+func invalidateUserRoutingUtilizationCache(userID string) {
+	rc.DeleteCacheItem(userRoutingUtilizationCache, userID)
+}
+
+func invalidateUserExportDetailCaches(userID string) {
+	invalidateUserVoicemailPolicyCache(userID)
+	invalidateUserRoutingUtilizationCache(userID)
+}
+
 /*
 The function newUserProxy sets up the user proxy by providing it
 with all the necessary information to communicate effectively with Genesys Cloud.
@@ -230,6 +249,7 @@ func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *
 		return nil, resp, err
 	}
 	rc.DeleteCacheItem(p.userCache, id)
+	invalidateUserExportDetailCaches(id)
 	return data, nil, nil
 }
 
@@ -347,7 +367,22 @@ func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id st
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.voicemailApi.GetVoicemailUserpolicy(id)
+	if cached := rc.GetCacheItem(userVoicemailPolicyCache, id); cached != nil {
+		log.Printf("[USER-CACHE] User %s: voicemail policy cache hit", id)
+		return cached, nil, nil
+	}
+
+	policy, resp, err := p.voicemailApi.GetVoicemailUserpolicy(id)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if policy != nil {
+		rc.SetCache(userVoicemailPolicyCache, id, *policy)
+		log.Printf("[USER-CACHE] User %s: cached voicemail policy", id)
+	}
+
+	return policy, resp, nil
 }
 
 func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
@@ -377,7 +412,7 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 		allPools = *rc.GetCache(p.extensionPoolCache)
 	} else if rc.GetCacheSize(p.extensionPoolCache) != *extensionPoolList.Total || rc.GetCacheSize(p.extensionPoolCache) != 0 {
 		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+		extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
 
 		allPools = append(allPools, *extensionPoolList.Entities...)
 

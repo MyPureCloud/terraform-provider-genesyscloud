@@ -23,6 +23,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *routingWrapupcodeProxy
 
+var routingWrapupcodesCache = rc.NewResourceCache[platformclientv2.Wrapupcode]() // Create Cache for routing wrapupcode resource
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createRoutingWrapupcodeFunc func(ctx context.Context, p *routingWrapupcodeProxy, wrapupcode *platformclientv2.Wrapupcoderequest) (*platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error)
 type getAllRoutingWrapupcodeFunc func(ctx context.Context, p *routingWrapupcodeProxy) (*[]platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error)
@@ -57,8 +59,8 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newRoutingWrapupcodeProxy(clientConfig *platformclientv2.Configuration) *routingWrapupcodeProxy {
-	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)                 // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
-	routingWrapupcodesCache := rc.NewResourceCache[platformclientv2.Wrapupcode]() // Create Cache for routing wrapupcode resource
+	api := platformclientv2.NewRoutingApiWithConfig(clientConfig) // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+
 	return &routingWrapupcodeProxy{
 		clientConfig:                     clientConfig,
 		routingApi:                       api,
@@ -103,9 +105,6 @@ func (p *routingWrapupcodeProxy) getRoutingWrapupcodeIdByName(ctx context.Contex
 
 // getRoutingWrapupcodeById returns a single Genesys Cloud routing wrapupcodes by Id
 func (p *routingWrapupcodeProxy) getRoutingWrapupcodeById(ctx context.Context, id string) (routingWrapupcode *platformclientv2.Wrapupcode, response *platformclientv2.APIResponse, err error) {
-	if wrapupcode := rc.GetCacheItem(p.routingWrapupcodesCache, id); wrapupcode != nil { // Get the wrapupcode from the cache, if not there in the cache then call p.getRoutingWrapupcodeByIdAttr()
-		return wrapupcode, nil, nil
-	}
 	return p.getRoutingWrapupcodeByIdAttr(ctx, p, id)
 }
 
@@ -132,15 +131,34 @@ func getRoutingWrapupcodeByIdFn(ctx context.Context, p *routingWrapupcodeProxy, 
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.routingApi.GetRoutingWrapupcode(id)
+	if wrapupcode := rc.GetCacheItem(p.routingWrapupcodesCache, id); wrapupcode != nil {
+		return wrapupcode, nil, nil
+	}
+
+	wrapupcode, response, err := p.routingApi.GetRoutingWrapupcode(id)
+	if err != nil {
+		return nil, response, err
+	}
+
+	if wrapupcode != nil {
+		rc.SetCache(p.routingWrapupcodesCache, id, *wrapupcode)
+	}
+	return wrapupcode, response, nil
 }
 
 // updateRoutingWrapupcodeFn is an implementation of the function to update a Genesys Cloud routing wrapupcodes
 func updateRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy, id string, routingWrapupcode *platformclientv2.Wrapupcoderequest) (*platformclientv2.Wrapupcode, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	wrapupcode, response, err := p.routingApi.PutRoutingWrapupcode(id, *routingWrapupcode)
+	if err != nil {
+		return nil, response, err
+	}
 
-	return p.routingApi.PutRoutingWrapupcode(id, *routingWrapupcode)
+	if wrapupcode != nil {
+		rc.SetCache(p.routingWrapupcodesCache, id, *wrapupcode)
+	}
+	return wrapupcode, response, nil
 }
 
 // deleteRoutingWrapupcodeFn is an implementation function for deleting a Genesys Cloud routing wrapupcodes
@@ -162,7 +180,7 @@ func getAllRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy) (
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allWrapupcodes []platformclientv2.Wrapupcode
-	const pageSize = 100
+	const pageSize = 500
 
 	wrapupcodes, apiResponse, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", []string{}, []string{})
 	if err != nil {

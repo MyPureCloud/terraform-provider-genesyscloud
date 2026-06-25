@@ -13,6 +13,8 @@ import (
 
 var internalProxy *knowledgeLabelProxy
 
+var knowledgeLabelCache = rc.NewResourceCache[platformclientv2.Labelresponse]()
+
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeLabelProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type GetAllKnowledgeLabelEntitiesFunc func(ctx context.Context, p *knowledgeLabelProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
 type getKnowledgeLabelFunc func(ctx context.Context, p *knowledgeLabelProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type knowledgeLabelProxy struct {
 
 func newKnowledgeLabelProxy(clientConfig *platformclientv2.Configuration) *knowledgeLabelProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgeLabelCache := rc.NewResourceCache[platformclientv2.Labelresponse]()
+
 	return &knowledgeLabelProxy{
 		clientConfig:                     clientConfig,
 		KnowledgeApi:                     api,

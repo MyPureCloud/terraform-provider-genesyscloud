@@ -20,6 +20,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *authRoleProxy
 
+var authRoleCache = rc.NewResourceCache[platformclientv2.Domainorganizationrole]() // Create Cache for authRole resource
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createAuthRoleFunc func(ctx context.Context, p *authRoleProxy, domainOrganizationRole *platformclientv2.Domainorganizationrolecreate) (*platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error)
 type getAllAuthRoleFunc func(ctx context.Context, p *authRoleProxy) (*[]platformclientv2.Domainorganizationrole, *platformclientv2.APIResponse, error)
@@ -50,7 +52,7 @@ type authRoleProxy struct {
 // newAuthRoleProxy initializes the auth role proxy with all of the data needed to communicate with Genesys Cloud
 func newAuthRoleProxy(clientConfig *platformclientv2.Configuration) *authRoleProxy {
 	api := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
-	authRoleCache := rc.NewResourceCache[platformclientv2.Domainorganizationrole]() // Create Cache for authRole resource
+
 	return &authRoleProxy{
 		clientConfig:              clientConfig,
 		authorizationApi:          api,

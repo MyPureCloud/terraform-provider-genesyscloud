@@ -21,6 +21,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectGrammarProxy
 
+var grammarCache = rc.NewResourceCache[platformclientv2.Grammar]()
+
 // Type definitions for each func on our proxy so that we can easily mock them out later
 type createArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error)
 type getAllArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy) (*[]platformclientv2.Grammar, *platformclientv2.APIResponse, error)
@@ -45,7 +47,7 @@ type architectGrammarProxy struct {
 // newArchitectGrammarProxy initializes the grammar proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *architectGrammarProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	grammarCache := rc.NewResourceCache[platformclientv2.Grammar]()
+
 	return &architectGrammarProxy{
 		clientConfig:                    clientConfig,
 		architectApi:                    api,

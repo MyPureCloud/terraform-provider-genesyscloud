@@ -1,6 +1,7 @@
 package group
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,12 +10,16 @@ import (
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAccResourceGroupBasic(t *testing.T) {
@@ -711,4 +716,34 @@ func generateUserResource(
 		certifications = [%s]
 	}
 	`, resourceLabel, email, name, state, title, department, manager, acdAutoAnswer, profileSkills, certifications)
+}
+
+func TestUnitGetGroupMembersCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	groupID := "group-members-cache-test"
+	cached := []string{"user-1", "user-2"}
+	rc.SetCache(groupMembersCache, groupID, cached)
+
+	members, _, err := getGroupMembersFn(context.Background(), &groupProxy{}, groupID)
+	require.NoError(t, err)
+	require.NotNil(t, members)
+	require.Len(t, *members, 2)
+	assert.Equal(t, "user-1", (*members)[0])
+	assert.Equal(t, "user-2", (*members)[1])
+}
+
+func TestUnitGetGroupVoicemailPolicyCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	groupID := "group-voicemail-cache-test"
+	cached := platformclientv2.Voicemailgrouppolicy{
+		Enabled: platformclientv2.Bool(true),
+	}
+	rc.SetCache(groupVoicemailPolicyCache, groupID, cached)
+
+	policy, _, err := getGroupVoicemailPolicyFn(context.Background(), &groupProxy{}, groupID)
+	require.NoError(t, err)
+	require.NotNil(t, policy)
+	assert.True(t, *policy.Enabled)
 }
