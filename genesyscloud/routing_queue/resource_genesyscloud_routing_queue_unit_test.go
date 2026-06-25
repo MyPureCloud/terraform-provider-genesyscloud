@@ -384,6 +384,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 					"live_voice_flow_id":               "123",
 					"answering_machine_reaction_type":  "Transfer",
 					"answering_machine_flow_id":        "321",
+					"edge_group_id":                    "edge-group-123",
+					"site_id":                          "site-456",
 				},
 			},
 			expected: &platformclientv2.Callbackmediasettings{
@@ -401,6 +403,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 				LiveVoiceFlow:                &platformclientv2.Domainentityref{Id: platformclientv2.String("123")},
 				AnsweringMachineReactionType: platformclientv2.String("Transfer"),
 				AnsweringMachineFlow:         &platformclientv2.Domainentityref{Id: platformclientv2.String("321")},
+				EdgeGroup:                    &platformclientv2.Domainentityref{Id: platformclientv2.String("edge-group-123")},
+				Site:                         &platformclientv2.Domainentityref{Id: platformclientv2.String("site-456")},
 			},
 		},
 		{
@@ -422,6 +426,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 					"live_voice_flow_id":               "",
 					"answering_machine_reaction_type":  "",
 					"answering_machine_flow_id":        "",
+					"edge_group_id":                    "",
+					"site_id":                          "",
 				},
 			},
 			expected: &platformclientv2.Callbackmediasettings{
@@ -439,6 +445,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 				LiveVoiceFlow:                nil,
 				AnsweringMachineReactionType: nil,
 				AnsweringMachineFlow:         nil,
+				EdgeGroup:                    nil,
+				Site:                         nil,
 			},
 		},
 		{
@@ -461,6 +469,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 				LiveVoiceFlow:                nil,
 				AnsweringMachineReactionType: nil,
 				AnsweringMachineFlow:         nil,
+				EdgeGroup:                    nil,
+				Site:                         nil,
 			},
 		},
 	}

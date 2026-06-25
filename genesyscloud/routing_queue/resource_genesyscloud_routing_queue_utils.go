@@ -291,6 +291,8 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
 	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
 	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
+	callbackSettings.EdgeGroup = util.GetNillableDomainEntityRefFromMap(settingsMap, "edge_group_id")
+	callbackSettings.Site = util.GetNillableDomainEntityRefFromMap(settingsMap, "site_id")
 
 	return &callbackSettings
 }
@@ -864,6 +866,8 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "max_retry_count", settings.MaxRetryCount)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "retry_delay_seconds", settings.RetryDelaySeconds)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "edge_group_id", settings.EdgeGroup)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "site_id", settings.Site)
 
 	return []interface{}{settingsMap}
 }

@@ -615,6 +615,7 @@ Optional:
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `auto_dial_delay_seconds` (Number) Time in seconds after agent connects to callback before outgoing call is auto-dialed. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.
 - `auto_end_delay_seconds` (Number) Time in seconds after agent disconnects from the outgoing call before the encasing callback is auto-ended. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.
+- `edge_group_id` (String) The identifier of the edge group that will place the calls. Can be set to specify a custom edge group instead of the default one.
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Flag to enable Auto-Dial and Auto-End automation for callbacks on this queue. Defaults to `false`.
 - `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
@@ -626,6 +627,7 @@ Optional:
 - `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `site_id` (String) The identifier of the site to be used for dialing. If omitted, the default telephony site for the organization is used.
 
 
 <a id="nestedblock--media_settings_chat"></a>
