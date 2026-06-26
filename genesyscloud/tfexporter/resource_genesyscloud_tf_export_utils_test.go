@@ -1136,7 +1136,7 @@ func validateStateFileAsData(filename, siteName string) resource.TestCheckFunc {
 	}
 }
 
-func validatePublishedAndUnpublishedExported(configFile string) resource.TestCheckFunc {
+func validatePublishedAndUnpublishedExported(configFile, publishedName, unpublishedName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		_, err := os.ReadFile(configFile)
 		if err != nil {
@@ -1156,19 +1156,34 @@ func validatePublishedAndUnpublishedExported(configFile string) resource.TestChe
 				return fmt.Errorf("no resources exported for genesyscloud_quality_forms_survey")
 			}
 
-			if publishedForm, ok := forms["test-published-form"].(map[string]interface{}); ok {
-				if publishedForm["published"].(bool) != true {
-					return fmt.Errorf("test-published-form is not published")
+			foundPublished := false
+			foundUnpublished := false
+			for _, formData := range forms {
+				form, ok := formData.(map[string]interface{})
+				if !ok {
+					continue
 				}
-			} else {
-				return fmt.Errorf("test-published-form is not exported")
+				name, _ := form["name"].(string)
+				published, _ := form["published"].(bool)
+
+				if name == publishedName {
+					if !published {
+						return fmt.Errorf("form %s should be published but is not", publishedName)
+					}
+					foundPublished = true
+				}
+				if name == unpublishedName {
+					if published {
+						return fmt.Errorf("form %s should not be published but is", unpublishedName)
+					}
+					foundUnpublished = true
+				}
 			}
-			if unpublishedForm, ok := forms["test-unpublished-form"].(map[string]interface{}); ok {
-				if unpublishedForm["published"].(bool) != false {
-					return fmt.Errorf("test-unpublished-form is published")
-				}
-			} else {
-				return fmt.Errorf("test-unpublished-form is not exported")
+			if !foundPublished {
+				return fmt.Errorf("published form %s not found in export", publishedName)
+			}
+			if !foundUnpublished {
+				return fmt.Errorf("unpublished form %s not found in export", unpublishedName)
 			}
 		}
 		return nil
