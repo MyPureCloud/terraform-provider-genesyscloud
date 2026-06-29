@@ -4,6 +4,7 @@ subcategory: ""
 description: |-
   Genesys Cloud User.
   Export block label: "{email}"
+  By default, org exports include both active and inactive users. Set the GENESYSCLOUD_SKIP_INACTIVE_USER_EXPORT environment variable to omit inactive users from export listings.
 ---
 # genesyscloud_user (Resource)
 
@@ -12,6 +13,8 @@ description: |-
 Genesys Cloud User.
 
 Export block label: "{email}"
+
+By default, org exports include both active and inactive users. Set the GENESYSCLOUD_SKIP_INACTIVE_USER_EXPORT environment variable to omit inactive users from export listings.
 
 ## API Usage
 
