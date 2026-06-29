@@ -1,26 +1,17 @@
-
-inqueueEmail:
-  name: TF Test inqueueEmail Flow ed97e45a-6ece-432c-a8dd-90724e9867ad
-  division: New Home
+inboundCall:
+  name: Terraform Flow Test-fbfcd724-b60f-4aa4-8ca4-766495a40e42
+  description: test description 2
   defaultLanguage: en-us
-  supportedLanguages:
-    en-us:
-      defaultLanguageSkill:
-        noValue: true
-  settingsErrorHandling:
-    errorHandling:
-      endInQueueState:
-        none: true
-  startUpState:
-    name: Initial State
-    refId: Initial State_10
-    actions:
-      - endState:
-          name: End State
-  periodicState:
-    name: Recurring State
-    refId: Recurring State_12
-    actions:
-      - endState:
-          name: End State
-
+  startUpRef: ./menus/menu[mainMenu]
+  initialGreeting:
+    tts: Archy says hi!!!!!
+  menus:
+    - menu:
+        name: Main Menu
+        audio:
+          tts: You are at the Main Menu, press 9 to disconnect.
+        refId: mainMenu
+        choices:
+          - menuDisconnect:
+              name: Disconnect
+              dtmf: digit_9
