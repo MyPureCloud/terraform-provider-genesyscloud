@@ -73,12 +73,39 @@ func TestUnitRollbackDecisionTableUsesFreshContext(t *testing.T) {
 		return &platformclientv2.APIResponse{StatusCode: 200}, nil
 	}
 
-	rollbackDecisionTable(tableId, proxy)
+	err := rollbackDecisionTable(tableId, proxy)
 
+	assert.NoError(t, err)
 	assert.True(t, deleteCalled, "rollback should invoke the delete")
 	assert.Equal(t, tableId, deletedTableId, "rollback should delete the correct table")
 	assert.NoError(t, ctxHadError, "rollback context must be live (not expired/cancelled)")
 	assert.True(t, ctxHadDeadline, "rollback context should carry its own deadline")
+}
+
+// TestUnitRollbackDecisionTableReturnsDeleteError verifies that a failed cleanup
+// DELETE is surfaced to callers so create-failure diagnostics can mention manual
+// cleanup may be required.
+func TestUnitRollbackDecisionTableReturnsDeleteError(t *testing.T) {
+	deleteErr := assert.AnError
+	proxy := &BusinessRulesDecisionTableProxy{}
+	proxy.deleteBusinessRulesDecisionTableAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, id string) (*platformclientv2.APIResponse, error) {
+		return &platformclientv2.APIResponse{StatusCode: 500}, deleteErr
+	}
+
+	err := rollbackDecisionTable("table-failed-cleanup", proxy)
+	assert.ErrorIs(t, err, deleteErr)
+}
+
+// TestUnitRollbackDecisionTableReturnsNilOnSuccess verifies rollback reports
+// success when the cleanup DELETE succeeds.
+func TestUnitRollbackDecisionTableReturnsNilOnSuccess(t *testing.T) {
+	proxy := &BusinessRulesDecisionTableProxy{}
+	proxy.deleteBusinessRulesDecisionTableAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, id string) (*platformclientv2.APIResponse, error) {
+		return &platformclientv2.APIResponse{StatusCode: 200}, nil
+	}
+
+	err := rollbackDecisionTable("table-rollback-123", proxy)
+	assert.NoError(t, err)
 }
 
 // TestUnitRollbackDecisionTableNotBlockedByExpiredRequestContext verifies that an
@@ -97,9 +124,114 @@ func TestUnitRollbackDecisionTableNotBlockedByExpiredRequestContext(t *testing.T
 		return &platformclientv2.APIResponse{StatusCode: 200}, nil
 	}
 
-	rollbackDecisionTable("table-xyz", proxy)
+	err := rollbackDecisionTable("table-xyz", proxy)
 
+	assert.NoError(t, err)
 	assert.NoError(t, ctxErrSeen, "rollback should run on a fresh context regardless of the expired request context")
+}
+
+func unitTestDuplicateRowResponse(index int) *platformclientv2.APIResponse {
+	body := []byte(`{"message":"Duplicate decision table rows found [{\"id\":\"ghost-row\",\"index\":` + strconv.Itoa(index) + `}]",` +
+		`"code":"decision.table.duplicate.row","status":409,` +
+		`"messageWithParams":"Duplicate decision table rows found {duplicateRows}",` +
+		`"messageParams":{"duplicateRows":"[{\"id\":\"ghost-row\",\"index\":` + strconv.Itoa(index) + `}]"}}`)
+	return &platformclientv2.APIResponse{StatusCode: 409, RawBody: body}
+}
+
+func unitTestApplyRowChangesVersionColumns() *platformclientv2.Decisiontablecolumns {
+	inputID := "input-col-1"
+	outputID := "output-col-1"
+	return &platformclientv2.Decisiontablecolumns{
+		Inputs: &[]platformclientv2.Decisiontableinputcolumn{
+			{Id: &inputID},
+		},
+		Outputs: &[]platformclientv2.Decisiontableoutputcolumn{
+			{Id: &outputID},
+		},
+	}
+}
+
+func unitTestApplyRowChangesAddRow() map[string]interface{} {
+	return map[string]interface{}{
+		"inputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "VIP",
+						"type":  "string",
+					},
+				},
+			},
+		},
+		"outputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{
+						"value": "queue-1",
+						"type":  "string",
+					},
+				},
+			},
+		},
+	}
+}
+
+// TestUnitApplyRowChangesSkipsGhostRowDuplicate verifies the update-path add-rows
+// loop treats a matching-index 409 duplicate.row as an already-created ghost row
+// and continues, using priorRowCount+i+1 as the expected index base.
+func TestUnitApplyRowChangesSkipsGhostRowDuplicate(t *testing.T) {
+	const (
+		tableID       = "table-update-ghost"
+		version       = 2
+		priorRowCount = 3
+		expectedIndex = priorRowCount + 1 // first add after 3 kept rows
+	)
+
+	var createCalls int
+	proxy := &BusinessRulesDecisionTableProxy{}
+	proxy.getBusinessRulesDecisionTableVersionAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Decisiontableversion{
+			Columns: unitTestApplyRowChangesVersionColumns(),
+		}, &platformclientv2.APIResponse{StatusCode: 200}, nil
+	}
+	proxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+		createCalls++
+		return unitTestDuplicateRowResponse(expectedIndex), assert.AnError
+	}
+
+	err := applyRowChanges(context.Background(), proxy, tableID, version, RowChange{
+		adds: []map[string]interface{}{unitTestApplyRowChangesAddRow()},
+	}, priorRowCount)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, createCalls, "ghost duplicate should be treated as success without retrying")
+}
+
+// TestUnitApplyRowChangesFailsOnGenuineDuplicate verifies a 409 duplicate.row at
+// an earlier index is not skipped during update-path adds.
+func TestUnitApplyRowChangesFailsOnGenuineDuplicate(t *testing.T) {
+	const (
+		tableID       = "table-update-dup"
+		version       = 2
+		priorRowCount = 3
+	)
+
+	proxy := &BusinessRulesDecisionTableProxy{}
+	proxy.getBusinessRulesDecisionTableVersionAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Decisiontableversion{
+			Columns: unitTestApplyRowChangesVersionColumns(),
+		}, &platformclientv2.APIResponse{StatusCode: 200}, nil
+	}
+	proxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+		return unitTestDuplicateRowResponse(1), assert.AnError
+	}
+
+	err := applyRowChanges(context.Background(), proxy, tableID, version, RowChange{
+		adds: []map[string]interface{}{unitTestApplyRowChangesAddRow()},
+	}, priorRowCount)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to add new row 1/1")
 }
 
 // TestUnitIsDuplicateRowAtIndex verifies the add-rows idempotency guard: a 409
