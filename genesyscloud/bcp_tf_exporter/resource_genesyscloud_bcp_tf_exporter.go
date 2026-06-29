@@ -41,21 +41,25 @@ type BcpResourceDependency struct {
 
 type BcpExportData map[string][]BcpResource
 
-var (
-	providerResources     map[string]*schema.Resource
-	providerResourcesOnce sync.Once
-)
-
 func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	directory := d.Get("directory").(string)
 	filename := d.Get("filename").(string)
 	logPermissionErrorsFilename := d.Get("log_permissions_filename").(string)
+	maxWorkers := d.Get("max_workers").(int)
 
 	validatedDir, validatedFilename, err := validatePath(directory, filename)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
+	if logPermissionErrorsFilename != "" {
+		_, err = validateFilename(logPermissionErrorsFilename)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	providerResources, _ := registrar.GetResources()
 	exporters := resourceExporter.GetResourceExporters()
 	tfExporterState.ActivateExporterState()
 	filteredExporters := filterExporters(ctx, exporters, d)
@@ -68,6 +72,14 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	})
 
 	for resourceType, exporter := range filteredExporters {
+
+		// Handle context cancellation
+		select {
+		case <-ctx.Done():
+			return diag.FromErr(fmt.Errorf("export cancelled: %v", ctx.Err()))
+		default:
+		}
+
 		tflog.Debug(ctx, "Processing resource type", map[string]interface{}{
 			"resource_type": resourceType,
 		})
@@ -102,47 +114,28 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 		}
 
 		resourceMap := exporter.GetSanitizedResourceMap()
-		var resources []BcpResource
-
-		if providerResources == nil {
-			providerResourcesOnce.Do(func() {
-				providerResources, _ = registrar.GetResources()
-			})
+		items := make([]workItem, 0, len(resourceMap))
+		for id, resMeta := range resourceMap {
+			items = append(items, workItem{id: id, resMeta: resMeta})
 		}
 
-		for id, resMeta := range resourceMap {
-			resource, exists := providerResources[resourceType]
-			if !exists {
-				tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
-					"resource_type": resourceType,
-					"id":            id,
-				})
-				continue
-			}
-
-			var instanceState *terraform.InstanceState
-			if meta != nil {
-				var err error
-				instanceState, err = getResourceState(ctx, resource, id, resMeta, meta)
-				if err != nil {
-					tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
-						"resource_type": resourceType,
-						"id":            id,
-						"error":         err.Error(),
-					})
-					continue
-				}
-			}
-
-			name := getResourceName(instanceState, resMeta)
-			deps := getResourceDependencies(ctx, providerResources, resourceType, id, resMeta, exporter, meta, instanceState)
-
-			resources = append(resources, BcpResource{
-				ID:           id,
-				Name:         name,
-				BlockLabel:   resMeta.BlockLabel,
-				Dependencies: deps,
-			})
+		// Flow resources are processed sequentially to avoid data races on the
+		// proxy singleton and redundant concurrent API calls for dependency
+		// resolution. The dependent consumers API is the bottleneck, so
+		// parallelism provides negligible benefit.
+		//
+		// If flow processing performance becomes a concern, consider:
+		// 1. Batch-resolving all flow dependencies in a single pass before
+		//    processing individual items (requires API batch support or
+		//    pre-fetching into a cache map keyed by flow ID).
+		// 2. Using a dedicated, concurrency-safe proxy instance per goroutine
+		//    with a bounded worker pool (requires refactoring getBcpExporterProxy
+		//    away from the singleton pattern for flows).
+		var resources []BcpResource
+		if resourceType == architectFlow.ResourceType {
+			resources = processFlowResourcesSequentially(ctx, items, providerResources, resourceType, exporter, meta)
+		} else {
+			resources = processResourcesConcurrently(ctx, items, providerResources, resourceType, exporter, meta, maxWorkers)
 		}
 
 		if len(resources) > 0 {
@@ -156,6 +149,7 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 				"resource_count": len(resources),
 			})
 		}
+
 	}
 
 	if err := os.MkdirAll(validatedDir, 0755); err != nil {
@@ -197,29 +191,41 @@ func createBcpTfExporter(ctx context.Context, d *schema.ResourceData, meta inter
 	return nil
 }
 
-// Add path validation
-func validatePath(dir, filename string) (string, string, error) {
-	// Clean and validate directory path
-	if strings.Contains(dir, "..") {
-		return "", "", fmt.Errorf("directory path contains invalid traversal sequences")
+// Add validations
+func validateFilename(filename string) (string, error) {
+	if filename == "" {
+		return "", fmt.Errorf("filename is required")
 	}
-
 	// Validate filename
 	if strings.Contains(filename, "..") || strings.Contains(filename, "/") {
-		return "", "", fmt.Errorf("filename contains invalid characters")
+		return "", fmt.Errorf("filename contains invalid characters")
 	}
 
 	// Safety check for path traversal
 	cleanFilePath := filepath.Clean(filename)
 	cleanBaseFilePath := filepath.Base(cleanFilePath)
 	if cleanBaseFilePath != cleanFilePath {
-		return "", "", fmt.Errorf("filename contains invalid path traversal sequences")
+		return "", fmt.Errorf("filename contains invalid path traversal sequences")
+	}
+
+	return cleanFilePath, nil
+}
+
+func validatePath(dir, filename string) (string, string, error) {
+	// Clean and validate directory path
+	if strings.Contains(dir, "..") {
+		return "", "", fmt.Errorf("directory path contains invalid traversal sequences")
 	}
 
 	// Explicit base path validation of dir
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid directory path: %v", err)
+	}
+
+	cleanBaseFilePath, err := validateFilename(filename)
+	if err != nil {
+		return "", "", err
 	}
 
 	return absDir, cleanBaseFilePath, nil
@@ -240,6 +246,98 @@ func deleteBcpTfExporter(_ context.Context, d *schema.ResourceData, _ interface{
 		return diag.FromErr(err)
 	}
 	return nil
+}
+
+type workItem struct {
+	id      string
+	resMeta *resourceExporter.ResourceMeta
+}
+
+func processItem(ctx context.Context, item workItem, providerResources map[string]*schema.Resource, resourceType string, exporter *resourceExporter.ResourceExporter, meta interface{}) (*BcpResource, bool) {
+	resource, exists := providerResources[resourceType]
+	if !exists {
+		tflog.Warn(ctx, "Resource type not registered, skipping", map[string]interface{}{
+			"resource_type": resourceType,
+			"id":            item.id,
+		})
+		return nil, false
+	}
+
+	var instanceState *terraform.InstanceState
+	if meta != nil {
+		var err error
+		instanceState, err = getResourceState(ctx, resource, item.id, item.resMeta, meta)
+		if err != nil {
+			tflog.Warn(ctx, "Failed to get resource state, skipping", map[string]interface{}{
+				"resource_type": resourceType,
+				"id":            item.id,
+				"error":         err.Error(),
+			})
+			return nil, false
+		}
+	}
+
+	name := getResourceName(instanceState, item.resMeta)
+	deps := getResourceDependencies(ctx, providerResources, resourceType, item.id, item.resMeta, exporter, meta, instanceState)
+	return &BcpResource{
+		ID:           item.id,
+		Name:         name,
+		BlockLabel:   item.resMeta.BlockLabel,
+		Dependencies: deps,
+	}, true
+}
+
+func processFlowResourcesSequentially(ctx context.Context, items []workItem, providerResources map[string]*schema.Resource, resourceType string, exporter *resourceExporter.ResourceExporter, meta interface{}) []BcpResource {
+	var resources []BcpResource
+	for _, item := range items {
+		select {
+		case <-ctx.Done():
+			return resources
+		default:
+		}
+		if r, ok := processItem(ctx, item, providerResources, resourceType, exporter, meta); ok {
+			resources = append(resources, *r)
+		}
+	}
+	return resources
+}
+
+func calcWorkerCount(maxWorkers, itemCount int) int {
+	return max(min(maxWorkers, itemCount), 1)
+}
+
+func processResourcesConcurrently(ctx context.Context, items []workItem, providerResources map[string]*schema.Resource, resourceType string, exporter *resourceExporter.ResourceExporter, meta interface{}, maxWorkers int) []BcpResource {
+	var resources []BcpResource
+	workerCount := calcWorkerCount(maxWorkers, len(items))
+	sem := make(chan struct{}, workerCount)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for _, item := range items {
+		select {
+		case <-ctx.Done():
+			wg.Wait()
+			return resources
+		default:
+		}
+
+		wg.Add(1)
+		sem <- struct{}{} // acquire slot
+
+		go func(wi workItem) {
+			defer wg.Done()
+			defer func() { <-sem }() // release slot
+
+			if r, ok := processItem(ctx, wi, providerResources, resourceType, exporter, meta); ok {
+				mu.Lock()
+				resources = append(resources, *r)
+				mu.Unlock()
+			}
+		}(item)
+	}
+
+	wg.Wait()
+	return resources
 }
 
 func filterExporters(ctx context.Context, exporters map[string]*resourceExporter.ResourceExporter, d *schema.ResourceData) map[string]*resourceExporter.ResourceExporter {
@@ -321,11 +419,11 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		BlockLabel: resMeta.BlockLabel,
 	}
 
-	proxy := GetBcpExporterProxy(nil)
+	var proxy *bcpExporterProxy
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-			proxy = GetBcpExporterProxy(clientConfig)
+			proxy = getBcpExporterProxy(clientConfig)
 			resources, dependsMap, err := proxy.GetFlowDependencies(ctx, resourceKeys)
 			if err != nil {
 				return nil, nil, []string{}, diag.Errorf("Failed to retrieve dependencies for flow %s: %s", resourceKeys.State.ID, err)
@@ -432,11 +530,19 @@ func extractSpecificDependencies(ctx context.Context, providerResources map[stri
 	ctyType := resource.CoreConfigSchema().ImpliedType()
 	stateVal, err := schema.StateValueFromInstanceState(instanceState, ctyType)
 	if err != nil {
+		tflog.Warn(ctx, "Failed to convert instance state", map[string]interface{}{
+			"resource_type": resourceType,
+			"error":         err.Error(),
+		})
 		return bcpResourceDependencies
 	}
 
 	resourceData, err := schema.StateValueToJSONMap(stateVal, ctyType)
 	if err != nil {
+		tflog.Warn(ctx, "Failed to unmarshal JSON", map[string]interface{}{
+			"resource_type": resourceType,
+			"error":         err.Error(),
+		})
 		return bcpResourceDependencies
 	}
 
@@ -570,8 +676,16 @@ func isValidGUID(s string) bool {
 	if len(s) != 36 {
 		return false
 	}
-	if s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
-		return false
+	for i, c := range s {
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+		} else {
+			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+				return false
+			}
+		}
 	}
 	return true
 }

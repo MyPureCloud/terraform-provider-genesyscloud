@@ -1,11 +1,11 @@
 package bcp_tf_exporter
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -16,29 +16,16 @@ import (
    used in testing the bcp_tf_exporter resource.
 */
 
-type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
-}
-
-// registerTestResources registers all resources used in the tests
-func (r *registerTestInstance) registerTestResources() {
-	r.resourceMapMutex.Lock()
-	defer r.resourceMapMutex.Unlock()
-
-	providerResources[ResourceType] = ResourceBcpTfExporter()
-	providerResources[user.ResourceType] = user.ResourceUser()
-	providerResources[group.ResourceType] = group.ResourceGroup()
-	providerResources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
-}
-
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	providerResources = make(map[string]*schema.Resource)
 
-	regInstance := &registerTestInstance{}
+	resources := make(map[string]*schema.Resource)
+	resources[ResourceType] = ResourceBcpTfExporter()
+	resources[user.ResourceType] = user.ResourceUser()
+	resources[group.ResourceType] = group.ResourceGroup()
+	resources[architect_flow.ResourceType] = architect_flow.ResourceArchitectFlow()
 
-	regInstance.registerTestResources()
-
+	registrar.SetResources(resources, make(map[string]*schema.Resource))
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

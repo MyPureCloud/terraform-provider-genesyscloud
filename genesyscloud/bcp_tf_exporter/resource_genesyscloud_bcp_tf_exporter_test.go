@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -500,9 +501,6 @@ func TestUnitBcpTfExporter_WarningScenarios(t *testing.T) {
 			"filename":  filename,
 		})
 
-		// Set providerResources to nil to simulate unregistered resource
-		providerResources = nil
-
 		diags := createBcpTfExporter(context.Background(), d, nil)
 		assert.False(t, diags.HasError())
 
@@ -576,6 +574,62 @@ func TestUnitBcpTfExporter_GetFlowDependencies(t *testing.T) {
 			AsObjectMap:            map[string][]string{},
 		}, result)
 	})
+}
+
+func TestUnitBcpTfExporter_CalcWorkerCount(t *testing.T) {
+	tests := []struct {
+		name       string
+		maxWorkers int
+		itemCount  int
+		expected   int
+	}{
+		{"zero workers floors to 1", 0, 5, 1},
+		{"zero items floors to 1", 5, 0, 1},
+		{"both zero floors to 1", 0, 0, 1},
+		{"workers less than items", 3, 10, 3},
+		{"workers equal to items", 5, 5, 5},
+		{"workers exceed items caps to items", 10, 3, 3},
+		{"negative workers floors to 1", -1, 5, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := calcWorkerCount(tt.maxWorkers, tt.itemCount)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestUnitBcpTfExporter_ProcessResourcesConcurrently_WorkerCount(t *testing.T) {
+	ctx := context.Background()
+	providerResources := map[string]*schema.Resource{
+		"genesyscloud_user": user.ResourceUser(),
+	}
+	exporter := &resourceExporter.ResourceExporter{}
+
+	items := []workItem{
+		{id: "user1", resMeta: &resourceExporter.ResourceMeta{BlockLabel: "user_1", OriginalLabel: "User 1"}},
+		{id: "user2", resMeta: &resourceExporter.ResourceMeta{BlockLabel: "user_2", OriginalLabel: "User 2"}},
+		{id: "user3", resMeta: &resourceExporter.ResourceMeta{BlockLabel: "user_3", OriginalLabel: "User 3"}},
+	}
+
+	tests := []struct {
+		name       string
+		maxWorkers int
+	}{
+		{"zero workers defaults to 1", 0},
+		{"one worker", 1},
+		{"workers equal to items", 3},
+		{"workers exceed items", 10},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resources := processResourcesConcurrently(ctx, items, providerResources, "genesyscloud_user", exporter, nil, tt.maxWorkers)
+			// All items should be processed regardless of worker count
+			assert.Len(t, resources, 3)
+		})
+	}
 }
 
 func TestUnitBcpTfExporter_GetResourceDependencies(t *testing.T) {
