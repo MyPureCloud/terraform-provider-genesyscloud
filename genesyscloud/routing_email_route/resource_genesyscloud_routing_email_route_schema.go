@@ -235,6 +235,7 @@ func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 			"spam_flow_id":                  {RefType: "genesyscloud_flow"},
 			"reply_email_address.domain_id": {RefType: "genesyscloud_routing_email_domain"},
 			"reply_email_address.route_id":  {RefType: "genesyscloud_routing_email_route"},
+			"signature.canned_response_id":  {RefType: "genesyscloud_responsemanagement_response"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"reply_email_address": {"route_id", "self_reference_route"},
