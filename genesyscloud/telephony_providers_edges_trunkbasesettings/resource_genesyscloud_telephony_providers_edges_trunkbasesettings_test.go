@@ -141,7 +141,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 			"genesyscloud_location."+locationResourceLabel+".id",
 			"Cloud",
 			false,
-			"[\"us-east-1\"]",
+			util.AssignRegion(),
 			util.NullValue,
 			util.NullValue,
 		)
@@ -223,7 +223,7 @@ func TestAccResourceExternalTrunkBaseSettingsInboundSite(t *testing.T) {
 					"genesyscloud_location."+locationResourceLabel+".id",
 					"Cloud",
 					false,
-					"[\"us-east-1\"]",
+					util.AssignRegion(),
 					util.NullValue,
 					util.NullValue,
 				),
