@@ -1481,10 +1481,12 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	testSetup(t)
 
 	var (
-		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
-		resourceLabel = "export"
-		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		exportTestDir   = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
+		resourceLabel   = "export"
+		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+		publishedName   = "test-published-form"
+		unpublishedName = "test-unpublished-form"
 	)
 
 	// Clean up
