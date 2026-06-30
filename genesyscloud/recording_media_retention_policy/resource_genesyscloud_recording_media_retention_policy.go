@@ -97,6 +97,7 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	policy, resp, err := pp.createPolicy(ctx, &reqBody)
 	log.Printf("Media retention policy creation status %#v", resp.Status)
 	if err != nil {
+		d.Partial(true)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create media retention policy %s error: %s", name, err), resp)
 	}
 
@@ -104,7 +105,11 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	policyId := policy.Id
 	d.SetId(*policyId)
 	log.Printf("Created media retention policy %s %s", name, *policy.Id)
-	return readMediaRetentionPolicy(ctx, d, meta)
+	diags := readMediaRetentionPolicy(ctx, d, meta)
+	if diags.HasError() {
+		d.Partial(true)
+	}
+	return diags
 }
 
 // readMediaRetentionPolicy is used by the recording media retention policy resource to read a media retention policy from genesys cloud.
@@ -128,10 +133,17 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		resourcedata.SetNillableValue(d, "order", retentionPolicy.Order)
 		resourcedata.SetNillableValue(d, "description", retentionPolicy.Description)
 		resourcedata.SetNillableValue(d, "enabled", retentionPolicy.Enabled)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditions", retentionPolicy.Conditions, flattenConditions)
+		var schemaTeamIds []string
+		if conditions, ok := d.Get("conditions").([]interface{}); ok {
+			schemaTeamIds = teamIdsFromConditionBlock(conditions)
+		}
+		flattenConditionsWithConfig := func(conditions *platformclientv2.Policyconditions) []interface{} {
+			return flattenConditions(conditions, schemaTeamIds)
+		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "conditions", retentionPolicy.Conditions, flattenConditionsWithConfig)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "policy_errors", retentionPolicy.PolicyErrors, flattenPolicyErrors)
 
-		err, mediaPolicies := flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx)
+		err, mediaPolicies := flattenMediaPolicies(retentionPolicy.MediaPolicies, pp, ctx, d)
 		if err != nil {
 			return retry.NonRetryableError(fmt.Errorf("unable to flatten media policies in readMediaRetentionPolicy() method: %s", err))
 		}
@@ -146,6 +158,7 @@ func readMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, meta 
 		if retentionPolicy.Actions != nil {
 			d.Set("actions", actions)
 		}
+
 		return cc.CheckState(d)
 	})
 }
@@ -185,13 +198,18 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	log.Printf("Updating media retention policy %s", name)
-	policy, resp, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
+	_, resp, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
 	if err != nil {
+		d.Partial(true)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update media retention policy %s error: %s", name, err), resp)
 	}
 
-	log.Printf("Updated media retention policy %s %s", name, *policy.Id)
-	return readMediaRetentionPolicy(ctx, d, meta)
+	log.Printf("Updated media retention policy %s %s", name, d.Id())
+	diags := readMediaRetentionPolicy(ctx, d, meta)
+	if diags.HasError() {
+		d.Partial(true)
+	}
+	return diags
 }
 
 // deleteMediaRetentionPolicy is used by the recording media retention policy resource to delete a media retention policy from Genesys cloud.
