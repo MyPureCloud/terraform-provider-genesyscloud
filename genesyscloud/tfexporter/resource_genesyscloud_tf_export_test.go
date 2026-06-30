@@ -1579,7 +1579,7 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validatePublishedAndUnpublishedExported(configPath),
+					validatePublishedAndUnpublishedExported(configPath, publishedName, unpublishedName),
 					validateStateFileHasPublishedAndUnpublished(statePath),
 				),
 			},
