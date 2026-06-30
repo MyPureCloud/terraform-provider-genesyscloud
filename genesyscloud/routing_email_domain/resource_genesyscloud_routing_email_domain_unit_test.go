@@ -350,7 +350,7 @@ func TestUnitCreateRoutingEmailDomain_AlreadyExists_LookupFails_ReturnsError(t *
 	domainName := "acdemailplaysandboxeuscedee1"
 
 	// Mock proxy that simulates the "already exists" 400 error on create,
-	// AND fails the lookup (edge case where domain can't be found).
+	// AND fails the lookup with a non-retryable error.
 	mockProxy := &routingEmailDomainProxy{
 		createRoutingEmailDomainAttr: func(_ context.Context, _ *routingEmailDomainProxy, _ *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
 			return nil, &platformclientv2.APIResponse{
@@ -359,7 +359,7 @@ func TestUnitCreateRoutingEmailDomain_AlreadyExists_LookupFails_ReturnsError(t *
 			}, fmt.Errorf("API Error: 400 - The inbound domain already exists")
 		},
 		getRoutingEmailDomainIdByNameAttr: func(_ context.Context, _ *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
-			return "", &platformclientv2.APIResponse{StatusCode: 200}, true, fmt.Errorf("unable to find routing email domain with name %s", name)
+			return "", &platformclientv2.APIResponse{StatusCode: 200}, false, fmt.Errorf("unable to find routing email domain with name %s", name)
 		},
 	}
 
