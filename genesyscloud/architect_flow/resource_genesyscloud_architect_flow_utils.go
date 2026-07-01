@@ -81,6 +81,7 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 	ctx := context.Background()
 	filename := fmt.Sprintf("%s.yaml", flowId)
 
+	log.Printf("Retrieving flow '%s' for export to file", flowId)
 	flow, resp, err := proxy.GetFlow(ctx, flowId)
 	if err != nil {
 		log.Printf("Failed to read flow '%s'. Flow name and type will not be included in the file name. Error: %s. API Response: %s", flowId, err.Error(), resp)
@@ -101,6 +102,7 @@ func architectFlowResolver(flowId, exportDirectory, subDirectory string, configM
 		return fmt.Errorf("flow '%s' has no published version and cannot be exported", flowId)
 	}
 
+	log.Printf("Generating download URL for flow '%s' version '%s'", flowId, flowVersion)
 	downloadUrl, err := proxy.generateDownloadUrl(flowId, flowVersion)
 	if err != nil {
 		return err
