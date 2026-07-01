@@ -105,7 +105,11 @@ func readBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		resourcedata.SetNillableValue(d, "name", schema.Name)
-		resourcedata.SetNillableValue(d, "description", schema.JsonSchema.Description)
+		if schema.JsonSchema != nil {
+			// Preserve null for an absent description; SetNillableValue would coerce it
+			// to "" for a TypeString and cause a null -> "" plan inconsistency.
+			resourcedata.SetStringValueIfNotNil(d, "description", schema.JsonSchema.Description)
+		}
 		resourcedata.SetNillableValue(d, "properties", schemaPropsPtr)
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
 		resourcedata.SetNillableValue(d, "version", schema.Version)
