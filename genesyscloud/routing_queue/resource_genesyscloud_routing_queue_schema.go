@@ -888,7 +888,11 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"members":                {"user_id"},
 		},
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id", "conditional_group_routing_rules.queue_id", "conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id", "conditional_group_activation.rules.conditions.simple_metric.queue_id"},
-		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
+		AllowZeroValues: []string{
+			"bullseye_rings.expansion_timeout_seconds",
+			"conditional_group_activation.rules.conditions.value",
+			"conditional_group_activation.pilot_rule.conditions.value",
+		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
