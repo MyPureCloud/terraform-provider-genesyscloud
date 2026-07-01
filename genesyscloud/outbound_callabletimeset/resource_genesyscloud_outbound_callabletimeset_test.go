@@ -113,6 +113,31 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 				),
 			},
 			{
+				// Update with named callable times
+				Config: GenerateOutboundCallabletimeset(
+					resourceLabel,
+					name1,
+					GenerateCallableTimesBlock(
+						timeZone1,
+						`name = "America-NewYork-Morning"`,
+						GenerateTimeSlotsBlock("09:00:00", "12:00:00", "1"),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"genesyscloud_outbound_callabletimeset."+resourceLabel, "name", name1,
+					),
+					resource.TestCheckTypeSetElemNestedAttrs(
+						"genesyscloud_outbound_callabletimeset."+resourceLabel,
+						"callable_times.*",
+						map[string]string{
+							"name":         "America-NewYork-Morning",
+							"time_zone_id": timeZone1,
+						},
+					),
+				),
+			},
+			{
 				// Read
 				ResourceName:      "genesyscloud_outbound_callabletimeset." + resourceLabel,
 				ImportState:       true,
