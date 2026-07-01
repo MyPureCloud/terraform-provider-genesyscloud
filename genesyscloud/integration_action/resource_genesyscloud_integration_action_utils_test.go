@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
 
@@ -129,4 +131,72 @@ func TestBuildIntegrationActionBlockLabel(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestSameNameDifferentCategoryProducesStableDistinctLabels is a regression test for
+// the bug where two integration actions with the same name but different categories
+// would get non-deterministic labels on export, causing destructive plan changes.
+//
+// The fix includes the category in the BlockLabel so that same-named actions in
+// different categories never collide in the sanitizer.
+//
+// This test runs the full pipeline: buildIntegrationActionBlockLabel -> sanitizer,
+// and verifies the resulting labels are distinct AND stable across multiple iterations.
+func TestSameNameDifferentCategoryProducesStableDistinctLabels(t *testing.T) {
+	// Simulate two custom actions with the same name in different categories
+	actionProd := platformclientv2.Action{
+		Id:            strPtr("custom_-_aaaa-1111-bbbb-2222"),
+		Name:          strPtr("Log Call"),
+		Category:      strPtr("Navigator Data Actions - Production"),
+		IntegrationId: strPtr("integ-prod"),
+	}
+	actionStag := platformclientv2.Action{
+		Id:            strPtr("custom_-_cccc-3333-dddd-4444"),
+		Name:          strPtr("Log Call"),
+		Category:      strPtr("Navigator Data Actions - Staging"),
+		IntegrationId: strPtr("integ-stag"),
+	}
+
+	// Run 100 iterations to confirm labels never flip (the old bug was non-deterministic)
+	var firstLabelProd, firstLabelStag string
+
+	for i := 0; i < 100; i++ {
+		// Build labels the same way getAllIntegrationActions does
+		idMetaMap := resourceExporter.ResourceIDMetaMap{
+			*actionProd.Id: &resourceExporter.ResourceMeta{
+				BlockLabel: buildIntegrationActionBlockLabel(actionProd, nil),
+			},
+			*actionStag.Id: &resourceExporter.ResourceMeta{
+				BlockLabel: buildIntegrationActionBlockLabel(actionStag, nil),
+			},
+		}
+
+		// Run through the sanitizer (same as the exporter does)
+		sanitizer := resourceExporter.NewSanitizerProvider()
+		sanitizer.S.Sanitize(idMetaMap)
+
+		labelProd := idMetaMap[*actionProd.Id].BlockLabel
+		labelStag := idMetaMap[*actionStag.Id].BlockLabel
+
+		// Labels must be different
+		if labelProd == labelStag {
+			t.Fatalf("iteration %d: both actions got the same label %q — category not differentiating", i, labelProd)
+		}
+
+		// Labels must be stable across iterations
+		if i == 0 {
+			firstLabelProd = labelProd
+			firstLabelStag = labelStag
+		} else {
+			if labelProd != firstLabelProd {
+				t.Fatalf("iteration %d: Production label changed from %q to %q — labels are non-deterministic", i, firstLabelProd, labelProd)
+			}
+			if labelStag != firstLabelStag {
+				t.Fatalf("iteration %d: Staging label changed from %q to %q — labels are non-deterministic", i, firstLabelStag, labelStag)
+			}
+		}
+	}
+
+	t.Logf("Production label (stable across 100 runs): %s", firstLabelProd)
+	t.Logf("Staging label (stable across 100 runs):    %s", firstLabelStag)
 }
