@@ -53,6 +53,30 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating routing email domain %s", domainID)
 	domain, resp, err := proxy.createRoutingEmailDomain(ctx, &sdkDomain)
 	if err != nil {
+		// Handle the "already exists" race condition where the API creates the domain
+		// but returns a 400 error due to eventual consistency in some regions.
+		if util.IsStatus400(resp) && strings.Contains(fmt.Sprintf("%s", err), "domain already exists") {
+			log.Printf("Routing email domain %s reported as already existing. Attempting to adopt existing domain into state.", domainID)
+			retryErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+				existingID, retryResp, retryable, lookupErr := proxy.getRoutingEmailDomainIdByName(ctx, domainID)
+				if lookupErr != nil {
+					if retryable {
+						return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error looking up existing routing email domain %s | error: %s", domainID, lookupErr), retryResp))
+					}
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error looking up existing routing email domain %s | error: %s", domainID, lookupErr), retryResp))
+				}
+				d.SetId(existingID)
+				return nil
+			})
+			if retryErr == nil && d.Id() != "" {
+				log.Printf("Adopted existing routing email domain %s into state", d.Id())
+				if d.HasChanges("mail_from_domain", "custom_smtp_server_id", "graph_api_settings", "imap_settings") {
+					return updateRoutingEmailDomain(ctx, d, meta)
+				}
+				return readRoutingEmailDomain(ctx, d, meta)
+			}
+			log.Printf("Failed to look up existing routing email domain %s after retries", domainID)
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create routing email domain %s error: %s", domainID, err), resp)
 	}
 
@@ -60,7 +84,7 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Created routing email domain %s", *domain.Id)
 
 	// Other settings must be updated in a PATCH update
-	if d.HasChanges("mail_from_domain", "custom_smtp_server_id", "graph_api_settings", "imap_settings") {
+	if d.HasChanges("mail_from_domain", "custom_smtp_server_id") {
 		return updateRoutingEmailDomain(ctx, d, meta)
 	} else {
 		return readRoutingEmailDomain(ctx, d, meta)
@@ -85,8 +109,6 @@ func readRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta in
 
 		resourcedata.SetNillableValue(d, "subdomain", domain.SubDomain)
 		resourcedata.SetNillableReference(d, "custom_smtp_server_id", domain.CustomSMTPServer)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "graph_api_settings", domain.GraphApiSettings, flattenGraphApiSettings)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "imap_settings", domain.ImapSettings, flattenImapSettings)
 
 		if domain.SubDomain != nil && *domain.SubDomain {
 			// Strip off the regional domain suffix added by the server
@@ -123,24 +145,14 @@ func updateRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("Updating routing email domain %s", d.Id())
 
-	patchRequest := &platformclientv2.Inbounddomainpatchrequest{
+	_, resp, err := proxy.updateRoutingEmailDomain(ctx, d.Id(), &platformclientv2.Inbounddomainpatchrequest{
 		MailFromSettings: &platformclientv2.Mailfromresult{
 			MailFromDomain: &mailFromDomain,
 		},
 		CustomSMTPServer: &platformclientv2.Domainentityref{
 			Id: &customSMTPServer,
 		},
-	}
-
-	if graphApiSettings := expandGraphApiSettings(d); graphApiSettings != nil {
-		patchRequest.GraphApiSettings = graphApiSettings
-	}
-
-	if imapSettings := expandImapSettings(d); imapSettings != nil {
-		patchRequest.ImapSettings = imapSettings
-	}
-
-	_, resp, err := proxy.updateRoutingEmailDomain(ctx, d.Id(), patchRequest)
+	})
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update routing email domain %s error: %s", d.Id(), err), resp)
 	}
