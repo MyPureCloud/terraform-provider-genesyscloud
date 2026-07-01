@@ -142,6 +142,106 @@ func TestAccResourceTaskManagementWorktypeStatusTransition(t *testing.T) {
 	})
 }
 
+func TestAccResourceTaskManagementWorktypeStatusTransitionClearOptionalFields(t *testing.T) {
+	t.Parallel()
+	var (
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
+
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
+
+		wtResourceLabel = "worktype_id"
+		wtName          = "wt_" + uuid.NewString()
+		wtDescription   = "test worktype description"
+
+		statusResourceLabel1 = "status1"
+		status1Name          = "status1-" + uuid.NewString()
+		status1Category      = "Open"
+
+		statusResourceLabel2 = "status2"
+		status2Name          = "status2-" + uuid.NewString()
+		status2Category      = "Closed"
+
+		transitionResourceLabel = "status1transition"
+		transitionResourceType  = ResourceType
+	)
+
+	baseConfig := workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+		workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
+		workType.GenerateWorktypeResourceBasic(
+			wtResourceLabel,
+			wtName,
+			wtDescription,
+			fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			"",
+		) +
+		GenerateWorktypeStatusResource(
+			statusResourceLabel1,
+			fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+			status1Name,
+			status1Category,
+			"",
+			util.NullValue,
+			"",
+			"default = true",
+		) +
+		GenerateWorktypeStatusResourceWithDependsOn(
+			statusResourceLabel2,
+			fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+			status2Name,
+			status2Category,
+			"",
+			util.NullValue,
+			"",
+			"genesyscloud_task_management_worktype_status"+"."+statusResourceLabel1,
+			"default = false",
+		)
+
+	transitionConfig := baseConfig +
+		GenerateWorkTypeStatusResourceTransition(
+			transitionResourceLabel,
+			fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+			fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel1),
+			fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2),
+			fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2),
+			"86400",
+			`status_transition_time = "04:00:00"`,
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: transitionConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_delay_seconds", "86400"),
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_time", "04:00:00"),
+					resource.TestCheckResourceAttrSet(transitionResourceType+"."+transitionResourceLabel, "default_destination_status_id"),
+				),
+			},
+			{
+				Config: baseConfig +
+					GenerateWorkTypeStatusResourceTransitionWithoutAutoTransition(
+						transitionResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel1),
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel2),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "default_destination_status_id", ""),
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_delay_seconds", "0"),
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_time", ""),
+				),
+			},
+		},
+		CheckDestroy: testVerifyTaskManagementWorktypeStatusDestroyed,
+	})
+}
+
 func testVerifyTaskManagementWorktypeStatusDestroyed(state *terraform.State) error {
 	taskManagementApi := platformclientv2.NewTaskManagementApi()
 	for _, res := range state.RootModule().Resources {
