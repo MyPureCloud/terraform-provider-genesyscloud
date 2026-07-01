@@ -53,6 +53,30 @@ func createRoutingEmailDomain(ctx context.Context, d *schema.ResourceData, meta 
 	log.Printf("Creating routing email domain %s", domainID)
 	domain, resp, err := proxy.createRoutingEmailDomain(ctx, &sdkDomain)
 	if err != nil {
+		// Handle the "already exists" race condition where the API creates the domain
+		// but returns a 400 error due to eventual consistency in some regions.
+		if util.IsStatus400(resp) && strings.Contains(fmt.Sprintf("%s", err), "domain already exists") {
+			log.Printf("Routing email domain %s reported as already existing. Attempting to adopt existing domain into state.", domainID)
+			retryErr := util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+				existingID, retryResp, retryable, lookupErr := proxy.getRoutingEmailDomainIdByName(ctx, domainID)
+				if lookupErr != nil {
+					if retryable {
+						return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error looking up existing routing email domain %s | error: %s", domainID, lookupErr), retryResp))
+					}
+					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error looking up existing routing email domain %s | error: %s", domainID, lookupErr), retryResp))
+				}
+				d.SetId(existingID)
+				return nil
+			})
+			if retryErr == nil && d.Id() != "" {
+				log.Printf("Adopted existing routing email domain %s into state", d.Id())
+				if d.HasChanges("mail_from_domain", "custom_smtp_server_id", "graph_api_settings", "imap_settings") {
+					return updateRoutingEmailDomain(ctx, d, meta)
+				}
+				return readRoutingEmailDomain(ctx, d, meta)
+			}
+			log.Printf("Failed to look up existing routing email domain %s after retries", domainID)
+		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create routing email domain %s error: %s", domainID, err), resp)
 	}
 
