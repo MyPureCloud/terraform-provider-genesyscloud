@@ -22,6 +22,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *journeyOutcomeProxy
 
+var outcomeCache = rc.NewResourceCache[platformclientv2.Outcome]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createJourneyOutcomeFunc func(ctx context.Context, p *journeyOutcomeProxy, outcome *platformclientv2.Outcomerequest) (*platformclientv2.Outcome, *platformclientv2.APIResponse, error)
 type getAllJourneyOutcomesFunc func(ctx context.Context, p *journeyOutcomeProxy) (*[]platformclientv2.Outcome, *platformclientv2.APIResponse, error)
@@ -57,7 +59,6 @@ seamlessly with the Genesys Cloud platform.
 */
 func newJourneyOutcomeProxy(clientConfig *platformclientv2.Configuration) *journeyOutcomeProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	outcomeCache := rc.NewResourceCache[platformclientv2.Outcome]()
 
 	return &journeyOutcomeProxy{
 		clientConfig:                  clientConfig,

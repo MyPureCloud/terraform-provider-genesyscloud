@@ -23,6 +23,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *businessRulesSchemaProxy
 
+var businessRulesSchemaCache = rc.NewResourceCache[platformclientv2.Businessrulesdataschema]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy, schema *platformclientv2.Businessrulesschemacreaterequest) (*platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error)
 type getAllBusinessRulesSchemaFunc func(ctx context.Context, p *businessRulesSchemaProxy) (*[]platformclientv2.Businessrulesdataschema, *platformclientv2.APIResponse, error)
@@ -50,7 +52,6 @@ type businessRulesSchemaProxy struct {
 // newBusinessRulesSchemaProxy initializes the business rules schema proxy with all of the data needed to communicate with Genesys Cloud
 func newBusinessRulesSchemaProxy(clientConfig *platformclientv2.Configuration) *businessRulesSchemaProxy {
 	api := platformclientv2.NewBusinessRulesApiWithConfig(clientConfig)
-	businessRulesSchemaCache := rc.NewResourceCache[platformclientv2.Businessrulesdataschema]()
 
 	return &businessRulesSchemaProxy{
 		clientConfig:                            clientConfig,

@@ -15,6 +15,8 @@ import (
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *externalUserIdentityProxy
 
+var externalUserIdentityCache = rc.NewResourceCache[platformclientv2.Userexternalidentifier]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createExternalUserIdentityFunc func(ctx context.Context, p *externalUserIdentityProxy, userId string, externalIdentity platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error)
 type getAllExternalUserIdentityFunc func(ctx context.Context, p *externalUserIdentityProxy, userId string) (*[]platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type externalUserIdentityProxy struct {
 
 func newExternalUserIdentityProxy(clientConfig *platformclientv2.Configuration) *externalUserIdentityProxy {
 	api := platformclientv2.NewUsersApiWithConfig(clientConfig)
-	externalUserIdentityCache := rc.NewResourceCache[platformclientv2.Userexternalidentifier]()
+
 	return &externalUserIdentityProxy{
 		clientConfig:                    clientConfig,
 		externalUserApi:                 api,

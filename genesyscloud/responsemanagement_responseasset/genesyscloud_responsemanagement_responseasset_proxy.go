@@ -27,6 +27,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *responsemanagementResponseassetProxy
 
+var assetCache = rc.NewResourceCache[platformclientv2.Responseasset]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllResponseAssetsFunc func(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error)
 type createRespManagementRespAssetFunc func(ctx context.Context, p *responsemanagementResponseassetProxy, respAsset *platformclientv2.Createresponseassetrequest) (*platformclientv2.Createresponseassetresponse, *platformclientv2.APIResponse, error)
@@ -51,7 +53,7 @@ type responsemanagementResponseassetProxy struct {
 // newRespManagementRespAssetProxy initializes the responsemanagement responseasset proxy with all of the data needed to communicate with Genesys Cloud
 func newRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuration) *responsemanagementResponseassetProxy {
 	api := platformclientv2.NewResponseManagementApiWithConfig(clientConfig)
-	assetCache := rc.NewResourceCache[platformclientv2.Responseasset]()
+
 	return &responsemanagementResponseassetProxy{
 		clientConfig:                         clientConfig,
 		responseManagementApi:                api,

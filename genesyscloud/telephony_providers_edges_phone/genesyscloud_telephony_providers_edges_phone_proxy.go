@@ -36,6 +36,8 @@ Each proxy implementation:
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *phoneProxy
 
+var phoneCache = rc.NewResourceCache[platformclientv2.Phone]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllPhonesFunc func(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type createPhoneFunc func(ctx context.Context, p *phoneProxy, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
@@ -77,7 +79,6 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
-	phoneCache := rc.NewResourceCache[platformclientv2.Phone]()
 
 	return &phoneProxy{
 		clientConfig: clientConfig,
