@@ -17,6 +17,7 @@ import (
 )
 
 func TestAccResourceJourneyActionMapActionMediaTypes(t *testing.T) {
+	t.Skip("DEVTOOLING-1737: Skipping due to infinite retry caused by is_pacing_enabled Deprecated+Default interaction with consistency checker (CPR-3051)")
 	runJourneyActionMapTestCaseWithFileServer(t, "action_media_types", 8111)
 }
 
