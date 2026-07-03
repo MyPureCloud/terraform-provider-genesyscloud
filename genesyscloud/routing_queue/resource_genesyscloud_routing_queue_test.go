@@ -784,7 +784,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				// Update the flows
 				PreConfig: func() {
 					// Wait for flows to be fully published and active before updating the queue
-					time.Sleep(15 * time.Second)
+					time.Sleep(30 * time.Second)
 				},
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,
