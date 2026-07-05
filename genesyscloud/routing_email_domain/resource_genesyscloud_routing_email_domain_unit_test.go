@@ -16,6 +16,28 @@ func routingEmailDomainTestSchema() map[string]*schema.Schema {
 	return ResourceRoutingEmailDomain().Schema
 }
 
+func TestUnitRoutingEmailDomainExporter_UnResolvableSchemasOmitComputedStatus(t *testing.T) {
+	exporter := RoutingEmailDomainExporter()
+
+	for _, attr := range []string{"graph_api_settings", "imap_settings"} {
+		attrSchema, ok := exporter.UnResolvableAttributes[attr]
+		if !ok {
+			t.Fatalf("expected %s in UnResolvableAttributes", attr)
+		}
+
+		elem, ok := attrSchema.Elem.(*schema.Resource)
+		if !ok {
+			t.Fatalf("expected %s export schema to use nested resource", attr)
+		}
+		if _, ok := elem.Schema["status"]; ok {
+			t.Fatalf("%s export schema must not include computed status", attr)
+		}
+		if _, ok := elem.Schema["integration_id"]; !ok {
+			t.Fatalf("%s export schema must include integration_id", attr)
+		}
+	}
+}
+
 func TestUnitRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *testing.T) {
 	instanceID := "delltechnologies.mypurecloud.com"
 	state := &terraform.InstanceState{
@@ -81,28 +103,6 @@ func TestUnitGetRoutingEmailDomainIdByName_SubdomainPrefixMatch(t *testing.T) {
 	}
 	if gotID != fullID {
 		t.Fatalf("expected id %q, got %q", fullID, gotID)
-	}
-}
-
-func TestUnitRoutingEmailDomainExporter_UnResolvableSchemasOmitComputedStatus(t *testing.T) {
-	exporter := RoutingEmailDomainExporter()
-
-	for _, attr := range []string{"graph_api_settings", "imap_settings"} {
-		attrSchema, ok := exporter.UnResolvableAttributes[attr]
-		if !ok {
-			t.Fatalf("expected %s in UnResolvableAttributes", attr)
-		}
-
-		elem, ok := attrSchema.Elem.(*schema.Resource)
-		if !ok {
-			t.Fatalf("expected %s export schema to use nested resource", attr)
-		}
-		if _, ok := elem.Schema["status"]; ok {
-			t.Fatalf("%s export schema must not include computed status", attr)
-		}
-		if _, ok := elem.Schema["integration_id"]; !ok {
-			t.Fatalf("%s export schema must include integration_id", attr)
-		}
 	}
 }
 
