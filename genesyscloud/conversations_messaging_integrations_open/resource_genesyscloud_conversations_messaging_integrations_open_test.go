@@ -88,6 +88,9 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 			},
 			// Update outbound_notification_webhook_url
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					GenerateConversationMessagingOpenResource(
