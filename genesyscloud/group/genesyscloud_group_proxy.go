@@ -6,6 +6,7 @@ import (
 	"log"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -257,7 +258,7 @@ func getAllGroupFn(ctx context.Context, p *groupProxy) (*[]platformclientv2.Grou
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allGroups []platformclientv2.Group
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 
 	groups, resp, getErr := p.groupsApi.GetGroups(pageSize, 1, nil, nil, "")
 	if getErr != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
@@ -180,7 +181,7 @@ func getAllRoutingWrapupcodeFn(ctx context.Context, p *routingWrapupcodeProxy) (
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allWrapupcodes []platformclientv2.Wrapupcode
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 
 	wrapupcodes, apiResponse, err := p.routingApi.GetRoutingWrapupcodes(pageSize, 1, "", "", "", []string{}, []string{})
 	if err != nil {

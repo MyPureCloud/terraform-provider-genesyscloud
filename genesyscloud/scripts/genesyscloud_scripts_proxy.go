@@ -17,6 +17,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 )
@@ -155,7 +156,7 @@ func getAllPublishedScriptsFn(ctx context.Context, p *scriptsProxy) (*[]platform
 
 	var allPublishedScripts []platformclientv2.Script
 	var resp *platformclientv2.APIResponse
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 
 	data, resp, err := p.scriptsApi.GetScriptsPublished(pageSize, 1, "", "", "", "", "", "")
 	if err != nil {

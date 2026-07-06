@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -275,9 +276,9 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	//Inner function to get user based on status
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
 		var users []platformclientv2.User
-		const pageSize = 500
+		pageSize := page_size.ForResource(ResourceType, 500)
 		// DEVTOOLING-862: inactive GetUsers requests return 400 beyond 10,000 users (100 pages at pageSize).
-		const maxInactiveUserPages = 10_000 / pageSize
+		maxInactiveUserPages := 10_000 / pageSize
 		expandedAttributes := []string{
 			// Expands
 			"skills",

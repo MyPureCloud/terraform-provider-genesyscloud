@@ -12,6 +12,7 @@ import (
 
 	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 )
 
 /*
@@ -191,7 +192,7 @@ func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name strin
 	}
 
 	var allQueues []platformclientv2.Queue
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 
 	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
 	if getErr != nil {
@@ -335,7 +336,7 @@ func fetchQueueWrapupCodeAssignments(ctx context.Context, api *platformclientv2.
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var assignments []platformclientv2.Wrapupcode
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 	apiCalls := 0
 
 	wrapupcodes, apiResponse, err := api.GetRoutingQueueWrapupcodes(queueId, pageSize, 1, "")
