@@ -353,7 +353,7 @@ func getArchitectFlow(actionMapAction map[string]interface{}) *platformclientv2.
 
 func flattenOpenActionFields(openActionFields *platformclientv2.Openactionfields) map[string]interface{} {
 	architectFlowFieldsMap := make(map[string]interface{})
-	architectFlowFieldsMap["open_action"] = lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
+	stringmap.SetValueIfNotNil(architectFlowFieldsMap, "open_action", lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef))
 	if openActionFields.ConfigurationFields != nil {
 		jsonString, err := util.InterfaceToJson(openActionFields.ConfigurationFields)
 		if err != nil {
