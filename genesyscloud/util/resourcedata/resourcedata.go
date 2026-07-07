@@ -148,6 +148,19 @@ func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 	}
 }
 
+// SetStringValueIfNotNil sets {key} to *value only when value is non-nil, and
+// leaves the attribute untouched when value is nil. Unlike SetNillableValue,
+// the nil branch does NOT call d.Set(key, nil) - for a TypeString that coerces
+// an absent value to "" and produces a null -> "" inconsistency ("provider
+// produced an invalid plan / unexpected new value"). Leaving the attribute unset
+// preserves null in state. Use this for optional string fields the API returns
+// as nil when absent.
+func SetStringValueIfNotNil(d *schema.ResourceData, key string, value *string) {
+	if value != nil {
+		_ = d.Set(key, *value)
+	}
+}
+
 // SetNillableValueWithInterfaceArrayWithFunc will set the value of {key} to an interface array using func {f} if {value} is not nil
 func SetNillableValueWithInterfaceArrayWithFunc[T any](d *schema.ResourceData, key string, value *T, f func(*T) []interface{}) {
 	if value != nil {
