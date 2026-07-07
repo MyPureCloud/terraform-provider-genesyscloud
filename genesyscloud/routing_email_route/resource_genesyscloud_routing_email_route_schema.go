@@ -207,6 +207,7 @@ func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 			"reply_email_address": {"route_id", "self_reference_route"},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"reply_email_address.route_id":             {ResolverFunc: resourceExporter.ReplyEmailAddressSelfReferenceRouteExporterResolver},
 			"reply_email_address.self_reference_route": {ResolverFunc: resourceExporter.ReplyEmailAddressSelfReferenceRouteExporterResolver},
 		},
 	}
