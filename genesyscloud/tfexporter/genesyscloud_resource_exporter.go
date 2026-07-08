@@ -879,12 +879,28 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 		if diagnostics.HasError() {
 			return
 		}
-		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s: %v", resource.Type, resource.State.ID, err))
+
+		maxRetries := 3
+		var lastErr error
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
+				lastErr = err
+				if attempt < maxRetries-1 {
+					backoff := time.Duration(1<<attempt) * time.Second
+					tflog.Warn(g.ctx, fmt.Sprintf("RetrieveAndWriteFilesFunc failed for resource type %s and id %s (attempt %d/%d). Retrying in %v. Error: %v", resource.Type, resource.State.ID, attempt+1, maxRetries, backoff, err))
+					time.Sleep(backoff)
+				}
+			} else {
+				lastErr = nil
+				break
+			}
+		}
+		if lastErr != nil {
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s after %d attempts: %v", resource.Type, resource.State.ID, maxRetries, lastErr))
 			diagnostics = append(diagnostics, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
-				Detail:   err.Error(),
+				Detail:   lastErr.Error(),
 			})
 		}
 	}
