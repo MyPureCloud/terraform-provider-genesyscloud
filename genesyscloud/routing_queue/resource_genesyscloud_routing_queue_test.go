@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var (
@@ -784,7 +784,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 				// Update the flows
 				PreConfig: func() {
 					// Wait for flows to be fully published and active before updating the queue
-					time.Sleep(15 * time.Second)
+					time.Sleep(30 * time.Second)
 				},
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,

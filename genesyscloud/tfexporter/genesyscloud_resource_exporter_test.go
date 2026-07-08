@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -249,7 +249,11 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 		resourceFilter:     IncludeFilterResourceByRegex,
 		exportFormat:       "hcl",
 		maxConcurrentOps:   10,
-		provider:           &schema.Provider{},
+		provider: &schema.Provider{
+			ResourcesMap: map[string]*schema.Resource{
+				testResourceType: testResource,
+			},
+		},
 		exporters: &map[string]*resourceExporter.ResourceExporter{
 			testResourceType: testExporter,
 		},
