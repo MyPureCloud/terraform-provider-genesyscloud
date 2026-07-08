@@ -16,24 +16,35 @@ func routingEmailDomainTestSchema() map[string]*schema.Schema {
 	return ResourceRoutingEmailDomain().Schema
 }
 
-func TestUnitRoutingEmailDomainExporter_UnResolvableSchemasOmitComputedStatus(t *testing.T) {
+func TestUnitRoutingEmailDomainExporter_IntegrationReferences(t *testing.T) {
 	exporter := RoutingEmailDomainExporter()
 
+	if _, ok := exporter.UnResolvableAttributes["custom_smtp_server_id"]; !ok {
+		t.Fatal("expected custom_smtp_server_id in UnResolvableAttributes")
+	}
 	for _, attr := range []string{"graph_api_settings", "imap_settings"} {
-		attrSchema, ok := exporter.UnResolvableAttributes[attr]
-		if !ok {
-			t.Fatalf("expected %s in UnResolvableAttributes", attr)
+		if _, ok := exporter.UnResolvableAttributes[attr]; ok {
+			t.Fatalf("expected %s to be omitted from UnResolvableAttributes", attr)
 		}
+	}
 
-		elem, ok := attrSchema.Elem.(*schema.Resource)
+	for block, attrs := range exporter.RemoveIfMissing {
+		if len(attrs) != 1 || attrs[0] != "integration_id" {
+			t.Fatalf("expected %s RemoveIfMissing to require integration_id, got %v", block, attrs)
+		}
+	}
+	if len(exporter.RemoveIfMissing) != 2 {
+		t.Fatalf("expected RemoveIfMissing for graph_api_settings and imap_settings, got %v", exporter.RemoveIfMissing)
+	}
+
+	refType := "genesyscloud_integration"
+	for _, path := range []string{"graph_api_settings.integration_id", "imap_settings.integration_id"} {
+		ref, ok := exporter.RefAttrs[path]
 		if !ok {
-			t.Fatalf("expected %s export schema to use nested resource", attr)
+			t.Fatalf("expected RefAttrs for %s", path)
 		}
-		if _, ok := elem.Schema["status"]; ok {
-			t.Fatalf("%s export schema must not include computed status", attr)
-		}
-		if _, ok := elem.Schema["integration_id"]; !ok {
-			t.Fatalf("%s export schema must include integration_id", attr)
+		if ref.RefType != refType {
+			t.Fatalf("expected %s RefType %q, got %q", path, refType, ref.RefType)
 		}
 	}
 }
@@ -219,6 +230,16 @@ func TestUnitFlattenGraphApiSettings(t *testing.T) {
 	if flattenGraphApiSettings(nil) != nil {
 		t.Fatalf("expected nil for nil settings")
 	}
+
+	if flattenGraphApiSettings(&platformclientv2.Graphapisettings{}) != nil {
+		t.Fatalf("expected nil for empty Graph API settings object")
+	}
+
+	if flattenGraphApiSettings(&platformclientv2.Graphapisettings{
+		Integration: &platformclientv2.Domainentityref{},
+	}) != nil {
+		t.Fatalf("expected nil when Graph API integration id is unset")
+	}
 }
 
 func TestUnitFlattenImapSettings(t *testing.T) {
@@ -246,6 +267,16 @@ func TestUnitFlattenImapSettings(t *testing.T) {
 
 	if flattenImapSettings(nil) != nil {
 		t.Fatalf("expected nil for nil settings")
+	}
+
+	if flattenImapSettings(&platformclientv2.Imapsettings{}) != nil {
+		t.Fatalf("expected nil for empty IMAP settings object")
+	}
+
+	if flattenImapSettings(&platformclientv2.Imapsettings{
+		Integration: &platformclientv2.Domainentityref{},
+	}) != nil {
+		t.Fatalf("expected nil when IMAP integration id is unset")
 	}
 }
 

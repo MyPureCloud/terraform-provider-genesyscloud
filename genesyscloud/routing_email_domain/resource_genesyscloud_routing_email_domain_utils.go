@@ -40,7 +40,7 @@ func CleanupRoutingEmailDomains(prefix string) error {
 }
 
 func flattenGraphApiSettings(settings *platformclientv2.Graphapisettings) []interface{} {
-	if settings == nil {
+	if settings == nil || settings.Integration == nil || settings.Integration.Id == nil {
 		return nil
 	}
 
@@ -52,7 +52,7 @@ func flattenGraphApiSettings(settings *platformclientv2.Graphapisettings) []inte
 }
 
 func flattenImapSettings(settings *platformclientv2.Imapsettings) []interface{} {
-	if settings == nil {
+	if settings == nil || settings.Integration == nil || settings.Integration.Id == nil {
 		return nil
 	}
 
