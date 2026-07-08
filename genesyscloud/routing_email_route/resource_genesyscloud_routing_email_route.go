@@ -127,8 +127,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "auto_bcc", route.AutoBcc, flattenAutoBccEmailAddress)
 		resourcedata.SetNillableReference(d, "spam_flow_id", route.SpamFlow)
 		resourcedata.SetNillableValue(d, "allow_multiple_actions", route.AllowMultipleActions)
-
-		_ = d.Set("signature", flattenSignature(route.Signature))
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "signature", route.Signature, flattenSignature)
 
 		if route.Skills != nil {
 			_ = d.Set("skill_ids", util.SdkDomainEntityRefArrToSet(*route.Skills))
