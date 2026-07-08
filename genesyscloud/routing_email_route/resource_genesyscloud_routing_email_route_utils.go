@@ -32,6 +32,7 @@ func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclient
 		Flow:      util.BuildSdkDomainEntityRef(d, "flow_id"),
 		AutoBcc:   buildAutoBccEmailAddresses(d),
 		SpamFlow:  util.BuildSdkDomainEntityRef(d, "spam_flow_id"),
+		Signature: buildSignature(d),
 	}
 
 	if d.Get("history_inclusion") != "" {
@@ -50,6 +51,28 @@ func buildFromEmail(d *schema.ResourceData) *string {
 		return platformclientv2.String(d.Get("from_email").(string))
 	}
 	return nil
+}
+
+func buildSignature(d *schema.ResourceData) *platformclientv2.Signature {
+	sigList := d.Get("signature").([]interface{})
+	if len(sigList) == 0 {
+		return nil
+	}
+	sigMap := sigList[0].(map[string]interface{})
+	signature := &platformclientv2.Signature{}
+	if v, ok := sigMap["enabled"].(bool); ok {
+		signature.Enabled = &v
+	}
+	if v, ok := sigMap["canned_response_id"].(string); ok && v != "" {
+		signature.CannedResponseId = &v
+	}
+	if v, ok := sigMap["always_included"].(bool); ok {
+		signature.AlwaysIncluded = &v
+	}
+	if v, ok := sigMap["inclusion_type"].(string); ok && v != "" {
+		signature.InclusionType = &v
+	}
+	return signature
 }
 
 func buildAutoBccEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Emailaddress {
@@ -85,6 +108,18 @@ func buildReplyEmailAddress(domainID string, routeID string, pattern string) *pl
 }
 
 // Flatten Functions
+
+func flattenSignature(sig *platformclientv2.Signature) []interface{} {
+	if sig == nil {
+		return nil
+	}
+	sigMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(sigMap, "enabled", sig.Enabled)
+	resourcedata.SetMapValueIfNotNil(sigMap, "canned_response_id", sig.CannedResponseId)
+	resourcedata.SetMapValueIfNotNil(sigMap, "always_included", sig.AlwaysIncluded)
+	resourcedata.SetMapValueIfNotNil(sigMap, "inclusion_type", sig.InclusionType)
+	return []interface{}{sigMap}
+}
 
 func flattenAutoBccEmailAddress(emailAddress *[]platformclientv2.Emailaddress) []interface{} {
 	if len(*emailAddress) == 0 {

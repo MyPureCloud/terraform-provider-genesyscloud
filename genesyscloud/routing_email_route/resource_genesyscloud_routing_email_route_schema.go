@@ -35,6 +35,32 @@ var (
 			},
 		},
 	}
+
+	signatureResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"enabled": {
+				Description: "A toggle to enable the signature on email send.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"canned_response_id": {
+				Description: "The identifier referring to an email signature canned response.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"always_included": {
+				Description: "A toggle that defines if a signature is always included or only set on the first email in an email chain.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"inclusion_type": {
+				Description:  "The configuration to indicate when the signature of a conversation has to be included.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Never", "Always", "FirstResponseOnly"}, false),
+			},
+		},
+	}
 )
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
@@ -166,6 +192,13 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"signature": {
+				Description: "The configuration for the canned response signature that will be appended to outbound emails sent via this route.",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem:        signatureResource,
+			},
 		},
 	}
 }
@@ -202,6 +235,7 @@ func RoutingEmailRouteExporter() *resourceExporter.ResourceExporter {
 			"spam_flow_id":                  {RefType: "genesyscloud_flow"},
 			"reply_email_address.domain_id": {RefType: "genesyscloud_routing_email_domain"},
 			"reply_email_address.route_id":  {RefType: "genesyscloud_routing_email_route"},
+			"signature.canned_response_id":  {RefType: "genesyscloud_responsemanagement_response"},
 		},
 		RemoveIfMissing: map[string][]string{
 			"reply_email_address": {"route_id", "self_reference_route"},
