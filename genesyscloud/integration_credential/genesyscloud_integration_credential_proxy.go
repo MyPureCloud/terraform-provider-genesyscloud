@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -269,7 +269,7 @@ func getIntegrationByCredentialIdFn(ctx context.Context, p *IntegrationCredsProx
 	var allIntegrations []platformclientv2.Integration
 	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
-		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "", "")
 		if err != nil {
 			return nil, response, err
 		}

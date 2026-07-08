@@ -41,6 +41,7 @@ The following OAuth scopes are required to use this resource:
 resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
   name = "Example Callable time set"
   callable_times {
+    name         = "Africa/Abidjan"
     time_zone_id = "Africa/Abidjan"
     time_slots {
       start_time = "07:00:00"
@@ -54,6 +55,7 @@ resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
     }
   }
   callable_times {
+    name         = "Europe/Dublin"
     time_zone_id = "Europe/Dublin"
     time_slots {
       start_time = "05:30:30"
@@ -91,6 +93,10 @@ Required:
 
 - `time_slots` (Block Set, Min: 1) The time intervals for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times--time_slots))
 - `time_zone_id` (String) The time zone for the time slots; for example, Africa/Abidjan
+
+Optional:
+
+- `name` (String) The name for the callable time.
 
 <a id="nestedblock--callable_times--time_slots"></a>
 ### Nested Schema for `callable_times.time_slots`

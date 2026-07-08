@@ -81,7 +81,10 @@ func ResourceBcpTfExporter() *schema.Resource {
 		// - Cross-org resource correlation
 		// - Backup and restore planning
 		Description: "Genesys Cloud BCP Resource to export resource IDs, names, and dependencies in JSON format.",
-
+		// This resource is create-only (no update). All attributes are ForceNew,
+		// so any configuration change triggers a destroy + re-create, producing a fresh export.
+		// This is intentional — the resource represents a point-in-time export operation,
+		// not a persistent managed object.
 		CreateWithoutTimeout: createBcpTfExporter,
 		ReadWithoutTimeout:   readBcpTfExporter,
 		DeleteContext:        deleteBcpTfExporter,
@@ -146,6 +149,17 @@ func ResourceBcpTfExporter() *schema.Resource {
 				},
 				ForceNew:      true,
 				ConflictsWith: []string{"include_filter_resources"},
+			},
+			"max_workers": {
+				// Maximum number of concurrent workers to use for exporting resources.
+				// Defaults to 10 if not specified.
+				// Increasing this number may speed up exports but can also increase load on the Genesys Cloud API.
+				Description:      "Maximum number of concurrent workers to use for exporting resources.",
+				Type:             schema.TypeInt,
+				Optional:         true,
+				Default:          10,
+				ForceNew:         true,
+				ValidateDiagFunc: validators.ValidateIntMin(1),
 			},
 		},
 	}

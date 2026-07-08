@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -46,7 +46,8 @@ resource "genesyscloud_intents_customerintents" "intent" {
 `, namePrefix, categoryDescription)
 }
 
-// AccOwnerRoleAndUserRolesHCL grants default_case_owner caseManagement caseplan/case view in home division (auth role + user_roles).
+// AccOwnerRoleAndUserRolesHCL grants default_case_owner caseManagement caseplan/case view plus
+// the built-in admin role in home division (auth role + user_roles).
 func AccOwnerRoleAndUserRolesHCL(roleDisplayName string) string {
 	roleName := roleDisplayName
 	if len(roleName) > 100 {
@@ -59,11 +60,19 @@ func AccOwnerRoleAndUserRolesHCL(roleDisplayName string) string {
 		authrole.GenerateRolePermPolicy("caseManagement", "caseplan", `"view"`),
 		authrole.GenerateRolePermPolicy("caseManagement", "case", `"view"`),
 	) + `
+data "genesyscloud_auth_role" "admin" {
+  name = "admin"
+}
+
 resource "genesyscloud_user_roles" "cp_owner_roles" {
   user_id = genesyscloud_user.owner.id
   roles {
     role_id      = genesyscloud_auth_role.cp_owner_cm.id
     division_ids = [data.genesyscloud_auth_division_home.home.id]
+  }
+  roles {
+    role_id      = data.genesyscloud_auth_role.admin.id
+    division_ids = ["*"]
   }
 }
 `

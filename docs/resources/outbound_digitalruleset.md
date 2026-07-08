@@ -123,7 +123,7 @@ Required:
 <a id="nestedblock--rules--actions--set_content_template_action_settings"></a>
 ### Nested Schema for `rules.actions.set_content_template_action_settings`
 
-Required:
+Optional:
 
 - `email_content_template_id` (String) A string of email contentTemplateId.
 - `sms_content_template_id` (String) A string of sms contentTemplateId.

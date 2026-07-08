@@ -222,6 +222,18 @@ func GetResourceExporterByResourceType(resourceType string) *resourceExporter.Re
 	return resourceExporters[resourceType]
 }
 
+// GetClonedResourceExporterByResourceType returns a per-call copy of the registry exporter
+// so MRMO export does not mutate shared singleton state.
+func GetClonedResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
+	return resourceExporter.CloneResourceExporter(GetResourceExporterByResourceType(resourceType))
+}
+
+// ResourceTypeSupportsExport reports whether the provider has a ResourceExporter for the
+// given type (required for MRMO ExportByType and bulk export paths).
+func ResourceTypeSupportsExport(resourceType string) bool {
+	return GetResourceExporterByResourceType(resourceType) != nil
+}
+
 func GetResourceTypeNames() []string {
 	if !resourceMapsAreRegistered() {
 		registerResources()

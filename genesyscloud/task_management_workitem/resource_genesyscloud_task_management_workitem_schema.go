@@ -209,6 +209,9 @@ func TaskManagementWorkitemExporter() *resourceExporter.ResourceExporter {
 			"skills_ids":             {RefType: "genesyscloud_routing_skill"},
 			"status_id":              {RefType: "genesyscloud_task_management_worktype_status"},
 		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"status_id": {ResolverFunc: task_management_worktype_status.WorktypeStatusRefResolver("status_id")},
+		},
 	}
 }
 

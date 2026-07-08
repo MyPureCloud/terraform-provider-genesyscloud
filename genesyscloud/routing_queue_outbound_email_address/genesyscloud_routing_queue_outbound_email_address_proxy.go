@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -82,9 +82,8 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}
 
-	// For some reason outbound email address is a double pointer
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		return *queue.OutboundEmailAddress, resp, nil
+	if queue.OutboundEmailAddress != nil {
+		return queue.OutboundEmailAddress, resp, nil
 	}
 
 	return nil, resp, fmt.Errorf("no outbound email address for queue %s", queueId)
@@ -142,8 +141,8 @@ func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQue
 		return nil, resp, fmt.Errorf("failed to update outbound email address for routing queue %s: %s", queueId, err)
 	}
 
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		return *queue.OutboundEmailAddress, resp, nil
+	if queue.OutboundEmailAddress != nil {
+		return queue.OutboundEmailAddress, resp, nil
 	}
 
 	return nil, resp, fmt.Errorf("error updating outbound email address for routing queue %s: %s", queueId, err)

@@ -54,6 +54,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[stageplanpkg.ResourceType] = stageplanpkg.DataSourceCaseManagementStageplan()
 	providerDataSources[caseplanpkg.ResourceType] = caseplanpkg.DataSourceCaseManagementCaseplan()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerDataSources[authrole.ResourceType] = authrole.DataSourceAuthRole()
 }
 
 func initTestResources() {

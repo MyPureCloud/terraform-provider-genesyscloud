@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var internalProxy *routingQueueConditionalGroupActivationProxy
@@ -125,9 +125,8 @@ func updateRoutingQueueConditionActivationFn(ctx context.Context, p *routingQueu
 		SuppressInQueueCallRecording: queue.SuppressInQueueCallRecording,
 	}
 
-	// OutboundEmailAddress returned by GetRoutingQueue is a pointer to a pointer
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		updateQueue.OutboundEmailAddress = *queue.OutboundEmailAddress
+	if queue.OutboundEmailAddress != nil {
+		updateQueue.OutboundEmailAddress = queue.OutboundEmailAddress
 	}
 
 	// Remove queue_id from first CGR rule to avoid API error

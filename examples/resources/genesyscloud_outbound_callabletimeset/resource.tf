@@ -1,6 +1,7 @@
 resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
   name = "Example Callable time set"
   callable_times {
+    name         = "Africa/Abidjan"
     time_zone_id = "Africa/Abidjan"
     time_slots {
       start_time = "07:00:00"
@@ -14,6 +15,7 @@ resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
     }
   }
   callable_times {
+    name         = "Europe/Dublin"
     time_zone_id = "Europe/Dublin"
     time_slots {
       start_time = "05:30:30"

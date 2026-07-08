@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v191/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/stretchr/testify/assert"
 )
@@ -129,7 +129,7 @@ func TestUnitBulkApplyRowChangesMultiChunkWithSmallLimits(t *testing.T) {
 			Id:      &tId,
 			Version: platformclientv2.Int(versionNumber),
 			Contract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{Id: &tSchemaId},
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{Id: &tSchemaId},
 			},
 			Columns: tColumns,
 		}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
