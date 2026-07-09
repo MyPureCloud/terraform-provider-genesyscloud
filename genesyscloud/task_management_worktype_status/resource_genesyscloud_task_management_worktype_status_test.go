@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -271,6 +271,11 @@ func TestAccResourceTaskManagementWorktypeStatusAutoTerminateWorkitem(t *testing
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel2, "auto_terminate_workitem", util.FalseValue),
 				),
+			},
+			{
+				ResourceName:      ResourceType + "." + statusResourceLabel2,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyTaskManagementWorktypeStatusDestroyed,

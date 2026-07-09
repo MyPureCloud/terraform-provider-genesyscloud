@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -124,9 +124,23 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 	d.SetId(worktypeId + "/" + *workitemStatus.Id)
 
 	if autoTerminate := resourcedata.GetNillableBool(d, "auto_terminate_workitem"); autoTerminate != nil {
-		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusAutoTerminate(ctx, worktypeId, *workitemStatus.Id, *autoTerminate)
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s auto_terminate_workitem: %s", worktypeId, *workitemStatus.Id, err), resp)
+		statusId := *workitemStatus.Id
+		diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
+			workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusAutoTerminate(ctx, worktypeId, statusId, *autoTerminate)
+			if err == nil {
+				return nil
+			}
+			builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s auto_terminate_workitem: %s", worktypeId, statusId, err), resp)
+			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
+				return retry.RetryableError(builtDiagErr)
+			}
+			if util.IsStatus409(resp) {
+				return retry.RetryableError(builtDiagErr)
+			}
+			return retry.NonRetryableError(builtDiagErr)
+		})
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -246,8 +260,9 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		}
 		// When only auto_terminate_workitem changed, the SDK update omits false and the API may return no change.
 		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "No change for the record is obtained") && d.HasChange("auto_terminate_workitem") {
-			workitemStatus, resp, err = proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
-			if err == nil {
+			currentStatus, _, getErr := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
+			if getErr == nil && currentStatus != nil {
+				workitemStatus = currentStatus
 				return nil
 			}
 		}

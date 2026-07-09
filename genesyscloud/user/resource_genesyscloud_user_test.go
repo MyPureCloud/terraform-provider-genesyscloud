@@ -25,7 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ext1, ext2 string) {
@@ -268,7 +268,6 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 }
 
 func TestAccResourceUserAddresses(t *testing.T) {
-	t.Parallel()
 	var (
 		addrUserResourceLabel1      = "test-user-addr1"
 		addrUserResourceLabel2      = "test-user-addr2"
@@ -573,6 +572,17 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.#", "0"),
 				),
 			},
+			{
+				// Final step: remove extension pool so it can be destroyed cleanly
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel4,
+					addrEmail4,
+					addrUserName4,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "email", addrEmail4),
+				),
+			},
 		},
 		CheckDestroy: testVerifyUsersDestroyed,
 	})
@@ -639,7 +649,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 }
 
 func TestAccResourceUserSkills(t *testing.T) {
-	t.Parallel()
+
 	var (
 		userResourceLabel1  = "test-user"
 		email1              = "terraform-" + uuid.NewString() + "@user.com"
@@ -728,7 +738,6 @@ func TestAccResourceUserSkills(t *testing.T) {
 }
 
 func TestAccResourceUserLanguages(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user"
 		email1             = "terraform-" + uuid.NewString() + "@user.com"
@@ -814,7 +823,6 @@ func TestAccResourceUserLanguages(t *testing.T) {
 }
 
 func TestAccResourceUserLocations(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-loc"
 		email              = "terraform-" + uuid.NewString() + "@user.com"
@@ -871,7 +879,6 @@ func TestAccResourceUserLocations(t *testing.T) {
 }
 
 func TestAccResourceUserEmployerInfo(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-info"
 		userName           = "Info Terraform"
@@ -975,7 +982,6 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 }
 
 func TestAccResourceUserroutingUtilBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-util"
 		userName           = "Terraform Util"
@@ -1109,7 +1115,6 @@ func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 }
 
 func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-util"
 		userName           = "Terraform Util"

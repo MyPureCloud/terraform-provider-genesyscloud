@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
@@ -48,6 +48,7 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
 					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription1),
 					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "content_search_enabled", util.TrueValue),
 				),
 			},
 			{
@@ -62,6 +63,7 @@ func TestAccResourceKnowledgeKnowledgebaseBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "name", knowledgeBaseName1),
 					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "description", knowledgeBaseDescription2),
 					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "core_language", knowledgeBaseCoreLanguage1),
+					resource.TestCheckResourceAttr(ResourceType+"."+knowledgeBaseResourceLabel1, "content_search_enabled", util.TrueValue),
 				),
 			},
 			{

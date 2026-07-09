@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -31,6 +32,15 @@ func TestAccResourceCaseManagementStageplan(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForStageplan(caseplanName, refPrefix, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: testAccCaseplanForStageplan(caseplanName, refPrefix, schemaName, emailLocal) + fmt.Sprintf(`
 resource "genesyscloud_case_management_stageplan" "s1" {
   caseplan_id   = genesyscloud_case_management_caseplan.cp.id
@@ -59,6 +69,33 @@ data "genesyscloud_case_management_stageplan" "lookup" {
 		},
 		CheckDestroy: caseplanpkg.AccVerifyCaseplanDestroyed,
 	})
+}
+
+// testAccUserAndDepsForStageplan returns the config with user, roles, and all dependencies
+// but WITHOUT the caseplan resource. This allows role propagation before creating the caseplan.
+func testAccUserAndDepsForStageplan(caseplanName, refPrefix, schemaName, emailLocal string) string {
+	props := `jsonencode({
+    acc_note_text = {
+      allOf     = [{ "$ref" = "#/definitions/text" }]
+      title     = "n"
+      minLength = 1
+      maxLength = 100
+    }
+  })`
+
+	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
+		caseplanpkg.AccCustomerIntentDepsHCL(caseplanName, "acc stageplan deps") +
+		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc", props, util.TrueValue) +
+		fmt.Sprintf(`
+resource "genesyscloud_user" "owner" {
+  email       = "%[1]s@exampleuser.com"
+  name        = "%[2]s owner"
+  password    = "TfAccCaseplan1!"
+  division_id = data.genesyscloud_auth_division_home.home.id
+}
+
+%[3]s
+`, emailLocal, caseplanName, caseplanpkg.AccOwnerRoleAndUserRolesHCL(caseplanName))
 }
 
 func testAccCaseplanForStageplan(caseplanName, refPrefix, schemaName, emailLocal string) string {

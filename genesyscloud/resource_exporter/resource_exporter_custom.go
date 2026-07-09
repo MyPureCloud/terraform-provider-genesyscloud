@@ -10,7 +10,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
@@ -248,6 +248,7 @@ func ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap map[string]in
 	if routeId == currentRouteReference {
 		configMap["self_reference_route"] = true
 		configMap["route_id"] = nil
+		configMap["domain_id"] = nil
 	}
 	return nil
 }

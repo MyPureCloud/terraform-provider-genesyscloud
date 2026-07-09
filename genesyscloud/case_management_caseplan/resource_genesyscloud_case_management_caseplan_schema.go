@@ -163,7 +163,7 @@ func CaseManagementCaseplanExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":           {RefType: "genesyscloud_auth_division"},
 			"default_case_owner.id": {RefType: "genesyscloud_user"},
-			"customer_intent.id":    {RefType: "genesyscloud_customer_intent"},
+			"customer_intent.id":    {RefType: "genesyscloud_intents_customerintents"},
 			"data_schema.id":        {RefType: "genesyscloud_task_management_workitem_schema"},
 		},
 	}
