@@ -292,7 +292,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 				Id: &tDivisionId,
 			},
 			Contract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{
 					Id: &tSchemaId,
 				},
 			},
@@ -539,7 +539,7 @@ func TestUnitResourceBusinessRulesDecisionTableRead(t *testing.T) {
 				Id: &tDivisionId,
 			},
 			Contract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{
 					Id: &tSchemaId,
 				},
 			},
@@ -838,7 +838,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateNameDescription(t *testing.
 				Id: &tDivisionId,
 			},
 			Contract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{
 					Id: &tSchemaId,
 				},
 			},
@@ -1007,7 +1007,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRows(t *testing.T) {
 				Id: &tDivisionId,
 			},
 			Contract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{
 					Id: &tSchemaId,
 				},
 			},
@@ -1549,7 +1549,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRowFailureRollback(t *testi
 				Version: platformclientv2.Int(1),
 			},
 			PublishedContract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{
 					Id: &tSchemaId,
 				},
 			},
@@ -1597,7 +1597,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRowFailureRollback(t *testi
 				Id: &tDivisionId,
 			},
 			Contract: &platformclientv2.Decisiontablecontract{
-				ParentSchema: &platformclientv2.Domainentityref{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{
 					Id: &tSchemaId,
 				},
 			},
