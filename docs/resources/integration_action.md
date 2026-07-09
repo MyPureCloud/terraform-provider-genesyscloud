@@ -6,17 +6,28 @@ description: |-
 ---
 # genesyscloud_integration_action (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/integrations/actions](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions)
-* [POST /api/v2/integrations/actions](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions)
-* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId-)
-* [GET /api/v2/integrations/actions/{actionId}/templates/{fileName}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId--templates--fileName-)
-* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#patch-api-v2-integrations-actions--actionId-)
-* [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#delete-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations)
+* [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions)
+* [POST /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions)
+* [POST /api/v2/integrations/actions/drafts](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions-drafts)
+* [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId-)
+* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft)
+* [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft-function)
+* [PUT /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-integrations-actions--actionId--draft-function)
+* [POST /api/v2/integrations/actions/{actionId}/draft/function/upload](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions--actionId--draft-function-upload)
+* [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions--actionId--draft-publish)
+* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--function)
+* [GET /api/v2/integrations/actions/{actionId}/templates/{fileName}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--templates--fileName-)
 
 ## Permissions and Scopes
 
@@ -29,18 +40,13 @@ The following permissions are required to use this resource:
 * `integrations:action:view`
 * `integrations:actionFunction:edit`
 * `integrations:actionFunction:view`
+* `integrations:integration:view`
 
 The following OAuth scopes are required to use this resource:
 
 * `integrations`
 * `integrations:readonly`
 * `upload`
-## Function Configuration APIs
-
-* [POST /api/v2/integrations/actions/{actionId}/draft/function/upload](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-function-upload)
-* [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId--draft-function)
-* [PUT /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/api/rest/v2/integrations/#put-api-v2-integrations-actions--actionId--draft-function)
-* [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-publish)
 
 ## Export Behavior
 

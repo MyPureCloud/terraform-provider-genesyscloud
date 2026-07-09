@@ -6,27 +6,49 @@ description: |-
 ---
 # genesyscloud_journey_action_map (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Journey Action Map
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-actionmaps)
-* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#post-api-v2-journey-actionmaps)
-* [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-actionmaps--actionMapId-)
-* [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-actionmaps--actionMapId-)
-* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-actionmaps--actionMapId-)
+* [GET /api/v2/architect/schedulegroups](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedulegroups)
+* [DELETE /api/v2/architect/schedulegroups/{scheduleGroupId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-architect-schedulegroups--scheduleGroupId-)
+* [GET /api/v2/architect/schedules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-architect-schedules)
+* [DELETE /api/v2/architect/schedules/{scheduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-architect-schedules--scheduleId-)
+* [GET /api/v2/flows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows)
+* [DELETE /api/v2/flows/{flowId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-flows--flowId-)
+* [GET /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-actionmaps)
+* [POST /api/v2/journey/actionmaps](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-journey-actionmaps)
+* [DELETE /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-actionmaps--actionMapId-)
+* [GET /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-actionmaps--actionMapId-)
+* [PATCH /api/v2/journey/actionmaps/{actionMapId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-journey-actionmaps--actionMapId-)
+* [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-segments)
+* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-segments--segmentId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `architect:flow:delete`
+* `architect:flow:view`
 * `journey:actionmap:add`
 * `journey:actionmap:delete`
 * `journey:actionmap:edit`
 * `journey:actionmap:view`
+* `journey:segment:delete`
+* `journey:segment:view`
+* `routing:schedule:delete`
+* `routing:schedule:view`
+* `routing:scheduleGroup:delete`
+* `routing:scheduleGroup:view`
 
 The following OAuth scopes are required to use this resource:
 
+* `architect`
+* `architect:readonly`
 * `journey`
 * `journey:readonly`
 
@@ -82,13 +104,13 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 
 Required:
 
-- `media_type` (String) Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.
+- `media_type` (String) Media type of action. Valid values: webchat (deprecated), webMessagingOffer, contentOffer, architectFlow, openAction. Note: The 'webchat' media type is deprecated. ACD Chat v2.0 in Genesys Predictive Engagement is being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement.
 
 Optional:
 
 - `action_template_id` (String) Action template associated with the action map. For media type contentOffer.
 - `architect_flow_fields` (Block Set, Max: 1) Architect Flow Id and input contract. For media type architectFlow. (see [below for nested schema](#nestedblock--action--architect_flow_fields))
-- `is_pacing_enabled` (Boolean) Whether this action should be throttled. Defaults to `true`.
+- `is_pacing_enabled` (Boolean, Deprecated) *DEPRECATED: Web Chat is deprecated and being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement* Whether this action should be throttled. Defaults to `true`.
 - `open_action_fields` (Block Set, Max: 1) Admin-configurable fields of an open action. For media type openAction. (see [below for nested schema](#nestedblock--action--open_action_fields))
 - `web_messaging_offer_fields` (Block Set, Max: 1) Admin-configurable fields of a web messaging offer action. For media type webMessagingOffer. (see [below for nested schema](#nestedblock--action--web_messaging_offer_fields))
 

@@ -233,7 +233,7 @@ var (
 				Optional:    true,
 			},
 			"media_type": {
-				Description:  "Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.",
+				Description:  "Media type of action. Valid values: webchat (deprecated), webMessagingOffer, contentOffer, architectFlow, openAction. Note: The 'webchat' media type is deprecated. ACD Chat v2.0 in Genesys Predictive Engagement is being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
@@ -264,6 +264,7 @@ var (
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+				Deprecated:  "Web Chat is deprecated and being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement",
 			},
 		},
 	}

@@ -6,19 +6,23 @@ description: |-
 ---
 # genesyscloud_team (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud team
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [PATCH /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-teams--teamId-)
-* [DELETE /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-teams--teamId-)
-* [POST /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams)
-* [GET /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId-)
 * [GET /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams)
+* [POST /api/v2/teams](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams)
+* [DELETE /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-teams--teamId-)
+* [GET /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId-)
+* [PATCH /api/v2/teams/{teamId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-teams--teamId-)
 * [DELETE /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-teams--teamId--members)
-* [POST /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams--teamId--members)
 * [GET /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-teams--teamId--members)
+* [POST /api/v2/teams/{teamId}/members](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-teams--teamId--members)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -28,7 +28,8 @@ All other \*.tf files are ignored by the documentation tool. This allows example
 - **resource.tf** - The primary example file that appears in the documentation. It demonstrates a complete, working example with all commonly used attributes.
 - **simplest_resource.tf** - (Optional) A minimal working example with only required attributes. Used for testing basic functionality and backward compatibility.
 - **locals.tf** - Contains schema definitions, dependencies, and test constraints.
-- **apis.md** - Contains links to the APIs used by the resource.
+- **apis.md** - Contains links to the APIs used by the resource. **Auto-generated** by the `apidocs` tool from proxy file analysis. Must include a `<!-- sources -->` comment at the top that declares which source file(s) to scan (see below).
+- **notes.md** - (Optional) Contains addendum content (migration guides, export behavior, breaking changes) that is appended to the generated documentation after the API endpoints and permissions sections.
 
 ### Additional Files
 
@@ -197,8 +198,26 @@ When creating new examples:
    - Add skip conditions if the resource requires specific products
 
 5. **Document APIs** in apis.md:
-   - List all APIs used by the resource
-   - Include links to API documentation
+   - The `apis.md` file must include a `<!-- sources -->` comment block at the top that declares which source file(s) to scan for API endpoint detection
+   - The `apidocs` tool reads these paths, scans the source files for SDK method calls and raw HTTP calls, maps them to API endpoints via the Swagger spec's `operationId` field, and updates the endpoint list
+   - The source paths are relative to the repository root
+   - Example `apis.md` file:
+     ```markdown
+     <!-- sources
+     genesyscloud/routing_queue/genesyscloud_routing_queue_proxy.go
+     -->
+     * [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues)
+     * [POST /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues)
+     ```
+   - Multiple source files can be listed (one per line) for resources that call APIs through multiple proxy files:
+     ```markdown
+     <!-- sources
+     genesyscloud/my_resource/genesyscloud_my_resource_proxy.go
+     genesyscloud/shared/genesyscloud_shared_proxy.go
+     -->
+     ```
+   - If the `<!-- sources -->` comment is missing, the tool will print an error with instructions on what to add
+   - If a declared source file does not exist, the tool will print an error identifying the invalid path
 
 ## Dependency Resolution
 
@@ -229,7 +248,7 @@ This ensures tests don't fail due to missing products or environment-specific co
 - **Test thoroughly**: Ensure examples can be applied successfully.
 - **Include comments**: Add comments to explain complex configurations.
 - **Maintain dependencies**: Keep track of dependencies between resources.
-- **Document APIs**: Keep API documentation up to date.
+- **Document APIs**: The `apis.md` file requires a `<!-- sources -->` comment at the top — run `make docs` to update endpoints.
 - **Use variables**: Use variables for values that might change.
 - **Follow naming conventions**: Use consistent naming across examples.
 - **Keep simplest_resource.tf minimal**: Include only required attributes.

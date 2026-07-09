@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -30,6 +31,15 @@ func TestAccResourceCaseManagementCaseplan(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal) + fmt.Sprintf(`
 data "genesyscloud_case_management_caseplan" "by_name" {
   name       = "%s"
@@ -69,6 +79,15 @@ func TestAccResourceCaseManagementCaseplanIntakeSettings(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, false, 1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
@@ -111,6 +130,15 @@ func TestAccResourceCaseManagementCaseplanPublish(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal) + `
 resource "genesyscloud_case_management_caseplan_publish" "pub" {
   caseplan_id = genesyscloud_case_management_caseplan.cp.id
@@ -147,6 +175,15 @@ func TestAccResourceCaseManagementCaseplanPublish_revisionBump(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: base + `
 resource "genesyscloud_case_management_caseplan_publish" "pub" {
   caseplan_id = genesyscloud_case_management_caseplan.cp.id
@@ -215,6 +252,15 @@ func TestAccResourceCaseManagementCaseplanCreateVersion(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: base + `
 resource "genesyscloud_case_management_caseplan_publish" "pub" {
   caseplan_id = genesyscloud_case_management_caseplan.cp.id
@@ -258,6 +304,15 @@ func TestAccResourceCaseManagementCaseplanCreateVersion_revisionAfterRepublish(t
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: base + `
 resource "genesyscloud_case_management_caseplan_publish" "pub" {
   caseplan_id = genesyscloud_case_management_caseplan.cp.id
@@ -327,6 +382,15 @@ func TestAccResourceCaseManagementCaseplan_publishDraftUpdateRepublish(t *testin
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: base(descInitial, dueInitial, ttlInitial),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "description", descInitial),
@@ -404,6 +468,33 @@ resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
 		},
 		CheckDestroy: AccVerifyCaseplanDestroyed,
 	})
+}
+
+// testAccUserAndDepsForCaseplan returns the config with user, roles, and all dependencies
+// but WITHOUT the caseplan resource. This allows role propagation before creating the caseplan.
+func testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal string) string {
+	props := `jsonencode({
+    acc_note_text = {
+      allOf     = [{ "$ref" = "#/definitions/text" }]
+      title     = "n"
+      minLength = 1
+      maxLength = 100
+    }
+  })`
+
+	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
+		AccCustomerIntentDepsHCL(caseplanName, "acc caseplan deps") +
+		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
+		fmt.Sprintf(`
+resource "genesyscloud_user" "owner" {
+  email       = "%[1]s@exampleuser.com"
+  name        = "%[2]s owner"
+  password    = "TfAccCaseplan1!"
+  division_id = data.genesyscloud_auth_division_home.home.id
+}
+
+%[3]s
+`, emailLocal, caseplanName, AccOwnerRoleAndUserRolesHCL(caseplanName))
 }
 
 func testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal string) string {

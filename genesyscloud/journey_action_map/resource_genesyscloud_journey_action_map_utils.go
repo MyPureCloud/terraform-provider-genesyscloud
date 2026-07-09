@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
@@ -353,7 +353,7 @@ func getArchitectFlow(actionMapAction map[string]interface{}) *platformclientv2.
 
 func flattenOpenActionFields(openActionFields *platformclientv2.Openactionfields) map[string]interface{} {
 	architectFlowFieldsMap := make(map[string]interface{})
-	architectFlowFieldsMap["open_action"] = lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef)
+	stringmap.SetValueIfNotNil(architectFlowFieldsMap, "open_action", lists.FlattenAsList(openActionFields.OpenAction, flattenOpenActionDomainEntityRef))
 	if openActionFields.ConfigurationFields != nil {
 		jsonString, err := util.InterfaceToJson(openActionFields.ConfigurationFields)
 		if err != nil {

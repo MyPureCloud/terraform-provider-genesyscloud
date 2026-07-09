@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -141,9 +141,8 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 		SuppressInQueueCallRecording: queue.SuppressInQueueCallRecording,
 	}
 
-	// For some reason OutboundEmailAddress returned by GetRoutingQueue is a pointer to a pointer so I am handling it here
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		updateQueue.OutboundEmailAddress = *queue.OutboundEmailAddress
+	if queue.OutboundEmailAddress != nil {
+		updateQueue.OutboundEmailAddress = queue.OutboundEmailAddress
 	}
 
 	// Update the queue with th new rules

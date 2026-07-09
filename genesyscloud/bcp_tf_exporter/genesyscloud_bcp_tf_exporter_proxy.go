@@ -8,44 +8,41 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
-type BcpExporterProxy struct {
-	ClientConfig               *platformclientv2.Configuration
-	GetFlowDependenciesAttr    getFlowDependenciesFunc
-	GetAllWithPooledClientAttr getPooledClientFunc
+type bcpExporterProxy struct {
+	clientConfig               *platformclientv2.Configuration
+	getFlowDependenciesAttr    getFlowDependenciesFunc
+	getAllWithPooledClientAttr getPooledClientFunc
 }
 
-type getFlowDependenciesFunc func(ctx context.Context, p *BcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error)
+type getFlowDependenciesFunc func(ctx context.Context, p *bcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error)
 type getPooledClientFunc func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
 
-var InternalProxy *BcpExporterProxy
+var internalProxy *bcpExporterProxy
 
-func GetBcpExporterProxy(ClientConfig *platformclientv2.Configuration) *BcpExporterProxy {
-	return newBcpExporterProxy(ClientConfig)
-}
-
-func newBcpExporterProxy(ClientConfig *platformclientv2.Configuration) *BcpExporterProxy {
-	if InternalProxy == nil {
-		InternalProxy = &BcpExporterProxy{
-			GetAllWithPooledClientAttr: getPooledClientFn,
-		}
+func getBcpExporterProxy(ClientConfig *platformclientv2.Configuration) *bcpExporterProxy {
+	if internalProxy == nil {
+		internalProxy = newBcpExporterProxy(ClientConfig)
 	}
+	return internalProxy
+}
 
-	if ClientConfig != nil {
-		InternalProxy.ClientConfig = ClientConfig
-		InternalProxy.GetFlowDependenciesAttr = getFlowDependenciesFn
+func newBcpExporterProxy(clientConfig *platformclientv2.Configuration) *bcpExporterProxy {
+	return &bcpExporterProxy{
+		clientConfig:               clientConfig,
+		getAllWithPooledClientAttr: getPooledClientFn,
+		getFlowDependenciesAttr:    getFlowDependenciesFn,
 	}
-	return InternalProxy
 }
 
-func (p *BcpExporterProxy) GetFlowDependencies(ctx context.Context, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
-	return p.GetFlowDependenciesAttr(ctx, p, resourceInfo)
+func (p *bcpExporterProxy) GetFlowDependencies(ctx context.Context, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+	return p.getFlowDependenciesAttr(ctx, p, resourceInfo)
 }
 
-func (p *BcpExporterProxy) GetAllWithPooledClient(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-	return p.GetAllWithPooledClientAttr(ctx, method)
+func (p *bcpExporterProxy) GetAllWithPooledClient(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+	return p.getAllWithPooledClientAttr(ctx, method)
 }
 
 func getPooledClientFn(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
@@ -58,13 +55,13 @@ func getPooledClientFn(ctx context.Context, method provider.GetCustomConfigFunc)
 	return resources, dependsMap, totalFlowResources, err
 }
 
-func getFlowDependenciesFn(ctx context.Context, p *BcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+func getFlowDependenciesFn(ctx context.Context, p *bcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
 	// Create fresh config to avoid pooled client's canceled context issue
 	// Only copy essential auth settings for efficiency
 	freshConfig := platformclientv2.NewConfiguration()
-	freshConfig.BasePath = p.ClientConfig.BasePath
-	freshConfig.AccessToken = p.ClientConfig.AccessToken
-	freshConfig.DefaultHeader = p.ClientConfig.DefaultHeader // Direct assignment is safe for read-only use
+	freshConfig.BasePath = p.clientConfig.BasePath
+	freshConfig.AccessToken = p.clientConfig.AccessToken
+	freshConfig.DefaultHeader = p.clientConfig.DefaultHeader // Direct assignment is safe for read-only use
 
 	depConsumerProxy := dependentconsumers.GetDependentConsumerProxy(freshConfig)
 	resources, dependsMap, _, err := depConsumerProxy.GetDependentConsumers(ctx, resourceInfo, []string{})

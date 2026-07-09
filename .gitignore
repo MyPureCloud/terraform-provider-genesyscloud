@@ -65,3 +65,6 @@ tools/resource_metadata_exporter/build/*
 
 # Symlink to the GC Platform SDK Go module cache for Amazon Q SDK reference (avoids out-of-workspace prompts)
 .sdk-reference
+
+# Cached swagger spec for apidocs tool
+apidocs/swagger_cache.json

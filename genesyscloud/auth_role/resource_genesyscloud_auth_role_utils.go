@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func validatePermissionPolicy(proxy *authRoleProxy, policy platformclientv2.Domainpermissionpolicy) (*platformclientv2.APIResponse, error) {
@@ -128,10 +128,10 @@ func buildSdkPermPolicyCondOperands(operands []interface{}) *[]platformclientv2.
 		switch varType {
 		case "USER":
 			value := operandMap["user_id"].(string)
-			sdkOperand.User = &platformclientv2.User{Id: &value}
+			sdkOperand.User = &platformclientv2.Userfullreference{Id: &value}
 		case "QUEUE":
 			value := operandMap["queue_id"].(string)
-			sdkOperand.Queue = &platformclientv2.Queue{Id: &value}
+			sdkOperand.Queue = &platformclientv2.Queuefullreference{Id: &value}
 		default:
 			value := operandMap["value"].(string)
 			sdkOperand.Value = &value

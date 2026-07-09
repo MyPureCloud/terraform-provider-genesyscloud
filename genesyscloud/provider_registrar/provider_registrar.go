@@ -26,6 +26,9 @@ import (
 	bcpTfExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/bcp_tf_exporter"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
+	caseManagementCaseplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
+	caseManagementStageplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
+	caseManagementStepplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stepplan"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
@@ -33,9 +36,6 @@ import (
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 	cmSupportedContentDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent_default"
 	conversationsSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_settings"
-	caseManagementCaseplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_caseplan"
-	caseManagementStageplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
-	caseManagementStepplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stepplan"
 	employeeperformanceExternalmetricsDefinition "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/employeeperformance_externalmetrics_definitions"
 	externalContacts "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts"
 	externalSource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
@@ -44,10 +44,10 @@ import (
 	flowLogLevel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_loglevel"
 	flowMilestone "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_milestone"
 	flowOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/flow_outcome"
-	groupGreeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_greeting"
 	greeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting"
 	greetingUser "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/greeting_user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
+	groupGreeting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_greeting"
 	groupRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide"
 	guideVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/guide_version"
@@ -220,6 +220,18 @@ func GetResourceExporterByResourceType(resourceType string) *resourceExporter.Re
 		registerResources()
 	}
 	return resourceExporters[resourceType]
+}
+
+// GetClonedResourceExporterByResourceType returns a per-call copy of the registry exporter
+// so MRMO export does not mutate shared singleton state.
+func GetClonedResourceExporterByResourceType(resourceType string) *resourceExporter.ResourceExporter {
+	return resourceExporter.CloneResourceExporter(GetResourceExporterByResourceType(resourceType))
+}
+
+// ResourceTypeSupportsExport reports whether the provider has a ResourceExporter for the
+// given type (required for MRMO ExportByType and bulk export paths).
+func ResourceTypeSupportsExport(resourceType string) bool {
+	return GetResourceExporterByResourceType(resourceType) != nil
 }
 
 func GetResourceTypeNames() []string {

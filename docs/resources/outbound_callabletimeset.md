@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_outbound_callabletimeset (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound callabletimeset
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets)
-* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/routing/outbound/#post-api-v2-outbound-callabletimesets)
-* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
-* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
-* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets)
+* [POST /api/v2/outbound/callabletimesets](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-callabletimesets)
+* [DELETE /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [GET /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-callabletimesets--callableTimeSetId-)
+* [PUT /api/v2/outbound/callabletimesets/{callableTimeSetId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-callabletimesets--callableTimeSetId-)
 
 ## Permissions and Scopes
 
@@ -38,6 +41,7 @@ The following OAuth scopes are required to use this resource:
 resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
   name = "Example Callable time set"
   callable_times {
+    name         = "Africa/Abidjan"
     time_zone_id = "Africa/Abidjan"
     time_slots {
       start_time = "07:00:00"
@@ -51,6 +55,7 @@ resource "genesyscloud_outbound_callabletimeset" "example_callable_time_set" {
     }
   }
   callable_times {
+    name         = "Europe/Dublin"
     time_zone_id = "Europe/Dublin"
     time_slots {
       start_time = "05:30:30"
@@ -88,6 +93,10 @@ Required:
 
 - `time_slots` (Block Set, Min: 1) The time intervals for which it is acceptable to place outbound calls. (see [below for nested schema](#nestedblock--callable_times--time_slots))
 - `time_zone_id` (String) The time zone for the time slots; for example, Africa/Abidjan
+
+Optional:
+
+- `name` (String) The name for the callable time.
 
 <a id="nestedblock--callable_times--time_slots"></a>
 ### Nested Schema for `callable_times.time_slots`

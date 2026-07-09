@@ -397,6 +397,10 @@ provider_installation {
 
 A shared [Dictionary](./DICTIONARY.md) of terminology should be referenced as a guide to ensure consistency in variable naming, function parameters, and code comments throughout the provider implementation. The aim is to improve code readability, maintainability, and collaboration among developers working on the provider by adhering to these conventions.
 
+### Concurrent Pagination
+
+See [Concurrent Pagination](./CONCURRENT_PAGINATION.md) for how to migrate proxy `getAll*` functions from sequential page loops to `FetchPagesConcurrently`. Use the reference implementations there when extending parallel pagination to remaining resource types.
+
 ### Debugging
 
 See the [Debugging](./DEBUGGING.md) section for information on how to setup your IDE to debug the provider.

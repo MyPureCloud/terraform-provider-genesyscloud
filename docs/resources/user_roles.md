@@ -7,17 +7,21 @@ description: |-
 ---
 # genesyscloud_user_roles (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud User Roles maintains user role assignments.
 
 Terraform expects to manage the resources that are defined in its stack. You can use this resource to assign roles to existing users that are not managed by Terraform. However, one thing you have to remember is that when you use this resource to assign roles to existing users, you must define all roles assigned to those users in this resource. Otherwise, you will inadvertently drop all of the existing roles assigned to the user and replace them with the one defined in this resource. Keep this in mind, as the author of this note inadvertently stripped his Genesys admin account of administrator privileges while using this resource to assign a role to his account. The best lessons in life are often free and self-inflicted.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/authorization/subjects/{subjectId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-subjects--subjectId-)
-* [GET /api/v2/authorization/divisions/home](https://developer.mypurecloud.com/api/rest/v2/authorization/#get-api-v2-authorization-divisions-home)
-* [POST /api/v2/authorization/subjects/{subjectId}/bulkadd](https://developer.mypurecloud.com/api/rest/v2/authorization/#post-api-v2-authorization-subjects--subjectId--bulkadd)
-* [DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}](https://developer.mypurecloud.com/api/rest/v2/authorization/#delete-api-v2-authorization-subjects--subjectId--divisions--divisionId--roles--roleId-)
+* [GET /api/v2/authorization/divisions/home](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-divisions-home)
+* [GET /api/v2/authorization/subjects/{subjectId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-subjects--subjectId-)
+* [POST /api/v2/authorization/subjects/{subjectId}/bulkadd](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-authorization-subjects--subjectId--bulkadd)
+* [DELETE /api/v2/authorization/subjects/{subjectId}/divisions/{divisionId}/roles/{roleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-authorization-subjects--subjectId--divisions--divisionId--roles--roleId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

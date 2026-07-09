@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_outbound_campaignrule (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound campaign rule
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/campaignrules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaignrules)
-* [GET /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaignrules--campaignRuleId-)
 * [POST /api/v2/outbound/campaignrules](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-campaignrules)
-* [PUT /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-campaignrules--campaignRuleId-)
 * [DELETE /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-campaignrules--campaignRuleId-)
+* [GET /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaignrules--campaignRuleId-)
+* [PUT /api/v2/outbound/campaignrules/{campaignRuleId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-campaignrules--campaignRuleId-)
 
 ## Permissions and Scopes
 
@@ -195,7 +198,7 @@ Required:
 
 Required:
 
-- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents | campaignRecordsAttempted | campaignContactsMessaged | campaignBusinessSuccess | campaignBusinessNeutral | campaignBusinessFailure | campaignValidAttempts | campaignRightPartyContacts)
+- `condition_type` (String) The type of condition to evaluate (campaignProgress | campaignAgents | campaignRecordsAttempted | campaignContactsMessaged | campaignBusinessSuccess | campaignBusinessNeutral | campaignBusinessFailure | campaignValidAttempts | campaignRightPartyContacts | timeOfDay | dayOfWeek | dayOfMonth | weekDayOfMonth | specificDate | campaignRunTime | campaignWaitTime)
 - `parameters` (Block Set, Min: 1) The parameters for the CampaignRuleCondition. (see [below for nested schema](#nestedblock--condition_groups--conditions--parameters))
 
 Optional:

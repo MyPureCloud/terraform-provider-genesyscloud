@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourcePhoneBasic(t *testing.T) {
@@ -324,7 +324,7 @@ func TestAccResourceHardPhoneStandalone(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Premises",
 		false,
-		`["us-east-1"]`,
+		util.AssignRegion(),
 		util.NullValue,
 		util.NullValue,
 		"primary_sites   = []",
@@ -579,7 +579,7 @@ func TestAccResourcePhoneStandaloneRemoteStation(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Premises",
 		false,
-		`["us-east-1"]`,
+		util.AssignRegion(),
 		util.NullValue,
 		util.NullValue,
 		"primary_sites   = []",

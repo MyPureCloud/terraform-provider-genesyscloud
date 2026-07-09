@@ -69,6 +69,13 @@ func ResourceKnowledgeKnowledgebase() *schema.Resource {
 				Optional:    true,
 				Computed:    true,
 			},
+			"content_search_enabled": {
+				Description: "Flag that indicates search on article content is enabled for the knowledge base. This setting cannot be changed after the knowledge base is created.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
+			},
 		},
 	}
 }

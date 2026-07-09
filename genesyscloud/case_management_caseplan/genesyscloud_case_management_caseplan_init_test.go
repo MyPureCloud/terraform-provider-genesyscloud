@@ -6,8 +6,8 @@ import (
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
-	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
 	intentCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_categories"
+	customerIntent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	userpkg "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
@@ -44,6 +44,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	providerDataSources[ResourceType] = DataSourceCaseManagementCaseplan()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerDataSources[authrole.ResourceType] = authrole.DataSourceAuthRole()
 }
 
 func initTestResources() {

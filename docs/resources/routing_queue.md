@@ -6,20 +6,25 @@ description: |-
 ---
 # genesyscloud_routing_queue (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Queue
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-- [POST /api/v2/routing/queues](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues)
-- [GET /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--members)
-- [GET /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId-)
-- [POST /api/v2/routing/queues/{queueId}/members](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--members)
-- [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-queues--queueId--members--memberId-)
-- [DELETE /api/v2/routing/queues/{queueId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId-)
-- [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-queues--queueId--wrapupcodes)
-- [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-queues--queueId--wrapupcodes)
-- [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
+* [GET /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues)
+* [POST /api/v2/routing/queues](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues)
+* [DELETE /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-queues--queueId-)
+* [GET /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId-)
+* [PUT /api/v2/routing/queues/{queueId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-queues--queueId-)
+* [GET /api/v2/routing/queues/{queueId}/members](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId--members)
+* [POST /api/v2/routing/queues/{queueId}/members](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues--queueId--members)
+* [PATCH /api/v2/routing/queues/{queueId}/members/{memberId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-queues--queueId--members--memberId-)
+* [GET /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-queues--queueId--wrapupcodes)
+* [POST /api/v2/routing/queues/{queueId}/wrapupcodes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-queues--queueId--wrapupcodes)
+* [DELETE /api/v2/routing/queues/{queueId}/wrapupcodes/{codeId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-queues--queueId--wrapupcodes--codeId-)
 
 ## Permissions and Scopes
 
@@ -36,6 +41,7 @@ The following OAuth scopes are required to use this resource:
 
 * `routing`
 * `routing:readonly`
+
 ## Schema Migration: Routing Queue V1 to V2
 
 ### Migration Details
@@ -150,7 +156,6 @@ resource "genesyscloud_routing_queue" "example" {
 #### Action Required
 
 The state will be automatically upgraded when you run terraform init with version 1.60.0 or later of the provider. After this, you will have to update your config to remove these attributes from the `media_settings_call`, `media_settings_email`, `media_settings_chat`, and `media_settings_message` config blocks as they are no longer supported.
-
 
 ## Example Usage
 
@@ -656,7 +661,7 @@ Optional:
 
 - `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
-- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the "sub_type_settings" configuration for each media type Defaults to `false`.
+- `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the "sub_type_settings" configuration for each media type
 - `inactivity_timeout_settings` (Block List, Max: 1) Inactivity timeout settings for messages. (see [below for nested schema](#nestedblock--media_settings_message--inactivity_timeout_settings))
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.

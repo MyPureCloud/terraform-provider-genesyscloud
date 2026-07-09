@@ -115,6 +115,19 @@ resource "genesyscloud_tf_export" "export" {
 
 ~> **Note:** The default value of `export_deprecated` (`true`) will likely switch to `false` in a future release.
 
+## Omitting Unresolved References:
+
+By default, optional reference attributes that cannot be resolved to Terraform references during export are left as raw GUIDs. To omit these attributes from the export (for example, when a referenced contact list has been deleted), set `export_omit_unresolved_refs` to `true`:
+
+```hcl
+resource "genesyscloud_tf_export" "export" {
+  directory                   = "./genesyscloud"
+  export_omit_unresolved_refs = true
+}
+```
+
+~> **Note:** The default value of `export_omit_unresolved_refs` (`false`) will likely switch to `true` in a future release.
+
 ## Export State File Comparison:
 
 In its standard setup, during a full org download, the exporter doesnt verify if the exported state file is in sync with the exported configuration.

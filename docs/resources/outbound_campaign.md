@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_outbound_campaign (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound campaign
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-campaigns)
-* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns--campaignId-)
 * [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns)
+* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-campaigns)
 * [DELETE /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-campaigns--campaignId-)
+* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns--campaignId-)
 * [PUT /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-campaigns--campaignId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -64,7 +68,7 @@ resource "genesyscloud_outbound_campaign" "power_campaign" {
   max_calls_per_agent           = 2
   campaign_status               = "off"
   contact_list_id               = genesyscloud_outbound_contact_list.contact_list.id
-  queue_id                      = genesyscloud_routing_queue.queue.id
+  queue_id                      = genesyscloud_routing_queue.example_queue.id
   site_id                       = genesyscloud_telephony_providers_edges_site.site.id
   call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.example_cars.id
   phone_columns {

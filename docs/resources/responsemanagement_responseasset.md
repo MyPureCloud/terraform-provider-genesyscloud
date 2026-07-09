@@ -6,20 +6,27 @@ description: |-
 ---
 # genesyscloud_responsemanagement_responseasset (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud responsemanagement response asset
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/responsemanagement/responseassets/{responseAssetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responseassets--responseAssetId-)
+* [POST /api/v2/responsemanagement/responseassets/search](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-responsemanagement-responseassets-search)
 * [POST /api/v2/responsemanagement/responseassets/uploads](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-responsemanagement-responseassets-uploads)
 * [DELETE /api/v2/responsemanagement/responseassets/{responseAssetId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-responsemanagement-responseassets--responseAssetId-)
+* [GET /api/v2/responsemanagement/responseassets/{responseAssetId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-responsemanagement-responseassets--responseAssetId-)
+* [PUT /api/v2/responsemanagement/responseassets/{responseAssetId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-responsemanagement-responseassets--responseAssetId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `responseAssets:asset:add`
 * `responseAssets:asset:delete`
+* `responseAssets:asset:edit`
 * `responseAssets:asset:view`
 
 The following OAuth scopes are required to use this resource:

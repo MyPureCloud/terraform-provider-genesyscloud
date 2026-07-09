@@ -6,18 +6,20 @@ description: |-
 ---
 # genesyscloud_task_management_workitem (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management workitem
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workitems)
-* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-taskmanagement-workitems--workitemId-)
-* [PATCH /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-taskmanagement-workitems--workitemId-)
-* [DELETE /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-taskmanagement-workitems--workitemId-)
-* [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workitems-query)
-* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-taskmanagement-workbins-query)
-
+* [POST /api/v2/taskmanagement/workbins/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workbins-query)
+* [POST /api/v2/taskmanagement/workitems](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workitems)
+* [POST /api/v2/taskmanagement/workitems/query](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-workitems-query)
+* [DELETE /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-workitems--workitemId-)
+* [GET /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-workitems--workitemId-)
+* [PATCH /api/v2/taskmanagement/workitems/{workitemId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-workitems--workitemId-)
 
 ## Permissions and Scopes
 

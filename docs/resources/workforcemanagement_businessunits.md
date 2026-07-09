@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_workforcemanagement_businessunits (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud workforce management business units
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/workforcemanagement/businessunits](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#post-api-v2-workforcemanagement-businessunits)
-* [GET /api/v2/workforcemanagement/businessunits](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#get-api-v2-workforcemanagement-businessunits)
-* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#get-api-v2-workforcemanagement-businessunits--businessUnitId-)
-* [PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#patch-api-v2-workforcemanagement-businessunits--businessUnitId-)
-* [DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#delete-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [GET /api/v2/workforcemanagement/businessunits](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-workforcemanagement-businessunits)
+* [POST /api/v2/workforcemanagement/businessunits](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-workforcemanagement-businessunits)
+* [DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-workforcemanagement-businessunits--businessUnitId-)
 
 ## Permissions and Scopes
 

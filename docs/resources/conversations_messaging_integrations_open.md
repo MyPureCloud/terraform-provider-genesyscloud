@@ -6,17 +6,19 @@ description: |-
 ---
 # genesyscloud_conversations_messaging_integrations_open (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud conversations messaging integrations open
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+* [GET /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-open)
 * [POST /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-conversations-messaging-integrations-open)
+* [DELETE /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-open--integrationId-)
 * [GET /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-open--integrationId-)
 * [PATCH /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-conversations-messaging-integrations-open--integrationId-)
-* [DELETE /api/v2/conversations/messaging/integrations/open/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-conversations-messaging-integrations-open--integrationId-)
-* [GET /api/v2/conversations/messaging/integrations/open](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-conversations-messaging-integrations-open)
-
 
 ## Permissions and Scopes
 

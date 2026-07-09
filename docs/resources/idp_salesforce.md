@@ -6,14 +6,18 @@ description: |-
 ---
 # genesyscloud_idp_salesforce (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Single Sign-on Salesforce Identity Provider. See this page for detailed configuration instructions: https://help.mypurecloud.com/articles/add-salesforce-as-a-single-sign-on-provider/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/identityproviders/salesforce](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#get-api-v2-identityproviders-salesforce)
-* [PUT /api/v2/identityproviders/salesforce](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#put-api-v2-identityproviders-salesforce)
-* [DELETE /api/v2/identityproviders/salesforce](https://developer.mypurecloud.com/api/rest/v2/identityprovider/#delete-api-v2-identityproviders-salesforce)
+* [DELETE /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-identityproviders-salesforce)
+* [GET /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-identityproviders-salesforce)
+* [PUT /api/v2/identityproviders/salesforce](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-identityproviders-salesforce)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

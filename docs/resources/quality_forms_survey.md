@@ -6,25 +6,31 @@ description: |-
 ---
 # genesyscloud_quality_forms_survey (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Survey Forms
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)
-* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId-)
-* [POST /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-forms-surveys)
-* [PUT /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#put-api-v2-quality-forms-surveys--formId-)
-* [DELETE /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#delete-api-v2-quality-forms-surveys--formId-)
-* [POST /api/v2/quality/publishedforms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-surveys)
-* [GET /api/v2/quality/publishedforms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-surveys--formId-)
-* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId--versions)
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys)
+* [POST /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-quality-forms-surveys)
+* [DELETE /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-quality-forms-surveys--formId-)
+* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys--formId-)
+* [PATCH /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-quality-forms-surveys--formId-)
+* [PUT /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-quality-forms-surveys--formId-)
+* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys--formId--versions)
+* [POST /api/v2/quality/publishedforms/surveys](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-quality-publishedforms-surveys)
+* [GET /api/v2/quality/publishedforms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-publishedforms-surveys--formId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `quality:surveyForm:add`
 * `quality:surveyForm:delete`
+* `quality:surveyForm:disable`
 * `quality:surveyForm:edit`
 * `quality:surveyForm:view`
 

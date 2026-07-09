@@ -179,7 +179,6 @@ var (
 				Description: "Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the \"sub_type_settings\" configuration for each media type",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
 			},
 			"inactivity_timeout_settings": {
 				Description: "Inactivity timeout settings for messages.",

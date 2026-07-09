@@ -1,5 +1,5 @@
 resource "genesyscloud_group" "ExampleTestGroup" {
-  name  = "Example Test Group"
+  name = "Example Test Group"
 }
 
 resource "genesyscloud_group_greeting" "Test_Greeting" {

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -159,7 +159,9 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableReference(d, "division_id", campaign.Division)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_line_balancing_settings", campaign.DynamicLineBalancingSettings, flattenLineBalancingSettings)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "diagnostics_settings", campaign.DiagnosticsSettings, flattenDiagnosticsSettings)
+		if campaign.DialingMode != nil && (*campaign.DialingMode == "power" || *campaign.DialingMode == "predictive") {
+            resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "diagnostics_settings", campaign.DiagnosticsSettings, flattenDiagnosticsSettings)
+        }
 		if campaign.SkillColumns != nil && len(*campaign.SkillColumns) > 0 {
 			_ = d.Set("skill_columns", *campaign.SkillColumns)
 		}

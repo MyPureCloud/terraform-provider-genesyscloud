@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_outbound_sequence (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound sequence
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-- [POST /api/v2/outbound/sequences](https://developer.genesys.cloud/routing/outbound/#post-api-v2-outbound-sequences)
-- [GET /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-sequences--sequenceId-)
-- [GET /api/v2/outbound/sequences](https://developer.genesys.cloud/routing/outbound/#get-api-v2-outbound-sequences)
-- [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#delete-api-v2-outbound-sequences--sequenceId-)
-- [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/routing/outbound/#put-api-v2-outbound-sequences--sequenceId-)
+* [GET /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-sequences)
+* [POST /api/v2/outbound/sequences](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-sequences)
+* [DELETE /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-sequences--sequenceId-)
+* [GET /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-sequences--sequenceId-)
+* [PUT /api/v2/outbound/sequences/{sequenceId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-sequences--sequenceId-)
 
 ## Permissions and Scopes
 
