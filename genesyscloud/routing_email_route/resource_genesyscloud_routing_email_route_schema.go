@@ -57,7 +57,7 @@ var (
 				Description:  "The configuration to indicate when the signature of a conversation has to be included.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"Never", "Always", "FirstResponseOnly"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"Draft", "Send", "SendOnce"}, false),
 			},
 		},
 	}
