@@ -59,13 +59,13 @@ type phoneProxy struct {
 	usersApi     *platformclientv2.UsersApi
 	phoneCache   rc.CacheInterface[platformclientv2.Phone]
 
-	getAllPhonesAttr   getAllPhonesFunc
-	createPhoneAttr    createPhoneFunc
-	getPhoneByIdAttr   getPhoneByIdFunc
+	getAllPhonesAttr           getAllPhonesFunc
+	createPhoneAttr            createPhoneFunc
+	getPhoneByIdAttr           getPhoneByIdFunc
 	getPhoneByNameAttr         getPhoneByNameFunc
 	getPhoneByWebRtcUserIdAttr getPhoneByWebRtcUserIdFunc
 	updatePhoneAttr            updatePhoneFunc
-	deletePhoneAttr    deletePhoneFunc
+	deletePhoneAttr            deletePhoneFunc
 
 	getPhoneBaseSettingAttr     getPhoneBaseSettingFunc
 	getStationOfUserAttr        getStationOfUserFunc
@@ -88,13 +88,13 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 		usersApi:     usersApi,
 		phoneCache:   phoneCache,
 
-		getAllPhonesAttr:   getAllPhonesFn,
-		createPhoneAttr:    createPhoneFn,
+		getAllPhonesAttr:           getAllPhonesFn,
+		createPhoneAttr:            createPhoneFn,
 		getPhoneByIdAttr:           getPhoneByIdFn,
 		getPhoneByNameAttr:         getPhoneByNameFn,
 		getPhoneByWebRtcUserIdAttr: getPhoneByWebRtcUserIdFn,
 		updatePhoneAttr:            updatePhoneFn,
-		deletePhoneAttr:    deletePhoneFn,
+		deletePhoneAttr:            deletePhoneFn,
 
 		getPhoneBaseSettingAttr:     getPhoneBaseSettingFn,
 		getStationOfUserAttr:        getStationOfUserFn,
