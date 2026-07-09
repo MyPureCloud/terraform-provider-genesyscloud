@@ -310,21 +310,18 @@ func getPhoneByWebRtcUserIdFn(ctx context.Context, p *phoneProxy, webRtcUserId s
 		return nil, resp, nil
 	}
 
-	var deletedPhone *platformclientv2.Phone
 	for _, phone := range *phones.Entities {
 		if phone.WebRtcUser == nil || phone.WebRtcUser.Id == nil || *phone.WebRtcUser.Id != webRtcUserId {
 			continue
 		}
+
 		if phone.State != nil && *phone.State == "deleted" {
-			if deletedPhone == nil {
-				deletedPhone = &phone
-			}
 			continue
 		}
 		return &phone, resp, nil
 	}
 
-	return deletedPhone, resp, nil
+	return nil, resp, nil
 }
 
 // updatePhoneFn is an implementation function for updating a Genesys Cloud Phone
