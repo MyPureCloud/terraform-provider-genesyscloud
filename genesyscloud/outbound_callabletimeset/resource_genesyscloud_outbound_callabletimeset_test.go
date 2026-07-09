@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceOutboundCallabletimeset(t *testing.T) {
@@ -85,6 +85,31 @@ func TestAccResourceOutboundCallabletimeset(t *testing.T) {
 					resource.TestCheckTypeSetElemNestedAttrs("genesyscloud_outbound_callabletimeset."+resourceLabel, "callable_times.*", map[string]string{
 						"time_zone_id": timeZone2,
 					}),
+				),
+			},
+			{
+				// Update with named callable times
+				Config: GenerateOutboundCallabletimeset(
+					resourceLabel,
+					name1,
+					GenerateCallableTimesBlock(
+						timeZone1,
+						`name = "America-NewYork-Morning"`,
+						GenerateTimeSlotsBlock("09:00:00", "12:00:00", "1"),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"genesyscloud_outbound_callabletimeset."+resourceLabel, "name", name1,
+					),
+					resource.TestCheckTypeSetElemNestedAttrs(
+						"genesyscloud_outbound_callabletimeset."+resourceLabel,
+						"callable_times.*",
+						map[string]string{
+							"name":         "America-NewYork-Morning",
+							"time_zone_id": timeZone1,
+						},
+					),
 				),
 			},
 			{
