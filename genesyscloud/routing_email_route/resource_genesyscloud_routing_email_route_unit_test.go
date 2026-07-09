@@ -73,7 +73,7 @@ func TestUnitBuildSignature(t *testing.T) {
 
 	t.Run("maps all fields correctly", func(t *testing.T) {
 		cannedID := "canned-abc-123"
-		inclusionType := "Always"
+		inclusionType := "Send"
 		d := schema.TestResourceDataRaw(t, ResourceRoutingEmailRoute().Schema, map[string]interface{}{
 			"signature": []interface{}{
 				map[string]interface{}{
@@ -141,7 +141,7 @@ func TestUnitFlattenSignature(t *testing.T) {
 		enabled := true
 		cannedID := "canned-xyz-456"
 		alwaysIncluded := false
-		inclusionType := "FirstResponseOnly"
+		inclusionType := "SendOnce"
 
 		sig := &platformclientv2.Signature{
 			Enabled:          &enabled,
