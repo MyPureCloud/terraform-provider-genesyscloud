@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -35,6 +36,15 @@ func TestAccResourceCaseManagementStepplan(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
+				// to allow role propagation before creating the caseplan.
+				Config: testAccUserAndDepsForStepplan(caseplanName, refPrefix, schemaName, wbName, wtName, emailLocal),
+			},
+			{
+				PreConfig: func() {
+					// Allow time for role propagation before creating caseplan
+					time.Sleep(15 * time.Second)
+				},
 				Config: testAccCaseplanStackForStepplan(caseplanName, refPrefix, schemaName, wbName, wtName, emailLocal) + fmt.Sprintf(`
 resource "genesyscloud_case_management_stageplan" "st1" {
   caseplan_id  = genesyscloud_case_management_caseplan.cp.id
@@ -78,6 +88,41 @@ data "genesyscloud_case_management_stepplan" "lookup" {
 		},
 		CheckDestroy: caseplanpkg.AccVerifyCaseplanDestroyed,
 	})
+}
+
+// testAccUserAndDepsForStepplan returns the config with user, roles, and all dependencies
+// but WITHOUT the caseplan resource. This allows role propagation before creating the caseplan.
+func testAccUserAndDepsForStepplan(caseplanName, refPrefix, schemaName, wbName, wtName, emailLocal string) string {
+	props := `jsonencode({
+    acc_note_text = {
+      allOf     = [{ "$ref" = "#/definitions/text" }]
+      title     = "n"
+      minLength = 1
+      maxLength = 100
+    }
+  })`
+
+	wtExtra := `
+		schema_id = genesyscloud_task_management_workitem_schema.schema.id
+		schema_version = floor(genesyscloud_task_management_workitem_schema.schema.version)
+		assignment_enabled = false
+`
+
+	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
+		caseplanpkg.AccCustomerIntentDepsHCL(caseplanName, "acc stepplan deps") +
+		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc", props, util.TrueValue) +
+		workbin.GenerateWorkbinResource("wb", wbName, "acc", "data.genesyscloud_auth_division_home.home.id") +
+		worktype.GenerateWorktypeResourceBasic("wt", wtName, "acc", "genesyscloud_task_management_workbin.wb.id", wtExtra) +
+		fmt.Sprintf(`
+resource "genesyscloud_user" "owner" {
+  email       = "%[1]s@exampleuser.com"
+  name        = "%[2]s owner"
+  password    = "TfAccCaseplan1!"
+  division_id = data.genesyscloud_auth_division_home.home.id
+}
+
+%[3]s
+`, emailLocal, caseplanName, caseplanpkg.AccOwnerRoleAndUserRolesHCL(caseplanName))
 }
 
 func testAccCaseplanStackForStepplan(caseplanName, refPrefix, schemaName, wbName, wtName, emailLocal string) string {

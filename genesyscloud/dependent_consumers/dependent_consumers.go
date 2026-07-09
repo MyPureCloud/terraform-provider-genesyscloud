@@ -44,6 +44,7 @@ func SetDependentObjectMaps() map[string]string {
 		dependentConsumerMap["RESPONSE"] = "genesyscloud_responsemanagement_response"
 		dependentConsumerMap["SCHEDULE"] = "genesyscloud_architect_schedules"
 		dependentConsumerMap["SCHEDULEGROUP"] = "genesyscloud_architect_schedulegroups"
+		dependentConsumerMap["SECUREACTION"] = "genesyscloud_integration_action"
 		dependentConsumerMap["SECURECALLFLOW"] = "genesyscloud_flow"
 		dependentConsumerMap["SURVEYINVITEFLOW"] = "genesyscloud_flow"
 		dependentConsumerMap["USER"] = "genesyscloud_user"

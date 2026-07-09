@@ -11,6 +11,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	architectlanguages "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/architectlanguages"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -116,7 +117,7 @@ func ResourceArchitectUserPrompt() *schema.Resource {
 				Description: "Audio of TTS resources for the audio prompt.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !feature_toggles.BcpModeEnabledExists(), // false if BCP mode running, otherwise true
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userPromptResource,
 			},
