@@ -11,6 +11,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -23,6 +24,11 @@ var (
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "ID of the question group.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"context_id": {
+				Description: "An identifier for this question group that stays the same across versions of the form.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -74,6 +80,13 @@ var (
 				MaxItems:    1,
 				Elem:        evaluationFormVisibilityCondition,
 			},
+			"default_answers_to": {
+				Description: "Default scoring settings for the questions within this question group.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        evaluationFormDefaultAnswersTo,
+			},
 		},
 	}
 
@@ -81,6 +94,11 @@ var (
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "ID of the question.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"context_id": {
+				Description: "An identifier for this question that stays the same across versions of the form.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -132,6 +150,18 @@ var (
 				Optional:    true,
 				Elem:        evaluationFormMultipleSelectOptionQuestion,
 			},
+			"default_answer_id": {
+				Description: "The default selected answer for the question.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"automated_scoring_focus": {
+				Description:  "Focus setting for automated scoring. Valid values: FullInteraction, EvaluatedAgent.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"FullInteraction", "EvaluatedAgent"}, false),
+			},
 			"is_kill": {
 				Description: "True if the question is a fatal question",
 				Type:        schema.TypeBool,
@@ -168,6 +198,11 @@ var (
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "ID of the question.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"context_id": {
+				Description: "An identifier for this option that stays the same across versions of the form.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -213,6 +248,18 @@ var (
 				Optional:    true,
 				Elem:        evaluationFormAnswerOptionsResource,
 			},
+			"default_answer_id": {
+				Description: "The default selected answer for the option question.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"automated_scoring_focus": {
+				Description:  "Focus setting for automated scoring. Valid values: FullInteraction, EvaluatedAgent.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"FullInteraction", "EvaluatedAgent"}, false),
+			},
 			"is_kill": {
 				Description: "True if the option is a fatal question",
 				Type:        schema.TypeBool,
@@ -233,6 +280,11 @@ var (
 			"id": {
 				Type:        schema.TypeString,
 				Description: "The ID for the answer option.",
+				Computed:    true,
+			},
+			"context_id": {
+				Type:        schema.TypeString,
+				Description: "An identifier for this answer that stays the same across versions of the form.",
 				Computed:    true,
 			},
 			"text": {
@@ -274,6 +326,130 @@ var (
 			},
 		},
 	}
+
+	evaluationFormDefaultAnswersTo = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"highest_score": {
+				Description: "True, when answer should default to highest score.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"not_applicable": {
+				Description: "True, when answer should default to N/A.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"lowest_score": {
+				Description: "True, when answer should default to lowest score.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"user_defined": {
+				Description: "True, when answer should default to user defined answer.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+		},
+	}
+
+	evaluationFormDisputesAssignee = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"user_id": {
+				Description: "The ID of the user the dispute should be assigned to. Required when type is Individual.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"type": {
+				Description:  "The assignee type. Valid values: Original, Individual, None.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Original", "Individual", "None"}, false),
+			},
+		},
+	}
+
+	evaluationFormEvaluationSettings = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"revisions_enabled": {
+				Description: "Whether revisions are allowed for evaluations. When enabled, rescoring creates a new version of the evaluation and retracts the existing evaluation version. Does not apply for calibration evaluations.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"disputes_enabled": {
+				Description: "Whether disputes are allowed for evaluations. Does not apply for calibration evaluations.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"disputes_allowed_per_evaluation": {
+				Description: "The maximum number of disputes allowed for an evaluation.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			"disputes_assignees": {
+				Description: "A list of assignees responsible for handling each dispute. This list size needs to be equal to disputes_allowed_per_evaluation.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        evaluationFormDisputesAssignee,
+			},
+		},
+	}
+
+	evaluationFormAiScoringQuestionSetting = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"question_context_id": {
+				Description: "The context id of the question in the group.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"enabled": {
+				Description: "True if AI Scoring feature is configured for this question.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+		},
+	}
+
+	evaluationFormAiScoringQuestionGroupSetting = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"question_group_context_id": {
+				Description: "The context id of the question group in the form.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"question_settings": {
+				Description: "AI scoring settings for the questions within this question group.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        evaluationFormAiScoringQuestionSetting,
+			},
+		},
+	}
+
+	evaluationFormAiScoring = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"id": {
+				Description: "The globally unique identifier for the AI scoring settings object.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"question_group_settings": {
+				Description: "AI scoring settings per question group.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        evaluationFormAiScoringQuestionGroupSetting,
+			},
+		},
+	}
 )
 
 type EvaluationFormQuestionGroupStruct struct {
@@ -285,12 +461,16 @@ type EvaluationFormQuestionGroupStruct struct {
 	ManualWeight            bool
 	Questions               []EvaluationFormQuestionStruct
 	VisibilityCondition     VisibilityConditionStruct
+	DefaultAnswersTo        *DefaultAnswersToStruct
 }
 
 type EvaluationFormStruct struct {
-	Name           string
-	Published      bool
-	QuestionGroups []EvaluationFormQuestionGroupStruct
+	Name               string
+	Published          bool
+	Dialect            string
+	QuestionGroups     []EvaluationFormQuestionGroupStruct
+	EvaluationSettings *EvaluationSettingsStruct
+	DependsOn          []string
 }
 
 type EvaluationFormQuestionStruct struct {
@@ -301,9 +481,29 @@ type EvaluationFormQuestionStruct struct {
 	CommentsRequired              bool
 	IsKill                        bool
 	IsCritical                    bool
+	AutomatedScoringFocus         string
 	VisibilityCondition           VisibilityConditionStruct
 	AnswerOptions                 []AnswerOptionStruct
 	MultipleSelectOptionQuestions []MultipleSelectOptionQuestionStruct
+}
+
+type DefaultAnswersToStruct struct {
+	HighestScore  bool
+	NotApplicable bool
+	LowestScore   bool
+	UserDefined   bool
+}
+
+type EvaluationSettingsStruct struct {
+	RevisionsEnabled             bool
+	DisputesEnabled              bool
+	DisputesAllowedPerEvaluation int
+	DisputesAssignees            []DisputesAssigneeStruct
+}
+
+type DisputesAssigneeStruct struct {
+	Type   string
+	UserId string
 }
 
 type MultipleSelectOptionQuestionStruct struct {
@@ -383,6 +583,31 @@ func ResourceEvaluationForm() *schema.Resource {
 				MinItems:    1,
 				Elem:        evaluationFormQuestionGroup,
 			},
+			"evaluation_settings": {
+				Description: "Settings for evaluations associated with this form.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        evaluationFormEvaluationSettings,
+			},
+			"ai_scoring": {
+				Description: "AI scoring settings for the evaluation form.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        evaluationFormAiScoring,
+			},
+			"dialect": {
+				Description: "The language dialect for this evaluation form. Supported dialects: ar, cs, da, de, en-US, es, fi, fr, fr-CA, he, hi, it, ja, ko, nl, no, pl, pt-BR, pt-PT, ru, sv, th, tr, uk, zh-CN, zh-TW.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"modified_date": {
+				Description: "Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -397,6 +622,9 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 			},
 			"question_groups.questions.multiple_select_option_questions.answer_options.assistance_conditions.topic_ids": {
 				RefType: sttTopic.ResourceType,
+			},
+			"evaluation_settings.disputes_assignees.user_id": {
+				RefType: user.ResourceType,
 			},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
@@ -414,10 +642,16 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 		},
 		ExcludedAttributes: []string{
 			"question_groups.id",
+			"question_groups.context_id",
 			"question_groups.questions.id",
+			"question_groups.questions.context_id",
 			"question_groups.questions.answer_options.id",
+			"question_groups.questions.answer_options.context_id",
 			"question_groups.questions.multiple_select_option_questions.id",
+			"question_groups.questions.multiple_select_option_questions.context_id",
 			"question_groups.questions.multiple_select_option_questions.answer_options.id",
+			"question_groups.questions.multiple_select_option_questions.answer_options.context_id",
+			"modified_date",
 		},
 	}
 }

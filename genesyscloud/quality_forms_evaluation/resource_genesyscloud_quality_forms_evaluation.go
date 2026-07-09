@@ -64,6 +64,16 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		QuestionGroups: buildSdkQuestionGroups(d),
 	}
 
+	if evaluationSettings, ok := d.Get("evaluation_settings").([]interface{}); ok && len(evaluationSettings) > 0 {
+		evaluationForm.EvaluationSettings = buildSdkEvaluationSettings(evaluationSettings)
+	}
+	if aiScoring, ok := d.Get("ai_scoring").([]interface{}); ok && len(aiScoring) > 0 {
+		evaluationForm.AiScoring = buildSdkAiScoring(aiScoring)
+	}
+	if dialect, ok := d.Get("dialect").(string); ok && dialect != "" {
+		evaluationForm.Dialect = &dialect
+	}
+
 	log.Printf("Creating Evaluation Form %s", name)
 	formResponse, proxyResponse, err := proxy.createQualityFormsEvaluation(ctx, evaluationForm)
 	if err != nil {
@@ -139,8 +149,16 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		resourcedata.SetNillableValue(d, "name", evaluationForm.Name)
+		resourcedata.SetNillableTime(d, "modified_date", evaluationForm.ModifiedDate)
+		resourcedata.SetNillableValue(d, "dialect", evaluationForm.Dialect)
 		if evaluationForm.QuestionGroups != nil {
 			_ = d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
+		}
+		if evaluationForm.EvaluationSettings != nil {
+			_ = d.Set("evaluation_settings", flattenEvaluationSettings(evaluationForm.EvaluationSettings))
+		}
+		if evaluationForm.AiScoring != nil {
+			_ = d.Set("ai_scoring", flattenAiScoring(evaluationForm.AiScoring))
 		}
 
 		return cc.CheckState(d)
@@ -174,6 +192,16 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		evaluationForm := &platformclientv2.Evaluationform{
 			Name:           &name,
 			QuestionGroups: buildSdkQuestionGroups(d),
+		}
+
+		if evaluationSettings, ok := d.Get("evaluation_settings").([]interface{}); ok && len(evaluationSettings) > 0 {
+			evaluationForm.EvaluationSettings = buildSdkEvaluationSettings(evaluationSettings)
+		}
+		if aiScoring, ok := d.Get("ai_scoring").([]interface{}); ok && len(aiScoring) > 0 {
+			evaluationForm.AiScoring = buildSdkAiScoring(aiScoring)
+		}
+		if dialect, ok := d.Get("dialect").(string); ok && dialect != "" {
+			evaluationForm.Dialect = &dialect
 		}
 
 		log.Printf("Updating Evaluation Form %s", name)

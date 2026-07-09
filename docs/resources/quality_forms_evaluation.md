@@ -176,12 +176,16 @@ resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
 
 ### Optional
 
+- `ai_scoring` (Block List, Max: 1) AI scoring settings for the evaluation form. (see [below for nested schema](#nestedblock--ai_scoring))
+- `dialect` (String) The language dialect for this evaluation form. Supported dialects: ar, cs, da, de, en-US, es, fi, fr, fr-CA, he, hi, it, ja, ko, nl, no, pl, pt-BR, pt-PT, ru, sv, th, tr, uk, zh-CN, zh-TW.
+- `evaluation_settings` (Block List, Max: 1) Settings for evaluations associated with this form. (see [below for nested schema](#nestedblock--evaluation_settings))
 - `published` (Boolean) Specifies if the evaluation form is published. **Note:** A form cannot be modified if published is set to true. Defaults to `false`.
 
 ### Read-Only
 
 - `context_id` (String) ID of the context of the evaluation form. This provides access to all versions of forms.
 - `id` (String) The ID of this resource.
+- `modified_date` (String) Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `published_id` (String) The ID of the published evaluation form.
 
 <a id="nestedblock--question_groups"></a>
@@ -195,6 +199,7 @@ Required:
 
 Optional:
 
+- `default_answers_to` (Block List, Max: 1) Default scoring settings for the questions within this question group. (see [below for nested schema](#nestedblock--question_groups--default_answers_to))
 - `default_answers_to_highest` (Boolean) Specifies whether to default answers to highest score. Defaults to `false`.
 - `default_answers_to_na` (Boolean) Specifies whether to default answers to not applicable. Defaults to `false`.
 - `manual_weight` (Boolean) Specifies whether a manual weight is set. Defaults to `true`.
@@ -203,6 +208,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this question group that stays the same across versions of the form.
 - `id` (String) ID of the question group.
 
 <a id="nestedblock--question_groups--questions"></a>
@@ -215,7 +221,9 @@ Required:
 Optional:
 
 - `answer_options` (Block List) Options from which to choose an answer for this question. Required for multipleChoiceQuestion type. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options))
+- `automated_scoring_focus` (String) Focus setting for automated scoring. Valid values: FullInteraction, EvaluatedAgent.
 - `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
+- `default_answer_id` (String) The default selected answer for the question.
 - `help_text` (String) Help text for the question.
 - `is_critical` (Boolean) True if the question is a critical question Defaults to `false`.
 - `is_kill` (Boolean) True if the question is a fatal question Defaults to `false`.
@@ -226,6 +234,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this question that stays the same across versions of the form.
 - `id` (String) ID of the question.
 
 <a id="nestedblock--question_groups--questions--answer_options"></a>
@@ -243,6 +252,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this answer that stays the same across versions of the form.
 - `id` (String) The ID for the answer option.
 
 <a id="nestedblock--question_groups--questions--answer_options--assistance_conditions"></a>
@@ -265,7 +275,9 @@ Required:
 Optional:
 
 - `answer_options` (Block List) Options from which to choose an answer for this option question. Required for multipleChoiceQuestion type options. (see [below for nested schema](#nestedblock--question_groups--questions--multiple_select_option_questions--answer_options))
+- `automated_scoring_focus` (String) Focus setting for automated scoring. Valid values: FullInteraction, EvaluatedAgent.
 - `comments_required` (Boolean) Specifies whether comments are required. Defaults to `false`.
+- `default_answer_id` (String) The default selected answer for the option question.
 - `help_text` (String) Help text for the option.
 - `is_critical` (Boolean) True if the option is a critical question Defaults to `false`.
 - `is_kill` (Boolean) True if the option is a fatal question Defaults to `false`.
@@ -275,6 +287,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this option that stays the same across versions of the form.
 - `id` (String) ID of the question.
 
 <a id="nestedblock--question_groups--questions--multiple_select_option_questions--answer_options"></a>
@@ -292,6 +305,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this answer that stays the same across versions of the form.
 - `id` (String) The ID for the answer option.
 
 <a id="nestedblock--question_groups--questions--multiple_select_option_questions--answer_options--assistance_conditions"></a>
@@ -324,6 +338,17 @@ Required:
 
 
 
+<a id="nestedblock--question_groups--default_answers_to"></a>
+### Nested Schema for `question_groups.default_answers_to`
+
+Optional:
+
+- `highest_score` (Boolean) True, when answer should default to highest score. Defaults to `false`.
+- `lowest_score` (Boolean) True, when answer should default to lowest score. Defaults to `false`.
+- `not_applicable` (Boolean) True, when answer should default to N/A. Defaults to `false`.
+- `user_defined` (Boolean) True, when answer should default to user defined answer. Defaults to `false`.
+
+
 <a id="nestedblock--question_groups--visibility_condition"></a>
 ### Nested Schema for `question_groups.visibility_condition`
 
@@ -331,4 +356,54 @@ Required:
 
 - `combining_operation` (String) Valid Values: AND, OR
 - `predicates` (List of String) A list of strings, each representing the location in the form of the Answer Option to depend on. In the format of "/form/questionGroup/{questionGroupIndex}/question/{questionIndex}/answer/{answerIndex}" or, to assume the current question group, "../question/{questionIndex}/answer/{answerIndex}". Note: Indexes are zero-based
+
+
+
+<a id="nestedblock--ai_scoring"></a>
+### Nested Schema for `ai_scoring`
+
+Optional:
+
+- `id` (String) The globally unique identifier for the AI scoring settings object.
+- `question_group_settings` (Block List) AI scoring settings per question group. (see [below for nested schema](#nestedblock--ai_scoring--question_group_settings))
+
+<a id="nestedblock--ai_scoring--question_group_settings"></a>
+### Nested Schema for `ai_scoring.question_group_settings`
+
+Optional:
+
+- `question_group_context_id` (String) The context id of the question group in the form.
+- `question_settings` (Block List) AI scoring settings for the questions within this question group. (see [below for nested schema](#nestedblock--ai_scoring--question_group_settings--question_settings))
+
+<a id="nestedblock--ai_scoring--question_group_settings--question_settings"></a>
+### Nested Schema for `ai_scoring.question_group_settings.question_settings`
+
+Optional:
+
+- `enabled` (Boolean) True if AI Scoring feature is configured for this question. Defaults to `false`.
+- `question_context_id` (String) The context id of the question in the group.
+
+
+
+
+<a id="nestedblock--evaluation_settings"></a>
+### Nested Schema for `evaluation_settings`
+
+Optional:
+
+- `disputes_allowed_per_evaluation` (Number) The maximum number of disputes allowed for an evaluation.
+- `disputes_assignees` (Block List) A list of assignees responsible for handling each dispute. This list size needs to be equal to disputes_allowed_per_evaluation. (see [below for nested schema](#nestedblock--evaluation_settings--disputes_assignees))
+- `disputes_enabled` (Boolean) Whether disputes are allowed for evaluations. Does not apply for calibration evaluations. Defaults to `false`.
+- `revisions_enabled` (Boolean) Whether revisions are allowed for evaluations. When enabled, rescoring creates a new version of the evaluation and retracts the existing evaluation version. Does not apply for calibration evaluations. Defaults to `false`.
+
+<a id="nestedblock--evaluation_settings--disputes_assignees"></a>
+### Nested Schema for `evaluation_settings.disputes_assignees`
+
+Required:
+
+- `type` (String) The assignee type. Valid values: Original, Individual, None.
+
+Optional:
+
+- `user_id` (String) The ID of the user the dispute should be assigned to. Required when type is Individual.
 
