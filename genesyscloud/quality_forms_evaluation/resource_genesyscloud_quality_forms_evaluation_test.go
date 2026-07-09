@@ -546,6 +546,7 @@ func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
 		QuestionGroups: []EvaluationFormQuestionGroupStruct{
 			{
 				Name:         "Group with new attributes",
+				NaEnabled:    false,
 				Weight:       1,
 				ManualWeight: true,
 				DefaultAnswersTo: &DefaultAnswersToStruct{
@@ -557,7 +558,12 @@ func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
 				Questions: []EvaluationFormQuestionStruct{
 					{
 						Text:                  "Question with automated scoring focus",
+						HelpText:              "Help text for scoring question",
 						Type:                  "multipleChoiceQuestion",
+						NaEnabled:             true,
+						CommentsRequired:      true,
+						IsKill:                false,
+						IsCritical:            true,
 						AutomatedScoringFocus: "EvaluatedAgent",
 						AnswerOptions: []AnswerOptionStruct{
 							{
@@ -603,11 +609,26 @@ func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_allowed_per_evaluation", fmt.Sprint(evaluationForm1.EvaluationSettings.DisputesAllowedPerEvaluation)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_assignees.0.type", evaluationForm1.EvaluationSettings.DisputesAssignees[0].Type),
 					resource.TestCheckResourceAttrPair(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_assignees.0.user_id", userResource.ResourceType+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.weight", fmt.Sprint(evaluationForm1.QuestionGroups[0].Weight)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.manual_weight", strconv.FormatBool(evaluationForm1.QuestionGroups[0].ManualWeight)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.highest_score", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.HighestScore)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.not_applicable", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.NotApplicable)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.lowest_score", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.LowestScore)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.user_defined", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.UserDefined)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.help_text", evaluationForm1.QuestionGroups[0].Questions[0].HelpText),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.type", evaluationForm1.QuestionGroups[0].Questions[0].Type),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.comments_required", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].CommentsRequired)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.is_kill", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].IsKill)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.is_critical", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].IsCritical)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.automated_scoring_focus", evaluationForm1.QuestionGroups[0].Questions[0].AutomatedScoringFocus),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.0.text", evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.0.value", fmt.Sprint(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions[0].Value)),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "context_id"),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.context_id"),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.context_id"),
