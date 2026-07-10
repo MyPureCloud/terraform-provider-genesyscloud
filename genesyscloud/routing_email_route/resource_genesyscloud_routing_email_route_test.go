@@ -294,14 +294,17 @@ func TestAccResourceRoutingEmailRouteSignature(t *testing.T) {
 
 		// initial signature values
 		sigEnabled1       = true
-		sigAlwaysIncl1    = false
+		sigAlwaysIncl1    = true
 		sigInclusionType1 = "Send"
 
 		// updated signature values
 		sigEnabled2       = false
-		sigAlwaysIncl2    = true
+		sigAlwaysIncl2    = false
 		sigInclusionType2 = "SendOnce"
 	)
+
+	CleanupRoutingEmailDomains()
+	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.ReplaceAll(uuid.NewString(), "-", ""))
 
 	// shared config blocks reused across steps
 	domainConfig := routingEmailDomain.GenerateRoutingEmailDomainResource(
@@ -318,11 +321,12 @@ func TestAccResourceRoutingEmailRouteSignature(t *testing.T) {
 		resp1ResourceLabel,
 		resp1Name,
 		[]string{"genesyscloud_responsemanagement_library." + libResourceLabel + ".id"},
-		util.NullValue, // interaction_type
-		util.NullValue, // substitutions_schema_id
-		util.NullValue, // response_type
-		[]string{},     // asset_ids
+		util.NullValue,        // interaction_type
+		util.NullValue,        // substitutions_schema_id
+		`"Footer"`,            // response_type
+		[]string{},            // asset_ids
 		responsemanagementResponse.GenerateTextsBlock("Email signature one", "text/plain", util.NullValue),
+		`footer { type = "Signature" }`,
 	)
 	resp2Config := responsemanagementResponse.GenerateResponseManagementResponseResource(
 		resp2ResourceLabel,
@@ -330,14 +334,12 @@ func TestAccResourceRoutingEmailRouteSignature(t *testing.T) {
 		[]string{"genesyscloud_responsemanagement_library." + libResourceLabel + ".id"},
 		util.NullValue,
 		util.NullValue,
-		util.NullValue,
+		`"Footer"`,
 		[]string{},
 		responsemanagementResponse.GenerateTextsBlock("Email signature two", "text/plain", util.NullValue),
+		`footer { type = "Signature" }`,
 	)
 
-	CleanupRoutingEmailDomains()
-
-	domainId = fmt.Sprintf("terraformroutes.%s.com", strings.ReplaceAll(uuid.NewString(), "-", ""))
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
