@@ -2103,19 +2103,21 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 		if prefix != "" {
 			fullPath = prefix + "." + name
 		}
-		// Remove any computed attributes if export computed exporter config not set
-		if s.Computed == true && !g.exportComputed {
-			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
-			excludedAttributes = append(excludedAttributes, fullPath)
-			continue
-		}
 		// Remove any computed read-only attributes from being exported regardless of exporter config
 		// because they cannot be set by a user when reapplying the configuration in a different org
 		if s.Computed == true && s.Optional == false {
-			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a read-only computed attribute", fullPath, resourceType))
 			excludedAttributes = append(excludedAttributes, fullPath)
 			continue
 		}
+
+		// Remove any computed but optional attributes if export computed exporter config not set
+		if s.Computed == true && !g.exportComputed {
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed, but optional attribute and exclude_computed was set", fullPath, resourceType))
+			excludedAttributes = append(excludedAttributes, fullPath)
+			continue
+		}
+
 		// Remove deprecated attributes if export_deprecated is set to false
 		if s.Deprecated != "" && !g.exportDeprecated {
 			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a deprecated attribute", fullPath, resourceType))
