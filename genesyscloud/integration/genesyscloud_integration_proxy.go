@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -137,7 +137,7 @@ func getAllIntegrationsFn(ctx context.Context, p *IntegrationsProxy) (*[]platfor
 	var resp *platformclientv2.APIResponse
 	for pageNum := 1; ; pageNum++ {
 		const pageSize = 100
-		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "", "")
 		if err != nil {
 			return nil, resp, err
 		}
@@ -185,7 +185,7 @@ func getIntegrationByNameFn(ctx context.Context, p *IntegrationsProxy, integrati
 	var resp *platformclientv2.APIResponse
 	const pageSize = 100
 	for pageNum := 1; ; pageNum++ {
-		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "")
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "", "")
 		if err != nil {
 			return nil, false, resp, err
 		}

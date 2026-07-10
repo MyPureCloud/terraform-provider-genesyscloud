@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
-
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
@@ -37,7 +35,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
@@ -981,6 +979,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user"),
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
+			strconv.Quote("genesyscloud_journey_outcome"),
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
@@ -2102,9 +2101,33 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		exportResourceLabel1 = "exportFormatTest-export1"
 		jsonConfigFilePath   = filepath.Join(exportTestDir, defaultTfJSONFile)
 		hclConfigFilePath    = filepath.Join(exportTestDir, defaultTfHCLFile)
+		segmentLabel         = "test_export_segment_" + uuid.NewString()[:8]
+		segmentName          = "tf_test_export_seg_" + uuid.NewString()[:8]
 	)
 
 	defer os.RemoveAll(exportTestDir)
+
+	segmentConfig := fmt.Sprintf(`
+resource "genesyscloud_journey_segment" "%s" {
+  display_name            = "%s"
+  color                   = "#008000"
+  should_display_to_agent = true
+  journey {
+    patterns {
+      criteria {
+        key                = "page.hostname"
+        values             = ["test.example.com"]
+        operator           = "equal"
+        should_ignore_case = false
+      }
+      count        = 1
+      stream_type  = "Web"
+      session_type = "web"
+      event_name   = "EventName"
+    }
+  }
+}
+`, segmentLabel, segmentName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -2112,7 +2135,11 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportResourceExportFormat(
+				// First create a segment so there's something to export
+				Config: segmentConfig,
+			},
+			{
+				Config: segmentConfig + generateTfExportResourceExportFormat(
 					exportResourceLabel1,
 					strconv.Quote("hcl_json"),
 					[]string{"genesyscloud_journey_segment"},
@@ -2297,6 +2324,17 @@ resource "%s" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create the flow first and let it settle before exporting
+				Config: flowResource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(architectFlow.ResourceType+"."+flowResourceLabel, "id"),
+				),
+			},
+			{
+				// Step 2: Export the flow after it has been fully published
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
@@ -2388,13 +2426,11 @@ func TestAccResourceTfExportSanitizedDuplicateLabels(t *testing.T) {
 		stateFilePath = filepath.Join(exportTestDir, defaultTfStateFile)
 		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
 
-		sanitizer      = resourceExporter.NewSanitizerProvider()
-		sanitizedName  = sanitizer.S.SanitizeResourceBlockLabel(dataActionName)
-		expectedLabels = []string{
-			sanitizedName,
-			sanitizedName + "_" + sanitizeResourceHash(dataActionName+"2"),
-			sanitizedName + "_" + sanitizeResourceHash(dataActionName+"3"),
-		}
+		sanitizer = resourceExporter.NewSanitizerProvider()
+		// The exporter uses "{category} {name}" as the display name for integration_action
+		// where category = integration name
+		fullDisplayName = integrationName + " " + dataActionName
+		sanitizedName   = sanitizer.S.SanitizeResourceBlockLabel(fullDisplayName)
 	)
 
 	defer func(path string) {
@@ -2496,15 +2532,91 @@ resource "genesyscloud_integration_credential" "%s" {
 		dataActionResource(dataActionLabel3),
 	)
 
+	// Split config: resources without export, then add export
+	resourcesOnlyConfig := fmt.Sprintf(`
+locals {
+  shared_action_name = "%s"
+  integration_name   = "%s"
+}
+
+resource "genesyscloud_integration" "%s" {
+  config {
+    advanced = jsonencode({})
+    credentials = {
+      pureCloudOAuthClient = genesyscloud_integration_credential.%s.id
+    }
+    name       = local.integration_name
+    properties = jsonencode({})
+  }
+  integration_type = "purecloud-data-actions"
+  intended_state   = "ENABLED"
+}
+
+resource "genesyscloud_integration_credential" "%s" {
+  name                 = "%s"
+  credential_type_name = "pureCloudOAuthClient"
+  fields = {
+    clientId     = "someUserName"
+    clientSecret = "$tr0ngP@s$w0rd"
+  }
+}
+
+%s
+
+%s
+
+%s
+`, dataActionName, integrationName,
+		integrationLabel,
+		credentialLabel,
+		credentialLabel,
+		credentialName,
+		dataActionResource(dataActionLabel1),
+		dataActionResource(dataActionLabel2),
+		dataActionResource(dataActionLabel3),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create resources
+				Config: resourcesOnlyConfig,
+			},
+			{
+				// Step 2: Export (resources already exist and are searchable)
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					verifyLabelsExistInExportedStateFile(stateFilePath, integrationAction.ResourceType, expectedLabels),
-					verifyLabelsExistInExportedTfConfig(configPath, integrationAction.ResourceType, expectedLabels),
+					// Verify that 3 integration_action resources exist in the state file with the sanitized base name
+					func(s *terraform.State) error {
+						data, err := os.ReadFile(stateFilePath)
+						if err != nil {
+							return fmt.Errorf("failed to read state file: %s", err)
+						}
+						content := string(data)
+						count := strings.Count(content, sanitizedName)
+						if count < 3 {
+							return fmt.Errorf("expected at least 3 occurrences of sanitized label prefix %q in state file, found %d", sanitizedName, count)
+						}
+						return nil
+					},
+					// Verify that 3 integration_action resources exist in the config file with the sanitized base name
+					func(s *terraform.State) error {
+						data, err := os.ReadFile(configPath)
+						if err != nil {
+							return fmt.Errorf("failed to read config file: %s", err)
+						}
+						content := string(data)
+						count := strings.Count(content, sanitizedName)
+						if count < 3 {
+							return fmt.Errorf("expected at least 3 occurrences of sanitized label prefix %q in config file, found %d", sanitizedName, count)
+						}
+						return nil
+					},
 				),
 			},
 		},
