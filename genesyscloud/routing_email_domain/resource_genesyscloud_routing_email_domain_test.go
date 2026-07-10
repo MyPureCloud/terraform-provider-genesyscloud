@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -134,4 +135,53 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 
 	// Success. All Domains destroyed
 	return nil
+}
+
+func TestAccResourceRoutingEmailDomainGraphApi(t *testing.T) {
+	var (
+		domainResourceLabel = "routing-domain-graph"
+		domainId            = fmt.Sprintf("defaultgraph%04d.inindca.com", rand.Intn(10000))
+	)
+
+	if cleanupErr := CleanupRoutingEmailDomains("defaultgraph"); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create email domain with graph_api_settings referencing existing Azure Graph Api integration
+				Config: fmt.Sprintf(`
+data "genesyscloud_integration" "Azure_Graph_Api" {
+  name = "Azure Graph Api"
+}
+
+resource "genesyscloud_routing_email_domain" "%s" {
+  domain_id = "%s"
+  subdomain = false
+  graph_api_settings {
+    integration_id = data.genesyscloud_integration.Azure_Graph_Api.id
+  }
+}
+`, domainResourceLabel, domainId),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "domain_id", domainId),
+					resource.TestCheckResourceAttr("genesyscloud_routing_email_domain."+domainResourceLabel, "subdomain", "false"),
+					resource.TestCheckResourceAttrPair(
+						"genesyscloud_routing_email_domain."+domainResourceLabel, "graph_api_settings.0.integration_id",
+						"data.genesyscloud_integration.Azure_Graph_Api", "id",
+					),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_email_domain." + domainResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyRoutingEmailDomainDestroyed,
+	})
 }
