@@ -295,12 +295,12 @@ func TestAccResourceRoutingEmailRouteSignature(t *testing.T) {
 		// initial signature values
 		sigEnabled1       = true
 		sigAlwaysIncl1    = false
-		sigInclusionType1 = "Always"
+		sigInclusionType1 = "Send"
 
 		// updated signature values
 		sigEnabled2       = false
 		sigAlwaysIncl2    = true
-		sigInclusionType2 = "FirstResponseOnly"
+		sigInclusionType2 = "SendOnce"
 	)
 
 	// shared config blocks reused across steps
