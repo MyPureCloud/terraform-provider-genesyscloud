@@ -108,15 +108,15 @@ func readPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 			_ = d.Set("state", *currentPhone.State)
 		}
 
-		if currentPhone.LineBaseSettings != nil {
+		if currentPhone.LineBaseSettings != nil && currentPhone.LineBaseSettings.Id != nil {
 			_ = d.Set("line_base_settings_id", *currentPhone.LineBaseSettings.Id)
 		}
 
-		if currentPhone.PhoneMetaBase != nil {
+		if currentPhone.PhoneMetaBase != nil && currentPhone.PhoneMetaBase.Id != nil {
 			_ = d.Set("phone_meta_base_id", *currentPhone.PhoneMetaBase.Id)
 		}
 
-		if currentPhone.WebRtcUser != nil {
+		if currentPhone.WebRtcUser != nil && currentPhone.WebRtcUser.Id != nil {
 			_ = d.Set("web_rtc_user_id", *currentPhone.WebRtcUser.Id)
 		}
 

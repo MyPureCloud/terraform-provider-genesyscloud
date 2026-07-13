@@ -126,21 +126,22 @@ type GenesysCloudResourceExporter struct {
 
 	// 4-byte alignment
 	// .. Mutex
-	buildSecondDepsMutex       sync.RWMutex
-	cyclicDependsListMutex     sync.Mutex
-	dataSourceTypesMapsMutex   sync.RWMutex
-	dependsListMutex           sync.RWMutex
-	exMutex                    sync.RWMutex
-	exportersMutex             sync.RWMutex
-	filterListMutex            sync.RWMutex
-	flowResourcesListMutex     sync.RWMutex
-	replaceWithDatasourceMutex sync.Mutex
-	resourceErrorsMutex        sync.RWMutex
-	resourcesMutex             sync.Mutex
-	resourceStateMutex         sync.Mutex
-	resourceTypesMapsMutex     sync.RWMutex
-	unresolvedAttrsMutex       sync.Mutex
-	attributesDecodedMutex     sync.Mutex
+	buildSecondDepsMutex          sync.RWMutex
+	cyclicDependsListMutex        sync.Mutex
+	dataSourceTypesMapsMutex      sync.RWMutex
+	dependsListMutex              sync.RWMutex
+	exMutex                       sync.RWMutex
+	exportersMutex                sync.RWMutex
+	filterListMutex               sync.RWMutex
+	flowResourcesListMutex        sync.RWMutex
+	replaceWithDatasourceMutex    sync.Mutex
+	resourceErrorsMutex           sync.RWMutex
+	resourcesExportedForMrMoMutex sync.Mutex
+	resourcesMutex                sync.Mutex
+	resourceStateMutex            sync.Mutex
+	resourceTypesMapsMutex        sync.RWMutex
+	unresolvedAttrsMutex          sync.Mutex
+	attributesDecodedMutex        sync.Mutex
 
 	// .. Int
 	maxConcurrentOps int // New field to control concurrency
@@ -224,6 +225,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ctx:                      ctx,
 		meta:                     meta,
 		maxConcurrentOps:         d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
+		resourceErrors:           make(map[string][]ResourceErrorInfo),
 	}
 
 	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
@@ -280,6 +282,7 @@ func NewThreadSafeGenesysCloudResourceExporter(d *schema.ResourceData, ctx conte
 		exportComputed:           d.Get("export_computed").(bool),
 		exportOmitUnresolvedRefs: d.Get("export_omit_unresolved_refs").(bool),
 		maxConcurrentOps:         10, // Default to 10 concurrent operations
+		resourceErrors:           make(map[string][]ResourceErrorInfo),
 	}
 
 	// Set max concurrent operations based on configuration if available
@@ -2168,15 +2171,7 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 	}
 
 	if mrmo.IsActive() {
-		g.resourceExportedForMrMo = resource.Data(state)
-		if g.resourcesExportedForMrMo == nil {
-			tmp := make(map[string][]*schema.ResourceData, 0)
-			g.resourcesExportedForMrMo = &tmp
-		}
-		if (*g.resourcesExportedForMrMo)[resType] == nil {
-			(*g.resourcesExportedForMrMo)[resType] = make([]*schema.ResourceData, 0)
-		}
-		(*g.resourcesExportedForMrMo)[resType] = append((*g.resourcesExportedForMrMo)[resType], resource.Data(state))
+		g.recordMrMoResourceExport(resType, resource.Data(state))
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))
@@ -2931,6 +2926,37 @@ func (g *GenesysCloudResourceExporter) matchesExportFormat(formats ...string) bo
 		}
 	}
 	return false
+}
+
+// recordMrMoResourceExport appends refreshed resource state for MRMO export-by-type.
+// getResourcesForType invokes getResourceState concurrently per instance, so writes
+// to the shared MRMO export maps must be serialized.
+func (g *GenesysCloudResourceExporter) recordMrMoResourceExport(resType string, resourceData *schema.ResourceData) {
+	g.resourcesExportedForMrMoMutex.Lock()
+	defer g.resourcesExportedForMrMoMutex.Unlock()
+
+	g.resourceExportedForMrMo = resourceData
+	if g.resourcesExportedForMrMo == nil {
+		tmp := make(map[string][]*schema.ResourceData)
+		g.resourcesExportedForMrMo = &tmp
+	}
+	if (*g.resourcesExportedForMrMo)[resType] == nil {
+		(*g.resourcesExportedForMrMo)[resType] = make([]*schema.ResourceData, 0)
+	}
+	(*g.resourcesExportedForMrMo)[resType] = append((*g.resourcesExportedForMrMo)[resType], resourceData)
+}
+
+func (g *GenesysCloudResourceExporter) mrMoResourceDataList(resType string) []*schema.ResourceData {
+	g.resourcesExportedForMrMoMutex.Lock()
+	defer g.resourcesExportedForMrMoMutex.Unlock()
+
+	if g.resourcesExportedForMrMo == nil {
+		return make([]*schema.ResourceData, 0)
+	}
+	if list := (*g.resourcesExportedForMrMo)[resType]; list != nil {
+		return list
+	}
+	return make([]*schema.ResourceData, 0)
 }
 
 // Helper methods for thread-safe access to shared state
