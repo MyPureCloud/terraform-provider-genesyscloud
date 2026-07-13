@@ -319,6 +319,17 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 		return resp, err
 	}
 
+	// Deletes run before creates so a file->TTS language is removed before being recreated.
+	for _, language := range resourcesToDelete {
+		log.Printf("Deleting user prompt resource for language: %s", language)
+		resp, err = p.deleteArchitectUserPromptResource(ctx, d.Id(), language)
+		if err != nil {
+			return resp, fmt.Errorf("failed to delete user prompt resource for language '%s': %w", language, err)
+		}
+
+		allLanguages = removeByValue(allLanguages, language)
+	}
+
 	for _, r := range resourcesToCreate {
 		var resource *platformclientv2.Promptasset
 		log.Printf("Creating user prompt resource for language: %s", *r.Language)
@@ -347,16 +358,6 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 		}
 
 		allLanguages = append(allLanguages, *r.Language)
-	}
-
-	for _, language := range resourcesToDelete {
-		log.Printf("Deleting user prompt resource for language: %s", language)
-		resp, err = p.deleteArchitectUserPromptResource(ctx, d.Id(), language)
-		if err != nil {
-			return resp, fmt.Errorf("failed to delete user prompt resource for language '%s': %w", language, err)
-		}
-
-		removeByValue(allLanguages, language)
 	}
 
 	if _, verifyErr := p.verifyPromptResourceFilesAreTranscoded(ctx, promptId, allLanguages); verifyErr != nil {
@@ -522,8 +523,16 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 			}
 
 			if languageExists {
-				updateResourceStruct := buildUserPromptResourceForUpdate(promptResourceMap)
-				toUpdate = append(toUpdate, *updateResourceStruct)
+				configFilename, _ := promptResourceMap["filename"].(string)
+				if configFilename == "" && existingResourceHasAudio(existingResources, resourceLanguage) {
+					// file->TTS: delete and recreate since an update won't remove the org audio.
+					toDelete = append(toDelete, resourceLanguage)
+					createResourceStruct := buildUserPromptResourceForCreate(promptResourceMap)
+					toCreate = append(toCreate, *createResourceStruct)
+				} else {
+					updateResourceStruct := buildUserPromptResourceForUpdate(promptResourceMap)
+					toUpdate = append(toUpdate, *updateResourceStruct)
+				}
 			} else {
 				createResourceStruct := buildUserPromptResourceForCreate(promptResourceMap)
 				toCreate = append(toCreate, *createResourceStruct)
@@ -553,6 +562,22 @@ func (p *architectUserPromptProxy) buildUserPromptResourcesForCreateAndUpdate(ct
 	}
 
 	return toCreate, toUpdate, toDelete, nil, nil
+}
+
+// existingResourceHasAudio returns whether the org resource for the given language has transcoded audio.
+func existingResourceHasAudio(existingResources *[]platformclientv2.Promptasset, language string) bool {
+	if existingResources == nil {
+		return false
+	}
+	for _, r := range *existingResources {
+		if r.Language == nil || *r.Language != language {
+			continue
+		}
+		hasMedia := r.MediaUri != nil && *r.MediaUri != ""
+		transcoded := r.UploadStatus != nil && *r.UploadStatus == "transcoded"
+		return hasMedia && transcoded
+	}
+	return false
 }
 
 // the resources section of the schema is modified , to nil resources usecase.
