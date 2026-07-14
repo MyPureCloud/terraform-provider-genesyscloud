@@ -1,8 +1,23 @@
 package knowledge_label
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
+
+func BuildCompositeKnowledgeLabelID(labelId, knowledgeBaseId string) string {
+	return fmt.Sprintf("%s,%s", labelId, knowledgeBaseId)
+}
+
+func ParseCompositeKnowledgeLabelID(id string) (labelId, knowledgeBaseId string, _ error) {
+	parts := strings.Split(id, ",")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid composite knowledge label ID: %s", id)
+	}
+	return parts[0], parts[1], nil
+}
 
 func buildKnowledgeLabel(labelIn map[string]interface{}) platformclientv2.Labelcreaterequest {
 	name := labelIn["name"].(string)

@@ -51,7 +51,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 
 				for _, knowledgeLabel := range *knowledgeLabels.Entities {
 					if *knowledgeLabel.Name == name {
-						id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
+						id := BuildCompositeKnowledgeLabelID(*knowledgeLabel.Id, *knowledgeBase.Id)
 						d.SetId(id)
 						return nil
 					}
@@ -69,7 +69,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 
 				for _, knowledgeLabel := range *knowledgeLabels.Entities {
 					if *knowledgeLabel.Name == name {
-						id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
+						id := BuildCompositeKnowledgeLabelID(*knowledgeLabel.Id, *knowledgeBase.Id)
 						d.SetId(id)
 						return nil
 					}
