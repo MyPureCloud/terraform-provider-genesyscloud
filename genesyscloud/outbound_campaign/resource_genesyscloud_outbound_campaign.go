@@ -160,8 +160,8 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_contact_queueing_settings", campaign.DynamicContactQueueingSettings, flattenSettings)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "dynamic_line_balancing_settings", campaign.DynamicLineBalancingSettings, flattenLineBalancingSettings)
 		if campaign.DialingMode != nil && (*campaign.DialingMode == "power" || *campaign.DialingMode == "predictive") {
-            resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "diagnostics_settings", campaign.DiagnosticsSettings, flattenDiagnosticsSettings)
-        }
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "diagnostics_settings", campaign.DiagnosticsSettings, flattenDiagnosticsSettings)
+		}
 		if campaign.SkillColumns != nil && len(*campaign.SkillColumns) > 0 {
 			_ = d.Set("skill_columns", *campaign.SkillColumns)
 		}
