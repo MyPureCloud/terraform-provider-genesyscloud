@@ -647,10 +647,13 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 			"question_groups.questions.context_id",
 			"question_groups.questions.answer_options.id",
 			"question_groups.questions.answer_options.context_id",
+			"question_groups.questions.default_answer_id",
 			"question_groups.questions.multiple_select_option_questions.id",
 			"question_groups.questions.multiple_select_option_questions.context_id",
 			"question_groups.questions.multiple_select_option_questions.answer_options.id",
 			"question_groups.questions.multiple_select_option_questions.answer_options.context_id",
+			"question_groups.questions.multiple_select_option_questions.default_answer_id",
+			"ai_scoring",
 			"modified_date",
 		},
 	}

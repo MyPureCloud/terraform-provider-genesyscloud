@@ -267,14 +267,31 @@ func buildSdkDefaultAnswersTo(defaultAnswersTo []interface{}) *platformclientv2.
 	}
 }
 
+func hasEvaluationSettings(settings *platformclientv2.Evaluationsettings) bool {
+	if settings == nil {
+		return false
+	}
+	return (settings.RevisionsEnabled != nil && *settings.RevisionsEnabled) ||
+		(settings.DisputesEnabled != nil && *settings.DisputesEnabled)
+}
+
+func buildDisabledEvaluationSettings() *platformclientv2.Evaluationsettings {
+	revisionsEnabled := false
+	disputesEnabled := false
+	return &platformclientv2.Evaluationsettings{
+		RevisionsEnabled: &revisionsEnabled,
+		DisputesEnabled:  &disputesEnabled,
+	}
+}
+
 func buildSdkEvaluationSettings(evaluationSettings []interface{}) *platformclientv2.Evaluationsettings {
 	if len(evaluationSettings) <= 0 {
-		return nil
+		return buildDisabledEvaluationSettings()
 	}
 
 	settingsMap, ok := evaluationSettings[0].(map[string]interface{})
 	if !ok {
-		return nil
+		return buildDisabledEvaluationSettings()
 	}
 
 	revisionsEnabled := settingsMap["revisions_enabled"].(bool)
@@ -317,6 +334,16 @@ func buildSdkDisputesAssignees(assignees []interface{}) *[]platformclientv2.Eval
 	}
 
 	return &sdkAssignees
+}
+
+func buildClearedAiScoring() *platformclientv2.Aiscoringsettings {
+	return &platformclientv2.Aiscoringsettings{
+		QuestionGroupSettings: &[]platformclientv2.Questiongroupsettings{},
+	}
+}
+
+func hasAiScoring(aiScoring *platformclientv2.Aiscoringsettings) bool {
+	return aiScoring != nil && aiScoring.QuestionGroupSettings != nil && len(*aiScoring.QuestionGroupSettings) > 0
 }
 
 func buildSdkAiScoring(aiScoring []interface{}) *platformclientv2.Aiscoringsettings {
