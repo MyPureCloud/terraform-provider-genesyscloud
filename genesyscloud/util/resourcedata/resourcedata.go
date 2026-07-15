@@ -1,8 +1,10 @@
 package resourcedata
 
 import (
+	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -290,4 +292,22 @@ func BuildSdkList[T interface{}](d *schema.ResourceData, key string, elementBuil
 		return &sdkList
 	}
 	return nil
+}
+
+const CompositeIDSeparator = ","
+
+// BuildCompositeID creates a composite ID with resourceId first, followed by relatedIds.
+// resourceId must identify the core resource represented by the Terraform resource. For
+// example, a knowledge label's resourceId is the label ID, while its knowledge base ID
+// is a related ID.
+func BuildCompositeID(resourceId string, relatedIds ...string) string {
+	return resourceId + CompositeIDSeparator + strings.Join(relatedIds, CompositeIDSeparator)
+}
+
+func ParseCompositeID(id string) (resourceId string, relatedIds []string, _ error) {
+	parts := strings.Split(id, CompositeIDSeparator)
+	if len(parts) < 2 {
+		return "", nil, fmt.Errorf("invalid composite ID: %s", id)
+	}
+	return parts[0], parts[1:], nil
 }

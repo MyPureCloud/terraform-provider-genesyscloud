@@ -1,22 +1,20 @@
 package knowledge_label
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 func BuildCompositeKnowledgeLabelID(labelId, knowledgeBaseId string) string {
-	return fmt.Sprintf("%s,%s", labelId, knowledgeBaseId)
+	return resourcedata.BuildCompositeID(labelId, knowledgeBaseId)
 }
 
 func ParseCompositeKnowledgeLabelID(id string) (labelId, knowledgeBaseId string, _ error) {
-	parts := strings.Split(id, ",")
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("invalid composite knowledge label ID: %s", id)
+	resourceId, relatedIds, err := resourcedata.ParseCompositeID(id)
+	if err != nil {
+		return "", "", err
 	}
-	return parts[0], parts[1], nil
+	return resourceId, relatedIds[0], nil
 }
 
 func buildKnowledgeLabel(labelIn map[string]interface{}) platformclientv2.Labelcreaterequest {

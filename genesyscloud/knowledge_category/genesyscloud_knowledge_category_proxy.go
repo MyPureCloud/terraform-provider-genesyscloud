@@ -212,7 +212,7 @@ func getKnowledgeCategoryByNameFn(ctx context.Context, p *knowledgeCategoryProxy
 
 			for _, knowledgeCategory := range *knowledgeCategories {
 				if *knowledgeCategory.Name == categoryName {
-					id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+					id := BuildCompositeKnowledgeCategoryID(*knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 					return id, false, resp, nil
 				}
 			}
@@ -229,7 +229,7 @@ func getKnowledgeCategoryByNameFn(ctx context.Context, p *knowledgeCategoryProxy
 
 			for _, knowledgeCategory := range *knowledgeCategories {
 				if *knowledgeCategory.Name == categoryName {
-					id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+					id := BuildCompositeKnowledgeCategoryID(*knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 					return id, false, resp, nil
 				}
 			}

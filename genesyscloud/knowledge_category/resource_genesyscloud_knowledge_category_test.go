@@ -3,7 +3,6 @@ package knowledge_category
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -213,15 +212,6 @@ func generateKnowledgeCategoryRequestBody(categoryName string, categoryDescripti
 
 func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 	knowledgeAPI := platformclientv2.NewKnowledgeApi()
-	var knowledgeBaseId string
-
-	// Find the knowledge base ID
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type == "genesyscloud_knowledge_knowledgebase" {
-			knowledgeBaseId = rs.Primary.ID
-			break
-		}
-	}
 
 	// Validate all categories are deleted
 	for _, rs := range state.RootModule().Resources {
@@ -229,8 +219,10 @@ func testVerifyKnowledgeCategoryDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		id := strings.Split(rs.Primary.ID, " ")
-		knowledgeCategoryId := id[0]
+		knowledgeCategoryId, knowledgeBaseId, err := ParseCompositeKnowledgeCategoryID(rs.Primary.ID)
+		if err != nil {
+			return fmt.Errorf("failed to parse knowledge category ID %q: %w", rs.Primary.ID, err)
+		}
 
 		// Retry for up to 180 seconds
 		if err := util.WithRetries(context.Background(), 180*time.Second, func() *retry.RetryError {
