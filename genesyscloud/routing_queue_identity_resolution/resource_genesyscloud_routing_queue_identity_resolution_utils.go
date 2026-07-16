@@ -93,3 +93,14 @@ func isDefaultIdentityResolutionConfig(config *platformclientv2.Identityresoluti
 
 	return true
 }
+
+// suppressAllDivisionsDivisionIdDiff treats omitted division_id and "*" as equivalent
+// (both mean all divisions). Read omits "*" from state, so explicit config "*" would
+// otherwise show a perpetual plan diff.
+func suppressAllDivisionsDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
+	return isAllDivisionsDivisionId(old) && isAllDivisionsDivisionId(new)
+}
+
+func isAllDivisionsDivisionId(v string) bool {
+	return v == "" || v == "*"
+}

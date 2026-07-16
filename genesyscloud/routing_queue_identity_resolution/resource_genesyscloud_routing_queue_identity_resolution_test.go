@@ -73,6 +73,51 @@ func TestAccResourceRoutingQueueIdentityResolution(t *testing.T) {
 				),
 			},
 			{
+				// Explicit "*" is equivalent to omitted division_id (all divisions).
+				// State stores omitted; DiffSuppressFunc must keep the plan empty.
+				Config: routingQueue.GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+				) + generateRoutingQueueIdentityResolutionResource(
+					identityResolutionResourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".id",
+					"false",
+					`"*"`,
+				),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Apply "*" and confirm read still omits division_id from state.
+				Config: routingQueue.GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+				) + generateRoutingQueueIdentityResolutionResource(
+					identityResolutionResourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".id",
+					"false",
+					`"*"`,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					verifyIdentityResolutionStateDivisionCleared("genesyscloud_routing_queue_identity_resolution."+identityResolutionResourceLabel),
+					verifyIdentityResolutionConfig("genesyscloud_routing_queue."+queueResourceLabel, false, ""),
+				),
+			},
+			{
+				// Omitting division_id after an explicit "*" apply must also be a no-op.
+				Config: routingQueue.GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+				) + generateRoutingQueueIdentityResolutionResource(
+					identityResolutionResourceLabel,
+					"genesyscloud_routing_queue."+queueResourceLabel+".id",
+					"false",
+					"",
+				),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
 				ResourceName:      "genesyscloud_routing_queue_identity_resolution." + identityResolutionResourceLabel,
 				ImportState:       true,
 				ImportStateVerify: true,

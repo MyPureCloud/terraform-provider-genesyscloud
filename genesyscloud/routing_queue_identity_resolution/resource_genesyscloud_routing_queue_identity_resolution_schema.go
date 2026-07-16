@@ -31,9 +31,10 @@ var callOnBehalfOfQueueSchema = &schema.Resource{
 			Required:    true,
 		},
 		"division_id": {
-			Description: "Division ID used during identity resolution. If not set, * will be used for all divisions. '*' may also be set explicitly for all divisions.",
-			Type:        schema.TypeString,
-			Optional:    true,
+			Description:      "Division ID used during identity resolution. If not set, * will be used for all divisions. '*' may also be set explicitly for all divisions.",
+			Type:             schema.TypeString,
+			Optional:         true,
+			DiffSuppressFunc: suppressAllDivisionsDivisionIdDiff,
 		},
 	},
 }

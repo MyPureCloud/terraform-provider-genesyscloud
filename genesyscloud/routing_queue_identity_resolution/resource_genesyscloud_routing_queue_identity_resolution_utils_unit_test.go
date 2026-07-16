@@ -103,3 +103,12 @@ func TestUnitRoutingQueueIdentityResolutionExporterRefAttrs(t *testing.T) {
 	assert.Equal(t, "genesyscloud_auth_division", exporter.RefAttrs["call_on_behalf_of_queue.division_id"].RefType)
 	assert.Equal(t, []string{"*"}, exporter.RefAttrs["call_on_behalf_of_queue.division_id"].AltValues)
 }
+
+func TestUnitSuppressAllDivisionsDivisionIdDiff(t *testing.T) {
+	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "", "*", nil))
+	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "*", "", nil))
+	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "", "", nil))
+	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "*", "*", nil))
+	assert.False(t, suppressAllDivisionsDivisionIdDiff("division_id", "", uuid.NewString(), nil))
+	assert.False(t, suppressAllDivisionsDivisionIdDiff("division_id", uuid.NewString(), "*", nil))
+}
