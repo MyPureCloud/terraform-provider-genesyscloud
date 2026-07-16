@@ -8,92 +8,156 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnitIsDefaultIdentityResolutionConfigTrue(t *testing.T) {
-	resolveIdentities := true
-	config := platformclientv2.Identityresolutionqueueconfig{
-		CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
-			ResolveIdentities: &resolveIdentities,
-		},
-	}
-	assert.True(t, isDefaultIdentityResolutionConfig(&config))
-}
-
-func TestUnitIsDefaultIdentityResolutionConfigFalseResolve(t *testing.T) {
-	resolveIdentities := false
-	config := platformclientv2.Identityresolutionqueueconfig{
-		CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
-			ResolveIdentities: &resolveIdentities,
-		},
-	}
-	assert.False(t, isDefaultIdentityResolutionConfig(&config))
-}
-
-func TestUnitIsDefaultIdentityResolutionConfigFalseDivision(t *testing.T) {
-	resolveIdentities := true
+func TestUnitIsDefaultIdentityResolutionConfig(t *testing.T) {
+	resolveTrue := true
+	resolveFalse := false
+	star := "*"
 	divisionId := uuid.NewString()
-	config := platformclientv2.Identityresolutionqueueconfig{
-		CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
-			ResolveIdentities: &resolveIdentities,
-			Division: &platformclientv2.Writablestarrabledivision{
-				Id: &divisionId,
+
+	tests := []struct {
+		name     string
+		config   *platformclientv2.Identityresolutionqueueconfig
+		expected bool
+	}{
+		{
+			name: "resolve true without division",
+			config: &platformclientv2.Identityresolutionqueueconfig{
+				CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
+					ResolveIdentities: &resolveTrue,
+				},
 			},
+			expected: true,
+		},
+		{
+			name: "resolve true with star division",
+			config: &platformclientv2.Identityresolutionqueueconfig{
+				CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
+					ResolveIdentities: &resolveTrue,
+					Division:          &platformclientv2.Writablestarrabledivision{Id: &star},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "resolve false",
+			config: &platformclientv2.Identityresolutionqueueconfig{
+				CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
+					ResolveIdentities: &resolveFalse,
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "specific division",
+			config: &platformclientv2.Identityresolutionqueueconfig{
+				CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
+					ResolveIdentities: &resolveTrue,
+					Division:          &platformclientv2.Writablestarrabledivision{Id: &divisionId},
+				},
+			},
+			expected: false,
 		},
 	}
-	assert.False(t, isDefaultIdentityResolutionConfig(&config))
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, isDefaultIdentityResolutionConfig(test.config))
+		})
+	}
 }
 
 func TestUnitBuildCallOnBehalfOfQueueConfig(t *testing.T) {
 	divisionId := uuid.NewString()
-	blocks := []interface{}{
-		map[string]interface{}{
-			"resolve_identities": false,
-			"division_id":        divisionId,
-		},
+
+	tests := []struct {
+		name               string
+		divisionId         string
+		expectDivisionNil  bool
+		expectedDivisionId string
+	}{
+		{name: "specific division", divisionId: divisionId, expectedDivisionId: divisionId},
+		{name: "omitted division", expectDivisionNil: true},
+		{name: "explicit star", divisionId: "*", expectDivisionNil: true},
 	}
 
-	config, err := buildCallOnBehalfOfQueueConfig(blocks)
-	assert.NoError(t, err)
-	assert.NotNil(t, config.ResolveIdentities)
-	assert.False(t, *config.ResolveIdentities)
-	assert.NotNil(t, config.Division)
-	assert.Equal(t, divisionId, *config.Division.Id)
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			block := map[string]interface{}{
+				"resolve_identities": false,
+			}
+			if test.divisionId != "" {
+				block["division_id"] = test.divisionId
+			}
 
-func TestUnitBuildCallOnBehalfOfQueueConfigAllDivisions(t *testing.T) {
-	blocks := []interface{}{
-		map[string]interface{}{
-			"resolve_identities": false,
-		},
+			config, err := buildCallOnBehalfOfQueueConfig([]interface{}{block})
+			assert.NoError(t, err)
+			assert.NotNil(t, config.ResolveIdentities)
+			assert.False(t, *config.ResolveIdentities)
+
+			if test.expectDivisionNil {
+				assert.Nil(t, config.Division)
+				return
+			}
+			assert.NotNil(t, config.Division)
+			assert.Equal(t, test.expectedDivisionId, *config.Division.Id)
+		})
 	}
-
-	config, err := buildCallOnBehalfOfQueueConfig(blocks)
-	assert.NoError(t, err)
-	assert.Nil(t, config.Division)
 }
 
 func TestUnitFlattenCallOnBehalfOfQueue(t *testing.T) {
-	resolveIdentities := true
-	divisionId := "*"
-	config := &platformclientv2.Outboundqueueidentityresolutionconfig{
-		ResolveIdentities: &resolveIdentities,
-		Division: &platformclientv2.Writablestarrabledivision{
-			Id: &divisionId,
+	resolveTrue := true
+	star := "*"
+	divisionId := uuid.NewString()
+
+	tests := []struct {
+		name               string
+		config             *platformclientv2.Outboundqueueidentityresolutionconfig
+		expectResolve      bool
+		expectDivisionId   string
+		expectDivisionOmit bool
+	}{
+		{
+			name:               "nil config defaults resolve true",
+			config:             nil,
+			expectResolve:      true,
+			expectDivisionOmit: true,
+		},
+		{
+			name: "star division omitted from state",
+			config: &platformclientv2.Outboundqueueidentityresolutionconfig{
+				ResolveIdentities: &resolveTrue,
+				Division:          &platformclientv2.Writablestarrabledivision{Id: &star},
+			},
+			expectResolve:      true,
+			expectDivisionOmit: true,
+		},
+		{
+			name: "specific division kept",
+			config: &platformclientv2.Outboundqueueidentityresolutionconfig{
+				ResolveIdentities: &resolveTrue,
+				Division:          &platformclientv2.Writablestarrabledivision{Id: &divisionId},
+			},
+			expectResolve:    true,
+			expectDivisionId: divisionId,
 		},
 	}
 
-	flattened := flattenCallOnBehalfOfQueue(config)
-	assert.Len(t, flattened, 1)
-	block := flattened[0].(map[string]interface{})
-	assert.Equal(t, true, block["resolve_identities"])
-	_, hasDivision := block["division_id"]
-	assert.False(t, hasDivision)
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			flattened := flattenCallOnBehalfOfQueue(test.config)
+			assert.Len(t, flattened, 1)
+			block := flattened[0].(map[string]interface{})
+			assert.Equal(t, test.expectResolve, block["resolve_identities"])
 
-func TestUnitFlattenCallOnBehalfOfQueueNil(t *testing.T) {
-	flattened := flattenCallOnBehalfOfQueue(nil)
-	assert.Len(t, flattened, 1)
-	block := flattened[0].(map[string]interface{})
-	assert.Equal(t, true, block["resolve_identities"])
+			divisionId, hasDivision := block["division_id"]
+			if test.expectDivisionOmit {
+				assert.False(t, hasDivision)
+				return
+			}
+			assert.True(t, hasDivision)
+			assert.Equal(t, test.expectDivisionId, divisionId)
+		})
+	}
 }
 
 func TestUnitRoutingQueueIdentityResolutionExporterRefAttrs(t *testing.T) {
@@ -105,10 +169,22 @@ func TestUnitRoutingQueueIdentityResolutionExporterRefAttrs(t *testing.T) {
 }
 
 func TestUnitSuppressAllDivisionsDivisionIdDiff(t *testing.T) {
-	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "", "*", nil))
-	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "*", "", nil))
-	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "", "", nil))
-	assert.True(t, suppressAllDivisionsDivisionIdDiff("division_id", "*", "*", nil))
-	assert.False(t, suppressAllDivisionsDivisionIdDiff("division_id", "", uuid.NewString(), nil))
-	assert.False(t, suppressAllDivisionsDivisionIdDiff("division_id", uuid.NewString(), "*", nil))
+	tests := []struct {
+		name     string
+		old, new string
+		suppress bool
+	}{
+		{name: "empty to star", old: "", new: "*", suppress: true},
+		{name: "star to empty", old: "*", new: "", suppress: true},
+		{name: "empty to empty", old: "", new: "", suppress: true},
+		{name: "star to star", old: "*", new: "*", suppress: true},
+		{name: "empty to uuid", old: "", new: uuid.NewString(), suppress: false},
+		{name: "uuid to star", old: uuid.NewString(), new: "*", suppress: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.suppress, suppressAllDivisionsDivisionIdDiff("division_id", test.old, test.new, nil))
+		})
+	}
 }

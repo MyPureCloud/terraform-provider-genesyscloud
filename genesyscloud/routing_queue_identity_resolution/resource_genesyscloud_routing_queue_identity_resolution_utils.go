@@ -42,7 +42,7 @@ func buildCallOnBehalfOfQueueConfig(blocks []interface{}) (*platformclientv2.Out
 		ResolveIdentities: &resolveIdentities,
 	}
 
-	if divisionId, ok := block["division_id"].(string); ok && divisionId != "" {
+	if divisionId, ok := block["division_id"].(string); ok && !isAllDivisionsDivisionId(divisionId) {
 		config.Division = &platformclientv2.Writablestarrabledivision{
 			Id: platformclientv2.String(divisionId),
 		}
@@ -66,7 +66,7 @@ func flattenCallOnBehalfOfQueue(config *platformclientv2.Outboundqueueidentityre
 	}
 	if config.Division != nil && config.Division.Id != nil {
 		divisionId := *config.Division.Id
-		if divisionId != "" && divisionId != "*" {
+		if !isAllDivisionsDivisionId(divisionId) {
 			result["division_id"] = divisionId
 		}
 	}
@@ -84,23 +84,21 @@ func isDefaultIdentityResolutionConfig(config *platformclientv2.Identityresoluti
 		return false
 	}
 
-	if inner.Division != nil && inner.Division.Id != nil {
-		divisionId := *inner.Division.Id
-		if divisionId != "" && divisionId != "*" {
-			return false
-		}
+	if inner.Division != nil && inner.Division.Id != nil && !isAllDivisionsDivisionId(*inner.Division.Id) {
+		return false
 	}
 
 	return true
 }
 
-// suppressAllDivisionsDivisionIdDiff treats omitted division_id and "*" as equivalent
-// (both mean all divisions). Read omits "*" from state, so explicit config "*" would
-// otherwise show a perpetual plan diff.
-func suppressAllDivisionsDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
-	return isAllDivisionsDivisionId(old) && isAllDivisionsDivisionId(new)
-}
-
+// isAllDivisionsDivisionId reports whether division_id means all divisions
+// (omitted in config/state, or explicit "*").
 func isAllDivisionsDivisionId(v string) bool {
 	return v == "" || v == "*"
+}
+
+// suppressAllDivisionsDivisionIdDiff treats omitted division_id and "*" as equivalent.
+// Read omits "*" from state, so explicit config "*" would otherwise show a perpetual plan diff.
+func suppressAllDivisionsDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
+	return isAllDivisionsDivisionId(old) && isAllDivisionsDivisionId(new)
 }

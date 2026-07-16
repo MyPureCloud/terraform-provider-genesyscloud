@@ -73,8 +73,7 @@ func TestAccResourceRoutingQueueIdentityResolution(t *testing.T) {
 				),
 			},
 			{
-				// Explicit "*" is equivalent to omitted division_id (all divisions).
-				// State stores omitted; DiffSuppressFunc must keep the plan empty.
+				// Explicit "*" is equivalent to omitted division_id (covered in unit for build/flatten).
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResourceLabel,
 					queueName,
@@ -83,36 +82,6 @@ func TestAccResourceRoutingQueueIdentityResolution(t *testing.T) {
 					"genesyscloud_routing_queue."+queueResourceLabel+".id",
 					"false",
 					`"*"`,
-				),
-				PlanOnly:           true,
-				ExpectNonEmptyPlan: false,
-			},
-			{
-				// Apply "*" and confirm read still omits division_id from state.
-				Config: routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResourceLabel,
-					queueName,
-				) + generateRoutingQueueIdentityResolutionResource(
-					identityResolutionResourceLabel,
-					"genesyscloud_routing_queue."+queueResourceLabel+".id",
-					"false",
-					`"*"`,
-				),
-				Check: resource.ComposeTestCheckFunc(
-					verifyIdentityResolutionStateDivisionCleared("genesyscloud_routing_queue_identity_resolution."+identityResolutionResourceLabel),
-					verifyIdentityResolutionConfig("genesyscloud_routing_queue."+queueResourceLabel, false, ""),
-				),
-			},
-			{
-				// Omitting division_id after an explicit "*" apply must also be a no-op.
-				Config: routingQueue.GenerateRoutingQueueResourceBasic(
-					queueResourceLabel,
-					queueName,
-				) + generateRoutingQueueIdentityResolutionResource(
-					identityResolutionResourceLabel,
-					"genesyscloud_routing_queue."+queueResourceLabel+".id",
-					"false",
-					"",
 				),
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
@@ -203,7 +172,7 @@ func verifyIdentityResolutionConfig(queueResourcePath string, resolveIdentities 
 			}
 		} else if config.CallOnBehalfOfQueue.Division != nil && config.CallOnBehalfOfQueue.Division.Id != nil {
 			divisionId := *config.CallOnBehalfOfQueue.Division.Id
-			if divisionId != "" && divisionId != "*" {
+			if !isAllDivisionsDivisionId(divisionId) {
 				return fmt.Errorf("expected all divisions for queue %s, got division_id=%s", queueResource.Primary.ID, divisionId)
 			}
 		}
