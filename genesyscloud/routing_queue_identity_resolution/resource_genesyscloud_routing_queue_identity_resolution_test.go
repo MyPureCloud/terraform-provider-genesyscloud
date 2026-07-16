@@ -68,7 +68,7 @@ func TestAccResourceRoutingQueueIdentityResolution(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue_identity_resolution."+identityResolutionResourceLabel, "call_on_behalf_of_queue.0.resolve_identities", "false"),
-					verifyIdentityResolutionStateDivisionCleared("genesyscloud_routing_queue_identity_resolution." + identityResolutionResourceLabel),
+					verifyIdentityResolutionStateDivisionCleared("genesyscloud_routing_queue_identity_resolution."+identityResolutionResourceLabel),
 					verifyIdentityResolutionConfig("genesyscloud_routing_queue."+queueResourceLabel, false, ""),
 				),
 			},
