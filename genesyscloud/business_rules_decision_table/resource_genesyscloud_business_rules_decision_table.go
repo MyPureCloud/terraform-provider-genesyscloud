@@ -13,11 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	platformclientv2 "github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -142,11 +140,15 @@ func rollbackDecisionTable(tableId string, proxy *BusinessRulesDecisionTableProx
 	return nil
 }
 
-// readBusinessRulesDecisionTable reads a Genesys Cloud business rules decision table
+// readBusinessRulesDecisionTable reads a Genesys Cloud business rules decision table.
+// The consistency checker is intentionally not used here: large tables (thousands of
+// rows) make each retry prohibitively expensive, and false-positive null vs "" diffs
+// on optional fields (description, defaults_to siblings) previously caused an
+// infinite read loop ending in "Plugin did not respond" (DEVTOOLING-1711). Terraform's
+// native plan/diff still detects drift for this resource.
 func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessRulesDecisionTableProxy(sdkConfig)
-	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceBusinessRulesDecisionTable(), constants.ConsistencyChecks(), ResourceType)
 
 	tableId := d.Id()
 	log.Printf("Reading business rules decision table %s", tableId)
@@ -231,7 +233,7 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 		d.Set("rows", rows)
 
 		log.Printf("Read business rules decision table %s version %d", tableId, versionToRead)
-		return cc.CheckState(d)
+		return nil
 	})
 }
 

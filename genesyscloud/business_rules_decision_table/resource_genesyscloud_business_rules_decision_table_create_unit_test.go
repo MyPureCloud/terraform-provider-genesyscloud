@@ -49,6 +49,44 @@ func TestUnitDecisionTableDefaultsToComputed(t *testing.T) {
 	}
 }
 
+// TestUnitFlattenDefaultsToNormalizesSiblings verifies flattenDefaultsTo always emits
+// all three mutually-exclusive keys with stable empty siblings, so Read does not
+// introduce null vs "" inconsistencies (DEVTOOLING-1711).
+func TestUnitFlattenDefaultsToNormalizesSiblings(t *testing.T) {
+	assertFlattenedDefaultsTo := func(t *testing.T, got []interface{}, wantValue, wantSpecial string, wantValues []interface{}) {
+		t.Helper()
+		assert.Len(t, got, 1)
+		m, ok := got[0].(map[string]interface{})
+		assert.True(t, ok)
+		assert.Equal(t, wantValue, m["value"])
+		assert.Equal(t, wantSpecial, m["special"])
+		assert.Equal(t, wantValues, m["values"])
+		assert.Len(t, m, 3, "exactly value/special/values should be present")
+	}
+
+	t.Run("nil returns nil", func(t *testing.T) {
+		assert.Nil(t, flattenDefaultsTo(nil))
+	})
+
+	t.Run("special active leaves value and values empty", func(t *testing.T) {
+		special := "Null"
+		got := flattenDefaultsTo(&platformclientv2.Decisiontablecolumndefaultrowvalue{Special: &special})
+		assertFlattenedDefaultsTo(t, got, "", "Null", []interface{}{})
+	})
+
+	t.Run("value active leaves special and values empty", func(t *testing.T) {
+		value := "Standard"
+		got := flattenDefaultsTo(&platformclientv2.Decisiontablecolumndefaultrowvalue{Value: &value})
+		assertFlattenedDefaultsTo(t, got, "Standard", "", []interface{}{})
+	})
+
+	t.Run("values active leaves value and special empty", func(t *testing.T) {
+		values := []string{"a", "b"}
+		got := flattenDefaultsTo(&platformclientv2.Decisiontablecolumndefaultrowvalue{Values: &values})
+		assertFlattenedDefaultsTo(t, got, "", "", []interface{}{"a", "b"})
+	})
+}
+
 // TestUnitRollbackDecisionTableUsesFreshContext verifies that the create-failure
 // rollback deletes the partial table on a fresh, non-expired context, even when
 // the original request context is already cancelled (the create-timeout case).
