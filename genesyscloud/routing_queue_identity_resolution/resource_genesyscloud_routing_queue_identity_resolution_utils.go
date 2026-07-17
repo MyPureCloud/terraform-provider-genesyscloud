@@ -42,7 +42,7 @@ func buildCallOnBehalfOfQueueConfig(blocks []interface{}) (*platformclientv2.Out
 		ResolveIdentities: &resolveIdentities,
 	}
 
-	if divisionId, ok := block["division_id"].(string); ok && !isParentDivisionId(divisionId) {
+	if divisionId, ok := block["division_id"].(string); ok && !isUnassignedDivisionId(divisionId) {
 		config.Division = &platformclientv2.Writablestarrabledivision{
 			Id: platformclientv2.String(divisionId),
 		}
@@ -66,7 +66,7 @@ func flattenCallOnBehalfOfQueue(config *platformclientv2.Outboundqueueidentityre
 	}
 	if config.Division != nil && config.Division.Id != nil {
 		divisionId := *config.Division.Id
-		if !isParentDivisionId(divisionId) {
+		if !isUnassignedDivisionId(divisionId) {
 			result["division_id"] = divisionId
 		}
 	}
@@ -84,22 +84,23 @@ func isDefaultIdentityResolutionConfig(config *platformclientv2.Identityresoluti
 		return false
 	}
 
-	if inner.Division != nil && inner.Division.Id != nil && !isParentDivisionId(*inner.Division.Id) {
+	if inner.Division != nil && inner.Division.Id != nil && !isUnassignedDivisionId(*inner.Division.Id) {
 		return false
 	}
 
 	return true
 }
 
-// isParentDivisionId reports whether division_id means use the parent resource's
-// division (omitted in config/state, or explicit "*").
-func isParentDivisionId(v string) bool {
+// isUnassignedDivisionId reports whether division_id is the unassigned (STAR) division
+// sentinel (omitted in config/state, or explicit "*"). In contacts-service, "*" serializes
+// a null/STAR division id — not "all divisions" and not "parent resource's division".
+func isUnassignedDivisionId(v string) bool {
 	return v == "" || v == "*"
 }
 
-// suppressParentDivisionIdDiff treats omitted division_id and "*" as equivalent
-// (both mean the parent resource's division). Read omits "*" from state, so explicit
+// suppressUnassignedDivisionIdDiff treats omitted division_id and "*" as equivalent
+// (both mean the unassigned / STAR division). Read omits "*" from state, so explicit
 // config "*" would otherwise show a perpetual plan diff.
-func suppressParentDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
-	return isParentDivisionId(old) && isParentDivisionId(new)
+func suppressUnassignedDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
+	return isUnassignedDivisionId(old) && isUnassignedDivisionId(new)
 }

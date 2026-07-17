@@ -31,17 +31,17 @@ var callOnBehalfOfQueueSchema = &schema.Resource{
 			Required:    true,
 		},
 		"division_id": {
-			Description:      "The division to use when performing identity resolution. If not set, * means use the parent resource's division. '*' may also be set explicitly for the same behavior.",
+			Description:      "The division to use when performing identity resolution. If not set, * means the unassigned (star) division. '*' may also be set explicitly for the same behavior.",
 			Type:             schema.TypeString,
 			Optional:         true,
-			DiffSuppressFunc: suppressParentDivisionIdDiff,
+			DiffSuppressFunc: suppressUnassignedDivisionIdDiff,
 		},
 	},
 }
 
 func ResourceRoutingQueueIdentityResolution() *schema.Resource {
 	return &schema.Resource{
-		Description:   `Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, the parent resource's division).`,
+		Description:   `Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, unassigned division).`,
 		CreateContext: provider.CreateWithPooledClient(createRoutingQueueIdentityResolution),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingQueueIdentityResolution),
 		UpdateContext: provider.UpdateWithPooledClient(updateRoutingQueueIdentityResolution),

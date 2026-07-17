@@ -168,7 +168,7 @@ func TestUnitRoutingQueueIdentityResolutionExporterRefAttrs(t *testing.T) {
 	assert.Equal(t, []string{"*"}, exporter.RefAttrs["call_on_behalf_of_queue.division_id"].AltValues)
 }
 
-func TestUnitSuppressParentDivisionIdDiff(t *testing.T) {
+func TestUnitSuppressUnassignedDivisionIdDiff(t *testing.T) {
 	tests := []struct {
 		name     string
 		old, new string
@@ -184,7 +184,7 @@ func TestUnitSuppressParentDivisionIdDiff(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.suppress, suppressParentDivisionIdDiff("division_id", test.old, test.new, nil))
+			assert.Equal(t, test.suppress, suppressUnassignedDivisionIdDiff("division_id", test.old, test.new, nil))
 		})
 	}
 }

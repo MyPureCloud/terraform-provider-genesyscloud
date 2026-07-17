@@ -2,13 +2,13 @@
 page_title: "genesyscloud_routing_queue_identity_resolution Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, the parent resource's division).
+  Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, unassigned division).
 ---
 # genesyscloud_routing_queue_identity_resolution (Resource)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
-Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, the parent resource's division).
+Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, unassigned division).
 
 ## API Usage
 
@@ -66,5 +66,5 @@ Required:
 
 Optional:
 
-- `division_id` (String) The division to use when performing identity resolution. If not set, * means use the parent resource's division. '*' may also be set explicitly for the same behavior.
+- `division_id` (String) The division to use when performing identity resolution. If not set, * means the unassigned (star) division. '*' may also be set explicitly for the same behavior.
 
