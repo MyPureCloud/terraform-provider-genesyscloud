@@ -2,13 +2,13 @@
 page_title: "genesyscloud_routing_queue_identity_resolution Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, all divisions).
+  Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, the parent resource's division).
 ---
 # genesyscloud_routing_queue_identity_resolution (Resource)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
-Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, all divisions).
+Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, the parent resource's division).
 
 ## API Usage
 
@@ -51,7 +51,7 @@ resource "genesyscloud_routing_queue_identity_resolution" "example_queue_identit
 ### Required
 
 - `call_on_behalf_of_queue` (Block List, Min: 1, Max: 1) Identity resolution settings for outbound calls placed on behalf of the queue. (see [below for nested schema](#nestedblock--call_on_behalf_of_queue))
-- `queue_id` (String) ID of the routing queue.
+- `queue_id` (String) ID of the routing queue this identity resolution config belongs to.
 
 ### Read-Only
 
@@ -62,9 +62,9 @@ resource "genesyscloud_routing_queue_identity_resolution" "example_queue_identit
 
 Required:
 
-- `resolve_identities` (Boolean) Whether the channel should resolve identities.
+- `resolve_identities` (Boolean) Whether identities should be resolved.
 
 Optional:
 
-- `division_id` (String) Division ID used during identity resolution. If not set, * will be used for all divisions. '*' may also be set explicitly for all divisions.
+- `division_id` (String) The division to use when performing identity resolution. If not set, * means use the parent resource's division. '*' may also be set explicitly for the same behavior.
 

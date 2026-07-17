@@ -26,22 +26,22 @@ func SetRegistrar(regInstance registrar.Registrar) {
 var callOnBehalfOfQueueSchema = &schema.Resource{
 	Schema: map[string]*schema.Schema{
 		"resolve_identities": {
-			Description: "Whether the channel should resolve identities.",
+			Description: "Whether identities should be resolved.",
 			Type:        schema.TypeBool,
 			Required:    true,
 		},
 		"division_id": {
-			Description:      "Division ID used during identity resolution. If not set, * will be used for all divisions. '*' may also be set explicitly for all divisions.",
+			Description:      "The division to use when performing identity resolution. If not set, * means use the parent resource's division. '*' may also be set explicitly for the same behavior.",
 			Type:             schema.TypeString,
 			Optional:         true,
-			DiffSuppressFunc: suppressAllDivisionsDivisionIdDiff,
+			DiffSuppressFunc: suppressParentDivisionIdDiff,
 		},
 	},
 }
 
 func ResourceRoutingQueueIdentityResolution() *schema.Resource {
 	return &schema.Resource{
-		Description:   `Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, all divisions).`,
+		Description:   `Genesys Cloud routing queue identity resolution settings. Destroy restores the queue to its default identity resolution configuration (resolve_identities = true, the parent resource's division).`,
 		CreateContext: provider.CreateWithPooledClient(createRoutingQueueIdentityResolution),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingQueueIdentityResolution),
 		UpdateContext: provider.UpdateWithPooledClient(updateRoutingQueueIdentityResolution),
@@ -52,7 +52,7 @@ func ResourceRoutingQueueIdentityResolution() *schema.Resource {
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"queue_id": {
-				Description: "ID of the routing queue.",
+				Description: "ID of the routing queue this identity resolution config belongs to.",
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,

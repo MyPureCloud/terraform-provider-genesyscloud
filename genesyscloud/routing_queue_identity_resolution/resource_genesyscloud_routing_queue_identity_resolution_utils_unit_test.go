@@ -29,7 +29,7 @@ func TestUnitIsDefaultIdentityResolutionConfig(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "resolve true with star division",
+			name: "resolve true with division *",
 			config: &platformclientv2.Identityresolutionqueueconfig{
 				CallOnBehalfOfQueue: &platformclientv2.Outboundqueueidentityresolutionconfig{
 					ResolveIdentities: &resolveTrue,
@@ -77,7 +77,7 @@ func TestUnitBuildCallOnBehalfOfQueueConfig(t *testing.T) {
 	}{
 		{name: "specific division", divisionId: divisionId, expectedDivisionId: divisionId},
 		{name: "omitted division", expectDivisionNil: true},
-		{name: "explicit star", divisionId: "*", expectDivisionNil: true},
+		{name: "explicit *", divisionId: "*", expectDivisionNil: true},
 	}
 
 	for _, test := range tests {
@@ -123,7 +123,7 @@ func TestUnitFlattenCallOnBehalfOfQueue(t *testing.T) {
 			expectDivisionOmit: true,
 		},
 		{
-			name: "star division omitted from state",
+			name: "division * omitted from state",
 			config: &platformclientv2.Outboundqueueidentityresolutionconfig{
 				ResolveIdentities: &resolveTrue,
 				Division:          &platformclientv2.Writablestarrabledivision{Id: &star},
@@ -168,23 +168,23 @@ func TestUnitRoutingQueueIdentityResolutionExporterRefAttrs(t *testing.T) {
 	assert.Equal(t, []string{"*"}, exporter.RefAttrs["call_on_behalf_of_queue.division_id"].AltValues)
 }
 
-func TestUnitSuppressAllDivisionsDivisionIdDiff(t *testing.T) {
+func TestUnitSuppressParentDivisionIdDiff(t *testing.T) {
 	tests := []struct {
 		name     string
 		old, new string
 		suppress bool
 	}{
-		{name: "empty to star", old: "", new: "*", suppress: true},
-		{name: "star to empty", old: "*", new: "", suppress: true},
+		{name: "empty to *", old: "", new: "*", suppress: true},
+		{name: "* to empty", old: "*", new: "", suppress: true},
 		{name: "empty to empty", old: "", new: "", suppress: true},
-		{name: "star to star", old: "*", new: "*", suppress: true},
+		{name: "* to *", old: "*", new: "*", suppress: true},
 		{name: "empty to uuid", old: "", new: uuid.NewString(), suppress: false},
-		{name: "uuid to star", old: uuid.NewString(), new: "*", suppress: false},
+		{name: "uuid to *", old: uuid.NewString(), new: "*", suppress: false},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.suppress, suppressAllDivisionsDivisionIdDiff("division_id", test.old, test.new, nil))
+			assert.Equal(t, test.suppress, suppressParentDivisionIdDiff("division_id", test.old, test.new, nil))
 		})
 	}
 }

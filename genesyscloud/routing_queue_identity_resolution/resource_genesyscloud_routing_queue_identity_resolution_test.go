@@ -73,7 +73,7 @@ func TestAccResourceRoutingQueueIdentityResolution(t *testing.T) {
 				),
 			},
 			{
-				// Explicit "*" is equivalent to omitted division_id (covered in unit for build/flatten).
+				// Explicit "*" is equivalent to omitted division_id (both mean the parent resource's division).
 				Config: routingQueue.GenerateRoutingQueueResourceBasic(
 					queueResourceLabel,
 					queueName,
@@ -172,8 +172,8 @@ func verifyIdentityResolutionConfig(queueResourcePath string, resolveIdentities 
 			}
 		} else if config.CallOnBehalfOfQueue.Division != nil && config.CallOnBehalfOfQueue.Division.Id != nil {
 			divisionId := *config.CallOnBehalfOfQueue.Division.Id
-			if !isAllDivisionsDivisionId(divisionId) {
-				return fmt.Errorf("expected all divisions for queue %s, got division_id=%s", queueResource.Primary.ID, divisionId)
+			if !isParentDivisionId(divisionId) {
+				return fmt.Errorf("expected the parent resource's division (* or empty) for queue %s, got division_id=%s", queueResource.Primary.ID, divisionId)
 			}
 		}
 

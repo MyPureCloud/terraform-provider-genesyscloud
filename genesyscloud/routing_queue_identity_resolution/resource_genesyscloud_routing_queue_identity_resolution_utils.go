@@ -42,7 +42,7 @@ func buildCallOnBehalfOfQueueConfig(blocks []interface{}) (*platformclientv2.Out
 		ResolveIdentities: &resolveIdentities,
 	}
 
-	if divisionId, ok := block["division_id"].(string); ok && !isAllDivisionsDivisionId(divisionId) {
+	if divisionId, ok := block["division_id"].(string); ok && !isParentDivisionId(divisionId) {
 		config.Division = &platformclientv2.Writablestarrabledivision{
 			Id: platformclientv2.String(divisionId),
 		}
@@ -66,7 +66,7 @@ func flattenCallOnBehalfOfQueue(config *platformclientv2.Outboundqueueidentityre
 	}
 	if config.Division != nil && config.Division.Id != nil {
 		divisionId := *config.Division.Id
-		if !isAllDivisionsDivisionId(divisionId) {
+		if !isParentDivisionId(divisionId) {
 			result["division_id"] = divisionId
 		}
 	}
@@ -84,21 +84,22 @@ func isDefaultIdentityResolutionConfig(config *platformclientv2.Identityresoluti
 		return false
 	}
 
-	if inner.Division != nil && inner.Division.Id != nil && !isAllDivisionsDivisionId(*inner.Division.Id) {
+	if inner.Division != nil && inner.Division.Id != nil && !isParentDivisionId(*inner.Division.Id) {
 		return false
 	}
 
 	return true
 }
 
-// isAllDivisionsDivisionId reports whether division_id means all divisions
-// (omitted in config/state, or explicit "*").
-func isAllDivisionsDivisionId(v string) bool {
+// isParentDivisionId reports whether division_id means use the parent resource's
+// division (omitted in config/state, or explicit "*").
+func isParentDivisionId(v string) bool {
 	return v == "" || v == "*"
 }
 
-// suppressAllDivisionsDivisionIdDiff treats omitted division_id and "*" as equivalent.
-// Read omits "*" from state, so explicit config "*" would otherwise show a perpetual plan diff.
-func suppressAllDivisionsDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
-	return isAllDivisionsDivisionId(old) && isAllDivisionsDivisionId(new)
+// suppressParentDivisionIdDiff treats omitted division_id and "*" as equivalent
+// (both mean the parent resource's division). Read omits "*" from state, so explicit
+// config "*" would otherwise show a perpetual plan diff.
+func suppressParentDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
+	return isParentDivisionId(old) && isParentDivisionId(new)
 }
