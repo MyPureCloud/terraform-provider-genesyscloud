@@ -419,11 +419,10 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		BlockLabel: resMeta.BlockLabel,
 	}
 
-	var proxy *bcpExporterProxy
+	proxy := getBcpExporterProxy(providerMeta.ClientConfig)
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-			proxy = getBcpExporterProxy(clientConfig)
 			resources, dependsMap, err := proxy.GetFlowDependencies(ctx, resourceKeys)
 			if err != nil {
 				return nil, nil, []string{}, diag.Errorf("Failed to retrieve dependencies for flow %s: %s", resourceKeys.State.ID, err)
