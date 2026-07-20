@@ -473,6 +473,16 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 		exports = g.resourceTypeFilter(exports, *filterList)
 	}
 
+	// Remove deprecated resource types if export_deprecated is false
+	if !g.exportDeprecated {
+		for resourceType := range exports {
+			if res, ok := providerResources[resourceType]; ok && res.DeprecationMessage != "" {
+				tflog.Info(g.ctx, fmt.Sprintf("Excluding deprecated resource type '%s' from export", resourceType))
+				delete(exports, resourceType)
+			}
+		}
+	}
+
 	// Thread-safe update of exporters
 	g.exportersMutex.Lock()
 	g.exporters = &exports
