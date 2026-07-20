@@ -197,6 +197,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
 
 ### Read-Only
 
+- `action_type` (String) The type of the integration action. Computed based on the action ID prefix. Values: `static` (built-in actions shipped by Genesys Cloud) or `custom` (user-created actions).
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--config_request"></a>

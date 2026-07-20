@@ -2,13 +2,13 @@
 page_title: "genesyscloud_integration_action Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.
+  Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id and/or action_type can be provided to disambiguate the lookup.
 ---
 # genesyscloud_integration_action (Data Source)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
 
-Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.
+Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id and/or action_type can be provided to disambiguate the lookup.
 
 ## API Usage
 
@@ -61,7 +61,8 @@ data "genesyscloud_integration_action" "staticAction" {
 
 ### Optional
 
-- `integration_id` (String) The ID of the integration that owns the action. Optional, used to disambiguate static (built-in) data actions whose names may not be unique across integration instances.
+- `action_type` (String) The type of the integration action. Optional, used to disambiguate when a static (built-in) action and a custom action share the same name under the same integration. Valid values: `static`, `custom`.
+- `integration_id` (String) The ID of the integration that owns the action. Optional, used to disambiguate data actions whose names may not be unique across integration instances.
 
 ### Read-Only
 

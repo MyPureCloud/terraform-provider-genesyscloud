@@ -1072,8 +1072,12 @@ func waitForExtensionPoolActivation(ctx context.Context, d *schema.ResourceData,
 		return
 	}
 
-	addressMap := addresses[0].(map[string]interface{})
-	phoneNumbers := addressMap["phone_numbers"].(*schema.Set)
+	addressMap, ok := addresses[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	phoneNumbers, _ := addressMap["phone_numbers"].(*schema.Set)
 	if phoneNumbers == nil {
 		return
 	}
