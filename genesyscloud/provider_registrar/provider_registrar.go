@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
 	aiStudioSummarySetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/ai_studio_summary_setting"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -254,6 +255,7 @@ func resourceMapsAreRegistered() bool {
 func registerResources() {
 	regInstance := &RegisterInstance{}
 	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
+	agenticVirtualAgent.SetRegistrar(regInstance)                           //Registering agentic virtual agent
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
