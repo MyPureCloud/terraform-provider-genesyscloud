@@ -2121,6 +2121,81 @@ func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
 			},
 			expected: []string{"routing.rules.internal_id", "routing.rules.old_weight", "routing.timeout"},
 		},
+		{
+			name:             "Read-only computed excluded before computed+optional check when exportComputed is false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"read_only_id": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: false,
+				},
+				"computed_optional": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"normal": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{"read_only_id", "computed_optional"},
+		},
+		{
+			name:             "Read-only computed excluded but computed+optional kept when exportComputed is true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"read_only_id": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: false,
+				},
+				"computed_optional": {
+					Type:     schema.TypeString,
+					Computed: true,
+					Optional: true,
+				},
+				"normal": {
+					Type:     schema.TypeString,
+					Required: true,
+				},
+			},
+			expected: []string{"read_only_id"},
+		},
+		{
+			name:             "Nested read-only computed always excluded regardless of exportComputed",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"server_id": {
+								Type:     schema.TypeString,
+								Computed: true,
+								Optional: false,
+							},
+							"default_value": {
+								Type:     schema.TypeString,
+								Computed: true,
+								Optional: true,
+							},
+							"user_value": {
+								Type:     schema.TypeString,
+								Optional: true,
+							},
+						},
+					},
+				},
+			},
+			// server_id is read-only computed (always excluded), default_value is computed+optional (kept when exportComputed=true)
+			expected: []string{"block.server_id"},
+		},
 	}
 
 	for _, tt := range tests {
