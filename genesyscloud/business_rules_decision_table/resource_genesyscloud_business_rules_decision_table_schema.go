@@ -1,5 +1,11 @@
 package business_rules_decision_table
 
+// @team: RuleBasedDecisions
+// @chat: #rule-based-decisions
+// @pm: Rob Blane
+// @jira: RULES
+// @description: Manages rule-based decision tables for Genesys Cloud. Provides a flexible way to define decision tables with inputs and outputs, and to manage their rows and columns.
+
 import (
 	"fmt"
 	"strconv"
@@ -148,16 +154,22 @@ func valueSchemaFunc() *schema.Resource {
 func defaultsToSchemaFunc() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			// value/values/special are mutually exclusive; a column sets exactly one.
+			// Computed lets the provider own the unused siblings (which the legacy SDK
+			// materializes as empty) so plan(null) -> apply("") is not flagged as an
+			// inconsistency and does not produce a phantom ForceNew diff.
 			"value": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.",
+				Computed:    true,
+				Description: "A default string value for this column, will be cast to appropriate type according to the relevant contract schema property. Mutually exclusive with 'values' and 'special'; set only one per column (enforced by the API).",
 			},
 
 			"values": {
 				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "A default list of string values for this column. Used for stringList data types.",
+				Computed:    true,
+				Description: "A default list of string values for this column. Used for stringList data types. Mutually exclusive with 'value' and 'special'; set only one per column (enforced by the API).",
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -166,7 +178,8 @@ func defaultsToSchemaFunc() *schema.Resource {
 			"special": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				Description:  "A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.",
+				Computed:     true,
+				Description:  "A default special value enum for this column. Valid values: Wildcard, Null, Empty, CurrentTime. Mutually exclusive with 'value' and 'values'; set only one per column (enforced by the API).",
 				ValidateFunc: validation.StringInSlice([]string{"Wildcard", "Null", "Empty", "CurrentTime"}, false),
 			},
 		},
@@ -187,7 +200,7 @@ func inputColumnSchemaFunc() *schema.Resource {
 				Required:    true,
 				MaxItems:    1,
 				Elem:        &schema.Resource{Schema: defaultsToSchemaFunc().Schema},
-				Description: "Default value configuration. Only one of 'value' or 'special' should be set.",
+				Description: "Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API).",
 			},
 			"expression": {
 				Type:        schema.TypeList,
@@ -214,7 +227,7 @@ func outputColumnSchemaFunc() *schema.Resource {
 				Required:    true,
 				MaxItems:    1,
 				Elem:        &schema.Resource{Schema: defaultsToSchemaFunc().Schema},
-				Description: "Default value configuration. Only one of 'value' or 'special' should be set.",
+				Description: "Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API).",
 			},
 			"value": {
 				Type:        schema.TypeList,
@@ -262,7 +275,10 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Read: schema.DefaultTimeout(8 * time.Minute),
+			Create: schema.DefaultTimeout(120 * time.Minute),
+			Read:   schema.DefaultTimeout(8 * time.Minute),
+			Update: schema.DefaultTimeout(120 * time.Minute),
+			Delete: schema.DefaultTimeout(8 * time.Minute),
 		},
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
@@ -461,11 +477,18 @@ func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 		},
 		// Note: To export routing queue resources that are referenced in decision tables,
 		// include "genesyscloud_routing_queue" in the export filter resources.
+		//
+		// IMPORTANT: Resolver paths are matched by exact string against the attribute
+		// path the exporter framework computes while walking the config (see
+		// sanitizeConfigMap / sanitizeConfigArray in genesyscloud/tfexporter). That path
+		// is dot-separated attribute names with no array indices and no wildcards, so a
+		// row literal value is looked up as "rows.inputs.literal.value" — anything with
+		// "*" or numeric segments will silently never match and the resolver will not run.
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"columns.outputs.defaults_to.value": {ResolverFunc: QueueIdResolver},
 			"columns.inputs.defaults_to.value":  {ResolverFunc: QueueIdResolver},
-			"rows.*.inputs.*.literal.value":     {ResolverFunc: QueueIdResolver},
-			"rows.*.outputs.*.literal.value":    {ResolverFunc: QueueIdResolver},
+			"rows.inputs.literal.value":         {ResolverFunc: QueueIdResolver},
+			"rows.outputs.literal.value":        {ResolverFunc: QueueIdResolver},
 		},
 	}
 }

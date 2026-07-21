@@ -1,5 +1,8 @@
-* [GET /api/v2/telephony/providers/edges/didpools](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-didpools)
-* [POST /api/v2/telephony/providers/edges/didpools](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#post-api-v2-telephony-providers-edges-didpools)
-* [GET /api/v2/telephony/providers/edges/didpools/{didPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#get-api-v2-telephony-providers-edges-didpools--didPoolId-)
-* [PUT /api/v2/telephony/providers/edges/didpools/{didPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#put-api-v2-telephony-providers-edges-didpools--didPoolId-)
-* [DELETE /api/v2/telephony/providers/edges/didpools/{didPoolId}](https://developer.genesys.cloud/api/rest/v2/telephonyprovidersedge/#delete-api-v2-telephony-providers-edges-didpools--didPoolId-)
+<!-- sources
+genesyscloud/telephony_providers_edges_did_pool/genesyscloud_telephony_providers_edges_did_pool_proxy.go
+-->
+* [GET /api/v2/telephony/providers/edges/didpools](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-didpools)
+* [POST /api/v2/telephony/providers/edges/didpools](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-telephony-providers-edges-didpools)
+* [DELETE /api/v2/telephony/providers/edges/didpools/{didPoolId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-telephony-providers-edges-didpools--didPoolId-)
+* [GET /api/v2/telephony/providers/edges/didpools/{didPoolId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-telephony-providers-edges-didpools--didPoolId-)
+* [PUT /api/v2/telephony/providers/edges/didpools/{didPoolId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-telephony-providers-edges-didpools--didPoolId-)

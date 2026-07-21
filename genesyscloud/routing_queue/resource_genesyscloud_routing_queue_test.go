@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var (
@@ -782,6 +782,10 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			},
 			{
 				// Update the flows
+				PreConfig: func() {
+					// Wait for flows to be fully published and active before updating the queue
+					time.Sleep(30 * time.Second)
+				},
 				Config: architectFlow.GenerateFlowResource(
 					queueFlowResourceLabel2,
 					queueFlowFilePath1,
@@ -1590,7 +1594,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
@@ -1959,7 +1963,7 @@ func isUserDeleted(id string) (bool, error) {
 
 	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	// Check if the user is not found (deleted)
 	if response != nil && response.StatusCode == 404 {

@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -311,9 +311,8 @@ func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	if exists := featureToggles.OEAToggleExists(); !exists {
-		if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
-			outboundEmailAddress := *currentQueue.OutboundEmailAddress
-			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
+		if currentQueue.OutboundEmailAddress != nil {
+			_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
 		} else {
 			_ = d.Set("outbound_email_address", nil)
 		}
@@ -463,9 +462,8 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		if exists := featureToggles.OEAToggleExists(); !exists {
-			if currentQueue.OutboundEmailAddress != nil && *currentQueue.OutboundEmailAddress != nil {
-				outboundEmailAddress := *currentQueue.OutboundEmailAddress
-				_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*outboundEmailAddress)})
+			if currentQueue.OutboundEmailAddress != nil {
+				_ = d.Set("outbound_email_address", []interface{}{FlattenQueueEmailAddress(*currentQueue.OutboundEmailAddress)})
 			} else {
 				_ = d.Set("outbound_email_address", nil)
 			}
@@ -607,7 +605,7 @@ func addCGRAndOEAAndCGA(proxy *RoutingQueueProxy, d *schema.ResourceData, queue 
 		log.Printf("%s is set, not updating outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 
 		if currentQueue.OutboundEmailAddress != nil {
-			queue.OutboundEmailAddress = *currentQueue.OutboundEmailAddress
+			queue.OutboundEmailAddress = currentQueue.OutboundEmailAddress
 		}
 	}
 

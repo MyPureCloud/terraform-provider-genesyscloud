@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -492,6 +492,40 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 	}
 }
 
+// This test proves that the site_id field from the API is preserved through
+// the flatten (read) and build (write) round-trip.
+func TestUnitFlattenAndBuildCallbackSiteId(t *testing.T) {
+	siteId := "test-site-uuid-12345"
+
+	// Simulate what the API returns: callback settings with a Site reference
+	apiResponse := &platformclientv2.Callbackmediasettings{
+		AlertingTimeoutSeconds: platformclientv2.Int(30),
+		ServiceLevel: &platformclientv2.Servicelevel{
+			Percentage: platformclientv2.Float64(0.8),
+			DurationMs: platformclientv2.Int(20000),
+		},
+		EnableAutoAnswer: platformclientv2.Bool(false),
+		Mode:             platformclientv2.String("CustomerFirst"),
+		Site:             &platformclientv2.Domainentityref{Id: &siteId},
+	}
+
+	// FLATTEN: Simulate reading from API → Terraform state
+	flattened := flattenMediaSettingCallback(apiResponse)
+	assert.NotNil(t, flattened)
+	assert.Len(t, flattened, 1)
+
+	flatMap := flattened[0].(map[string]interface{})
+	flatSiteId, exists := flatMap["site_id"]
+	assert.True(t, exists, "site_id should exist in flattened callback settings")
+	assert.Equal(t, siteId, flatSiteId, "site_id should match the API value")
+
+	// BUILD: Simulate writing from Terraform state → API request
+	rebuilt := buildSdkMediaSettingCallback(flattened)
+	assert.NotNil(t, rebuilt)
+	assert.NotNil(t, rebuilt.Site, "Site should not be nil after round-trip")
+	assert.Equal(t, siteId, *rebuilt.Site.Id, "Site ID should survive the round-trip")
+}
+
 func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue platformclientv2.Createqueuerequest) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"id":                                tId,
@@ -711,13 +745,13 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
 	subTypeMap := make(map[string]platformclientv2.Messagesubtypesettings)
 	baseMediaSettings := platformclientv2.Messagesubtypesettings{
-		EnableAutoAnswer: platformclientv2.Bool(true),
+		EnableAutoAnswer:        platformclientv2.Bool(true),
+		EnableInactivityTimeout: platformclientv2.Bool(false),
 	}
 	subTypeMap["instagram"] = baseMediaSettings
 	return platformclientv2.Messagemediasettings{
-		EnableAutoAnswer:        platformclientv2.Bool(true),
-		AlertingTimeoutSeconds:  platformclientv2.Int(20),
-		EnableInactivityTimeout: platformclientv2.Bool(false),
+		EnableAutoAnswer:       platformclientv2.Bool(true),
+		AlertingTimeoutSeconds: platformclientv2.Int(20),
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: platformclientv2.Float64(0.7),
 			DurationMs: platformclientv2.Int(10000),

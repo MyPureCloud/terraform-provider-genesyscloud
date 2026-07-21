@@ -6,16 +6,22 @@ description: |-
 ---
 # genesyscloud_externalcontacts_contact (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud External Contact
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#get-api-v2-externalcontacts-contacts)
-* [POST /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#post-api-v2-externalcontacts-contacts)
-* [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#get-api-v2-externalcontacts-contacts--contactId-)
-* [PUT /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#put-api-v2-externalcontacts-contacts--contactId-)
-* [DELETE /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/commdigital/externalcontacts/externalcontacts-apis#delete-api-v2-externalcontacts-contacts--contactId-)
+* [GET /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-contacts)
+* [POST /api/v2/externalcontacts/contacts](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-externalcontacts-contacts)
+* [DELETE /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-externalcontacts-contacts--contactId-)
+* [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-contacts--contactId-)
+* [PUT /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-externalcontacts-contacts--contactId-)
+* [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
+* [GET /api/v2/externalcontacts/scan/contacts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-contacts)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -24,10 +30,12 @@ The following permissions are required to use this resource:
 * `externalContacts:contact:delete`
 * `externalContacts:contact:edit`
 * `externalContacts:contact:view`
+* `externalContacts:externalOrganization:view`
 * `relate:contact:add`
 * `relate:contact:delete`
 * `relate:contact:edit`
 * `relate:contact:view`
+* `relate:externalOrganization:view`
 
 The following OAuth scopes are required to use this resource:
 

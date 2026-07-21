@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_routing_email_domain (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Email Domain
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/email/domains](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains)
-* [POST /api/v2/routing/email/domains](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-email-domains)
-* [GET /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainId-)
-* [DELETE /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-email-domains--domainId-)
-* [PATCH /api/v2/routing/email/domains/{domainId}](https://developer.mypurecloud.com/api/rest/v2/routing/#patch-api-v2-routing-email-domains--domainId-)
+* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains)
+* [POST /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-email-domains)
+* [DELETE /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-email-domains--domainId-)
+* [GET /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainId-)
+* [PATCH /api/v2/routing/email/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-email-domains--domainId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -49,10 +53,35 @@ resource "genesyscloud_routing_email_domain" "example_domain_com" {
 ### Optional
 
 - `custom_smtp_server_id` (String) The ID of the custom SMTP server integration to use when sending outbound emails from this domain.
+- `graph_api_settings` (Block List, Max: 1) The Graph API server integration and settings to use for processing inbound and outbound emails. (see [below for nested schema](#nestedblock--graph_api_settings))
+- `imap_settings` (Block List, Max: 1) The IMAP server integration and settings to use for processing inbound emails. (see [below for nested schema](#nestedblock--imap_settings))
 - `mail_from_domain` (String) The custom MAIL FROM domain. This must be a subdomain of your email domain
 - `subdomain` (Boolean) Indicates if this a Genesys Cloud sub-domain. If true, then the appropriate DNS records are created for sending/receiving email. Changing the subdomain attribute will cause the routing_email_domain to be dropped and recreated with a new ID. Defaults to `false`.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+<a id="nestedblock--graph_api_settings"></a>
+### Nested Schema for `graph_api_settings`
+
+Optional:
+
+- `integration_id` (String) The Graph API server integration to use for emails.
+
+Read-Only:
+
+- `status` (String) Graph API server status.
+
+
+<a id="nestedblock--imap_settings"></a>
+### Nested Schema for `imap_settings`
+
+Optional:
+
+- `integration_id` (String) The IMAP server integration to use for ingesting emails.
+
+Read-Only:
+
+- `status` (String) IMAP server status.
 

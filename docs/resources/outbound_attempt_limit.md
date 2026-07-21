@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_outbound_attempt_limit (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Outbound Attempt Limit
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/outbound/attemptlimits](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-attemptlimits)
 * [POST /api/v2/outbound/attemptlimits](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-attemptlimits)
+* [DELETE /api/v2/outbound/attemptlimits/{attemptLimitsId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-attemptlimits--attemptLimitsId-)
 * [GET /api/v2/outbound/attemptlimits/{attemptLimitsId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-attemptlimits--attemptLimitsId-)
 * [PUT /api/v2/outbound/attemptlimits/{attemptLimitsId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-attemptlimits--attemptLimitsId-)
-* [DELETE /api/v2/outbound/attemptlimits/{attemptLimitsId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-attemptlimits--attemptLimitsId-)
 
 ## Permissions and Scopes
 

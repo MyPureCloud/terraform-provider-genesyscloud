@@ -6,9 +6,12 @@ description: |-
 ---
 # genesyscloud_learning_modules (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud learning modules
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/learning/modules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules)
@@ -16,6 +19,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-learning-modules--moduleId-)
 * [GET /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-learning-modules--moduleId-)
 * [PUT /api/v2/learning/modules/{moduleId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-learning-modules--moduleId-)
+* [POST /api/v2/learning/modules/{moduleId}/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-learning-modules--moduleId--publish)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -23,6 +28,7 @@ The following permissions are required to use this resource:
 * `learning:module:add`
 * `learning:module:delete`
 * `learning:module:edit`
+* `learning:module:publish`
 * `learning:module:view`
 
 The following OAuth scopes are required to use this resource:

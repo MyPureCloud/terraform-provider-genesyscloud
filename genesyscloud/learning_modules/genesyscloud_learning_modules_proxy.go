@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -133,19 +133,16 @@ func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searc
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allModules []platformclientv2.Learningmodule
-	const isArchived = false
 	types := []string{}
 	const pageSize = 100
 	const pageNumber = 1
 	const sortOrder = ""
 	const sortBy = ""
 	expand := []string{}
-	const isPublished = ""
 	statuses := []string{}
 	externalIds := []string{}
 
 	modules, resp, err := p.learningApi.GetLearningModules(
-		isArchived,
 		types,
 		pageSize,
 		pageNumber,
@@ -153,7 +150,6 @@ func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searc
 		sortBy,
 		searchTerm,
 		expand,
-		isPublished,
 		statuses,
 		externalIds,
 	)
@@ -169,7 +165,6 @@ func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searc
 
 	for pageNum := 2; pageNum <= *modules.PageCount; pageNum++ {
 		modules, resp, err := p.learningApi.GetLearningModules(
-			isArchived,
 			types,
 			pageSize,
 			pageNum,
@@ -177,7 +172,6 @@ func getAllLearningModulesFn(ctx context.Context, p *learningModulesProxy, searc
 			sortBy,
 			searchTerm,
 			expand,
-			isPublished,
 			statuses,
 			externalIds,
 		)

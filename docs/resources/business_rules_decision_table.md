@@ -6,24 +6,27 @@ description: |-
 ---
 # genesyscloud_business_rules_decision_table (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables)
-* [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId-)
-* [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#patch-api-v2-businessrules-decisiontables--tableId-)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId-)
-* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables-search)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
-* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/platform/preview-apis#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
-* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
-* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/platform/preview-apis#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [POST /api/v2/businessrules/decisiontables](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables)
+* [GET /api/v2/businessrules/decisiontables/search](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables-search)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId-)
+* [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-businessrules-decisiontables--tableId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
+* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/publish](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--publish)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows)
+* [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
+* [PUT /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}/rows/{rowId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-businessrules-decisiontables--tableId--versions--tableVersion--rows--rowId-)
 
 ## Permissions and Scopes
 
@@ -389,7 +392,7 @@ Required:
 
 Required:
 
-- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--inputs--defaults_to))
+- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API). (see [below for nested schema](#nestedblock--columns--inputs--defaults_to))
 - `expression` (Block List, Min: 1, Max: 1) The input column condition expression, comprising the left side and comparator of a logical condition in the form of left|comparator|right, where each row of the decision table will provide the right side to form a complete condition. (see [below for nested schema](#nestedblock--columns--inputs--expression))
 
 Read-Only:
@@ -401,9 +404,9 @@ Read-Only:
 
 Optional:
 
-- `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
-- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
-- `values` (List of String) A default list of string values for this column. Used for stringList data types.
+- `special` (String) A default special value enum for this column. Valid values: Wildcard, Null, Empty, CurrentTime. Mutually exclusive with 'value' and 'values'; set only one per column (enforced by the API).
+- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property. Mutually exclusive with 'values' and 'special'; set only one per column (enforced by the API).
+- `values` (List of String) A default list of string values for this column. Used for stringList data types. Mutually exclusive with 'value' and 'special'; set only one per column (enforced by the API).
 
 
 <a id="nestedblock--columns--inputs--expression"></a>
@@ -453,7 +456,7 @@ Required:
 
 Required:
 
-- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Only one of 'value' or 'special' should be set. (see [below for nested schema](#nestedblock--columns--outputs--defaults_to))
+- `defaults_to` (Block List, Min: 1, Max: 1) Default value configuration. Set exactly one of 'value', 'values', or 'special'; they are mutually exclusive (enforced by the API). (see [below for nested schema](#nestedblock--columns--outputs--defaults_to))
 - `value` (Block List, Min: 1, Max: 1) The output data of this column that will be provided by each row. (see [below for nested schema](#nestedblock--columns--outputs--value))
 
 Read-Only:
@@ -465,9 +468,9 @@ Read-Only:
 
 Optional:
 
-- `special` (String) A default special value enum for this column.Valid values: Wildcard, Null, Empty, CurrentTime.
-- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property.
-- `values` (List of String) A default list of string values for this column. Used for stringList data types.
+- `special` (String) A default special value enum for this column. Valid values: Wildcard, Null, Empty, CurrentTime. Mutually exclusive with 'value' and 'values'; set only one per column (enforced by the API).
+- `value` (String) A default string value for this column, will be cast to appropriate type according to the relevant contract schema property. Mutually exclusive with 'values' and 'special'; set only one per column (enforced by the API).
+- `values` (List of String) A default list of string values for this column. Used for stringList data types. Mutually exclusive with 'value' and 'special'; set only one per column (enforced by the API).
 
 
 <a id="nestedblock--columns--outputs--value"></a>
@@ -623,5 +626,8 @@ Optional:
 
 Optional:
 
+- `create` (String)
+- `delete` (String)
 - `read` (String)
+- `update` (String)
 

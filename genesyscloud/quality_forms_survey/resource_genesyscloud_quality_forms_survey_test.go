@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceSurveyFormBasic(t *testing.T) {
@@ -301,6 +301,123 @@ func TestAccResourceSurveyFormPublishing(t *testing.T) {
 				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.TrueValue),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + formResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifySurveyFormDestroyed,
+	})
+}
+
+func TestAccResourceSurveyFormNewAttributes(t *testing.T) {
+	formResourceLabel1 := "test-survey-form-new-attrs"
+
+	surveyForm1 := SurveyFormStruct{
+		Name:      "terraform-survey-new-attrs-" + uuid.NewString(),
+		Language:  "en-US",
+		Published: false,
+		QuestionGroups: []SurveyFormQuestionGroupStruct{
+			{
+				Name:      "Group with computed identifiers",
+				NaEnabled: false,
+				Questions: []SurveyFormQuestionStruct{
+					{
+						Text:                  "Would you recommend our services?",
+						VarType:               "npsQuestion",
+						ExplanationPrompt:     "explanation-prompt",
+						MaxResponseCharacters: 100,
+					},
+					{
+						Text:                  "Are you satisfied with your experience?",
+						HelpText:              "Help text here",
+						VarType:               "freeTextQuestion",
+						NaEnabled:             true,
+						MaxResponseCharacters: 100,
+					},
+					{
+						Text:    "Did the agent perform the opening spiel?",
+						VarType: "multipleChoiceQuestion",
+						AnswerOptions: []AnswerOptionStruct{
+							{
+								Text:  "Yes",
+								Value: 1,
+							},
+							{
+								Text:  "No",
+								Value: 0,
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "Group with visibility condition",
+				Questions: []SurveyFormQuestionStruct{
+					{
+						Text:    "Did the agent offer to sell product?",
+						VarType: "multipleChoiceQuestion",
+						AnswerOptions: []AnswerOptionStruct{
+							{
+								Text:  "Yes",
+								Value: 1,
+							},
+							{
+								Text:  "No",
+								Value: 0,
+							},
+						},
+						VisibilityCondition: VisibilityConditionStruct{
+							CombiningOperation: "AND",
+							Predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
+						},
+					},
+				},
+				VisibilityCondition: VisibilityConditionStruct{
+					CombiningOperation: "AND",
+					Predicates:         []string{"/form/questionGroup/0/question/2/answer/1"},
+				},
+			},
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", surveyForm1.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "language", surveyForm1.Language),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.type", surveyForm1.QuestionGroups[0].Questions[0].VarType),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.explanation_prompt", surveyForm1.QuestionGroups[0].Questions[0].ExplanationPrompt),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.max_response_characters", fmt.Sprint(surveyForm1.QuestionGroups[0].Questions[0].MaxResponseCharacters)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.type", surveyForm1.QuestionGroups[0].Questions[1].VarType),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.help_text", surveyForm1.QuestionGroups[0].Questions[1].HelpText),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.1.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].Questions[1].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.2.text", surveyForm1.QuestionGroups[0].Questions[2].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.2.answer_options.#", fmt.Sprint(len(surveyForm1.QuestionGroups[0].Questions[2].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.2.answer_options.0.text", surveyForm1.QuestionGroups[0].Questions[2].AnswerOptions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.2.answer_options.0.value", fmt.Sprint(surveyForm1.QuestionGroups[0].Questions[2].AnswerOptions[0].Value)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].VisibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.visibility_condition.0.predicates.0", surveyForm1.QuestionGroups[1].VisibilityCondition.Predicates[0]),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.visibility_condition.0.combining_operation", surveyForm1.QuestionGroups[1].Questions[0].VisibilityCondition.CombiningOperation),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.1.questions.0.visibility_condition.0.predicates.0", surveyForm1.QuestionGroups[1].Questions[0].VisibilityCondition.Predicates[0]),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "modified_date"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.2.context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.2.answer_options.0.context_id"),
 				),
 			},
 			{

@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_flow_milestone (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud flow milestone
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/flows/milestones](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-milestones)
-* [POST /api/v2/flows/milestones](https://developer.genesys.cloud/routing/architect/#post-api-v2-flows-milestones)
-* [DELETE /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#delete-api-v2-flows-milestones--milestoneId-)
-* [GET /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-milestones--milestoneId-)
-* [PUT /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-flows-milestones--milestoneId-)
+* [GET /api/v2/flows/milestones](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-milestones)
+* [POST /api/v2/flows/milestones](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-flows-milestones)
+* [DELETE /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-flows-milestones--milestoneId-)
+* [GET /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-milestones--milestoneId-)
+* [PUT /api/v2/flows/milestones/{milestoneId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-flows-milestones--milestoneId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
