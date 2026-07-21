@@ -9,6 +9,7 @@ package outbound_campaignrule
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -128,23 +129,35 @@ var (
 	}
 )
 
+// validateTimeZoneID performs a lightweight IANA time zone format check at plan time.
+// It accepts region/location names (e.g. "America/New_York") and the special zones
+// "UTC" and "GMT". This catches empty values and obvious typos early; the API remains
+// the authoritative validator for whether a well-formed zone actually exists.
+var validateTimeZoneID = validation.StringMatch(
+	regexp.MustCompile(`^(UTC|GMT|[A-Za-z]+/[A-Za-z0-9_+-]+)$`),
+	`must be a valid IANA time zone, e.g. "America/New_York", "UTC", or "GMT"`,
+)
+
 var (
 	outboundCampaignRuleWeekDayOfMonth = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`day_of_week`: {
-				Description: `Day of week (1=Monday, 7=Sunday).`,
-				Required:    true,
-				Type:        schema.TypeInt,
+				Description:  `Day of week (1=Monday, 7=Sunday).`,
+				Required:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntBetween(1, 7),
 			},
 			`month`: {
-				Description: `Month (1-12). Optional.`,
-				Optional:    true,
-				Type:        schema.TypeInt,
+				Description:  `Month (1-12). Optional.`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntBetween(1, 12),
 			},
 			`occurrence`: {
-				Description: `Occurrence (1-4, or -1 for last).`,
-				Optional:    true,
-				Type:        schema.TypeInt,
+				Description:  `Occurrence (1-4, or -1 for last).`,
+				Optional:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntInSlice([]int{-1, 1, 2, 3, 4}),
 			},
 		},
 	}
@@ -963,9 +976,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"onEachTrigger", "oncePerDay"}, true),
 			},
 			`time_zone_id`: {
-				Description: `The time zone for the execution control frequency="oncePerDay"; for example, Africa/Abidjan. This property is ignored when frequency is not "oncePerDay".`,
-				Optional:    true,
-				Type:        schema.TypeString,
+				Description:  `The time zone for the execution control frequency="oncePerDay"; for example, Africa/Abidjan. This property is ignored when frequency is not "oncePerDay".`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validateTimeZoneID,
 			},
 		},
 	}
@@ -1070,10 +1084,11 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 				Type:        schema.TypeBool,
 			},
 			`time_zone_id`: {
-				Description: `Optional. Used for date/time conditions. If omitted, Genesys Cloud defaults to UTC.`,
-				Optional:    true,
-				Computed:    true,
-				Type:        schema.TypeString,
+				Description:  `Optional. Used for date/time conditions. If omitted, Genesys Cloud defaults to UTC.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validateTimeZoneID,
 			},
 		},
 	}
