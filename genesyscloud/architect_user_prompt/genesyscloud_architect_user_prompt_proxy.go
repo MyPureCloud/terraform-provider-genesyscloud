@@ -326,8 +326,6 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 		if err != nil {
 			return resp, fmt.Errorf("failed to delete user prompt resource for language '%s': %w", language, err)
 		}
-
-		allLanguages = removeByValue(allLanguages, language)
 	}
 
 	for _, r := range resourcesToCreate {
@@ -364,17 +362,6 @@ func createOrUpdateArchitectUserPromptResourcesFn(ctx context.Context, p *archit
 		log.Printf("Failed to verify that all resource files were transcoded. Please contact care for more assistance. Prompt ID: '%s'. Error: %s", promptId, verifyErr.Error())
 	}
 	return resp, nil
-}
-
-func removeByValue(slice []string, value string) []string {
-	for i, v := range slice {
-		if v == value {
-			// Remove the element by value
-			return append(slice[:i], slice[i+1:]...)
-		}
-	}
-	// Value not found; return the original slice return slice }
-	return slice
 }
 
 func getArchitectUserPromptResourcesFn(ctx context.Context, p *architectUserPromptProxy, promptId string) (*[]platformclientv2.Promptasset, *platformclientv2.APIResponse, error) {
