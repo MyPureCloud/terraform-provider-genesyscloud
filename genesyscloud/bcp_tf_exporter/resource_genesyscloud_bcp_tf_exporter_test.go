@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
@@ -573,6 +574,136 @@ func TestUnitBcpTfExporter_GetFlowDependencies(t *testing.T) {
 			AsProviderResourceList: []string{},
 			AsObjectMap:            map[string][]string{},
 		}, result)
+	})
+
+	t.Run("returns dependencies on happy path", func(t *testing.T) {
+		// Reset singleton so getBcpExporterProxy creates a fresh one with our mocks
+		internalProxy = nil
+		defer func() { internalProxy = nil }()
+
+		meta := &provider.ProviderMeta{
+			ClientConfig: platformclientv2.NewConfiguration(),
+		}
+
+		// Override the proxy function attrs after it's created by injecting via the singleton
+		internalProxy = &bcpExporterProxy{
+			clientConfig: meta.ClientConfig,
+			getFlowDependenciesAttr: func(ctx context.Context, p *bcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+				return resourceExporter.ResourceIDMetaMap{},
+					&resourceExporter.DependencyResource{
+						DependsMap: map[string][]string{
+							flowID: {
+								"genesyscloud_queue.queue-id-1",
+								"genesyscloud_user.user-id-1",
+							},
+						},
+					}, nil
+			},
+			getAllWithPooledClientAttr: func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+				// Simulate what the real pooled client does: call the method with a config
+				return method(ctx, meta.ClientConfig)
+			},
+		}
+
+		result := getFlowDependencies(ctx, flowID, resMeta, meta)
+
+		assert.Equal(t, []string{
+			"genesyscloud_queue::queue-id-1",
+			"genesyscloud_user::user-id-1",
+		}, result.AsProviderResourceList)
+		assert.Equal(t, map[string][]string{
+			"genesyscloud_queue": {"queue-id-1"},
+			"genesyscloud_user":  {"user-id-1"},
+		}, result.AsObjectMap)
+	})
+
+	t.Run("returns empty when GetAllWithPooledClient returns error", func(t *testing.T) {
+		internalProxy = nil
+		defer func() { internalProxy = nil }()
+
+		meta := &provider.ProviderMeta{
+			ClientConfig: platformclientv2.NewConfiguration(),
+		}
+
+		internalProxy = &bcpExporterProxy{
+			clientConfig: meta.ClientConfig,
+			getFlowDependenciesAttr: func(ctx context.Context, p *bcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+				return nil, nil, nil
+			},
+			getAllWithPooledClientAttr: func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+				return nil, nil, nil, diag.Errorf("simulated pool error")
+			},
+		}
+
+		result := getFlowDependencies(ctx, flowID, resMeta, meta)
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
+
+	t.Run("returns empty when DependsMap has no entry for flow", func(t *testing.T) {
+		internalProxy = nil
+		defer func() { internalProxy = nil }()
+
+		meta := &provider.ProviderMeta{
+			ClientConfig: platformclientv2.NewConfiguration(),
+		}
+
+		internalProxy = &bcpExporterProxy{
+			clientConfig: meta.ClientConfig,
+			getFlowDependenciesAttr: func(ctx context.Context, p *bcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+				return resourceExporter.ResourceIDMetaMap{},
+					&resourceExporter.DependencyResource{
+						DependsMap: map[string][]string{
+							"other-flow-id": {"genesyscloud_queue.q1"},
+						},
+					}, nil
+			},
+			getAllWithPooledClientAttr: func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+				return method(ctx, meta.ClientConfig)
+			},
+		}
+
+		result := getFlowDependencies(ctx, flowID, resMeta, meta)
+		assert.Equal(t, BcpResourceDependency{
+			AsProviderResourceList: []string{},
+			AsObjectMap:            map[string][]string{},
+		}, result)
+	})
+
+	t.Run("skips deps without dot separator", func(t *testing.T) {
+		internalProxy = nil
+		defer func() { internalProxy = nil }()
+
+		meta := &provider.ProviderMeta{
+			ClientConfig: platformclientv2.NewConfiguration(),
+		}
+
+		internalProxy = &bcpExporterProxy{
+			clientConfig: meta.ClientConfig,
+			getFlowDependenciesAttr: func(ctx context.Context, p *bcpExporterProxy, resourceInfo resourceExporter.ResourceInfo) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, error) {
+				return resourceExporter.ResourceIDMetaMap{},
+					&resourceExporter.DependencyResource{
+						DependsMap: map[string][]string{
+							flowID: {
+								"malformed_no_dot",
+								"genesyscloud_queue.valid-id",
+							},
+						},
+					}, nil
+			},
+			getAllWithPooledClientAttr: func(ctx context.Context, method provider.GetCustomConfigFunc) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
+				return method(ctx, meta.ClientConfig)
+			},
+		}
+
+		result := getFlowDependencies(ctx, flowID, resMeta, meta)
+		// Only the valid dep should appear
+		assert.Equal(t, []string{"genesyscloud_queue::valid-id"}, result.AsProviderResourceList)
+		assert.Equal(t, map[string][]string{
+			"genesyscloud_queue": {"valid-id"},
+		}, result.AsObjectMap)
 	})
 }
 

@@ -22,6 +22,7 @@ import (
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 )
 
@@ -266,6 +267,11 @@ var (
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: validation.IntBetween(60, 86400),
+			},
+			"site_id": {
+				Description: "The identifier of the site to be used for dialing; can be set in place of an edge group.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}
@@ -879,6 +885,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
+			"media_settings_callback.site_id":                   {RefType: telephonyProvidersEdgesSite.ResourceType},
 			"media_settings_message.inactivity_timeout_settings.flow_id":                {RefType: architectFlow.ResourceType},
 			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
 			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},
@@ -888,7 +895,11 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"members":                {"user_id"},
 		},
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id", "conditional_group_routing_rules.queue_id", "conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id", "conditional_group_activation.rules.conditions.simple_metric.queue_id"},
-		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
+		AllowZeroValues: []string{
+			"bullseye_rings.expansion_timeout_seconds",
+			"conditional_group_activation.rules.conditions.value",
+			"conditional_group_activation.pilot_rule.conditions.value",
+		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},

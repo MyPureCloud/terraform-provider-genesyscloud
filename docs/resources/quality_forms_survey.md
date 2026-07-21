@@ -134,7 +134,9 @@ resource "genesyscloud_quality_forms_survey" "example_survey_form" {
 
 ### Read-Only
 
+- `context_id` (String) Unique Id for all versions of this form
 - `id` (String) The ID of this resource.
+- `modified_date` (String) Last modified date. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 
 <a id="nestedblock--question_groups"></a>
 ### Nested Schema for `question_groups`
@@ -151,6 +153,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this question group that stays the same across versions of the form.
 - `id` (String) The ID of the survey question group.
 
 <a id="nestedblock--question_groups--questions"></a>
@@ -172,6 +175,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this question that stays the same across versions of the form.
 - `id` (String) The ID of the survey question.
 
 <a id="nestedblock--question_groups--questions--answer_options"></a>
@@ -185,9 +189,11 @@ Required:
 Optional:
 
 - `assistance_conditions` (Block Set) Options from which to choose an answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options--assistance_conditions))
+- `built_in_type` (String) The built-in type of this answer option. Only used for built-in answer options such as selection states for Multiple Select answer options.Valid values: Selected, Unselected
 
 Read-Only:
 
+- `context_id` (String) An identifier for this answer that stays the same across versions of the form.
 - `id` (String) The ID of the survey answer option.
 
 <a id="nestedblock--question_groups--questions--answer_options--assistance_conditions"></a>
