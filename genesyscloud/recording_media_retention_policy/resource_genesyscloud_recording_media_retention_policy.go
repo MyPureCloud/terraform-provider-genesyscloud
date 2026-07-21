@@ -97,6 +97,8 @@ func createMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	policy, resp, err := pp.createPolicy(ctx, &reqBody)
 	log.Printf("Media retention policy creation status %#v", resp.Status)
 	if err != nil {
+		// Preserve prior state on apply error
+		// Partial causes State() to read from prior state instead of proposed config.
 		d.Partial(true)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create media retention policy %s error: %s", name, err), resp)
 	}
@@ -200,6 +202,8 @@ func updateMediaRetentionPolicy(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Updating media retention policy %s", name)
 	_, resp, err := pp.updatePolicy(ctx, d.Id(), &reqBody)
 	if err != nil {
+		// Preserve prior state on apply error
+		// Partial causes State() to read from prior state instead of proposed config.
 		d.Partial(true)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update media retention policy %s error: %s", name, err), resp)
 	}

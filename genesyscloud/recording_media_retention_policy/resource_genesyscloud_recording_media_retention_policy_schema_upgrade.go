@@ -64,6 +64,9 @@ func mediaPolicyBlockSchemaV1() *schema.Schema {
 	}
 }
 
+// upgradeMediaRetentionPolicyStateV1 converts team_ids from TypeSet to sorted TypeList.
+// This addresses DEVTOOLING-1497 where the SDK gRPC layer was forcing planned TypeSet
+// values into state on apply errors, causing state corruption.
 func upgradeMediaRetentionPolicyStateV1(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
 	upgradeTeamIdsInConditionsList(rawState["conditions"])
 	upgradeTeamIdsInMediaPolicies(rawState["media_policies"])
