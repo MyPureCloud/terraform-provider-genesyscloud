@@ -455,16 +455,6 @@ func validateConditionBlocksInGroups(groups []interface{}) error {
 }
 
 func validateNoTimeBasedConditionsInLegacy(conditions []interface{}) error {
-	v2OnlyConditionTypes := map[string]bool{
-		"timeOfDay":        true,
-		"dayOfWeek":        true,
-		"dayOfMonth":       true,
-		"specificDate":     true,
-		"weekDayOfMonth":   true,
-		"campaignRunTime":  true,
-		"campaignWaitTime": true,
-	}
-
 	for _, c := range conditions {
 		if c == nil {
 			continue

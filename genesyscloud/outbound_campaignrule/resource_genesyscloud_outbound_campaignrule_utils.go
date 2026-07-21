@@ -11,6 +11,20 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
+// v2OnlyConditionTypes are condition types that require campaign_rule_processing = "v2"
+// with condition_groups; they cannot be used in legacy campaign_rule_conditions.
+// Shared between plan-time (CustomizeDiff in schema.go) and apply-time (Create/Update here)
+// validation so both stay in sync.
+var v2OnlyConditionTypes = map[string]bool{
+	"timeOfDay":        true,
+	"dayOfWeek":        true,
+	"dayOfMonth":       true,
+	"specificDate":     true,
+	"weekDayOfMonth":   true,
+	"campaignRunTime":  true,
+	"campaignWaitTime": true,
+}
+
 // validateCampaignRuleBeforeAPICall validates that OBR-723 blocks (for_duration, date_time_parameters, etc.)
 // are not used in legacy campaign_rule_conditions. This runs at apply-time in Create/Update.
 // Uses a separate helper (validateNoTimeBasedConditionsInLegacyFromResourceData) because
@@ -29,16 +43,6 @@ func validateCampaignRuleBeforeAPICall(d *schema.ResourceData) error {
 // validateNoTimeBasedConditionsInLegacyFromResourceData is the apply-time version that handles
 // ResourceData types (*schema.Set for parameters) vs CustomizeDiff types ([]interface{}).
 func validateNoTimeBasedConditionsInLegacyFromResourceData(conditions []interface{}) error {
-	v2OnlyConditionTypes := map[string]bool{
-		"timeOfDay":        true,
-		"dayOfWeek":        true,
-		"dayOfMonth":       true,
-		"specificDate":     true,
-		"weekDayOfMonth":   true,
-		"campaignRunTime":  true,
-		"campaignWaitTime": true,
-	}
-
 	for i, c := range conditions {
 		if c == nil {
 			continue
