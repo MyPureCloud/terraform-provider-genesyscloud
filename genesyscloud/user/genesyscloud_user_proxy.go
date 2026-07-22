@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -329,11 +330,15 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	}
 	allUsers = append(allUsers, *activeUsers...)
 
-	inactiveUsers, apiResponse, err := getUsersByStatus("inactive")
-	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to get 'inactive' users %v", err)
+	if featureToggles.SkipInactiveUserExportToggleExists() {
+		log.Printf("Skipping inactive user export because %s is set", featureToggles.SkipInactiveUserExportToggleName())
+	} else {
+		inactiveUsers, apiResponse, err := getUsersByStatus("inactive")
+		if err != nil {
+			return nil, apiResponse, fmt.Errorf("failed to get 'inactive' users %v", err)
+		}
+		allUsers = append(allUsers, *inactiveUsers...)
 	}
-	allUsers = append(allUsers, *inactiveUsers...)
 
 	// Cache the architect schedules resource into the p.userCache for later use
 	for _, user := range allUsers {
