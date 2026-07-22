@@ -276,7 +276,7 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(120 * time.Minute),
-			Read:   schema.DefaultTimeout(8 * time.Minute),
+			Read:   schema.DefaultTimeout(60 * time.Minute),
 			Update: schema.DefaultTimeout(120 * time.Minute),
 			Delete: schema.DefaultTimeout(8 * time.Minute),
 		},

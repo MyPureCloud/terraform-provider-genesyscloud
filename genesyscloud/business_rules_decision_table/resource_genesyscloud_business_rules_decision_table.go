@@ -257,7 +257,7 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 	}
 
 	limAdd, _, _ := getBulkChunkLimits()
-	return bulkAddConvertedRows(ctx, proxy, tableId, version, sdkRows, limAdd)
+	return bulkAddConvertedRows(ctx, proxy, tableId, version, sdkRows, limAdd, 0)
 }
 
 // publishDecisionTableVersion publishes a decision table version
@@ -462,7 +462,9 @@ func updateDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTa
 	log.Printf("Detected changes: %d adds, %d updates, %d deletes", len(changes.adds), len(changes.updates), len(changes.deletes))
 
 	// Step 4: Apply changes to the draft version
-	err = applyRowChanges(ctx, proxy, tableId, newVersionNumber, changes)
+	// kept rows (= existing rows minus deletes) precede appended adds; used by the bulk ghost-chunk guard.
+	priorRowCount := len(oldRows) - len(changes.deletes)
+	err = applyRowChanges(ctx, proxy, tableId, newVersionNumber, changes, priorRowCount)
 	if err != nil {
 		return fmt.Errorf("failed to apply row changes: %s", err)
 	}

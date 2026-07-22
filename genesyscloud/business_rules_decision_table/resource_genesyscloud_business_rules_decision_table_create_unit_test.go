@@ -25,7 +25,7 @@ func TestUnitDecisionTableSchemaTimeouts(t *testing.T) {
 
 	assert.Equal(t, 120*time.Minute, *resource.Timeouts.Create, "Create timeout should be 120m")
 	assert.Equal(t, 120*time.Minute, *resource.Timeouts.Update, "Update timeout should be 120m")
-	assert.Equal(t, 8*time.Minute, *resource.Timeouts.Read, "Read timeout should be 8m")
+	assert.Equal(t, 60*time.Minute, *resource.Timeouts.Read, "Read timeout should be 60m")
 	assert.Equal(t, 8*time.Minute, *resource.Timeouts.Delete, "Delete timeout should be 8m")
 }
 

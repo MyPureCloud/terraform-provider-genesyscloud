@@ -959,14 +959,16 @@ func valuesEqual(val1, val2 interface{}) bool {
 	}
 }
 
-// applyRowChanges applies the detected changes to the draft version
-func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange) error {
+// applyRowChanges applies the detected changes to the draft version.
+// priorRowCount is the number of rows already present before adds are applied
+// (kept rows = original rows minus deletes); used by the bulk ghost-chunk guard.
+func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, priorRowCount int) error {
 	limAdd, limUpd, limRem := getBulkChunkLimits()
-	return applyRowChangesWithLimits(ctx, proxy, tableId, version, changes, limAdd, limUpd, limRem)
+	return applyRowChangesWithLimits(ctx, proxy, tableId, version, changes, priorRowCount, limAdd, limUpd, limRem)
 }
 
 // applyRowChangesWithLimits applies row changes using explicit bulk chunk sizes (used in tests).
-func applyRowChangesWithLimits(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, limAdd, limUpd, limRem int) error {
+func applyRowChangesWithLimits(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, priorRowCount, limAdd, limUpd, limRem int) error {
 	tableVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
 	if err != nil {
 		return fmt.Errorf("failed to get table version for column mapping: %s", err)
@@ -1017,7 +1019,7 @@ func applyRowChangesWithLimits(ctx context.Context, proxy *BusinessRulesDecision
 		sdkRow.RowIndex = nil
 		addRows = append(addRows, sdkRow)
 	}
-	if err := bulkAddConvertedRows(ctx, proxy, tableId, version, addRows, limAdd); err != nil {
+	if err := bulkAddConvertedRows(ctx, proxy, tableId, version, addRows, limAdd, priorRowCount); err != nil {
 		return err
 	}
 
@@ -1047,16 +1049,25 @@ func normalizeLiteralValue(value, literalType string) string {
 }
 
 // bulkAddConvertedRows bulk-adds pre-converted SDK rows in chunks. Each row must have RowIndex nilled.
-func bulkAddConvertedRows(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, sdkRows []platformclientv2.Createdecisiontablerowrequest, chunkLimit int) error {
-	start := 0
+// baseRowCount is the number of rows on the version before this add operation starts (0 on create,
+// kept-row count on update); chunkStart offsets within sdkRows feed the ghost-chunk index guard.
+func bulkAddConvertedRows(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, sdkRows []platformclientv2.Createdecisiontablerowrequest, chunkLimit int, baseRowCount int) error {
+	chunkStart := 0
 	for _, chunk := range chunks.ChunkBy(sdkRows, chunkLimit) {
 		log.Printf("Bulk adding %d new rows", len(chunk))
-		_, err := proxy.bulkAddDecisionTableRows(ctx, tableId, version, chunk)
+		resp, err := proxy.bulkAddDecisionTableRows(ctx, tableId, version, chunk)
 		if err != nil {
-			return fmt.Errorf("failed to bulk add rows (batch %d-%d of %d): %s", start, start+len(chunk)-1, len(sdkRows), err)
+			if isGhostChunkDuplicate(resp, baseRowCount, chunkStart, len(chunk)) {
+				first, last := expectedChunkIndexRange(baseRowCount, chunkStart, len(chunk))
+				log.Printf("[WARN] bulk chunk rows %d-%d already exist on decision table %s version %d (409 %s with index in [%d,%d]); treating as added and continuing",
+					chunkStart+1, chunkStart+len(chunk), tableId, version, decisionTableDuplicateRowCode, first, last)
+				chunkStart += len(chunk)
+				continue
+			}
+			return fmt.Errorf("failed to bulk add rows (batch %d-%d of %d): %s", chunkStart, chunkStart+len(chunk)-1, len(sdkRows), err)
 		}
 		log.Printf("Successfully bulk added %d rows to decision table %s version %d", len(chunk), tableId, version)
-		start += len(chunk)
+		chunkStart += len(chunk)
 	}
 	return nil
 }

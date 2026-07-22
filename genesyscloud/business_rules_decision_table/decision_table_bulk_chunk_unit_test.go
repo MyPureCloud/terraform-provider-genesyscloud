@@ -156,7 +156,7 @@ func TestUnitBulkApplyRowChangesMultiChunkWithSmallLimits(t *testing.T) {
 		deletes: deletes,
 		adds:    adds,
 		updates: nil,
-	}, 2, 15, 3)
+	}, 0, 2, 15, 3)
 	assert.NoError(t, err)
 	assert.Equal(t, []int{2, 2, 1}, bulkAddLens)
 	assert.Equal(t, []int{3, 3, 1}, bulkRemoveLens)
