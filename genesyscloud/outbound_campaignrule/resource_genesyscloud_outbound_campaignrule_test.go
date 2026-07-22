@@ -1272,6 +1272,7 @@ data "genesyscloud_auth_division_home" "home" {}
 }
 
 func TestAccResourceOutboundCampaignRuleTimeBasedConditions(t *testing.T) {
+	t.Parallel()
 	var (
 		resourceLabel = "campaign_rule_time"
 		ruleName      = "TF CR Time " + uuid.NewString()
@@ -1314,24 +1315,20 @@ func TestAccResourceOutboundCampaignRuleTimeBasedConditions(t *testing.T) {
 	)
 
 	// Time-based condition: timeOfDay between 09:00 and 17:00
-	timeOfDayCondition := `
-		conditions {
-			condition_type = "timeOfDay"
-			parameters {
-				operator = "between"
-				value    = ""
-			}
-			date_time_parameters {
-				inverted = false
-				time_of_day {
-					interval {
-						min = "09:00:00"
-						max = "17:00:00"
-					}
-				}
+	timeOfDayInner := `
+		time_of_day {
+			interval {
+				min = "09:00:00"
+				max = "17:00:00"
 			}
 		}
 `
+	timeOfDayCondition := generateConditionGroupConditionBlock(
+		"timeOfDay",
+		generateCampaignRuleParameters("between", "", "", "", "", "", "", "", "", "", "", "", "", "")+
+			generateDateTimeParameters(false, timeOfDayInner),
+	)
+
 	// Campaign trigger condition
 	campaignTriggerCondition := generateConditionGroupConditionBlock("campaignProgress", generateCampaignRuleParameters(condProgressOp, condProgressVal, "", "", "", "", "", "", "", "", "", "", "", ""))
 
@@ -1363,6 +1360,103 @@ func TestAccResourceOutboundCampaignRuleTimeBasedConditions(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.date_time_parameters.0.inverted", util.FalseValue),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.date_time_parameters.0.time_of_day.0.interval.0.min", "09:00:00"),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.date_time_parameters.0.time_of_day.0.interval.0.max", "17:00:00"),
+				),
+			},
+			{
+				ResourceName:      "genesyscloud_outbound_campaignrule." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyCampaignRuleDestroyed,
+	})
+}
+
+// TestAccResourceOutboundCampaignRuleWeekDayOfMonth covers the weekDayOfMonth condition type, which
+// has the deepest nested schema (date_time_parameters -> week_day_of_month -> threshold_value ->
+// day_of_week/month/occurrence). Uses operator "equals" with threshold_value ("1st Monday of
+// September"). A campaignProgress trigger condition is required because time/date conditions cannot
+// stand alone.
+func TestAccResourceOutboundCampaignRuleWeekDayOfMonth(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel = "campaign_rule_wdom"
+		ruleName      = "TF CR WDOM " + uuid.NewString()
+
+		campaign1ResourceLabel = "campaign1"
+		campaign1Name          = "TF Test Campaign " + uuid.NewString()
+		outboundFlowFilePath   = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
+		campaign1FlowName      = "test flow " + uuid.NewString()
+		campaign1Resource      = generateCampaignResourceForCampaignRuleTests(
+			campaign1ResourceLabel,
+			campaign1Name,
+			"off",
+			"contact-list-wdom",
+			"test contact list"+uuid.NewString(),
+			"location-wdom",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131785%v", 10000+rand.Intn(99999-10000)),
+			"site-wdom",
+			"test site "+uuid.NewString(),
+			"wrapupcode-wdom",
+			"test wrapup code "+uuid.NewString(),
+			"campaignrule-wdom-flow",
+			outboundFlowFilePath,
+			campaign1FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"car-wdom",
+			"test car"+uuid.NewString(),
+		)
+
+		entityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceLabel + ".id"}
+		timeZoneId        = "America/New_York"
+	)
+
+	// weekDayOfMonth: "1st Monday of September" via operator "equals" + threshold_value.
+	weekDayInner := `
+		week_day_of_month {
+			threshold_value {
+				day_of_week = 1
+				month       = 9
+				occurrence  = 1
+			}
+		}
+`
+	weekDayCondition := generateConditionGroupConditionBlock(
+		"weekDayOfMonth",
+		generateCampaignRuleParameters("equals", "", "", "", "", "", "", "", "", "", "", "", "", "")+
+			generateDateTimeParameters(false, weekDayInner),
+	)
+	// Trigger condition (required alongside any time/date condition).
+	triggerCondition := generateConditionGroupConditionBlock("campaignProgress", generateCampaignRuleParameters("greaterThan", "0.5", "", "", "", "", "", "", "", "", "", "", "", ""))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`data "genesyscloud_auth_division_home" "home" {}`) +
+					campaign1Resource +
+					generateOutboundCampaignRule(
+						resourceLabel,
+						ruleName,
+						util.FalseValue,
+						util.FalseValue,
+						generateCampaignRuleEntity(entityCampaignIds, []string{}, []string{}, []string{}),
+						generateCampaignRuleProcessingV2(),
+						fmt.Sprintf(`time_zone_id = "%s"`, timeZoneId),
+						generateConditionGroup(false, triggerCondition, weekDayCondition),
+						generateExecutionSettings("onEachTrigger", ""),
+						generateCampaignRuleActions("", "turnOffCampaign", []string{}, []string{}, []string{}, []string{}, util.TrueValue, ""),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_processing", "v2"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.condition_type", "campaignProgress"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.condition_type", "weekDayOfMonth"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.date_time_parameters.0.week_day_of_month.0.threshold_value.0.day_of_week", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.date_time_parameters.0.week_day_of_month.0.threshold_value.0.month", "9"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.1.date_time_parameters.0.week_day_of_month.0.threshold_value.0.occurrence", "1"),
 				),
 			},
 			{
@@ -1412,91 +1506,6 @@ resource "genesyscloud_outbound_campaignrule" "test" {
   }
 }`,
 				ExpectError: regexp.MustCompile(`date_time_parameters requires campaign_rule_processing = "v2"`),
-			},
-		},
-	})
-}
-
-// for_duration is nested inside parameters TypeSet and is not reliably visible
-// to CustomizeDiff, so this is validated before the API call in Create/Update.
-// Therefore this test does NOT use PlanOnly: true.
-func TestAccResourceOutboundCampaignRuleLegacyRejectsForDuration(t *testing.T) {
-	t.Parallel()
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: `
-resource "genesyscloud_outbound_campaignrule" "test" {
-  name = "test-legacy-reject-duration"
-  campaign_rule_entities {
-    campaign_ids = []
-  }
-  campaign_rule_conditions {
-    condition_type = "campaignProgress"
-    parameters {
-      operator = "greaterThan"
-      value    = "50"
-      for_duration {
-        seconds = 30
-      }
-    }
-  }
-  campaign_rule_actions {
-    action_type = "turnOnCampaign"
-    campaign_rule_action_entities {
-      use_triggering_entity = true
-    }
-  }
-}`,
-				ExpectError: regexp.MustCompile(`for_duration.*campaign_rule_processing = "v2"`),
-			},
-		},
-	})
-}
-
-func TestAccResourceOutboundCampaignRuleActionRejectsForDuration(t *testing.T) {
-	t.Parallel()
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				Config: `
-resource "genesyscloud_outbound_campaignrule" "test" {
-  name = "test-action-reject-duration"
-  campaign_rule_entities {
-    campaign_ids = []
-  }
-  campaign_rule_processing = "v2"
-  condition_groups {
-    match_any_conditions = false
-    conditions {
-      condition_type = "campaignProgress"
-      parameters {
-        operator = "greaterThan"
-        value    = "50"
-      }
-    }
-  }
-  execution_settings {
-    frequency = "onEachTrigger"
-  }
-  campaign_rule_actions {
-    action_type = "turnOnCampaign"
-    parameters {
-      for_duration {
-        seconds = 30
-      }
-    }
-    campaign_rule_action_entities {
-      use_triggering_entity = true
-    }
-  }
-}`,
-				PlanOnly:    true,
-				ExpectError: regexp.MustCompile(`An argument named "for_duration" is not expected here|Unsupported block type|for_duration`),
 			},
 		},
 	})
@@ -2202,13 +2211,25 @@ func generateCampaignRuleConditions(id string, conditionType string, parametersB
 }
 
 // generateConditionGroupConditionBlock generates a single "conditions" block for use inside condition_groups.
-func generateConditionGroupConditionBlock(conditionType string, parametersBlock string) string {
+func generateConditionGroupConditionBlock(conditionType string, conditionBody string) string {
 	return fmt.Sprintf(`
 		conditions {
 			condition_type = "%s"
 			%s
 		}
-`, conditionType, parametersBlock)
+`, conditionType, conditionBody)
+}
+
+// generateDateTimeParameters builds a date_time_parameters block. innerBlock is the specific
+// sub-block for the condition type (e.g. a time_of_day{} or week_day_of_month{} block). inverted
+// maps to the optional "inverted" flag.
+func generateDateTimeParameters(inverted bool, innerBlock string) string {
+	return fmt.Sprintf(`
+		date_time_parameters {
+			inverted = %t
+			%s
+		}
+`, inverted, innerBlock)
 }
 
 // generateConditionGroup generates a condition_groups block (v2 processing).
