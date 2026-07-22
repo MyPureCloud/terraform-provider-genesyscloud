@@ -131,6 +131,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign. Must be >= 1. Supports decimal values (e.g., 1.5, 2.3).
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
 - `outbound_line_count` (Number) The number of outbound lines to be concurrently dialed. Only applicable to non-preview campaigns; only required for agentless.
+- `preview_auto_end` (Boolean) When enabled, the preview will automatically end and the call will be placed after the preview timeout (preview_time_out_seconds). Only applicable to preview campaigns. Defaults to `false`.
 - `preview_time_out_seconds` (Number) The number of seconds before a call will be automatically placed on a preview. A value of 0 indicates no automatic placement of calls. Only applicable to preview campaigns.
 - `priority` (Number) The priority of this campaign relative to other campaigns that are running on the same queue. 5 is the highest priority, 1 the lowest.
 - `queue_id` (String) The Queue for this Campaign to route calls to. Required for all dialing modes except agentless.

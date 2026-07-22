@@ -166,6 +166,12 @@ func ResourceIntegrationAction() *schema.Resource {
 				Default:     false,
 				ForceNew:    true,
 			},
+			"action_type": {
+				Description: "The type of the integration action. Computed based on the action ID prefix. " +
+					"Values: `static` (built-in actions shipped by Genesys Cloud) or `custom` (user-created actions).",
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"config_timeout_seconds": {
 				Description:  "Optional 1-60 second timeout enforced on the execution or test of this action. This setting is invalid for Custom Authentication Actions.",
 				Type:         schema.TypeInt,
@@ -232,7 +238,9 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source
 func DataSourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud integration action. Select an integration action by name. For static (built-in) data actions whose names may collide across integration instances, integration_id can be provided to disambiguate the lookup.",
+		Description: "Data source for Genesys Cloud integration action. Select an integration action by name. " +
+			"For static (built-in) data actions whose names may collide across integration instances, " +
+			"integration_id and/or action_type can be provided to disambiguate the lookup.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -241,9 +249,18 @@ func DataSourceIntegrationAction() *schema.Resource {
 				Required:    true,
 			},
 			"integration_id": {
-				Description: "The ID of the integration that owns the action. Optional, used to disambiguate static (built-in) data actions whose names may not be unique across integration instances.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description: "The ID of the integration that owns the action. Optional, used to disambiguate " +
+					"data actions whose names may not be unique across integration instances.",
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"action_type": {
+				Description: "The type of the integration action. Optional, used to disambiguate when a " +
+					"static (built-in) action and a custom action share the same name under the same " +
+					"integration. Valid values: `static`, `custom`.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"static", "custom"}, false),
 			},
 		},
 	}

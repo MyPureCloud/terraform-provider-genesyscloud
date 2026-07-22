@@ -2324,6 +2324,17 @@ resource "%s" "%s" {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create the flow first and let it settle before exporting
+				Config: flowResource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(architectFlow.ResourceType+"."+flowResourceLabel, "id"),
+				),
+			},
+			{
+				// Step 2: Export the flow after it has been fully published
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),

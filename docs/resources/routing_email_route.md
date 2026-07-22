@@ -50,6 +50,12 @@ resource "genesyscloud_routing_email_route" "example_route" {
     name  = "Supervisors"
     email = "support_supervisors@${genesyscloud_routing_email_domain.example_domain_com.domain_id}"
   }
+  signature {
+    enabled            = false
+    canned_response_id = genesyscloud_responsemanagement_response.example_signature_response.id
+    always_included    = false
+    inclusion_type     = "FirstResponseOnly"
+  }
 }
 
 resource "genesyscloud_routing_email_route" "example_route_reference_other_route" {
@@ -91,6 +97,7 @@ resource "genesyscloud_routing_email_route" "example_route_reference_other_route
 - `priority` (Number) The priority to use for routing.
 - `queue_id` (String) The queue to route the emails to. This should not be set if a flow_id is specified.
 - `reply_email_address` (Block List, Max: 1) The route to use for email replies. This should not be set if from_email or auto_bcc are specified. (see [below for nested schema](#nestedblock--reply_email_address))
+- `signature` (Block List, Max: 1) The configuration for the canned response signature that will be appended to outbound emails sent via this route. (see [below for nested schema](#nestedblock--signature))
 - `skill_ids` (Set of String) The skills to use for routing.
 - `spam_flow_id` (String) The flow to use for processing inbound emails that have been marked as spam.
 
@@ -119,4 +126,15 @@ Optional:
 - `route_id` (String) ID of the route.
 - `self_reference_route` (Boolean) Use this route as the reply email address. If true you will use the route id for this resource as the reply and you
 							              can not set a route. If you set this value to false (or leave the attribute off) you must set a route id and matching domain. Defaults to `false`.
+
+
+<a id="nestedblock--signature"></a>
+### Nested Schema for `signature`
+
+Optional:
+
+- `always_included` (Boolean) A toggle that defines if a signature is always included or only set on the first email in an email chain.
+- `canned_response_id` (String) The identifier referring to an email signature canned response.
+- `enabled` (Boolean) A toggle to enable the signature on email send.
+- `inclusion_type` (String) The configuration to indicate when the signature of a conversation has to be included.
 

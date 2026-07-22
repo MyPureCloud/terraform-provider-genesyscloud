@@ -11,6 +11,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -154,6 +155,10 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 		if surveyForm.Name != nil {
 			_ = d.Set("name", *surveyForm.Name)
 		}
+		if surveyForm.ContextId != nil {
+			_ = d.Set("context_id", *surveyForm.ContextId)
+		}
+		resourcedata.SetNillableTime(d, "modified_date", surveyForm.ModifiedDate)
 
 		if surveyForm.Language != nil {
 			_ = d.Set("language", *surveyForm.Language)

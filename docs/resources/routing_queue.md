@@ -626,6 +626,7 @@ Optional:
 - `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `site_id` (String) The identifier of the site to be used for dialing; can be set in place of an edge group.
 
 
 <a id="nestedblock--media_settings_chat"></a>

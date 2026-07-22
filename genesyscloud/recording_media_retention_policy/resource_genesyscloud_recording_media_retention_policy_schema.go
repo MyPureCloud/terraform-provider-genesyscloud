@@ -97,6 +97,15 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 		},
 	}
 
+	// TypeList is used instead of TypeSet because the SDK gRPC layer forces planned TypeSet
+	// values into state on apply, even when d.Partial(true) is set after an error.
+	teamIdsSchema := &schema.Schema{
+		Description: "Teams to match conversations against",
+		Type:        schema.TypeList,
+		Optional:    true,
+		Elem:        &schema.Schema{Type: schema.TypeString},
+	}
+
 	callMediaPolicyConditions := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"for_user_ids": {
@@ -144,12 +153,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Default:     nil,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"team_ids": {
-				Description: "Teams to match conversations against",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+			"team_ids": teamIdsSchema,
 			"duration": {
 				Description: "",
 				Type:        schema.TypeList,
@@ -200,12 +204,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
-			"team_ids": {
-				Description: "Teams to match conversations against",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+			"team_ids": teamIdsSchema,
 			"duration": {
 				Description: "",
 				Type:        schema.TypeList,
@@ -256,12 +255,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
-			"team_ids": {
-				Description: "Teams to match conversations against",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+			"team_ids": teamIdsSchema,
 			"customer_participation": {
 				Description:  "This condition is to filter out conversation with and without customer participation. Valid values: YES, NO.",
 				Type:         schema.TypeString,
@@ -311,12 +305,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
-			"team_ids": {
-				Description: "Teams to match conversations against",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+			"team_ids": teamIdsSchema,
 			"customer_participation": {
 				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
 				Type:         schema.TypeString,
@@ -380,12 +369,7 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				Optional:    true,
 				Elem:        timeAllowed,
 			},
-			"team_ids": {
-				Description: "Teams to match conversations against",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+			"team_ids": teamIdsSchema,
 			"customer_participation": {
 				Description:  "This condition is to filter out conversation with and without customer participation.Valid values: YES, NO.",
 				Type:         schema.TypeString,
@@ -926,7 +910,14 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Type:    resourceMediaRetentionPolicySchemaV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: upgradeMediaRetentionPolicyStateV1,
+				Version: 1,
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The policy name. Changing the policy_name attribute will cause the recording_media_retention_policy to be dropped and recreated with a new ID.",
