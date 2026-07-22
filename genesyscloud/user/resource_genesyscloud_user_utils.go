@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -1094,8 +1094,12 @@ func waitForExtensionPoolActivation(ctx context.Context, d *schema.ResourceData,
 		return
 	}
 
-	addressMap := addresses[0].(map[string]interface{})
-	phoneNumbers := addressMap["phone_numbers"].(*schema.Set)
+	addressMap, ok := addresses[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	phoneNumbers, _ := addressMap["phone_numbers"].(*schema.Set)
 	if phoneNumbers == nil {
 		return
 	}

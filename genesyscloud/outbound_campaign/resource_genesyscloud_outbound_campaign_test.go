@@ -32,7 +32,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -192,7 +192,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Cloud",
 		false,
-		"[\"us-east-1\"]",
+		util.AssignRegion(),
 		util.NullValue,
 		util.NullValue,
 	) + fmt.Sprintf(`
@@ -611,7 +611,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 		"genesyscloud_location."+locationResourceLabel+".id",
 		"Cloud",
 		false,
-		"[\"us-east-1\"]",
+		util.AssignRegion(),
 		util.NullValue,
 		util.NullValue,
 	) + "\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"
@@ -1350,6 +1350,174 @@ func TestAccResourceOutboundCampaignPredictiveDiagnosticsSettings(t *testing.T) 
 						"genesyscloud_routing_queue."+queueResourceLabel, "id"),
 					resource.TestCheckResourceAttr(resourcePath,
 						"diagnostics_settings.0.report_low_max_calls_per_agent_alert", "true"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyOutboundCampaignDestroyed,
+	})
+}
+
+func TestAccResourceOutboundCampaignPreviewAutoEnd(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel            = "campaign_preview_auto_end"
+		name                     = "TF PreviewAutoEnd " + uuid.NewString()
+		dialingMode              = "preview"
+		callerName               = "Test Name"
+		callerAddress            = "+353371111111"
+		contactListResourceLabel = "contact_list"
+		queueResourceLabel       = "queue"
+
+		resourcePath = ResourceType + "." + resourceLabel
+	)
+
+	scriptId, err := getPublishedScriptId()
+	if err != nil || scriptId == "" {
+		t.Skip("Skipping as a published script ID is needed to run this test")
+	}
+
+	referencedResources := GenerateReferencedResourcesForOutboundCampaignTests(
+		contactListResourceLabel,
+		"",
+		queueResourceLabel,
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create preview campaign WITHOUT preview_auto_end (omitted = defaults to false)
+				Config: referencedResources +
+					generateOutboundCampaign(
+						resourceLabel,
+						name,
+						dialingMode,
+						strconv.Quote(callerName),
+						strconv.Quote(callerAddress),
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						strconv.Quote(scriptId),
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						[]string{},
+						util.FalseValue,
+						generatePhoneColumnNoTypeBlock("Cell"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", dialingMode),
+					resource.TestCheckResourceAttr(resourcePath, "preview_auto_end", util.FalseValue),
+				),
+			},
+			{
+				// Step 2: Update to enable preview_auto_end with explicit preview_time_out_seconds
+				Config: referencedResources +
+					generateOutboundCampaign(
+						resourceLabel,
+						name,
+						dialingMode,
+						strconv.Quote(callerName),
+						strconv.Quote(callerAddress),
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						strconv.Quote(scriptId),
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"10",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						[]string{},
+						util.FalseValue,
+						generatePhoneColumnNoTypeBlock("Cell"),
+						"preview_auto_end = true",
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "preview_auto_end", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "preview_time_out_seconds", "10"),
+				),
+			},
+			{
+				// Step 3: Disable preview_auto_end
+				Config: referencedResources +
+					generateOutboundCampaign(
+						resourceLabel,
+						name,
+						dialingMode,
+						strconv.Quote(callerName),
+						strconv.Quote(callerAddress),
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						strconv.Quote(scriptId),
+						"genesyscloud_routing_queue."+queueResourceLabel+".id",
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						[]string{},
+						[]string{},
+						[]string{},
+						[]string{},
+						util.FalseValue,
+						generatePhoneColumnNoTypeBlock("Cell"),
+						"preview_auto_end = false",
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "preview_auto_end", util.FalseValue),
 				),
 			},
 			{

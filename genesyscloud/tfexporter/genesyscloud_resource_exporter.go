@@ -41,7 +41,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -473,6 +473,16 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 		exports = g.resourceTypeFilter(exports, *filterList)
 	}
 
+	// Remove deprecated resource types if export_deprecated is false
+	if !g.exportDeprecated {
+		for resourceType := range exports {
+			if res, ok := providerResources[resourceType]; ok && res.DeprecationMessage != "" {
+				tflog.Info(g.ctx, fmt.Sprintf("Excluding deprecated resource type '%s' from export", resourceType))
+				delete(exports, resourceType)
+			}
+		}
+	}
+
 	// Thread-safe update of exporters
 	g.exportersMutex.Lock()
 	g.exporters = &exports
@@ -879,12 +889,28 @@ func (g *GenesysCloudResourceExporter) customWriteAttributes(jsonResult util.Jso
 		if diagnostics.HasError() {
 			return
 		}
-		if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
-			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s: %v", resource.Type, resource.State.ID, err))
+
+		maxRetries := 3
+		var lastErr error
+		for attempt := 0; attempt < maxRetries; attempt++ {
+			if err := resourceFilesWriterFunc(resource.State.ID, exportDir, exporters[resource.Type].CustomFileWriter.SubDirectory, jsonResult, g.meta, resource); err != nil {
+				lastErr = err
+				if attempt < maxRetries-1 {
+					backoff := time.Duration(1<<attempt) * time.Second
+					tflog.Warn(g.ctx, fmt.Sprintf("RetrieveAndWriteFilesFunc failed for resource type %s and id %s (attempt %d/%d). Retrying in %v. Error: %v", resource.Type, resource.State.ID, attempt+1, maxRetries, backoff, err))
+					time.Sleep(backoff)
+				}
+			} else {
+				lastErr = nil
+				break
+			}
+		}
+		if lastErr != nil {
+			tflog.Error(g.ctx, fmt.Sprintf("An error has occurred while trying invoking the RetrieveAndWriteFilesFunc for resource type %s and id %s after %d attempts: %v", resource.Type, resource.State.ID, maxRetries, lastErr))
 			diagnostics = append(diagnostics, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  fmt.Sprintf("Failed to invoke %s custom resolver method.", resource.Type),
-				Detail:   err.Error(),
+				Detail:   lastErr.Error(),
 			})
 		}
 	}
@@ -2087,19 +2113,21 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 		if prefix != "" {
 			fullPath = prefix + "." + name
 		}
-		// Remove any computed attributes if export computed exporter config not set
-		if s.Computed == true && !g.exportComputed {
-			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
-			excludedAttributes = append(excludedAttributes, fullPath)
-			continue
-		}
 		// Remove any computed read-only attributes from being exported regardless of exporter config
 		// because they cannot be set by a user when reapplying the configuration in a different org
 		if s.Computed == true && s.Optional == false {
-			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a read-only computed attribute", fullPath, resourceType))
 			excludedAttributes = append(excludedAttributes, fullPath)
 			continue
 		}
+
+		// Remove any computed but optional attributes if export computed exporter config not set
+		if s.Computed == true && !g.exportComputed {
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed, but optional attribute and exclude_computed was set", fullPath, resourceType))
+			excludedAttributes = append(excludedAttributes, fullPath)
+			continue
+		}
+
 		// Remove deprecated attributes if export_deprecated is set to false
 		if s.Deprecated != "" && !g.exportDeprecated {
 			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a deprecated attribute", fullPath, resourceType))

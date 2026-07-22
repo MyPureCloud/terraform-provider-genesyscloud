@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -88,6 +88,9 @@ func TestAccResourceConversationsMessagingIntegrationsOpen(t *testing.T) {
 			},
 			// Update outbound_notification_webhook_url
 			{
+				PreConfig: func() {
+					time.Sleep(30 * time.Second)
+				},
 				Config: messagingSettingResource1 +
 					supportedContentResource1 +
 					GenerateConversationMessagingOpenResource(

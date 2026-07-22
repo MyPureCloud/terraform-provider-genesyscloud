@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -555,6 +555,13 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValue(d, "secure", action.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
 
+		// Derive action_type from the ID prefix
+		if strings.HasPrefix(d.Id(), staticActionIDPrefix) {
+			_ = d.Set("action_type", "static")
+		} else {
+			_ = d.Set("action_type", "custom")
+		}
+
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
@@ -658,6 +665,13 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "integration_id", action.IntegrationId)
 		resourcedata.SetNillableValue(d, "secure", action.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
+
+		// Derive action_type from the ID prefix
+		if strings.HasPrefix(d.Id(), staticActionIDPrefix) {
+			_ = d.Set("action_type", "static")
+		} else {
+			_ = d.Set("action_type", "custom")
+		}
 
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)

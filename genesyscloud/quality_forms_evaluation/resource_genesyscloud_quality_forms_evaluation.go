@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // getAllEvaluationForms retrieves all evaluation forms from Genesys Cloud
@@ -62,6 +62,14 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	evaluationForm := &platformclientv2.Evaluationform{
 		Name:           &name,
 		QuestionGroups: buildSdkQuestionGroups(d),
+	}
+
+	evaluationForm.EvaluationSettings = buildSdkEvaluationSettings(d.Get("evaluation_settings").([]interface{}))
+	if aiScoring, ok := d.Get("ai_scoring").([]interface{}); ok && len(aiScoring) > 0 {
+		evaluationForm.AiScoring = buildSdkAiScoring(aiScoring)
+	}
+	if dialect, ok := d.Get("dialect").(string); ok && dialect != "" {
+		evaluationForm.Dialect = &dialect
 	}
 
 	log.Printf("Creating Evaluation Form %s", name)
@@ -139,8 +147,23 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 
 		resourcedata.SetNillableValue(d, "name", evaluationForm.Name)
+		resourcedata.SetNillableTime(d, "modified_date", evaluationForm.ModifiedDate)
+		resourcedata.SetNillableValue(d, "dialect", evaluationForm.Dialect)
 		if evaluationForm.QuestionGroups != nil {
 			_ = d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
+		}
+
+		// Persist only when settings are active
+		if hasEvaluationSettings(evaluationForm.EvaluationSettings) {
+			_ = d.Set("evaluation_settings", flattenEvaluationSettings(evaluationForm.EvaluationSettings))
+		} else {
+			_ = d.Set("evaluation_settings", nil)
+		}
+		// Persist only when AI scoring has group settings
+		if hasAiScoring(evaluationForm.AiScoring) {
+			_ = d.Set("ai_scoring", flattenAiScoring(evaluationForm.AiScoring))
+		} else {
+			_ = d.Set("ai_scoring", nil)
 		}
 
 		return cc.CheckState(d)
@@ -174,6 +197,16 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		evaluationForm := &platformclientv2.Evaluationform{
 			Name:           &name,
 			QuestionGroups: buildSdkQuestionGroups(d),
+		}
+
+		evaluationForm.EvaluationSettings = buildSdkEvaluationSettings(d.Get("evaluation_settings").([]interface{}))
+		if aiScoring := d.Get("ai_scoring").([]interface{}); len(aiScoring) > 0 {
+			evaluationForm.AiScoring = buildSdkAiScoring(aiScoring)
+		} else {
+			evaluationForm.AiScoring = buildClearedAiScoring()
+		}
+		if dialect, ok := d.Get("dialect").(string); ok && dialect != "" {
+			evaluationForm.Dialect = &dialect
 		}
 
 		log.Printf("Updating Evaluation Form %s", name)

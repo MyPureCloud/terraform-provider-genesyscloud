@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v192/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -43,6 +43,7 @@ type getAllPhonesFunc func(ctx context.Context, p *phoneProxy) (*[]platformclien
 type createPhoneFunc func(ctx context.Context, p *phoneProxy, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type getPhoneByIdFunc func(ctx context.Context, p *phoneProxy, phoneId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type getPhoneByNameFunc func(ctx context.Context, p *phoneProxy, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error)
+type getPhoneByWebRtcUserIdFunc func(ctx context.Context, p *phoneProxy, webRtcUserId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type updatePhoneFunc func(ctx context.Context, p *phoneProxy, phoneId string, phoneConfig *platformclientv2.Phone) (*platformclientv2.Phone, *platformclientv2.APIResponse, error)
 type deletePhoneFunc func(ctx context.Context, p *phoneProxy, phoneId string) (response *platformclientv2.APIResponse, err error)
 
@@ -60,12 +61,13 @@ type phoneProxy struct {
 	usersApi     *platformclientv2.UsersApi
 	phoneCache   rc.CacheInterface[platformclientv2.Phone]
 
-	getAllPhonesAttr   getAllPhonesFunc
-	createPhoneAttr    createPhoneFunc
-	getPhoneByIdAttr   getPhoneByIdFunc
-	getPhoneByNameAttr getPhoneByNameFunc
-	updatePhoneAttr    updatePhoneFunc
-	deletePhoneAttr    deletePhoneFunc
+	getAllPhonesAttr           getAllPhonesFunc
+	createPhoneAttr            createPhoneFunc
+	getPhoneByIdAttr           getPhoneByIdFunc
+	getPhoneByNameAttr         getPhoneByNameFunc
+	getPhoneByWebRtcUserIdAttr getPhoneByWebRtcUserIdFunc
+	updatePhoneAttr            updatePhoneFunc
+	deletePhoneAttr            deletePhoneFunc
 
 	getPhoneBaseSettingAttr     getPhoneBaseSettingFunc
 	getStationOfUserAttr        getStationOfUserFunc
@@ -87,12 +89,13 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 		usersApi:     usersApi,
 		phoneCache:   phoneCache,
 
-		getAllPhonesAttr:   getAllPhonesFn,
-		createPhoneAttr:    createPhoneFn,
-		getPhoneByIdAttr:   getPhoneByIdFn,
-		getPhoneByNameAttr: getPhoneByNameFn,
-		updatePhoneAttr:    updatePhoneFn,
-		deletePhoneAttr:    deletePhoneFn,
+		getAllPhonesAttr:           getAllPhonesFn,
+		createPhoneAttr:            createPhoneFn,
+		getPhoneByIdAttr:           getPhoneByIdFn,
+		getPhoneByNameAttr:         getPhoneByNameFn,
+		getPhoneByWebRtcUserIdAttr: getPhoneByWebRtcUserIdFn,
+		updatePhoneAttr:            updatePhoneFn,
+		deletePhoneAttr:            deletePhoneFn,
 
 		getPhoneBaseSettingAttr:     getPhoneBaseSettingFn,
 		getStationOfUserAttr:        getStationOfUserFn,
@@ -132,6 +135,11 @@ func (p *phoneProxy) getPhoneById(ctx context.Context, phoneId string) (*platfor
 // getPhoneByName retrieves a Genesys Cloud Phone by name
 func (p *phoneProxy) getPhoneByName(ctx context.Context, phoneName string) (phone *platformclientv2.Phone, retryable bool, resp *platformclientv2.APIResponse, err error) {
 	return p.getPhoneByNameAttr(ctx, p, phoneName)
+}
+
+// getPhoneByWebRtcUserId retrieves a Genesys Cloud Phone assigned to a WebRTC user
+func (p *phoneProxy) getPhoneByWebRtcUserId(ctx context.Context, webRtcUserId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	return p.getPhoneByWebRtcUserIdAttr(ctx, p, webRtcUserId)
 }
 
 // updatePhone updates a Genesys Cloud Phone
@@ -286,6 +294,35 @@ func getPhoneByNameFn(ctx context.Context, p *phoneProxy, phoneName string) (pho
 		}
 	}
 	return nil, true, resp, fmt.Errorf("failed to find ID of phone '%s'", phoneName)
+}
+
+// getPhoneByWebRtcUserIdFn is an implementation function for retrieving a Genesys Cloud Phone by WebRTC user ID
+func getPhoneByWebRtcUserIdFn(ctx context.Context, p *phoneProxy, webRtcUserId string) (*platformclientv2.Phone, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	const pageSize = 100
+	expand := []string{"lines", "properties"}
+	fields := []string{"webRtcUser"}
+
+	phones, resp, err := p.edgesApi.GetTelephonyProvidersEdgesPhones(1, pageSize, "", "", "", webRtcUserId, "", "", "", "", "", "", "", "", "", expand, fields)
+	if err != nil {
+		return nil, resp, err
+	}
+	if phones.Entities == nil || len(*phones.Entities) == 0 {
+		return nil, resp, nil
+	}
+
+	for _, phone := range *phones.Entities {
+		if phone.WebRtcUser == nil || phone.WebRtcUser.Id == nil || *phone.WebRtcUser.Id != webRtcUserId {
+			continue
+		}
+
+		if phone.State != nil && *phone.State == "deleted" {
+			continue
+		}
+		return &phone, resp, nil
+	}
+
+	return nil, resp, nil
 }
 
 // updatePhoneFn is an implementation function for updating a Genesys Cloud Phone
