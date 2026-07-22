@@ -22,8 +22,8 @@ import (
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
-	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 )
 
@@ -892,7 +892,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
 			"media_settings_callback.site_id":                   {RefType: telephonyProvidersEdgesSite.ResourceType},
-			"media_settings_callback.edge_group_id":              {RefType: edgeGroup.ResourceType},
+			"media_settings_callback.edge_group_id":             {RefType: edgeGroup.ResourceType},
 			"media_settings_message.inactivity_timeout_settings.flow_id":                {RefType: architectFlow.ResourceType},
 			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
 			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},

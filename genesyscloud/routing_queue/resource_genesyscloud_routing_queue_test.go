@@ -21,6 +21,8 @@ import (
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
+	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
@@ -1398,29 +1400,86 @@ func TestAccResourceRoutingQueueCallbackCustomerFirst(t *testing.T) {
 	})
 }
 
-func TestAccResourceRoutingQueueCallbackSiteId(t *testing.T) {
+func TestAccResourceRoutingQueueCallbackEdgeGroupAndSite(t *testing.T) {
+	t.Parallel()
 	var (
-		queueResourceLabel = "test-queue-callback-site"
-		queueName          = "Terraform Test Queue Callback Site-" + uuid.NewString()
+		queueResourceLabel = "test-queue-callback-edgegroup-site"
+		queueName          = "TF Queue EdgeGroup Site " + uuid.NewString()
 		alertTimeout       = "7"
 		slPercent          = "0.5"
 		slDuration         = "1000"
 		callbackMode       = "CustomerFirst"
+
+		// Edge group prerequisites
+		trunkBaseResourceLabel = "trunk_base_for_eg"
+		trunkBaseName          = "TF Trunk Base " + uuid.NewString()
+		edgeGroupResourceLabel = "edge_group_for_queue"
+		edgeGroupName          = "TF Edge Group " + uuid.NewString()
 	)
 
-	// Get managed site ID - skip test if no site available
+	// Look up any managed site (no hardcoded name — works in all regions)
 	siteID, err := getManagedSiteId()
 	if err != nil {
 		t.Skipf("Skipping test: could not find a managed site: %v", err)
 	}
+
+	// Trunk base settings (required dependency for edge group)
+	trunkBaseConfig := tbs.GenerateTrunkBaseSettingsResourceWithCustomAttrs(
+		trunkBaseResourceLabel,
+		trunkBaseName,
+		"",
+		"phone_connections_webrtc.json",
+		"PHONE",
+		false,
+	)
+
+	// Edge group resource
+	edgeGroupConfig := edgeGroup.GenerateEdgeGroupResourceWithCustomAttrs(
+		edgeGroupResourceLabel,
+		edgeGroupName,
+		"test edge group for routing queue callback",
+		false,
+		false,
+		edgeGroup.GeneratePhoneTrunkBaseIds("genesyscloud_telephony_providers_edges_trunkbasesettings."+trunkBaseResourceLabel+".id"),
+	)
+
+	edgeGroupRef := "genesyscloud_telephony_providers_edges_edge_group." + edgeGroupResourceLabel + ".id"
+	queuePath := "genesyscloud_routing_queue." + queueResourceLabel
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create with site_id
-				Config: GenerateRoutingQueueResourceBasic(
+				// Step 1: Create with edge_group_id
+				Config: trunkBaseConfig + edgeGroupConfig + GenerateRoutingQueueResourceBasic(
+					queueResourceLabel,
+					queueName,
+					GenerateMediaSettingsCallBack(
+						"media_settings_callback",
+						alertTimeout,
+						util.FalseValue,
+						slPercent,
+						slDuration,
+						util.FalseValue,
+						"0",
+						"0",
+						"mode = "+strconv.Quote(callbackMode),
+						"live_voice_reaction_type = "+strconv.Quote("TransferToQueue"),
+						"answering_machine_reaction_type = "+strconv.Quote("HangUp"),
+						"edge_group_id = "+edgeGroupRef,
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(queuePath, "name", queueName),
+					resource.TestCheckResourceAttr(queuePath, "media_settings_callback.0.mode", callbackMode),
+					resource.TestCheckResourceAttrPair(queuePath, "media_settings_callback.0.edge_group_id",
+						"genesyscloud_telephony_providers_edges_edge_group."+edgeGroupResourceLabel, "id"),
+				),
+			},
+			{
+				// Step 2: Update — switch from edge_group_id to site_id
+				Config: trunkBaseConfig + edgeGroupConfig + GenerateRoutingQueueResourceBasic(
 					queueResourceLabel,
 					queueName,
 					GenerateMediaSettingsCallBack(
@@ -1439,14 +1498,15 @@ func TestAccResourceRoutingQueueCallbackSiteId(t *testing.T) {
 					),
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "name", queueName),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.mode", callbackMode),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueResourceLabel, "media_settings_callback.0.site_id", siteID),
+					resource.TestCheckResourceAttr(queuePath, "name", queueName),
+					resource.TestCheckResourceAttr(queuePath, "media_settings_callback.0.mode", callbackMode),
+					resource.TestCheckResourceAttr(queuePath, "media_settings_callback.0.site_id", siteID),
+					resource.TestCheckResourceAttr(queuePath, "media_settings_callback.0.edge_group_id", ""),
 				),
 			},
 			{
-				// Import/Read
-				ResourceName:      "genesyscloud_routing_queue." + queueResourceLabel,
+				// Step 3: Import/Read
+				ResourceName:      queuePath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -1455,19 +1515,20 @@ func TestAccResourceRoutingQueueCallbackSiteId(t *testing.T) {
 	})
 }
 
-// getManagedSiteId returns the ID of a managed site (e.g., "PureCloud Voice - AWS")
+// getManagedSiteId returns the ID of any managed site in the org.
+// Does not hardcode a site name — works across all regions and CI environments.
 func getManagedSiteId() (string, error) {
 	sdkConfig, err := provider.AuthorizeSdk()
 	if err != nil {
 		return "", fmt.Errorf("error authorizing SDK: %v", err)
 	}
 	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(sdkConfig)
-	data, _, err := api.GetTelephonyProvidersEdgesSites(1, 1, "", "", "PureCloud Voice - AWS", "", true, nil)
+	data, _, err := api.GetTelephonyProvidersEdgesSites(1, 1, "", "", "", "", true, nil)
 	if err != nil {
-		return "", fmt.Errorf("error querying sites: %v", err)
+		return "", fmt.Errorf("error querying managed sites: %v", err)
 	}
 	if data.Entities == nil || len(*data.Entities) == 0 {
-		return "", fmt.Errorf("no managed site found")
+		return "", fmt.Errorf("no managed site found in this org")
 	}
 	return *(*data.Entities)[0].Id, nil
 }
