@@ -63,14 +63,17 @@ func validateNoTimeBasedConditionsInLegacyFromResourceData(conditions []interfac
 			return fmt.Errorf("campaign_rule_conditions[%d]: campaign_wait_time_settings is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
 		}
 
-		// Check for_duration in parameters
-		params := condMap["parameters"].(*schema.Set)
-		if params != nil && params.Len() > 0 {
-			paramsMap := params.List()[0].(map[string]interface{})
-			if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
-				return fmt.Errorf("campaign_rule_conditions[%d]: for_duration is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
+		// FROZEN pending DEVTOOLING-1759: for_duration disabled in schema, so this check is moot.
+		/*
+			// Check for_duration in parameters
+			params := condMap["parameters"].(*schema.Set)
+			if params != nil && params.Len() > 0 {
+				paramsMap := params.List()[0].(map[string]interface{})
+				if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+					return fmt.Errorf("campaign_rule_conditions[%d]: for_duration is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
+				}
 			}
-		}
+		*/
 	}
 	return nil
 }
@@ -277,13 +280,17 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 	sdkCampaignRuleParameters.EmailContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "email_content_template_id")
 	sdkCampaignRuleParameters.SmsContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "sms_content_template_id")
 
-	if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
-		durationMap := v[0].(map[string]interface{})
-		seconds := durationMap["seconds"].(int)
-		sdkCampaignRuleParameters.ForDuration = &platformclientv2.Duration{
-			Seconds: &seconds,
+	// FROZEN pending DEVTOOLING-1759 (Go SDK serializes Duration as an object, causing 400).
+	// Re-enable this block when the SDK is fixed.
+	/*
+		if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+			durationMap := v[0].(map[string]interface{})
+			seconds := durationMap["seconds"].(int)
+			sdkCampaignRuleParameters.ForDuration = &platformclientv2.Duration{
+				Seconds: &seconds,
+			}
 		}
-	}
+	*/
 
 	return &sdkCampaignRuleParameters
 }
@@ -531,9 +538,12 @@ func flattenRuleParameters(params *platformclientv2.Campaignruleparameters) []in
 		paramsMap["email_messages_per_minute"] = strconv.Itoa(*params.EmailMessagesPerMinute)
 	}
 
-	if params.ForDuration != nil {
-		paramsMap["for_duration"] = flattenForDuration(params.ForDuration)
-	}
+	// FROZEN pending DEVTOOLING-1759: re-enable together with the for_duration field.
+	/*
+		if params.ForDuration != nil {
+			paramsMap["for_duration"] = flattenForDuration(params.ForDuration)
+		}
+	*/
 
 	return []interface{}{paramsMap}
 }
@@ -746,6 +756,8 @@ func flattenWeekDayOfMonth(sdk *platformclientv2.Campaignruleweekdayofmonth) map
 	return m
 }
 
+// FROZEN pending DEVTOOLING-1759: re-enable together with the for_duration field.
+/*
 func flattenForDuration(sdk *platformclientv2.Duration) []interface{} {
 	if sdk == nil {
 		return nil
@@ -756,6 +768,7 @@ func flattenForDuration(sdk *platformclientv2.Duration) []interface{} {
 	}
 	return []interface{}{m}
 }
+*/
 
 func nilToEmpty(s *string) string {
 	if s == nil {

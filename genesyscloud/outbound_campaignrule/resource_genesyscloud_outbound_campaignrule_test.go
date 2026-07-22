@@ -1469,6 +1469,89 @@ func TestAccResourceOutboundCampaignRuleWeekDayOfMonth(t *testing.T) {
 	})
 }
 
+// FROZEN pending DEVTOOLING-1759 (Go SDK serializes Duration as an object, causing 400).
+// Re-enable this end-to-end for_duration test when the SDK is fixed.
+/*
+// TestAccResourceOutboundCampaignRuleForDuration covers the for_duration parameter working
+// end-to-end ("campaignAgents < 2 for 900s"). A duration-based condition is self-triggering, so it
+// may stand alone without a separate campaign trigger condition.
+func TestAccResourceOutboundCampaignRuleForDuration(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel = "campaign_rule_dur"
+		ruleName      = "TF CR Duration " + uuid.NewString()
+
+		campaign1ResourceLabel = "campaign1"
+		campaign1Name          = "TF Test Campaign " + uuid.NewString()
+		outboundFlowFilePath   = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
+		campaign1FlowName      = "test flow " + uuid.NewString()
+		campaign1Resource      = generateCampaignResourceForCampaignRuleTests(
+			campaign1ResourceLabel,
+			campaign1Name,
+			"off",
+			"contact-list-dur",
+			"test contact list"+uuid.NewString(),
+			"location-dur",
+			"test location "+uuid.NewString(),
+			fmt.Sprintf("+131786%v", 10000+rand.Intn(99999-10000)),
+			"site-dur",
+			"test site "+uuid.NewString(),
+			"wrapupcode-dur",
+			"test wrapup code "+uuid.NewString(),
+			"campaignrule-dur-flow",
+			outboundFlowFilePath,
+			campaign1FlowName,
+			"${data.genesyscloud_auth_division_home.home.name}",
+			"car-dur",
+			"test car"+uuid.NewString(),
+		)
+
+		entityCampaignIds = []string{"genesyscloud_outbound_campaign." + campaign1ResourceLabel + ".id"}
+	)
+
+	// "campaignAgents < 2 for 900 seconds" — duration attaches to a campaign-based condition.
+	durationCondition := generateConditionGroupConditionBlock(
+		"campaignAgents",
+		generateForDurationParameters("lessThan", "2", 900),
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`data "genesyscloud_auth_division_home" "home" {}`) +
+					campaign1Resource +
+					generateOutboundCampaignRule(
+						resourceLabel,
+						ruleName,
+						util.FalseValue,
+						util.FalseValue,
+						generateCampaignRuleEntity(entityCampaignIds, []string{}, []string{}, []string{}),
+						generateCampaignRuleProcessingV2(),
+						generateConditionGroup(false, durationCondition),
+						generateExecutionSettings("onEachTrigger", ""),
+						generateCampaignRuleActions("", "turnOffCampaign", []string{}, []string{}, []string{}, []string{}, util.TrueValue, ""),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "name", ruleName),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "campaign_rule_processing", "v2"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.condition_type", "campaignAgents"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.parameters.0.operator", "lessThan"),
+					resource.TestCheckResourceAttr("genesyscloud_outbound_campaignrule."+resourceLabel, "condition_groups.0.conditions.0.parameters.0.for_duration.0.seconds", "900"),
+				),
+			},
+			{
+				ResourceName:      "genesyscloud_outbound_campaignrule." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyCampaignRuleDestroyed,
+	})
+}
+*/
+
 func TestAccResourceOutboundCampaignRuleLegacyRejectsDateTimeParams(t *testing.T) {
 	t.Parallel()
 	resource.Test(t, resource.TestCase{
@@ -1510,6 +1593,96 @@ resource "genesyscloud_outbound_campaignrule" "test" {
 		},
 	})
 }
+
+// FROZEN pending DEVTOOLING-1759: for_duration is disabled in the schema, so these
+// rejection tests are moot (Terraform now errors with "Unsupported argument" on its own).
+// Re-enable together with the for_duration field.
+/*
+// for_duration is nested inside parameters TypeSet and is not reliably visible
+// to CustomizeDiff, so this is validated before the API call in Create/Update.
+// Therefore this test does NOT use PlanOnly: true.
+func TestAccResourceOutboundCampaignRuleLegacyRejectsForDuration(t *testing.T) {
+	t.Parallel()
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+resource "genesyscloud_outbound_campaignrule" "test" {
+  name = "test-legacy-reject-duration"
+  campaign_rule_entities {
+    campaign_ids = []
+  }
+  campaign_rule_conditions {
+    condition_type = "campaignProgress"
+    parameters {
+      operator = "greaterThan"
+      value    = "50"
+      for_duration {
+        seconds = 30
+      }
+    }
+  }
+  campaign_rule_actions {
+    action_type = "turnOnCampaign"
+    campaign_rule_action_entities {
+      use_triggering_entity = true
+    }
+  }
+}`,
+				ExpectError: regexp.MustCompile(`for_duration.*campaign_rule_processing = "v2"`),
+			},
+		},
+	})
+}
+
+func TestAccResourceOutboundCampaignRuleActionRejectsForDuration(t *testing.T) {
+	t.Parallel()
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: `
+resource "genesyscloud_outbound_campaignrule" "test" {
+  name = "test-action-reject-duration"
+  campaign_rule_entities {
+    campaign_ids = []
+  }
+  campaign_rule_processing = "v2"
+  condition_groups {
+    match_any_conditions = false
+    conditions {
+      condition_type = "campaignProgress"
+      parameters {
+        operator = "greaterThan"
+        value    = "50"
+      }
+    }
+  }
+  execution_settings {
+    frequency = "onEachTrigger"
+  }
+  campaign_rule_actions {
+    action_type = "turnOnCampaign"
+    parameters {
+      for_duration {
+        seconds = 30
+      }
+    }
+    campaign_rule_action_entities {
+      use_triggering_entity = true
+    }
+  }
+}`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`An argument named "for_duration" is not expected here|Unsupported block type|for_duration`),
+			},
+		},
+	})
+}
+*/
 
 func TestAccResourceOutboundCampaignRuleRejectsBetweenWithInSet(t *testing.T) {
 	t.Parallel()
@@ -2231,6 +2404,24 @@ func generateDateTimeParameters(inverted bool, innerBlock string) string {
 		}
 `, inverted, innerBlock)
 }
+
+// FROZEN pending DEVTOOLING-1759: re-enable together with the for_duration test.
+/*
+// generateForDurationParameters builds a parameters block with a for_duration sub-block, used by
+// duration-based conditions (e.g. "campaignAgents < 2 for 900s"). Kept separate from
+// generateCampaignRuleParameters because that helper does not model for_duration.
+func generateForDurationParameters(operator, value string, seconds int) string {
+	return fmt.Sprintf(`
+		parameters {
+			operator = "%s"
+			value    = "%s"
+			for_duration {
+				seconds = %d
+			}
+		}
+`, operator, value, seconds)
+}
+*/
 
 // generateConditionGroup generates a condition_groups block (v2 processing).
 func generateConditionGroup(matchAnyConditions bool, conditionBlocks ...string) string {
