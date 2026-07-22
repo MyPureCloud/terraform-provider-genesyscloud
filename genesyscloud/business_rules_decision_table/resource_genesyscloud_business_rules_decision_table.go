@@ -277,45 +277,55 @@ func publishDecisionTableVersion(ctx context.Context, proxy *BusinessRulesDecisi
 	return nil
 }
 
-// getDecisionTableRows retrieves all rows from a specific decision table version
+// getDecisionTableRows retrieves all rows from a specific decision table version.
+// Page 1 is fetched on the caller's proxy; pages 2–N use provider.FetchPagesConcurrently
+// (sequential when max_concurrent_pages is 1, the default).
 func getDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableVersion *platformclientv2.Decisiontableversion) ([]interface{}, error) {
-	// Extract tableId and version from tableVersion
 	tableId := *tableVersion.Id
 	version := *tableVersion.Version
-
-	var allRows []platformclientv2.Decisiontablerow
 	const pageSize = 100
-	pageNum := 1
+	pageSizeStr := fmt.Sprintf("%d", pageSize)
 
-	for {
-		rowListing, _, err := proxy.getDecisionTableRows(ctx, tableId, version, fmt.Sprintf("%d", pageNum), fmt.Sprintf("%d", pageSize))
-		if err != nil {
-			return nil, fmt.Errorf("failed to get rows for version %d page %d: %s", version, pageNum, err)
-		}
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-		if rowListing == nil || rowListing.Entities == nil || len(*rowListing.Entities) == 0 {
-			break
-		}
-
-		allRows = append(allRows, *rowListing.Entities...)
-
-		// Check if there are more pages
-		if rowListing.PageCount == nil || pageNum >= *rowListing.PageCount {
-			break
-		}
-		pageNum++
+	first, resp, err := proxy.getDecisionTableRows(ctx, tableId, version, "1", pageSizeStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows for version %d page 1: %s", version, err)
+	}
+	if first == nil || first.Entities == nil || len(*first.Entities) == 0 {
+		return []interface{}{}, nil
 	}
 
-	// Get column IDs in order for column order mapping
-	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
+	allRows := append([]platformclientv2.Decisiontablerow{}, *first.Entities...)
 
-	// Convert SDK rows to Terraform format using column order mapping
+	totalPages := 1
+	if first.PageCount != nil {
+		totalPages = *first.PageCount
+	}
+
+	allRows, _, err = provider.FetchPagesConcurrently(ctx, ResourceType, allRows, resp, totalPages, proxy.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newBusinessRulesDecisionTableProxy(clientConfig)
+			pageList, pageResp, pageErr := pageProxy.getDecisionTableRows(ctx, tableId, version, fmt.Sprintf("%d", pageNum), pageSizeStr)
+			if pageErr != nil {
+				return nil, pageResp, fmt.Errorf("failed to get rows for version %d page %d: %w", version, pageNum, pageErr)
+			}
+			if pageList == nil || pageList.Entities == nil || len(*pageList.Entities) == 0 {
+				return []platformclientv2.Decisiontablerow{}, pageResp, nil
+			}
+			return *pageList.Entities, pageResp, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 	terraformRows := make([]interface{}, len(allRows))
 	for i, row := range allRows {
-		// For now, use a simple conversion that includes all columns
 		terraformRows[i] = convertSDKRowToProvider(row, inputColumnIds, outputColumnIds)
 	}
-
 	return terraformRows, nil
 }
 
