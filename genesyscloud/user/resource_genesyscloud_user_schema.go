@@ -8,6 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -209,9 +210,11 @@ func customizeDiffAddressRemoval(ctx context.Context, diff *schema.ResourceDiff,
 
 func ResourceUser() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud User.
+		Description: fmt.Sprintf(`Genesys Cloud User.
 
-Export block label: "{email}"`,
+Export block label: "{email}"
+
+By default, org exports include both active and inactive users. Set the %s environment variable to omit inactive users from export listings.`, featureToggles.SkipInactiveUserExportToggleName()),
 
 		CreateContext: provider.CreateWithPooledClient(createUser),
 		ReadContext:   provider.ReadWithPooledClient(readUser),
