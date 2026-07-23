@@ -2626,21 +2626,15 @@ resource "genesyscloud_integration_credential" "%s" {
 
 // TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences exercises the
 // end-to-end exporter pipeline for a decision table that references routing
-// queues in both columns (column defaults) AND rows (row literal values).
+// queues in column defaults and in row data.
 //
-// It is the regression test for the queue-in-rows resolution bug: the exporter
-// registered a QueueIdResolver for row literal paths under the keys
-// "rows.*.inputs.*.literal.value" and "rows.*.outputs.*.literal.value", but the
-// export framework matches resolver keys by exact string against a dot-only
-// path it constructs while walking the config. Wildcard segments never appear in
-// that runtime path, so the resolver silently never fired and exported decision
-// tables wrote raw queue UUIDs into row cells instead of
-// ${genesyscloud_routing_queue.<label>.id} references — meaning the exported
-// HCL could not be applied to another org without manual fix-up.
+// Column defaults still resolve via QueueIdResolver to
+// ${genesyscloud_routing_queue.<label>.id} references.
 //
-// The four assertions below cover the four queue-bearing locations on the
-// resource. The column assertions guard the previously-working paths; the row
-// assertions are the ones that fail against the pre-fix code.
+// Nested rows are no longer exported: CustomFileWriter writes a Populated CSV
+// under rows/<blockLabel>.csv, sets rows_csv_filepath, and deletes nested rows
+// from the config map. Platform Populated CSV cells use queue friendly names
+// (not UUIDs); the provider strips the rowId column on export.
 func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing.T) {
 	testSetup(t)
 
@@ -2708,9 +2702,7 @@ func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing
 					},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					// Column defaults — these worked before the fix because their
-					// resolver paths had no wildcards. Asserting them ensures the
-					// fix didn't regress the existing behavior.
+					// Column defaults — QueueIdResolver still rewrites UUIDs to refs.
 					assertDecisionTableQueueReference(
 						configPath, tableName,
 						[]string{"columns", "0", "inputs", "0", "defaults_to", "0", "value"},
@@ -2721,18 +2713,8 @@ func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing
 						[]string{"columns", "0", "outputs", "0", "defaults_to", "0", "value"},
 						expectedQueueBRef,
 					),
-					// Row literals — these are the regression assertions. Against
-					// the pre-fix exporter they hold raw UUIDs.
-					assertDecisionTableQueueReference(
-						configPath, tableName,
-						[]string{"rows", "0", "inputs", "0", "literal", "0", "value"},
-						expectedQueueARef,
-					),
-					assertDecisionTableQueueReference(
-						configPath, tableName,
-						[]string{"rows", "0", "outputs", "0", "literal", "0", "value"},
-						expectedQueueBRef,
-					),
+					// Row data is CSV-backed after export (not nested rows).
+					assertDecisionTableCSVExport(configPath, exportTestDir, tableName, queueAName, queueBName),
 				),
 			},
 		},
@@ -2869,6 +2851,67 @@ resource "genesyscloud_business_rules_decision_table" "test_table" {
   }
 }
 `, schemaName, queueAName, queueBName, tableName)
+}
+
+// assertDecisionTableCSVExport asserts the exported decision table uses
+// rows_csv_filepath (under rows/), has no nested rows, and the CSV on disk has
+// no rowId header and contains queue friendly names (not raw UUIDs).
+func assertDecisionTableCSVExport(configPath, exportTestDir, tableName, queueAName, queueBName string) resource.TestCheckFunc {
+	uuidPattern := regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`)
+	return func(_ *terraform.State) error {
+		exportData, err := util.LoadJsonFileToMap(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to load export file %s: %v", configPath, err)
+		}
+		resources, ok := exportData["resource"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf(`exported config missing top-level "resource" map`)
+		}
+		tables, ok := resources["genesyscloud_business_rules_decision_table"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("no genesyscloud_business_rules_decision_table resources exported")
+		}
+		table, ok := tables[tableName].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("decision table %q was not exported (found tables: %v)", tableName, keysOf(tables))
+		}
+
+		csvRel, ok := table["rows_csv_filepath"].(string)
+		if !ok || csvRel == "" {
+			return fmt.Errorf("exported table %q missing rows_csv_filepath", tableName)
+		}
+		if !strings.HasPrefix(filepath.ToSlash(csvRel), "rows/") {
+			return fmt.Errorf("rows_csv_filepath %q is not under rows/", csvRel)
+		}
+		if rowsRaw, exists := table["rows"]; exists {
+			if rows, isSlice := rowsRaw.([]interface{}); isSlice && len(rows) > 0 {
+				return fmt.Errorf("exported table %q still has nested rows (%d); expected CSV-only export", tableName, len(rows))
+			}
+		}
+
+		csvFullPath := filepath.Join(exportTestDir, csvRel)
+		raw, err := os.ReadFile(csvFullPath)
+		if err != nil {
+			return fmt.Errorf("exported CSV not found at %s: %v", csvFullPath, err)
+		}
+		content := string(raw)
+		headerLine := strings.SplitN(content, "\n", 2)[0]
+		for _, col := range strings.Split(headerLine, ",") {
+			if strings.TrimSpace(col) == "rowId" {
+				return fmt.Errorf("exported CSV header must not include rowId; got %q", headerLine)
+			}
+		}
+		if !strings.Contains(content, queueAName) {
+			return fmt.Errorf("exported CSV does not contain queue A name %q", queueAName)
+		}
+		if !strings.Contains(content, queueBName) {
+			return fmt.Errorf("exported CSV does not contain queue B name %q", queueBName)
+		}
+		if uuidPattern.MatchString(content) {
+			return fmt.Errorf("exported CSV still contains a raw UUID; expected queue friendly names only")
+		}
+		return nil
+	}
 }
 
 // assertDecisionTableQueueReference walks the exported JSON config and asserts

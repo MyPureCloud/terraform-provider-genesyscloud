@@ -2,13 +2,13 @@
 page_title: "genesyscloud_business_rules_decision_table Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
+  Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation. Prefer rows_csv_filepath for row data; nested rows is deprecated.
 ---
 # genesyscloud_business_rules_decision_table (Resource)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
-Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.
+Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation. Prefer rows_csv_filepath for row data; nested rows is deprecated.
 
 ## API Usage
 
@@ -19,6 +19,11 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId-)
 * [GET /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId-)
 * [PATCH /api/v2/businessrules/decisiontables/{tableId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-businessrules-decisiontables--tableId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/exports](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--exports)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/exports/{exportJobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--exports--exportJobId-)
+* [POST /api/v2/businessrules/decisiontables/{tableId}/imports](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--imports)
+* [GET /api/v2/businessrules/decisiontables/{tableId}/imports/{importJobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--imports--importJobId-)
+* [PATCH /api/v2/businessrules/decisiontables/{tableId}/imports/{importJobId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-businessrules-decisiontables--tableId--imports--importJobId-)
 * [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions)
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
@@ -39,6 +44,11 @@ The following permissions are required to use this resource:
 * `businessrules:decisionTable:publish`
 * `businessrules:decisionTable:search`
 * `businessrules:decisionTable:view`
+* `businessrules:decisionTableExportJob:add`
+* `businessrules:decisionTableExportJob:view`
+* `businessrules:decisionTableImportJob:add`
+* `businessrules:decisionTableImportJob:edit`
+* `businessrules:decisionTableImportJob:view`
 * `businessrules:decisionTableRow:add`
 * `businessrules:decisionTableRow:delete`
 * `businessrules:decisionTableRow:edit`
@@ -50,6 +60,23 @@ The following OAuth scopes are required to use this resource:
 * `business-rules`
 * `business-rules:readonly`
 
+## Migrating from nested `rows` to `rows_csv_filepath`
+
+### Deprecation notice
+
+The nested `rows` block is deprecated and will be removed in a later version. Prefer `rows_csv_filepath` (with computed `rows_csv_content_hash` and `rows_record_count`). Existing configs that still use `rows` continue to work until removal.
+
+### Migration steps
+
+1. Obtain a CSV of table rows (recommended: run `genesyscloud_tf_export` against the existing table — writes a Populated CSV under `rows/` with `rowId` stripped and sets `rows_csv_filepath` in the exported config), or author a CSV yourself.
+2. CSV rules: headers must match the platform export shape (`schema_property_key::Comparator` for inputs, bare `schema_property_key` for outputs); do **not** include a `rowId` column in the on-disk file — the import API (Replace mode) requires a `rowId` header with empty cell values, and the provider reinjects that column on upload (and strips it on export); `stringList` cells use `||` as the item delimiter; queue and other platform object cells use friendly names.
+3. In the decision table resource, remove the nested `rows` blocks and set:
+
+   ```hcl
+   rows_csv_filepath = "${path.module}/rows/example.csv"
+   ```
+
+4. Run `terraform plan` / `terraform apply`. The resource ID is unchanged. Both the first apply after switching and later CSV edits (detected via content hash) run a Replace CSV import, then publish a new version.
 
 ## Example Usage
 
@@ -254,103 +281,9 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
     }
   }
 
-  rows {
-    inputs {
-      literal {
-        value = "John Doe"
-        type  = "string"
-      }
-    }
-    inputs {
-      literal {
-        value = "option_1"
-        type  = "string"
-      }
-    }
-    inputs {
-      literal {
-        value = "85"
-        type  = "integer"
-      }
-    }
-    inputs {
-      literal {
-        value = "15000.0"
-        type  = "number"
-      }
-    }
-    inputs {
-      literal {
-        value = "true"
-        type  = "boolean"
-      }
-    }
-    inputs {
-      literal {
-        value = "2023-01-01"
-        type  = "date"
-      }
-    }
-    inputs {
-      literal {
-        value = "2023-12-31"
-        type  = "date"
-      }
-    }
-    inputs {
-      literal {
-        value = "2023-12-01T10:30:00.000Z"
-        type  = "datetime"
-      }
-    }
-
-    inputs {
-      literal {} // Empty literal block with no value or type specified to use column default and must be provided
-    }
-
-    inputs {
-      literal { // Literal block with empty value and type to use column default and must be provided
-        value = ""
-        type  = ""
-      }
-    }
-    inputs {
-      literal {
-        value = genesyscloud_routing_queue.example_queue.id
-        type  = "string"
-      }
-    }
-    inputs {
-      literal {
-        value = "vip,premium"
-        type  = "stringList"
-      }
-    }
-    outputs {
-      literal {
-        value = genesyscloud_routing_queue.example_queue2.id
-        type  = "string"
-      }
-    }
-    outputs {
-      literal {
-        value = "Premium Support"
-        type  = "string"
-      }
-    }
-    outputs {
-      literal {
-        value = "option_2"
-        type  = "string"
-      }
-    }
-    outputs {
-      literal {
-        value = "premium_support,escalation,technical_expert" # Comma-separated string for stringList
-        type  = "stringList"
-      }
-    }
-  }
+  # Nested rows { } is deprecated. Do not include a rowId column; stringList uses ||;
+  # queue cells use friendly names (see rows/resource_example.csv).
+  rows_csv_filepath = "${path.module}/rows/resource_example.csv"
 }
 ```
 
@@ -364,19 +297,22 @@ resource "genesyscloud_business_rules_decision_table" "example_decision_table" {
 Note: The order of input and output columns defines the positional mapping for row values. Row inputs/outputs must be provided in the same order as their corresponding columns. (see [below for nested schema](#nestedblock--columns))
 - `division_id` (String) The ID of the division the decision table belongs to.
 - `name` (String) The decision table name.
-- `rows` (Block List, Min: 1) Decision table rows containing input conditions and output results. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.
-
-IMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns. The first input/output corresponds to the first column, second to second column, etc. (see [below for nested schema](#nestedblock--rows))
 - `schema_id` (String) The ID of the rules schema used by the decision table.
 
 ### Optional
 
 - `description` (String) The decision table description.
+- `rows` (Block List, Deprecated) *DEPRECATED: Use rows_csv_filepath instead. Nested rows will be removed in a later version.* Deprecated. Use rows_csv_filepath instead. Decision table rows containing input conditions and output results. Mutually exclusive with rows_csv_filepath. When used, provide at least one row block.
+
+IMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns. (see [below for nested schema](#nestedblock--rows))
+- `rows_csv_filepath` (String) Path to a CSV of decision table rows. Create and later CSV edits (path or content hash change) each run a decision table CSV import job in Replace mode, then publish the resulting draft version. Mutually exclusive with rows. CSV must have at least one data row. Headers must match the platform export shape (inputs as schema_property_key::Comparator, outputs as schema_property_key). Do not include a rowId column in the on-disk file: Replace import requires a rowId header with empty cell values, which the provider reinjects on upload and strips on export. stringList cells use '||' as the item delimiter (not commas). Queue and other platform object cells use friendly names resolved by the platform on import/export.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `rows_csv_content_hash` (String) Hash of the rows CSV. Stored in state to detect file content changes.
+- `rows_record_count` (Number) Number of data rows in the CSV at last successful import. Not refreshed from the API on read.
 - `version` (Number) Current version number of this published decision table.
 
 <a id="nestedblock--columns"></a>
