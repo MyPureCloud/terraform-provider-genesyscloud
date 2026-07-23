@@ -24,6 +24,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *journeyActionMapProxy
 
+var actionMapCache = rc.NewResourceCache[platformclientv2.Actionmap]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createJourneyActionMapFunc func(ctx context.Context, p *journeyActionMapProxy, actionMap *platformclientv2.Actionmap) (*platformclientv2.Actionmap, *platformclientv2.APIResponse, error)
 type getAllJourneyActionMapsFunc func(ctx context.Context, p *journeyActionMapProxy) (*[]platformclientv2.Actionmap, *platformclientv2.APIResponse, error)
@@ -59,7 +61,6 @@ seamlessly with the Genesys Cloud platform.
 */
 func newJourneyActionMapProxy(clientConfig *platformclientv2.Configuration) *journeyActionMapProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	actionMapCache := rc.NewResourceCache[platformclientv2.Actionmap]()
 
 	return &journeyActionMapProxy{
 		clientConfig:                    clientConfig,

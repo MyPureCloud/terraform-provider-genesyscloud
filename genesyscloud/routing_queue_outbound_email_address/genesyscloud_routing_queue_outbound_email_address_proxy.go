@@ -77,12 +77,8 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 		}
 	}
 
-	queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil)
-	if err != nil {
-		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
-	}
-
-	if queue.OutboundEmailAddress != nil {
+	// For some reason outbound email address is a double pointer
+	if queue != nil && queue.OutboundEmailAddress != nil {
 		return queue.OutboundEmailAddress, resp, nil
 	}
 

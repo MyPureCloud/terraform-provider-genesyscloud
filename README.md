@@ -117,6 +117,22 @@ _Note_: `CONSISTENCY_CHECKS` can only be used when `BYPASS_CONSISTENCY_CHECKER` 
 
 _Note_: Settings `CONSISTENCY_CHECKS=0` will completely disable the consistency checker and stop it from running.
 
+### Per-resource list page size
+
+Some resources use a page size of 500 when listing entities during export. You can override this per resource type by setting an environment variable:
+
+```
+GENESYSCLOUD_PAGE_SIZE_<resource_type>=<page_size>
+```
+
+For example, to use a page size of 100 when exporting wrapup codes:
+
+```
+GENESYSCLOUD_PAGE_SIZE_genesyscloud_routing_wrapupcode=100
+```
+
+Supported resources include `genesyscloud_architect_flow`, `genesyscloud_group`, `genesyscloud_routing_queue`, `genesyscloud_routing_skill`, `genesyscloud_routing_wrapupcode`, `genesyscloud_script`, and `genesyscloud_user`. If the variable is unset or invalid, the provider default (500) is used.
+
 ### Data Sources
 
 There may be cases where you want to reference existing resources in a Terraform configuration file but do not want those resources to be managed by Terraform. This provider supports several data source types that can act as a read-only resource for existing objects in your org. To include one in your configuration, add a `data` block to your configuration file with one of the supported data source types:

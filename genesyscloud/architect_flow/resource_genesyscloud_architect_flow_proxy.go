@@ -11,6 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
@@ -333,7 +334,7 @@ func buildFlowListQueryParams(name string, varType []string, pageSize, pageNum i
 func getAllArchitectFlowsFn(ctx context.Context, p *architectFlowProxy, name string, varType []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 	var allFlows []platformclientv2.Flow
 
 	flows, apiResp, err := customapi.Do[platformclientv2.Flowentitylisting](

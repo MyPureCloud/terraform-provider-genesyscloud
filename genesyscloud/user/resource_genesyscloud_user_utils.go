@@ -13,6 +13,7 @@ import (
 	"time"
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
@@ -296,6 +297,7 @@ func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.
 		return diagErr
 	}
 
+	invalidateUserVoicemailPolicyCache(d.Id())
 	return nil
 }
 
@@ -344,6 +346,7 @@ func updateUserRoutingUtilization(ctx context.Context, d *schema.ResourceData, p
 			}
 
 			log.Printf("Updated user utilization for user %s", d.Id())
+			invalidateUserRoutingUtilizationCache(d.Id())
 		}
 	}
 	return nil
@@ -545,10 +548,7 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
 	log.Printf("Getting user utilization")
 
-	c := customapi.NewClient(proxy.routingApi.Configuration, ResourceType)
-	path := fmt.Sprintf("/api/v2/routing/users/%s/utilization", d.Id())
-	rawBody, response, err := customapi.DoRaw(context.Background(), c, customapi.MethodGet, path, nil, nil)
-
+	rawBody, response, err := getUserRoutingUtilizationRaw(context.Background(), d.Id(), proxy)
 	if err != nil {
 		if util.IsStatus404(response) {
 			d.SetId("") // User doesn't exist
@@ -557,8 +557,30 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
 	}
 
+	return setRoutingUtilizationState(d, rawBody)
+}
+
+func getUserRoutingUtilizationRaw(ctx context.Context, userID string, proxy *userProxy) ([]byte, *platformclientv2.APIResponse, error) {
+	if cached := rc.GetCacheItem(userRoutingUtilizationCache, userID); cached != nil {
+		log.Printf("[USER-CACHE] User %s: routing utilization cache hit", userID)
+		return *cached, nil, nil
+	}
+
+	c := customapi.NewClient(proxy.routingApi.Configuration, ResourceType)
+	path := fmt.Sprintf("/api/v2/routing/users/%s/utilization", userID)
+	rawBody, response, err := customapi.DoRaw(ctx, c, customapi.MethodGet, path, nil, nil)
+	if err != nil {
+		return nil, response, err
+	}
+
+	rc.SetCache(userRoutingUtilizationCache, userID, rawBody)
+	log.Printf("[USER-CACHE] User %s: cached routing utilization", userID)
+	return rawBody, response, nil
+}
+
+func setRoutingUtilizationState(d *schema.ResourceData, rawBody []byte) diag.Diagnostics {
 	agentUtilization := &agentUtilizationWithLabels{}
-	err = json.Unmarshal(rawBody, &agentUtilization)
+	err := json.Unmarshal(rawBody, &agentUtilization)
 	if err != nil {
 		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
 	}
