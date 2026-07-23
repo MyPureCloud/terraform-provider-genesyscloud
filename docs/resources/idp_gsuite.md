@@ -43,6 +43,7 @@ resource "genesyscloud_idp_gsuite" "gsuite" {
   target_uri               = "https://example.com/login"
   relying_party_identifier = "unique-id-from-gsuite"
   sign_authn_requests      = false
+  force_authn              = true
 }
 ```
 
@@ -60,6 +61,7 @@ resource "genesyscloud_idp_gsuite" "gsuite" {
 - `name` (String) Name of the provider.
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to GSuite.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
 - `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by GSuite.

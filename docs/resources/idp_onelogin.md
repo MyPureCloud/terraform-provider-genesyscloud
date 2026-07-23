@@ -42,6 +42,7 @@ resource "genesyscloud_idp_onelogin" "onelogin" {
   issuer_uri          = "https://example.com"
   target_uri          = "https://example.com/login"
   sign_authn_requests = false
+  force_authn         = true
 }
 ```
 
@@ -59,6 +60,7 @@ resource "genesyscloud_idp_onelogin" "onelogin" {
 - `name` (String) IDP OneLogin resource name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to OneLogin.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
 - `slo_uri` (String) Provided by OneLogin on app creation
 - `target_uri` (String) Target URI provided by OneLogin.

@@ -42,6 +42,7 @@ resource "genesyscloud_idp_salesforce" "salesforce" {
   issuer_uri          = "https://example.com"
   target_uri          = "https://example.com/login"
   sign_authn_requests = false
+  force_authn         = true
 }
 ```
 
@@ -59,6 +60,7 @@ resource "genesyscloud_idp_salesforce" "salesforce" {
 - `name` (String) Name of the provider
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to Ping.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `slo_binding` (String)
 - `slo_uri` (String) Provided on app creation.
 - `target_uri` (String) Target URI provided by Salesforce.

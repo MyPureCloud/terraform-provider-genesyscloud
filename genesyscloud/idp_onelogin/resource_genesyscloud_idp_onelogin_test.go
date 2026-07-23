@@ -42,6 +42,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -52,6 +53,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -66,6 +68,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.TrueValue,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -77,6 +80,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "force_authn", util.FalseValue),
 				),
 			},
 			{
@@ -91,6 +95,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -103,6 +108,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -117,6 +123,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -129,6 +136,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -143,6 +151,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "name", name1),
@@ -156,6 +165,7 @@ func TestAccResourceIdpOnelogin(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_onelogin.onelogin", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -178,7 +188,8 @@ func generateIdpOneloginResource(
 	partyID string,
 	sloURI string,
 	sloBinding string,
-	signAuthnRequests string) string {
+	signAuthnRequests string,
+	forceAuthn string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_onelogin" "onelogin" {
 		name = "%s"
 		certificates = %s
@@ -189,8 +200,9 @@ func generateIdpOneloginResource(
 		slo_uri = "%s"
 		slo_binding = "%s"
 		sign_authn_requests = %s
+		force_authn = %s
 	}
-	`, name, certs, issuerURI, targetURI, disabled, partyID, sloURI, sloBinding, signAuthnRequests)
+	`, name, certs, issuerURI, targetURI, disabled, partyID, sloURI, sloBinding, signAuthnRequests, forceAuthn)
 }
 
 func testVerifyIdpOneloginDestroyed(state *terraform.State) error {
