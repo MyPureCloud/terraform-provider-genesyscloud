@@ -28,7 +28,7 @@ func runDataJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             generateDataJourneyActionMapTestSteps(testCaseName, testObjectFullName),
+		Steps: generateDataJourneyActionMapTestSteps(testCaseName, testObjectFullName),
 	})
 }
 

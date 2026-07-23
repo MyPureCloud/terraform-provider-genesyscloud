@@ -54,7 +54,7 @@ resource "genesyscloud_routing_email_route" "example_route" {
     enabled            = false
     canned_response_id = genesyscloud_responsemanagement_response.example_signature_response.id
     always_included    = false
-    inclusion_type     = "Send"
+    inclusion_type     = "FirstResponseOnly"
   }
 }
 
