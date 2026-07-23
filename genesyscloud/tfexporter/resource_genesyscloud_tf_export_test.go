@@ -979,7 +979,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user"),
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
-			strconv.Quote("genesyscloud_journey_outcome"),
 		},
 		strconv.Quote("json"),
 		util.FalseValue,

@@ -68,7 +68,6 @@ import (
 	intentsCustomerintents "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeyOutcomePredictor "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
@@ -359,7 +358,6 @@ func registerResources() {
 	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	journeyActionTemplate.SetRegistrar(regInstance)                        //Registering journey action template
-	journeyOutcome.SetRegistrar(regInstance)                               //Registering journey outcome
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
