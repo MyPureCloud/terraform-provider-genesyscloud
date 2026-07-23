@@ -57,10 +57,10 @@ resource "genesyscloud_idp_okta" "okta" {
 ### Optional
 
 - `disabled` (Boolean) True if Okta is disabled.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `name` (String) IDP Okta name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to Okta.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
-- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `slo_binding` (String) Valid values: HTTP Redirect, HTTP Post
 - `slo_uri` (String) Provided by Okta on app creation.
 - `target_uri` (String) Target URI provided by Okta.
