@@ -11,10 +11,6 @@ import (
 // added duplicates a row that already exists on the table version.
 const decisionTableDuplicateRowCode = "decision.table.duplicate.row"
 
-// rulePersistenceConflictCode is returned for version-lock/concurrency conflicts
-// where nothing was written. It must not be treated as a ghost-chunk success.
-const rulePersistenceConflictCode = "RULE_PERSISTENCE_CONFLICT"
-
 func expectedChunkIndexRange(baseRowCount, chunkStart, chunkSize int) (first, last int) {
 	return baseRowCount + chunkStart + 1, baseRowCount + chunkStart + chunkSize
 }
