@@ -21,6 +21,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *supportedContentProxy
 
+var supportedContentCache = rc.NewResourceCache[platformclientv2.Supportedcontent]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createSupportedContentFunc func(ctx context.Context, p *supportedContentProxy, supportedContent *platformclientv2.Supportedcontent) (*platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error)
 type getAllSupportedContentFunc func(ctx context.Context, p *supportedContentProxy) (*[]platformclientv2.Supportedcontent, *platformclientv2.APIResponse, error)
@@ -45,7 +47,7 @@ type supportedContentProxy struct {
 // newSupportedContentProxy initializes the supported content proxy with all of the data needed to communicate with Genesys Cloud
 func newSupportedContentProxy(clientConfig *platformclientv2.Configuration) *supportedContentProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	supportedContentCache := rc.NewResourceCache[platformclientv2.Supportedcontent]()
+
 	return &supportedContentProxy{
 		clientConfig:                    clientConfig,
 		conversationsApi:                api,

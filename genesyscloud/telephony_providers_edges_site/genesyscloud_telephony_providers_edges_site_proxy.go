@@ -35,6 +35,11 @@ Each proxy implementation:
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *SiteProxy
 
+var (
+	unmanagedSiteCache = rc.NewResourceCache[platformclientv2.Site]()
+	managedSiteCache   = rc.NewResourceCache[platformclientv2.Site]()
+)
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllSitesFunc func(ctx context.Context, p *SiteProxy, managed bool) (*[]platformclientv2.Site, *platformclientv2.APIResponse, error)
 type createSiteFunc func(ctx context.Context, p *SiteProxy, site *platformclientv2.Site) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
@@ -94,9 +99,6 @@ func newSiteProxy(clientConfig *platformclientv2.Configuration) *SiteProxy {
 	locationsApi := platformclientv2.NewLocationsApiWithConfig(clientConfig)
 	telephonyApi := platformclientv2.NewTelephonyApiWithConfig(clientConfig)
 	organizationApi := platformclientv2.NewOrganizationApiWithConfig(clientConfig)
-
-	unmanagedSiteCache := rc.NewResourceCache[platformclientv2.Site]()
-	managedSiteCache := rc.NewResourceCache[platformclientv2.Site]()
 
 	return &SiteProxy{
 		clientConfig:    clientConfig,
@@ -255,7 +257,13 @@ func getAllSitesFn(ctx context.Context, p *SiteProxy, managed bool) (*[]platform
 		return rc.GetCache(siteCache), nil, nil
 	} else if rc.GetCacheSize(siteCache) != *sites.Total && rc.GetCacheSize(siteCache) != 0 {
 		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		siteCache = rc.NewResourceCache[platformclientv2.Site]()
+		if managed {
+			managedSiteCache = rc.NewResourceCache[platformclientv2.Site]()
+			siteCache = managedSiteCache
+		} else {
+			unmanagedSiteCache = rc.NewResourceCache[platformclientv2.Site]()
+			siteCache = unmanagedSiteCache
+		}
 	}
 
 	for pageNum := 2; pageNum <= *sites.PageCount; pageNum++ {
