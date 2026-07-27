@@ -182,7 +182,7 @@ var (
 			},
 			`max_length`: {
 				Description: `The maximum length of the text column selected for dynamic queueing.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeInt,
 			},
 		},
