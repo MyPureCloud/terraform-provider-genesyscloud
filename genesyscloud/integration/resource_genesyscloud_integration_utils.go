@@ -196,7 +196,7 @@ func GenerateIntegrationConfig(name string, notes string, cred string, props str
 }
 
 func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p *IntegrationsProxy, sev diag.Severity) diag.Diagnostics {
-	// NEW: Fetch current dependencies from Axon custom API
+	// NEW for Axon: Fetch current dependencies from Axon custom API
 	// If sev is Warning, then add a diagnostic Warning entry with the requiredByCount
 	// else if sev is Error, then add a diagnostic Error entry with the requiredByCount
 	// else add a diagnostic Info entry with the requiredByCount

@@ -140,10 +140,10 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// intendedState := d.Get("intended_state").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+
 	// TODO - This needs to point to Custom Axon API Proxy
 	ap := getIntegrationsProxy(sdkConfig)
-
-	// NEW: Call axon to check for any dependencies before update and generate a warning if there are any
+	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Warning)
 	if diagMsg.HasError() {
 		return diagMsg
@@ -178,10 +178,10 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 // deleteIntegration is used by the integration resource to delete an integration from Genesys cloud.
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+
 	// TODO - This needs to point to Custom Axon API Proxy
 	ap := getIntegrationsProxy(sdkConfig)
-
-	// NEW: Call axon to check for any dependencies before delete and generate an error if there are any
+	// NEW for Axon: Call axon to check for any dependencies before delete and generate an error if there are any
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Error)
 	if diagMsg.HasError() {
 		return diagMsg
