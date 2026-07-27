@@ -138,10 +138,25 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 
 // updateIntegration is used by the integration resource to update an integration in Genesys Cloud
 func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	intendedState := d.Get("intended_state").(string)
+	// intendedState := d.Get("intended_state").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
 
+	// TODO - This needs to point to Custom Axon API Proxy
+	ap := getIntegrationsProxy(sdkConfig)
+	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
+	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Warning)
+	if diagMsg.HasError() {
+		return diagMsg
+	} else {
+		// If there are warnings, we need to log them to the console
+		for _, diag := range diagMsg {
+			log.Printf("Warning: %s", diag.Summary)
+		}
+		// Continue with the operation
+	}
+
+	intendedState := d.Get("intended_state").(string)
+	ip := getIntegrationsProxy(sdkConfig)
 	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
 	if diagErr != nil {
 		return diagErr
@@ -163,8 +178,22 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 // deleteIntegration is used by the integration resource to delete an integration from Genesys cloud.
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
 
+	// TODO - This needs to point to Custom Axon API Proxy
+	ap := getIntegrationsProxy(sdkConfig)
+	// NEW for Axon: Call axon to check for any dependencies before delete and generate an error if there are any
+	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Error)
+	if diagMsg.HasError() {
+		return diagMsg
+	} else {
+		// If there are warnings, we need to log them to the console
+		for _, diag := range diagMsg {
+			log.Printf("Warning: %s", diag.Summary)
+		}
+		// Continue with the operation
+	}
+
+	ip := getIntegrationsProxy(sdkConfig)
 	resp, err := ip.deleteIntegration(ctx, d.Id())
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete Integration %s error: %s", d.Id(), err), resp)

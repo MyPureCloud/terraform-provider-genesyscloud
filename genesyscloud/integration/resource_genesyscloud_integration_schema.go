@@ -7,6 +7,9 @@ package integration
 // @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -85,6 +88,7 @@ func ResourceIntegration() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: customizeDiffCheckDependencies,
 		Schema: map[string]*schema.Schema{
 			"intended_state": {
 				Description:  "Integration state (ENABLED | DISABLED).",
@@ -170,4 +174,36 @@ func DataSourceIntegrationWebhook() *schema.Resource {
 			},
 		},
 	}
+}
+
+// NEW for Axon: customizeDiffCheckDependencies is a CustomizeDiff function that checks whether the integration
+// has downstream dependencies (e.g. Data Actions) before allowing an update or delete plan.
+func customizeDiffCheckDependencies(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// Skip on create — no remote resource exists yet
+	if diff.Id() == "" {
+		return nil
+	}
+
+	// Only fire when something meaningful changed
+	if !diff.HasChanges("config", "intended_state") {
+		return nil
+	}
+
+	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
+	ip := getIntegrationsProxy(sdkConfig)
+	_ = ip // placeholder until proxy method is implemented
+
+	// TODO: Call the proxy to check dependencies
+	// requiredByCount, _, err := ip.GetIntegrationDependencyCount(ctx, diff.Id())
+	// if err != nil {
+	// 	return fmt.Errorf("failed to check dependencies for integration %s: %s", diff.Id(), err)
+	// }
+	// if requiredByCount > 0 {
+	// 	return fmt.Errorf("integration %s is currently used by %d Data Actions — update may break them", diff.Id(), requiredByCount)
+	// }
+
+	_ = ctx
+	_ = fmt.Sprintf // suppress unused import until TODO is implemented
+
+	return nil
 }
