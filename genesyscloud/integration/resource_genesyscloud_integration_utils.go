@@ -201,20 +201,20 @@ func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p
 	// If sev is Warning, then add a diagnostic Warning entry with the requiredByCount
 	// else if sev is Error, then add a diagnostic Error entry with the requiredByCount
 	// else add a diagnostic Info entry with the requiredByCount
-	// requiredByCount, err := p.GetIntegrationDependencyCount(ctx, d.Id())
-	// if err != nil {
-	// 	return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration dependency count for integration %s", d.Id()), err)
-	// }
-	// if requiredByCount > 0 {
-	// 	msg := fmt.Sprintf("Integration %s is currently being used by %d other Data Actions.", d.Id(), requiredByCount)
-	// 	switch sev {
-	// 	case diag.Warning:
-	// 		return diag.Diagnostics{util.BuildDiagnosticWarning(ResourceType, msg)}
-	// 	case diag.Error:
-	// 		return diag.Diagnostics{util.BuildDiagnosticError(ResourceType, msg, nil)}
-	// 	default:
-	// 		return diag.Diagnostics{util.BuildDiagnosticInfo(ResourceType, msg)}
-	// 	}
-	// }
+	requiredByCount, err := p.GetRequiredByCount(ctx, "Integration", d.Id())
+	if err != nil {
+		// 	return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration dependency count for integration %s", d.Id()), err)
+	}
+	if requiredByCount > 0 {
+		// 	msg := fmt.Sprintf("Integration %s is currently being used by %d other Data Actions.", d.Id(), requiredByCount)
+		// 	switch sev {
+		// 	case diag.Warning:
+		// 		return diag.Diagnostics{util.BuildDiagnosticWarning(ResourceType, msg)}
+		// 	case diag.Error:
+		// 		return diag.Diagnostics{util.BuildDiagnosticError(ResourceType, msg, nil)}
+		// 	default:
+		// 		return diag.Diagnostics{util.BuildDiagnosticInfo(ResourceType, msg)}
+		// 	}
+	}
 	return nil
 }

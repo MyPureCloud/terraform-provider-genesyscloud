@@ -144,7 +144,6 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
 	ap := axon.NewAxonProxy(sdkConfig)
-	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Warning)
 	if diagMsg.HasError() {
 		return diagMsg
@@ -182,7 +181,6 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	// NEW for Axon: Call axon to check for any dependencies before delete and generate an error if there are any
 	ap := axon.NewAxonProxy(sdkConfig)
-	// NEW for Axon: Call axon to check for any dependencies before delete and generate an error if there are any
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Error)
 	if diagMsg.HasError() {
 		return diagMsg
