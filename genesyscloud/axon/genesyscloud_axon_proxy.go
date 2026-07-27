@@ -14,25 +14,25 @@ type DependencyCount struct {
 	EstimatedCount int `json:"estimatedCount"`
 }
 
-type getRequiredByCountFunc func(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error)
+type getRequiredByCountFunc func(ctx context.Context, p *AxonProxy, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error)
 
-type axonProxy struct {
+type AxonProxy struct {
 	clientConfig           *platformclientv2.Configuration
 	getRequiredByCountAttr getRequiredByCountFunc
 }
 
-func newAxonProxy(clientConfig *platformclientv2.Configuration) *axonProxy {
-	return &axonProxy{
+func NewAxonProxy(clientConfig *platformclientv2.Configuration) *AxonProxy {
+	return &AxonProxy{
 		clientConfig:           clientConfig,
 		getRequiredByCountAttr: getRequiredByCountFn,
 	}
 }
 
-func (p *axonProxy) getRequiredByCount(ctx context.Context, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error) {
+func (p *AxonProxy) GetRequiredByCount(ctx context.Context, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error) {
 	return p.getRequiredByCountAttr(ctx, p, resourceType, entityType, entityID)
 }
 
-func getRequiredByCountFn(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error) {
+func getRequiredByCountFn(ctx context.Context, p *AxonProxy, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error) {
 	c := customapi.NewClient(p.clientConfig, resourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requiredbycounts"
 

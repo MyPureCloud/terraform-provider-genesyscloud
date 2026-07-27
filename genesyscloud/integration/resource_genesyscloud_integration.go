@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/axon"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -141,8 +142,8 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	// intendedState := d.Get("intended_state").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
-	// TODO - This needs to point to Custom Axon API Proxy
-	ap := getIntegrationsProxy(sdkConfig)
+	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
+	ap := axon.NewAxonProxy(sdkConfig)
 	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Warning)
 	if diagMsg.HasError() {
@@ -179,8 +180,8 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 
-	// TODO - This needs to point to Custom Axon API Proxy
-	ap := getIntegrationsProxy(sdkConfig)
+	// NEW for Axon: Call axon to check for any dependencies before delete and generate an error if there are any
+	ap := axon.NewAxonProxy(sdkConfig)
 	// NEW for Axon: Call axon to check for any dependencies before delete and generate an error if there are any
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Error)
 	if diagMsg.HasError() {

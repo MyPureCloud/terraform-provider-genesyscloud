@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/axon"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -195,7 +196,7 @@ func GenerateIntegrationConfig(name string, notes string, cred string, props str
 	`, name, notes, cred, props, adv)
 }
 
-func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p *IntegrationsProxy, sev diag.Severity) diag.Diagnostics {
+func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p *axon.AxonProxy, sev diag.Severity) diag.Diagnostics {
 	// NEW for Axon: Fetch current dependencies from Axon custom API
 	// If sev is Warning, then add a diagnostic Warning entry with the requiredByCount
 	// else if sev is Error, then add a diagnostic Error entry with the requiredByCount
