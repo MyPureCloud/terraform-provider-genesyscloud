@@ -34,13 +34,13 @@ type EntityConnectionPagedResponse struct {
 	PreviousURI string             `json:"previousUri"`
 }
 
-type getRequiredByCountFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error)
+type GetRequiredByCountFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error)
 type getRequiresFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
 type getRequiredByFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
 
 type AxonProxy struct {
 	clientConfig           *platformclientv2.Configuration
-	getRequiredByCountAttr getRequiredByCountFunc
+	getRequiredByCountAttr GetRequiredByCountFunc
 	getRequiresAttr        getRequiresFunc
 	getRequiredByAttr      getRequiredByFunc
 }
@@ -57,6 +57,11 @@ func NewAxonProxy(clientConfig *platformclientv2.Configuration) *AxonProxy {
 func (p *AxonProxy) GetRequiredByCount(ctx context.Context, entityType, entityID string) (int, error) {
 	count, err := p.getRequiredByCountAttr(ctx, p, entityType, entityID)
 	return count, err
+}
+
+// SetGetRequiredByCountAttr allows injecting a mock implementation for testing.
+func (p *AxonProxy) SetGetRequiredByCountAttr(fn GetRequiredByCountFunc) {
+	p.getRequiredByCountAttr = fn
 }
 
 // getRequires pages the outgoing connections (entities this entity requires).
