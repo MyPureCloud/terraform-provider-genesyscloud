@@ -242,26 +242,34 @@ func generateHackathonIntegrationActionResource(
 
 func testVerifyHackathon2026ResourcesDestroyed(state *terraform.State) error {
 	integrationAPI := platformclientv2.NewIntegrationsApi()
+
+	// Verify integrations are destroyed first (before data actions)
 	for _, rs := range state.RootModule().Resources {
-		switch rs.Type {
-		case "genesyscloud_integration_action":
-			action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false, false)
-			if action != nil {
-				return fmt.Errorf("Integration action (%s) still exists", rs.Primary.ID)
-			} else if util.IsStatus404(resp) {
-				continue
-			} else {
-				return fmt.Errorf("Unexpected error: %s", err)
-			}
-		case "genesyscloud_integration":
-			integ, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
-			if integ != nil {
-				return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
-			} else if util.IsStatus404(resp) {
-				continue
-			} else {
-				return fmt.Errorf("Unexpected error: %s", err)
-			}
+		if rs.Type != "genesyscloud_integration" {
+			continue
+		}
+		integ, resp, err := integrationAPI.GetIntegration(rs.Primary.ID, 100, 1, "", nil, "", "")
+		if integ != nil {
+			return fmt.Errorf("Integration (%s) still exists", rs.Primary.ID)
+		} else if util.IsStatus404(resp) {
+			continue
+		} else {
+			return fmt.Errorf("Unexpected error: %s", err)
+		}
+	}
+
+	// Then verify data actions are destroyed
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_integration_action" {
+			continue
+		}
+		action, resp, err := integrationAPI.GetIntegrationsAction(rs.Primary.ID, "", false, false)
+		if action != nil {
+			return fmt.Errorf("Integration action (%s) still exists", rs.Primary.ID)
+		} else if util.IsStatus404(resp) {
+			continue
+		} else {
+			return fmt.Errorf("Unexpected error: %s", err)
 		}
 	}
 	return nil
