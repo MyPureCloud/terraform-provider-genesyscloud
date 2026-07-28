@@ -2,12 +2,16 @@ package axon
 
 import (
 	"context"
+	"log"
 	"net/url"
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
+
+// Following would normally be defined in resource_genesyscloud_dependencies_schema.go
+const ResourceType = "genesyscloud_dependencies"
 
 // DependencyCount is the response of the requiredbycounts dependencies endpoint.
 type DependencyCount struct {
@@ -30,19 +34,19 @@ type EntityConnectionPagedResponse struct {
 	PreviousURI string             `json:"previousUri"`
 }
 
-type getRequiredByCountFunc func(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error)
-type getRequiresFunc func(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
-type getRequiredByFunc func(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
+type GetRequiredByCountFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error)
+type getRequiresFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
+type getRequiredByFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
 
-type axonProxy struct {
+type AxonProxy struct {
 	clientConfig           *platformclientv2.Configuration
-	getRequiredByCountAttr getRequiredByCountFunc
+	getRequiredByCountAttr GetRequiredByCountFunc
 	getRequiresAttr        getRequiresFunc
 	getRequiredByAttr      getRequiredByFunc
 }
 
-func newAxonProxy(clientConfig *platformclientv2.Configuration) *axonProxy {
-	return &axonProxy{
+func NewAxonProxy(clientConfig *platformclientv2.Configuration) *AxonProxy {
+	return &AxonProxy{
 		clientConfig:           clientConfig,
 		getRequiredByCountAttr: getRequiredByCountFn,
 		getRequiresAttr:        getRequiresFn,
@@ -50,40 +54,53 @@ func newAxonProxy(clientConfig *platformclientv2.Configuration) *axonProxy {
 	}
 }
 
-func (p *axonProxy) getRequiredByCount(ctx context.Context, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error) {
-	return p.getRequiredByCountAttr(ctx, p, resourceType, entityType, entityID)
+func (p *AxonProxy) GetRequiredByCount(ctx context.Context, entityType, entityID string) (int, error) {
+	count, err := p.getRequiredByCountAttr(ctx, p, entityType, entityID)
+	return count, err
+}
+
+// SetGetRequiredByCountAttr allows injecting a mock implementation for testing.
+func (p *AxonProxy) SetGetRequiredByCountAttr(fn GetRequiredByCountFunc) {
+	p.getRequiredByCountAttr = fn
 }
 
 // getRequires pages the outgoing connections (entities this entity requires).
-func (p *axonProxy) getRequires(ctx context.Context, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	return p.getRequiresAttr(ctx, p, resourceType, entityType, entityID, queryParams)
+func (p *AxonProxy) getRequires(ctx context.Context, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	return p.getRequiresAttr(ctx, p, entityType, entityID, queryParams)
 }
 
 // getRequiredBy pages the incoming connections (entities that require this entity).
-func (p *axonProxy) getRequiredBy(ctx context.Context, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	return p.getRequiredByAttr(ctx, p, resourceType, entityType, entityID, queryParams)
+func (p *AxonProxy) getRequiredBy(ctx context.Context, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	return p.getRequiredByAttr(ctx, p, entityType, entityID, queryParams)
 }
 
-func getRequiredByCountFn(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string) (int, *platformclientv2.APIResponse, error) {
-	c := customapi.NewClient(p.clientConfig, resourceType)
+func getRequiredByCountFn(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error) {
+	c := customapi.NewClient(p.clientConfig, ResourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requiredbycounts"
 
 	result, resp, err := customapi.Do[DependencyCount](ctx, c, customapi.MethodGet, path, nil, nil)
 	if err != nil {
-		return 0, resp, err
+		if resp.StatusCode == 404 {
+			// Return 0 w/o error if the entity doesn't exist
+			return 0, nil
+		} else {
+			log.Printf("Failed to get dependency count for %s %s: %v", entityType, entityID, err)
+			// log.Print(resp)
+			return 0, err
+		}
 	}
-	return result.EstimatedCount, resp, nil
+	return result.EstimatedCount, nil
 }
 
-func getRequiresFn(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	c := customapi.NewClient(p.clientConfig, resourceType)
+func getRequiresFn(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	c := customapi.NewClient(p.clientConfig, ResourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requires"
 
 	return customapi.Do[EntityConnectionPagedResponse](ctx, c, customapi.MethodGet, path, nil, queryParams)
 }
 
-func getRequiredByFn(ctx context.Context, p *axonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	c := customapi.NewClient(p.clientConfig, resourceType)
+func getRequiredByFn(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	c := customapi.NewClient(p.clientConfig, ResourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requiredby"
 
 	return customapi.Do[EntityConnectionPagedResponse](ctx, c, customapi.MethodGet, path, nil, queryParams)
