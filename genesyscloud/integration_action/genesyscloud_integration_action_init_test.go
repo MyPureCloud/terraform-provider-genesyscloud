@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	integration "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
+	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -34,6 +35,7 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceIntegrationAction()
 	providerResources[integration.ResourceType] = integration.ResourceIntegration()
+	providerResources[integrationCred.ResourceType] = integrationCred.ResourceIntegrationCredential()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
