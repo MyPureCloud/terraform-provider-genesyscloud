@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -9,13 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/axon"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
@@ -582,4 +586,126 @@ func isUserDeleted(id string) (bool, error) {
 
 	// If user is found, it means the user is not deleted
 	return false, nil
+}
+
+// NEW for Axon: Unit tests for checkIntegrationDependencies
+func TestCheckIntegrationDependencies_NoDependencies(t *testing.T) {
+	// When requiredByCount is 0, no diagnostics should be returned regardless of severity
+	ap := &axon.AxonProxy{}
+	ap.SetGetRequiredByCountAttr(func(ctx context.Context, p *axon.AxonProxy, entityType, entityID string) (int, error) {
+		return 0, nil
+	})
+
+	d := schema.TestResourceDataRaw(t, ResourceIntegration().Schema, map[string]interface{}{
+		"integration_type": "function-data-action",
+		"intended_state":   "DISABLED",
+	})
+	d.SetId("test-integration-id")
+
+	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
+	if result != nil {
+		t.Errorf("expected nil diagnostics when no dependencies, got: %v", result)
+	}
+}
+
+func TestCheckIntegrationDependencies_HasDependencies_WarningSeverity(t *testing.T) {
+	// When requiredByCount > 0 and severity is Warning, should log but return nil (no error)
+	ap := &axon.AxonProxy{}
+	ap.SetGetRequiredByCountAttr(func(ctx context.Context, p *axon.AxonProxy, entityType, entityID string) (int, error) {
+		return 5, nil
+	})
+
+	d := schema.TestResourceDataRaw(t, ResourceIntegration().Schema, map[string]interface{}{
+		"integration_type": "function-data-action",
+		"intended_state":   "DISABLED",
+	})
+	d.SetId("test-integration-id")
+
+	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
+	if result != nil {
+		t.Errorf("expected nil diagnostics for warning severity with dependencies, got: %v", result)
+	}
+}
+
+func TestCheckIntegrationDependencies_HasDependencies_ErrorSeverity(t *testing.T) {
+	// When requiredByCount > 0 and severity is Error, should return an error diagnostic
+	ap := &axon.AxonProxy{}
+	ap.SetGetRequiredByCountAttr(func(ctx context.Context, p *axon.AxonProxy, entityType, entityID string) (int, error) {
+		return 3, nil
+	})
+
+	d := schema.TestResourceDataRaw(t, ResourceIntegration().Schema, map[string]interface{}{
+		"integration_type": "function-data-action",
+		"intended_state":   "DISABLED",
+	})
+	d.SetId("test-integration-id")
+
+	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Error)
+	if !result.HasError() {
+		t.Errorf("expected error diagnostic when dependencies exist with Error severity, got: %v", result)
+	}
+}
+
+func TestCheckIntegrationDependencies_ApiError_WarningSeverity(t *testing.T) {
+	// When the API returns an error and severity is Warning, should log and return nil
+	ap := &axon.AxonProxy{}
+	ap.SetGetRequiredByCountAttr(func(ctx context.Context, p *axon.AxonProxy, entityType, entityID string) (int, error) {
+		return 0, fmt.Errorf("connection timeout")
+	})
+
+	d := schema.TestResourceDataRaw(t, ResourceIntegration().Schema, map[string]interface{}{
+		"integration_type": "function-data-action",
+		"intended_state":   "DISABLED",
+	})
+	d.SetId("test-integration-id")
+
+	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
+	if result != nil {
+		t.Errorf("expected nil diagnostics for warning severity on API error, got: %v", result)
+	}
+}
+
+func TestCheckIntegrationDependencies_ApiError_ErrorSeverity(t *testing.T) {
+	// When the API returns an error and severity is Error, should return an error diagnostic
+	ap := &axon.AxonProxy{}
+	ap.SetGetRequiredByCountAttr(func(ctx context.Context, p *axon.AxonProxy, entityType, entityID string) (int, error) {
+		return 0, fmt.Errorf("connection timeout")
+	})
+
+	d := schema.TestResourceDataRaw(t, ResourceIntegration().Schema, map[string]interface{}{
+		"integration_type": "function-data-action",
+		"intended_state":   "DISABLED",
+	})
+	d.SetId("test-integration-id")
+
+	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Error)
+	if !result.HasError() {
+		t.Errorf("expected error diagnostic on API error with Error severity, got: %v", result)
+	}
+}
+
+func TestCheckIntegrationDependencies_VerifiesEntityTypeAndId(t *testing.T) {
+	// Verify the correct entityType and entityID are passed to the proxy
+	var capturedEntityType, capturedEntityID string
+	ap := &axon.AxonProxy{}
+	ap.SetGetRequiredByCountAttr(func(ctx context.Context, p *axon.AxonProxy, entityType, entityID string) (int, error) {
+		capturedEntityType = entityType
+		capturedEntityID = entityID
+		return 0, nil
+	})
+
+	d := schema.TestResourceDataRaw(t, ResourceIntegration().Schema, map[string]interface{}{
+		"integration_type": "function-data-action",
+		"intended_state":   "DISABLED",
+	})
+	d.SetId("my-integration-123")
+
+	checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
+
+	if capturedEntityType != "Integration" {
+		t.Errorf("expected entityType 'Integration', got: %s", capturedEntityType)
+	}
+	if capturedEntityID != "my-integration-123" {
+		t.Errorf("expected entityID 'my-integration-123', got: %s", capturedEntityID)
+	}
 }
