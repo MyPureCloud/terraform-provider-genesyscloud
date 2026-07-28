@@ -144,7 +144,7 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 
 	// NEW for Axon: Call axon to check for any dependencies before update and generate a warning if there are any
 	ap := axon.NewAxonProxy(sdkConfig)
-	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Warning)
+	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Error)
 	if diagMsg.HasError() {
 		return diagMsg
 	}
