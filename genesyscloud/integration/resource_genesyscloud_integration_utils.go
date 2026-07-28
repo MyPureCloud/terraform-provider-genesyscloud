@@ -215,7 +215,7 @@ func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p
 	msg := fmt.Sprintf("Integration %s is currently required by %d or more entities.", d.Id(), requiredByCount)
 	if sev == diag.Error {
 		// caller wants to fail operation if there were dependencies
-		return util.BuildDiagnosticError(ResourceType, msg, err)
+		return util.BuildDiagnosticError(ResourceType, msg, fmt.Errorf("%s", msg))
 	} else {
 		// If we are treating failures as warnings, then just log them to the console and return the count
 		log.Printf("Warning: %s", msg)
