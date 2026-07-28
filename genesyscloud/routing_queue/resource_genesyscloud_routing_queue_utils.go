@@ -217,7 +217,12 @@ func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platf
 		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(d, subTypeSettingsList)
 	}
 
-	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableBool(d, "media_settings_message.0.enable_inactivity_timeout")
+	// The API only accepts EnableInactivityTimeout when set to true.
+	// Sending false explicitly causes a 400 error.
+	enableInactivityTimeout := resourcedata.GetNillableBool(d, "media_settings_message.0.enable_inactivity_timeout")
+	if enableInactivityTimeout != nil && *enableInactivityTimeout {
+		messageMediaSettings.EnableInactivityTimeout = enableInactivityTimeout
+	}
 
 	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
 		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
@@ -310,7 +315,12 @@ func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *ma
 		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableBool(d, fmt.Sprintf("media_settings_message.0.sub_type_settings.%d.enable_inactivity_timeout", i))
+		// The API only accepts EnableInactivityTimeout when set to true.
+		// Sending false explicitly causes a 400 error.
+		enableInactivityTimeout := resourcedata.GetNillableBool(d, fmt.Sprintf("media_settings_message.0.sub_type_settings.%d.enable_inactivity_timeout", i))
+		if enableInactivityTimeout != nil && *enableInactivityTimeout {
+			subTypeSetting.EnableInactivityTimeout = enableInactivityTimeout
+		}
 		returnObj[mediaType] = subTypeSetting
 	}
 
