@@ -35,8 +35,8 @@ type EntityConnectionPagedResponse struct {
 }
 
 type getRequiredByCountFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error)
-type getRequiresFunc func(ctx context.Context, p *AxonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
-type getRequiredByFunc func(ctx context.Context, p *AxonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
+type getRequiresFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
+type getRequiredByFunc func(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error)
 
 type AxonProxy struct {
 	clientConfig           *platformclientv2.Configuration
@@ -60,13 +60,13 @@ func (p *AxonProxy) GetRequiredByCount(ctx context.Context, entityType, entityID
 }
 
 // getRequires pages the outgoing connections (entities this entity requires).
-func (p *AxonProxy) getRequires(ctx context.Context, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	return p.getRequiresAttr(ctx, p, resourceType, entityType, entityID, queryParams)
+func (p *AxonProxy) getRequires(ctx context.Context, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	return p.getRequiresAttr(ctx, p, entityType, entityID, queryParams)
 }
 
 // getRequiredBy pages the incoming connections (entities that require this entity).
-func (p *AxonProxy) getRequiredBy(ctx context.Context, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	return p.getRequiredByAttr(ctx, p, resourceType, entityType, entityID, queryParams)
+func (p *AxonProxy) getRequiredBy(ctx context.Context, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	return p.getRequiredByAttr(ctx, p, entityType, entityID, queryParams)
 }
 
 func getRequiredByCountFn(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error) {
@@ -87,15 +87,15 @@ func getRequiredByCountFn(ctx context.Context, p *AxonProxy, entityType, entityI
 	return result.EstimatedCount, nil
 }
 
-func getRequiresFn(ctx context.Context, p *AxonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	c := customapi.NewClient(p.clientConfig, resourceType)
+func getRequiresFn(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	c := customapi.NewClient(p.clientConfig, ResourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requires"
 
 	return customapi.Do[EntityConnectionPagedResponse](ctx, c, customapi.MethodGet, path, nil, queryParams)
 }
 
-func getRequiredByFn(ctx context.Context, p *AxonProxy, resourceType, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
-	c := customapi.NewClient(p.clientConfig, resourceType)
+func getRequiredByFn(ctx context.Context, p *AxonProxy, entityType, entityID string, queryParams url.Values) (*EntityConnectionPagedResponse, *platformclientv2.APIResponse, error) {
+	c := customapi.NewClient(p.clientConfig, ResourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requiredby"
 
 	return customapi.Do[EntityConnectionPagedResponse](ctx, c, customapi.MethodGet, path, nil, queryParams)
