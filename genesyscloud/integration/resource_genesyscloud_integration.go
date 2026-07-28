@@ -147,12 +147,6 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Warning)
 	if diagMsg.HasError() {
 		return diagMsg
-	} else {
-		// If there are warnings, we need to log them to the console
-		for _, diag := range diagMsg {
-			log.Printf("Warning: %s", diag.Summary)
-		}
-		// Continue with the operation
 	}
 
 	intendedState := d.Get("intended_state").(string)
@@ -184,12 +178,6 @@ func deleteIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	diagMsg := checkIntegrationDependencies(ctx, d, ap, diag.Error)
 	if diagMsg.HasError() {
 		return diagMsg
-	} else {
-		// If there are warnings, we need to log them to the console
-		for _, diag := range diagMsg {
-			log.Printf("Warning: %s", diag.Summary)
-		}
-		// Continue with the operation
 	}
 
 	ip := getIntegrationsProxy(sdkConfig)

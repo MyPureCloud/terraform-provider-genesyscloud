@@ -197,24 +197,28 @@ func GenerateIntegrationConfig(name string, notes string, cred string, props str
 }
 
 func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p *axon.AxonProxy, sev diag.Severity) diag.Diagnostics {
-	// NEW for Axon: Fetch current dependencies from Axon custom API
-	// If sev is Warning, then add a diagnostic Warning entry with the requiredByCount
-	// else if sev is Error, then add a diagnostic Error entry with the requiredByCount
-	// else add a diagnostic Info entry with the requiredByCount
+	// NEW for Axon: Fetch current requiredByCount of dependencies from Axon custom API
+	// If caller sev is Error, then return a diagnostic Error entry with the requiredByCount
+	// else, just log a Warning with the requiredByCount
 	requiredByCount, err := p.GetRequiredByCount(ctx, "Integration", d.Id())
 	if err != nil {
-		// 	return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration dependency count for integration %s", d.Id()), err)
+		msg := fmt.Sprintf("Failed to get dependency count for integration %s", d.Id())
+		if sev == diag.Error {
+			return util.BuildDiagnosticError(ResourceType, msg, err)
+		} else {
+			// If we are treating failures as warnings, then just log them to the console
+			log.Printf("Warning: %s", msg)
+			return nil
+		}
 	}
-	if requiredByCount > 0 {
-		// 	msg := fmt.Sprintf("Integration %s is currently being used by %d other Data Actions.", d.Id(), requiredByCount)
-		// 	switch sev {
-		// 	case diag.Warning:
-		// 		return diag.Diagnostics{util.BuildDiagnosticWarning(ResourceType, msg)}
-		// 	case diag.Error:
-		// 		return diag.Diagnostics{util.BuildDiagnosticError(ResourceType, msg, nil)}
-		// 	default:
-		// 		return diag.Diagnostics{util.BuildDiagnosticInfo(ResourceType, msg)}
-		// 	}
+
+	msg := fmt.Sprintf("Integration %s is currently required by %d or more entities.", d.Id(), requiredByCount)
+	if sev == diag.Error {
+		// caller wants to fail operation if there were dependencies
+		return util.BuildDiagnosticError(ResourceType, msg, err)
+	} else {
+		// If we are treating failures as warnings, then just log them to the console and return the count
+		log.Printf("Warning: %s", msg)
+		return nil
 	}
-	return nil
 }

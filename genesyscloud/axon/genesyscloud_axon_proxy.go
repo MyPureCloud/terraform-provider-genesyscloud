@@ -10,6 +10,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
+// Following would normally be defined in resource_genesyscloud_dependencies_schema.go
+const ResourceType = "genesyscloud_dependencies"
+
 // DependencyCount is the response of the requiredbycounts dependencies endpoint.
 type DependencyCount struct {
 	EstimatedCount int `json:"estimatedCount"`
@@ -35,17 +38,17 @@ func (p *AxonProxy) GetRequiredByCount(ctx context.Context, entityType, entityID
 }
 
 func getRequiredByCountFn(ctx context.Context, p *AxonProxy, entityType, entityID string) (int, error) {
-	c := customapi.NewClient(p.clientConfig, "dependencies")
+	c := customapi.NewClient(p.clientConfig, ResourceType)
 	path := "/api/v2/dependencies/type/" + url.PathEscape(entityType) + "/id/" + url.PathEscape(entityID) + "/connections/requiredbycounts"
 
 	result, resp, err := customapi.Do[DependencyCount](ctx, c, customapi.MethodGet, path, nil, nil)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			// Return 0 if the entity doesn't exist
+			// Return 0 w/o error if the entity doesn't exist
 			return 0, nil
 		} else {
 			log.Printf("Failed to get dependency count for %s %s: %v", entityType, entityID, err)
-			log.Print(resp)
+			// log.Print(resp)
 			return 0, err
 		}
 	}
