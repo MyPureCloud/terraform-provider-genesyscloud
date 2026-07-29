@@ -200,6 +200,7 @@ func GenerateIntegrationConfig(name string, notes string, cred string, props str
 // NEW for Axon: Is the Integration requiredBy other resources that are tracking dependencies?
 func checkIntegrationDependencies(ctx context.Context, id string, p *axon.AxonProxy, sev diag.Severity, ignoreDependencies bool) diag.Diagnostics {
 	// Skip dependency check if overridden at the resource level or globally via env var
+	// TODO - The global env var check should be implemented in genesyscloud/axon/genesyscloud_axon_proxy.go once Axon is GA
 	if ignoreDependencies || os.Getenv("GENESYSCLOUD_IGNORE_ALL_DEPENDENCIES") == "true" {
 		log.Printf("Skipping dependency check for integration %s (ignore_dependencies=true or GENESYSCLOUD_IGNORE_ALL_DEPENDENCIES=true)", id)
 		return nil
