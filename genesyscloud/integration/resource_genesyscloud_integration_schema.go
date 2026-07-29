@@ -9,12 +9,15 @@ package integration
 import (
 	"context"
 	"fmt"
+	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/axon"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -110,6 +113,22 @@ func ResourceIntegration() *schema.Resource {
 				Computed:    true,
 				Elem:        integrationConfigResource,
 			},
+			// NEW for Axon: Example of providing a per resource attribute to ignore dependencies for update/delete
+			"ignore_dependencies": {
+				Description: "If true, skip dependency checking on update and delete. " +
+					"Can also be set globally via the GENESYSCLOUD_IGNORE_ALL_DEPENDENCIES environment variable.",
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+			// NEW for Axon: We're not using the computed "dependency_warning" attribute HACK as it always causes plan diffs to apply
+			// Real solution will be to use a plan modifier once our provider uses the TF Plugin Framework (v6)
+			// "dependency_warning": {
+			// 	// NEW for Axon: HACK until we move to Terraform Plugin Framework (v6) which supports plan-time diagnostic warnings
+			// 	Description: "Plan-time warning indicating other resources depend on this integration. Populated automatically during plan when changes are detected.",
+			// 	Type:        schema.TypeString,
+			// 	Computed:    true,
+			// },
 		},
 	}
 }
@@ -178,6 +197,8 @@ func DataSourceIntegrationWebhook() *schema.Resource {
 
 // NEW for Axon: customizeDiffCheckDependencies is a CustomizeDiff function that checks whether the integration
 // has downstream dependencies (e.g. Data Actions) before allowing an update or delete plan.
+// TODO - Once the provider uses TF Plugin Framework (v6), this can be replaced with a plan modifier -
+// resp.Diagnostics.AddWarning("Dependency Warning", diagMsg[0].Summary)
 func customizeDiffCheckDependencies(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
 	// Skip on create — no remote resource exists yet
 	if diff.Id() == "" {
@@ -186,24 +207,29 @@ func customizeDiffCheckDependencies(ctx context.Context, diff *schema.ResourceDi
 
 	// Only fire when something meaningful changed
 	if !diff.HasChanges("config", "intended_state") {
+		// Note: We're not using the computed "dependency_warning" attribute HACK as it always causes plan diffs to apply
+		// diff.SetNew("dependency_warning", "")
 		return nil
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	ip := getIntegrationsProxy(sdkConfig)
-	_ = ip // placeholder until proxy method is implemented
+	ap := axon.NewAxonProxy(sdkConfig)
+	ignoreDeps, _ := diff.Get("ignore_dependencies").(bool)
+	diagMsg := checkIntegrationDependencies(ctx, diff.Id(), ap, diag.Warning, ignoreDeps)
+	if diagMsg.HasError() {
+		return fmt.Errorf("%s", diagMsg[0].Summary)
+	}
 
-	// TODO: Call the proxy to check dependencies
-	// requiredByCount, _, err := ip.GetIntegrationDependencyCount(ctx, diff.Id())
-	// if err != nil {
-	// 	return fmt.Errorf("failed to check dependencies for integration %s: %s", diff.Id(), err)
+	// Surface any warnings as a computed attribute visible in the plan diff
+	if len(diagMsg) > 0 {
+		// Note: We're not using the computed "dependency_warning" attribute HACK as it always causes plan diffs to apply
+		// diff.SetNew("dependency_warning", diagMsg[0].Summary)
+		log.Println(diagMsg[0].Summary)
+	}
+	// } else {
+	// 	Note: We're not using the computed "dependency_warning" attribute HACK as it always causes plan diffs to apply
+	// 	diff.SetNew("dependency_warning", "")
 	// }
-	// if requiredByCount > 0 {
-	// 	return fmt.Errorf("integration %s is currently used by %d Data Actions — update may break them", diff.Id(), requiredByCount)
-	// }
-
-	_ = ctx
-	_ = fmt.Sprintf // suppress unused import until TODO is implemented
 
 	return nil
 }

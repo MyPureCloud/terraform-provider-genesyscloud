@@ -97,3 +97,13 @@ func BuildWithRetriesApiDiagnosticError(resourceType string, summary string, api
 	}
 	return errors.New(errorMsg)
 }
+
+func BuildDiagnosticWarning(resourceType string, summary string, detail ...string) diag.Diagnostics {
+	dg := diag.Diagnostic{Severity: diag.Warning, Summary: summary}
+	if len(detail) > 0 && detail[0] != "" {
+		dg.Detail = detail[0]
+	}
+	var dgs diag.Diagnostics
+	dgs = append(dgs, dg)
+	return dgs
+}

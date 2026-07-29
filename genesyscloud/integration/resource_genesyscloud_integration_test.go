@@ -602,7 +602,7 @@ func TestCheckIntegrationDependencies_NoDependencies(t *testing.T) {
 	})
 	d.SetId("test-integration-id")
 
-	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
+	result := checkIntegrationDependencies(context.Background(), d.Id(), ap, diag.Warning, false)
 	if result != nil {
 		t.Errorf("expected nil diagnostics when no dependencies, got: %v", result)
 	}
@@ -621,9 +621,9 @@ func TestCheckIntegrationDependencies_HasDependencies_WarningSeverity(t *testing
 	})
 	d.SetId("test-integration-id")
 
-	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
-	if result != nil {
-		t.Errorf("expected nil diagnostics for warning severity with dependencies, got: %v", result)
+	result := checkIntegrationDependencies(context.Background(), d.Id(), ap, diag.Warning, false)
+	if result.HasError() {
+		t.Errorf("expected no error diagnostics for warning severity with dependencies, got: %v", result)
 	}
 }
 
@@ -640,7 +640,7 @@ func TestCheckIntegrationDependencies_HasDependencies_ErrorSeverity(t *testing.T
 	})
 	d.SetId("test-integration-id")
 
-	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Error)
+	result := checkIntegrationDependencies(context.Background(), d.Id(), ap, diag.Error, false)
 	if !result.HasError() {
 		t.Errorf("expected error diagnostic when dependencies exist with Error severity, got: %v", result)
 	}
@@ -659,9 +659,9 @@ func TestCheckIntegrationDependencies_ApiError_WarningSeverity(t *testing.T) {
 	})
 	d.SetId("test-integration-id")
 
-	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
-	if result != nil {
-		t.Errorf("expected nil diagnostics for warning severity on API error, got: %v", result)
+	result := checkIntegrationDependencies(context.Background(), d.Id(), ap, diag.Warning, false)
+	if result.HasError() {
+		t.Errorf("expected no error diagnostics for warning severity on API error, got: %v", result)
 	}
 }
 
@@ -678,7 +678,7 @@ func TestCheckIntegrationDependencies_ApiError_ErrorSeverity(t *testing.T) {
 	})
 	d.SetId("test-integration-id")
 
-	result := checkIntegrationDependencies(context.Background(), d, ap, diag.Error)
+	result := checkIntegrationDependencies(context.Background(), d.Id(), ap, diag.Error, false)
 	if !result.HasError() {
 		t.Errorf("expected error diagnostic on API error with Error severity, got: %v", result)
 	}
@@ -700,7 +700,7 @@ func TestCheckIntegrationDependencies_VerifiesEntityTypeAndId(t *testing.T) {
 	})
 	d.SetId("my-integration-123")
 
-	checkIntegrationDependencies(context.Background(), d, ap, diag.Warning)
+	checkIntegrationDependencies(context.Background(), d.Id(), ap, diag.Warning, false)
 
 	if capturedEntityType != "Integration" {
 		t.Errorf("expected entityType 'Integration', got: %s", capturedEntityType)

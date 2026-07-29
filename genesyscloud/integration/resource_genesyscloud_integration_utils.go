@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/axon"
@@ -196,35 +197,41 @@ func GenerateIntegrationConfig(name string, notes string, cred string, props str
 	`, name, notes, cred, props, adv)
 }
 
-func checkIntegrationDependencies(ctx context.Context, d *schema.ResourceData, p *axon.AxonProxy, sev diag.Severity) diag.Diagnostics {
+// NEW for Axon: Is the Integration requiredBy other resources that are tracking dependencies?
+func checkIntegrationDependencies(ctx context.Context, id string, p *axon.AxonProxy, sev diag.Severity, ignoreDependencies bool) diag.Diagnostics {
+	// Skip dependency check if overridden at the resource level or globally via env var
+	if ignoreDependencies || os.Getenv("GENESYSCLOUD_IGNORE_ALL_DEPENDENCIES") == "true" {
+		log.Printf("Skipping dependency check for integration %s (ignore_dependencies=true or GENESYSCLOUD_IGNORE_ALL_DEPENDENCIES=true)", id)
+		return nil
+	}
+
 	// NEW for Axon: Fetch current requiredByCount of dependencies from Axon custom API
 	// If caller sev is Error, then return a diagnostic Error entry with the requiredByCount
 	// else, just log a Warning with the requiredByCount
-	requiredByCount, err := p.GetRequiredByCount(ctx, "Integration", d.Id())
+	requiredByCount, err := p.GetRequiredByCount(ctx, "Integration", id)
 	if err != nil {
-		msg := fmt.Sprintf("Failed to get dependency count for integration %s", d.Id())
+		msg := fmt.Sprintf("Failed to get dependency count for integration %s", id)
 		if sev == diag.Error {
 			return util.BuildDiagnosticError(ResourceType, msg, err)
 		} else {
 			// If we are treating failures as warnings, then just log them to the console
 			log.Printf("Warning: %s", msg)
-			// return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Warning: Failed to get dependency count for integration %s", d.Id(), patchErr), resp)
-			return nil
+			return util.BuildDiagnosticWarning(ResourceType, msg)
 		}
 	}
 
 	if requiredByCount > 0 {
-		msg := fmt.Sprintf("Integration %s is currently required by %d or more entities.", d.Id(), requiredByCount)
+		msg := fmt.Sprintf("Integration %s is currently required by %d or more entities.", id, requiredByCount)
 		if sev == diag.Error {
 			// caller wants to fail operation if there were dependencies
 			return util.BuildDiagnosticError(ResourceType, msg, fmt.Errorf("%s", msg))
 		} else {
 			// If we are treating failures as warnings, then just log them to the console and return the count
 			log.Printf("Warning: %s", msg)
-			return nil
+			return util.BuildDiagnosticWarning(ResourceType, msg)
 		}
 	} else {
-		log.Printf("No dependencies found for integration %s", d.Id())
+		log.Printf("No dependencies found for integration %s", id)
 		return nil
 	}
 }
