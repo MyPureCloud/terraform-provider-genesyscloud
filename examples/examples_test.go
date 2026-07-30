@@ -638,3 +638,48 @@ func TestUnitLoadExampleLocalsMergeDirectly(t *testing.T) {
 		t.Errorf("Expected other to have 'key2' entry")
 	}
 }
+
+// TestUnitLoadExamplePathTraversalBlocked tests that dependency paths escaping the examples
+// root directory are rejected (CWE-22 / path traversal).
+func TestUnitLoadExamplePathTraversalBlocked(t *testing.T) {
+	// Create a temp directory that acts as the "examples" root
+	examplesDir, err := os.MkdirTemp("", "examples")
+	if err != nil {
+		t.Fatalf("Failed to create examples dir: %v", err)
+	}
+	defer os.RemoveAll(examplesDir)
+
+	// Create a resource directory inside examples/
+	resourceDir := filepath.Join(examplesDir, "my_resource")
+	if err := os.Mkdir(resourceDir, 0755); err != nil {
+		t.Fatalf("Failed to create resource dir: %v", err)
+	}
+
+	resourcePath := filepath.Join(resourceDir, "resource.tf")
+	if err := os.WriteFile(resourcePath, []byte(`resource "test" "r" { name = "r" }`), 0644); err != nil {
+		t.Fatalf("Failed to write resource.tf: %v", err)
+	}
+
+	// locals.tf references a path that escapes the examples root
+	localsPath := filepath.Join(resourceDir, "locals.tf")
+	if err := os.WriteFile(localsPath, []byte(`
+locals {
+  dependencies = {
+    resource = ["../../../../etc/passwd"]
+  }
+}
+`), 0644); err != nil {
+		t.Fatalf("Failed to write locals.tf: %v", err)
+	}
+
+	example := NewExample()
+	processedState := NewProcessedExampleState()
+	_, err = example.LoadExampleWithDependencies(resourcePath, processedState)
+
+	if err == nil {
+		t.Fatal("Expected an error for path traversal, but got nil")
+	}
+	if !strings.Contains(err.Error(), "escapes allowed directory") {
+		t.Errorf("Expected 'escapes allowed directory' error, got: %v", err)
+	}
+}
