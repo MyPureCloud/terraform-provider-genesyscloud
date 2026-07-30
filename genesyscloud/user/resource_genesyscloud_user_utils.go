@@ -12,13 +12,15 @@ import (
 	"strings"
 	"time"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -295,6 +297,7 @@ func updateUserVoicemailPolicies(d *schema.ResourceData, proxy *userProxy) diag.
 		return diagErr
 	}
 
+	invalidateUserVoicemailPolicyCache(d.Id())
 	return nil
 }
 
@@ -311,16 +314,13 @@ func updateUserRoutingUtilization(ctx context.Context, d *schema.ResourceData, p
 				labelUtilizations := allSettings["label_utilizations"].([]interface{})
 
 				if len(labelUtilizations) > 0 {
-					// Set resource context for SDK debug logging
-
-					apiClient := &proxy.routingApi.Configuration.APIClient
-
-					path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-					headerParams := buildHeaderParams(proxy.routingApi)
-					requestPayload := make(map[string]interface{})
-					requestPayload["utilization"] = buildMediaTypeUtilizations(allSettings)
-					requestPayload["labelUtilizations"] = buildLabelUtilizationsRequest(labelUtilizations)
-					_, err = apiClient.CallAPI(path, "PUT", requestPayload, headerParams, nil, nil, "", nil, "")
+					c := customapi.NewClient(proxy.routingApi.Configuration, ResourceType)
+					path := fmt.Sprintf("/api/v2/routing/users/%s/utilization", d.Id())
+					requestPayload := map[string]interface{}{
+						"utilization":       buildMediaTypeUtilizations(allSettings),
+						"labelUtilizations": buildLabelUtilizationsRequest(labelUtilizations),
+					}
+					_, err = customapi.DoNoResponse(ctx, c, customapi.MethodPut, path, requestPayload, nil)
 				} else {
 					sdkSettings := make(map[string]platformclientv2.Mediautilization)
 					for sdkType, schemaType := range getUtilizationMediaTypes() {
@@ -346,6 +346,7 @@ func updateUserRoutingUtilization(ctx context.Context, d *schema.ResourceData, p
 			}
 
 			log.Printf("Updated user utilization for user %s", d.Id())
+			invalidateUserRoutingUtilizationCache(d.Id())
 		}
 	}
 	return nil
@@ -547,12 +548,7 @@ func restoreDeletedUser(ctx context.Context, d *schema.ResourceData, meta interf
 func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.Diagnostics {
 	log.Printf("Getting user utilization")
 
-	apiClient := &proxy.routingApi.Configuration.APIClient
-
-	path := fmt.Sprintf("%s/api/v2/routing/users/%s/utilization", proxy.routingApi.Configuration.BasePath, d.Id())
-	headerParams := buildHeaderParams(proxy.routingApi)
-	response, err := apiClient.CallAPI(path, "GET", nil, headerParams, nil, nil, "", nil, "")
-
+	rawBody, response, err := getUserRoutingUtilizationRaw(context.Background(), d.Id(), proxy)
 	if err != nil {
 		if util.IsStatus404(response) {
 			d.SetId("") // User doesn't exist
@@ -561,8 +557,30 @@ func readUserRoutingUtilization(d *schema.ResourceData, proxy *userProxy) diag.D
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read routing utilization for user %s error: %s", d.Id(), err), response)
 	}
 
+	return setRoutingUtilizationState(d, rawBody)
+}
+
+func getUserRoutingUtilizationRaw(ctx context.Context, userID string, proxy *userProxy) ([]byte, *platformclientv2.APIResponse, error) {
+	if cached := rc.GetCacheItem(userRoutingUtilizationCache, userID); cached != nil {
+		log.Printf("[USER-CACHE] User %s: routing utilization cache hit", userID)
+		return *cached, nil, nil
+	}
+
+	c := customapi.NewClient(proxy.routingApi.Configuration, ResourceType)
+	path := fmt.Sprintf("/api/v2/routing/users/%s/utilization", userID)
+	rawBody, response, err := customapi.DoRaw(ctx, c, customapi.MethodGet, path, nil, nil)
+	if err != nil {
+		return nil, response, err
+	}
+
+	rc.SetCache(userRoutingUtilizationCache, userID, rawBody)
+	log.Printf("[USER-CACHE] User %s: cached routing utilization", userID)
+	return rawBody, response, nil
+}
+
+func setRoutingUtilizationState(d *schema.ResourceData, rawBody []byte) diag.Diagnostics {
 	agentUtilization := &agentUtilizationWithLabels{}
-	err = json.Unmarshal(response.RawBody, &agentUtilization)
+	err := json.Unmarshal(rawBody, &agentUtilization)
 	if err != nil {
 		log.Printf("[WARN] failed to unmarshal json: %s", err.Error())
 	}
@@ -955,20 +973,6 @@ func getUtilizationMediaTypes() map[string]string {
 	return utilizationMediaTypes
 }
 
-func buildHeaderParams(routingAPI *platformclientv2.RoutingApi) map[string]string {
-	headerParams := make(map[string]string)
-
-	for key := range routingAPI.Configuration.DefaultHeader {
-		headerParams[key] = routingAPI.Configuration.DefaultHeader[key]
-	}
-
-	headerParams["Authorization"] = "Bearer " + routingAPI.Configuration.AccessToken
-	headerParams["Content-Type"] = "application/json"
-	headerParams["Accept"] = "application/json"
-
-	return headerParams
-}
-
 func flattenUtilizationSetting(settings mediaUtilization) []interface{} {
 	settingsMap := make(map[string]interface{})
 
@@ -1090,8 +1094,12 @@ func waitForExtensionPoolActivation(ctx context.Context, d *schema.ResourceData,
 		return
 	}
 
-	addressMap := addresses[0].(map[string]interface{})
-	phoneNumbers := addressMap["phone_numbers"].(*schema.Set)
+	addressMap, ok := addresses[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	phoneNumbers, _ := addressMap["phone_numbers"].(*schema.Set)
 	if phoneNumbers == nil {
 		return
 	}

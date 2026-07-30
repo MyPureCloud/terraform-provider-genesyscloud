@@ -36,6 +36,7 @@ If the stack trace occurs within the create context and before the ID is set in 
 "Root object was present, but now absent." Can be set with the GENESYSCLOUD_LOG_STACK_TRACES environment variable. **WARNING**: This is a debugging feature that may cause your Terraform state to become out of sync with the API.
 If you encounter any stack traces, please report them so we can address the underlying issues.
 - `log_stack_traces_file_path` (String) Specifies the file path for the stack trace logs. Can be set with the `GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH` environment variable. Default value is genesyscloud_stack_traces.log
+- `max_concurrent_pages` (Number) Maximum pages to fetch in parallel when listing resources. A value of 1 keeps sequential pagination. Higher values help exports with many pages; for few pages, sequential is often as fast or faster. Increase token_pool_size with this value so each parallel page can acquire its own OAuth token. Can be set with the `GENESYSCLOUD_MAX_CONCURRENT_PAGES` environment variable.
 - `oauthclient_id` (String) OAuthClient ID found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_ID` environment variable.
 - `oauthclient_secret` (String, Sensitive) OAuthClient secret found on the OAuth page of Admin UI. Can be set with the `GENESYSCLOUD_OAUTHCLIENT_SECRET` environment variable.
 - `proxy` (Block Set, Max: 1) (see [below for nested schema](#nestedblock--proxy))
@@ -45,7 +46,7 @@ If you encounter any stack traces, please report them so we can address the unde
 - `sdk_debug_format` (String) Specifies the data format of the 'sdk_debug.log'. Only applicable if sdk_debug is true. Can be set with the `GENESYSCLOUD_SDK_DEBUG_FORMAT` environment variable. Default value is Text.
 - `token_acquire_timeout` (String) Timeout for acquiring a token from the pool. Can be set with the `GENESYSCLOUD_TOKEN_ACQUIRE_TIMEOUT` environment variable.
 - `token_init_timeout` (String) Timeout for initializing the token pool. Can be set with the `GENESYSCLOUD_TOKEN_INIT_TIMEOUT` environment variable.
-- `token_pool_size` (Number) Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
+- `token_pool_size` (Number) Max number of OAuth tokens in the token pool (1-50). Each token is minted at provider startup via the OAuth client-credentials endpoint; larger values increase startup time and can trigger OAuth rate limiting during pool prefill. Match this to max_concurrent_pages rather than setting it higher than needed. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.
 
 <a id="nestedblock--gateway"></a>
 ### Nested Schema for `gateway`

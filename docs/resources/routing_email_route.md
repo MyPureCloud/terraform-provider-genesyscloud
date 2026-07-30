@@ -6,16 +6,21 @@ description: |-
 ---
 # genesyscloud_routing_email_route (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Routing Email Domain Route
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/routing/email/domains/{domainName}/routes](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainName--routes)
-* [POST /api/v2/routing/email/domains/{domainName}/routes](https://developer.mypurecloud.com/api/rest/v2/routing/#post-api-v2-routing-email-domains--domainName--routes)
-* [GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#get-api-v2-routing-email-domains--domainName--routes--routeId-)
-* [PUT /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#put-api-v2-routing-email-domains--domainName--routes--routeId-)
-* [DELETE /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.mypurecloud.com/api/rest/v2/routing/#delete-api-v2-routing-email-domains--domainName--routes--routeId-)
+* [GET /api/v2/routing/email/domains](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains)
+* [GET /api/v2/routing/email/domains/{domainName}/routes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainName--routes)
+* [POST /api/v2/routing/email/domains/{domainName}/routes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-email-domains--domainName--routes)
+* [DELETE /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-email-domains--domainName--routes--routeId-)
+* [GET /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-domains--domainName--routes--routeId-)
+* [PUT /api/v2/routing/email/domains/{domainName}/routes/{routeId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-email-domains--domainName--routes--routeId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -44,6 +49,12 @@ resource "genesyscloud_routing_email_route" "example_route" {
   auto_bcc {
     name  = "Supervisors"
     email = "support_supervisors@${genesyscloud_routing_email_domain.example_domain_com.domain_id}"
+  }
+  signature {
+    enabled            = false
+    canned_response_id = genesyscloud_responsemanagement_response.example_signature_response.id
+    always_included    = false
+    inclusion_type     = "Send"
   }
 }
 
@@ -86,6 +97,7 @@ resource "genesyscloud_routing_email_route" "example_route_reference_other_route
 - `priority` (Number) The priority to use for routing.
 - `queue_id` (String) The queue to route the emails to. This should not be set if a flow_id is specified.
 - `reply_email_address` (Block List, Max: 1) The route to use for email replies. This should not be set if from_email or auto_bcc are specified. (see [below for nested schema](#nestedblock--reply_email_address))
+- `signature` (Block List, Max: 1) The configuration for the canned response signature that will be appended to outbound emails sent via this route. (see [below for nested schema](#nestedblock--signature))
 - `skill_ids` (Set of String) The skills to use for routing.
 - `spam_flow_id` (String) The flow to use for processing inbound emails that have been marked as spam.
 
@@ -114,4 +126,15 @@ Optional:
 - `route_id` (String) ID of the route.
 - `self_reference_route` (Boolean) Use this route as the reply email address. If true you will use the route id for this resource as the reply and you
 							              can not set a route. If you set this value to false (or leave the attribute off) you must set a route id and matching domain. Defaults to `false`.
+
+
+<a id="nestedblock--signature"></a>
+### Nested Schema for `signature`
+
+Optional:
+
+- `always_included` (Boolean) A toggle that defines if a signature is always included or only set on the first email in an email chain.
+- `canned_response_id` (String) The identifier referring to an email signature canned response.
+- `enabled` (Boolean) A toggle to enable the signature on email send.
+- `inclusion_type` (String) The configuration to indicate when the signature of a conversation has to be included.
 

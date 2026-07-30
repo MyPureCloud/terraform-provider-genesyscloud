@@ -6,16 +6,19 @@ description: |-
 ---
 # genesyscloud_task_management_worktype_flow_datebased_rule (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud task management onattributeChange Rule
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules)
 * [POST /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules)
+* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
-* [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}/flows/datebased/rules/{ruleId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-worktypes--worktypeId--flows-datebased-rules--ruleId-)
 
 ## Permissions and Scopes
 

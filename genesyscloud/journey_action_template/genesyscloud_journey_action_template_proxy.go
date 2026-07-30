@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -21,6 +21,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *journeyActionTemplateProxy
+
+var templateCache = rc.NewResourceCache[platformclientv2.Actiontemplate]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createJourneyActionTemplateFunc func(ctx context.Context, p *journeyActionTemplateProxy, template *platformclientv2.Actiontemplate) (*platformclientv2.Actiontemplate, *platformclientv2.APIResponse, error)
@@ -57,7 +59,6 @@ seamlessly with the Genesys Cloud platform.
 */
 func newJourneyActionTemplateProxy(clientConfig *platformclientv2.Configuration) *journeyActionTemplateProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	templateCache := rc.NewResourceCache[platformclientv2.Actiontemplate]()
 
 	return &journeyActionTemplateProxy{
 		clientConfig:                         clientConfig,

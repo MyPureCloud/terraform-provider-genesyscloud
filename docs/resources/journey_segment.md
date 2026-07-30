@@ -6,16 +6,20 @@ description: |-
 ---
 # genesyscloud_journey_segment (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Journey Segment
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/journey/segments](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-segments)
-* [POST /api/v2/journey/segments](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#post-api-v2-journey-segments)
-* [GET /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#get-api-v2-journey-segments--segmentId-)
-* [PATCH /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#patch-api-v2-journey-segments--segmentId-)
-* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/commdigital/digital/webmessaging/journey/journey-apis#delete-api-v2-journey-segments--segmentId-)
+* [GET /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-segments)
+* [POST /api/v2/journey/segments](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-journey-segments)
+* [DELETE /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-journey-segments--segmentId-)
+* [GET /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-journey-segments--segmentId-)
+* [PATCH /api/v2/journey/segments/{segmentId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-journey-segments--segmentId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
@@ -71,12 +75,12 @@ resource "genesyscloud_journey_segment" "example_journey_segment_resource" {
 
 ### Required
 
-- `color` (String) The hexadecimal color value of the segment.
 - `display_name` (String) The display name of the segment.
 
 ### Optional
 
 - `assignment_expiration_days` (Number) Time, in days, from when the segment is assigned until it is automatically unassigned.
+- `color` (String) The hexadecimal color value of the segment.
 - `context` (Block Set, Max: 1) The context of the segment. (see [below for nested schema](#nestedblock--context))
 - `description` (String) A description of the segment.
 - `is_active` (Boolean) Whether or not the segment is active. Defaults to `true`.

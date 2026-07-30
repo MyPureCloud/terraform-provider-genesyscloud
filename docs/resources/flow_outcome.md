@@ -7,16 +7,20 @@ description: |-
 ---
 # genesyscloud_flow_outcome (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud flow outcome. If an outcome with the same name already exists, 
 the resource will manage the existing outcome instead of failing during creation, as outcomes cannot be deleted.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/flows/outcomes](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-outcomes)
-* [POST /api/v2/flows/outcomes](https://developer.genesys.cloud/routing/architect/#post-api-v2-flows-outcomes)
-* [GET /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/routing/architect/#get-api-v2-flows-outcomes--flowOutcomeId-)
-* [PUT /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/routing/architect/#put-api-v2-flows-outcomes--flowOutcomeId-)
+* [GET /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-outcomes)
+* [POST /api/v2/flows/outcomes](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-flows-outcomes)
+* [GET /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows-outcomes--flowOutcomeId-)
+* [PUT /api/v2/flows/outcomes/{flowOutcomeId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-flows-outcomes--flowOutcomeId-)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:

@@ -33,6 +33,11 @@ var (
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"context_id": {
+				Description: "An identifier for this question group that stays the same across versions of the form.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 			"name": {
 				Description: "Name of display question in question group.",
 				Type:        schema.TypeString,
@@ -65,6 +70,11 @@ var (
 		Schema: map[string]*schema.Schema{
 			"id": {
 				Description: "The ID of the survey question.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"context_id": {
+				Description: "An identifier for this question that stays the same across versions of the form.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -141,6 +151,11 @@ var (
 				Description: "The ID of the survey answer option.",
 				Computed:    true,
 			},
+			"context_id": {
+				Type:        schema.TypeString,
+				Description: "An identifier for this answer that stays the same across versions of the form.",
+				Computed:    true,
+			},
 			"text": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -148,6 +163,12 @@ var (
 			"value": {
 				Type:     schema.TypeInt,
 				Required: true,
+			},
+			"built_in_type": {
+				Description:  `The built-in type of this answer option. Only used for built-in answer options such as selection states for Multiple Select answer options.Valid values: Selected, Unselected`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Selected", "Unselected"}, false),
 			},
 			"assistance_conditions": {
 				Description: "Options from which to choose an answer for this question.",
@@ -194,6 +215,11 @@ func ResourceQualityFormsSurvey() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			`modified_date`: {
+				Description: `Last modified date. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z`,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
 			"published": {
 				Description: "Specifies if the survey form is published.",
 				Type:        schema.TypeBool,
@@ -205,6 +231,11 @@ func ResourceQualityFormsSurvey() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
+			},
+			`context_id`: {
+				Description: `Unique Id for all versions of this form`,
+				Computed:    true,
+				Type:        schema.TypeString,
 			},
 			"language": {
 				Description:  "Language for survey viewer localization. Currently localized languages: da, de, en-US, es, fi, fr, it, ja, ko, nl, no, pl, pt-BR, sv, th, tr, zh-CN, zh-TW. Languages in beta: pt-PT, he, hi. Languages in alpha: ar, uk",
@@ -250,8 +281,12 @@ func QualityFormsSurveyExporter() *resourceExporter.ResourceExporter {
 		AllowZeroValues: []string{"question_groups.questions.answer_options.value"},
 		ExcludedAttributes: []string{
 			"question_groups.id",
+			"question_groups.context_id",
 			"question_groups.questions.id",
+			"question_groups.questions.context_id",
 			"question_groups.questions.answer_options.id",
+			"question_groups.questions.answer_options.context_id",
+			"modified_date",
 		},
 	}
 }

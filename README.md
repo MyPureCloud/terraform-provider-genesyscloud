@@ -117,6 +117,22 @@ _Note_: `CONSISTENCY_CHECKS` can only be used when `BYPASS_CONSISTENCY_CHECKER` 
 
 _Note_: Settings `CONSISTENCY_CHECKS=0` will completely disable the consistency checker and stop it from running.
 
+### Per-resource list page size
+
+Some resources use a page size of 500 when listing entities during export. You can override this per resource type by setting an environment variable:
+
+```
+GENESYSCLOUD_PAGE_SIZE_<resource_type>=<page_size>
+```
+
+For example, to use a page size of 100 when exporting wrapup codes:
+
+```
+GENESYSCLOUD_PAGE_SIZE_genesyscloud_routing_wrapupcode=100
+```
+
+Supported resources include `genesyscloud_architect_flow`, `genesyscloud_group`, `genesyscloud_routing_queue`, `genesyscloud_routing_skill`, `genesyscloud_routing_wrapupcode`, `genesyscloud_script`, and `genesyscloud_user`. If the variable is unset or invalid, the provider default (500) is used.
+
 ### Data Sources
 
 There may be cases where you want to reference existing resources in a Terraform configuration file but do not want those resources to be managed by Terraform. This provider supports several data source types that can act as a read-only resource for existing objects in your org. To include one in your configuration, add a `data` block to your configuration file with one of the supported data source types:
@@ -169,6 +185,57 @@ $ make testunit
 3. Import your package to `main.go` at the root of the project and, from the `registerResources` function, call the SetRegistrar function passing in the `regInstance` variable.
 
 If you want to go off of an example, we recommend using the [external contacts](https://github.com/MyPureCloud/terraform-provider-genesyscloud/tree/main/genesyscloud/external_contacts) package.
+
+### Custom API Client
+
+When a proxy function needs to call a Genesys Cloud API endpoint that doesn't have a generated SDK method, use the `custom_api_client` package (`genesyscloud/custom_api_client`) instead of calling `APIClient.CallAPI()` directly or constructing raw `http.Client` requests. This package handles authorization headers, content-type negotiation, query parameter encoding, error handling, and SDK debug logging context automatically.
+
+```go
+import customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+```
+
+**Available functions:**
+
+| Function | Use case |
+|----------|----------|
+| `Do[T]` | Typed JSON response — unmarshals into `T` |
+| `DoNoResponse` | No response body (DELETE, PUT with no return) |
+| `DoRaw` | Raw `[]byte` response for custom unmarshaling |
+| `DoWithAcceptHeader` | Non-JSON responses (e.g., `text/csv`) |
+
+**Example — adding to a proxy struct:**
+
+```go
+type myProxy struct {
+    clientConfig    *platformclientv2.Configuration
+    myApi           *platformclientv2.MyApi
+    customApiClient *customapi.Client
+}
+
+func newMyProxy(clientConfig *platformclientv2.Configuration) *myProxy {
+    return &myProxy{
+        clientConfig:    clientConfig,
+        myApi:           platformclientv2.NewMyApiWithConfig(clientConfig),
+        customApiClient: customapi.NewClient(clientConfig, ResourceType),
+    }
+}
+```
+
+**Example — making a call:**
+
+```go
+// Typed response
+result, resp, err := customapi.Do[platformclientv2.MyEntity](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/my/endpoint", nil, nil)
+
+// With query params
+qp := customapi.NewQueryParams(map[string]string{"pageSize": "100", "pageNumber": "1"})
+result, resp, err := customapi.Do[platformclientv2.MyListing](ctx, p.customApiClient, customapi.MethodGet, "/api/v2/my/endpoint", nil, qp)
+
+// Delete with no response
+resp, err := customapi.DoNoResponse(ctx, p.customApiClient, customapi.MethodDelete, "/api/v2/my/endpoint/"+id, nil, nil)
+```
+
+See the [package documentation](genesyscloud/custom_api_client/custom_api_client.go) for full details and additional examples.
 
 ### Documentation Generation
 
@@ -345,6 +412,10 @@ provider_installation {
 ### Dictionary
 
 A shared [Dictionary](./DICTIONARY.md) of terminology should be referenced as a guide to ensure consistency in variable naming, function parameters, and code comments throughout the provider implementation. The aim is to improve code readability, maintainability, and collaboration among developers working on the provider by adhering to these conventions.
+
+### Concurrent Pagination
+
+See [Concurrent Pagination](./CONCURRENT_PAGINATION.md) for how to migrate proxy `getAll*` functions from sequential page loops to `FetchPagesConcurrently`. Use the reference implementations there when extending parallel pagination to remaining resource types.
 
 ### Debugging
 

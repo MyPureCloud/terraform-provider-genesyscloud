@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -26,6 +26,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *responsemanagementResponseassetProxy
+
+var assetCache = rc.NewResourceCache[platformclientv2.Responseasset]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllResponseAssetsFunc func(ctx context.Context, p *responsemanagementResponseassetProxy) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error)
@@ -51,7 +53,7 @@ type responsemanagementResponseassetProxy struct {
 // newRespManagementRespAssetProxy initializes the responsemanagement responseasset proxy with all of the data needed to communicate with Genesys Cloud
 func newRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuration) *responsemanagementResponseassetProxy {
 	api := platformclientv2.NewResponseManagementApiWithConfig(clientConfig)
-	assetCache := rc.NewResourceCache[platformclientv2.Responseasset]()
+
 	return &responsemanagementResponseassetProxy{
 		clientConfig:                         clientConfig,
 		responseManagementApi:                api,
@@ -123,6 +125,9 @@ func (p *responsemanagementResponseassetProxy) uploadRespManagementRespAsset(ctx
 	if name == "" {
 		name = localFilePath
 	}
+
+	// Normalize the asset name for cross-platform compatibility.
+	name = normalizeAssetName(name)
 
 	sdkResponseAsset := platformclientv2.Createresponseassetrequest{
 		Name: &name,
@@ -246,6 +251,12 @@ func createRespManagementRespAssetFn(ctx context.Context, p *responsemanagementR
 func updateRespManagementRespAssetFn(ctx context.Context, p *responsemanagementResponseassetProxy, id string, respAsset *platformclientv2.Responseassetrequest) (*platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Normalize the asset name for cross-platform compatibility.
+	if respAsset.Name != nil {
+		normalized := normalizeAssetName(*respAsset.Name)
+		respAsset.Name = &normalized
+	}
 
 	return p.responseManagementApi.PutResponsemanagementResponseasset(id, *respAsset)
 }

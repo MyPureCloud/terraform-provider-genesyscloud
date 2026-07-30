@@ -3,12 +3,13 @@ package journey_action_map
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -22,6 +23,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *journeyActionMapProxy
+
+var actionMapCache = rc.NewResourceCache[platformclientv2.Actionmap]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createJourneyActionMapFunc func(ctx context.Context, p *journeyActionMapProxy, actionMap *platformclientv2.Actionmap) (*platformclientv2.Actionmap, *platformclientv2.APIResponse, error)
@@ -58,7 +61,6 @@ seamlessly with the Genesys Cloud platform.
 */
 func newJourneyActionMapProxy(clientConfig *platformclientv2.Configuration) *journeyActionMapProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	actionMapCache := rc.NewResourceCache[platformclientv2.Actionmap]()
 
 	return &journeyActionMapProxy{
 		clientConfig:                    clientConfig,

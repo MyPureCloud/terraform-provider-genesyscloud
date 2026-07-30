@@ -2,11 +2,52 @@ package routing_email_domain
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
+
+func routingEmailDomainTestSchema() map[string]*schema.Schema {
+	return ResourceRoutingEmailDomain().Schema
+}
+
+func TestUnitRoutingEmailDomainExporter_IntegrationReferences(t *testing.T) {
+	exporter := RoutingEmailDomainExporter()
+
+	if _, ok := exporter.UnResolvableAttributes["custom_smtp_server_id"]; !ok {
+		t.Fatal("expected custom_smtp_server_id in UnResolvableAttributes")
+	}
+	for _, attr := range []string{"graph_api_settings", "imap_settings"} {
+		if _, ok := exporter.UnResolvableAttributes[attr]; ok {
+			t.Fatalf("expected %s to be omitted from UnResolvableAttributes", attr)
+		}
+	}
+
+	for block, attrs := range exporter.RemoveIfMissing {
+		if len(attrs) != 1 || attrs[0] != "integration_id" {
+			t.Fatalf("expected %s RemoveIfMissing to require integration_id, got %v", block, attrs)
+		}
+	}
+	if len(exporter.RemoveIfMissing) != 2 {
+		t.Fatalf("expected RemoveIfMissing for graph_api_settings and imap_settings, got %v", exporter.RemoveIfMissing)
+	}
+
+	refType := "genesyscloud_integration"
+	for _, path := range []string{"graph_api_settings.integration_id", "imap_settings.integration_id"} {
+		ref, ok := exporter.RefAttrs[path]
+		if !ok {
+			t.Fatalf("expected RefAttrs for %s", path)
+		}
+		if ref.RefType != refType {
+			t.Fatalf("expected %s RefType %q, got %q", path, refType, ref.RefType)
+		}
+	}
+}
 
 func TestUnitRoutingEmailDomainExporter_DataSourceResolver_UsesInstanceID(t *testing.T) {
 	instanceID := "delltechnologies.mypurecloud.com"
@@ -73,5 +114,324 @@ func TestUnitGetRoutingEmailDomainIdByName_SubdomainPrefixMatch(t *testing.T) {
 	}
 	if gotID != fullID {
 		t.Fatalf("expected id %q, got %q", fullID, gotID)
+	}
+}
+
+func TestUnitCreateRoutingEmailDomain_AlreadyExists_AdoptsExisting(t *testing.T) {
+	domainName := "acdemailplaysandboxeuscedee1"
+	existingFullID := "acdemailplaysandboxeuscedee1.mypurecloud.com"
+	subdomain := true
+
+	// Mock proxy that simulates the "already exists" 400 error on create,
+	// but returns the domain on lookup by name.
+	mockProxy := &routingEmailDomainProxy{
+		createRoutingEmailDomainAttr: func(_ context.Context, _ *routingEmailDomainProxy, _ *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+			return nil, &platformclientv2.APIResponse{
+				StatusCode:   http.StatusBadRequest,
+				ErrorMessage: "The inbound domain already exists (f24218ed-277b-441b-b6a6-b66c63a34c51)",
+			}, fmt.Errorf("API Error: 400 - The inbound domain already exists")
+		},
+		getRoutingEmailDomainIdByNameAttr: func(_ context.Context, _ *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+			return existingFullID, &platformclientv2.APIResponse{StatusCode: 200}, false, nil
+		},
+		getRoutingEmailDomainByIdAttr: func(_ context.Context, _ *routingEmailDomainProxy, id string) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+			return &platformclientv2.Inbounddomain{
+				Id:        &existingFullID,
+				SubDomain: &subdomain,
+			}, &platformclientv2.APIResponse{StatusCode: 200}, nil
+		},
+	}
+
+	// Temporarily replace the internal proxy singleton
+	oldProxy := internalProxy
+	internalProxy = mockProxy
+	defer func() { internalProxy = oldProxy }()
+
+	resourceSchema := routingEmailDomainTestSchema()
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
+		"domain_id": domainName,
+		"subdomain": true,
+	})
+
+	meta := &provider.ProviderMeta{
+		ClientConfig: &platformclientv2.Configuration{},
+	}
+
+	diags := createRoutingEmailDomain(context.Background(), d, meta)
+	if diags != nil && diags.HasError() {
+		t.Fatalf("expected no error, got diagnostics: %v", diags)
+	}
+
+	if d.Id() != existingFullID {
+		t.Fatalf("expected resource ID to be %q, got %q", existingFullID, d.Id())
+	}
+}
+
+func TestUnitCreateRoutingEmailDomain_AlreadyExists_LookupFails_ReturnsError(t *testing.T) {
+	domainName := "acdemailplaysandboxeuscedee1"
+
+	// Mock proxy that simulates the "already exists" 400 error on create,
+	// AND fails the lookup with a non-retryable error.
+	mockProxy := &routingEmailDomainProxy{
+		createRoutingEmailDomainAttr: func(_ context.Context, _ *routingEmailDomainProxy, _ *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {
+			return nil, &platformclientv2.APIResponse{
+				StatusCode:   http.StatusBadRequest,
+				ErrorMessage: "The inbound domain already exists (f24218ed-277b-441b-b6a6-b66c63a34c51)",
+			}, fmt.Errorf("API Error: 400 - The inbound domain already exists")
+		},
+		getRoutingEmailDomainIdByNameAttr: func(_ context.Context, _ *routingEmailDomainProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+			return "", &platformclientv2.APIResponse{StatusCode: 200}, false, fmt.Errorf("unable to find routing email domain with name %s", name)
+		},
+	}
+
+	oldProxy := internalProxy
+	internalProxy = mockProxy
+	defer func() { internalProxy = oldProxy }()
+
+	resourceSchema := routingEmailDomainTestSchema()
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{
+		"domain_id": domainName,
+		"subdomain": true,
+	})
+
+	meta := &provider.ProviderMeta{
+		ClientConfig: &platformclientv2.Configuration{},
+	}
+
+	diags := createRoutingEmailDomain(context.Background(), d, meta)
+	if diags == nil || !diags.HasError() {
+		t.Fatalf("expected error diagnostic when lookup fails, got none")
+	}
+}
+
+func TestUnitFlattenGraphApiSettings(t *testing.T) {
+	integrationID := "6572c166-70dc-4ea7-b410-cabe2ee3e4c6"
+	status := "Active"
+
+	flat := flattenGraphApiSettings(&platformclientv2.Graphapisettings{
+		Integration: &platformclientv2.Domainentityref{Id: &integrationID},
+		Status:      &status,
+	})
+	if len(flat) != 1 {
+		t.Fatalf("expected 1 flattened block, got %d", len(flat))
+	}
+
+	settingsMap, ok := flat[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected map[string]interface{}, got %T", flat[0])
+	}
+	if settingsMap["integration_id"] != integrationID {
+		t.Fatalf("expected integration_id %q, got %v", integrationID, settingsMap["integration_id"])
+	}
+	if settingsMap["status"] != status {
+		t.Fatalf("expected status %q, got %v", status, settingsMap["status"])
+	}
+
+	if flattenGraphApiSettings(nil) != nil {
+		t.Fatalf("expected nil for nil settings")
+	}
+
+	if flattenGraphApiSettings(&platformclientv2.Graphapisettings{}) != nil {
+		t.Fatalf("expected nil for empty Graph API settings object")
+	}
+
+	if flattenGraphApiSettings(&platformclientv2.Graphapisettings{
+		Integration: &platformclientv2.Domainentityref{},
+	}) != nil {
+		t.Fatalf("expected nil when Graph API integration id is unset")
+	}
+}
+
+func TestUnitFlattenImapSettings(t *testing.T) {
+	integrationID := "imap-integration-id"
+	status := "AwaitingFolders"
+
+	flat := flattenImapSettings(&platformclientv2.Imapsettings{
+		Integration: &platformclientv2.Domainentityref{Id: &integrationID},
+		Status:      &status,
+	})
+	if len(flat) != 1 {
+		t.Fatalf("expected 1 flattened block, got %d", len(flat))
+	}
+
+	settingsMap, ok := flat[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected map[string]interface{}, got %T", flat[0])
+	}
+	if settingsMap["integration_id"] != integrationID {
+		t.Fatalf("expected integration_id %q, got %v", integrationID, settingsMap["integration_id"])
+	}
+	if settingsMap["status"] != status {
+		t.Fatalf("expected status %q, got %v", status, settingsMap["status"])
+	}
+
+	if flattenImapSettings(nil) != nil {
+		t.Fatalf("expected nil for nil settings")
+	}
+
+	if flattenImapSettings(&platformclientv2.Imapsettings{}) != nil {
+		t.Fatalf("expected nil for empty IMAP settings object")
+	}
+
+	if flattenImapSettings(&platformclientv2.Imapsettings{
+		Integration: &platformclientv2.Domainentityref{},
+	}) != nil {
+		t.Fatalf("expected nil when IMAP integration id is unset")
+	}
+}
+
+func TestUnitExpandGraphApiSettings(t *testing.T) {
+	integrationID := "6572c166-70dc-4ea7-b410-cabe2ee3e4c6"
+	resourceSchema := routingEmailDomainTestSchema()
+
+	tests := []struct {
+		name    string
+		data    map[string]interface{}
+		wantNil bool
+		wantID  string
+	}{
+		{
+			name: "block absent",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty block list",
+			data: map[string]interface{}{
+				"domain_id":          "example.com",
+				"subdomain":          false,
+				"graph_api_settings": []interface{}{},
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"graph_api_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": "",
+					},
+				},
+			},
+			wantNil: true,
+		},
+		{
+			name: "valid integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"graph_api_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": integrationID,
+					},
+				},
+			},
+			wantNil: false,
+			wantID:  integrationID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := schema.TestResourceDataRaw(t, resourceSchema, tt.data)
+			got := expandGraphApiSettings(d)
+
+			if tt.wantNil {
+				if got != nil {
+					t.Fatalf("expected nil, got %+v", got)
+				}
+				return
+			}
+
+			if got == nil || got.Integration == nil || got.Integration.Id == nil {
+				t.Fatalf("expected Graph API settings with integration id, got %+v", got)
+			}
+			if *got.Integration.Id != tt.wantID {
+				t.Fatalf("expected integration id %q, got %q", tt.wantID, *got.Integration.Id)
+			}
+		})
+	}
+}
+
+func TestUnitExpandImapSettings(t *testing.T) {
+	integrationID := "imap-integration-id"
+	resourceSchema := routingEmailDomainTestSchema()
+
+	tests := []struct {
+		name    string
+		data    map[string]interface{}
+		wantNil bool
+		wantID  string
+	}{
+		{
+			name: "block absent",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty block list",
+			data: map[string]interface{}{
+				"domain_id":     "example.com",
+				"subdomain":     false,
+				"imap_settings": []interface{}{},
+			},
+			wantNil: true,
+		},
+		{
+			name: "empty integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"imap_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": "",
+					},
+				},
+			},
+			wantNil: true,
+		},
+		{
+			name: "valid integration_id",
+			data: map[string]interface{}{
+				"domain_id": "example.com",
+				"subdomain": false,
+				"imap_settings": []interface{}{
+					map[string]interface{}{
+						"integration_id": integrationID,
+					},
+				},
+			},
+			wantNil: false,
+			wantID:  integrationID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := schema.TestResourceDataRaw(t, resourceSchema, tt.data)
+			got := expandImapSettings(d)
+
+			if tt.wantNil {
+				if got != nil {
+					t.Fatalf("expected nil, got %+v", got)
+				}
+				return
+			}
+
+			if got == nil || got.Integration == nil || got.Integration.Id == nil {
+				t.Fatalf("expected IMAP settings with integration id, got %+v", got)
+			}
+			if *got.Integration.Id != tt.wantID {
+				t.Fatalf("expected integration id %q, got %q", tt.wantID, *got.Integration.Id)
+			}
+		})
 	}
 }

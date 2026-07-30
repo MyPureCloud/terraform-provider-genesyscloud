@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -19,6 +19,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *integrationFacebookProxy
+
+var facebookCache = rc.NewResourceCache[platformclientv2.Facebookintegration]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createIntegrationFacebookFunc func(ctx context.Context, p *integrationFacebookProxy, facebookIntegrationRequest *platformclientv2.Facebookintegrationrequest) (*platformclientv2.Facebookintegration, *platformclientv2.APIResponse, error)
@@ -44,7 +46,7 @@ type integrationFacebookProxy struct {
 // newIntegrationFacebookProxy initializes the integration facebook proxy with all of the data needed to communicate with Genesys Cloud
 func newIntegrationFacebookProxy(clientConfig *platformclientv2.Configuration) *integrationFacebookProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	facebookCache := rc.NewResourceCache[platformclientv2.Facebookintegration]()
+
 	return &integrationFacebookProxy{
 		clientConfig:                       clientConfig,
 		conversationsApi:                   api,

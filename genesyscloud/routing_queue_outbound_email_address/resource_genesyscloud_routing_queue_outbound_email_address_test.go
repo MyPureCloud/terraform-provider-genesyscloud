@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceRoutingQueueOutboundEmailAddress(t *testing.T) {
@@ -217,7 +217,7 @@ func verifyOutboundEmailAddressExists(queueResourcePath string) resource.TestChe
 			return err
 		}
 
-		if queue.OutboundEmailAddress == nil || *queue.OutboundEmailAddress == nil {
+		if queue.OutboundEmailAddress == nil {
 			return fmt.Errorf("no outbound email address found for queue %s %s", queueID, *queue.Name)
 		}
 

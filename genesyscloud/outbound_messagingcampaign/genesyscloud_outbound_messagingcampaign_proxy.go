@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
@@ -19,6 +19,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *outboundMessagingcampaignProxy
+
+var obMessagingCampaignCache = rc.NewResourceCache[platformclientv2.Messagingcampaign]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createOutboundMessagingcampaignFunc func(ctx context.Context, p *outboundMessagingcampaignProxy, messagingCampaign *platformclientv2.Messagingcampaign) (*platformclientv2.Messagingcampaign, *platformclientv2.APIResponse, error)
@@ -44,7 +46,7 @@ type outboundMessagingcampaignProxy struct {
 // newOutboundMessagingcampaignProxy initializes the outbound messagingcampaign proxy with all of the data needed to communicate with Genesys Cloud
 func newOutboundMessagingcampaignProxy(clientConfig *platformclientv2.Configuration) *outboundMessagingcampaignProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
-	obMessagingCampaignCache := rc.NewResourceCache[platformclientv2.Messagingcampaign]()
+
 	return &outboundMessagingcampaignProxy{
 		clientConfig:                             clientConfig,
 		outboundApi:                              api,

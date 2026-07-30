@@ -21,7 +21,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceArchitectUserPromptBasic(t *testing.T) {
@@ -372,6 +372,99 @@ func TestAccResourceArchitectUserPromptWavFilS3URI(t *testing.T) {
 		},
 		CheckDestroy: testVerifyUserPromptsDestroyed,
 	})
+}
+
+func TestAccResourceArchitectUserPromptFileToTTS(t *testing.T) {
+	userPromptResourceLabel := "test-user_prompt_file_to_tts"
+	userPromptName := "TestUserPromptFileToTTS_" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription := "Test prompt file to TTS switch"
+	userPromptResourceLang := "en-us"
+	userPromptResourceText := "This is a test greeting!"
+	userPromptResourceTTS := "This is TTS only now!"
+	userPromptResourceFileName := testrunner.GetTestDataPath("resource", ResourceType, "test-prompt-01.wav")
+	resourcePath := "genesyscloud_architect_user_prompt." + userPromptResourceLabel
+
+	withAudio := UserPromptResourceStruct{
+		Language:        userPromptResourceLang,
+		Tts_string:      util.NullValue,
+		Text:            strconv.Quote(userPromptResourceText),
+		Filename:        strconv.Quote(userPromptResourceFileName),
+		FileContentHash: userPromptResourceFileName,
+	}
+
+	ttsOnly := UserPromptResourceStruct{
+		Language:        userPromptResourceLang,
+		Tts_string:      strconv.Quote(userPromptResourceTTS),
+		Text:            strconv.Quote(userPromptResourceText),
+		Filename:        util.NullValue,
+		FileContentHash: util.NullValue,
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create with audio file
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					[]*UserPromptResourceStruct{&withAudio},
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", userPromptName),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.language", userPromptResourceLang),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.filename", userPromptResourceFileName),
+				),
+			},
+			{
+				// Switch same language to TTS only (covers delete+recreate path)
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					[]*UserPromptResourceStruct{&ttsOnly},
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", userPromptName),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.language", userPromptResourceLang),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.tts_string", userPromptResourceTTS),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.filename", ""),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.file_content_hash", ""),
+					testVerifyPromptResourceHasNoAudio(resourcePath, userPromptResourceLang),
+				),
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
+}
+
+func testVerifyPromptResourceHasNoAudio(resourcePath, language string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		rs, ok := state.RootModule().Resources[resourcePath]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourcePath)
+		}
+
+		architectAPI := platformclientv2.NewArchitectApi()
+		prompt, _, err := architectAPI.GetArchitectPrompt(rs.Primary.ID, true, true, []string{language})
+		if err != nil {
+			return fmt.Errorf("failed to get prompt %s: %w", rs.Primary.ID, err)
+		}
+		if prompt.Resources == nil {
+			return nil
+		}
+		for _, r := range *prompt.Resources {
+			if r.Language == nil || *r.Language != language {
+				continue
+			}
+			if r.MediaUri != nil && *r.MediaUri != "" {
+				return fmt.Errorf("expected no audio for language %s, but mediaUri is still set", language)
+			}
+		}
+		return nil
+	}
 }
 
 func testVerifyUserPromptsDestroyed(state *terraform.State) error {

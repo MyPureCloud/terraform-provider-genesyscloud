@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -50,18 +50,94 @@ func getAllIntegrationActions(ctx context.Context, clientConfig *platformclientv
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integration actions %s", err), resp)
 	}
 
+	// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
+	// updated, or deleted via the public API. They are included here so the exporter
+	// can emit them as data sources (see ExportAsDataFunc on the exporter) rather than
+	// as managed resources, allowing other resources to reference them. A given static
+	// action name (e.g. "Get User") frequently repeats across integration instances of
+	// the same type, so we fold the parent integration name into the block label to
+	// keep labels distinct in the exported config.
+	integrationNamesById, diagErr := buildIntegrationNameLookup(ctx, iap, *actions)
+	if diagErr != nil {
+		return nil, diagErr
+	}
+
 	for _, action := range *actions {
-		// Don't include "static" actions
-		if strings.HasPrefix(*action.Id, "static") {
-			continue
-		}
 		blockHash, err := util.QuickHashFields(action.Category)
 		if err != nil {
 			return nil, diag.Errorf("error hashing integration action %s: %s", *action.Name, err)
 		}
-		resources[*action.Id] = &resourceExporter.ResourceMeta{BlockLabel: *action.Category + "_" + *action.Name, BlockHash: blockHash}
+		resources[*action.Id] = &resourceExporter.ResourceMeta{
+			BlockLabel: buildIntegrationActionBlockLabel(action, integrationNamesById),
+			BlockHash:  blockHash,
+		}
 	}
 	return resources, nil
+}
+
+// buildIntegrationNameLookup returns a map of integration id -> integration name to use
+// when generating block labels. The lookup is only populated when at least one static
+// action is present in the supplied actions, since custom actions don't need the
+// integration name baked into their label and the API call is otherwise wasted work.
+func buildIntegrationNameLookup(ctx context.Context, iap *integrationActionsProxy, actions []platformclientv2.Action) (map[string]string, diag.Diagnostics) {
+	hasStatic := false
+	for _, action := range actions {
+		if action.Id != nil && strings.HasPrefix(*action.Id, staticActionIDPrefix) {
+			hasStatic = true
+			break
+		}
+	}
+	if !hasStatic {
+		return nil, nil
+	}
+
+	integrations, resp, err := iap.getAllIntegrations(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get integrations for static action labels: %s", err), resp)
+	}
+
+	lookup := make(map[string]string, len(*integrations))
+	for _, integration := range *integrations {
+		if integration.Id == nil || integration.Name == nil {
+			continue
+		}
+		lookup[*integration.Id] = *integration.Name
+	}
+	return lookup, nil
+}
+
+// buildIntegrationActionBlockLabel returns the label used for an action's exported block.
+// Custom actions retain their existing `<category>_<name>` label so that existing exports
+// remain stable. Static (built-in) actions are prefixed with the parent integration's
+// name and a three-underscore delimiter (`<integrationName>___<category>_<name>`) so
+// that actions sharing a name across integration instances (e.g. "Get User") still
+// produce distinct labels, and so the integration name is visually separable from the
+// `<category>_<name>` portion.
+func buildIntegrationActionBlockLabel(action platformclientv2.Action, integrationNamesById map[string]string) string {
+	category := ""
+	if action.Category != nil {
+		category = *action.Category
+	}
+	name := ""
+	if action.Name != nil {
+		name = *action.Name
+	}
+
+	blockLabel := category + "_" + name
+
+	if action.Id == nil || !strings.HasPrefix(*action.Id, staticActionIDPrefix) {
+		return blockLabel
+	}
+	if action.IntegrationId == nil {
+		return blockLabel
+	}
+	integrationName, ok := integrationNamesById[*action.IntegrationId]
+	if !ok || integrationName == "" {
+		return blockLabel
+	}
+
+	blockLabel = integrationName + "___" + blockLabel
+	return blockLabel
 }
 
 // createIntegrationAction is used by the integration actions resource to create Genesyscloud integration action
@@ -73,7 +149,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
-	if containsFunctionDataAction(category) {
+	if isFunctionDataActionIntegration(ctx, integrationId, iap) || containsFunctionDataAction(category) {
 		return createFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 
@@ -116,6 +192,20 @@ func containsFunctionDataAction(s string) bool {
 	normalized = strings.ReplaceAll(normalized, "_", " ")
 	normalized = strings.ReplaceAll(normalized, "-", " ")
 	return strings.Contains(normalized, "function data action")
+}
+
+// isFunctionDataActionIntegration checks if the integration with the given ID is of type "function-data-actions"
+// by making a GET API call to retrieve the integration details.
+func isFunctionDataActionIntegration(ctx context.Context, integrationId string, iap *integrationActionsProxy) bool {
+	integration, _, err := iap.integrationsApi.GetIntegration(integrationId, 1, 1, "", nil, "", "")
+	if err != nil {
+		log.Printf("Warning: failed to get integration %s to check type: %v. Falling back to category check.", integrationId, err)
+		return false
+	}
+	if integration != nil && integration.IntegrationType != nil && integration.IntegrationType.Id != nil {
+		return *integration.IntegrationType.Id == "function-data-actions"
+	}
+	return false
 }
 
 func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}, iap *integrationActionsProxy) diag.Diagnostics {
@@ -244,7 +334,7 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	log.Printf("DEBUG: Publishing action as publish=true")
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		log.Printf("DEBUG: Updating Published draft with version: %d", version)
-		resp, err := iap.publishIntegrationActionDraft(ctx, id, version+1)
+		resp, err := iap.publishIntegrationActionDraft(ctx, id, version)
 		if err != nil {
 			if resp != nil {
 				log.Printf("DEBUG: Publish failed with status %d", resp.StatusCode)
@@ -479,6 +569,13 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValue(d, "secure", action.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
 
+		// Derive action_type from the ID prefix
+		if strings.HasPrefix(d.Id(), staticActionIDPrefix) {
+			_ = d.Set("action_type", "static")
+		} else {
+			_ = d.Set("action_type", "custom")
+		}
+
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
@@ -583,6 +680,13 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "secure", action.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
 
+		// Derive action_type from the ID prefix
+		if strings.HasPrefix(d.Id(), staticActionIDPrefix) {
+			_ = d.Set("action_type", "static")
+		} else {
+			_ = d.Set("action_type", "custom")
+		}
+
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
@@ -617,7 +721,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("config_response", nil)
 		}
 
-		if containsFunctionDataAction(*action.Category) {
+		if isFunctionDataActionIntegration(ctx, d.Get("integration_id").(string), iap) || containsFunctionDataAction(*action.Category) {
 			var functionData *platformclientv2.Functionconfig
 
 			log.Printf("DEBUG: Reading published function for integration action %s", d.Id())
@@ -680,7 +784,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	if containsFunctionDataAction(category) {
+	if isFunctionDataActionIntegration(ctx, d.Get("integration_id").(string), iap) || containsFunctionDataAction(category) {
 		return updateFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 

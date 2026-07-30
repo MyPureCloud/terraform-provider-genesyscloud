@@ -1,6 +1,7 @@
 package resource_exporter
 
 import (
+	"fmt"
 	"testing"
 
 	"encoding/json"
@@ -20,6 +21,26 @@ type propertyGroupTest struct {
 	SkillName            string
 	ExporterResourceType string
 	ExpectedResult       string
+}
+
+func TestUnitOmitUnresolvedGuidFromConfigMap(t *testing.T) {
+	guid := uuid.NewString()
+	configMap := map[string]interface{}{
+		"contact_list_id": guid,
+	}
+
+	OmitUnresolvedGuidFromConfigMap(configMap, "contact_list_id")
+	if _, ok := configMap["contact_list_id"]; ok {
+		t.Fatal("expected unresolved GUID to be omitted from config map")
+	}
+
+	configMap = map[string]interface{}{
+		"contact_list_id": "${genesyscloud_outbound_contact_list.example.id}",
+	}
+	OmitUnresolvedGuidFromConfigMap(configMap, "contact_list_id")
+	if configMap["contact_list_id"] == nil {
+		t.Fatal("expected resolved reference to be kept in config map")
+	}
 }
 
 // TestUnitExporterCustomMemberGroup uses a table based approach to test the three different types of groups that can be resolved.
@@ -120,4 +141,34 @@ func TestUnitRuleSetPropertyGroup(t *testing.T) {
 		}
 	}
 
+}
+
+// TestUnitReplyEmailAddressSelfReferenceRouteExporterResolver verifies DEVTOOLING-1565: when a route
+// self-references as its reply address, the export resolver must set self_reference_route=true and
+// clear route_id and domain_id. Leaving domain_id in place conflicts with self_reference_route
+// and causes terraform plan to fail.
+func TestUnitReplyEmailAddressSelfReferenceRouteExporterResolver(t *testing.T) {
+	resourceLabel := "example_email_route"
+	configMap := map[string]interface{}{
+		"domain_id": "${data.genesyscloud_routing_email_domain.example_email_domain.id}",
+		"route_id":  fmt.Sprintf("${genesyscloud_routing_email_route.%s.id}", resourceLabel),
+	}
+
+	err := ReplyEmailAddressSelfReferenceRouteExporterResolver(configMap, nil, resourceLabel)
+	if err != nil {
+		t.Fatalf("unexpected error from resolver: %v", err)
+	}
+
+	selfReferenceRoute, ok := configMap["self_reference_route"].(bool)
+	if !ok || !selfReferenceRoute {
+		t.Fatalf("expected self_reference_route=true, got %#v", configMap["self_reference_route"])
+	}
+
+	if configMap["route_id"] != nil {
+		t.Fatalf("expected route_id to be cleared, got %#v", configMap["route_id"])
+	}
+
+	if configMap["domain_id"] != nil {
+		t.Fatalf("expected domain_id to be cleared, got %#v", configMap["domain_id"])
+	}
 }

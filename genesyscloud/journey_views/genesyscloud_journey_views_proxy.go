@@ -9,10 +9,12 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var internalProxy *journeyViewsProxy
+
+var journeyViewCache = rc.NewResourceCache[platformclientv2.Journeyview]()
 
 type getAllJourneyViewsFunc func(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type getJourneyViewByNameFunc func(ctx context.Context, p *journeyViewsProxy, name string) (string, *platformclientv2.APIResponse, error, bool)
@@ -35,7 +37,7 @@ type journeyViewsProxy struct {
 
 func newJourneyViewsProxy(clientConfig *platformclientv2.Configuration) *journeyViewsProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	journeyViewCache := rc.NewResourceCache[platformclientv2.Journeyview]()
+
 	return &journeyViewsProxy{
 		clientConfig:             clientConfig,
 		journeyViewsApi:          api,

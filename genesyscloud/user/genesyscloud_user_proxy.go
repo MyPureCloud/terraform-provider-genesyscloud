@@ -3,14 +3,17 @@ package user
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
 	"net/http"
 	"strconv"
 
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -70,6 +73,25 @@ type userProxy struct {
 
 var userCache = rc.NewResourceCache[platformclientv2.User]()
 var extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+
+// userVoicemailPolicyCache stores voicemail user policies per user during export.
+var userVoicemailPolicyCache = rc.NewResourceCache[platformclientv2.Voicemailuserpolicy]()
+
+// userRoutingUtilizationCache stores raw routing utilization API responses per user during export.
+var userRoutingUtilizationCache = rc.NewResourceCache[[]byte]()
+
+func invalidateUserVoicemailPolicyCache(userID string) {
+	rc.DeleteCacheItem(userVoicemailPolicyCache, userID)
+}
+
+func invalidateUserRoutingUtilizationCache(userID string) {
+	rc.DeleteCacheItem(userRoutingUtilizationCache, userID)
+}
+
+func invalidateUserExportDetailCaches(userID string) {
+	invalidateUserVoicemailPolicyCache(userID)
+	invalidateUserRoutingUtilizationCache(userID)
+}
 
 /*
 The function newUserProxy sets up the user proxy by providing it
@@ -200,7 +222,7 @@ func getUserByIdFn(ctx context.Context, p *userProxy, id string, expand []string
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.userApi.GetUser(id, expand, "", state)
+	return p.userApi.GetUser(id, expand, "", nil, state)
 }
 
 // hydrateUserCacheFn
@@ -208,7 +230,7 @@ func hydrateUserCacheFn(ctx context.Context, p *userProxy, pageSize int, pageNum
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", "")
+	return p.userApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", nil, "")
 }
 
 // getUserByNameFn
@@ -229,6 +251,7 @@ func deleteUserFn(ctx context.Context, p *userProxy, id string) (*interface{}, *
 		return nil, resp, err
 	}
 	rc.DeleteCacheItem(p.userCache, id)
+	invalidateUserExportDetailCaches(id)
 	return data, nil, nil
 }
 
@@ -253,8 +276,10 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 
 	//Inner function to get user based on status
 	getUsersByStatus := func(userStatus string) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
-		users := []platformclientv2.User{}
-		const pageSize = 100
+		var users []platformclientv2.User
+		pageSize := page_size.ForResource(ResourceType, 500)
+		// DEVTOOLING-862: inactive GetUsers requests return 400 beyond 10,000 users (100 pages at pageSize).
+		maxInactiveUserPages := 10_000 / pageSize
 		expandedAttributes := []string{
 			// Expands
 			"skills",
@@ -264,27 +289,54 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 			"certifications",
 			"employerInfo",
 		}
-		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", userStatus)
+		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", nil, userStatus)
 		if err != nil {
 			return nil, apiResponse, err
 		}
-		users = append(users, *usersList.Entities...)
 
-		for pageNum := 2; pageNum <= *usersList.PageCount; pageNum++ {
-			usersList, apiResponse, err := p.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", userStatus)
-
-			//DEVTOOLING-862 - This is a blocker for the BCP team as before this if check was put in the code would fail when it hit 10K of inactive users.
-			//The BCP team (Cesar Branco has asked to write a warning to the log) and just return what we currently have.
-			//Long-term solution is working with Joe Fruland to change the backend API.
-			if userStatus == "inactive" && apiResponse != nil && apiResponse.StatusCode == http.StatusBadRequest {
-				log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API.  No further exports of inactive users will occur.")
-				return &users, apiResponse, nil
-			}
-
-			if err != nil {
-				return nil, apiResponse, err
-			}
+		if usersList.Entities != nil && len(*usersList.Entities) > 0 {
 			users = append(users, *usersList.Entities...)
+		}
+
+		totalPages := 1
+		if usersList.PageCount != nil {
+			totalPages = *usersList.PageCount
+		}
+
+		// The API may report a PageCount above the inactive cap, but pages beyond 100 always
+		// return 400. Cap pagination here so concurrent fetches do not spawn hundreds of
+		// goroutines that each hit a doomed API call.
+		if userStatus == "inactive" && totalPages > maxInactiveUserPages {
+			log.Printf("WARNING!!: Inactive user PageCount (%d) exceeds the API limit of %d pages (10,000 users). Pagination will stop at page %d.", totalPages, maxInactiveUserPages, maxInactiveUserPages)
+			totalPages = maxInactiveUserPages
+		}
+
+		users, apiResponse, err = provider.FetchPagesConcurrently(ctx, ResourceType, users, apiResponse, totalPages, p.clientConfig,
+			func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.User, *platformclientv2.APIResponse, error) {
+				ctx = provider.EnsureResourceContext(ctx, ResourceType)
+				pageProxy := newUserProxy(clientConfig)
+				pageUsersList, pageResp, pageErr := pageProxy.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", nil, userStatus)
+
+				// Safety net only: with the page cap above, inactive requests within range should not
+				// return 400. If one does, treat it as end-of-results rather than failing the export.
+				if userStatus == "inactive" && pageResp != nil && pageResp.StatusCode == http.StatusBadRequest {
+					log.Printf("WARNING!!: The maximum number of inactive users (10,000) have been retrieved from the API. No further exports of inactive users will occur.")
+					return []platformclientv2.User{}, pageResp, nil
+				}
+
+				if pageErr != nil {
+					return nil, pageResp, pageErr
+				}
+
+				if pageUsersList.Entities == nil || len(*pageUsersList.Entities) == 0 {
+					return []platformclientv2.User{}, pageResp, nil
+				}
+
+				return *pageUsersList.Entities, pageResp, nil
+			},
+		)
+		if err != nil {
+			return nil, apiResponse, err
 		}
 
 		return &users, apiResponse, nil
@@ -299,11 +351,15 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 	}
 	allUsers = append(allUsers, *activeUsers...)
 
-	inactiveUsers, apiResponse, err := getUsersByStatus("inactive")
-	if err != nil {
-		return nil, apiResponse, fmt.Errorf("failed to get 'inactive' users %v", err)
+	if featureToggles.SkipInactiveUserExportToggleExists() {
+		log.Printf("Skipping inactive user export because %s is set", featureToggles.SkipInactiveUserExportToggleName())
+	} else {
+		inactiveUsers, apiResponse, err := getUsersByStatus("inactive")
+		if err != nil {
+			return nil, apiResponse, fmt.Errorf("failed to get 'inactive' users %v", err)
+		}
+		allUsers = append(allUsers, *inactiveUsers...)
 	}
-	allUsers = append(allUsers, *inactiveUsers...)
 
 	// Cache the architect schedules resource into the p.userCache for later use
 	for _, user := range allUsers {
@@ -317,7 +373,22 @@ func getVoicemailUserpoliciesByUserIdFn(ctx context.Context, p *userProxy, id st
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.voicemailApi.GetVoicemailUserpolicy(id)
+	if cached := rc.GetCacheItem(userVoicemailPolicyCache, id); cached != nil {
+		log.Printf("[USER-CACHE] User %s: voicemail policy cache hit", id)
+		return cached, nil, nil
+	}
+
+	policy, resp, err := p.voicemailApi.GetVoicemailUserpolicy(id)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if policy != nil {
+		rc.SetCache(userVoicemailPolicyCache, id, *policy)
+		log.Printf("[USER-CACHE] User %s: cached voicemail policy", id)
+	}
+
+	return policy, resp, nil
 }
 
 func updatePasswordFn(ctx context.Context, p *userProxy, userId string, newPassword string) (*platformclientv2.APIResponse, error) {
@@ -347,7 +418,7 @@ func getTelephonyExtensionPoolByExtensionFn(ctx context.Context, p *userProxy, e
 		allPools = *rc.GetCache(p.extensionPoolCache)
 	} else if rc.GetCacheSize(p.extensionPoolCache) != *extensionPoolList.Total || rc.GetCacheSize(p.extensionPoolCache) != 0 {
 		// The cache is populated but not with the right data, clear the cache so it can be re populated
-		p.extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
+		extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
 
 		allPools = append(allPools, *extensionPoolList.Entities...)
 

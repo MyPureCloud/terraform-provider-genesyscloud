@@ -11,12 +11,21 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var internalProxy *knowledgeDocumentProxy
+
+var (
+	knowledgeDocumentCache  = rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
+	knowledgeLabelCache     = rc.NewResourceCache[platformclientv2.Labelresponse]()
+	knowledgeCategoryCache  = rc.NewResourceCache[platformclientv2.Categoryresponse]()
+	knowledgeVariationCache = rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
+)
 
 type getKnowledgeDocumentByTitleFunc func(ctx context.Context, p *knowledgeDocumentProxy, title string, knowledgeBaseName string, categoryName string) (string, bool, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseCategoryFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error)
@@ -26,7 +35,7 @@ type getKnowledgeKnowledgebaseLabelFunc func(ctx context.Context, p *knowledgeDo
 type getKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, expand []string, state string) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type GetAllKnowledgeDocumentEntitiesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
-type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
+type createKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
 type createKnowledgebaseDocumentVersionsFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentversion) (*platformclientv2.Knowledgedocumentversion, *platformclientv2.APIResponse, error)
 type deleteKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string) (*platformclientv2.APIResponse, error)
 type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, documentId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error)
@@ -34,6 +43,7 @@ type updateKnowledgeKnowledgebaseDocumentFunc func(ctx context.Context, p *knowl
 type knowledgeDocumentProxy struct {
 	clientConfig                             *platformclientv2.Configuration
 	KnowledgeApi                             *platformclientv2.KnowledgeApi
+	customApiClient                          *customapi.Client
 	getKnowledgeDocumentByTitleAttr          getKnowledgeDocumentByTitleFunc
 	getKnowledgeKnowledgebaseCategoryAttr    getKnowledgeKnowledgebaseCategoryFunc
 	getKnowledgeKnowledgebaseCategoriesAttr  getKnowledgeKnowledgebaseCategoriesFunc
@@ -54,13 +64,11 @@ type knowledgeDocumentProxy struct {
 
 func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *knowledgeDocumentProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgeDocumentCache := rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
-	knowledgeLabelCache := rc.NewResourceCache[platformclientv2.Labelresponse]()
-	knowledgeCategoryCache := rc.NewResourceCache[platformclientv2.Categoryresponse]()
-	knowledgeVariationCache := rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
+
 	return &knowledgeDocumentProxy{
 		clientConfig:                             clientConfig,
 		KnowledgeApi:                             api,
+		customApiClient:                          customapi.NewClient(clientConfig, ResourceType),
 		getKnowledgeDocumentByTitleAttr:          getKnowledgeDocumentByTitleFn,
 		getKnowledgeKnowledgebaseCategoryAttr:    getKnowledgeKnowledgebaseCategoryFn,
 		getKnowledgeKnowledgebaseCategoriesAttr:  getKnowledgeKnowledgebaseCategoriesFn,
@@ -120,7 +128,7 @@ func (p *knowledgeDocumentProxy) GetAllKnowledgeDocumentEntities(ctx context.Con
 	return p.GetAllKnowledgeDocumentEntitiesAttr(ctx, p, knowledgeBase)
 }
 
-func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func (p *knowledgeDocumentProxy) createKnowledgeKnowledgebaseDocument(ctx context.Context, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	return p.createKnowledgeKnowledgebaseDocumentAttr(ctx, p, knowledgeBaseId, body)
 }
 
@@ -267,32 +275,26 @@ func GetAllKnowledgeDocumentEntitiesFn(ctx context.Context, p *knowledgeDocument
 	const pageSize = 100
 	// prepare base url
 	resourcePath := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s/documents", url.PathEscape(*knowledgeBase.Id))
-	listDocumentsBaseUrl := fmt.Sprintf("%s%s", p.KnowledgeApi.Configuration.BasePath, resourcePath)
 
 	for {
 		// prepare query params
-		queryParams := make(map[string]string, 0)
-		queryParams["after"] = after
-		queryParams["pageSize"] = fmt.Sprintf("%v", pageSize)
-		queryParams["includeDrafts"] = "true"
-
-		// prepare headers
-		headers := make(map[string]string)
-		headers["Authorization"] = fmt.Sprintf("Bearer %s", p.clientConfig.AccessToken)
-		headers["Content-Type"] = "application/json"
-		headers["Accept"] = "application/json"
+		queryParams := customapi.NewQueryParams(map[string]string{
+			"after":         after,
+			"pageSize":      fmt.Sprintf("%v", pageSize),
+			"includeDrafts": "true",
+		})
 
 		// execute request
-		response, err := p.clientConfig.APIClient.CallAPI(listDocumentsBaseUrl, "GET", nil, headers, queryParams, nil, "", nil, "")
+		rawBody, resp, err := customapi.DoRaw(ctx, p.customApiClient, customapi.MethodGet, resourcePath, nil, queryParams)
 		if err != nil {
-			return nil, response, fmt.Errorf("failed to read knowledge document list response error: %s", err)
+			return nil, resp, fmt.Errorf("failed to read knowledge document list response error: %s", err)
 		}
 
 		// process response
 		var knowledgeDocuments platformclientv2.Knowledgedocumentresponselisting
-		unmarshalErr := json.Unmarshal(response.RawBody, &knowledgeDocuments)
+		unmarshalErr := json.Unmarshal(rawBody, &knowledgeDocuments)
 		if unmarshalErr != nil {
-			return nil, response, fmt.Errorf("failed to unmarshal knowledge document list response: %s", unmarshalErr)
+			return nil, resp, fmt.Errorf("failed to unmarshal knowledge document list response: %s", unmarshalErr)
 		}
 
 		/**
@@ -503,7 +505,7 @@ func cacheKnowledgeCategoryEntities(p *knowledgeDocumentProxy, knowledgeBaseId s
 	return &entities, nil
 }
 
-func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentcreaterequest) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
+func createKnowledgeKnowledgebaseDocumentFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, body *platformclientv2.Knowledgedocumentreq) (*platformclientv2.Knowledgedocumentresponse, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 

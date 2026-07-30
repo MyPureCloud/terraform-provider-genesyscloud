@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -19,6 +19,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *taskManagementOnCreateRuleProxy
+
+var onCreateRuleCache = rc.NewResourceCache[platformclientv2.Workitemoncreaterule]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createTaskManagementOnCreateRuleFunc func(ctx context.Context, p *taskManagementOnCreateRuleProxy, worktypeId string, onCreateRuleCreate *platformclientv2.Workitemoncreaterulecreate) (*platformclientv2.Workitemoncreaterule, *platformclientv2.APIResponse, error)
@@ -45,7 +47,7 @@ type taskManagementOnCreateRuleProxy struct {
 // newTaskManagementOnCreateRuleProxy initializes the task management worktype proxy with all the data needed to communicate with Genesys Cloud
 func newTaskManagementOnCreateRuleProxy(clientConfig *platformclientv2.Configuration) *taskManagementOnCreateRuleProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
-	onCreateRuleCache := rc.NewResourceCache[platformclientv2.Workitemoncreaterule]()
+
 	taskmanagementProxy := taskManagementWorktype.GetTaskManagementWorktypeProxy(clientConfig)
 	return &taskManagementOnCreateRuleProxy{
 		clientConfig:                              clientConfig,

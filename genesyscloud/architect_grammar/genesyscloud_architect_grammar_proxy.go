@@ -3,12 +3,13 @@ package architect_grammar
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v179/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -19,6 +20,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectGrammarProxy
+
+var grammarCache = rc.NewResourceCache[platformclientv2.Grammar]()
 
 // Type definitions for each func on our proxy so that we can easily mock them out later
 type createArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error)
@@ -44,7 +47,7 @@ type architectGrammarProxy struct {
 // newArchitectGrammarProxy initializes the grammar proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *architectGrammarProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	grammarCache := rc.NewResourceCache[platformclientv2.Grammar]()
+
 	return &architectGrammarProxy{
 		clientConfig:                    clientConfig,
 		architectApi:                    api,
