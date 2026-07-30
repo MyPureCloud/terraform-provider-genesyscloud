@@ -1,7 +1,6 @@
 package journey_action_template
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -15,7 +14,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	err       error
 )
 
 /*
@@ -54,9 +52,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	if sdkConfig, err = provider.AuthorizeSdk(); err != nil {
-		log.Fatal(err)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

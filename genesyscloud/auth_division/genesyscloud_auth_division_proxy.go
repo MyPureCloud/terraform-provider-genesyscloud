@@ -14,6 +14,8 @@ import (
 
 var internalProxy *authDivisionProxy
 
+var authDivisionCache = rc.NewResourceCache[platformclientv2.Authzdivision]()
+
 type getAllAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, name string) (*[]platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type createAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, authzDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type getAuthDivisionIdByNameFunc func(ctx context.Context, p *authDivisionProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
@@ -36,7 +38,7 @@ type authDivisionProxy struct {
 // newAuthDivisionProxy initializes the auth division proxy with all of the data needed to communicate with Genesys Cloud
 func newAuthDivisionProxy(clientConfig *platformclientv2.Configuration) *authDivisionProxy {
 	api := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
-	authDivisionCache := rc.NewResourceCache[platformclientv2.Authzdivision]()
+
 	return &authDivisionProxy{
 		clientConfig:                clientConfig,
 		authorizationApi:            api,

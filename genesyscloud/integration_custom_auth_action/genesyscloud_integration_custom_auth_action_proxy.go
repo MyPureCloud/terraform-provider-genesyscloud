@@ -123,7 +123,7 @@ func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActi
 	actions := []platformclientv2.Action{}
 	const pageSize = 100
 
-	actionsList, resp, err := p.integrationsApi.GetIntegrationsActions(pageSize, 1, "", "", "", "", "", "", "", "", "true")
+	actionsList, resp, err := p.integrationsApi.GetIntegrationsActions(pageSize, 1, "", "", "", "", "", "", "", "", "true", false)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -135,7 +135,7 @@ func getAllIntegrationCustomAuthActionsFn(ctx context.Context, p *customAuthActi
 	}
 
 	for pageNum := 2; pageNum <= *actionsList.PageCount; pageNum++ {
-		actionsList, resp, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "true")
+		actionsList, resp, err := p.integrationsApi.GetIntegrationsActions(pageSize, pageNum, "", "", "", "", "", "", "", "", "true", false)
 		if err != nil {
 			return nil, resp, err
 		}

@@ -44,8 +44,10 @@ func TestAccMrmoExport(t *testing.T) {
 	}()
 
 	output, diags := Export(context.Background(), ExportInput{
-		ResourceType: "genesyscloud_outbound_attempt_limit",
-		EntityId:     attemptLimitId,
+		BaseExportInput: BaseExportInput{
+			ResourceType: "genesyscloud_outbound_attempt_limit",
+		},
+		EntityId: attemptLimitId,
 	}, clientConfig)
 
 	if diags.HasError() {

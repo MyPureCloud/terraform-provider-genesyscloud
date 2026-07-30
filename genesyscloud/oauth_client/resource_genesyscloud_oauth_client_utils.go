@@ -114,9 +114,9 @@ func updateSecretToDirectory(directory string, oauthClientResult *platformclient
 
 func fetchOauthClientSecret(sdkConfig *platformclientv2.Configuration, id string) map[string]string {
 	fields := make(map[string]string)
-	fields["client_id"] = id
+	fields["clientId"] = id
 	RetrieveCachedOauthClientSecret(sdkConfig, fields)
-	if _, exists := fields["client_secret"]; !exists {
+	if _, exists := fields["clientSecret"]; !exists {
 		err := FetchFieldsFromMetaDataCache(fields, CacheFile)
 		if err != nil {
 			log.Printf("Unable to fetch from provider Cache %v", err)

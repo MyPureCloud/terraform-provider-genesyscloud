@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
@@ -629,12 +630,14 @@ func convertLiteralToSDK(literal map[string]interface{}) (*platformclientv2.Lite
 	return sdkLiteral, nil
 }
 
-// converts an SDK literal to provider format
+// convertSDKLiteralToProvider converts an SDK literal to provider format.
+// String and stringList values are trimmed to ensure clean exports between orgs.
 func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[string]interface{} {
 	literal := make(map[string]interface{})
 
 	if sdkLiteral.VarString != nil {
-		literal["value"] = *sdkLiteral.VarString
+		// Trim whitespace to ensure consistency between orgs
+		literal["value"] = strings.TrimSpace(*sdkLiteral.VarString)
 		literal["type"] = "string"
 	} else if sdkLiteral.Integer != nil {
 		literal["value"] = strconv.Itoa(*sdkLiteral.Integer)
@@ -657,8 +660,12 @@ func convertSDKLiteralToProvider(sdkLiteral *platformclientv2.Literal) map[strin
 		literal["value"] = *sdkLiteral.Special
 		literal["type"] = "special"
 	} else if sdkLiteral.Strings != nil {
-		// Convert string slice back to comma-separated string
-		literal["value"] = strings.Join(*sdkLiteral.Strings, ",")
+		// Trim whitespace to ensure consistency between orgs
+		trimmed := make([]string, len(*sdkLiteral.Strings))
+		for i, s := range *sdkLiteral.Strings {
+			trimmed[i] = strings.TrimSpace(s)
+		}
+		literal["value"] = strings.Join(trimmed, ",")
 		literal["type"] = "stringList"
 	} else {
 		// If no fields are set, return empty values to indicate use of column default
@@ -968,8 +975,12 @@ func valuesEqual(val1, val2 interface{}) bool {
 	}
 }
 
-// applyRowChanges applies the detected changes to the draft version
-func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange) error {
+// applyRowChanges applies the detected changes to the draft version.
+// priorRowCount is the number of rows already present in the draft version
+// before the adds are applied (kept rows = original rows minus deletes; updates
+// keep their slot). New rows are appended after these, so the i-th add lands at
+// row index priorRowCount+i+1. This is needed for the 504-ghost-row guard below.
+func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, priorRowCount int) error {
 	// Get the table version to extract column mapping
 	tableVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
 	if err != nil {
@@ -1036,11 +1047,26 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d: %s", i+1, err)
 		}
-		_, err = proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
-		if err != nil {
+		resp, cerr := proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
+		if cerr != nil {
+			// 504-ghost-row guard (see addRowsToVersion / isDuplicateRowAtIndex). A POST
+			// can return 504 at the gateway yet succeed server-side; the non-idempotent
+			// retry then collides with that ghost row and returns 409 duplicate.row.
+			//
+			// Unlike the create path (fresh version, the i-th add lands at index i+1),
+			// here the new version is a COPY and adds are appended AFTER the kept rows,
+			// so the i-th add lands at index priorRowCount+i+1. That index is always past
+			// every kept row (1..priorRowCount) and every earlier add, so a genuine config
+			// duplicate (which reports an earlier row's index) can never match - only a
+			// true ghost of the row we just sent matches. A wrong base would merely fail
+			// to skip a ghost (same as no guard); it can never mask a real duplicate.
+			if isDuplicateRowAtIndex(resp, priorRowCount+i+1) {
+				log.Printf("[WARN] row %d already exists on decision table %s version %d (409 %s at matching index %d); treating as added and continuing", i+1, tableId, version, decisionTableDuplicateRowCode, priorRowCount+i+1)
+				continue
+			}
 			// If adding a row fails, we can't easily rollback individual rows
 			// The version cleanup will handle the overall rollback
-			return fmt.Errorf("failed to add new row %d/%d: %s", i+1, len(changes.adds), err)
+			return fmt.Errorf("failed to add new row %d/%d: %s", i+1, len(changes.adds), cerr)
 		}
 
 		// Track successfully added rows (if we had row IDs, we'd store them here)
@@ -1050,4 +1076,25 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 
 	log.Printf("Successfully applied all row changes: %d deletes, %d updates, %d adds", len(changes.deletes), len(changes.updates), len(addedRows))
 	return nil
+}
+
+// normalizeLiteralValue normalizes whitespace in string and stringList literal values.
+func normalizeLiteralValue(value, literalType string) string {
+	if value == "" {
+		return value
+	}
+
+	switch literalType {
+	case "string":
+		return strings.TrimSpace(util.StripInvisibleUnicodeFromString(value))
+	case "stringList":
+		stripped := util.StripInvisibleUnicodeFromString(value)
+		parts := strings.Split(stripped, ",")
+		for i, part := range parts {
+			parts[i] = strings.TrimSpace(part)
+		}
+		return strings.Join(parts, ",")
+	default:
+		return value
+	}
 }

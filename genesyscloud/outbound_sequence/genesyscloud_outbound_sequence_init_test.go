@@ -1,7 +1,6 @@
 package outbound_sequence
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -35,7 +34,6 @@ var providerResources map[string]*schema.Resource
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 type registerTestInstance struct {
@@ -70,10 +68,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for the package outbound_sequence: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)

@@ -217,7 +217,7 @@ func verifyOutboundEmailAddressExists(queueResourcePath string) resource.TestChe
 			return err
 		}
 
-		if queue.OutboundEmailAddress == nil || *queue.OutboundEmailAddress == nil {
+		if queue.OutboundEmailAddress == nil {
 			return fmt.Errorf("no outbound email address found for queue %s %s", queueID, *queue.Name)
 		}
 

@@ -141,9 +141,8 @@ func updateRoutingQueueConditionRoutingFn(ctx context.Context, p *routingQueueCo
 		SuppressInQueueCallRecording: queue.SuppressInQueueCallRecording,
 	}
 
-	// For some reason OutboundEmailAddress returned by GetRoutingQueue is a pointer to a pointer so I am handling it here
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		updateQueue.OutboundEmailAddress = *queue.OutboundEmailAddress
+	if queue.OutboundEmailAddress != nil {
+		updateQueue.OutboundEmailAddress = queue.OutboundEmailAddress
 	}
 
 	// Update the queue with th new rules

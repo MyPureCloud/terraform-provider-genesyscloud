@@ -261,7 +261,7 @@ func isUserDeleted(id string) (bool, error) {
 
 	usersAPI := platformclientv2.NewUsersApi()
 	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	// Check if the user is not found (deleted)
 	if response != nil && response.StatusCode == 404 {
@@ -299,7 +299,7 @@ func testVerifyGroupsAndUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 			if user != nil {
 				return fmt.Errorf("User (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {

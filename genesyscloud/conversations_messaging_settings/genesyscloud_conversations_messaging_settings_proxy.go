@@ -3,8 +3,9 @@ package conversations_messaging_settings
 import (
 	"context"
 	"fmt"
-	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"log"
+
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -12,6 +13,8 @@ import (
 )
 
 var internalProxy *conversationsMessagingSettingsProxy
+
+var messagingSettingsCache = rc.NewResourceCache[platformclientv2.Messagingsetting]()
 
 type getAllConversationsMessagingSettingsFunc func(ctx context.Context, p *conversationsMessagingSettingsProxy) (*[]platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error)
 type createConversationsMessagingSettingsFunc func(ctx context.Context, p *conversationsMessagingSettingsProxy, messagingSettingRequest *platformclientv2.Messagingsettingrequest) (*platformclientv2.Messagingsetting, *platformclientv2.APIResponse, error)
@@ -38,7 +41,7 @@ type conversationsMessagingSettingsProxy struct {
 // newConversationsMessagingSettingsProxy initializes the conversations messaging settings proxy with all of the data needed to communicate with Genesys Cloud
 func newConversationsMessagingSettingsProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingSettingsProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	messagingSettingsCache := rc.NewResourceCache[platformclientv2.Messagingsetting]()
+
 	return &conversationsMessagingSettingsProxy{
 		clientConfig:                                  clientConfig,
 		conversationsApi:                              api,

@@ -6,20 +6,38 @@ description: |-
 ---
 # genesyscloud_oauth_client (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud OAuth Clients. See this page for detailed configuration information: https://help.mypurecloud.com/articles/create-an-oauth-client/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#get-api-v2-oauth-clients)
-* [GET /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#get-api-v2-oauth-clients--clientId-)
-* [POST /api/v2/oauth/clients](https://developer.genesys.cloud/api/rest/v2/oauth/#post-api-v2-oauth-clients)
-* [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#put-api-v2-oauth-clients--clientId-)
-* [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/api/rest/v2/oauth/#delete-api-v2-oauth-clients--clientId-)
+* [POST /api/v2/integrations/credentials](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-credentials)
+* [DELETE /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-integrations-credentials--credentialId-)
+* [GET /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-credentials--credentialId-)
+* [PUT /api/v2/integrations/credentials/{credentialId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-integrations-credentials--credentialId-)
+* [GET /api/v2/oauth/clients](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-oauth-clients)
+* [POST /api/v2/oauth/clients](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-oauth-clients)
+* [DELETE /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-oauth-clients--clientId-)
+* [GET /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-oauth-clients--clientId-)
+* [PUT /api/v2/oauth/clients/{clientId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-oauth-clients--clientId-)
+* [GET /api/v2/tokens/me](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-tokens-me)
+* [GET /api/v2/users/me](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-users-me)
+* [GET /api/v2/users/{subjectId}/roles](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-users--subjectId--roles)
+* [PUT /api/v2/users/{subjectId}/roles](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-users--subjectId--roles)
+
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `authorization:grant:add`
+* `authorization:grant:view`
+* `integrations:integration:add`
+* `integrations:integration:delete`
+* `integrations:integration:edit`
+* `integrations:integration:view`
 * `oauth:client:add`
 * `oauth:client:delete`
 * `oauth:client:edit`
@@ -27,8 +45,13 @@ The following permissions are required to use this resource:
 
 The following OAuth scopes are required to use this resource:
 
+* `authorization`
+* `authorization:readonly`
+* `integrations`
+* `integrations:readonly`
 * `oauth`
 * `oauth:readonly`
+* `user-basic-info`
 
 
 ## Example Usage

@@ -45,7 +45,7 @@ func getAllIntegrations(ctx context.Context, clientConfig *platformclientv2.Conf
 	ip := getIntegrationsProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	integrations, resp, err := ip.getAllIntegrations(ctx)
+	integrations, resp, err := ip.GetAllIntegrations(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get all integrations %s", err), resp)
 	}
@@ -124,7 +124,7 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "intended_state", currentIntegration.IntendedState)
 
 		// Use returned ID to get current config, which contains complete configuration
-		integrationConfig, resp, err := ip.getIntegrationConfig(ctx, *currentIntegration.Id)
+		integrationConfig, resp, err := ip.GetIntegrationConfig(ctx, *currentIntegration.Id)
 
 		if err != nil {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read config of integration %s | error: %s", d.Id(), getErr), resp))

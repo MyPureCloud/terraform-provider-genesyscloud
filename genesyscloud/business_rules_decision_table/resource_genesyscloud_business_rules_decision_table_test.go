@@ -665,3 +665,128 @@ func generateColumnsWithInvalidPropertyKey(queueResourceLabel string) string {
 func generateHomeDivisionReference() string {
 	return "\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"
 }
+
+// TestAccResourceBusinessRulesDecisionTableWhitespaceEdgeCases replicates the customer issue
+// from RULES-1491: whitespace differences between .tf config and API response cause false
+// state mismatches and unnecessary updates on every terraform plan/apply.
+//
+// The customer scenario: table exists with clean values, user updates .tf from a spreadsheet
+// which introduces trailing spaces and spaces after commas. Terraform sees a diff and forces
+// an unnecessary update even though the data is semantically identical.
+//
+// This test:
+//   - Step 1: Create with clean values (no whitespace)
+//   - Step 2: Re-apply with whitespace-padded values — should produce NO plan changes (the bug)
+//   - Step 3: Real content change — verify actual updates still trigger
+//   - Step 4: Re-apply Step 3 config with whitespace added — should produce NO plan changes
+//
+// BEFORE FIX: Steps 2 and 4 FAIL — Terraform detects non-empty plan from whitespace diffs
+// AFTER FIX: All steps PASS — DiffSuppressFunc normalizes whitespace
+func TestAccResourceBusinessRulesDecisionTableWhitespaceEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
+	if !enabled {
+		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
+		return
+	}
+
+	var (
+		tableResourceLabel  = "test-whitespace-dt"
+		schemaResourceLabel = "test-whitespace-schema"
+		queueResourceLabel  = "test-whitespace-queue"
+
+		tableName         = "TF Whitespace Test-" + uuid.NewString()[:8]
+		tableDesc         = "Terraform whitespace edge case test"
+		schemaName        = "TF Whitespace Schema-" + uuid.NewString()[:8]
+		schemaDescription = "Test schema for whitespace edge cases"
+		queueName         = "TF Whitespace Queue-" + uuid.NewString()[:8]
+	)
+
+	baseConfig := generateBusinessRulesSchemaResource(schemaResourceLabel, schemaName, schemaDescription) +
+		generateHomeDivisionReference() +
+		generateRoutingQueueResource(queueResourceLabel, queueName)
+
+	// Step 1: Clean values — guaranteed to work with the API
+	cleanConfig := baseConfig +
+		generateBusinessRulesDecisionTableResource(
+			tableResourceLabel, tableName, tableDesc,
+			"data.genesyscloud_auth_division_home.home.id",
+			"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+			generateColumns(queueResourceLabel),
+			generateRows(queueResourceLabel),
+		)
+
+	// Step 2: Same data but with whitespace padding — simulates spreadsheet import
+	whitespaceConfig := baseConfig +
+		generateBusinessRulesDecisionTableResource(
+			tableResourceLabel, tableName, tableDesc,
+			"data.genesyscloud_auth_division_home.home.id",
+			"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+			generateColumns(queueResourceLabel),
+			generateRowsWithWhitespaceEdgeCases(queueResourceLabel),
+		)
+
+	// Step 3: Real content change — clean values
+	realChangeConfig := baseConfig +
+		generateBusinessRulesDecisionTableResource(
+			tableResourceLabel, tableName, tableDesc,
+			"data.genesyscloud_auth_division_home.home.id",
+			"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+			generateColumns(queueResourceLabel),
+			generateRowsWithRealContentChange(queueResourceLabel),
+		)
+
+	// Step 4: Same as Step 3 but with whitespace padding — tests diff suppression after update
+	realChangeWithWhitespaceConfig := baseConfig +
+		generateBusinessRulesDecisionTableResource(
+			tableResourceLabel, tableName, tableDesc,
+			"data.genesyscloud_auth_division_home.home.id",
+			"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+			generateColumns(queueResourceLabel),
+			generateRowsWithRealContentChangeAndWhitespace(queueResourceLabel),
+		)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create with clean values
+				Config: cleanConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "name", tableName),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.#", "1"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.1.literal.0.value", "John Doe"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.value", "Premium Support"),
+				),
+			},
+			{
+				// Step 2: Re-apply with whitespace-padded values — should be NO plan changes
+				// BEFORE FIX: FAILS — Terraform sees "John Doe" vs "John Doe " as different
+				// AFTER FIX: PASSES — DiffSuppressFunc trims whitespace before comparison
+				Config:             whitespaceConfig,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Step 3: Real content change — verify actual updates still work
+				Config: realChangeConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.inputs.1.literal.0.value", "Jane Smith"),
+					resource.TestCheckResourceAttr("genesyscloud_business_rules_decision_table."+tableResourceLabel, "rows.0.outputs.1.literal.0.value", "Standard Support"),
+				),
+			},
+			{
+				// Step 4: Re-apply Step 3 values with whitespace — should be NO plan changes
+				// Tests that diff suppression works after an update too, not just after create
+				// BEFORE FIX: FAILS
+				// AFTER FIX: PASSES
+				Config:             realChangeWithWhitespaceConfig,
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+		CheckDestroy: testVerifyBusinessRulesDecisionTablesDestroyed,
+	})
+}

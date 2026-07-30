@@ -1,7 +1,6 @@
 package telephony_providers_edges_phone
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -33,7 +32,6 @@ var (
 	providerResources map[string]*schema.Resource
 
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 type registerTestInstance struct {
@@ -65,10 +63,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for the package telephony_providers_edges_phone: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

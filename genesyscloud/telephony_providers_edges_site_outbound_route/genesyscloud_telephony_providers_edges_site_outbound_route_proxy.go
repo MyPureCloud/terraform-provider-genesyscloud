@@ -20,6 +20,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *siteOutboundRouteProxy
 
+var siteOutboundRouteCache = rc.NewResourceCache[platformclientv2.Outboundroutebase]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllSiteOutboundRoutesFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
 type getSiteByIdFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*platformclientv2.Site, *platformclientv2.APIResponse, error)
@@ -49,7 +51,6 @@ type siteOutboundRouteProxy struct {
 func newSiteOutboundRouteProxy(clientConfig *platformclientv2.Configuration) *siteOutboundRouteProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	siteProxy := telephonyProvidersEdgesSite.GetSiteProxy(clientConfig)
-	siteOutboundRouteCache := rc.NewResourceCache[platformclientv2.Outboundroutebase]()
 
 	return &siteOutboundRouteProxy{
 		clientConfig: clientConfig,

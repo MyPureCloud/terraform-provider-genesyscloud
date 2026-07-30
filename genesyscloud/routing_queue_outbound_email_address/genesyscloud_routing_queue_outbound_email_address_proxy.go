@@ -77,14 +77,9 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 		}
 	}
 
-	queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil)
-	if err != nil {
-		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
-	}
-
 	// For some reason outbound email address is a double pointer
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		return *queue.OutboundEmailAddress, resp, nil
+	if queue != nil && queue.OutboundEmailAddress != nil {
+		return queue.OutboundEmailAddress, resp, nil
 	}
 
 	return nil, resp, fmt.Errorf("no outbound email address for queue %s", queueId)
@@ -142,8 +137,8 @@ func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQue
 		return nil, resp, fmt.Errorf("failed to update outbound email address for routing queue %s: %s", queueId, err)
 	}
 
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		return *queue.OutboundEmailAddress, resp, nil
+	if queue.OutboundEmailAddress != nil {
+		return queue.OutboundEmailAddress, resp, nil
 	}
 
 	return nil, resp, fmt.Errorf("error updating outbound email address for routing queue %s: %s", queueId, err)

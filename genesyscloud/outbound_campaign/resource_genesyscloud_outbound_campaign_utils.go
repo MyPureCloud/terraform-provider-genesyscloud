@@ -33,22 +33,14 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	outboundLineCount := d.Get("outbound_line_count").(int)
 	skipPreviewDisabled := d.Get("skip_preview_disabled").(bool)
 	previewTimeOutSeconds := d.Get("preview_time_out_seconds").(int)
+	previewAutoEnd := d.Get("preview_auto_end").(bool)
 	alwaysRunning := d.Get("always_running").(bool)
 	noAnswerTimeout := d.Get("no_answer_timeout").(int)
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
 	priority := d.Get("priority").(int)
-	maxCallsPerAgent := d.Get("max_calls_per_agent").(int)
+	maxCallsPerAgent := d.Get("max_calls_per_agent").(float64)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
-
-	// Add logging for call_analysis_response_set_id
-	callAnalysisResponseSetId := d.Get("call_analysis_response_set_id").(string)
-	campaignName := d.Get("name").(string)
-	if callAnalysisResponseSetId != "" {
-		log.Printf("Campaign '%s': call_analysis_response_set_id is set to: %s", campaignName, callAnalysisResponseSetId)
-	} else {
-		log.Printf("Campaign '%s': call_analysis_response_set_id is empty/unset (will be nil in API call)", campaignName)
-	}
 
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
@@ -67,12 +59,15 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		CallAnalysisResponseSet:        util.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
 		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
+		PreviewAutoEnd:                 &previewAutoEnd,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
 		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
 		Division:                       util.BuildSdkDomainEntityRef(d, "division_id"),
 		DynamicContactQueueingSettings: buildSettings(d.Get("dynamic_contact_queueing_settings").([]interface{})),
 		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
+		DiagnosticsSettings:            buildDiagnosticsSettings(d.Get("diagnostics_settings").([]interface{})),
+		AgentOwnedColumn:               resourcedata.GetNonZeroPointer[string](d, "agent_owned_column"),
 	}
 
 	if len(skillColumns) > 0 {
@@ -99,8 +94,8 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	if priority != 0 {
 		campaign.Priority = &priority
 	}
-	if maxCallsPerAgent != 0 {
-		campaign.MaxCallsPerAgent = &maxCallsPerAgent
+	if maxCallsPerAgent >= 1 {
+		campaign.MaxCallsPerAgentDecimal = &maxCallsPerAgent
 	}
 	return campaign
 }
@@ -194,6 +189,21 @@ func buildLineBalancingSettings(settings []interface{}) *platformclientv2.Dynami
 	return &sdkLineBalancingSettings
 }
 
+func buildDiagnosticsSettings(settings []interface{}) *platformclientv2.Diagnosticssettings {
+	if settings == nil || len(settings) < 1 {
+		return nil
+	}
+	settingMap, ok := settings[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	var sdkDiagnosticsSettings platformclientv2.Diagnosticssettings
+	if v, ok := settingMap["report_low_max_calls_per_agent_alert"].(bool); ok {
+		sdkDiagnosticsSettings.ReportLowMaxCallsPerAgentAlert = platformclientv2.Bool(v)
+	}
+	return &sdkDiagnosticsSettings
+}
+
 func flattenSettings(settings *platformclientv2.Dynamiccontactqueueingsettings) []interface{} {
 	settingsMap := make(map[string]interface{}, 0)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "sort", settings.Sort)
@@ -239,6 +249,15 @@ func flattenLineBalancingSettings(settings *platformclientv2.Dynamiclinebalancin
 	settingsMap := make(map[string]interface{}, 0)
 	settingsMap["enabled"] = *settings.Enabled
 	resourcedata.SetMapValueIfNotNil(settingsMap, "relative_weight", settings.RelativeWeight)
+	return []interface{}{settingsMap}
+}
+
+func flattenDiagnosticsSettings(settings *platformclientv2.Diagnosticssettings) []interface{} {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]interface{}, 0)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "report_low_max_calls_per_agent_alert", settings.ReportLowMaxCallsPerAgentAlert)
 	return []interface{}{settingsMap}
 }
 

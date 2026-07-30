@@ -71,8 +71,6 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	statusId := fetchWorktypeStatusTerraformId(d.Get("status_id").(string))
 	destinationStatusIds := lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids")
 	defaultDestinationStatusId := resourcedata.GetNillableValue[string](d, "default_destination_status_id")
-	statusTransitionDelaySeconds := resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds")
-	statusTransitionTime := resourcedata.GetNillableValue[string](d, "status_transition_time")
 
 	err := validateSchema(d)
 	if err != nil {
@@ -118,17 +116,11 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 
 	log.Printf("%s task management worktype %s status %s %s in progress", operation, worktypeId, statusId, *workitemStatus.Name)
 
-	taskManagementWorktypeStatus := platformclientv2.Workitemstatusupdate{
-		Name:                         workitemStatus.Name,
-		Description:                  workitemStatus.Description,
-		DestinationStatusIds:         destinationStatusIds,
-		DefaultDestinationStatusId:   defaultDestinationStatusId,
-		StatusTransitionDelaySeconds: statusTransitionDelaySeconds,
-		StatusTransitionTime:         statusTransitionTime,
-	}
+	isCreate := operation == "create"
+	taskManagementWorktypeStatus := buildWorkitemStatusTransitionPatch(d, workitemStatus, destinationStatusIds, defaultDestinationStatusId, isCreate)
 
 	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		workitemStatus, resp, err = proxy.updateTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
+		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, taskManagementWorktypeStatus)
 		if err == nil {
 			return nil
 		}
@@ -257,7 +249,7 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 
 	log.Printf("%s task management worktype %s status %s %s in progress", "delete", worktypeId, statusId, *workitemStatus.Name)
 
-	taskManagementWorktypeStatus := Workitemstatusupdate{
+	taskManagementWorktypeStatus := &Workitemstatusupdate{
 		Name:                       workitemStatus.Name,
 		Description:                workitemStatus.Description,
 		DestinationStatusIds:       &destinationStatusIds,
@@ -265,7 +257,7 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 	}
 
 	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
-		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, &taskManagementWorktypeStatus)
+		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, taskManagementWorktypeStatus)
 		if err != nil {
 			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {

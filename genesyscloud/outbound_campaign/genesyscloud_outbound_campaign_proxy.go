@@ -24,6 +24,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *outboundCampaignProxy
 
+var campaignCache = rc.NewResourceCache[platformclientv2.Campaign]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, campaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error)
 type getAllOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy) (*[]platformclientv2.Campaign, *platformclientv2.APIResponse, error)
@@ -48,7 +50,7 @@ type outboundCampaignProxy struct {
 // newOutboundCampaignProxy initializes the outbound campaign proxy with all of the data needed to communicate with Genesys Cloud
 func newOutboundCampaignProxy(clientConfig *platformclientv2.Configuration) *outboundCampaignProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
-	campaignCache := rc.NewResourceCache[platformclientv2.Campaign]()
+
 	return &outboundCampaignProxy{
 		clientConfig:                    clientConfig,
 		outboundApi:                     api,
@@ -140,7 +142,8 @@ func createOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, out
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create campaign %s", err)
 	}
@@ -234,7 +237,8 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 		outboundCampaign.CampaignStatus = campaign.CampaignStatus
 	}
 	outboundCampaign.Version = campaign.Version
-	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update campaign: %s", err)
 	}

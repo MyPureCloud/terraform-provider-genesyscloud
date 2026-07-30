@@ -1,7 +1,6 @@
 package conversations_messaging_integrations_open
 
 import (
-	"log"
 	"sync"
 	"testing"
 
@@ -20,7 +19,6 @@ import (
 
 var (
 	sdkConfig *platformclientv2.Configuration
-	authErr   error
 )
 
 // providerDataSources holds a map of all registered datasources
@@ -54,10 +52,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
-	sdkConfig, authErr = provider.AuthorizeSdk()
-	if authErr != nil {
-		log.Fatalf("failed to authorize sdk for package conversations_messaging_integrations_open: %v", authErr)
-	}
+	sdkConfig = provider.SdkConfigurationForTests()
 
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)

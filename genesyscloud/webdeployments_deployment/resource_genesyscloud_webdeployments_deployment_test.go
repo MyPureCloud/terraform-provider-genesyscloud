@@ -473,7 +473,7 @@ func cleanupWebDeploymentsDeployment(t *testing.T, prefix string) {
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	webDeployments, resp, getErr := deploymentsAPI.GetWebdeploymentsDeployments([]string{})
+	webDeployments, resp, getErr := deploymentsAPI.GetWebdeploymentsDeployments("", "", "", []string{})
 	if getErr != nil {
 		t.Logf("failed to get page of deployments: %v %v", getErr, resp)
 		return

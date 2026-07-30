@@ -6,17 +6,28 @@ description: |-
 ---
 # genesyscloud_greeting (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Greeting
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#post-api-v2-greetings)
-* [GET /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings--greetingId-)
-* [GET /api/v2/greetings](https://apicentral.genesys.cloud/api-explorer#get-api-v2-greetings)
-* [PUT /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#put-api-v2-greetings--greetingId-)
-* [DELETE /api/v2/greetings/{greetingId}](https://apicentral.genesys.cloud/api-explorer#delete-api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-greetings)
+* [POST /api/v2/greetings](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-greetings)
+* [DELETE /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-greetings--greetingId-)
+* [PUT /api/v2/greetings/{greetingId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-greetings--greetingId-)
+* [GET /api/v2/greetings/{greetingId}/downloads](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-greetings--greetingId--downloads)
+* [GET /api/v2/greetings/{greetingId}/groups/downloads](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-greetings--greetingId--groups-downloads)
+
 ## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `greetings:greeting:download`
+* `greetings:groupGreeting:download`
 
 The following OAuth scopes are required to use this resource:
 
@@ -46,6 +57,8 @@ resource "genesyscloud_greeting" "test_greeting" {
 ### Optional
 
 - `audio_file` (Block List, Max: 1) Greeting audio file. (see [below for nested schema](#nestedblock--audio_file))
+- `audio_file_content_hash` (String) Hash value of the greeting audio file content. Used to detect changes.
+- `audio_filename` (String) Path to the greeting audio file used during export and import.
 - `audio_tts` (String) Greeting audio TTS.
 - `name` (String) Greeting name.
 - `owner_id` (String) The ID of the owner (organization) of the greeting.

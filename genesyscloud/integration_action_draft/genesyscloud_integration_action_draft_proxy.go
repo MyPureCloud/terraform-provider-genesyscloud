@@ -92,7 +92,7 @@ func getAllIntegrationActionDraftsFn(ctx context.Context, p *integrationActionsP
 	var err error
 	const pageSize = 100
 
-	actions, resp, err := p.integrationsApi.GetIntegrationsActionsDrafts(pageSize, 1, "", "", "", "", "", name, "", "", "")
+	actions, resp, err := p.integrationsApi.GetIntegrationsActionsDrafts(pageSize, 1, "", "", "", "", "", name, "", "", "", false)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error retrieving actions: %s", err)
 	}
@@ -102,7 +102,7 @@ func getAllIntegrationActionDraftsFn(ctx context.Context, p *integrationActionsP
 	allActions = append(allActions, *actions.Entities...)
 
 	for pageNum := 2; pageNum <= *actions.PageCount; pageNum++ {
-		actions, resp, err = p.integrationsApi.GetIntegrationsActionsDrafts(pageSize, pageNum, "", "", "", "", "", name, "", "", "")
+		actions, resp, err = p.integrationsApi.GetIntegrationsActionsDrafts(pageSize, pageNum, "", "", "", "", "", name, "", "", "", false)
 		if err != nil {
 			return nil, resp, fmt.Errorf("error retrieving actions: %s", err)
 		}

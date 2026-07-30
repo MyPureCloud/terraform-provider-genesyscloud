@@ -302,9 +302,10 @@ func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta 
 	if dealIntegrationFlag {
 		credentialId := resourcedata.GetNillableValue[string](d, "integration_credential_id")
 
-		if client.Secret == nil || *client.Secret != "" {
+		if client.Secret == nil || *client.Secret == "" {
 			fields := fetchOauthClientSecret(sdkConfig, *client.Id)
-			*client.Secret = fields["client_secret"]
+			secret := fields["clientSecret"]
+			client.Secret = &secret
 		}
 		if credentialId != nil {
 			currentCredential, resp, getErr := oauthClientProxy.getIntegrationCredential(ctx, *credentialId)
@@ -335,7 +336,11 @@ func createCredential(ctx context.Context, d *schema.ResourceData, client *platf
 		credType := "pureCloudOAuthClient"
 		results := make(map[string]string)
 		results["clientId"] = *client.Id
-		results["clientSecret"] = *client.Secret
+		if client.Secret != nil {
+			results["clientSecret"] = *client.Secret
+		} else {
+			log.Printf("Warning: client secret is nil for oauth client %s. Integration credential may be incomplete.", *client.Id)
+		}
 
 		createCredential := platformclientv2.Credential{
 			Name: credentialName,
@@ -369,7 +374,11 @@ func updateCredential(ctx context.Context, d *schema.ResourceData,
 		credType := "pureCloudOAuthClient"
 		results := make(map[string]string)
 		results["clientId"] = *client.Id
-		results["clientSecret"] = *client.Secret
+		if client.Secret != nil {
+			results["clientSecret"] = *client.Secret
+		} else {
+			log.Printf("Warning: client secret is nil for oauth client %s. Integration credential may be incomplete.", *client.Id)
+		}
 
 		updateCred := platformclientv2.Credential{
 			Name: credentialName,
