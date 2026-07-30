@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 

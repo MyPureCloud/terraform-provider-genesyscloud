@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v188/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -72,8 +72,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.NullValue, // Secure default (false)
-					util.NullValue, // Timeout default
+					util.NullValue,                             // Secure default (false)
+					util.NullValue,                             // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -168,8 +168,8 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.TrueValue, // Secure
-					util.NullValue, // time default
+					util.TrueValue,                             // Secure
+					util.NullValue,                             // time default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -295,8 +295,8 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					actionName1,
 					actionCateg1,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.NullValue, // Secure default (false)
-					util.NullValue, // Timeout default
+					util.NullValue,                             // Secure default (false)
+					util.NullValue,                             // Timeout default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
@@ -346,8 +346,8 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					actionName2,
 					actionCateg2,
 					"genesyscloud_integration."+integResourceLabel1+".id",
-					util.TrueValue, // Secure
-					util.NullValue, // time default
+					util.TrueValue,                             // Secure
+					util.NullValue,                             // time default
 					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
 					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
 					generateIntegrationActionConfigRequest(
