@@ -88,8 +88,8 @@ func TestAccDataSourceGroup(t *testing.T) {
 func generateGroupDataSource(
 	resourceLabel string,
 	name string,
-// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
-// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
+	// Must explicitly use depends_on in terraform v0.13 when a data source references a resource
+	// Fixed in v0.14 https://github.com/hashicorp/terraform/pull/26284
 	dependsOnResource string) string {
 	return fmt.Sprintf(`data "genesyscloud_group" "%s" {
 		name = "%s"

@@ -316,7 +316,7 @@ func TestAccResourceIntegration(t *testing.T) {
 					strconv.Quote(typeID2),
 					GenerateIntegrationConfig(
 						strconv.Quote(inteName2),
-						util.NullValue,                                                                                           // Empty notes
+						util.NullValue, // Empty notes
 						util.GenerateMapProperty(credTypeName1, "genesyscloud_integration_credential."+credResourceLabel1+".id"), // Reference credential ID
 						util.GenerateJsonEncodedProperties(
 							util.GenerateJsonProperty("smtpHost", strconv.Quote("fakeHost")),
