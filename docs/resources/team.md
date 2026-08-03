@@ -44,7 +44,7 @@ resource "genesyscloud_team" "example_team" {
 ### Optional
 
 - `description` (String) Team information.
-- `member_ids` (Set of String) IDs of members assigned to the team. If not set, this resource will not manage group members.
+- `member_ids` (List of String) IDs of members assigned to the team. If not set, this resource will not manage group members.
 
 ### Read-Only
 
