@@ -1108,24 +1108,24 @@ func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 	return settingsMap
 }
 
-func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
+func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]interface{}, diag.Diagnostics) {
 	members, err := getRoutingQueueMembers(queueID, memberBy, sdkConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	memberSet := schema.NewSet(schema.HashResource(queueMemberResource), []interface{}{})
+	memberList := make([]interface{}, 0, len(members))
 	for _, member := range members {
 		memberMap := make(map[string]interface{})
 		memberMap["user_id"] = *member.Id
 		memberMap["ring_num"] = *member.RingNumber
-		memberSet.Add(memberMap)
+		memberList = append(memberList, memberMap)
 	}
 
-	return memberSet, nil
+	return memberList, nil
 }
 
-func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) (*schema.Set, diag.Diagnostics) {
+func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) ([]string, diag.Diagnostics) {
 	codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(ctx, queueID)
 	codeIds := getWrapupCodeIds(codes)
 
@@ -1133,11 +1133,53 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
 	}
 
-	if codeIds != nil {
-		return lists.StringListToSet(codeIds), nil
-	}
+	return codeIds, nil
+}
 
-	return nil, nil
+func wrapupCodesFromConfig(codesConfig interface{}) []string {
+	switch v := codesConfig.(type) {
+	case []interface{}:
+		return lists.InterfaceListToStrings(v)
+	case *schema.Set:
+		if ids := lists.SetToStringList(v); ids != nil {
+			return *ids
+		}
+		return nil
+	case []string:
+		return v
+	default:
+		return nil
+	}
+}
+
+// organizeStringIdsForRead keeps config order when config and API have the same IDs (order-insensitive).
+func organizeStringIdsForRead(schemaList, apiList []string) []string {
+	if lists.AreEquivalent(schemaList, apiList) {
+		return schemaList
+	}
+	return apiList
+}
+
+func memberUserIds(members []interface{}) []string {
+	ids := make([]string, 0, len(members))
+	for _, member := range members {
+		memberMap, ok := member.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if userID, ok := memberMap["user_id"].(string); ok && userID != "" {
+			ids = append(ids, userID)
+		}
+	}
+	return ids
+}
+
+// organizeMembersForRead keeps config order when membership (user_id set) matches the API.
+func organizeMembersForRead(schemaMembers, apiMembers []interface{}) []interface{} {
+	if lists.AreEquivalent(memberUserIds(schemaMembers), memberUserIds(apiMembers)) {
+		return schemaMembers
+	}
+	return apiMembers
 }
 
 func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
