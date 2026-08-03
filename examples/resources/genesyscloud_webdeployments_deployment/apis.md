@@ -1,5 +1,9 @@
-* [GET /api/v2/webdeployments/deployments](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-deployments)
-* [POST /api/v2/webdeployments/deployments](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-deployments)
-* [DELETE /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#delete-api-v2-webdeployments-deployments--deploymentId-)
-* [GET /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-deployments--deploymentId-)
-* [PUT /api/v2/webdeployments/deployments/{deploymentId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#put-api-v2-webdeployments-deployments--deploymentId-)
+<!-- sources
+genesyscloud/webdeployments_deployment/genesyscloud_webdeployments_deployment_proxy.go
+-->
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions)
+* [GET /api/v2/webdeployments/deployments](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-deployments)
+* [POST /api/v2/webdeployments/deployments](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-webdeployments-deployments)
+* [DELETE /api/v2/webdeployments/deployments/{deploymentId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-webdeployments-deployments--deploymentId-)
+* [GET /api/v2/webdeployments/deployments/{deploymentId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-deployments--deploymentId-)
+* [PUT /api/v2/webdeployments/deployments/{deploymentId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-webdeployments-deployments--deploymentId-)

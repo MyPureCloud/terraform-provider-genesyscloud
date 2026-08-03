@@ -6,19 +6,39 @@ description: |-
 ---
 # genesyscloud_quality_forms_survey (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Survey Forms
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)
-* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId-)
-* [POST /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-forms-surveys)
-* [PUT /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#put-api-v2-quality-forms-surveys--formId-)
-* [DELETE /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#delete-api-v2-quality-forms-surveys--formId-)
-* [POST /api/v2/quality/publishedforms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#post-api-v2-quality-publishedforms-surveys)
-* [GET /api/v2/quality/publishedforms/surveys/{formId}](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-publishedforms-surveys--formId-)
-* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys--formId--versions)
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys)
+* [POST /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-quality-forms-surveys)
+* [DELETE /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-quality-forms-surveys--formId-)
+* [GET /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys--formId-)
+* [PATCH /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-quality-forms-surveys--formId-)
+* [PUT /api/v2/quality/forms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-quality-forms-surveys--formId-)
+* [GET /api/v2/quality/forms/surveys/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys--formId--versions)
+* [POST /api/v2/quality/publishedforms/surveys](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-quality-publishedforms-surveys)
+* [GET /api/v2/quality/publishedforms/surveys/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-publishedforms-surveys--formId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `quality:surveyForm:add`
+* `quality:surveyForm:delete`
+* `quality:surveyForm:disable`
+* `quality:surveyForm:edit`
+* `quality:surveyForm:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `quality`
+* `quality:readonly`
+
 
 ## Example Usage
 
@@ -114,7 +134,9 @@ resource "genesyscloud_quality_forms_survey" "example_survey_form" {
 
 ### Read-Only
 
+- `context_id` (String) Unique Id for all versions of this form
 - `id` (String) The ID of this resource.
+- `modified_date` (String) Last modified date. Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 
 <a id="nestedblock--question_groups"></a>
 ### Nested Schema for `question_groups`
@@ -131,6 +153,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this question group that stays the same across versions of the form.
 - `id` (String) The ID of the survey question group.
 
 <a id="nestedblock--question_groups--questions"></a>
@@ -152,6 +175,7 @@ Optional:
 
 Read-Only:
 
+- `context_id` (String) An identifier for this question that stays the same across versions of the form.
 - `id` (String) The ID of the survey question.
 
 <a id="nestedblock--question_groups--questions--answer_options"></a>
@@ -165,9 +189,11 @@ Required:
 Optional:
 
 - `assistance_conditions` (Block Set) Options from which to choose an answer for this question. (see [below for nested schema](#nestedblock--question_groups--questions--answer_options--assistance_conditions))
+- `built_in_type` (String) The built-in type of this answer option. Only used for built-in answer options such as selection states for Multiple Select answer options.Valid values: Selected, Unselected
 
 Read-Only:
 
+- `context_id` (String) An identifier for this answer that stays the same across versions of the form.
 - `id` (String) The ID of the survey answer option.
 
 <a id="nestedblock--question_groups--questions--answer_options--assistance_conditions"></a>

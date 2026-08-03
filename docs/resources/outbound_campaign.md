@@ -6,16 +6,34 @@ description: |-
 ---
 # genesyscloud_outbound_campaign (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound campaign
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-campaigns)
-* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns--campaignId-)
 * [GET /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns)
+* [POST /api/v2/outbound/campaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-campaigns)
 * [DELETE /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-campaigns--campaignId-)
+* [GET /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-campaigns--campaignId-)
 * [PUT /api/v2/outbound/campaigns/{campaignId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-campaigns--campaignId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:campaign:add`
+* `outbound:campaign:delete`
+* `outbound:campaign:edit`
+* `outbound:campaign:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+
 
 ## Example Usage
 
@@ -35,6 +53,32 @@ resource "genesyscloud_outbound_campaign" "campaign" {
   call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.example_cars.id
   phone_columns {
     column_name = "Cell"
+  }
+}
+
+# Example Power dialing campaign with diagnostics settings
+# diagnostics_settings is only applicable to Power and Predictive dialing modes
+resource "genesyscloud_outbound_campaign" "power_campaign" {
+  name                          = "Example Power Campaign"
+  dialing_mode                  = "power"
+  caller_name                   = "Support Team"
+  caller_address                = "+15559876543"
+  outbound_line_count           = 5
+  abandon_rate                  = 5.0
+  max_calls_per_agent           = 2
+  campaign_status               = "off"
+  contact_list_id               = genesyscloud_outbound_contact_list.contact_list.id
+  queue_id                      = genesyscloud_routing_queue.example_queue.id
+  site_id                       = genesyscloud_telephony_providers_edges_site.site.id
+  call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.example_cars.id
+  phone_columns {
+    column_name = "Cell"
+  }
+  # Diagnostics settings - controls campaign health alerts
+  # report_low_max_calls_per_agent_alert: When true (default), generates a health alert
+  # if Max Calls Per Agent is set below the value in Outbound Settings
+  diagnostics_settings {
+    report_low_max_calls_per_agent_alert = true
   }
 }
 
@@ -67,6 +111,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 ### Optional
 
 - `abandon_rate` (Number) The targeted abandon rate percentage. Required for progressive, power, and predictive campaigns.
+- `agent_owned_column` (String) Name of the contact list column containing the id of the agent who owns the record. Only applicable to preview campaigns.
 - `always_running` (Boolean) Indicates (when true) that the campaign will remain on after contacts are depleted, allowing additional contacts to be appended/added to the contact list and processed by the still-running campaign. The campaign can still be turned off manually.
 - `auto_answer` (Boolean) The option manages the auto-answer callback calls
 - `call_analysis_language` (String) The language the edge will use to analyze the call.
@@ -77,14 +122,16 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 - `campaign_status` (String) The current status of the Campaign. A Campaign may be turned 'on' or 'off' (default). If this value is changed alongside other changes to the resource, a subsequent update will occur immediately afterwards to set the campaign status. This is due to behavioral requirements in the Genesys Cloud API.
 - `contact_list_filter_ids` (List of String) Filter to apply to the contact list before dialing. Currently a campaign can only have one filter applied.
 - `contact_sorts` (Block List) The order in which to sort contacts for dialing, based on up to four columns. (see [below for nested schema](#nestedblock--contact_sorts))
+- `diagnostics_settings` (Block List, Max: 1) Campaign diagnostics settings. Only applicable to Power and Predictive dialing modes. (see [below for nested schema](#nestedblock--diagnostics_settings))
 - `division_id` (String) The division this campaign belongs to.
 - `dnc_list_ids` (Set of String) DncLists for this Campaign to check before placing a call.
 - `dynamic_contact_queueing_settings` (Block List, Max: 1) Settings for dynamic queueing of contacts. If not set, default dynamic contact queue settings will be applied (see [below for nested schema](#nestedblock--dynamic_contact_queueing_settings))
 - `dynamic_line_balancing_settings` (Block List, Max: 1) Dynamic line balancing settings. (see [below for nested schema](#nestedblock--dynamic_line_balancing_settings))
 - `edge_group_id` (String) The EdgeGroup that will place the calls. Required for all dialing modes except preview.
-- `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign.
+- `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on this campaign. Must be >= 1. Supports decimal values (e.g., 1.5, 2.3).
 - `no_answer_timeout` (Number) How long to wait before dispositioning a call as 'no-answer'. Default 30 seconds. Only applicable to non-preview campaigns.
 - `outbound_line_count` (Number) The number of outbound lines to be concurrently dialed. Only applicable to non-preview campaigns; only required for agentless.
+- `preview_auto_end` (Boolean) When enabled, the preview will automatically end and the call will be placed after the preview timeout (preview_time_out_seconds). Only applicable to preview campaigns. Defaults to `false`.
 - `preview_time_out_seconds` (Number) The number of seconds before a call will be automatically placed on a preview. A value of 0 indicates no automatic placement of calls. Only applicable to preview campaigns.
 - `priority` (Number) The priority of this campaign relative to other campaigns that are running on the same queue. 5 is the highest priority, 1 the lowest.
 - `queue_id` (String) The Queue for this Campaign to route calls to. Required for all dialing modes except agentless.
@@ -97,6 +144,7 @@ resource "genesyscloud_outbound_campaign" "campaign2" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+- `max_calls_per_agent_decimal` (Number) The maximum number of calls that can be placed per agent on this campaign with decimal precision, as returned by the API. Use max_calls_per_agent to configure this value.
 
 <a id="nestedblock--phone_columns"></a>
 ### Nested Schema for `phone_columns`
@@ -117,6 +165,14 @@ Optional:
 
 - `direction` (String) The direction in which to sort contacts. Defaults to `ASC`.
 - `numeric` (Boolean) Whether or not the column contains numeric data. Defaults to `false`.
+
+
+<a id="nestedblock--diagnostics_settings"></a>
+### Nested Schema for `diagnostics_settings`
+
+Optional:
+
+- `report_low_max_calls_per_agent_alert` (Boolean) Enables or disables the campaign health alert when Max Calls Per Agent is set below the value in Outbound Settings. Defaults to `true`.
 
 
 <a id="nestedblock--dynamic_contact_queueing_settings"></a>

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -11,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -124,6 +127,46 @@ func ValidateResourceAttributeInArray(arrayResourceName string, arrayFieldName, 
 		}
 
 		return fmt.Errorf("%s %s not found for resource %s in state", arrayFieldName, sourceValue, sourceID)
+	}
+}
+
+func ValidateJSONFileKeyValue[T comparable](configFile, resourcePath, attr string, value T) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		items := strings.Split(resourcePath, ".")
+
+		_, err := os.ReadFile(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to read file %s: %v", configFile, err)
+		}
+
+		// Load the JSON content of the export file
+		log.Println("Loading export config into map variable")
+		exportJsonData, err := LoadJsonFileToMap(configFile)
+		if err != nil {
+			return err
+		}
+
+		var exportedDataAttr map[string]interface{} = exportJsonData
+
+		for _, attrKey := range items {
+			// Drill down into the nested structure using the attribute keys
+			if nextLevel, ok := exportedDataAttr[attrKey].(map[string]interface{}); ok {
+				exportedDataAttr = nextLevel
+			} else {
+				// If the key doesn't exist or isn't a map, return an error
+				return fmt.Errorf("attribute %s not found in path %s from exported data at %s", attrKey, resourcePath, configFile)
+			}
+		}
+
+		exportedValue, ok := exportedDataAttr[attr].(T)
+		if !ok {
+			return fmt.Errorf("field %s not exported in resource %s config", attr, resourcePath)
+		}
+
+		if exportedValue != value {
+			return fmt.Errorf("expected %s to equal %v, got %v", attr, value, exportedValue)
+		}
+		return nil
 	}
 }
 
@@ -397,12 +440,30 @@ func interfaceToString(val interface{}) string {
 }
 
 func AssignRegion() string {
+	// Dynamically fetch valid media regions from the API
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err == nil {
+		telephonyApi := platformclientv2.NewTelephonyApiWithConfig(sdkConfig)
+		mediaRegions, _, err := telephonyApi.GetTelephonyMediaregions()
+		if err == nil && mediaRegions != nil {
+			// Try to use a "home" region first, then fall back to any available core region
+			if mediaRegions.AwsHomeRegion != nil && *mediaRegions.AwsHomeRegion != "" {
+				regionJSON := "[" + strconv.Quote(*mediaRegions.AwsHomeRegion) + "]"
+				return regionJSON
+			}
+			if mediaRegions.AwsCoreRegions != nil && len(*mediaRegions.AwsCoreRegions) > 0 {
+				regionJSON := "[" + strconv.Quote((*mediaRegions.AwsCoreRegions)[0]) + "]"
+				return regionJSON
+			}
+		}
+	}
 
+	// Fallback: static mapping if API call fails
 	region := "us-west-2"
-
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "tca" {
+	switch v := os.Getenv("GENESYSCLOUD_REGION"); v {
+	case "tca":
 		region = "us-east-1"
-	} else if v == "us-east-1" {
+	case "us-east-1":
 		region = "us-west-2"
 	}
 	regionJSON := "[" + strconv.Quote(region) + "]"

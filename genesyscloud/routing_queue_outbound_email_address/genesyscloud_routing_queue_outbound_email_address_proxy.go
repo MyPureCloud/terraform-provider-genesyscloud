@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -59,6 +60,9 @@ func (p *routingQueueOutboundEmailAddressProxy) updateRoutingQueueOutboundEmailA
 
 // getRoutingQueueOutboundEmailAddressFn is an implementation function for getting the outbound email address for a queue
 func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		queue *platformclientv2.Queue
 		resp  *platformclientv2.APIResponse
@@ -73,14 +77,9 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 		}
 	}
 
-	queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil)
-	if err != nil {
-		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
-	}
-
 	// For some reason outbound email address is a double pointer
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		return *queue.OutboundEmailAddress, resp, nil
+	if queue != nil && queue.OutboundEmailAddress != nil {
+		return queue.OutboundEmailAddress, resp, nil
 	}
 
 	return nil, resp, fmt.Errorf("no outbound email address for queue %s", queueId)
@@ -88,6 +87,9 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 
 // updateRoutingQueueOutboundEmailAddressFn is an implementation function for updating the outbound email address for a queue
 func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string, address *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Get the routing queue the rules belong to
 	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)
 	if err != nil {
@@ -135,8 +137,8 @@ func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQue
 		return nil, resp, fmt.Errorf("failed to update outbound email address for routing queue %s: %s", queueId, err)
 	}
 
-	if queue.OutboundEmailAddress != nil && *queue.OutboundEmailAddress != nil {
-		return *queue.OutboundEmailAddress, resp, nil
+	if queue.OutboundEmailAddress != nil {
+		return queue.OutboundEmailAddress, resp, nil
 	}
 
 	return nil, resp, fmt.Errorf("error updating outbound email address for routing queue %s: %s", queueId, err)

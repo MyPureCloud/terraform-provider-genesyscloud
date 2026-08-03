@@ -8,9 +8,10 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 type FileType int
@@ -28,6 +29,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectGrammarLanguageProxy
+
+var grammarLanguageCache = rc.NewResourceCache[platformclientv2.Grammarlanguage]()
 
 // Type definitions for each func on our proxy so that we can easily mock them out later
 type GrammarLanguageEntry struct {
@@ -55,7 +58,7 @@ type architectGrammarLanguageProxy struct {
 // newArchitectGrammarLanguageProxy initializes the grammar Language proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configuration) *architectGrammarLanguageProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	grammarLanguageCache := rc.NewResourceCache[platformclientv2.Grammarlanguage]()
+
 	return &architectGrammarLanguageProxy{
 		clientConfig:                        clientConfig,
 		architectApi:                        api,
@@ -104,7 +107,10 @@ func (p *architectGrammarLanguageProxy) getAllArchitectGrammarLanguage(ctx conte
 }
 
 // createArchitectGrammarLanguageFn is an implementation function for creating a Genesys Cloud Architect Grammar Language
-func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+func createArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLanguageProxy, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	languageSdk, resp, err := p.architectApi.PostArchitectGrammarLanguages(*language.GrammarId, *language)
 	if err != nil {
 		return nil, resp, err
@@ -128,7 +134,10 @@ func createArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 }
 
 // getArchitectGrammarLanguageByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar Language by ID
-func getArchitectGrammarLanguageByIdFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+func getArchitectGrammarLanguageByIdFn(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	language := rc.GetCacheItem(p.grammarLanguageCache, buildGrammarLanguageId(grammarId, languageCode))
 	if language != nil {
 		return language, nil, nil
@@ -137,7 +146,10 @@ func getArchitectGrammarLanguageByIdFn(_ context.Context, p *architectGrammarLan
 }
 
 // updateArchitectGrammarLanguageFn is an implementation of the function to update a Genesys Cloud Architect Grammar Language
-func updateArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+func updateArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string, language *platformclientv2.Grammarlanguage) (*platformclientv2.Grammarlanguage, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	languageUpdate := platformclientv2.Grammarlanguageupdate{
 		VoiceFileMetadata: language.VoiceFileMetadata,
 		DtmfFileMetadata:  language.DtmfFileMetadata,
@@ -166,7 +178,10 @@ func updateArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLang
 }
 
 // deleteArchitectGrammarLanguageFn is an implementation function for deleting a Genesys Cloud Architect Grammar Language
-func deleteArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (response *platformclientv2.APIResponse, err error) {
+func deleteArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLanguageProxy, grammarId string, languageCode string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.architectApi.DeleteArchitectGrammarLanguage(grammarId, languageCode)
 	if err != nil {
 		return resp, err
@@ -213,7 +228,9 @@ func uploadGrammarLanguageFile(p *architectGrammarLanguageProxy, language *platf
 }
 
 // getAllArchitectGrammarLanguageFn is the implementation for retrieving all Architect Grammars in Genesys Cloud
-func getAllArchitectGrammarLanguageFn(_ context.Context, p *architectGrammarLanguageProxy) (*[]GrammarLanguageEntry, *platformclientv2.APIResponse, error) {
+func getAllArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLanguageProxy) (*[]GrammarLanguageEntry, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allLanguages []GrammarLanguageEntry
 

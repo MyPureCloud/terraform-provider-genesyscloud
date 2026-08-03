@@ -6,19 +6,40 @@ description: |-
 ---
 # genesyscloud_recording_media_retention_policy (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Media Retention Policies
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/recording/mediaretentionpolicies](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-recording-mediaretentionpolicies)
-* [POST /api/v2/recording/mediaretentionpolicies](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-recording-mediaretentionpolicies)
-* [GET /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-recording-mediaretentionpolicies--policyId-)
-* [PUT /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-recording-mediaretentionpolicies--policyId-)
-* [DELETE /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-recording-mediaretentionpolicies--policyId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId-)
 * [GET /api/v2/quality/forms/evaluations/{formId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-evaluations--formId--versions)
-* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/api/rest/v2/quality/#get-api-v2-quality-forms-surveys)
+* [GET /api/v2/quality/forms/surveys](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-quality-forms-surveys)
+* [GET /api/v2/recording/mediaretentionpolicies](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-recording-mediaretentionpolicies)
+* [POST /api/v2/recording/mediaretentionpolicies](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-recording-mediaretentionpolicies)
+* [DELETE /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-recording-mediaretentionpolicies--policyId-)
+* [GET /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-recording-mediaretentionpolicies--policyId-)
+* [PUT /api/v2/recording/mediaretentionpolicies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-recording-mediaretentionpolicies--policyId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `quality:evaluationForm:view`
+* `quality:surveyForm:view`
+* `recording:retentionPolicy:add`
+* `recording:retentionPolicy:delete`
+* `recording:retentionPolicy:edit`
+* `recording:retentionPolicy:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `quality`
+* `quality:readonly`
+* `recordings`
+* `recordings:readonly`
 
 
 ## Example Usage
@@ -324,7 +345,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `media_types` (List of String)
-- `team_ids` (Set of String) Teams to match conversations against
+- `team_ids` (List of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -561,7 +582,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
-- `team_ids` (Set of String) Teams to match conversations against
+- `team_ids` (List of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -788,7 +809,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
-- `team_ids` (Set of String) Teams to match conversations against
+- `team_ids` (List of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -1015,7 +1036,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
-- `team_ids` (Set of String) Teams to match conversations against
+- `team_ids` (List of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 
@@ -1231,7 +1252,7 @@ Optional:
 - `for_queue_ids` (List of String)
 - `for_user_ids` (List of String)
 - `language_ids` (List of String)
-- `team_ids` (Set of String) Teams to match conversations against
+- `team_ids` (List of String) Teams to match conversations against
 - `time_allowed` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--conditions--time_allowed))
 - `wrapup_code_ids` (List of String)
 

@@ -3,6 +3,7 @@ package team
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -12,7 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 // getTeamFromResourceData maps data from schema ResourceData object to a platformclientv2.Team
@@ -100,10 +101,19 @@ func updateTeamMembers(ctx context.Context, d *schema.ResourceData, sdkConfig *p
 			}
 
 			chunkedMemberIds := lists.ChunkStringSlice(membersToAdd, maxMembersPerRequest)
+			var allDiags diag.Diagnostics
 			for _, chunk := range chunkedMemberIds {
-				if err := addGroupMembers(ctx, d, chunk, sdkConfig); err != nil {
-					return err
+				chunkDiags := addGroupMembers(ctx, d, chunk, sdkConfig)
+				if chunkDiags != nil {
+
+					allDiags = append(allDiags, chunkDiags...)
 				}
+			}
+			if allDiags != nil && allDiags.HasError() {
+				return allDiags
+			}
+			if len(allDiags) > 0 {
+				return allDiags
 			}
 		}
 	}
@@ -127,7 +137,10 @@ func addGroupMembers(ctx context.Context, d *schema.ResourceData, membersToAdd [
 		for i, failure := range *teamListingResponse.Failures {
 			failureReasons[i] = fmt.Sprintf("Member %s: %s", *failure.Id, *failure.Reason)
 		}
-		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to add team members for team %s: %v", d.Id(), failureReasons), fmt.Errorf("%v", failureReasons))
+
+		return util.BuildDiagnosticError(ResourceType,
+			fmt.Sprintf("Failed to add some team members to team %s", d.Id()),
+			fmt.Errorf("Failed to add the following members: %v. State has been synced with members that were successfully added. Please fix the issues and run 'terraform apply' again.", failureReasons))
 	}
 
 	return nil
@@ -143,23 +156,25 @@ func readTeamMembers(ctx context.Context, teamId string, sdkConfig *platformclie
 	// Return empty list instead of nil when there are no members so export can
 	// distinguish between "no members" and "not managing members".
 	if members == nil || len(*members) == 0 {
-		return []string{}, nil
+		log.Printf("[DEBUG]readTeamMembers: No members found for team %s", teamId)
+		return schema.NewSet(schema.HashString, []interface{}{}), nil
 	}
 
+	// Build list of actual member IDs from API response
+	interfaceList := make([]interface{}, len(*members))
 	memberIds := make([]string, len(*members))
 	for i, member := range *members {
-		memberIds[i] = *member.Id
+		memberId := *member.Id
+		interfaceList[i] = memberId
+		memberIds[i] = memberId
 	}
 
-	return memberIds, nil
-}
-
-// organizeMemberIdsForRead keeps config order when config and API have the same IDs.
-func organizeMemberIdsForRead(schemaList, apiList []string) []string {
-	if lists.AreEquivalent(schemaList, apiList) {
-		return schemaList
+	log.Printf("[DEBUG]readTeamMembers: Read %d actual members from API for team %s", len(*members), teamId)
+	if len(memberIds) > 0 {
+		log.Printf("[DEBUG]readTeamMembers: Member IDs from API: %v", memberIds)
 	}
-	return apiList
+
+	return schema.NewSet(schema.HashString, interfaceList), nil
 }
 
 func GenerateTeamResource(

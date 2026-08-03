@@ -1,10 +1,17 @@
 package architect_user_prompt
 
+// @team: Architect Team
+// @chat: #Genesys Cloud Architect support
+// @pm: Amelie Wisniak
+// @jira: ADS
+// @description: manages user and system data for Genesys Cloud Architect. This includes Architect flows, user and system prompts as well as flow outcomes.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	architectlanguages "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/architectlanguages"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -110,7 +117,7 @@ func ResourceArchitectUserPrompt() *schema.Resource {
 				Description: "Audio of TTS resources for the audio prompt.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !feature_toggles.BcpModeEnabledExists(), // false if BCP mode running, otherwise true
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userPromptResource,
 			},

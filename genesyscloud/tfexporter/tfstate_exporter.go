@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
-	"log"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -77,6 +78,7 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		resourceKey := ""
 		if resource.BlockType != "" {
 			resourceKey = resource.BlockType + "."
+			resource.State.Meta["schema_version"] = 0
 		}
 		resourceKey += resource.Type + "." + resource.BlockLabel
 		if resourceKey == ".." || resourceKey == "." { // This would catch the worst case of all empty strings

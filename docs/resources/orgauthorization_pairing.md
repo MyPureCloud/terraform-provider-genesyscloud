@@ -6,13 +6,30 @@ description: |-
 ---
 # genesyscloud_orgauthorization_pairing (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud orgauthorization pairing
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [POST /api/v2/orgauthorization/pairings](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-orgauthorization-pairings)
 * [GET /api/v2/orgauthorization/pairings/{pairingId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-orgauthorization-pairings--pairingId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `authorization:orgTrustee:add`
+* `authorization:orgTrustee:view`
+* `authorization:orgTrustor:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `organization-authorization`
+* `organization-authorization:readonly`
+
 
 ## Example Usage
 

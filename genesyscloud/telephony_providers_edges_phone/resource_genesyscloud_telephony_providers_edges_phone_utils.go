@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 type PhoneConfig struct {
@@ -80,12 +80,32 @@ func getPhoneFromResourceData(ctx context.Context, pp *phoneProxy, d *schema.Res
 		(*phoneConfig.Properties)["phone_standalone"] = phoneStandalone
 	}
 
-	webRtcUserId := d.Get("web_rtc_user_id")
-	if webRtcUserId != "" {
+	if webRtcUserId := d.Get("web_rtc_user_id").(string); webRtcUserId != "" {
 		phoneConfig.WebRtcUser = util.BuildSdkDomainEntityRef(d, "web_rtc_user_id")
 	}
 
 	return phoneConfig, nil
+}
+
+func isWebRtcPhoneAlreadyAssignedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "web rtc phone has already been assigned")
+}
+
+func adoptExistingWebRtcPhone(ctx context.Context, d *schema.ResourceData, meta interface{}, pp *phoneProxy, webRtcUserId string) (bool, diag.Diagnostics) {
+	existingPhone, resp, err := pp.getPhoneByWebRtcUserId(ctx, webRtcUserId)
+	if err != nil {
+		return false, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to lookup existing WebRTC phone for user %s error: %s", webRtcUserId, err), resp)
+	}
+	if existingPhone == nil || existingPhone.Id == nil {
+		return false, nil
+	}
+
+	log.Printf("Adopting existing WebRTC phone %s for user %s", *existingPhone.Id, webRtcUserId)
+	d.SetId(*existingPhone.Id)
+	return true, updatePhone(ctx, d, meta)
 }
 
 func getLineBaseSettingsID(ctx context.Context, pp *phoneProxy, phoneBaseSettingsId string) (string, error) {

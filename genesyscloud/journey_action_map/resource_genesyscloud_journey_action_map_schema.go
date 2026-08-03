@@ -1,5 +1,11 @@
 package journey_action_map
 
+// @team: Journey Data
+// @chat: #customer-journey-data
+// @pm: Angelo Cicchitto
+// @jira: CPR
+// @description: Action Map Qualification Service determines if actions should be triggered for customers based on configured action maps. Handles action templates and qualification logic for content offers, architect flows, webchat, web messaging, and open actions.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -43,13 +49,14 @@ var (
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        outcomeProbabilityConditionResource,
-			Deprecated:  "Use trigger_with_outcome_quantile_conditions attribute instead.",
+			Deprecated:  "Journey Outcomes is being removed. Remove this attribute from your configuration. There is no replacement. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 		},
 		"trigger_with_outcome_quantile_conditions": {
 			Description: "Quantile conditions for outcomes that must be satisfied to trigger the action map.",
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        outcomeQuantileConditionResource,
+			Deprecated:  "Journey Outcomes is being removed. Remove this attribute from your configuration. There is no replacement. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 		},
 		"page_url_conditions": {
 			Description: "URL conditions that a page must match for web actions to be displayable.",
@@ -226,7 +233,7 @@ var (
 				Optional:    true,
 			},
 			"media_type": {
-				Description:  "Media type of action. Valid values: webchat, webMessagingOffer, contentOffer, architectFlow, openAction.",
+				Description:  "Media type of action. Valid values: webchat (deprecated), webMessagingOffer, contentOffer, architectFlow, openAction. Note: The 'webchat' media type is deprecated. ACD Chat v2.0 in Genesys Predictive Engagement is being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
@@ -257,6 +264,7 @@ var (
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     true,
+				Deprecated:  "Web Chat is deprecated and being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement",
 			},
 		},
 	}
@@ -386,6 +394,10 @@ func JourneyActionMapExporter() *resourceExporter.ResourceExporter {
 			"action_map_schedule_groups.action_map_schedule_group_id":           {RefType: "genesyscloud_architect_schedulegroups"},
 			"action_map_schedule_groups.emergency_action_map_schedule_group_id": {RefType: "genesyscloud_architect_schedulegroups"},
 			"action.action_template_id":                                         {RefType: "genesyscloud_journey_action_template"},
+		},
+		RemoveIfMissing: map[string][]string{
+			"trigger_with_outcome_probability_conditions": {"outcome_id"},
+			"trigger_with_outcome_quantile_conditions":    {"outcome_id"},
 		},
 	}
 }

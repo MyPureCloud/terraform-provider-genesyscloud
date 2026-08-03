@@ -10,6 +10,7 @@ import (
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/errors"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
@@ -19,7 +20,151 @@ type MrMoExportResponse struct {
 	ResourceData *schema.ResourceData
 }
 
+type MrMoExportByTypeResponse struct {
+	Config           util.JsonMap
+	ResourceDataList []*schema.ResourceData
+}
+
+func diagNilResourceExporter(resType string) diag.Diagnostics {
+	return diag.Errorf(
+		"resource exporter is nil for type %q (no ResourceExporter registered in the provider)",
+		resType,
+	)
+}
+
+func cloneMrMoFlowExporter(generateOutputFiles bool) *resourceExporter.ResourceExporter {
+	var template *resourceExporter.ResourceExporter
+	if generateOutputFiles {
+		template = resourceExporter.GetNewFlowResourceExporter()
+	} else {
+		template = architectFlow.ArchitectFlowExporter()
+	}
+	return resourceExporter.CloneResourceExporter(template)
+}
+
+func swapMrMoFlowExporter(exporters map[string]*resourceExporter.ResourceExporter, resType string, generateOutputFiles bool, source *resourceExporter.ResourceExporter) {
+	flowExporterToUse := cloneMrMoFlowExporter(generateOutputFiles)
+	if generateOutputFiles {
+		log.Printf("Replaced flow exporter with new exporter")
+	} else {
+		log.Printf("Using legacy flow exporter")
+	}
+	flowExporterToUse.SetSanitizedResourceMap(source.GetSanitizedResourceMap())
+	exporters[resType] = flowExporterToUse
+}
+
+// ExportForMrMoByID runs the MrMo export pipeline for a single entity without
+// calling the resource type's GetResourcesFunc (i.e. without listing every
+// instance in the org). It relies on the resource's own Read context to fetch
+// the entity by ID, which every Genesys Cloud resource already does via the
+// standard RefreshWithoutUpgrade flow inside retrieveGenesysCloudObjectInstancesForMrMo.
+//
+// For singleton resources (exporter.IsSingleton), this function falls back to
+// the legacy ExportForMrMo path because their map key is derived from
+// exporter.ExportId rather than a free-form resource ID, and the list-cost is
+// trivial (one entry).
+//
+// If the target entity cannot be fetched (e.g. 404), an error diagnostic is
+// returned rather than silently producing an empty export, which is the
+// desired behavior for MrMo where we expect the entity to exist.
+func (g *GenesysCloudResourceExporter) ExportForMrMoByID(resType, resourceId string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportResponse, diags diag.Diagnostics) {
+	if exporter == nil {
+		return nil, diagNilResourceExporter(resType)
+	}
+	if exporter.IsSingleton {
+		log.Printf("ExportForMrMoByID: resource type %s is a singleton; falling back to ExportForMrMo", resType)
+		return g.ExportForMrMo(resType, resourceId, generateOutputFiles, exporter)
+	}
+
+	exporters := map[string]*resourceExporter.ResourceExporter{resType: exporter}
+	g.exporters = &exporters
+
+	if resType == architectFlow.ResourceType {
+		swapMrMoFlowExporter(*g.exporters, resType, generateOutputFiles, exporter)
+	}
+
+	// Seed a single-entry SanitizedResourceMap so retrieveGenesysCloudObjectInstancesForMrMo
+	// has an ID to iterate. BlockLabel is temporarily the ID; we backfill it
+	// from the refreshed state below so the exported HCL/JSON block label and
+	// state address match what ExportForMrMo would produce.
+	activeExporter := (*g.exporters)[resType]
+	activeExporter.SanitizedResourceMap = resourceExporter.ResourceIDMetaMap{
+		resourceId: &resourceExporter.ResourceMeta{BlockLabel: resourceId},
+	}
+
+	// Fetch the one object via the resource's Read context. This calls
+	// resource.RefreshWithoutUpgrade -> readContext -> proxy.get<Resource>ById.
+	// It is the only Genesys Cloud API call we actually need.
+	diags = append(diags, g.retrieveGenesysCloudObjectInstancesForMrMo()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// If the resource was not found (404/410), getResourceState returns
+	// (nil, nil) and the resource is silently skipped. For MrMo we treat this
+	// as a hard error: the caller explicitly named an entity that must exist.
+	//
+	// The error message deliberately matches the legacy ExportForMrMo format
+	// ("Resource <id> not found") because downstream consumers (e.g. the
+	// MrMo replicator) inspect the error string to detect the delete-event
+	// no-op case. Keeping the two paths' errors identical preserves behavior.
+	if len(g.resources) == 0 {
+		diags = append(diags, diag.Errorf("Resource %s not found", resourceId)...)
+		return nil, diags
+	}
+
+	// Backfill a human-readable BlockLabel from the refreshed state so the
+	// exported block label and state address are identical to what
+	// ExportForMrMo would produce.
+	for _, r := range g.resources {
+		if r.State == nil {
+			continue
+		}
+		if name, ok := r.State.Attributes["name"]; ok && name != "" {
+			meta := activeExporter.SanitizedResourceMap[resourceId]
+			if meta != nil {
+				meta.BlockLabel = name
+				meta.OriginalLabel = name
+			}
+			r.BlockLabel = name
+			r.OriginalLabel = name
+		}
+	}
+
+	diags = append(diags, g.buildAndExportDependsOnResourcesForFlows()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	diags = append(diags, g.buildResourceConfigMap()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	diags = append(diags, g.buildAndExportDependentResources()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	if generateOutputFiles {
+		diags = append(diags, g.generateOutputFiles()...)
+		if diags.HasError() {
+			return nil, diags
+		}
+	}
+
+	return &MrMoExportResponse{
+		Config: util.JsonMap{
+			"resource": g.resourceTypesMaps,
+		},
+		ResourceData: g.resourceExportedForMrMo,
+	}, diags
+}
+
 func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportResponse, diags diag.Diagnostics) {
+	if exporter == nil {
+		return nil, diagNilResourceExporter(resType)
+	}
 	exporters := make(map[string]*resourceExporter.ResourceExporter)
 	exporters[resType] = exporter
 	g.exporters = &exporters
@@ -31,24 +176,73 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 	}
 
 	if resType == architectFlow.ResourceType {
-		var flowExporterToUse *resourceExporter.ResourceExporter
-		if generateOutputFiles {
-			// Use archy export service to download the flow config file (create, update)
-			log.Printf("Replaced flow exporter with new exporter")
-			flowExporterToUse = resourceExporter.GetNewFlowResourceExporter()
-		} else {
-			// Use legacy exporter to be more efficient (more appropriate for flow deletion events that don't only require the ResourceData be exported)
-			log.Printf("Using legacy flow exporter")
-			flowExporterToUse = architectFlow.ArchitectFlowExporter()
-		}
-		flowExporterToUse.SetSanitizedResourceMap(exporter.GetSanitizedResourceMap())
-		(*g.exporters)[resType] = flowExporterToUse
+		swapMrMoFlowExporter(*g.exporters, resType, generateOutputFiles, exporter)
 	}
 
 	// Step #3 Filter out all resources from the resType exporters SanitizedResourceMap besides the one at index "{resourceId}"
-	diags = append(diags, g.filterResourceMetaMapBasedOnID(resType, resourceId)...)
+	if resourceId != "" {
+		diags = append(diags, g.filterResourceMetaMapBasedOnID(resType, resourceId)...)
+		if diags.HasError() {
+			return nil, diags
+		}
+	}
+
+	// Step #4 Retrieve the individual genesys cloud object instance
+	diags = append(diags, g.retrieveGenesysCloudObjectInstancesForMrMo()...)
 	if diags.HasError() {
 		return nil, diags
+	}
+
+	// Step #5 export dependent resources for the flows
+	diags = append(diags, g.buildAndExportDependsOnResourcesForFlows()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// Step #6 Convert the Genesys Cloud resources to neutral format (e.g. map of maps)
+	diags = append(diags, g.buildResourceConfigMap()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	// Step #7 export dependents for other resources
+	diags = append(diags, g.buildAndExportDependentResources()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	if generateOutputFiles {
+		// Step #7 Write the terraform state file along with either the HCL or JSON
+		diags = append(diags, g.generateOutputFiles()...)
+		if diags.HasError() {
+			return nil, diags
+		}
+	}
+
+	return &MrMoExportResponse{
+		Config: util.JsonMap{
+			"resource": g.resourceTypesMaps,
+		},
+		ResourceData: g.resourceExportedForMrMo,
+	}, diags
+}
+
+func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, generateOutputFiles bool, exporter *resourceExporter.ResourceExporter) (_ *MrMoExportByTypeResponse, diags diag.Diagnostics) {
+	if exporter == nil {
+		return nil, diagNilResourceExporter(resType)
+	}
+	exporters := make(map[string]*resourceExporter.ResourceExporter)
+	exporters[resType] = exporter
+	g.exporters = &exporters
+
+	// Step #2 Retrieve all the individual resources we are going to export
+	diags = append(diags, g.retrieveSanitizedResourceMapsForMrMo()...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	if resType == architectFlow.ResourceType {
+		swapMrMoFlowExporter(*g.exporters, resType, generateOutputFiles, exporter)
 	}
 
 	// Step #3 Retrieve the individual genesys cloud object instance
@@ -83,11 +277,18 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 		}
 	}
 
-	return &MrMoExportResponse{
+	var resourceDataList []*schema.ResourceData
+	if g.resourcesExportedForMrMo == nil {
+		resourceDataList = make([]*schema.ResourceData, 0)
+	} else {
+		resourceDataList = (*g.resourcesExportedForMrMo)[resType]
+	}
+
+	return &MrMoExportByTypeResponse{
 		Config: util.JsonMap{
 			"resource": g.resourceTypesMaps,
 		},
-		ResourceData: g.resourceExportedForMrMo,
+		ResourceDataList: resourceDataList,
 	}, diags
 }
 
@@ -171,6 +372,9 @@ func (g *GenesysCloudResourceExporter) retrieveGenesysCloudObjectInstancesForMrM
 
 func (g *GenesysCloudResourceExporter) buildSanitizedResourceMapsForMrMo(exporters map[string]*resourceExporter.ResourceExporter, filter []string, logErrors bool) diag.Diagnostics {
 	for resourceType, exporter := range exporters {
+		if exporter == nil {
+			return diagNilResourceExporter(resourceType)
+		}
 		log.Printf("Getting all resources for type %s", resourceType)
 		exporter.FilterResource = g.resourceFilter
 
@@ -180,7 +384,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMapsForMrMo(exporte
 			continue
 		}
 
-		if !containsPermissionsErrorOnly(err) {
+		if !errors.ContainsPermissionsErrorOnly(err) {
 			return err
 		}
 

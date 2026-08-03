@@ -5,13 +5,16 @@ import (
 	"strconv"
 	"testing"
 
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceEvaluationFormBasic(t *testing.T) {
@@ -292,6 +295,121 @@ func TestAccResourceEvaluationFormCompleteWithPublish(t *testing.T) {
 	})
 }
 
+func TestAccResourceEvaluationFormWithMultipleSelectQuestions(t *testing.T) {
+	formResourceLabel := "test-evaluation-form-multi-select"
+
+	// Evaluation form with multiple select questions
+	evaluationForm := EvaluationFormStruct{
+		Name:      "terraform-form-multiselect-" + uuid.NewString(),
+		Published: false,
+		QuestionGroups: []EvaluationFormQuestionGroupStruct{
+			{
+				Name:                    "Test Question Group",
+				DefaultAnswersToHighest: true,
+				DefaultAnswersToNA:      false,
+				NaEnabled:               true,
+				Weight:                  100,
+				ManualWeight:            true,
+				Questions: []EvaluationFormQuestionStruct{
+					{
+						Text:     "Regular multiple choice question",
+						HelpText: "Help text for the question",
+						Type:     "multipleChoiceQuestion",
+						AnswerOptions: []AnswerOptionStruct{
+							{
+								Text:  "Yes",
+								Value: 1,
+							},
+							{
+								Text:  "No",
+								Value: 0,
+							},
+						},
+					},
+					{
+						Text:     "Multiple Select Question - Exceptions",
+						HelpText: "Select all that apply",
+						Type:     "multipleSelectQuestion",
+						MultipleSelectOptionQuestions: []MultipleSelectOptionQuestionStruct{
+							{
+								Text:     "Option ALC",
+								HelpText: "",
+								Type:     "multipleChoiceQuestion",
+								AnswerOptions: []AnswerOptionStruct{
+									{
+										BuiltInType: "Unselected",
+										Value:       0,
+									},
+									{
+										BuiltInType: "Selected",
+										Value:       1,
+									},
+								},
+							},
+							{
+								Text:     "Option BLB",
+								HelpText: "",
+								Type:     "multipleChoiceQuestion",
+								AnswerOptions: []AnswerOptionStruct{
+									{
+										BuiltInType: "Unselected",
+										Value:       0,
+									},
+									{
+										BuiltInType: "Selected",
+										Value:       1,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create evaluation form with multiple select questions
+				Config: GenerateEvaluationFormResource(formResourceLabel, &evaluationForm),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "name", evaluationForm.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "published", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.name", evaluationForm.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.#", "2"),
+					// Check first question (multiple choice)
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.0.text", evaluationForm.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.0.type", "multipleChoiceQuestion"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.0.answer_options.#", "2"),
+					// Check second question (multiple select)
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.text", evaluationForm.QuestionGroups[0].Questions[1].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.type", "multipleSelectQuestion"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.#", "2"),
+					// Check first option question
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.text", "Option ALC"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.type", "multipleChoiceQuestion"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.answer_options.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.answer_options.0.built_in_type", "Unselected"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.0.answer_options.1.built_in_type", "Selected"),
+					// Check second option question
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel, "question_groups.0.questions.1.multiple_select_option_questions.1.text", "Option BLB"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            ResourceType + "." + formResourceLabel,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
+			},
+		},
+		CheckDestroy: testVerifyEvaluationFormDestroyed,
+	})
+}
+
 func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 	formResourceLabel1 := "test-evaluation-form-1"
 
@@ -397,6 +515,145 @@ func TestAccResourceEvaluationFormRepublishing(t *testing.T) {
 	})
 }
 
+func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
+	formResourceLabel1 := "test-evaluation-form-new-attrs"
+	formName := "terraform-form-new-attrs-" + uuid.NewString()
+
+	userResourceLabel := "test-dispute-assignee-user"
+	userEmail := "terraform-" + uuid.NewString() + "@example.com"
+	userName := "Terraform Dispute Assignee " + uuid.NewString()
+
+	// An Individual dispute assignee must have quality evaluation permissions
+	roleResourceLabel := "test-dispute-assignee-role"
+	roleName := "terraform-dispute-assignee-role-" + uuid.NewString()
+	userRolesResourceLabel := "test-dispute-assignee-user-roles"
+
+	evaluationForm1 := EvaluationFormStruct{
+		Name:    formName,
+		Dialect: "en-US",
+		EvaluationSettings: &EvaluationSettingsStruct{
+			RevisionsEnabled:             true,
+			DisputesEnabled:              true,
+			DisputesAllowedPerEvaluation: 1,
+			DisputesAssignees: []DisputesAssigneeStruct{
+				{
+					Type:   "Individual",
+					UserId: userResource.ResourceType + "." + userResourceLabel + ".id",
+				},
+			},
+		},
+		DependsOn: []string{userRoles.ResourceType + "." + userRolesResourceLabel},
+		QuestionGroups: []EvaluationFormQuestionGroupStruct{
+			{
+				Name:         "Group with new attributes",
+				NaEnabled:    false,
+				Weight:       1,
+				ManualWeight: true,
+				DefaultAnswersTo: &DefaultAnswersToStruct{
+					HighestScore:  true,
+					NotApplicable: false,
+					LowestScore:   false,
+					UserDefined:   false,
+				},
+				Questions: []EvaluationFormQuestionStruct{
+					{
+						Text:                  "Question with automated scoring focus",
+						HelpText:              "Help text for scoring question",
+						Type:                  "multipleChoiceQuestion",
+						NaEnabled:             true,
+						CommentsRequired:      true,
+						IsKill:                false,
+						IsCritical:            true,
+						AutomatedScoringFocus: "EvaluatedAgent",
+						AnswerOptions: []AnswerOptionStruct{
+							{
+								Text:  "Yes",
+								Value: 1,
+							},
+							{
+								Text:  "No",
+								Value: 0,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	config := userResource.GenerateBasicUserResource(userResourceLabel, userEmail, userName) +
+		authRole.GenerateAuthRoleResource(
+			roleResourceLabel,
+			roleName,
+			"Terraform test role for dispute assignee",
+			authRole.GenerateRolePermPolicy("quality", "evaluation", strconv.Quote("edit")),
+		) +
+		userRoles.GenerateUserRoles(
+			userRolesResourceLabel,
+			userResourceLabel,
+			generateResourceRoles("genesyscloud_auth_role."+roleResourceLabel+".id"),
+		) +
+		GenerateEvaluationFormResource(formResourceLabel1, &evaluationForm1)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", evaluationForm1.Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "dialect", evaluationForm1.Dialect),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.revisions_enabled", strconv.FormatBool(evaluationForm1.EvaluationSettings.RevisionsEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_enabled", strconv.FormatBool(evaluationForm1.EvaluationSettings.DisputesEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_allowed_per_evaluation", fmt.Sprint(evaluationForm1.EvaluationSettings.DisputesAllowedPerEvaluation)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_assignees.0.type", evaluationForm1.EvaluationSettings.DisputesAssignees[0].Type),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_assignees.0.user_id", userResource.ResourceType+"."+userResourceLabel, "id"),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(evaluationForm1.QuestionGroups))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", evaluationForm1.QuestionGroups[0].Name),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.weight", fmt.Sprint(evaluationForm1.QuestionGroups[0].Weight)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.manual_weight", strconv.FormatBool(evaluationForm1.QuestionGroups[0].ManualWeight)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.highest_score", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.HighestScore)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.not_applicable", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.NotApplicable)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.lowest_score", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.LowestScore)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.default_answers_to.0.user_defined", strconv.FormatBool(evaluationForm1.QuestionGroups[0].DefaultAnswersTo.UserDefined)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.text", evaluationForm1.QuestionGroups[0].Questions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.help_text", evaluationForm1.QuestionGroups[0].Questions[0].HelpText),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.type", evaluationForm1.QuestionGroups[0].Questions[0].Type),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.na_enabled", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].NaEnabled)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.comments_required", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].CommentsRequired)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.is_kill", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].IsKill)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.is_critical", strconv.FormatBool(evaluationForm1.QuestionGroups[0].Questions[0].IsCritical)),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.automated_scoring_focus", evaluationForm1.QuestionGroups[0].Questions[0].AutomatedScoringFocus),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.#", fmt.Sprint(len(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions))),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.0.text", evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions[0].Text),
+					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.0.value", fmt.Sprint(evaluationForm1.QuestionGroups[0].Questions[0].AnswerOptions[0].Value)),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.context_id"),
+					resource.TestCheckResourceAttrSet(ResourceType+"."+formResourceLabel1, "question_groups.0.questions.0.answer_options.0.context_id"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            ResourceType + "." + formResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"published"},
+			},
+		},
+		CheckDestroy: testVerifyEvaluationFormDestroyed,
+	})
+}
+
+func generateResourceRoles(roleID string) string {
+	return fmt.Sprintf(`roles {
+		role_id = %s
+	}
+	`, roleID)
+}
+
 func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 	qualityAPI := platformclientv2.NewQualityApi()
 	for _, rs := range state.RootModule().Resources {
@@ -405,10 +662,6 @@ func testVerifyEvaluationFormDestroyed(state *terraform.State) error {
 		}
 
 		form, resp, err := qualityAPI.GetQualityFormsEvaluation(rs.Primary.ID)
-		if form != nil {
-			continue
-		}
-
 		if form != nil {
 			return fmt.Errorf("Evaluation form (%s) still exists", rs.Primary.ID)
 		}

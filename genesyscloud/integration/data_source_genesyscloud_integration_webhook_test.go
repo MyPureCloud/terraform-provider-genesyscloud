@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -48,6 +49,7 @@ func TestAccDataSourceIntegrationWebhook(t *testing.T) {
 				) + generateIntegrationWebhookDataSource(inteResourceLabel2,
 					inteName1,
 					"genesyscloud_integration."+inteResourceLabel1),
+				PreConfig: func() { time.Sleep(30 * time.Second) },
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_webhook."+inteResourceLabel2, "id", "genesyscloud_integration."+inteResourceLabel1, "id"),
 					// Note: web_hook_id and invocation_url will be populated from the integration's attributes

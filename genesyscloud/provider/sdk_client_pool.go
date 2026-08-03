@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 const (
@@ -28,9 +29,9 @@ const (
 	// Default pool settings
 	DefaultMaxClients = 10
 	MinClients        = 1
-	MaxClients        = 20
+	MaxClients        = 50
 
-	AbsoluteDynamicMaxClients = 50 // Maximum clients the pool can grow to dynamically
+	AbsoluteDynamicMaxClients = 50
 
 	// Logging intervals
 	MetricsLoggingInterval = 5 * time.Minute
@@ -55,11 +56,12 @@ type SDKClientPool struct {
 }
 
 type SDKClientPoolConfig struct {
-	AcquireTimeout time.Duration
-	InitTimeout    time.Duration
-	MaxClients     int
-	DebugLogging   bool
-	Version        string
+	AcquireTimeout     time.Duration
+	InitTimeout        time.Duration
+	MaxClients         int
+	MaxConcurrentPages int
+	DebugLogging       bool
+	Version            string
 }
 
 type poolMetrics struct {
@@ -119,6 +121,17 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			max = v.(int)
 		}
 
+		// Scale HTTP connection limits with token pool size so concurrent exports can use all tokens.
+		if transport, ok := http.DefaultTransport.(*http.Transport); ok {
+			transport.MaxIdleConns = max * 2
+			transport.MaxIdleConnsPerHost = max
+			transport.MaxConnsPerHost = max
+			log.Printf("HTTP transport configured for token_pool_size=%d: MaxIdleConnsPerHost=%d, MaxConnsPerHost=%d",
+				max, max, max)
+		} else {
+			log.Printf("WARN: Could not configure HTTP transport (not *http.Transport)")
+		}
+
 		// Get timeouts from provider config
 		acquireTimeout := DefaultAcquireTimeout
 		if v, ok := providerConfig.GetOk(AttrTokenAcquireTimeout); ok {
@@ -140,12 +153,15 @@ func InitSDKClientPool(ctx context.Context, version string, providerConfig *sche
 			initTimeout = parsed
 		}
 
+		maxConcurrentPages := providerConfig.Get(AttrMaxConcurrentPages).(int)
+
 		config := &SDKClientPoolConfig{
-			MaxClients:     max,
-			AcquireTimeout: acquireTimeout,
-			InitTimeout:    initTimeout,
-			DebugLogging:   providerConfig.Get(AttrSdkClientPoolDebug).(bool),
-			Version:        version,
+			MaxClients:         max,
+			MaxConcurrentPages: maxConcurrentPages,
+			AcquireTimeout:     acquireTimeout,
+			InitTimeout:        initTimeout,
+			DebugLogging:       providerConfig.Get(AttrSdkClientPoolDebug).(bool),
+			Version:            version,
 		}
 
 		SdkClientPool = &SDKClientPool{
@@ -312,6 +328,16 @@ func (p *SDKClientPool) preFill(ctx context.Context, providerConfig *schema.Reso
 			p.logDebug("Error pre-filling client pool - %s", p.formatMetrics())
 			return resultErr
 		}
+		// Check if context was cancelled even though errDone fired first.
+		// When both channels are ready, Go's select picks randomly, so we
+		// must check ctx.Err() explicitly to reliably detect timeouts.
+		if ctx.Err() != nil {
+			p.logDebug("Timed out pre-filling client pool - %s", p.formatMetrics())
+			if p.config.DebugLogging {
+				log.Printf("Timed out pre-filling client pool - %s", p.formatMetrics())
+			}
+			return diag.Errorf("Timed out pre-filling client pool: %v", ctx.Err())
+		}
 		p.logDebug("Successfully pre-filled client pool - %s", p.formatMetrics())
 		// Also log to standard logger for test capture when debug is enabled
 		if p.config.DebugLogging {
@@ -388,6 +414,16 @@ func (p *SDKClientPool) acquire(ctx context.Context) (*platformclientv2.Configur
 	return nil, fmt.Errorf("failed to acquire client after %d attempts", maxRetries)
 }
 
+// Acquire acquires a client from the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Acquire(ctx context.Context) (*platformclientv2.Configuration, error) {
+	return p.acquire(ctx)
+}
+
+// Release releases a client back to the pool (exported for use in tfexporter).
+func (p *SDKClientPool) Release(c *platformclientv2.Configuration) error {
+	return p.release(c)
+}
+
 func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 	if c == nil {
 		return fmt.Errorf("attempted to release a nil configuration ?!?")
@@ -421,6 +457,10 @@ func (p *SDKClientPool) release(c *platformclientv2.Configuration) error {
 
 func (p *SDKClientPool) GetMaxClients() int {
 	return p.config.MaxClients
+}
+
+func (p *SDKClientPool) GetMaxConcurrentPages() int {
+	return p.config.MaxConcurrentPages
 }
 
 func cleanupConfiguration(config *platformclientv2.Configuration) error {
@@ -660,6 +700,10 @@ func (p *SDKClientPool) AddClientsToPool(ctx context.Context, providerConfig *sc
 			p.logDebug("Error adding clients to pool - %s", p.formatMetrics())
 			return resultErr
 		}
+		if ctx.Err() != nil {
+			p.logDebug("Timed out adding clients to pool - %s", p.formatMetrics())
+			return diag.Errorf("Timed out adding clients to pool: %v", ctx.Err())
+		}
 		p.logDebug("Successfully added %d clients to pool - %s", numClients, p.formatMetrics())
 		return nil
 	case <-ctx.Done():
@@ -783,35 +827,50 @@ func wrapWithRecover(method resContextFunc, operation constants.CRUDOperation) r
 	}
 }
 
+// resolveClientConfigForContext selects an SDK client for the current operation.
+// Priority: export ctx config, legacy MRMO global config, then SdkClientPool.
+// The returned release func is a no-op when the config was not acquired from the pool.
+func resolveClientConfigForContext(ctx context.Context) (*platformclientv2.Configuration, func(), diag.Diagnostics) {
+	if clientConfig, ok := ExportClientConfigFromContext(ctx); ok {
+		return clientConfig, func() {}, nil
+	}
+
+	if mrmo.IsActive() {
+		clientConfig, err := mrmo.GetClientConfig()
+		if err != nil {
+			return nil, nil, diag.FromErr(err)
+		}
+		return clientConfig, func() {}, nil
+	}
+
+	clientConfig, err := SdkClientPool.acquire(ctx)
+	if err != nil {
+		return nil, nil, diag.FromErr(err)
+	}
+
+	return clientConfig, func() {
+		if err := SdkClientPool.release(clientConfig); err != nil {
+			log.Printf("[WARN] Error releasing client to pool: %v", err)
+		}
+	}, nil
+}
+
 // Inject a pooled SDK client connection into a resource method's meta argument
 // and automatically return it to the Pool on completion
 func runWithPooledClient(method resContextFunc) resContextFunc {
 	return func(ctx context.Context, r *schema.ResourceData, meta interface{}) diag.Diagnostics {
-		if mrmo.IsActive() {
-			clientConfig, err := mrmo.GetClientConfig()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-			newMeta := *meta.(*ProviderMeta)
-			newMeta.ClientConfig = clientConfig
-			return method(ctx, r, &newMeta)
+		// Automatically inject resource context if not already set
+		// This allows SDK debug logs to include resource type and identifier without requiring
+		// each resource function to manually call SetResourceContext
+		if r != nil {
+			ctx = autoInjectResourceContext(ctx, r)
 		}
 
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return diags
 		}
-
-		// Ensure client is always released, even on panic
-		released := false
-		defer func() {
-			if !released {
-				if err := SdkClientPool.release(clientConfig); err != nil {
-					log.Printf("[WARN] Error releasing client to pool: %v", err)
-				}
-				released = true
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {
@@ -824,40 +883,167 @@ func runWithPooledClient(method resContextFunc) resContextFunc {
 		newMeta := *meta.(*ProviderMeta)
 		newMeta.ClientConfig = clientConfig
 
-		result := method(ctx, r, &newMeta)
-
-		// Release client after successful execution
-		if err := SdkClientPool.release(clientConfig); err != nil {
-			log.Printf("[WARN] Error releasing client to pool: %v", err)
-		}
-		released = true
-
-		return result
+		return method(ctx, r, &newMeta)
 	}
+}
+
+// resourceTypeContextKey is a context key for storing resource type during registration wrapping
+type resourceTypeContextKey struct{}
+
+// autoInjectResourceContext automatically injects resource context, merging with any existing context.
+// This extracts resource ID and name from ResourceData, and resource type from context (set during registration).
+// If the context already has resource metadata, it merges values:
+// - Uses resource type from registration wrapper (resourceTypeContextKey) if available, otherwise preserves existing
+// - Preserves existing ResourceId and ResourceName if they are not empty/"unavailable"
+// - Falls back to extracting from ResourceData if existing values are empty/"unavailable"
+// This function always calls setContextForRequest to ensure the SDK logging hooks can access the context.
+func autoInjectResourceContext(ctx context.Context, r *schema.ResourceData) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Get resource type from registration wrapper context key
+	resourceTypeFromWrapper := ""
+	if rt, ok := ctx.Value(resourceTypeContextKey{}).(string); ok {
+		resourceTypeFromWrapper = rt
+	}
+
+	// Debug logging
+	log.Printf("[DEBUG] autoInjectResourceContext: resourceTypeFromWrapper=%q", resourceTypeFromWrapper)
+
+	// Extract resource ID and name from ResourceData
+	extractedId, extractedName := extractResourceIdAndName(r)
+
+	// Get existing resource context if it exists
+	var existingCtx *ResourceContext
+	if rc, ok := ctx.Value(resourceContextKey{}).(*ResourceContext); ok && rc != nil {
+		existingCtx = rc
+	}
+
+	// Determine final values by merging existing context with new data
+	var finalResourceType, finalResourceId, finalResourceName string
+
+	if existingCtx != nil {
+		// Merge with existing context
+
+		// Resource type: prefer wrapper type, then existing, then empty
+		if resourceTypeFromWrapper != "" {
+			finalResourceType = resourceTypeFromWrapper
+		} else if existingCtx.ResourceType != "" {
+			finalResourceType = existingCtx.ResourceType
+		}
+
+		// Resource ID: prefer existing good value, then extracted, then "unavailable"
+		if existingCtx.ResourceId != "" && existingCtx.ResourceId != "unavailable" {
+			finalResourceId = existingCtx.ResourceId
+		} else if extractedId != "" && extractedId != "unavailable" {
+			finalResourceId = extractedId
+		} else {
+			finalResourceId = "unavailable"
+		}
+
+		// Resource Name: prefer existing good value, then extracted, then "unavailable"
+		if existingCtx.ResourceName != "" && existingCtx.ResourceName != "unavailable" {
+			finalResourceName = existingCtx.ResourceName
+		} else if extractedName != "" && extractedName != "unavailable" {
+			finalResourceName = extractedName
+		} else {
+			finalResourceName = "unavailable"
+		}
+	} else {
+		// No existing context, use extracted/wrapper values
+		finalResourceType = resourceTypeFromWrapper
+		finalResourceId = extractedId
+		finalResourceName = extractedName
+	}
+
+	// Always call WithResourceContext which also calls setContextForRequest
+	// This ensures the SDK logging hooks can access the resource context
+	return WithResourceContext(ctx, finalResourceType, finalResourceId, finalResourceName)
+}
+
+// WrapResourceWithType wraps the CRUD methods of a schema.Resource to automatically inject
+// the resource type into the context. This should be called during resource registration.
+// This allows autoInjectResourceContext to include the resource type without requiring
+// each resource file to manually call SetResourceContext.
+func WrapResourceWithType(resourceType string, resource *schema.Resource) {
+	if resource == nil {
+		return
+	}
+
+	// Wrap CreateContext
+	if resource.CreateContext != nil {
+		originalCreate := resource.CreateContext
+		resource.CreateContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalCreate(ctx, d, meta)
+		}
+	}
+
+	// Wrap ReadContext
+	if resource.ReadContext != nil {
+		originalRead := resource.ReadContext
+		resource.ReadContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalRead(ctx, d, meta)
+		}
+	}
+
+	// Wrap UpdateContext
+	if resource.UpdateContext != nil {
+		originalUpdate := resource.UpdateContext
+		resource.UpdateContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalUpdate(ctx, d, meta)
+		}
+	}
+
+	// Wrap DeleteContext
+	if resource.DeleteContext != nil {
+		originalDelete := resource.DeleteContext
+		resource.DeleteContext = func(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+			ctx = context.WithValue(ctx, resourceTypeContextKey{}, resourceType)
+			return originalDelete(ctx, d, meta)
+		}
+	}
+}
+
+// extractResourceIdAndName extracts both ID and name from ResourceData.
+// Returns "unavailable" for any missing values.
+func extractResourceIdAndName(d *schema.ResourceData) (resourceId, resourceName string) {
+	// Get resource ID
+	if d != nil && d.Id() != "" {
+		resourceId = d.Id()
+	} else {
+		resourceId = "unavailable"
+	}
+
+	// Get resource name
+	if d != nil {
+		if name, ok := d.GetOk("name"); ok {
+			if nameStr, ok := name.(string); ok && nameStr != "" {
+				resourceName = nameStr
+			} else {
+				resourceName = "unavailable"
+			}
+		} else {
+			resourceName = "unavailable"
+		}
+	} else {
+		resourceName = "unavailable"
+	}
+
+	return resourceId, resourceName
 }
 
 // GetAllWithPooledClient Inject a pooled SDK client connection into an exporter's getAll* method
 func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllResourcesFunc {
-	if mrmo.IsActive() {
-		clientConfig, err := mrmo.GetClientConfig()
-		if err != nil {
-			log.Printf("[WARN] Error getting client config: %s", err.Error())
-		}
-		return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-			return method(ctx, clientConfig)
-		}
-	}
-
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return nil, diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return nil, diags
 		}
-		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {
@@ -872,15 +1058,11 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 
 func GetAllWithPooledClientCustom(method GetCustomConfigFunc) resourceExporter.GetAllCustomResourcesFunc {
 	return func(ctx context.Context) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-		clientConfig, err := SdkClientPool.acquire(ctx)
-		if err != nil {
-			return nil, nil, nil, diag.FromErr(err)
+		clientConfig, release, diags := resolveClientConfigForContext(ctx)
+		if diags != nil {
+			return nil, nil, nil, diags
 		}
-		defer func() {
-			if err := SdkClientPool.release(clientConfig); err != nil {
-				log.Printf("[WARN] Error releasing client to pool: %v", err)
-			}
-		}()
+		defer release()
 
 		// Check if the request has been cancelled
 		select {

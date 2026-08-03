@@ -1,0 +1,55 @@
+name: Build Docs
+on:
+  push:
+    paths:
+      - 'examples/**'
+      - 'templates/**'
+      - 'genesyscloud/**/*_schema.go'
+      - 'genesyscloud/**/*_proxy.go'
+jobs:
+  docs-tests:
+    name: Docs Example Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+        id: go
+
+      - name: Run Unit Tests
+        env:
+          TF_UNIT: '1'
+        run: |
+          go test ./examples -run TestUnitExampleResourcesPlanOnly -v
+
+  docs-generation:
+    name: Docs Generation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+        id: go
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Run Go Generate
+        run: go generate
+
+      - name: Check for uncommitted doc changes
+        run: |
+          git diff --exit-code docs/ examples/ || \
+            (echo "ERROR: Generated docs are out of date. Run 'make docs' locally and commit the result." && exit 1)

@@ -6,16 +6,55 @@ description: |-
 ---
 # genesyscloud_outbound_messagingcampaign (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud outbound messagingcampaign
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-messagingcampaigns)
-* [GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-messagingcampaigns--messagingCampaignId-)
+* [GET /api/v2/outbound/digitalrulesets](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-digitalrulesets)
 * [GET /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-messagingcampaigns)
+* [POST /api/v2/outbound/messagingcampaigns](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-outbound-messagingcampaigns)
 * [DELETE /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-outbound-messagingcampaigns--messagingCampaignId-)
+* [GET /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-outbound-messagingcampaigns--messagingCampaignId-)
 * [PUT /api/v2/outbound/messagingcampaigns/{messagingCampaignId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-outbound-messagingcampaigns--messagingCampaignId-)
+* [POST /api/v2/routing/email/outbound/domains](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-email-outbound-domains)
+* [GET /api/v2/routing/email/outbound/domains/{domainId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-email-outbound-domains--domainId-)
+* [PUT /api/v2/routing/email/outbound/domains/{domainId}/activation](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-routing-email-outbound-domains--domainId--activation)
+* [POST /api/v2/routing/sms/phonenumbers](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-sms-phonenumbers)
+* [GET /api/v2/routing/sms/phonenumbers/{phoneNumberId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-sms-phonenumbers--phoneNumberId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `outbound:digitalRuleSet:view`
+* `outbound:emailCampaign:add`
+* `outbound:emailCampaign:delete`
+* `outbound:emailCampaign:edit`
+* `outbound:emailCampaign:view`
+* `outbound:messagingCampaign:add`
+* `outbound:messagingCampaign:delete`
+* `outbound:messagingCampaign:edit`
+* `outbound:messagingCampaign:view`
+* `outbound:whatsAppCampaign:add`
+* `outbound:whatsAppCampaign:delete`
+* `outbound:whatsAppCampaign:edit`
+* `outbound:whatsAppCampaign:view`
+* `routing:email:manage`
+* `routing:email:view`
+* `sms:phoneNumber:add`
+* `sms:phoneNumber:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `outbound`
+* `outbound:readonly`
+* `routing`
+* `routing:readonly`
+
 
 ## Example Usage
 
@@ -66,6 +105,7 @@ resource "genesyscloud_outbound_messagingcampaign" "example_outbound_messagingca
 - `errors` (Block List) A list of current error conditions associated with this messaging campaign. (see [below for nested schema](#nestedblock--errors))
 - `rule_set_ids` (List of String) Rule Sets to be applied while this campaign is sending messages
 - `sms_config` (Block Set, Max: 1) Configuration for this messaging campaign to send SMS messages. (see [below for nested schema](#nestedblock--sms_config))
+- `whats_app_config` (Block Set, Max: 1) Configuration for this messaging campaign to send WhatsApp messages. (see [below for nested schema](#nestedblock--whats_app_config))
 
 ### Read-Only
 
@@ -153,4 +193,14 @@ Optional:
 
 - `content_template_id` (String) The content template used to formulate the message to send to the contact.
 - `message_column` (String) The Contact List column specifying the message to send to the contact.
+
+
+<a id="nestedblock--whats_app_config"></a>
+### Nested Schema for `whats_app_config`
+
+Required:
+
+- `content_template_id` (String) The content template used to formulate the email to send to the contact.
+- `whats_app_columns` (List of String) The contact list columns specifying the WhatsApp address(es) of the contact
+- `whats_app_integration_id` (String) The WhatsApp integration used to send message to the contact.
 

@@ -1,5 +1,11 @@
 package journey_action_template
 
+// @team: Journey Data
+// @chat: #customer-journey-data
+// @pm: Angelo Cicchitto
+// @jira: CPR
+// @description: Action Map Qualification Service determines if actions should be triggered for customers based on configured action maps. Handles action templates and qualification logic for content offers, architect flows, webchat, web messaging, and open actions.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -31,7 +37,7 @@ var (
 			Optional:    true,
 		},
 		"media_type": {
-			Description:  "The media type of the action configured by the action template.",
+			Description:  "The media type of the action configured by the action template. Valid values: webchat (deprecated), webMessagingOffer, contentOffer, architectFlow, openAction. Note: The 'webchat' media type is deprecated. ACD Chat v2.0 in Genesys Predictive Engagement is being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement.",
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),

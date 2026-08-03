@@ -7,7 +7,9 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -21,6 +23,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectSchedulesProxy
+
+var schedulesCache = rc.NewResourceCache[platformclientv2.Schedule]() // Create Cache for architect schedules resource
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createArchitectSchedulesFunc func(ctx context.Context, p *architectSchedulesProxy, schedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error)
@@ -56,8 +60,8 @@ This includes configuring the proxy with the required data and settings so that 
 seamlessly with the Genesys Cloud platform.
 */
 func newArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *architectSchedulesProxy {
-	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)    // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
-	schedulesCache := rc.NewResourceCache[platformclientv2.Schedule]() // Create Cache for architect schedules resource
+	api := platformclientv2.NewArchitectApiWithConfig(clientConfig) // NewArchitectApiWithConfig creates an Genesyc Cloud API instance using the provided configuration
+
 	return &architectSchedulesProxy{
 		clientConfig:                      clientConfig,
 		architectApi:                      api,
@@ -120,6 +124,9 @@ func (p *architectSchedulesProxy) deleteArchitectSchedules(ctx context.Context, 
 
 // createArchitectSchedulesFn is an implementation function for creating a Genesys Cloud architect schedules
 func createArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	schedules, apiResponse, err := p.architectApi.PostArchitectSchedules(*architectSchedules)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to create architect schedules: %s", err)
@@ -129,6 +136,9 @@ func createArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy,
 
 // getAllArchitectSchedulesFn is the implementation for retrieving all architect schedules in Genesys Cloud
 func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy) (*[]platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allSchedules []platformclientv2.Schedule
 	const pageSize = 100
 
@@ -166,6 +176,9 @@ func getAllArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy)
 
 // getArchitectSchedulesIdByNameFn is an implementation of the function to get a Genesys Cloud architect schedules by name
 func getArchitectSchedulesIdByNameFn(ctx context.Context, p *architectSchedulesProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	schedules, apiResponse, err := getAllArchitectSchedulesFn(ctx, p)
 	if err != nil {
 		return "", false, apiResponse, err
@@ -187,6 +200,9 @@ func getArchitectSchedulesIdByNameFn(ctx context.Context, p *architectSchedulesP
 
 // getArchitectSchedulesByIdFn is an implementation of the function to get a Genesys Cloud architect schedules by Id
 func getArchitectSchedulesByIdFn(ctx context.Context, p *architectSchedulesProxy, id string) (architectSchedules *platformclientv2.Schedule, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	schedule, apiResponse, err := p.architectApi.GetArchitectSchedule(id)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to retrieve architect schedule by id %s: %s", id, err)
@@ -196,6 +212,9 @@ func getArchitectSchedulesByIdFn(ctx context.Context, p *architectSchedulesProxy
 
 // updateArchitectSchedulesFn is an implementation of the function to update a Genesys Cloud architect schedules
 func updateArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, id string, architectSchedules *platformclientv2.Schedule) (*platformclientv2.Schedule, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	schedule, apiResponse, err := getArchitectSchedulesByIdFn(ctx, p, id)
 	if err != nil {
 		return nil, apiResponse, fmt.Errorf("Failed to get schedule  %s by id: %s", id, err)
@@ -210,6 +229,9 @@ func updateArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy,
 
 // deleteArchitectSchedulesFn is an implementation function for deleting a Genesys Cloud architect schedules
 func deleteArchitectSchedulesFn(ctx context.Context, p *architectSchedulesProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.architectApi.DeleteArchitectSchedule(id)
 	if err != nil {
 		return resp, fmt.Errorf("Failed to delete architect schedules: %s", err)

@@ -10,10 +10,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func TestAccResourceJourneyOutcomePredictor(t *testing.T) {
+	t.Skip("Reached end of life, not supported anymore")
 	t.Parallel()
 	var (
 		resourcePath        = "genesyscloud_journey_outcome_predictor.test_predictor"

@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -24,21 +26,24 @@ type getAllTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskMan
 type getTaskManagementWorktypeStatusIdByNameFunc func(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, name string) (string, *platformclientv2.APIResponse, bool, error)
 type getTaskManagementWorktypeStatusByIdFunc func(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
 type updateTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string, workitemStatus *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
+type patchTaskManagementWorktypeStatusAutoTerminateFunc func(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string, autoTerminate bool) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error)
 type deleteTaskManagementWorktypeStatusFunc func(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) (*platformclientv2.APIResponse, error)
 type getTaskManagementWorktypeFunc func(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 
 // taskManagementWorktypeStatusProxy contains all the methods that call genesys cloud APIs.
 type taskManagementWorktypeStatusProxy struct {
-	clientConfig                                *platformclientv2.Configuration
-	taskManagementApi                           *platformclientv2.TaskManagementApi
-	worktypeProxy                               *taskManagementWorktype.TaskManagementWorktypeProxy
-	createTaskManagementWorktypeStatusAttr      createTaskManagementWorktypeStatusFunc
-	getAllTaskManagementWorktypeStatusAttr      getAllTaskManagementWorktypeStatusFunc
-	getTaskManagementWorktypeStatusIdByNameAttr getTaskManagementWorktypeStatusIdByNameFunc
-	getTaskManagementWorktypeStatusByIdAttr     getTaskManagementWorktypeStatusByIdFunc
-	updateTaskManagementWorktypeStatusAttr      updateTaskManagementWorktypeStatusFunc
-	deleteTaskManagementWorktypeStatusAttr      deleteTaskManagementWorktypeStatusFunc
-	getTaskManagementWorktypeAttr               getTaskManagementWorktypeFunc
+	clientConfig                                       *platformclientv2.Configuration
+	taskManagementApi                                  *platformclientv2.TaskManagementApi
+	customApiClient                                    *customapi.Client
+	worktypeProxy                                      *taskManagementWorktype.TaskManagementWorktypeProxy
+	createTaskManagementWorktypeStatusAttr             createTaskManagementWorktypeStatusFunc
+	getAllTaskManagementWorktypeStatusAttr             getAllTaskManagementWorktypeStatusFunc
+	getTaskManagementWorktypeStatusIdByNameAttr        getTaskManagementWorktypeStatusIdByNameFunc
+	getTaskManagementWorktypeStatusByIdAttr            getTaskManagementWorktypeStatusByIdFunc
+	updateTaskManagementWorktypeStatusAttr             updateTaskManagementWorktypeStatusFunc
+	patchTaskManagementWorktypeStatusAutoTerminateAttr patchTaskManagementWorktypeStatusAutoTerminateFunc
+	deleteTaskManagementWorktypeStatusAttr             deleteTaskManagementWorktypeStatusFunc
+	getTaskManagementWorktypeAttr                      getTaskManagementWorktypeFunc
 }
 
 // newTaskManagementWorktypeStatusProxy initializes the task management worktype status proxy with all of the data needed to communicate with Genesys Cloud
@@ -46,16 +51,18 @@ func newTaskManagementWorktypeStatusProxy(clientConfig *platformclientv2.Configu
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
 	taskmanagementProxy := taskManagementWorktype.GetTaskManagementWorktypeProxy(clientConfig)
 	return &taskManagementWorktypeStatusProxy{
-		clientConfig:                                clientConfig,
-		taskManagementApi:                           api,
-		worktypeProxy:                               taskmanagementProxy,
-		createTaskManagementWorktypeStatusAttr:      createTaskManagementWorktypeStatusFn,
-		getAllTaskManagementWorktypeStatusAttr:      getAllTaskManagementWorktypeStatusFn,
-		getTaskManagementWorktypeStatusIdByNameAttr: getTaskManagementWorktypeStatusIdByNameFn,
-		getTaskManagementWorktypeStatusByIdAttr:     getTaskManagementWorktypeStatusByIdFn,
-		updateTaskManagementWorktypeStatusAttr:      updateTaskManagementWorktypeStatusFn,
-		deleteTaskManagementWorktypeStatusAttr:      deleteTaskManagementWorktypeStatusFn,
-		getTaskManagementWorktypeAttr:               getTaskManagementWorktypeFn,
+		clientConfig:                                       clientConfig,
+		taskManagementApi:                                  api,
+		customApiClient:                                    customapi.NewClient(clientConfig, ResourceType),
+		worktypeProxy:                                      taskmanagementProxy,
+		createTaskManagementWorktypeStatusAttr:             createTaskManagementWorktypeStatusFn,
+		getAllTaskManagementWorktypeStatusAttr:             getAllTaskManagementWorktypeStatusFn,
+		getTaskManagementWorktypeStatusIdByNameAttr:        getTaskManagementWorktypeStatusIdByNameFn,
+		getTaskManagementWorktypeStatusByIdAttr:            getTaskManagementWorktypeStatusByIdFn,
+		updateTaskManagementWorktypeStatusAttr:             updateTaskManagementWorktypeStatusFn,
+		patchTaskManagementWorktypeStatusAutoTerminateAttr: patchTaskManagementWorktypeStatusAutoTerminateFn,
+		deleteTaskManagementWorktypeStatusAttr:             deleteTaskManagementWorktypeStatusFn,
+		getTaskManagementWorktypeAttr:                      getTaskManagementWorktypeFn,
 	}
 }
 
@@ -94,6 +101,11 @@ func (p *taskManagementWorktypeStatusProxy) updateTaskManagementWorktypeStatus(c
 	return p.updateTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, statusId, taskManagementWorktypeStatus)
 }
 
+// patchTaskManagementWorktypeStatusAutoTerminate patches auto_terminate_workitem using a custom body so explicit false is sent.
+func (p *taskManagementWorktypeStatusProxy) patchTaskManagementWorktypeStatusAutoTerminate(ctx context.Context, worktypeId string, statusId string, autoTerminate bool) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	return p.patchTaskManagementWorktypeStatusAutoTerminateAttr(ctx, p, worktypeId, statusId, autoTerminate)
+}
+
 // deleteTaskManagementWorktypeStatus deletes a Genesys Cloud task management worktype status by Id
 func (p *taskManagementWorktypeStatusProxy) deleteTaskManagementWorktypeStatus(ctx context.Context, worktypeId string, statusId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteTaskManagementWorktypeStatusAttr(ctx, p, worktypeId, statusId)
@@ -106,11 +118,13 @@ func (p *taskManagementWorktypeStatusProxy) getTaskManagementWorktype(ctx contex
 
 // createTaskManagementWorktypeStatusFn is an implementation function for creating a Genesys Cloud task management worktype status
 func createTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, taskManagementWorktypeStatus *platformclientv2.Workitemstatuscreate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PostTaskmanagementWorktypeStatuses(worktypeId, *taskManagementWorktypeStatus)
 }
 
 // getAllTaskManagementWorktypeStatusFn is the implementation for retrieving all task management worktype status in Genesys Cloud
 func getAllTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string) (*[]platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	statuses, resp, err := p.taskManagementApi.GetTaskmanagementWorktypeStatuses(worktypeId)
 	if err != nil {
 		return nil, resp, err
@@ -121,6 +135,7 @@ func getAllTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagement
 
 // getTaskManagementWorktypeStatusIdByNameFn is an implementation of the function to get a Genesys Cloud task management worktype status by name
 func getTaskManagementWorktypeStatusIdByNameFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	statuses, resp, err := getAllTaskManagementWorktypeStatusFn(ctx, p, worktypeId)
 	if err != nil {
 		return "", resp, false, err
@@ -141,20 +156,35 @@ func getTaskManagementWorktypeStatusIdByNameFn(ctx context.Context, p *taskManag
 
 // getTaskManagementWorktypeStatusByIdFn is an implementation of the function to get a Genesys Cloud task management worktype status by Id
 func getTaskManagementWorktypeStatusByIdFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.GetTaskmanagementWorktypeStatus(worktypeId, statusId)
 }
 
 // updateTaskManagementWorktypeStatusFn is an implementation of the function to update a Genesys Cloud task management worktype status
 func updateTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string, taskManagementWorktypeStatus *platformclientv2.Workitemstatusupdate) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.PatchTaskmanagementWorktypeStatus(worktypeId, statusId, *taskManagementWorktypeStatus)
+}
+
+type workitemStatusAutoTerminatePatch struct {
+	AutoTerminateWorkitem bool `json:"autoTerminateWorkitem"`
+}
+
+// patchTaskManagementWorktypeStatusAutoTerminateFn uses customapi so explicit false is sent for auto_terminate_workitem.
+func patchTaskManagementWorktypeStatusAutoTerminateFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string, autoTerminate bool) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	path := "/api/v2/taskmanagement/worktypes/" + worktypeId + "/statuses/" + statusId
+	body := workitemStatusAutoTerminatePatch{AutoTerminateWorkitem: autoTerminate}
+	return customapi.Do[platformclientv2.Workitemstatus](ctx, p.customApiClient, customapi.MethodPatch, path, body, nil)
 }
 
 // deleteTaskManagementWorktypeStatusFn is an implementation function for deleting a Genesys Cloud task management worktype status
 func deleteTaskManagementWorktypeStatusFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string, statusId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.DeleteTaskmanagementWorktypeStatus(worktypeId, statusId)
 }
 
 // getTaskManagementWorktypeFn is an implementation of the function to get a Genesys Cloud task management worktype
 func getTaskManagementWorktypeFn(ctx context.Context, p *taskManagementWorktypeStatusProxy, worktypeId string) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.taskManagementApi.GetTaskmanagementWorktype(worktypeId, nil)
 }

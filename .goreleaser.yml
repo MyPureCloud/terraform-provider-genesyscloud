@@ -7,6 +7,7 @@ before:
     # this is just an example and not a requirement for provider building/publishing
     - go mod tidy
     - go run ./tools/dependency_tree "public/data/" "{{ .Version }}"
+    - go run ./apidocs "{{ .Version }}"
 builds:
   - env:
       # goreleaser does not work with CGO, it could also complicate
@@ -42,6 +43,7 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - public/data/dependency_tree-*.json
+      - public/data/resource_permissions-*.json
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
@@ -62,6 +64,7 @@ release:
   draft: true
   extra_files:
     - glob: ./public/data/dependency_tree-*.json
+    - glob: ./public/data/resource_permissions-*.json
 changelog:
   use: github
   sort: asc

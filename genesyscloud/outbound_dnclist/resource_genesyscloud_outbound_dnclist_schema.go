@@ -1,5 +1,11 @@
 package outbound_dnclist
 
+// @team: List Management
+// @chat: #Genesys Cloud Dialer
+// @pm: Mason Mansfield
+// @jira: LM
+// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -91,6 +97,7 @@ func ResourceOutboundDncList() *schema.Resource {
 			`entries`: {
 				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{

@@ -53,3 +53,20 @@ func StringOrNil(s *string) string {
 	}
 	return *s
 }
+
+func StripInvisibleUnicodeFromString(s string) string {
+	return strings.Map(func(r rune) rune {
+		switch r {
+		case '\u00A0': // Non-breaking space → replace with regular space
+			return ' '
+		case '\u200B', // Zero-width space
+			'\u200C', // Zero-width non-joiner
+			'\u200D', // Zero-width joiner
+			'\u2060', // Word joiner
+			'\uFEFF': // Byte order mark
+			return -1
+		default:
+			return r
+		}
+	}, s)
+}

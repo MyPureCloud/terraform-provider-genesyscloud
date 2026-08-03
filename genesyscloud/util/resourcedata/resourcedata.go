@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/leekchan/timeutil"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 const (
@@ -145,6 +145,19 @@ func SetNillableValue[T any](d *schema.ResourceData, key string, value *T) {
 		_ = d.Set(key, *value)
 	} else {
 		_ = d.Set(key, nil)
+	}
+}
+
+// SetStringValueIfNotNil sets {key} to *value only when value is non-nil, and
+// leaves the attribute untouched when value is nil. Unlike SetNillableValue,
+// the nil branch does NOT call d.Set(key, nil) - for a TypeString that coerces
+// an absent value to "" and produces a null -> "" inconsistency ("provider
+// produced an invalid plan / unexpected new value"). Leaving the attribute unset
+// preserves null in state. Use this for optional string fields the API returns
+// as nil when absent.
+func SetStringValueIfNotNil(d *schema.ResourceData, key string, value *string) {
+	if value != nil {
+		_ = d.Set(key, *value)
 	}
 }
 

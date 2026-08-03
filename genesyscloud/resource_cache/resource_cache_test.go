@@ -6,6 +6,9 @@ import (
 )
 
 func TestUnitWithoutExporterState(t *testing.T) {
+	tfexporter_state.ResetExporterStateForTests()
+	t.Cleanup(tfexporter_state.ResetExporterStateForTests)
+
 	cache := NewResourceCache[int]()
 	// Test SetCache
 	SetCache(cache, "key1", 10)
@@ -24,6 +27,8 @@ func TestUnitWithoutExporterState(t *testing.T) {
 }
 
 func TestUnitSetCacheAndGetCache(t *testing.T) {
+	tfexporter_state.ResetExporterStateForTests()
+	t.Cleanup(tfexporter_state.ResetExporterStateForTests)
 	tfexporter_state.ActivateExporterState()
 	cache := NewResourceCache[int]()
 	// Test SetCache

@@ -3,8 +3,11 @@ package business_rules_decision_table
 import (
 	"context"
 	"fmt"
+	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -161,10 +164,16 @@ func (p *BusinessRulesDecisionTableProxy) deleteDecisionTableVersion(ctx context
 
 // Function implementations that make the actual API calls
 func createBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, createRequest *platformclientv2.Createdecisiontablerequest) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.businessRulesApi.PostBusinessrulesDecisiontables(*createRequest)
 }
 
 func getBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontable, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	// Check cache first
 	businessRulesDecisionTable := rc.GetCacheItem(p.BusinessRulesDecisionTableCache, tableId)
 	if businessRulesDecisionTable != nil {
@@ -181,6 +190,9 @@ func getBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDecisi
 }
 
 func updateBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, updateRequest *platformclientv2.Updatedecisiontablerequest) (*platformclientv2.Decisiontable, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	table, resp, err := p.businessRulesApi.PatchBusinessrulesDecisiontable(tableId, *updateRequest)
 	if err == nil && table != nil {
 		// Update cache with new data after successful update (dereference pointer to store value)
@@ -190,6 +202,9 @@ func updateBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDec
 }
 
 func deleteBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontable(tableId, false)
 	if err == nil {
 		// Remove from cache after successful deletion
@@ -199,6 +214,9 @@ func deleteBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDec
 }
 
 func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allTables []platformclientv2.Decisiontable
 	pageSize := "100"
 	after := ""
@@ -223,13 +241,14 @@ func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDe
 		}
 
 		// Extract the 'after' parameter from NextUri for the next iteration
-		after, err = util.GetQueryParamValueFromUri(*tables.NextUri, "after")
+		newAfter, err := util.GetQueryParamValueFromUri(*tables.NextUri, "after")
 		if err != nil {
 			return nil, resp, fmt.Errorf("unable to parse after cursor from decision tables next uri: %v", err)
 		}
-		if after == "" {
+		if newAfter == "" || newAfter == after {
 			break
 		}
+		after = newAfter
 	}
 
 	// Cache all decision tables for later use in data source lookups and export
@@ -249,6 +268,9 @@ func getAllBusinessRulesDecisionTablesFn(ctx context.Context, p *BusinessRulesDe
 
 // getBusinessRulesDecisionTablesByNameFn is an implementation of the function to get Genesys Cloud business rules decision tables by name
 func getBusinessRulesDecisionTablesByNameFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (matchingTables *[]platformclientv2.Decisiontable, retryable bool, resp *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	finalTables := []platformclientv2.Decisiontable{}
 
 	// Use the updated getAll function with name parameter for server-side filtering
@@ -276,37 +298,70 @@ func getBusinessRulesDecisionTablesByNameFn(ctx context.Context, p *BusinessRule
 }
 
 func getBusinessRulesDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.businessRulesApi.GetBusinessrulesDecisiontableVersion(tableId, versionNumber)
 }
 
 func createDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.businessRulesApi.PostBusinessrulesDecisiontableVersionRows(tableId, version, *row)
+	if err != nil && (resp == nil || resp.StatusCode == 0) {
+		// No HTTP response (transport/timeout/retry-exhaustion): not captured by the SDK error log or the 429/5xx file mirror.
+		log.Printf("[ERROR] decision table row POST (table %s v%d) failed with no SDK response: %v", tableId, version, err)
+	}
 	return resp, err
 }
 
 func publishDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.businessRulesApi.PutBusinessrulesDecisiontableVersionPublish(tableId, version)
 	return resp, err
 }
 
 func getDecisionTableRowsFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, pageNumber string, pageSize string) (*platformclientv2.Decisiontablerowlisting, *platformclientv2.APIResponse, error) {
-	return p.businessRulesApi.GetBusinessrulesDecisiontableVersionRows(tableId, version, pageNumber, pageSize)
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	rows, resp, err := p.businessRulesApi.GetBusinessrulesDecisiontableVersionRows(tableId, version, pageNumber, pageSize)
+	if err != nil && (resp == nil || resp.StatusCode == 0) {
+		// No HTTP response (transport/timeout/retry-exhaustion): not captured by the SDK error log or the 429/5xx file mirror.
+		log.Printf("[ERROR] decision table rows GET (table %s v%d page %s) failed with no SDK response: %v", tableId, version, pageNumber, err)
+	}
+	return rows, resp, err
 }
 
 func createDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.businessRulesApi.PostBusinessrulesDecisiontableVersions(tableId)
 }
 
 func updateDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.businessRulesApi.PutBusinessrulesDecisiontableVersionRow(tableId, version, rowId, *row)
 }
 
 func deleteDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersionRow(tableId, version, rowId)
 	return resp, err
 }
 
 func deleteDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersion(tableId, version)
 	return resp, err
 }

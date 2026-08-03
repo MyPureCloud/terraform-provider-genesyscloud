@@ -27,14 +27,14 @@ func (r *registerTestInstance) registerTestResources() {
 	r.resourceMapMutex.Lock()
 	defer r.resourceMapMutex.Unlock()
 
-	providerResources[ResourceName] = ResourceWorkforcemanagementBusinessunits()
+	providerResources[ResourceType] = ResourceWorkforcemanagementBusinessunits()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
 func (r *registerTestInstance) registerTestDataSources() {
 	r.datasourceMapMutex.Lock()
 	defer r.datasourceMapMutex.Unlock()
-	providerDataSources[ResourceName] = DataSourceWorkforcemanagementBusinessunits()
+	providerDataSources[ResourceType] = DataSourceWorkforcemanagementBusinessunits()
 }
 
 // initTestResources initializes all test resources.
