@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 
@@ -105,7 +105,11 @@ func readBusinessRulesSchema(ctx context.Context, d *schema.ResourceData, meta i
 		}
 
 		resourcedata.SetNillableValue(d, "name", schema.Name)
-		resourcedata.SetNillableValue(d, "description", schema.JsonSchema.Description)
+		if schema.JsonSchema != nil {
+			// Preserve null for an absent description; SetNillableValue would coerce it
+			// to "" for a TypeString and cause a null -> "" plan inconsistency.
+			resourcedata.SetStringValueIfNotNil(d, "description", schema.JsonSchema.Description)
+		}
 		resourcedata.SetNillableValue(d, "properties", schemaPropsPtr)
 		resourcedata.SetNillableValue(d, "enabled", schema.Enabled)
 		resourcedata.SetNillableValue(d, "version", schema.Version)

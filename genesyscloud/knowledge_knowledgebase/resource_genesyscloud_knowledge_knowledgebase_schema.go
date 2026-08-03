@@ -1,5 +1,11 @@
 package knowledge_knowledgebase
 
+// @team: Knowledge Administration Service Team
+// @chat: #knowledge-team
+// @pm: Harshali Desai
+// @jira: GKC
+// @description: Knowledge Administration service manages knowledge content for agent assistance. Provides APIs and UI for creating, searching, rating, and organizing knowledge articles that agents use to answer customer interactions effectively.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -20,6 +26,9 @@ func KnowledgeKnowledgebaseExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeKnowledgebases),
 		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "core_language"}: {Attr: "core_language"},
+		},
 	}
 }
 
@@ -59,6 +68,13 @@ func ResourceKnowledgeKnowledgebase() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Computed:    true,
+			},
+			"content_search_enabled": {
+				Description: "Flag that indicates search on article content is enabled for the knowledge base. This setting cannot be changed after the knowledge base is created.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				ForceNew:    true,
 			},
 		},
 	}

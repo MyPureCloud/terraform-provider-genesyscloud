@@ -6,19 +6,37 @@ description: |-
 ---
 # genesyscloud_webdeployments_configuration (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Web Deployment Configuration
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/webdeployments/configurations](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations)
-* [POST /api/v2/webdeployments/configurations](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations)
-* [DELETE /api/v2/webdeployments/configurations/{configurationId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#delete-api-v2-webdeployments-configurations--configurationId-)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#put-api-v2-webdeployments-configurations--configurationId--versions-draft)
-* [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#post-api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
-* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.dev-genesys.cloud/api/rest/v2/webdeployments/#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
+* [GET /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations)
+* [POST /api/v2/webdeployments/configurations](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-webdeployments-configurations)
+* [DELETE /api/v2/webdeployments/configurations/{configurationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-webdeployments-configurations--configurationId-)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions-draft)
+* [PUT /api/v2/webdeployments/configurations/{configurationId}/versions/draft](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-webdeployments-configurations--configurationId--versions-draft)
+* [POST /api/v2/webdeployments/configurations/{configurationId}/versions/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-webdeployments-configurations--configurationId--versions-draft-publish)
+* [GET /api/v2/webdeployments/configurations/{configurationId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-webdeployments-configurations--configurationId--versions--versionId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `webDeployments:configuration:add`
+* `webDeployments:configuration:delete`
+* `webDeployments:configuration:edit`
+* `webDeployments:configuration:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `webdeployments`
+* `webdeployments:readonly`
+
 
 ## Example Usage
 
@@ -39,6 +57,10 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
       key   = "MessengerHomeHeaderSubTitle"
       value = "Custom Header Subtitle"
     }
+    localized_labels {
+      key   = "MessengerLauncherButtonText"
+      value = "Chat with us"
+    }
   }
   position {
     alignment    = "Auto"
@@ -48,7 +70,11 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
   messenger {
     enabled = true
     launcher_button {
-      visibility = "OnDemand"
+      visibility   = "OnDemand"
+      display_type = "IconAndText"
+      icon {
+        url = "https://my-domain/images/launcher-icon.png"
+      }
     }
     home_screen {
       enabled  = true
@@ -273,16 +299,16 @@ Required:
 
 Optional:
 
-- `language` (String) Language of localized labels in homescreen app (eg. en-us, de-de)
-- `localized_labels` (Block List) Contains localized labels used in homescreen app (see [below for nested schema](#nestedblock--custom_i18n_labels--localized_labels))
+- `language` (String) Language of localized labels in messenger homescreen, push notification, or messenger launcher button (eg. en-us, de-de)
+- `localized_labels` (Block List) Contains localized labels used in messenger homescreen, push notification, or messenger launcher button. PushNotificationTitle and PushNotificationBody are required when notifications are enabled. (see [below for nested schema](#nestedblock--custom_i18n_labels--localized_labels))
 
 <a id="nestedblock--custom_i18n_labels--localized_labels"></a>
 ### Nested Schema for `custom_i18n_labels.localized_labels`
 
 Required:
 
-- `key` (String) Contains localized label key used in messenger homescreen
-- `value` (String) Contains localized label value used in messenger homescreen
+- `key` (String) Contains localized label key used in messenger homescreen, push notification, or messenger launcher button.
+- `value` (String) Contains localized label value used in messenger homescreen, push notification, or messenger launcher button.
 
 
 
@@ -384,6 +410,7 @@ Optional:
 - `file_upload` (Block List, Max: 1) File upload settings for messenger (see [below for nested schema](#nestedblock--messenger--file_upload))
 - `home_screen` (Block List, Max: 1) The settings for the home screen (see [below for nested schema](#nestedblock--messenger--home_screen))
 - `launcher_button` (Block List, Max: 1) The settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button))
+- `session_persistence_type` (String) The session persistence type for messenger. Valid values: AcrossSubdomains, DomainOrSubdomainOnly
 - `styles` (Block List, Max: 1) The style settings for messenger (see [below for nested schema](#nestedblock--messenger--styles))
 
 <a id="nestedblock--messenger--apps"></a>
@@ -405,6 +432,8 @@ Optional:
 - `enabled` (Boolean) The toggle to enable or disable conversations
 - `humanize` (Block List, Max: 1) The humanize conversations settings for the messenger app (see [below for nested schema](#nestedblock--messenger--apps--conversations--humanize))
 - `markdown_enabled` (Boolean) The markdown for the messenger app
+- `notifications` (Block List, Max: 1) The notification settings for messenger conversations (see [below for nested schema](#nestedblock--messenger--apps--conversations--notifications))
+- `session_duration_seconds` (Number) The guest session duration in seconds for messenger conversations
 - `show_agent_typing_indicator` (Boolean) The toggle to enable or disable typing indicator for messenger
 - `show_user_typing_indicator` (Boolean) The toggle to enable or disable typing indicator for messenger
 
@@ -435,6 +464,15 @@ Optional:
 
 
 
+<a id="nestedblock--messenger--apps--conversations--notifications"></a>
+### Nested Schema for `messenger.apps.conversations.notifications`
+
+Optional:
+
+- `enabled` (Boolean) Whether or not notifications are enabled
+- `notification_content_type` (String) The notification content type. Valid values: IncludeMessagesContent, ExcludeMessagesContent
+
+
 
 <a id="nestedblock--messenger--apps--knowledge"></a>
 ### Nested Schema for `messenger.apps.knowledge`
@@ -451,6 +489,7 @@ Optional:
 
 Optional:
 
+- `enable_attachments` (Boolean) Whether or not file attachments are enabled
 - `mode` (Block List) The list of supported file upload modes (see [below for nested schema](#nestedblock--messenger--file_upload--mode))
 
 <a id="nestedblock--messenger--file_upload--mode"></a>
@@ -477,7 +516,17 @@ Optional:
 
 Optional:
 
+- `display_type` (String) The display type for the launcher button. Valid values: Icon, Text, IconAndText
+- `icon` (Block List, Max: 1) Icon settings for the launcher button (see [below for nested schema](#nestedblock--messenger--launcher_button--icon))
 - `visibility` (String) The visibility settings for the button.Valid values: On, Off, OnDemand
+
+<a id="nestedblock--messenger--launcher_button--icon"></a>
+### Nested Schema for `messenger.launcher_button.icon`
+
+Optional:
+
+- `url` (String) URL for the custom launcher icon
+
 
 
 <a id="nestedblock--messenger--styles"></a>
@@ -512,6 +561,7 @@ Optional:
 - `enabled_categories` (Block List) Featured categories for knowledge portal (previously support center) home screen (see [below for nested schema](#nestedblock--support_center--enabled_categories))
 - `feedback_enabled` (Boolean) Whether or not requesting customer feedback on article content and article search results is enabled
 - `knowledge_base_id` (String) The knowledge base for knowledge portal (previously support center)
+- `label_filter` (Block List, Max: 1) Document label filter for knowledge portal. If set, only documents having at least one of the specified labels will be returned. (see [below for nested schema](#nestedblock--support_center--label_filter))
 - `router_type` (String) Router type for knowledge portal
 - `screens` (Block List) Available screens for the knowledge portal with its modules (see [below for nested schema](#nestedblock--support_center--screens))
 - `style_setting` (Block List, Max: 1) Style attributes for knowledge portal (previously support center) (see [below for nested schema](#nestedblock--support_center--style_setting))
@@ -535,6 +585,14 @@ Required:
 Optional:
 
 - `image_uri` (String) Source URL for the featured category
+
+
+<a id="nestedblock--support_center--label_filter"></a>
+### Nested Schema for `support_center.label_filter`
+
+Required:
+
+- `label_ids` (List of String) List of knowledge label IDs to filter by
 
 
 <a id="nestedblock--support_center--screens"></a>

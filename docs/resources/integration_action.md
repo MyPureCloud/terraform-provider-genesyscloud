@@ -6,24 +6,63 @@ description: |-
 ---
 # genesyscloud_integration_action (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [GET /api/v2/integrations/actions](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions)
-* [POST /api/v2/integrations/actions](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions)
-* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId-)
-* [GET /api/v2/integrations/actions/{actionId}/templates/{fileName}](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId--templates--fileName-)
-* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#patch-api-v2-integrations-actions--actionId-)
-* [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/api/rest/v2/integrations/#delete-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations)
+* [GET /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions)
+* [POST /api/v2/integrations/actions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions)
+* [POST /api/v2/integrations/actions/drafts](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions-drafts)
+* [DELETE /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId-)
+* [PATCH /api/v2/integrations/actions/{actionId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-integrations-actions--actionId-)
+* [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft)
+* [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft-function)
+* [PUT /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-integrations-actions--actionId--draft-function)
+* [POST /api/v2/integrations/actions/{actionId}/draft/function/upload](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions--actionId--draft-function-upload)
+* [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions--actionId--draft-publish)
+* [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--function)
+* [GET /api/v2/integrations/actions/{actionId}/templates/{fileName}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--templates--fileName-)
+* [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations--integrationId-)
 
-## Function Configuration APIs
+## Permissions and Scopes
 
-* [POST /api/v2/integrations/actions/{actionId}/draft/function/upload](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-function-upload)
-* [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-actions--actionId--draft-function)
-* [PUT /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/api/rest/v2/integrations/#put-api-v2-integrations-actions--actionId--draft-function)
-* [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/api/rest/v2/integrations/#post-api-v2-integrations-actions--actionId--draft-publish)
+The following permissions are required to use this resource:
+
+* `bridge:actions:view`
+* `integrations:action:add`
+* `integrations:action:delete`
+* `integrations:action:edit`
+* `integrations:action:view`
+* `integrations:actionFunction:edit`
+* `integrations:actionFunction:view`
+* `integrations:integration:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `integrations`
+* `integrations:readonly`
+* `upload`
+
+## Export Behavior
+
+### Static Data Actions Are Exported as Data Sources
+
+When exporting integration actions via the `genesyscloud_tf_export` resource, **static (built-in) data actions are emitted as `data` blocks rather than `resource` blocks**. Static data actions are the pre-installed system actions that ship with each Genesys Cloud integration; their IDs are prefixed with `static` (for example, `static_e7b86b86-...`).
+
+These actions are owned and managed by Genesys Cloud and cannot be created, updated, or deleted through the public Integration Actions API. Emitting them as managed resources would therefore produce Terraform configuration that fails on apply. Exporting them as data sources lets other resources (for example, Architect flows) reference them by name while leaving lifecycle management to Genesys Cloud.
+
+#### What this means for you
+
+- Custom integration actions that you (or your team) created continue to be exported as `resource "genesyscloud_integration_action"` blocks.
+- Static (built-in) data actions are exported as `data "genesyscloud_integration_action"` blocks that look them up by `name` and `integration_id`.
+- References to static data actions from other exported resources are automatically rewritten to use the generated data source (for example, `data.genesyscloud_integration_action.<label>.id`).
+- The `integration_id` attribute on the data source is optional, but it is emitted during export to disambiguate static actions whose names may repeat across integration instances.
 
 ## Example Usage
 
@@ -143,7 +182,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
 
 ### Required
 
-- `category` (String) Category of action. Can be up to 256 characters long.
+- `category` (String) Category of action. Can be up to 256 characters long. If the category contains 'function data action' (case-insensitive, underscores and hyphens treated as spaces), the action will be treated as a function data action and requires function_config to be set.
 - `contract_input` (String) JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.
 - `contract_output` (String) JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.
 - `integration_id` (String) The ID of the integration this action is associated with. Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.
@@ -159,6 +198,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
 
 ### Read-Only
 
+- `action_type` (String) The type of the integration action. Computed based on the action ID prefix. Values: `static` (built-in actions shipped by Genesys Cloud) or `custom` (user-created actions).
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--config_request"></a>

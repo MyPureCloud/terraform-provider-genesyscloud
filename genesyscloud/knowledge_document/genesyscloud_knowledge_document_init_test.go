@@ -19,9 +19,11 @@ used in testing the location resource.
 
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
+var providerDataSources map[string]*schema.Resource
 
 type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -34,14 +36,22 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[ResourceType] = ResourceKnowledgeDocument()
 }
 
+// registerTestDataSources registers all data sources used in the tests.
+func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+	providerDataSources[DataSourceType] = DataSourceKnowledgeDocument()
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
-
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

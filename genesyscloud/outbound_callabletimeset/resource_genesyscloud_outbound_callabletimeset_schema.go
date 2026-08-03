@@ -1,5 +1,11 @@
 package outbound_callabletimeset
 
+// @team: List Management
+// @chat: #Genesys Cloud Dialer
+// @pm: Mason Mansfield
+// @jira: LM
+// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -49,6 +55,12 @@ var timeSlotResource = &schema.Resource{
 			Required:    true,
 			Type:        schema.TypeSet,
 			Elem:        campaignTimeslotResource,
+		},
+		`name`: {
+			Description: `The name for the callable time.`,
+			Optional:    true,
+			Computed:    true,
+			Type:        schema.TypeString,
 		},
 		`time_zone_id`: {
 			Description: `The time zone for the time slots; for example, Africa/Abidjan`,

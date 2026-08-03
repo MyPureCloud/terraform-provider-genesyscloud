@@ -1,5 +1,11 @@
 package responsemanagement_response
 
+// @team: Response Management
+// @chat: #genesys-cloud-canned-responses
+// @pm: Marudhu Pandian
+// @jira: RESPONSES
+// @description: Response management provides the ability to support 'canned' responses to commonly asked questions for contact center users. The responses are designed to be used with email, chat, SMS, etc.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -210,11 +216,17 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 			`library_ids`: {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
+			`library_id`: {
+				RefType: "genesyscloud_responsemanagement_library",
+			},
 			`asset_ids`: {
 				RefType: "responsemanagement_responseasset",
 			},
 		},
 		JsonEncodeAttributes: []string{"substitutions_schema_id"},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "library_id"}: {Attr: "library_ids\\.\\d+"},
+		},
 	}
 }
 

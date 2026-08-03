@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func buildSurveyQuestionGroups(d *schema.ResourceData) (*[]platformclientv2.Surveyquestiongroup, diag.Diagnostics) {
@@ -89,10 +89,43 @@ func buildSdkAnswerOptions(answerOptions []interface{}) *[]platformclientv2.Answ
 			Value: &answerValue,
 		}
 
+		if builtInType, ok := answerOptionsMap["built_in_type"].(string); ok && builtInType != "" {
+			sdkAnswerOption.BuiltInType = &builtInType
+		}
+
+		if assistanceConditions, ok := answerOptionsMap["assistance_conditions"].(*schema.Set); ok && assistanceConditions.Len() > 0 {
+			sdkAnswerOption.AssistanceConditions = buildSdkAssistanceConditions(assistanceConditions.List())
+		}
+
 		sdkAnswerOptions = append(sdkAnswerOptions, sdkAnswerOption)
 	}
 
 	return &sdkAnswerOptions
+}
+
+func buildSdkAssistanceConditions(assistanceConditions []interface{}) *[]platformclientv2.Assistancecondition {
+	sdkConditions := make([]platformclientv2.Assistancecondition, 0)
+	for _, condition := range assistanceConditions {
+		conditionMap, ok := condition.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		operator := conditionMap["operator"].(string)
+		topicIdsList := conditionMap["topic_ids"].([]interface{})
+
+		topicIds := make([]string, len(topicIdsList))
+		for i, id := range topicIdsList {
+			topicIds[i] = id.(string)
+		}
+
+		sdkConditions = append(sdkConditions, platformclientv2.Assistancecondition{
+			Operator: &operator,
+			TopicIds: &topicIds,
+		})
+	}
+
+	return &sdkConditions
 }
 
 func buildSdkVisibilityCondition(visibilityCondition []interface{}) *platformclientv2.Visibilitycondition {
@@ -126,6 +159,9 @@ func flattenSurveyQuestionGroups(questionGroups *[]platformclientv2.Surveyquesti
 		if questionGroup.Id != nil {
 			questionGroupMap["id"] = *questionGroup.Id
 		}
+		if questionGroup.ContextId != nil {
+			questionGroupMap["context_id"] = *questionGroup.ContextId
+		}
 		if questionGroup.Name != nil {
 			questionGroupMap["name"] = *questionGroup.Name
 		}
@@ -155,6 +191,9 @@ func flattenSurveyQuestions(questions *[]platformclientv2.Surveyquestion) []inte
 		questionMap := make(map[string]interface{})
 		if question.Id != nil {
 			questionMap["id"] = *question.Id
+		}
+		if question.ContextId != nil {
+			questionMap["context_id"] = *question.ContextId
 		}
 		if question.Text != nil {
 			questionMap["text"] = *question.Text
@@ -214,15 +253,43 @@ func flattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []inte
 		if answerOption.Id != nil {
 			answerOptionMap["id"] = *answerOption.Id
 		}
+		if answerOption.ContextId != nil {
+			answerOptionMap["context_id"] = *answerOption.ContextId
+		}
 		if answerOption.Text != nil {
 			answerOptionMap["text"] = *answerOption.Text
 		}
 		if answerOption.Value != nil {
 			answerOptionMap["value"] = *answerOption.Value
 		}
+		if answerOption.BuiltInType != nil {
+			answerOptionMap["built_in_type"] = *answerOption.BuiltInType
+		}
+		if answerOption.AssistanceConditions != nil {
+			answerOptionMap["assistance_conditions"] = flattenAssistanceConditions(answerOption.AssistanceConditions)
+		}
 		answerOptionsList = append(answerOptionsList, answerOptionMap)
 	}
 	return answerOptionsList
+}
+
+func flattenAssistanceConditions(assistanceConditions *[]platformclientv2.Assistancecondition) []interface{} {
+	if assistanceConditions == nil {
+		return nil
+	}
+
+	var conditionList []interface{}
+	for _, condition := range *assistanceConditions {
+		conditionMap := make(map[string]interface{})
+		if condition.Operator != nil {
+			conditionMap["operator"] = *condition.Operator
+		}
+		if condition.TopicIds != nil {
+			conditionMap["topic_ids"] = *condition.TopicIds
+		}
+		conditionList = append(conditionList, conditionMap)
+	}
+	return conditionList
 }
 
 func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStruct) string {

@@ -4,23 +4,46 @@ import (
 	"context"
 	"fmt"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var internalProxy *knowledgebaseProxy
 
+var knowledgebaseCache = rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
+// knowledgebaseCreateRequest and knowledgebaseResponse mirror the Knowledge API payloads.
+// The platform SDK does not yet include contentSearchEnabled on these models.
+type knowledgebaseCreateRequest struct {
+	Name                 *string `json:"name,omitempty"`
+	Description          *string `json:"description,omitempty"`
+	CoreLanguage         *string `json:"coreLanguage,omitempty"`
+	ContentSearchEnabled *bool   `json:"contentSearchEnabled,omitempty"`
+}
+
+type knowledgebaseResponse struct {
+	Id                   *string `json:"id,omitempty"`
+	Name                 *string `json:"name,omitempty"`
+	Description          *string `json:"description,omitempty"`
+	CoreLanguage         *string `json:"coreLanguage,omitempty"`
+	Published            *bool   `json:"published,omitempty"`
+	ContentSearchEnabled *bool   `json:"contentSearchEnabled,omitempty"`
+}
+
 type getAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgebaseProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
-type getKnowledgebaseByIdFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
-type createKnowledgebaseFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *platformclientv2.Knowledgebasecreaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
+type getKnowledgebaseByIdFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*knowledgebaseResponse, *platformclientv2.APIResponse, error)
+type createKnowledgebaseFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *knowledgebaseCreateRequest) (*knowledgebaseResponse, *platformclientv2.APIResponse, error)
 type updateKnowledgebaseFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string, updateBody *platformclientv2.Knowledgebaseupdaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type deleteKnowledgebaseFunc func(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 
 type knowledgebaseProxy struct {
 	clientConfig                    *platformclientv2.Configuration
 	KnowledgeApi                    *platformclientv2.KnowledgeApi
+	customApiClient                 *customapi.Client
 	getAllKnowledgebaseEntitiesAttr getAllKnowledgebaseEntitiesFunc
 	getKnowledgebaseByIdAttr        getKnowledgebaseByIdFunc
 	createKnowledgebaseAttr         createKnowledgebaseFunc
@@ -31,10 +54,11 @@ type knowledgebaseProxy struct {
 
 func newKnowledgebaseProxy(clientConfig *platformclientv2.Configuration) *knowledgebaseProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgebaseCache := rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
 	return &knowledgebaseProxy{
 		clientConfig:                    clientConfig,
 		KnowledgeApi:                    api,
+		customApiClient:                 customapi.NewClient(clientConfig, ResourceType),
 		getAllKnowledgebaseEntitiesAttr: getAllKnowledgebaseEntitiesFn,
 		getKnowledgebaseByIdAttr:        getKnowledgebaseByIdFn,
 		createKnowledgebaseAttr:         createKnowledgebaseFn,
@@ -58,12 +82,12 @@ func (p *knowledgebaseProxy) getAllKnowledgebaseEntities(ctx context.Context, pu
 }
 
 // getKnowledgebaseById retrieves knowledgebase by its id
-func (p *knowledgebaseProxy) getKnowledgebaseById(ctx context.Context, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+func (p *knowledgebaseProxy) getKnowledgebaseById(ctx context.Context, knowledgebaseId string) (*knowledgebaseResponse, *platformclientv2.APIResponse, error) {
 	return p.getKnowledgebaseByIdAttr(ctx, p, knowledgebaseId)
 }
 
 // createKnowledgebase creates a knowledgebase in Genesys Cloud
-func (p *knowledgebaseProxy) createKnowledgebase(ctx context.Context, knowledgebaseRequest *platformclientv2.Knowledgebasecreaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+func (p *knowledgebaseProxy) createKnowledgebase(ctx context.Context, knowledgebaseRequest *knowledgebaseCreateRequest) (*knowledgebaseResponse, *platformclientv2.APIResponse, error) {
 	return p.createKnowledgebaseAttr(ctx, p, knowledgebaseRequest)
 }
 
@@ -78,6 +102,9 @@ func (p *knowledgebaseProxy) deleteKnowledgebase(ctx context.Context, knowledgeb
 }
 
 func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgebaseProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		after    string
 		resp     *platformclientv2.APIResponse
@@ -114,19 +141,30 @@ func getAllKnowledgebaseEntitiesFn(ctx context.Context, p *knowledgebaseProxy, p
 	return &entities, resp, nil
 }
 
-func getKnowledgebaseByIdFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.GetKnowledgeKnowledgebase(knowledgebaseId)
+func getKnowledgebaseByIdFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*knowledgebaseResponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	path := fmt.Sprintf("/api/v2/knowledge/knowledgebases/%s", knowledgebaseId)
+	return customapi.Do[knowledgebaseResponse](ctx, p.customApiClient, customapi.MethodGet, path, nil, nil)
 }
 
-func createKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *platformclientv2.Knowledgebasecreaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
-	return p.KnowledgeApi.PostKnowledgeKnowledgebases(*knowledgebaseRequest)
+func createKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseRequest *knowledgebaseCreateRequest) (*knowledgebaseResponse, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	return customapi.Do[knowledgebaseResponse](ctx, p.customApiClient, customapi.MethodPost, "/api/v2/knowledge/knowledgebases", knowledgebaseRequest, nil)
 }
 
 func updateKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string, updateBody *platformclientv2.Knowledgebaseupdaterequest) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.KnowledgeApi.PatchKnowledgeKnowledgebase(knowledgebaseId, *updateBody)
 }
 
 func deleteKnowledgebaseFn(ctx context.Context, p *knowledgebaseProxy, knowledgebaseId string) (*platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	delete, resp, err := p.KnowledgeApi.DeleteKnowledgeKnowledgebase(knowledgebaseId)
 	if err != nil {
 		return delete, resp, err

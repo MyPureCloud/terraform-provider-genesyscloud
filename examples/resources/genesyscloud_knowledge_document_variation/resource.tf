@@ -1,3 +1,4 @@
+// To enable nested tables, set ENABLE_NESTED_TABLES as an environment variable
 resource "genesyscloud_knowledge_document_variation" "example_document_variation" {
   knowledge_base_id     = genesyscloud_knowledge_knowledgebase.example_knowledgebase.id
   knowledge_document_id = genesyscloud_knowledge_document.example_unpublished_document.id
@@ -13,6 +14,11 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
               text      = "Paragraph text"
               marks     = ["Bold", "Italic", "Underline"]
               hyperlink = "https://example.com/hyperlink"
+              properties {
+                font_size        = "Large"
+                text_color       = "#000000"
+                background_color = "#FFFFFF"
+              }
             }
           }
           blocks {
@@ -45,10 +51,26 @@ resource "genesyscloud_knowledge_document_variation" "example_document_variation
         }
       }
       blocks {
-        type = "Image"
-        image {
-          url       = "https://example.com/image"
-          hyperlink = "https://example.com/hyperlink"
+        type = "Table"
+        table {
+          rows {
+            cells {
+              blocks {
+                type = "Text"
+                text {
+                  text = "Cell A1"
+                }
+              }
+            }
+            cells {
+              blocks {
+                type = "Text"
+                text {
+                  text = "Cell B1"
+                }
+              }
+            }
+          }
         }
       }
     }

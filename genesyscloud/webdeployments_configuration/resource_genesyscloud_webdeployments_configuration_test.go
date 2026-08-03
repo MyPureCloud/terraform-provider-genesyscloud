@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 type scCustomMessageConfig struct {
@@ -231,11 +231,17 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.language", "en-us"),
-					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "2"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.#", "5"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.key", "MessengerHomeHeaderTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.0.value", "My Messenger Home Header Title"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.key", "MessengerHomeHeaderSubTitle"),
 					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.1.value", "My Messenger Home Header SubTitle"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.key", "PushNotificationTitle"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.2.value", "New Message"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.key", "PushNotificationBody"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.3.value", "You have a new message"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.4.key", "MessengerLauncherButtonText"),
+					resource.TestCheckResourceAttr(resourcePath, "custom_i18n_labels.0.localized_labels.4.value", "Chat with us"),
 
 					resource.TestCheckResourceAttr(resourcePath, "position.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "position.0.alignment", "Auto"),
@@ -245,9 +251,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.visibility", "OnDemand"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.display_type", "IconAndText"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.icon.0.url", "https://my-domain/images/launcher-icon.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.styles.0.primary_color", "#B0B0B0"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.enable_attachments", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.0", "image/png"),
@@ -255,6 +264,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.session_persistence_type", "AcrossSubdomains"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.enabled", util.TrueValue),
@@ -266,6 +276,9 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.conversation_disconnect.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.conversation_disconnect.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.conversation_disconnect.0.type", "Send"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.notifications.0.notification_content_type", "IncludeMessagesContent"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.apps.0.conversations.0.humanize.0.bot.#", "1"),
@@ -368,9 +381,12 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.visibility", "OnDemand"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.display_type", "IconAndText"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.launcher_button.0.icon.0.url", "https://my-domain/images/launcher-icon.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.home_screen.0.logo_url", "https://my-domain/images/my-logo.png"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.styles.0.primary_color", "#B0B0B0"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.enable_attachments", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.#", "2"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.0.file_types.0", "image/png"),
@@ -378,6 +394,7 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.file_types.0", "image/jpeg"),
 					resource.TestCheckResourceAttr(resourcePath, "messenger.0.file_upload.0.mode.1.max_file_size_kb", "123"),
+					resource.TestCheckResourceAttr(resourcePath, "messenger.0.session_persistence_type", "AcrossSubdomains"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.#", "1"),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(resourcePath, "cobrowse.0.allow_agent_control", util.FalseValue),
@@ -980,6 +997,18 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 				key = "MessengerHomeHeaderSubTitle"
 				value = "My Messenger Home Header SubTitle"
 			}
+			localized_labels {
+				key = "PushNotificationTitle"
+				value = "New Message"
+			}
+			localized_labels {
+				key = "PushNotificationBody"
+				value = "You have a new message"
+			}
+			localized_labels {
+				key = "MessengerLauncherButtonText"
+				value = "Chat with us"
+			}
 		}
 		position {
 			alignment = "Auto"
@@ -990,6 +1019,10 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 			enabled = true
 			launcher_button {
 				visibility = "OnDemand"
+				display_type = "IconAndText"
+				icon {
+					url = "https://my-domain/images/launcher-icon.png"
+				}
 			}
 			home_screen {
 				enabled = true
@@ -999,6 +1032,7 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 				primary_color = "#B0B0B0"
 			}
 			file_upload {
+				enable_attachments = true
 				mode {
 					file_types = [ "image/png" ]
 					max_file_size_kb = 100
@@ -1008,6 +1042,7 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 					max_file_size_kb = 123
 				}
 			}
+			session_persistence_type = "AcrossSubdomains"
 			apps {
 				conversations {
 					enabled = true
@@ -1020,6 +1055,10 @@ func complexConfigurationResource(name, description, kbId string, nestedBlocks .
 						type = "Send"
 					}
 					conversation_clear_enabled = true
+					notifications {
+						enabled = true
+						notification_content_type = "IncludeMessagesContent"
+					}
 					humanize {
 						enabled = true
 						bot {
@@ -1512,7 +1551,7 @@ func cleanupWebDeploymentsConfiguration(t *testing.T, prefix string) {
 	}
 	deploymentsAPI := platformclientv2.NewWebDeploymentsApiWithConfig(config)
 
-	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations(false)
+	configurations, resp, getErr := deploymentsAPI.GetWebdeploymentsConfigurations("", "", "", false)
 	if getErr != nil {
 		t.Logf("failed to get page of configurations: %v %v", getErr, resp)
 		return

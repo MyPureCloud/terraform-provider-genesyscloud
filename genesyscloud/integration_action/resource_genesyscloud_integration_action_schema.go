@@ -1,5 +1,11 @@
 package integration_action
 
+// @team: Integration Services Indy
+// @chat: #genesys-cloud-integrations
+// @pm: Richard Schott
+// @jira: INTINDY
+// @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -142,7 +148,7 @@ func ResourceIntegrationAction() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"category": {
-				Description:  "Category of action. Can be up to 256 characters long.",
+				Description:  "Category of action. Can be up to 256 characters long. If the category contains 'function data action' (case-insensitive, underscores and hyphens treated as spaces), the action will be treated as a function data action and requires function_config to be set.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringLenBetween(1, 256),
@@ -159,6 +165,12 @@ func ResourceIntegrationAction() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				ForceNew:    true,
+			},
+			"action_type": {
+				Description: "The type of the integration action. Computed based on the action ID prefix. " +
+					"Values: `static` (built-in actions shipped by Genesys Cloud) or `custom` (user-created actions).",
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 			"config_timeout_seconds": {
 				Description:  "Optional 1-60 second timeout enforced on the execution or test of this action. This setting is invalid for Custom Authentication Actions.",
@@ -216,19 +228,39 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
+		// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
+		// updated, or deleted via the public API. Export them as data sources so that other
+		// resources (e.g. Architect flows) can reference them by name + integration_id.
+		ExportAsDataFunc: shouldExportIntegrationActionAsDataSource,
 	}
 }
 
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source
 func DataSourceIntegrationAction() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud integration action. Select an integration action by name",
+		Description: "Data source for Genesys Cloud integration action. Select an integration action by name. " +
+			"For static (built-in) data actions whose names may collide across integration instances, " +
+			"integration_id and/or action_type can be provided to disambiguate the lookup.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationActionRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration action",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"integration_id": {
+				Description: "The ID of the integration that owns the action. Optional, used to disambiguate " +
+					"data actions whose names may not be unique across integration instances.",
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"action_type": {
+				Description: "The type of the integration action. Optional, used to disambiguate when a " +
+					"static (built-in) action and a custom action share the same name under the same " +
+					"integration. Valid values: `static`, `custom`.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice([]string{"static", "custom"}, false),
 			},
 		},
 	}

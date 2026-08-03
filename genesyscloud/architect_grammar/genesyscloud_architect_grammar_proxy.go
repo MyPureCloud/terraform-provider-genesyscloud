@@ -7,7 +7,9 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -18,6 +20,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectGrammarProxy
+
+var grammarCache = rc.NewResourceCache[platformclientv2.Grammar]()
 
 // Type definitions for each func on our proxy so that we can easily mock them out later
 type createArchitectGrammarFunc func(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error)
@@ -43,7 +47,7 @@ type architectGrammarProxy struct {
 // newArchitectGrammarProxy initializes the grammar proxy with all the data needed to communicate with Genesys Cloud
 func newArchitectGrammarProxy(clientConfig *platformclientv2.Configuration) *architectGrammarProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	grammarCache := rc.NewResourceCache[platformclientv2.Grammar]()
+
 	return &architectGrammarProxy{
 		clientConfig:                    clientConfig,
 		architectApi:                    api,
@@ -98,7 +102,10 @@ func (p *architectGrammarProxy) deleteArchitectGrammar(ctx context.Context, gram
 }
 
 // createArchitectGrammarFn is an implementation function for creating a Genesys Cloud Architect Grammar
-func createArchitectGrammarFn(_ context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+func createArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	grammarSdk, resp, err := p.architectApi.PostArchitectGrammars(*grammar)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create grammar: %s %v", err, resp)
@@ -107,7 +114,10 @@ func createArchitectGrammarFn(_ context.Context, p *architectGrammarProxy, gramm
 }
 
 // getAllArchitectGrammarFn is the implementation for retrieving all Architect Grammars in Genesys Cloud
-func getAllArchitectGrammarFn(_ context.Context, p *architectGrammarProxy) (*[]platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+func getAllArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy) (*[]platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allGrammars []platformclientv2.Grammar
 
 	grammars, resp, err := p.architectApi.GetArchitectGrammars(1, 100, "", "", []string{}, "", "", "", true)
@@ -142,7 +152,10 @@ func getAllArchitectGrammarFn(_ context.Context, p *architectGrammarProxy) (*[]p
 }
 
 // getArchitectGrammarByIdFn is an implementation of the function to get a Genesys Cloud Architect Grammar by ID
-func getArchitectGrammarByIdFn(_ context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+func getArchitectGrammarByIdFn(ctx context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	grammar := rc.GetCacheItem(p.grammarCache, grammarId)
 	if grammar != nil {
 		return grammar, nil, nil
@@ -178,7 +191,10 @@ func getArchitectGrammarIdByNameFn(ctx context.Context, p *architectGrammarProxy
 }
 
 // updateArchitectGrammarFn is an implementation of the function to update a Genesys Cloud Architect Grammar
-func updateArchitectGrammarFn(_ context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+func updateArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammarId string, grammar *platformclientv2.Grammar) (*platformclientv2.Grammar, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	grammarSdk, resp, err := p.architectApi.PatchArchitectGrammar(grammarId, *grammar)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update grammar %s: %s", grammarId, err)
@@ -187,7 +203,10 @@ func updateArchitectGrammarFn(_ context.Context, p *architectGrammarProxy, gramm
 }
 
 // deleteArchitectGrammarFn is an implementation function for deleting a Genesys Cloud Architect Grammar
-func deleteArchitectGrammarFn(_ context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.APIResponse, error) {
+func deleteArchitectGrammarFn(ctx context.Context, p *architectGrammarProxy, grammarId string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.architectApi.DeleteArchitectGrammar(grammarId)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete grammar: %s", err)

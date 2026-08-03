@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func init() {
@@ -79,6 +79,7 @@ type ProviderMeta struct {
 	Organization          *platformclientv2.Organization
 	DefaultCountryCode    string
 	MaxClients            int
+	CustomRetryTimeout    time.Duration
 }
 
 type IntegrationMeta struct {
@@ -152,6 +153,8 @@ func configure(version string) schema.ConfigureContextFunc {
 		}
 		prl.InitPanicRecoveryLoggerInstance(data.Get("log_stack_traces").(bool), data.Get("log_stack_traces_file_path").(string))
 
+		customRetryTimeout := parseCustomRetryTimeout(data)
+
 		meta := &ProviderMeta{
 			Version:               version,
 			Platform:              &platform,
@@ -162,6 +165,7 @@ func configure(version string) schema.ConfigureContextFunc {
 			Organization:          currentOrg,
 			DefaultCountryCode:    *currentOrg.DefaultCountryCode,
 			MaxClients:            maxClients,
+			CustomRetryTimeout:    customRetryTimeout,
 		}
 
 		setProviderMeta(meta)
@@ -254,6 +258,7 @@ func getRegionMap() map[string]string {
 		"me-central-1":   "mec1.pure.cloud",
 		"mx-central-1":   "mxc1.pure.cloud",
 		"ap-southeast-1": "apse1.pure.cloud",
+		"eusc-de-east-1": "edee1.eusc-pure.cloud",
 	}
 }
 
@@ -297,6 +302,7 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 		RequestLogHook: func(request *http.Request, count int) {
 			sdkDebugRequest := newSDKDebugRequest(request, count)
 			request.Header.Set("TF-Correlation-Id", sdkDebugRequest.TransactionId)
+			storeSDKDebugMirrorRequestBodyForHook(sdkDebugRequest)
 			err, jsonStr := sdkDebugRequest.ToJSON()
 
 			if err != nil {
@@ -305,6 +311,12 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			log.Println(jsonStr)
 		},
 		ResponseLogHook: func(response *http.Response) {
+			cid := ""
+			if response != nil && response.Request != nil {
+				cid = response.Request.Header.Get("TF-Correlation-Id")
+			}
+			storedRequestBody := popSDKDebugMirrorRequestBody(cid)
+
 			sdkDebugResponse := newSDKDebugResponse(response)
 			err, jsonStr := sdkDebugResponse.ToJSON()
 
@@ -312,6 +324,9 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 				log.Printf("WARNING: Unable to log ResponseLogHook: %s", err)
 			}
 			log.Println(jsonStr)
+			if err == nil {
+				mirrorSDKDebugHTTPErrorToFile(response, storedRequestBody)
+			}
 		},
 	}
 
@@ -354,6 +369,8 @@ func withRetries(ctx context.Context, timeout time.Duration, method func() *retr
 }
 
 func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configuration) diag.Diagnostics {
+	sdkDebugHookRequestBodyEnabled.Store(data.Get("sdk_debug").(bool))
+
 	sdkDebugFilePath := data.Get("sdk_debug_file_path").(string)
 	if data.Get("sdk_debug").(bool) {
 		config.LoggingConfiguration = &platformclientv2.LoggingConfiguration{
@@ -365,8 +382,11 @@ func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configu
 		config.LoggingConfiguration.SetLogFilePath(sdkDebugFilePath)
 
 		dir, _ := filepath.Split(sdkDebugFilePath)
-		if err := os.MkdirAll(dir, os.ModePerm); os.IsExist(err) {
-			return diag.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
+		if dir != "" {
+			if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+				sdkDebugErrorMirrorPath.Store("")
+				return diag.Errorf("error while creating filepath for %s: %s", sdkDebugFilePath, err)
+			}
 		}
 
 		if format := data.Get("sdk_debug_format"); format == "Json" {
@@ -374,6 +394,9 @@ func setUpSDKLogging(data *schema.ResourceData, config *platformclientv2.Configu
 		} else {
 			config.LoggingConfiguration.SetLogFormat(platformclientv2.Text)
 		}
+		sdkDebugErrorMirrorPath.Store(sdkDebugFilePath)
+	} else {
+		sdkDebugErrorMirrorPath.Store("")
 	}
 	return nil
 }
@@ -482,4 +505,16 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	}
 
 	return sdkConfig, nil
+}
+
+// SdkConfigurationForTests returns a Genesys Cloud SDK configuration for package TestMain.
+// It authorizes when credentials are available; otherwise it returns the default configuration
+// so unit tests can run without live API credentials.
+func SdkConfigurationForTests() *platformclientv2.Configuration {
+	config, err := AuthorizeSdk()
+	if err != nil {
+		log.Printf("using default SDK configuration for tests: %v", err)
+		return platformclientv2.GetDefaultConfiguration()
+	}
+	return config
 }

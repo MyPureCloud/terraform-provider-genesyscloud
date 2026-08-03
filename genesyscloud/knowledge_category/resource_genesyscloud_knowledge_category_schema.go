@@ -1,5 +1,11 @@
 package knowledge_category
 
+// @team: Knowledge Administration Service Team
+// @chat: #knowledge-team
+// @pm: Harshali Desai
+// @jira: GKC
+// @description: Knowledge Administration service manages knowledge content for agent assistance. Provides APIs and UI for creating, searching, rating, and organizing knowledge articles that agents use to answer customer interactions effectively.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -46,6 +52,15 @@ func KnowledgeCategoryExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id":            {RefType: "genesyscloud_knowledge_knowledgebase"},
 			"knowledge_category.parent_id": {RefType: "genesyscloud_knowledge_category"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"knowledge_base_name": {
+				ResolverWithClientConfigFunc: resourceExporter.KnowledgeBaseNameResolver,
+			},
+		},
+		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
+			{Attr: "name"}:                {Attr: "knowledge_category\\.\\d+\\.name"},
+			{Attr: "knowledge_base_name"}: {Attr: "knowledge_base_id"},
 		},
 	}
 }

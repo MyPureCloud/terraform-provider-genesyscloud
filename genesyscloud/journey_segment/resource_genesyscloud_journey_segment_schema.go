@@ -1,5 +1,11 @@
 package journey_segment
 
+// @team: Journey Data
+// @chat: #customer-journey-data
+// @pm: Angelo Cicchitto
+// @jira: CPR
+// @description: Manages customer journey analytics and predictive engagement. Provides customer segmentation, outcome tracking, predictive modeling, and journey visualization for proactive customer engagement strategies.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -40,7 +46,8 @@ var (
 		"color": {
 			Description: "The hexadecimal color value of the segment.",
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
+			Computed:    true,
 			ValidateFunc: validation.StringMatch(func() *regexp.Regexp {
 				r, _ := regexp.Compile("^#[a-fA-F\\d]{6}$")
 				return r
@@ -50,6 +57,7 @@ var (
 			Description: "Whether or not the segment should be displayed to agent/supervisor users.",
 			Type:        schema.TypeBool,
 			Optional:    true,
+			Computed:    true,
 		},
 		"context": {
 			Description: "The context of the segment.",

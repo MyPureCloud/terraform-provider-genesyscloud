@@ -1,5 +1,11 @@
 package task_management_workitem
 
+// @team: Ashford
+// @chat: #workitem-development
+// @pm: Leslie Chau
+// @jira: WORKITEMS
+// @description: Task Management service for workitem orchestration and automation. Manages workitems, worktypes, workbins, status workflows, and automated rules for task assignment and lifecycle management.
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -202,6 +208,9 @@ func TaskManagementWorkitemExporter() *resourceExporter.ResourceExporter {
 			"queue_id":               {RefType: "genesyscloud_routing_queue"},
 			"skills_ids":             {RefType: "genesyscloud_routing_skill"},
 			"status_id":              {RefType: "genesyscloud_task_management_worktype_status"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"status_id": {ResolverFunc: task_management_worktype_status.WorktypeStatusRefResolver("status_id")},
 		},
 	}
 }

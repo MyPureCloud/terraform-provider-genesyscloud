@@ -13,12 +13,19 @@ const (
 	// Provider environment variables
 	logStackTracesEnvVar         = "GENESYSCLOUD_LOG_STACK_TRACES"
 	logStackTracesFilePathEnvVar = "GENESYSCLOUD_LOG_STACK_TRACES_FILE_PATH"
+	customRetryTimeoutEnvVar     = "GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT"
+	maxTokenPoolSizeEnvVar       = "GENESYSCLOUD_TOKEN_POOL_SIZE"
 
 	// Provider attribute keys
 	AttrTokenPoolSize       = "token_pool_size"
 	AttrTokenAcquireTimeout = "token_acquire_timeout"
 	AttrTokenInitTimeout    = "token_init_timeout"
+	AttrMaxConcurrentPages  = "max_concurrent_pages"
 	AttrSdkClientPoolDebug  = "sdk_client_pool_debug"
+	AttrCustomRetryTimeout  = "custom_retry_timeout"
+
+	// Default custom retry timeout (5 minutes)
+	DefaultCustomRetryTimeout = "5m"
 )
 
 func ProviderSchema() map[string]*schema.Schema {
@@ -78,8 +85,8 @@ func ProviderSchema() map[string]*schema.Schema {
 		AttrTokenPoolSize: {
 			Type:         schema.TypeInt,
 			Optional:     true,
-			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_POOL_SIZE", DefaultMaxClients),
-			Description:  "Max number of OAuth tokens in the token pool. Can be set with the `GENESYSCLOUD_TOKEN_POOL_SIZE` environment variable.",
+			DefaultFunc:  schema.EnvDefaultFunc(maxTokenPoolSizeEnvVar, DefaultMaxClients),
+			Description:  fmt.Sprintf("Max number of OAuth tokens in the token pool (%d-%d). Each token is minted at provider startup via the OAuth client-credentials endpoint; larger values increase startup time and can trigger OAuth rate limiting during pool prefill. Match this to max_concurrent_pages rather than setting it higher than needed. Can be set with the `%s` environment variable.", MinClients, MaxClients, maxTokenPoolSizeEnvVar),
 			ValidateFunc: validation.IntBetween(MinClients, MaxClients),
 		},
 		AttrTokenAcquireTimeout: {
@@ -94,6 +101,23 @@ func ProviderSchema() map[string]*schema.Schema {
 			Optional:     true,
 			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_TOKEN_INIT_TIMEOUT", DefaultInitTimeout.String()),
 			Description:  "Timeout for initializing the token pool. Can be set with the `GENESYSCLOUD_TOKEN_INIT_TIMEOUT` environment variable.",
+			ValidateFunc: validateDuration,
+		},
+		AttrMaxConcurrentPages: {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			DefaultFunc:  schema.EnvDefaultFunc("GENESYSCLOUD_MAX_CONCURRENT_PAGES", DefaultMaxConcurrentPages),
+			Description:  "Maximum pages to fetch in parallel when listing resources. A value of 1 keeps sequential pagination. Higher values help exports with many pages; for few pages, sequential is often as fast or faster. Increase token_pool_size with this value so each parallel page can acquire its own OAuth token. Can be set with the `GENESYSCLOUD_MAX_CONCURRENT_PAGES` environment variable.",
+			ValidateFunc: validation.IntBetween(DefaultMaxConcurrentPages, MaxConcurrentPages),
+		},
+		AttrCustomRetryTimeout: {
+			Type:        schema.TypeString,
+			Optional:    true,
+			DefaultFunc: schema.EnvDefaultFunc(customRetryTimeoutEnvVar, DefaultCustomRetryTimeout),
+			Description: fmt.Sprintf(`Maximum time to retry reading a resource after creation to handle eventual consistency.
+When a resource exists in Terraform state but returns 404 from the API (deleted externally), the provider retries with exponential backoff up to this timeout before removing it from state.
+Set to "0" or "0s" for immediate fail-fast behavior (no retries), useful for recovery scenarios where resources have been deleted from Genesys Cloud.
+Can be set with the %s environment variable. Default is 5 minutes.`, customRetryTimeoutEnvVar),
 			ValidateFunc: validateDuration,
 		},
 		"log_stack_traces": {

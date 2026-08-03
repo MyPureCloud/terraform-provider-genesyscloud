@@ -2,8 +2,10 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -125,4 +127,43 @@ func GetOrgDefaultCountryCode() string {
 		return ""
 	}
 	return meta.DefaultCountryCode
+}
+
+func parseCustomRetryTimeout(config *schema.ResourceData) time.Duration {
+	// Provider config takes precedence over env var/default.
+	// This function is only intended to be called during provider configuration,
+	// where ResourceData access is not concurrent.
+	if config != nil {
+		if v, ok := config.GetOk(AttrCustomRetryTimeout); ok {
+			if timeout, err := time.ParseDuration(v.(string)); err == nil {
+				return timeout
+			}
+		}
+	}
+
+	// Fall back to environment variable
+	if envVal := os.Getenv(customRetryTimeoutEnvVar); envVal != "" {
+		if timeout, err := time.ParseDuration(envVal); err == nil {
+			return timeout
+		}
+	}
+
+	// Use default value
+	timeout, _ := time.ParseDuration(DefaultCustomRetryTimeout)
+	return timeout
+}
+
+// GetCustomRetryTimeout returns the configured custom retry timeout.
+// It first checks the provider configuration, then falls back to the environment variable,
+// and finally uses the default value (5 minutes).
+// A timeout of 0 means no retries (immediate fail-fast behavior).
+func GetCustomRetryTimeout() time.Duration {
+	// Value is immutable after provider configuration; cache it on the ProviderMeta
+	// to avoid concurrent access to schema.ResourceData during parallel reads/exports.
+	if meta := GetProviderMeta(); meta != nil {
+		return meta.CustomRetryTimeout
+	}
+
+	// If meta isn't available (e.g. unit tests), fall back to env/default.
+	return parseCustomRetryTimeout(nil)
 }

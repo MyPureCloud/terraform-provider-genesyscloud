@@ -10,14 +10,29 @@ type Credentials struct {
 	ClientId     string
 	ClientSecret string
 	Region       string
+
+	// BasePathOverride can be used to override the basepath of the client configuration (useful for testing). If BasePathOverride is not specified/is empty string, the base path will be determined based on the value of Region.
+	BasePathOverride string
 }
 
 type ExportInput struct {
-	// ResourceType - The resource type of the entity to export e.g. genesyscloud_flow
-	ResourceType string
+	BaseExportInput
 
 	// EntityId - The identifier of the entity we want to export.
 	EntityId string
+
+	// UseGetByID, when true, causes Export to fetch the single entity directly
+	// via the resource's get-by-ID path (its Read context) instead of calling
+	// the resource type's GetResourcesFunc, which lists every instance of the
+	// type in the org. This is O(1) API calls per export rather than O(N).
+	// All current Genesys Cloud resources support get-by-ID; singleton
+	// resources transparently fall back to the legacy listing path.
+	UseGetByID bool
+}
+
+type BaseExportInput struct {
+	// ResourceType - The resource type of the entity to export e.g. genesyscloud_flow
+	ResourceType string
 
 	// GenerateOutputFiles - If set to false, no export folders or files will be created and only the ResourceData will be returned.
 	GenerateOutputFiles bool
@@ -29,6 +44,8 @@ type ExportInput struct {
 	Directory string
 }
 
+type ExportByTypeInput = BaseExportInput
+
 type ExportOutput struct {
 	// ExportData is the exported data that would be written to the .tf.json file during export
 	ExportData util.JsonMap
@@ -39,6 +56,21 @@ type ExportOutput struct {
 	// ExportedResourceData is the *schema.ResourceData representation of the exported resesource. This is the type we can pass into
 	// the create and update context functions.
 	ExportedResourceData *schema.ResourceData
+
+	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
+	ResourceExporter *resource_exporter.ResourceExporter
+}
+
+type ExportByTypeOutput struct {
+	// ExportData is the exported data that would be written to the .tf.json file during export
+	ExportData util.JsonMap
+
+	// ExportDataPath is the path to the export directory i.e. the value of "directory" in the genesyscloud_tf_export resource config
+	ExportDataPath string
+
+	// ExportedResourceDataList is the []*schema.ResourceData representation of the exported resources. This are the types we can pass into
+	// the create and update context functions.
+	ExportedResourceDataList []*schema.ResourceData
 
 	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
 	ResourceExporter *resource_exporter.ResourceExporter

@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
+	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -32,6 +35,9 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceEvaluationForm()
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
+	providerResources[userResource.ResourceType] = userResource.ResourceUser()
+	providerResources[authRole.ResourceType] = authRole.ResourceAuthRole()
+	providerResources[userRoles.ResourceType] = userRoles.ResourceUserRoles()
 }
 
 // registerTestDataSources registers all data sources used in the tests.

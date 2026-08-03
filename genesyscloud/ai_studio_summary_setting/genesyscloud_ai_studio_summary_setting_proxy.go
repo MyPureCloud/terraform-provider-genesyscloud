@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -17,6 +18,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *aiStudioSummarySettingProxy
+
+var summaryCache = rc.NewResourceCache[platformclientv2.Summarysetting]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createAiStudioSummarySettingFunc func(ctx context.Context, p *aiStudioSummarySettingProxy, summarySetting *platformclientv2.Summarysetting) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
@@ -42,7 +45,7 @@ type aiStudioSummarySettingProxy struct {
 // newAiStudioSummarySettingProxy initializes the ai studio summary setting proxy with all of the data needed to communicate with Genesys Cloud
 func newAiStudioSummarySettingProxy(clientConfig *platformclientv2.Configuration) *aiStudioSummarySettingProxy {
 	api := platformclientv2.NewAIStudioApiWithConfig(clientConfig)
-	summaryCache := rc.NewResourceCache[platformclientv2.Summarysetting]()
+
 	return &aiStudioSummarySettingProxy{
 		clientConfig:                          clientConfig,
 		aIStudioApi:                           api,
@@ -101,15 +104,17 @@ func (p *aiStudioSummarySettingProxy) deleteAiStudioSummarySetting(ctx context.C
 
 // createAiStudioSummarySettingFn is an implementation function for creating a Genesys Cloud ai studio summary setting
 func createAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySettingProxy, aiStudioSummarySetting *platformclientv2.Summarysetting) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.aIStudioApi.PostConversationsSummariesSettings(*aiStudioSummarySetting)
 }
 
 // getAllAiStudioSummarySettingFn is the implementation for retrieving all ai studio summary setting in Genesys Cloud
 func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySettingProxy, name string) (*[]platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allSummarySettings []platformclientv2.Summarysetting
 	const pageSize = 100
 
-	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", 1, pageSize)
+	summarySettings, resp, err := p.aIStudioApi.GetConversationsSummariesSettings(1, pageSize, name, "", "", "")
 	if err != nil {
 		return nil, resp, err
 	}
@@ -122,7 +127,7 @@ func getAllAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySetti
 	}
 
 	for pageNum := 2; pageNum <= *summarySettings.PageCount; pageNum++ {
-		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings("", name, "", "", pageNum, pageSize)
+		summarySettings, _, err := p.aIStudioApi.GetConversationsSummariesSettings(pageNum, pageSize, name, "", "", "")
 		if err != nil {
 			return nil, resp, err
 		}
@@ -165,15 +170,18 @@ func getAiStudioSummarySettingIdByNameFn(ctx context.Context, p *aiStudioSummary
 
 // getAiStudioSummarySettingByIdFn is an implementation of the function to get a Genesys Cloud ai studio summary setting by Id
 func getAiStudioSummarySettingByIdFn(ctx context.Context, p *aiStudioSummarySettingProxy, id string) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.aIStudioApi.GetConversationsSummariesSetting(id)
 }
 
 // updateAiStudioSummarySettingFn is an implementation of the function to update a Genesys Cloud ai studio summary setting
 func updateAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySettingProxy, id string, aiStudioSummarySetting *platformclientv2.Summarysetting) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.aIStudioApi.PutConversationsSummariesSetting(id, *aiStudioSummarySetting)
 }
 
 // deleteAiStudioSummarySettingFn is an implementation function for deleting a Genesys Cloud ai studio summary setting
 func deleteAiStudioSummarySettingFn(ctx context.Context, p *aiStudioSummarySettingProxy, id string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.aIStudioApi.DeleteConversationsSummariesSetting(id)
 }

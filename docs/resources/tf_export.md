@@ -7,13 +7,18 @@ description: |-
 ---
 # genesyscloud_tf_export (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud Resource to export Terraform config and (optionally) tfstate files to a local directory.
 		The config file is named 'genesyscloud.tf.json' or 'genesyscloud.tf', and the state file is named 'terraform.tfstate'.
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
+
 * The export resource calls GET APIs on all exported resource types. See the list of GET APIs on each resource.
+* By default, `genesyscloud_user` exports include both active and inactive users. Set `GENESYSCLOUD_SKIP_INACTIVE_USER_EXPORT` to omit inactive users from export listings.
 
 ## Example Usage
 
@@ -134,14 +139,16 @@ resource "genesyscloud_tf_export" "exclude_filter" {
 - `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
 - `export_as_hcl` (Boolean) Export the config as HCL. Deprecated. Please use the export_format attribute instead Defaults to `false`.
 - `export_computed` (Boolean) Export attributes that are marked as being Computed and Optional. Does not attempt to export attributes that are explicitly marked as read-only by the provider. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release. Defaults to `true`.
+- `export_deprecated` (Boolean) Export attributes that are marked as being Deprecated. Defaults to true to match existing functionality. This attribute's default value will likely switch to false in a future release. Defaults to `true`.
 - `export_format` (String) Export the config as hcl or json or json_hcl. Defaults to `json`.
+- `export_omit_unresolved_refs` (Boolean) Omit optional reference attributes that could not be resolved to Terraform references during export. When disabled, unresolved references are left as raw GUIDs. Defaults to false to match existing functionality. This attribute's default value will likely switch to true in a future release. Defaults to `false`.
 - `ignore_cyclic_deps` (Boolean) Ignore Cyclic Dependencies when building the flows and do not throw an error. Defaults to `true`.
 - `include_filter_resources` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
 - `include_filter_resources_by_id` (List of String) Include only resources that match a {resourceType}::{resourceId} value.  See export guide for additional information.
 - `include_state_file` (Boolean) Export a 'terraform.tfstate' file along with the config file. This can be used for orgs to begin managing existing resources with terraform. When `false`, GUID fields will be omitted from the config file unless a resource reference can be supplied. In this case, the resource type will need to be included in the `resource_types` array. Defaults to `false`.
 - `log_permission_errors` (Boolean) Log permission/product issues rather than fail. Defaults to `false`.
 - `max_concurrent_threads` (Number) Maximum number of concurrent threads to use during export process. This is distinct from the provider's token pool size configuration Defaults to `10`.
-- `replace_with_datasource` (List of String) Include only resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
+- `replace_with_datasource` (List of String) Replace exported resources with data sources for entries that match either a resource type (equivalent to "type::") or a resource type::regular expression. See export guide for additional information.
 - `resource_types` (List of String, Deprecated) *DEPRECATED: Use include_filter_resources attribute instead* Resource types to export, e.g. 'genesyscloud_user'. Defaults to all exportable types. NOTE: This field is deprecated and will be removed in future release.  Please use the include_filter_resources or exclude_filter_resources attribute.
 - `split_files_by_resource` (Boolean) Split export files by resource type. This will also split the terraform provider and variable declarations into their own files. Defaults to `false`.
 - `use_legacy_architect_flow_exporter` (Boolean) When set to `false`, architect flow configuration files will be downloaded as part of the flow export process. Defaults to `true`.

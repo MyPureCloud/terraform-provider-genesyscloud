@@ -6,6 +6,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -34,6 +35,7 @@ func TestAccDataSourceRoutingEmailDomain(t *testing.T) {
 					util.FalseValue,
 					util.NullValue,
 				) + generateRoutingEmailDomainDataSource(emailDataResourceLabel, "genesyscloud_routing_email_domain."+emailDomainResourceLabel+".domain_id", "genesyscloud_routing_email_domain."+emailDomainResourceLabel),
+				PreConfig: func() { time.Sleep(30 * time.Second) },
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_routing_email_domain."+emailDataResourceLabel, "id", "genesyscloud_routing_email_domain."+emailDomainResourceLabel, "id"),
 				),

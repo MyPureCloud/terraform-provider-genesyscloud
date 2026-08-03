@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -41,14 +43,24 @@ var templateCmd = &cobra.Command{
 	RunE:  runTemplate,
 }
 
+var reportCmd = &cobra.Command{
+	Use:   "report",
+	Short: "Generate a documentation report in all formats",
+	Long:  "Generates a comprehensive report in markdown, JSON, and CSV formats for documentation publishing",
+	RunE:  runReport,
+}
+
 // Command flags
 var (
 	discoverPath     string
+	exportPath       string
 	exportFormat     string
 	exportOutput     string
 	validatePath     string
 	templateResource string
 	templatePackage  string
+	reportPath       string
+	reportOutput     string
 )
 
 func init() {
@@ -56,6 +68,7 @@ func init() {
 	discoverCmd.Flags().StringVarP(&discoverPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
 
 	// Export command flags
+	exportCmd.Flags().StringVarP(&exportPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
 	exportCmd.Flags().StringVarP(&exportFormat, "format", "f", "markdown", "Output format (markdown, json, csv)")
 	exportCmd.Flags().StringVarP(&exportOutput, "output", "o", "", "Output file (defaults to stdout)")
 
@@ -67,6 +80,10 @@ func init() {
 	templateCmd.Flags().StringVarP(&templatePackage, "package", "p", "", "Package name (required)")
 	templateCmd.MarkFlagRequired("resource")
 	templateCmd.MarkFlagRequired("package")
+
+	// Report command flags
+	reportCmd.Flags().StringVarP(&reportPath, "path", "p", "./genesyscloud", "Path to scan for resource schema files")
+	reportCmd.Flags().StringVarP(&reportOutput, "output", "o", "./resource-annotation-report", "Output location and base name for the report")
 }
 
 func runDiscover(cmd *cobra.Command, args []string) error {
@@ -100,14 +117,7 @@ func runDiscover(cmd *cobra.Command, args []string) error {
 }
 
 func runExport(cmd *cobra.Command, args []string) error {
-	// Use the real discovery framework to get metadata
-	// Default to genesyscloud directory if not specified
-	scanPath := "./genesyscloud"
-	if discoverPath != "" {
-		scanPath = discoverPath
-	}
-	
-	discovery := NewResourceDiscovery(scanPath)
+	discovery := NewResourceDiscovery(exportPath)
 	metadata, err := discovery.DiscoverResources()
 	if err != nil {
 		return fmt.Errorf("failed to discover resources: %w", err)
@@ -117,11 +127,13 @@ func runExport(cmd *cobra.Command, args []string) error {
 	var cliMetadata []ResourceMetadata
 	for _, m := range metadata {
 		cliMetadata = append(cliMetadata, ResourceMetadata{
-			ResourceType: m.ResourceType,
-			PackageName:  m.PackageName,
-			TeamName:     m.TeamName,
-			TeamChatRoom: m.TeamChatRoom,
-			Description:  m.Description,
+			ResourceType:   m.ResourceType,
+			PackageName:    m.PackageName,
+			TeamName:       m.TeamName,
+			TeamChatRoom:   m.TeamChatRoom,
+			Description:    m.Description,
+			ProductManager: m.ProductManager,
+			JiraProject:    m.JiraProject,
 		})
 	}
 
@@ -220,47 +232,260 @@ func runTemplate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// Export functions
-func exportMarkdown(metadata []ResourceMetadata, output io.Writer) error {
-	fmt.Fprintln(output, "# Genesys Cloud Terraform Provider - Resource Metadata")
-	fmt.Fprintln(output)
-	fmt.Fprintln(output, "| Resource Type | Package | Team | Chat Room | Description |")
-	fmt.Fprintln(output, "|---------------|---------|------|-----------|-------------|")
+func createMarkdownFileWithContent(
+	exportFunc func([]ResourceMetadata, io.Writer) error,
+	metadata []ResourceMetadata,
+	filePath string,
+	title string,
+	order int,
+	codeBlockType string,
+) error {
+	var buffer bytes.Buffer
+	if err := exportFunc(metadata, &buffer); err != nil {
+		return fmt.Errorf("failed to export %s: %w", codeBlockType, err)
+	}
 
-	for _, m := range metadata {
-		fmt.Fprintf(output, "| %s | %s | %s | %s | %s |\n",
-			m.ResourceType,
-			m.PackageName,
-			m.TeamName,
-			m.TeamChatRoom,
-			m.Description)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create %s markdown file: %w", codeBlockType, err)
+	}
+	defer file.Close()
+
+	header := fmt.Sprintf(`---
+title: %s
+order: %d
+---
+
+`, title, order)
+
+	if _, err := file.WriteString(header); err != nil {
+		return fmt.Errorf("failed to write %s markdown header: %w", codeBlockType, err)
+	}
+
+	codeBlockStart := fmt.Sprintf("```%s\n", codeBlockType)
+	if _, err := file.WriteString(codeBlockStart); err != nil {
+		return fmt.Errorf("failed to write %s code block start: %w", codeBlockType, err)
+	}
+
+	if _, err := file.Write(buffer.Bytes()); err != nil {
+		return fmt.Errorf("failed to write %s content: %w", codeBlockType, err)
+	}
+
+	if _, err := file.WriteString("\n```\n"); err != nil {
+		return fmt.Errorf("failed to write %s code block end: %w", codeBlockType, err)
 	}
 
 	return nil
 }
 
-func exportJSON(metadata []ResourceMetadata, output io.Writer) error {
-	encoder := json.NewEncoder(output)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(metadata)
-}
+func runReport(cmd *cobra.Command, args []string) error {
+	discovery := NewResourceDiscovery(reportPath)
+	metadata, err := discovery.DiscoverResources()
+	if err != nil {
+		return fmt.Errorf("failed to discover resources: %w", err)
+	}
 
-func exportCSV(metadata []ResourceMetadata, output io.Writer) error {
-	writer := csv.NewWriter(output)
-	defer writer.Flush()
+	var fullMetadata []ResourceMetadata
+	for _, m := range metadata {
+		fullMetadata = append(fullMetadata, ResourceMetadata{
+			ResourceType:   m.ResourceType,
+			PackageName:    m.PackageName,
+			TeamName:       m.TeamName,
+			TeamChatRoom:   m.TeamChatRoom,
+			Description:    m.Description,
+			ProductManager: m.ProductManager,
+			JiraProject:    m.JiraProject,
+		})
+	}
 
-	// Write header
-	if err := writer.Write([]string{"Resource Type", "Package", "Team", "Chat Room", "Description"}); err != nil {
+	reportBaseName := filepath.Base(reportOutput)
+	reportPath := filepath.Dir(reportOutput)
+
+	jsonMarkdownPath := filepath.Join(reportPath, reportBaseName+".json.md")
+	if err := createMarkdownFileWithContent(
+		exportJSON,
+		fullMetadata,
+		jsonMarkdownPath,
+		"Resource Support Directory (JSON)",
+		3,
+		"json",
+	); err != nil {
 		return err
 	}
 
-	// Write data
-	for _, m := range metadata {
+	csvMarkdownPath := filepath.Join(reportPath, reportBaseName+".csv.md")
+	if err := createMarkdownFileWithContent(
+		exportCSV,
+		fullMetadata,
+		csvMarkdownPath,
+		"Resource Support Directory (CSV)",
+		4,
+		"csv",
+	); err != nil {
+		return err
+	}
+
+	reportFilePath := filepath.Join(reportPath, reportBaseName+".md")
+	reportFile, err := os.Create(reportFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create report file: %w", err)
+	}
+	defer reportFile.Close()
+
+	reportHeader := `---
+title: Resource Support Directory
+order: 2
+---
+
+This report contains the information and contact details for the teams that are responsible for the resources in the CX as Code project.
+
+---
+
+`
+
+	if _, err := reportFile.WriteString(reportHeader); err != nil {
+		return fmt.Errorf("failed to write report header: %w", err)
+	}
+
+	if err := exportMarkdown(fullMetadata, reportFile); err != nil {
+		return fmt.Errorf("failed to export markdown: %w", err)
+	}
+
+	reportFooter := fmt.Sprintf(`
+---
+
+## About This Report
+
+This report is automatically generated from resource metadata annotations in the [Terraform provider codebase](https://github.com/MyPureCloud/terraform-provider-genesyscloud).
+
+**Last Updated**: %s
+
+**Total Resources**: %d
+`, getCurrentDate(), len(fullMetadata))
+
+	if _, err := reportFile.WriteString(reportFooter); err != nil {
+		return fmt.Errorf("failed to write report footer: %w", err)
+	}
+
+	indexPath := filepath.Join(reportPath, "index.md")
+	indexFile, err := os.Create(indexPath)
+	if err != nil {
+		return fmt.Errorf("failed to create index file: %w", err)
+	}
+	defer indexFile.Close()
+
+	indexContent := fmt.Sprintf(`---
+title: Overview
+group: CX-as-Code
+order: 1
+---
+
+This directory contains resource annotation reports generated from the [Terraform provider codebase](https://github.com/MyPureCloud/terraform-provider-genesyscloud). These reports provide information about team ownership and contact details for resources in the CX as Code Terraform Provider.
+
+## Report Contents
+
+Report contains:
+- Resource type identifiers
+- Package names
+- Team ownership information
+- Genesys Cloud Chat room contact details
+- Resource descriptions
+
+## Last Updated
+
+Reports are automatically generated.
+
+**Last Updated**: %s
+
+**Total Resources**: %d
+`, getCurrentDate(), len(fullMetadata))
+
+	if _, err := indexFile.WriteString(indexContent); err != nil {
+		return fmt.Errorf("failed to write index file: %w", err)
+	}
+
+	fmt.Printf("Report generated successfully!\n")
+	fmt.Printf("  Index:  %s\n", indexPath)
+	fmt.Printf("  Report: %s\n", reportFilePath)
+	fmt.Printf("  JSON:   %s\n", jsonMarkdownPath)
+	fmt.Printf("  CSV:    %s\n", csvMarkdownPath)
+
+	return nil
+}
+
+func getCurrentDate() string {
+	return time.Now().Format("2006-01-02")
+}
+
+// Export functions
+func exportMarkdown(annotations []ResourceMetadata, output io.Writer) error {
+	fmt.Fprintln(output, "| Resource Type | Package | Team | Genesys Cloud Chat Room | Product Manager | Jira Project | Description |")
+	fmt.Fprintln(output, "|--------------|:--------:|------|:-----------------------------:|:---------------:|:------------:|-------------|")
+
+	for _, a := range annotations {
+		resourceType := strings.ReplaceAll(a.ResourceType, "_", "\\_")
+		packageName := fmt.Sprintf("`%s`", a.PackageName)
+		chatRoom := strings.TrimPrefix(a.TeamChatRoom, "#")
+
+		teamName := a.TeamName
+		if teamName == "" {
+			teamName = "Unknown Team"
+		}
+
+		if chatRoom == "" {
+			chatRoom = "Unknown Chat Room"
+		}
+
+		pm := a.ProductManager
+		if pm == "" {
+			pm = "N/A"
+		}
+
+		jira := a.JiraProject
+		if jira == "" {
+			jira = "N/A"
+		}
+
+		description := a.Description
+		if description == "" {
+			description = "N/A"
+		}
+
+		fmt.Fprintf(output, "| %s | %s | %s | %s | %s | %s | %s |\n",
+			resourceType,
+			packageName,
+			teamName,
+			chatRoom,
+			pm,
+			jira,
+			description)
+	}
+
+	return nil
+}
+
+func exportJSON(annotations []ResourceMetadata, output io.Writer) error {
+	encoder := json.NewEncoder(output)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(annotations)
+}
+
+func exportCSV(annotations []ResourceMetadata, output io.Writer) error {
+	writer := csv.NewWriter(output)
+	defer writer.Flush()
+
+	if err := writer.Write([]string{"Resource Type", "Package", "Team", "Chat Room", "Product Manager", "Jira Project", "Description"}); err != nil {
+		return err
+	}
+
+	for _, m := range annotations {
 		if err := writer.Write([]string{
 			m.ResourceType,
 			m.PackageName,
 			m.TeamName,
 			m.TeamChatRoom,
+			m.ProductManager,
+			m.JiraProject,
 			m.Description,
 		}); err != nil {
 			return err
@@ -272,11 +497,13 @@ func exportCSV(metadata []ResourceMetadata, output io.Writer) error {
 
 // ResourceMetadata represents the metadata structure for the CLI tool
 type ResourceMetadata struct {
-	ResourceType string `json:"resource_type"`
-	PackageName  string `json:"package_name"`
-	TeamName     string `json:"team_name"`
-	TeamChatRoom string `json:"team_chat_room"`
-	Description  string `json:"description"`
+	ResourceType    string `json:"resource_type"`
+	PackageName     string `json:"package_name"`
+	TeamName        string `json:"team_name"`
+	TeamChatRoom    string `json:"team_chat_room"`
+	Description     string `json:"description"`
+	ProductManager  string `json:"product_manager"`
+	JiraProject     string `json:"jira_project"`
 }
 
 // ResourceDiscovery provides functionality to discover and extract metadata from resources
@@ -360,6 +587,8 @@ func (d *ResourceDiscovery) extractMetadataFromFile(filePath string) (*ResourceM
 	var teamName string
 	var teamChatRoom string
 	var description string
+	var productManager string
+	var jiraProject string
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -390,6 +619,10 @@ func (d *ResourceDiscovery) extractMetadataFromFile(filePath string) (*ResourceM
 			teamChatRoom = strings.TrimSpace(strings.TrimPrefix(line, "// @chat:"))
 		} else if strings.HasPrefix(line, "// @description:") {
 			description = strings.TrimSpace(strings.TrimPrefix(line, "// @description:"))
+		} else if strings.HasPrefix(line, "// @pm:") {
+			productManager = strings.TrimSpace(strings.TrimPrefix(line, "// @pm:"))
+		} else if strings.HasPrefix(line, "// @jira:") {
+			jiraProject = strings.TrimSpace(strings.TrimPrefix(line, "// @jira:"))
 		}
 
 		// Extract build tag annotations
@@ -414,11 +647,13 @@ func (d *ResourceDiscovery) extractMetadataFromFile(filePath string) (*ResourceM
 	}
 
 	return &ResourceMetadata{
-		ResourceType: resourceType,
-		PackageName:  packageName,
-		TeamName:     teamName,
-		TeamChatRoom: teamChatRoom,
-		Description:  description,
+		ResourceType:   resourceType,
+		PackageName:    packageName,
+		TeamName:       teamName,
+		TeamChatRoom:   teamChatRoom,
+		Description:    description,
+		ProductManager: productManager,
+		JiraProject:    jiraProject,
 	}, nil
 }
 

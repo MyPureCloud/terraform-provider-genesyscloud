@@ -108,7 +108,7 @@ func (j *JsonExporter) exportJSONConfig() diag.Diagnostics {
 				},
 			}
 
-			resourceJSONFilePath := filepath.Join(j.dirPath, fmt.Sprintf("%s.%s", resType, resourceJSONFileExt))
+			resourceJSONFilePath := filepath.Join(j.dirPath, fmt.Sprintf("data_%s.%s", resType, resourceJSONFileExt))
 			if resourceJSONFilePath == "" {
 				return diag.Errorf("Failed to create file path %s", resourceJSONFilePath)
 			}

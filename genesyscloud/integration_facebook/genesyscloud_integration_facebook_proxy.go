@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -18,6 +19,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *integrationFacebookProxy
+
+var facebookCache = rc.NewResourceCache[platformclientv2.Facebookintegration]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createIntegrationFacebookFunc func(ctx context.Context, p *integrationFacebookProxy, facebookIntegrationRequest *platformclientv2.Facebookintegrationrequest) (*platformclientv2.Facebookintegration, *platformclientv2.APIResponse, error)
@@ -43,7 +46,7 @@ type integrationFacebookProxy struct {
 // newIntegrationFacebookProxy initializes the integration facebook proxy with all of the data needed to communicate with Genesys Cloud
 func newIntegrationFacebookProxy(clientConfig *platformclientv2.Configuration) *integrationFacebookProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	facebookCache := rc.NewResourceCache[platformclientv2.Facebookintegration]()
+
 	return &integrationFacebookProxy{
 		clientConfig:                       clientConfig,
 		conversationsApi:                   api,
@@ -99,11 +102,17 @@ func (p *integrationFacebookProxy) deleteIntegrationFacebook(ctx context.Context
 
 // createIntegrationFacebookFn is an implementation function for creating a Genesys Cloud integration facebook
 func createIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy, integrationFacebook *platformclientv2.Facebookintegrationrequest) (*platformclientv2.Facebookintegration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PostConversationsMessagingIntegrationsFacebook(*integrationFacebook)
 }
 
 // getAllIntegrationFacebookFn is the implementation for retrieving all integration facebook in Genesys Cloud
 func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy) (*[]platformclientv2.Facebookintegration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allFacebookIntegrationRequests []platformclientv2.Facebookintegration
 	const pageSize = 100
 
@@ -140,6 +149,9 @@ func getAllIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProx
 
 // getIntegrationFacebookIdByNameFn is an implementation of the function to get a Genesys Cloud integration facebook by name
 func getIntegrationFacebookIdByNameFn(ctx context.Context, p *integrationFacebookProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	facebookIntegrationRequests, resp, err := getAllIntegrationFacebookFn(ctx, p)
 	if err != nil {
 		return "", false, resp, err
@@ -163,6 +175,9 @@ func getIntegrationFacebookIdByNameFn(ctx context.Context, p *integrationFaceboo
 
 // getIntegrationFacebookByIdFn is an implementation of the function to get a Genesys Cloud integration facebook by Id
 func getIntegrationFacebookByIdFn(ctx context.Context, p *integrationFacebookProxy, id string) (integrationFacebook *platformclientv2.Facebookintegration, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	facebookReq := rc.GetCacheItem(p.facebookCache, id)
 	if facebookReq != nil {
 		return facebookReq, nil, nil
@@ -173,11 +188,17 @@ func getIntegrationFacebookByIdFn(ctx context.Context, p *integrationFacebookPro
 
 // updateIntegrationFacebookFn is an implementation of the function to update a Genesys Cloud integration facebook
 func updateIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy, id string, integrationFacebook *platformclientv2.Facebookintegrationupdaterequest) (*platformclientv2.Facebookintegration, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.conversationsApi.PatchConversationsMessagingIntegrationsFacebookIntegrationId(id, *integrationFacebook)
 }
 
 // deleteIntegrationFacebookFn is an implementation function for deleting a Genesys Cloud integration facebook
 func deleteIntegrationFacebookFn(ctx context.Context, p *integrationFacebookProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.conversationsApi.DeleteConversationsMessagingIntegrationsFacebookIntegrationId(id)
 	if err != nil {
 		return resp, err

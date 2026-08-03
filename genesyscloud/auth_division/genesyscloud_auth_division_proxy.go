@@ -7,10 +7,14 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 var internalProxy *authDivisionProxy
+
+var authDivisionCache = rc.NewResourceCache[platformclientv2.Authzdivision]()
 
 type getAllAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, name string) (*[]platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
 type createAuthDivisionFunc func(ctx context.Context, p *authDivisionProxy, authzDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error)
@@ -34,7 +38,7 @@ type authDivisionProxy struct {
 // newAuthDivisionProxy initializes the auth division proxy with all of the data needed to communicate with Genesys Cloud
 func newAuthDivisionProxy(clientConfig *platformclientv2.Configuration) *authDivisionProxy {
 	api := platformclientv2.NewAuthorizationApiWithConfig(clientConfig)
-	authDivisionCache := rc.NewResourceCache[platformclientv2.Authzdivision]()
+
 	return &authDivisionProxy{
 		clientConfig:                clientConfig,
 		authorizationApi:            api,
@@ -83,6 +87,9 @@ func (p *authDivisionProxy) deleteAuthDivision(ctx context.Context, id string, f
 }
 
 func getAllAuthDivisionFn(ctx context.Context, p *authDivisionProxy, name string) (*[]platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allAuthzDivisions []platformclientv2.Authzdivision
 	const pageSize = 100
 
@@ -117,10 +124,16 @@ func getAllAuthDivisionFn(ctx context.Context, p *authDivisionProxy, name string
 
 // createAuthDivisionFn is an implementation function for creating a Genesys Cloud auth division
 func createAuthDivisionFn(ctx context.Context, p *authDivisionProxy, authDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.authorizationApi.PostAuthorizationDivisions(*authDivision)
 }
 
 func getAuthDivisionByIdFn(ctx context.Context, p *authDivisionProxy, id string, objectCount, checkCache bool) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	if checkCache {
 		div := rc.GetCacheItem(p.authDivisionCache, id)
 		if div != nil {
@@ -132,6 +145,9 @@ func getAuthDivisionByIdFn(ctx context.Context, p *authDivisionProxy, id string,
 }
 
 func getAuthDivisionIdByNameFn(ctx context.Context, p *authDivisionProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	notFoundError := fmt.Errorf("unable to find auth division with name %s", name)
 
 	authzDivisions, resp, err := getAllAuthDivisionFn(ctx, p, name)
@@ -154,10 +170,16 @@ func getAuthDivisionIdByNameFn(ctx context.Context, p *authDivisionProxy, name s
 }
 
 func updateAuthDivisionFn(ctx context.Context, p *authDivisionProxy, id string, authDivision *platformclientv2.Authzdivision) (*platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.authorizationApi.PutAuthorizationDivision(id, *authDivision)
 }
 
 func deleteAuthDivisionFn(ctx context.Context, p *authDivisionProxy, id string, force bool) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	resp, err := p.authorizationApi.DeleteAuthorizationDivision(id, force)
 	if err != nil {
 		return resp, err

@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
-
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
@@ -36,6 +34,8 @@ import (
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
@@ -82,6 +82,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegEx(t *testing.T) {
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -143,6 +144,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExAndSanitizedLabels(t *t
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -216,6 +218,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByRegExExclusiveToResource(t *
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -342,11 +345,13 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			filepath.Join(exportTestDir, "genesyscloud_user.tf.json"),
 			filepath.Join(exportTestDir, "genesyscloud_routing_wrapupcode.tf.json"),
 			filepath.Join(exportTestDir, "provider.tf.json"),
+			filepath.Join(exportTestDir, "data_genesyscloud_auth_division.tf.json"),
+			filepath.Join(exportTestDir, "data_genesyscloud_routing_queue.tf.json"),
 		}
 
 		queueResources = []QueueExport{
 			{OriginalResourceLabel: "test-queue-1", ExportedLabel: "test-queue-1-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue", AcwTimeoutMs: 200000},
-			{OriginalResourceLabel: "test-queue-2", ExportedLabel: "test-queue-1-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue too", AcwTimeoutMs: 200000},
+			{OriginalResourceLabel: "test-queue-2", ExportedLabel: "test-queue-2-" + uuid.NewString() + uniquePostfix, Description: "This is a test queue too", AcwTimeoutMs: 200000},
 		}
 
 		userResources = []UserExport{
@@ -377,9 +382,16 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			strconv.Quote("genesyscloud_routing_queue::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_user::" + uniquePostfix + "$"),
 			strconv.Quote("genesyscloud_routing_wrapupcode::" + uniquePostfix + "$"),
+			strconv.Quote(fmt.Sprintf("%s::^%s$", authDivision.ResourceType, divName)),
 		},
 		strconv.Quote("json"),
 		util.TrueValue,
+		// Replace With Data Source
+		[]string{
+			strconv.Quote("genesyscloud_routing_queue::" + queueResources[0].ExportedLabel + "$"),
+			strconv.Quote(fmt.Sprintf("%s::^%s$", authDivision.ResourceType, divName)),
+		},
+		// Depends On
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -400,10 +412,31 @@ func TestAccResourceTfExportSplitFilesAsJSON(t *testing.T) {
 			{
 				Config: configWithExporter,
 				Check: resource.ComposeTestCheckFunc(
+					// Routing Queue Resource
 					validateFileCreated(expectedFilesPath[0]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[0], "resource.genesyscloud_routing_queue."+queueResources[1].ExportedLabel, "name", queueResources[1].ExportedLabel),
+
+					// User Resource
 					validateFileCreated(expectedFilesPath[1]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[1], "resource.genesyscloud_user."+resourceExporter.NewSanitizerProvider().S.SanitizeResourceBlockLabel(userResources[0].Email), "name", userResources[0].ExportedLabel),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[1], "resource.genesyscloud_user."+resourceExporter.NewSanitizerProvider().S.SanitizeResourceBlockLabel(userResources[1].Email), "name", userResources[1].ExportedLabel),
+
+					// Routing Wrapupcode Resource
 					validateFileCreated(expectedFilesPath[2]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[2], "resource.genesyscloud_routing_wrapupcode."+wrapupCodeResources[0].Name, "name", wrapupCodeResources[0].Name),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[2], "resource.genesyscloud_routing_wrapupcode."+wrapupCodeResources[1].Name, "name", wrapupCodeResources[1].Name),
+
+					// Provider
 					validateFileCreated(expectedFilesPath[3]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[3], "terraform.required_providers.genesyscloud", "source", "genesys.com/mypurecloud/genesyscloud"),
+
+					// Auth Division Data Resource
+					validateFileCreated(expectedFilesPath[4]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[4], "data.genesyscloud_auth_division."+divName, "name", divName),
+
+					// Routing Queue Data Resource
+					validateFileCreated(expectedFilesPath[5]),
+					util.ValidateJSONFileKeyValue(expectedFilesPath[5], "data.genesyscloud_routing_queue."+queueResources[0].ExportedLabel, "name", queueResources[0].ExportedLabel),
 				),
 			},
 		},
@@ -882,6 +915,7 @@ func TestAccResourceTfExportIncludeFilterResourcesByType(t *testing.T) {
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -945,6 +979,7 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user"),
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
+			strconv.Quote("genesyscloud_journey_outcome"),
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
@@ -1443,11 +1478,14 @@ func TestAccResourceTfExportUserPromptExportAudioFile(t *testing.T) {
 
 func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 	testSetup(t)
+
 	var (
-		exportTestDir = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
-		resourceLabel = "export"
-		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
-		statePath     = filepath.Join(exportTestDir, defaultTfStateFile)
+		exportTestDir   = testrunner.GetTestTempPath(".terraformregex" + uuid.NewString())
+		resourceLabel   = "export"
+		configPath      = filepath.Join(exportTestDir, defaultTfJSONFile)
+		statePath       = filepath.Join(exportTestDir, defaultTfStateFile)
+		publishedName   = "test-published-form"
+		unpublishedName = "test-unpublished-form"
 	)
 
 	// Clean up
@@ -1456,6 +1494,73 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 			t.Logf("failed to remove dir %s: %s", path, err)
 		}
 	}(exportTestDir)
+
+	// Create both a published and unpublished survey form via SDK before the export test
+	sdkConfig, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Skipf("failed to authorize SDK: %v", err)
+	}
+	qualityAPI := platformclientv2.NewQualityApiWithConfig(sdkConfig)
+
+	// Create published form
+	publishedForm, _, err := qualityAPI.PostQualityFormsSurveys(platformclientv2.Surveyform{
+		Name:      platformclientv2.String("test-published-form"),
+		Language:  platformclientv2.String("en-US"),
+		Published: platformclientv2.Bool(true),
+		QuestionGroups: &[]platformclientv2.Surveyquestiongroup{
+			{
+				Name: platformclientv2.String("Test Group"),
+				Questions: &[]platformclientv2.Surveyquestion{
+					{
+						Text:    platformclientv2.String("Was the customer satisfied?"),
+						VarType: platformclientv2.String("multipleChoiceQuestion"),
+						AnswerOptions: &[]platformclientv2.Answeroption{
+							{Text: platformclientv2.String("Yes"), Value: platformclientv2.Int(1)},
+							{Text: platformclientv2.String("No"), Value: platformclientv2.Int(0)},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Skipf("failed to create published survey form: %v", err)
+	}
+	defer func() {
+		if publishedForm != nil && publishedForm.Id != nil {
+			qualityAPI.DeleteQualityFormsSurvey(*publishedForm.Id)
+		}
+	}()
+
+	// Create unpublished form
+	unpublishedForm, _, err := qualityAPI.PostQualityFormsSurveys(platformclientv2.Surveyform{
+		Name:      platformclientv2.String("test-unpublished-form"),
+		Language:  platformclientv2.String("en-US"),
+		Published: platformclientv2.Bool(false),
+		QuestionGroups: &[]platformclientv2.Surveyquestiongroup{
+			{
+				Name: platformclientv2.String("Test Group"),
+				Questions: &[]platformclientv2.Surveyquestion{
+					{
+						Text:    platformclientv2.String("Was the agent helpful?"),
+						VarType: platformclientv2.String("multipleChoiceQuestion"),
+						AnswerOptions: &[]platformclientv2.Answeroption{
+							{Text: platformclientv2.String("Yes"), Value: platformclientv2.Int(1)},
+							{Text: platformclientv2.String("No"), Value: platformclientv2.Int(0)},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Skipf("failed to create unpublished survey form: %v", err)
+	}
+	defer func() {
+		if unpublishedForm != nil && unpublishedForm.Id != nil {
+			qualityAPI.DeleteQualityFormsSurvey(*unpublishedForm.Id)
+		}
+	}()
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -1472,9 +1577,10 @@ func TestAccResourceSurveyFormsPublishedAndUnpublished(t *testing.T) {
 					strconv.Quote("json"), // export_as_hcl
 					util.FalseValue,
 					[]string{},
+					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					validatePublishedAndUnpublishedExported(configPath),
+					validatePublishedAndUnpublishedExported(configPath, publishedName, unpublishedName),
 					validateStateFileHasPublishedAndUnpublished(statePath),
 				),
 			},
@@ -1523,6 +1629,7 @@ func TestAccResourceExportManagedSitesAsData(t *testing.T) {
 					},
 					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
+					[]string{},
 					[]string{},
 				),
 				Check: resource.ComposeTestCheckFunc(
@@ -1586,6 +1693,7 @@ func TestAccResourceTfExportSplitFilesAsHCL(t *testing.T) {
 		},
 		strconv.Quote("hcl"),
 		util.TrueValue,
+		[]string{},
 		[]string{
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[0].OriginalResourceLabel),
 			strconv.Quote("genesyscloud_routing_queue." + queueResources[1].OriginalResourceLabel),
@@ -1692,6 +1800,7 @@ resource "genesyscloud_architect_user_prompt" "%s" {
 					},
 					strconv.Quote("json"), // export_format attribute
 					util.FalseValue,
+					[]string{},
 					[]string{
 						strconv.Quote("genesyscloud_architect_user_prompt." + dPromptResourceLabel),
 						strconv.Quote("genesyscloud_architect_user_prompt." + hPromptResourceLabel),
@@ -1992,9 +2101,33 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		exportResourceLabel1 = "exportFormatTest-export1"
 		jsonConfigFilePath   = filepath.Join(exportTestDir, defaultTfJSONFile)
 		hclConfigFilePath    = filepath.Join(exportTestDir, defaultTfHCLFile)
+		segmentLabel         = "test_export_segment_" + uuid.NewString()[:8]
+		segmentName          = "tf_test_export_seg_" + uuid.NewString()[:8]
 	)
 
 	defer os.RemoveAll(exportTestDir)
+
+	segmentConfig := fmt.Sprintf(`
+resource "genesyscloud_journey_segment" "%s" {
+  display_name            = "%s"
+  color                   = "#008000"
+  should_display_to_agent = true
+  journey {
+    patterns {
+      criteria {
+        key                = "page.hostname"
+        values             = ["test.example.com"]
+        operator           = "equal"
+        should_ignore_case = false
+      }
+      count        = 1
+      stream_type  = "Web"
+      session_type = "web"
+      event_name   = "EventName"
+    }
+  }
+}
+`, segmentLabel, segmentName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
@@ -2002,7 +2135,11 @@ func TestAccResourceExporterFormat(t *testing.T) {
 		CheckDestroy:      testVerifyExportsDestroyedFunc(exportTestDir),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTfExportResourceExportFormat(
+				// First create a segment so there's something to export
+				Config: segmentConfig,
+			},
+			{
+				Config: segmentConfig + generateTfExportResourceExportFormat(
 					exportResourceLabel1,
 					strconv.Quote("hcl_json"),
 					[]string{"genesyscloud_journey_segment"},
@@ -2020,31 +2157,32 @@ func TestAccResourceExporterFormat(t *testing.T) {
 	})
 }
 
-// TestAccResourceTfExportArchitectFlowExporterLegacyAndNew Exports a flow using the legacy exporter (creates a tfvars file but does not export flow config files)
-// and then exports using the new archy exporter by setting use_legacy_architect_flow_exporter to false
-// Verifies that the appropriate files are/are not created when use_legacy_architect_flow_exporter is set to true/false
-// Verifies that the appropriate filepath is set inside the exported resource config when use_legacy_architect_flow_exporter is set to true/false
-func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
+// TestAccResourceTfExportArchitectFlowExporterLegacyAndNew creates an inbound call flow, then exports it using the
+// legacy exporter (creates a tfvars file but does not export flow config files) and then exports using the new archy
+// exporter by setting use_legacy_architect_flow_exporter to false.
+// TestAccResourceTfExportArchitectFlowExporterLegacy creates an inbound call flow and exports it using the
+// legacy exporter (creates a tfvars file but does not export flow config files).
+// Verifies that the appropriate files are/are not created when use_legacy_architect_flow_exporter is set to true
+// Verifies that the appropriate filepath is set inside the exported resource config
+func TestAccResourceTfExportArchitectFlowExporterLegacy(t *testing.T) {
 	testSetup(t)
-	const (
-		systemFlowName = "Default Voicemail Flow"
-		systemFlowType = "VOICEMAIL"
-		systemFlowId   = "de4c63f0-0be1-11ec-9a03-0242ac130003"
-	)
 
 	var (
-		systemFlowNameSanitized          = strings.Replace(systemFlowName, " ", "_", -1)
-		exportedSystemFlowFileName       = architectFlow.BuildExportFileName(systemFlowName, systemFlowType, systemFlowId)
-		exportResourceLabel              = "export"
-		exportTestDir                    = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
-		exportFullPath                   = ResourceType + "." + exportResourceLabel
-		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
+		flowName          = "tf_test_flow_legacy_" + uuid.NewString()
+		flowType          = "INBOUNDCALL"
+		flowResourceLabel = "test_flow"
+		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
 
-		exportedFlowResourceLabel               = systemFlowType + "_" + systemFlowNameSanitized
+		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+
+		flowNameSanitized = strings.Replace(flowName, " ", "_", -1)
+
+		exportResourceLabel = "export"
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath      = ResourceType + "." + exportResourceLabel
+
 		pathToExportedTerraformConfig           = filepath.Join(exportTestDir, defaultTfJSONFile)
-		exportedFlowResourceFullPath            = architectFlow.ResourceType + "." + exportedFlowResourceLabel
-		expectedFilepathValueWithLegacyExporter = fmt.Sprintf("${var.genesyscloud_flow_%s_%s_filepath}", systemFlowType, systemFlowNameSanitized)
-		expectedFilepathValueWithNewExporter    = filepath.Join(architectFlow.ExportSubDirectoryName, fmt.Sprintf("%s-%s-%s.yaml", systemFlowNameSanitized, systemFlowType, systemFlowId))
+		expectedFilepathValueWithLegacyExporter = fmt.Sprintf("${var.genesyscloud_flow_%s_%s_filepath}", flowType, flowNameSanitized)
 	)
 
 	defer func(path string) {
@@ -2053,45 +2191,157 @@ func TestAccResourceTfExportArchitectFlowExporterLegacyAndNew(t *testing.T) {
 		}
 	}(exportTestDir)
 
+	flowResource := architectFlow.GenerateFlowResource(
+		flowResourceLabel,
+		filePath,
+		inboundcallConfig,
+		false,
+	)
+
+	generateExportWithDependsOn := func(useLegacyExporter string) string {
+		return flowResource + fmt.Sprintf(`
+resource "%s" "%s" {
+	directory                          = "%s"
+	include_state_file                 = %s
+	export_format                      = %s
+	use_legacy_architect_flow_exporter = %s
+	include_filter_resources           = [%s]
+	depends_on                         = [%s.%s]
+}
+`, ResourceType, exportResourceLabel, exportTestDir, util.TrueValue, strconv.Quote("json"),
+			useLegacyExporter,
+			strconv.Quote(architectFlow.ResourceType+"::"+flowName),
+			architectFlow.ResourceType, flowResourceLabel)
+	}
+
+	exportedFlowResourceLabel := flowType + "_" + flowNameSanitized
+	exportedFlowResourceFullPath := "resource." + architectFlow.ResourceType + "." + exportedFlowResourceLabel
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTFExportResourceCustom(
-					exportResourceLabel,
-					exportTestDir,
-					util.TrueValue,
-					strconv.Quote("json"),
-					util.NullValue, // use_legacy_architect_flow_exporter - should default to true
-					[]string{
-						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
-					},
-				),
+				Config: generateExportWithDependsOn(util.NullValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.TrueValue),
 					validateFileCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
 					validateFileNotCreated(filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)),
-					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithLegacyExporter),
+					util.ValidateJSONFileKeyValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithLegacyExporter),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// TestAccResourceTfExportArchitectFlowExporterNew creates an inbound call flow and exports it using the new archy
+// exporter by setting use_legacy_architect_flow_exporter to false.
+// Verifies that the appropriate files are created and the filepath in the exported config matches the new exporter format
+func TestAccResourceTfExportArchitectFlowExporterNew(t *testing.T) {
+	testSetup(t)
+
+	var (
+		flowName          = "tf_test_flow_new_" + uuid.NewString()
+		flowType          = "INBOUNDCALL"
+		flowResourceLabel = "test_flow"
+		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+
+		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+
+		flowNameSanitized = strings.Replace(flowName, " ", "_", -1)
+
+		exportResourceLabel              = "export"
+		exportTestDir                    = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath                   = ResourceType + "." + exportResourceLabel
+		pathToFolderHoldingExportedFlows = filepath.Join(exportTestDir, architectFlow.ExportSubDirectoryName)
+
+		pathToExportedTerraformConfig = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occured while removing directory '%s': %s", exportTestDir, err)
+		}
+	}(exportTestDir)
+
+	flowResource := architectFlow.GenerateFlowResource(
+		flowResourceLabel,
+		filePath,
+		inboundcallConfig,
+		false,
+	)
+
+	generateExportWithDependsOn := func(useLegacyExporter string) string {
+		return flowResource + fmt.Sprintf(`
+resource "%s" "%s" {
+	directory                          = "%s"
+	include_state_file                 = %s
+	export_format                      = %s
+	use_legacy_architect_flow_exporter = %s
+	include_filter_resources           = [%s]
+	depends_on                         = [%s.%s]
+}
+`, ResourceType, exportResourceLabel, exportTestDir, util.TrueValue, strconv.Quote("json"),
+			useLegacyExporter,
+			strconv.Quote(architectFlow.ResourceType+"::"+flowName),
+			architectFlow.ResourceType, flowResourceLabel)
+	}
+
+	exportedFlowResourceLabel := flowType + "_" + flowNameSanitized
+	exportedFlowResourceFullPath := "resource." + architectFlow.ResourceType + "." + exportedFlowResourceLabel
+
+	validateExportedFlowFile := func(flowResourcePath, exportFlowsDir string) resource.TestCheckFunc {
+		return func(state *terraform.State) error {
+			flowRes, ok := state.RootModule().Resources[flowResourcePath]
+			if !ok {
+				return fmt.Errorf("flow resource %s not found in state", flowResourcePath)
+			}
+			flowId := flowRes.Primary.ID
+			expectedFileName := architectFlow.BuildExportFileName(flowName, flowType, flowId)
+			expectedPath := filepath.Join(exportFlowsDir, expectedFileName)
+			if _, err := os.Stat(expectedPath); err != nil {
+				return fmt.Errorf("expected exported flow file '%s' not found: %w", expectedPath, err)
+			}
+			return nil
+		}
+	}
+
+	validateExportedFlowFilepath := func(flowResourcePath, configFile, resourceFullPath string) resource.TestCheckFunc {
+		return func(state *terraform.State) error {
+			flowRes, ok := state.RootModule().Resources[flowResourcePath]
+			if !ok {
+				return fmt.Errorf("flow resource %s not found in state", flowResourcePath)
+			}
+			flowId := flowRes.Primary.ID
+			expectedFilepath := filepath.Join(architectFlow.ExportSubDirectoryName, fmt.Sprintf("%s-%s-%s.yaml", flowNameSanitized, flowType, flowId))
+			return util.ValidateJSONFileKeyValue(configFile, resourceFullPath, "filepath", expectedFilepath)(state)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create the flow first and let it settle before exporting
+				Config: flowResource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(architectFlow.ResourceType+"."+flowResourceLabel, "id"),
 				),
 			},
 			{
-				Config: generateTFExportResourceCustom(
-					exportResourceLabel,
-					exportTestDir,
-					util.TrueValue,
-					strconv.Quote("json"),
-					util.FalseValue, // use_legacy_architect_flow_exporter
-					[]string{
-						strconv.Quote(architectFlow.ResourceType + "::" + systemFlowName),
-					},
-				),
+				// Step 2: Export the flow after it has been fully published
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
+				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(exportFullPath, "use_legacy_architect_flow_exporter", util.FalseValue),
 					validateFileNotCreated(filepath.Join(exportTestDir, "terraform.tfvars")),
 					validateFileCreated(pathToFolderHoldingExportedFlows),
-					validateFileCreated(filepath.Join(pathToFolderHoldingExportedFlows, exportedSystemFlowFileName)),
-					validateExportedResourceAttributeValue(pathToExportedTerraformConfig, exportedFlowResourceFullPath, "filepath", expectedFilepathValueWithNewExporter),
+					validateExportedFlowFile(architectFlow.ResourceType+"."+flowResourceLabel, pathToFolderHoldingExportedFlows),
+					validateExportedFlowFilepath(architectFlow.ResourceType+"."+flowResourceLabel, pathToExportedTerraformConfig, exportedFlowResourceFullPath),
 				),
 			},
 		},
@@ -2176,13 +2426,11 @@ func TestAccResourceTfExportSanitizedDuplicateLabels(t *testing.T) {
 		stateFilePath = filepath.Join(exportTestDir, defaultTfStateFile)
 		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
 
-		sanitizer      = resourceExporter.NewSanitizerProvider()
-		sanitizedName  = sanitizer.S.SanitizeResourceBlockLabel(dataActionName)
-		expectedLabels = []string{
-			sanitizedName,
-			sanitizedName + "_" + sanitizeResourceHash(dataActionName+"2"),
-			sanitizedName + "_" + sanitizeResourceHash(dataActionName+"3"),
-		}
+		sanitizer = resourceExporter.NewSanitizerProvider()
+		// The exporter uses "{category} {name}" as the display name for integration_action
+		// where category = integration name
+		fullDisplayName = integrationName + " " + dataActionName
+		sanitizedName   = sanitizer.S.SanitizeResourceBlockLabel(fullDisplayName)
 	)
 
 	defer func(path string) {
@@ -2284,18 +2532,422 @@ resource "genesyscloud_integration_credential" "%s" {
 		dataActionResource(dataActionLabel3),
 	)
 
+	// Split config: resources without export, then add export
+	resourcesOnlyConfig := fmt.Sprintf(`
+locals {
+  shared_action_name = "%s"
+  integration_name   = "%s"
+}
+
+resource "genesyscloud_integration" "%s" {
+  config {
+    advanced = jsonencode({})
+    credentials = {
+      pureCloudOAuthClient = genesyscloud_integration_credential.%s.id
+    }
+    name       = local.integration_name
+    properties = jsonencode({})
+  }
+  integration_type = "purecloud-data-actions"
+  intended_state   = "ENABLED"
+}
+
+resource "genesyscloud_integration_credential" "%s" {
+  name                 = "%s"
+  credential_type_name = "pureCloudOAuthClient"
+  fields = {
+    clientId     = "someUserName"
+    clientSecret = "$tr0ngP@s$w0rd"
+  }
+}
+
+%s
+
+%s
+
+%s
+`, dataActionName, integrationName,
+		integrationLabel,
+		credentialLabel,
+		credentialLabel,
+		credentialName,
+		dataActionResource(dataActionLabel1),
+		dataActionResource(dataActionLabel2),
+		dataActionResource(dataActionLabel3),
+	)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Step 1: Create resources
+				Config: resourcesOnlyConfig,
+			},
+			{
+				// Step 2: Export (resources already exist and are searchable)
+				PreConfig: func() {
+					time.Sleep(45 * time.Second)
+				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					verifyLabelsExistInExportedStateFile(stateFilePath, integrationAction.ResourceType, expectedLabels),
-					verifyLabelsExistInExportedTfConfig(configPath, integrationAction.ResourceType, expectedLabels),
+					// Verify that 3 integration_action resources exist in the state file with the sanitized base name
+					func(s *terraform.State) error {
+						data, err := os.ReadFile(stateFilePath)
+						if err != nil {
+							return fmt.Errorf("failed to read state file: %s", err)
+						}
+						content := string(data)
+						count := strings.Count(content, sanitizedName)
+						if count < 3 {
+							return fmt.Errorf("expected at least 3 occurrences of sanitized label prefix %q in state file, found %d", sanitizedName, count)
+						}
+						return nil
+					},
+					// Verify that 3 integration_action resources exist in the config file with the sanitized base name
+					func(s *terraform.State) error {
+						data, err := os.ReadFile(configPath)
+						if err != nil {
+							return fmt.Errorf("failed to read config file: %s", err)
+						}
+						content := string(data)
+						count := strings.Count(content, sanitizedName)
+						if count < 3 {
+							return fmt.Errorf("expected at least 3 occurrences of sanitized label prefix %q in config file, found %d", sanitizedName, count)
+						}
+						return nil
+					},
 				),
 			},
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+// TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences exercises the
+// end-to-end exporter pipeline for a decision table that references routing
+// queues in both columns (column defaults) AND rows (row literal values).
+//
+// It is the regression test for the queue-in-rows resolution bug: the exporter
+// registered a QueueIdResolver for row literal paths under the keys
+// "rows.*.inputs.*.literal.value" and "rows.*.outputs.*.literal.value", but the
+// export framework matches resolver keys by exact string against a dot-only
+// path it constructs while walking the config. Wildcard segments never appear in
+// that runtime path, so the resolver silently never fired and exported decision
+// tables wrote raw queue UUIDs into row cells instead of
+// ${genesyscloud_routing_queue.<label>.id} references — meaning the exported
+// HCL could not be applied to another org without manual fix-up.
+//
+// The four assertions below cover the four queue-bearing locations on the
+// resource. The column assertions guard the previously-working paths; the row
+// assertions are the ones that fail against the pre-fix code.
+func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing.T) {
+	testSetup(t)
+
+	if !businessRulesDecisionTableExportFtEnabled(t) {
+		t.Skip("Business rules decision table feature toggle is not enabled in this test org; skipping export round-trip test")
+	}
+
+	var (
+		// Schema name is capped at 50 chars by the platform, so keep the suffix
+		// short. The first 8 hex chars of a UUID give us enough uniqueness for
+		// concurrent test runs without overflowing the schema-name limit.
+		uniqueSuffix = uuid.NewString()[:8]
+
+		// Use snake_case names so the sanitized resource block labels equal the
+		// raw names; that makes the expected ${...} reference strings predictable
+		// without going through the sanitizer at assertion time.
+		schemaName    = "tf_test_dt_export_schema_" + uniqueSuffix
+		queueAName    = "tf_test_dt_export_queue_a_" + uniqueSuffix
+		queueBName    = "tf_test_dt_export_queue_b_" + uniqueSuffix
+		tableName     = "tf_test_dt_export_table_" + uniqueSuffix
+		exportTestDir = testrunner.GetTestTempPath(".terraform_dt_export_" + uuid.NewString())
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	baseConfig := buildDecisionTableQueueExportBaseConfig(schemaName, queueAName, queueBName, tableName)
+
+	expectedQueueARef := fmt.Sprintf("${genesyscloud_routing_queue.%s.id}", queueAName)
+	expectedQueueBRef := fmt.Sprintf("${genesyscloud_routing_queue.%s.id}", queueBName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the schema, queues, and decision table.
+				Config: baseConfig,
+			},
+			{
+				// Step 2: run the export — include the queue, schema, and decision
+				// table so the QueueIdResolver has a populated SanitizedResourceMap
+				// to resolve row UUIDs against.
+				Config: baseConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					"dt_export",
+					exportTestDir,
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format
+					util.TrueValue,        // enable_dependency_resolution
+					[]string{
+						strconv.Quote("genesyscloud_business_rules_decision_table::" + tableName),
+						strconv.Quote("genesyscloud_routing_queue::" + queueAName),
+						strconv.Quote("genesyscloud_routing_queue::" + queueBName),
+						strconv.Quote("genesyscloud_business_rules_schema::" + schemaName),
+					},
+					[]string{
+						"genesyscloud_business_rules_decision_table.test_table",
+						"genesyscloud_routing_queue.queue_a",
+						"genesyscloud_routing_queue.queue_b",
+						"genesyscloud_business_rules_schema.test_schema",
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					// Column defaults — these worked before the fix because their
+					// resolver paths had no wildcards. Asserting them ensures the
+					// fix didn't regress the existing behavior.
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"columns", "0", "inputs", "0", "defaults_to", "0", "value"},
+						expectedQueueARef,
+					),
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"columns", "0", "outputs", "0", "defaults_to", "0", "value"},
+						expectedQueueBRef,
+					),
+					// Row literals — these are the regression assertions. Against
+					// the pre-fix exporter they hold raw UUIDs.
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"rows", "0", "inputs", "0", "literal", "0", "value"},
+						expectedQueueARef,
+					),
+					assertDecisionTableQueueReference(
+						configPath, tableName,
+						[]string{"rows", "0", "outputs", "0", "literal", "0", "value"},
+						expectedQueueBRef,
+					),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// businessRulesDecisionTableExportFtEnabled mirrors the skip-check used by the
+// resource's own acceptance tests so this test bails cleanly on orgs without
+// the decision table feature toggle. Inlined here to avoid exporting a
+// test-only helper from the business_rules_decision_table package.
+//
+// The tfexporter package's TestMain does not authorize the SDK (unlike the
+// business_rules_decision_table package), so we authorize explicitly here -
+// otherwise the probe runs against an unauthenticated client and every org
+// looks like it has the feature disabled.
+func businessRulesDecisionTableExportFtEnabled(t *testing.T) bool {
+	t.Helper()
+	if _, err := provider.AuthorizeSdk(); err != nil {
+		t.Logf("Failed to authorize SDK for decision table feature probe: %v", err)
+		return false
+	}
+	businessRulesAPI := platformclientv2.NewBusinessRulesApi()
+	_, resp, err := businessRulesAPI.GetBusinessrulesDecisiontables("", "", nil, "")
+	if err != nil {
+		t.Logf("Decision table probe error: %v", err)
+		return false
+	}
+	if resp == nil || resp.StatusCode != 200 {
+		status := 0
+		if resp != nil {
+			status = resp.StatusCode
+		}
+		t.Logf("Decision table probe returned status %d", status)
+		return false
+	}
+	return true
+}
+
+// buildDecisionTableQueueExportBaseConfig produces a minimal decision table
+// scenario: a schema with two businessRulesQueue properties, two queues, and a
+// single-row table whose columns and row reference both queues. Two queues
+// (rather than one) are used so the test can independently verify the inputs
+// and outputs branches resolve to the correct queue reference rather than
+// accidentally matching the same value at both ends.
+func buildDecisionTableQueueExportBaseConfig(schemaName, queueAName, queueBName, tableName string) string {
+	return fmt.Sprintf(`
+data "genesyscloud_auth_division_home" "home" {}
+
+resource "genesyscloud_routing_queue" "queue_a" {
+  name        = "%[2]s"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  description = "Queue A for decision table export round-trip test"
+}
+
+resource "genesyscloud_routing_queue" "queue_b" {
+  name        = "%[3]s"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  description = "Queue B for decision table export round-trip test"
+}
+
+resource "genesyscloud_business_rules_schema" "test_schema" {
+  enabled     = true
+  name        = "%[1]s"
+  description = "Schema for decision table export round-trip test"
+  properties = jsonencode({
+    "transfer_queue" : {
+      "allOf" : [{ "$ref" : "#/definitions/businessRulesQueue" }],
+      "title" : "transfer_queue",
+      "description" : "Input column queue reference"
+    },
+    "second_queue" : {
+      "allOf" : [{ "$ref" : "#/definitions/businessRulesQueue" }],
+      "title" : "second_queue",
+      "description" : "Output column queue reference"
+    }
+  })
+}
+
+resource "genesyscloud_business_rules_decision_table" "test_table" {
+  name        = "%[4]s"
+  description = "Decision table for export round-trip test"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  schema_id   = genesyscloud_business_rules_schema.test_schema.id
+
+  columns {
+    inputs {
+      defaults_to {
+        value = genesyscloud_routing_queue.queue_a.id
+      }
+      expression {
+        contractual {
+          schema_property_key = "transfer_queue"
+          contractual {
+            schema_property_key = "queue"
+            contractual {
+              schema_property_key = "id"
+            }
+          }
+        }
+        comparator = "Equals"
+      }
+    }
+
+    outputs {
+      defaults_to {
+        value = genesyscloud_routing_queue.queue_b.id
+      }
+      value {
+        schema_property_key = "second_queue"
+        properties {
+          schema_property_key = "queue"
+          properties {
+            schema_property_key = "id"
+          }
+        }
+      }
+    }
+  }
+
+  rows {
+    inputs {
+      literal {
+        value = genesyscloud_routing_queue.queue_a.id
+        type  = "string"
+      }
+    }
+    outputs {
+      literal {
+        value = genesyscloud_routing_queue.queue_b.id
+        type  = "string"
+      }
+    }
+  }
+}
+`, schemaName, queueAName, queueBName, tableName)
+}
+
+// assertDecisionTableQueueReference walks the exported JSON config and asserts
+// that the value at the given nested path on the named decision table equals
+// expectedRef AND is not a raw UUID. The path is the sequence of JSON keys
+// and array indices (as strings) under
+// resource.genesyscloud_business_rules_decision_table.<tableName>.
+//
+// The not-a-UUID check is deliberately separate from the equality check so
+// failures surface the symptom clearly: "we found a raw UUID where a reference
+// was expected" is far more diagnostic than "got X, want Y" for this class of
+// bug.
+func assertDecisionTableQueueReference(filename, tableName string, path []string, expectedRef string) resource.TestCheckFunc {
+	uuidPattern := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	return func(state *terraform.State) error {
+		if _, err := os.Stat(filename); err != nil {
+			return fmt.Errorf("export file not found at %s: %v", filename, err)
+		}
+		exportData, err := util.LoadJsonFileToMap(filename)
+		if err != nil {
+			return fmt.Errorf("failed to load export file %s: %v", filename, err)
+		}
+
+		resources, ok := exportData["resource"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf(`exported config missing top-level "resource" map`)
+		}
+		tables, ok := resources["genesyscloud_business_rules_decision_table"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("no genesyscloud_business_rules_decision_table resources exported")
+		}
+		table, ok := tables[tableName].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("decision table %q was not exported (found tables: %v)", tableName, keysOf(tables))
+		}
+
+		var current interface{} = table
+		for i, segment := range path {
+			switch typed := current.(type) {
+			case map[string]interface{}:
+				current, ok = typed[segment]
+				if !ok {
+					return fmt.Errorf("path segment %q (index %d) not found under decision table %q; remaining path: %v", segment, i, tableName, path[i:])
+				}
+			case []interface{}:
+				idx, parseErr := strconv.Atoi(segment)
+				if parseErr != nil {
+					return fmt.Errorf("path segment %q (index %d) is not a valid array index but the current node is an array", segment, i)
+				}
+				if idx < 0 || idx >= len(typed) {
+					return fmt.Errorf("array index %d out of bounds (len=%d) at path segment %d", idx, len(typed), i)
+				}
+				current = typed[idx]
+			default:
+				return fmt.Errorf("cannot descend into %T at path segment %q (index %d)", current, segment, i)
+			}
+		}
+
+		got, ok := current.(string)
+		if !ok {
+			return fmt.Errorf("value at path %v is %T, expected string", path, current)
+		}
+		if uuidPattern.MatchString(got) {
+			return fmt.Errorf("value at path %v on table %q is a raw UUID %q — the QueueIdResolver did not resolve it to a ${genesyscloud_routing_queue.<label>.id} reference. This is the queue-in-rows regression.", path, tableName, got)
+		}
+		if got != expectedRef {
+			return fmt.Errorf("value at path %v on table %q: got %q, want %q", path, tableName, got, expectedRef)
+		}
+		return nil
+	}
+}
+
+// keysOf returns the keys of a string-keyed map, used purely for error
+// messages so failures hint at what was exported when the expected table
+// is missing.
+func keysOf(m map[string]interface{}) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }

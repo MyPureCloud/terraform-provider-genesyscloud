@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 func getAllPhones(ctx context.Context, sdkConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -47,18 +47,31 @@ func createPhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Creating phone %s", *phoneConfig.Name)
 
+	webRtcUserId := d.Get("web_rtc_user_id").(string)
+	if webRtcUserId != "" {
+		if adopted, diagErr := adoptExistingWebRtcPhone(ctx, d, meta, pp, webRtcUserId); diagErr != nil || adopted {
+			return diagErr
+		}
+	}
+
 	diagErr := util.RetryWhen(util.IsStatus404, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		phone, resp, err := pp.createPhone(ctx, phoneConfig)
 		if err != nil {
+			if webRtcUserId != "" && isWebRtcPhoneAlreadyAssignedError(err) {
+				if adopted, diagErr := adoptExistingWebRtcPhone(ctx, d, meta, pp, webRtcUserId); diagErr != nil {
+					return resp, diagErr
+				} else if adopted {
+					return resp, nil
+				}
+			}
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create phone %s error: %s", *phoneConfig.Name, err), resp)
 		}
 		log.Printf("Completed call to create phone name %s with status code %d, correlation id %s", *phoneConfig.Name, resp.StatusCode, resp.CorrelationID)
 
 		d.SetId(*phone.Id)
 
-		webRtcUserId := d.Get("web_rtc_user_id")
 		if webRtcUserId != "" {
-			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string), *phone.Id)
+			diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId, *phone.Id)
 			if diagErr != nil {
 				return resp, diagErr
 			}
@@ -157,9 +170,8 @@ func updatePhone(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	log.Printf("Updated phone %s", *phone.Id)
 
-	webRtcUserId := d.Get("web_rtc_user_id")
-	if webRtcUserId != "" {
-		diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId.(string), *phone.Id)
+	if webRtcUserId := d.Get("web_rtc_user_id").(string); webRtcUserId != "" {
+		diagErr := assignUserToWebRtcPhone(ctx, pp, webRtcUserId, *phone.Id)
 		if diagErr != nil {
 			return diagErr
 		}

@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
+
+// Export-time resource caching is intentionally not used here.
+// GET /api/v2/routing/skillgroups returns Skillgroupdefinition entities, while
+// GET /api/v2/routing/skillgroups/{id} returns Skillgroup with additional fields such as
+// skillConditions and status. A shared per-ID cache cannot safely merge or substitute between
+// these types without losing data required for read/export.
 
 type getAllRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, name string) (*[]platformclientv2.Skillgroupdefinition, *platformclientv2.APIResponse, error)
 type createRoutingSkillGroupsFunc func(ctx context.Context, p *routingSkillGroupsProxy, skillGroupWithMemberDivisions *platformclientv2.Skillgroupwithmemberdivisions) (*platformclientv2.Skillgroupwithmemberdivisions, *platformclientv2.APIResponse, error)
@@ -96,6 +103,9 @@ func (p *routingSkillGroupsProxy) getRoutingSkillGroupsMemberDivison(ctx context
 
 // getAllRoutingSkillGroupsFn is the implementation for retrieving all routing skill groups in Genesys Cloud
 func getAllRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, name string) (*[]platformclientv2.Skillgroupdefinition, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var (
 		allSkillGroups []platformclientv2.Skillgroupdefinition
 		pageSize       = 100
@@ -104,7 +114,7 @@ func getAllRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 		response       *platformclientv2.APIResponse
 	)
 
-	for i := 0; ; i++ {
+	for {
 		skillGroups, resp, getErr := p.routingApi.GetRoutingSkillgroups(pageSize, name, after, "")
 		response = resp
 		if getErr != nil {
@@ -134,16 +144,25 @@ func getAllRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy,
 
 // createRoutingSkillGroupsFn is an implementation function for creating a Genesys Cloud routing skill groups
 func createRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, routingSkillGroups *platformclientv2.Skillgroupwithmemberdivisions) (*platformclientv2.Skillgroupwithmemberdivisions, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PostRoutingSkillgroups(*routingSkillGroups)
 }
 
 // getRoutingSkillGroupsByIdFn is an implementation of the function to get a Genesys Cloud routing skill groups by Id
 func getRoutingSkillGroupsByIdFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.GetRoutingSkillgroup(id)
 }
 
 // getRoutingSkillGroupsIdByNameFn is an implementation of the function to get a Genesys Cloud routing skill groups by name
 func getRoutingSkillGroupsIdByNameFn(ctx context.Context, p *routingSkillGroupsProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	skillGroup, resp, err := getAllRoutingSkillGroupsFn(ctx, p, name)
 	if err != nil {
 		return "", resp, false, err
@@ -165,18 +184,30 @@ func getRoutingSkillGroupsIdByNameFn(ctx context.Context, p *routingSkillGroupsP
 
 // updateRoutingSkillGroupsFn is an implementation of the function to update a Genesys Cloud routing skill groups
 func updateRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, id string, routingSkillGroups *platformclientv2.Skillgroup) (*platformclientv2.Skillgroup, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PatchRoutingSkillgroup(id, *routingSkillGroups)
 }
 
 // deleteRoutingSkillGroupsFn is an implementation function for deleting a Genesys Cloud routing skill groups
 func deleteRoutingSkillGroupsFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.DeleteRoutingSkillgroup(id)
 }
 
 func createRoutingSkillGroupsMemberDivisionFn(ctx context.Context, p *routingSkillGroupsProxy, id string, reqBody platformclientv2.Skillgroupmemberdivisions) (*platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.PostRoutingSkillgroupMembersDivisions(id, reqBody)
 }
 
 func getRoutingSkillGroupsMemberDivisonFn(ctx context.Context, p *routingSkillGroupsProxy, id string) (*platformclientv2.Skillgroupmemberdivisionlist, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	return p.routingApi.GetRoutingSkillgroupMembersDivisions(id, "")
 }

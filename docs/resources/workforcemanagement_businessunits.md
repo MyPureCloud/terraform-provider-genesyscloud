@@ -6,16 +6,105 @@ description: |-
 ---
 # genesyscloud_workforcemanagement_businessunits (Resource)
 
+<!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
+
 Genesys Cloud workforce management business units
 
 ## API Usage
+
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-* [POST /api/v2/workforcemanagement/businessunits](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#post-api-v2-workforcemanagement-businessunits)
-* [GET /api/v2/workforcemanagement/businessunits](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#get-api-v2-workforcemanagement-businessunits)
-* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#get-api-v2-workforcemanagement-businessunits--businessUnitId-)
-* [PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#patch-api-v2-workforcemanagement-businessunits--businessUnitId-)
-* [DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.mypurecloud.com/api/rest/v2/workforcemanagement/#delete-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [GET /api/v2/workforcemanagement/businessunits](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-workforcemanagement-businessunits)
+* [POST /api/v2/workforcemanagement/businessunits](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-workforcemanagement-businessunits)
+* [DELETE /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [GET /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-workforcemanagement-businessunits--businessUnitId-)
+* [PATCH /api/v2/workforcemanagement/businessunits/{businessUnitId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-workforcemanagement-businessunits--businessUnitId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `coaching:appointment:add`
+* `coaching:appointment:edit`
+* `learning:assignment:add`
+* `learning:assignment:reschedule`
+* `wfm:activityCode:add`
+* `wfm:activityCode:delete`
+* `wfm:activityCode:edit`
+* `wfm:activityCode:view`
+* `wfm:agent:edit`
+* `wfm:agent:view`
+* `wfm:agentSchedule:view`
+* `wfm:agentSchedulingPreferences:edit`
+* `wfm:agentSchedulingPreferencesQuery:view`
+* `wfm:agentSchedulingPreferencesSettings:view`
+* `wfm:agentShiftTradeRequest:participate`
+* `wfm:agentTimeOffRequest:submit`
+* `wfm:businessUnit:add`
+* `wfm:businessUnit:delete`
+* `wfm:businessUnit:edit`
+* `wfm:businessUnit:view`
+* `wfm:historicalAdherence:view`
+* `wfm:intraday:view`
+* `wfm:managementUnit:add`
+* `wfm:managementUnit:delete`
+* `wfm:managementUnit:edit`
+* `wfm:managementUnit:view`
+* `wfm:planningGroup:add`
+* `wfm:planningGroup:delete`
+* `wfm:planningGroup:edit`
+* `wfm:planningGroup:view`
+* `wfm:publishedSchedule:view`
+* `wfm:realtimeAdherence:view`
+* `wfm:schedule:add`
+* `wfm:schedule:delete`
+* `wfm:schedule:edit`
+* `wfm:schedule:generate`
+* `wfm:schedule:view`
+* `wfm:schedulingPreferencesQuery:view`
+* `wfm:schedulingPreferencesSettings:edit`
+* `wfm:schedulingPreferencesSettings:view`
+* `wfm:serviceGoalTemplate:add`
+* `wfm:serviceGoalTemplate:delete`
+* `wfm:serviceGoalTemplate:edit`
+* `wfm:serviceGoalTemplate:view`
+* `wfm:shiftTradeRequest:edit`
+* `wfm:shiftTradeRequest:view`
+* `wfm:shortTermForecast:add`
+* `wfm:shortTermForecast:delete`
+* `wfm:shortTermForecast:edit`
+* `wfm:shortTermForecast:view`
+* `wfm:shrinkage:view`
+* `wfm:staffingGroup:add`
+* `wfm:staffingGroup:delete`
+* `wfm:staffingGroup:edit`
+* `wfm:staffingGroup:view`
+* `wfm:timeOffLimit:add`
+* `wfm:timeOffLimit:delete`
+* `wfm:timeOffLimit:edit`
+* `wfm:timeOffLimit:view`
+* `wfm:timeOffPlan:add`
+* `wfm:timeOffPlan:delete`
+* `wfm:timeOffPlan:edit`
+* `wfm:timeOffPlan:view`
+* `wfm:timeOffRequest:add`
+* `wfm:timeOffRequest:edit`
+* `wfm:timeOffRequest:view`
+* `wfm:workPlan:add`
+* `wfm:workPlan:delete`
+* `wfm:workPlan:edit`
+* `wfm:workPlan:view`
+* `wfm:workPlanRotation:add`
+* `wfm:workPlanRotation:delete`
+* `wfm:workPlanRotation:edit`
+* `wfm:workPlanRotation:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `coaching`
+* `learning`
+* `workforce-management`
+* `workforce-management:readonly`
 
 
 ## Example Usage

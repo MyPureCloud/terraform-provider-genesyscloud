@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -23,6 +23,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *outboundCampaignProxy
+
+var campaignCache = rc.NewResourceCache[platformclientv2.Campaign]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createOutboundCampaignFunc func(ctx context.Context, p *outboundCampaignProxy, campaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error)
@@ -48,7 +50,7 @@ type outboundCampaignProxy struct {
 // newOutboundCampaignProxy initializes the outbound campaign proxy with all of the data needed to communicate with Genesys Cloud
 func newOutboundCampaignProxy(clientConfig *platformclientv2.Configuration) *outboundCampaignProxy {
 	api := platformclientv2.NewOutboundApiWithConfig(clientConfig)
-	campaignCache := rc.NewResourceCache[platformclientv2.Campaign]()
+
 	return &outboundCampaignProxy{
 		clientConfig:                    clientConfig,
 		outboundApi:                     api,
@@ -136,8 +138,12 @@ func (p *outboundCampaignProxy) turnOffCampaign(ctx context.Context, campaignId 
 }
 
 // createOutboundCampaignFn is an implementation function for creating a Genesys Cloud outbound campaign
-func createOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
-	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, false)
+func createOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, outboundCampaign *platformclientv2.Campaign) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	campaign, resp, err := p.outboundApi.PostOutboundCampaigns(*outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to create campaign %s", err)
 	}
@@ -145,7 +151,10 @@ func createOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy, outbo
 }
 
 // getAllOutboundCampaignFn is the implementation for retrieving all outbound campaign in Genesys Cloud
-func getAllOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy) (*[]platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
+func getAllOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy) (*[]platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	var allCampaigns []platformclientv2.Campaign
 	const pageSize = 100
 
@@ -182,6 +191,9 @@ func getAllOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy) (*[]p
 
 // getOutboundCampaignIdByNameFn is an implementation of the function to get a Genesys Cloud outbound campaign by name
 func getOutboundCampaignIdByNameFn(ctx context.Context, p *outboundCampaignProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	campaigns, resp, err := getAllOutboundCampaignFn(ctx, p)
 	if err != nil {
 		return "", false, resp, err
@@ -200,7 +212,10 @@ func getOutboundCampaignIdByNameFn(ctx context.Context, p *outboundCampaignProxy
 }
 
 // getOutboundCampaignByIdFn is an implementation of the function to get a Genesys Cloud outbound campaign by Id
-func getOutboundCampaignByIdFn(_ context.Context, p *outboundCampaignProxy, id string) (outboundCampaign *platformclientv2.Campaign, response *platformclientv2.APIResponse, err error) {
+func getOutboundCampaignByIdFn(ctx context.Context, p *outboundCampaignProxy, id string) (outboundCampaign *platformclientv2.Campaign, response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	campaign, resp, err := p.outboundApi.GetOutboundCampaign(id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to retrieve campaign by id %s: %s", id, err)
@@ -210,6 +225,9 @@ func getOutboundCampaignByIdFn(_ context.Context, p *outboundCampaignProxy, id s
 
 // updateOutboundCampaignFn is an implementation of the function to update a Genesys Cloud outbound campaign
 func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string, outboundCampaign *platformclientv2.Campaign, onlyStatus bool) (*platformclientv2.Campaign, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	campaign, resp, err := getOutboundCampaignByIdFn(ctx, p, id)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to campaign by id %s: %s", id, err)
@@ -219,7 +237,8 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 		outboundCampaign.CampaignStatus = campaign.CampaignStatus
 	}
 	outboundCampaign.Version = campaign.Version
-	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, false)
+	// Use useMaxCallsPerAgentDecimal=true to support decimal values for max_calls_per_agent
+	outboundCampaign, resp, err = p.outboundApi.PutOutboundCampaign(id, *outboundCampaign, true)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to update campaign: %s", err)
 	}
@@ -227,7 +246,10 @@ func updateOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id 
 }
 
 // deleteOutboundCampaignFn is an implementation function for deleting a Genesys Cloud outbound campaign
-func deleteOutboundCampaignFn(_ context.Context, p *outboundCampaignProxy, id string) (response *platformclientv2.APIResponse, err error) {
+func deleteOutboundCampaignFn(ctx context.Context, p *outboundCampaignProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
 	_, resp, err := p.outboundApi.DeleteOutboundCampaign(id)
 	if err != nil {
 		return resp, fmt.Errorf("failed to delete campaign: %s", err)

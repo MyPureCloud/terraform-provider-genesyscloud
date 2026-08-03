@@ -1,5 +1,11 @@
 package outbound_digitalruleset
 
+// @team: Outbound Digital
+// @chat: #genesys-cloud-digital-campaigns
+// @pm: Marudhu Panidan
+// @jira: OD
+// @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -370,12 +376,12 @@ var (
 		Schema: map[string]*schema.Schema{
 			`sms_content_template_id`: {
 				Description: `A string of sms contentTemplateId.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 			`email_content_template_id`: {
 				Description: `A string of email contentTemplateId.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -507,7 +513,7 @@ func ResourceOutboundDigitalruleset() *schema.Resource {
 			},
 			`rules`: {
 				Description: `The list of rules.`,
-				Required:    true,
+				Optional:    true,
 				Type:        schema.TypeList,
 				Elem:        digitalRuleResource,
 			},
@@ -523,6 +529,20 @@ func OutboundDigitalrulesetExporter() *resourceExporter.ResourceExporter {
 			"contact_list_id": {
 				RefType: "genesyscloud_outbound_contact_list",
 			},
+			"rules.actions.set_content_template_action_settings.sms_content_template_id": {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+			"rules.actions.set_content_template_action_settings.email_content_template_id": {
+				RefType: "genesyscloud_responsemanagement_response",
+			},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"contact_list_id": resourceExporter.OmitUnresolvedRefResolver(),
+			"rules.actions.set_content_template_action_settings.sms_content_template_id":   resourceExporter.OmitUnresolvedRefResolver(),
+			"rules.actions.set_content_template_action_settings.email_content_template_id": resourceExporter.OmitUnresolvedRefResolver(),
+		},
+		RemoveIfMissing: map[string][]string{
+			"rules.actions.set_content_template_action_settings": {"sms_content_template_id", "email_content_template_id"},
 		},
 		AllowZeroValues: []string{
 			"rules.order",

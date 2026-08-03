@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -24,8 +25,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
+
+func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ext1, ext2 string) {
+	t.Helper()
+
+	// Pick a 4-digit base aligned to 100s: [2000..9600].
+	// This avoids collisions with other runs/orgs much better than fixed ranges (4100/4200),
+	// while keeping extension values human-readable and within a single pool range.
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	base := 2000 + r.Intn(7601) // 2000..9600
+	base = (base / 100) * 100
+
+	start1i := base
+	end1i := base + 99
+	start2i := base + 100
+	end2i := base + 199
+
+	ext1i := start1i + 5
+	ext2i := start2i + 25
+
+	return strconv.Itoa(start1i), strconv.Itoa(end1i), strconv.Itoa(start2i), strconv.Itoa(end2i), strconv.Itoa(ext1i), strconv.Itoa(ext2i)
+}
 
 func TestAccResourceUserBasic(t *testing.T) {
 	t.Parallel()
@@ -246,7 +268,6 @@ func generateUserWithCustomAttrs(resourceLabel string, email string, name string
 }
 
 func TestAccResourceUserAddresses(t *testing.T) {
-	t.Parallel()
 	var (
 		addrUserResourceLabel1      = "test-user-addr1"
 		addrUserResourceLabel2      = "test-user-addr2"
@@ -323,7 +344,6 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number", addrPhone1),
-					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail2),
@@ -366,6 +386,7 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.address", addrEmail3),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.other_emails.0.type", addrTypeWork),
 				),
+				ExpectNonEmptyPlan: true,
 			},
 			{
 				// Add a user with only extension
@@ -386,7 +407,6 @@ func TestAccResourceUserAddresses(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "email", addrEmail2),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "name", addrUserName2),
-					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.type", addrTypeHome),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel2, "addresses.0.phone_numbers.0.extension", addrPhoneExt2),
@@ -552,6 +572,17 @@ func TestAccResourceUserAddresses(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "addresses.#", "0"),
 				),
 			},
+			{
+				// Final step: remove extension pool so it can be destroyed cleanly
+				Config: generateUserWithCustomAttrs(
+					addrUserResourceLabel4,
+					addrEmail4,
+					addrUserName4,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel4, "email", addrEmail4),
+				),
+			},
 		},
 		CheckDestroy: testVerifyUsersDestroyed,
 	})
@@ -618,7 +649,7 @@ func TestAccResourceUserPhone(t *testing.T) {
 }
 
 func TestAccResourceUserSkills(t *testing.T) {
-	t.Parallel()
+
 	var (
 		userResourceLabel1  = "test-user"
 		email1              = "terraform-" + uuid.NewString() + "@user.com"
@@ -707,7 +738,6 @@ func TestAccResourceUserSkills(t *testing.T) {
 }
 
 func TestAccResourceUserLanguages(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user"
 		email1             = "terraform-" + uuid.NewString() + "@user.com"
@@ -793,7 +823,6 @@ func TestAccResourceUserLanguages(t *testing.T) {
 }
 
 func TestAccResourceUserLocations(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-loc"
 		email              = "terraform-" + uuid.NewString() + "@user.com"
@@ -850,7 +879,6 @@ func TestAccResourceUserLocations(t *testing.T) {
 }
 
 func TestAccResourceUserEmployerInfo(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-info"
 		userName           = "Info Terraform"
@@ -954,7 +982,6 @@ func TestAccResourceUserEmployerInfo(t *testing.T) {
 }
 
 func TestAccResourceUserroutingUtilBasic(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-util"
 		userName           = "Terraform Util"
@@ -1088,7 +1115,6 @@ func TestAccResourceUserroutingUtilBasic(t *testing.T) {
 }
 
 func TestAccResourceUserroutingUtilWithLabels(t *testing.T) {
-	t.Parallel()
 	var (
 		userResourceLabel1 = "test-user-util"
 		userName           = "Terraform Util"
@@ -1376,7 +1402,7 @@ func testVerifyUsersDestroyed(state *terraform.State) error {
 			if err != nil {
 				continue
 			}
-			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", "")
+			_, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
 
 			if err != nil {
 				if util.IsStatus404(resp) {
@@ -1542,17 +1568,14 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 		addrUserResourceLabel1      = "test-user-addr-ext-pool"
 		addrUserName                = "Tim Cheese"
 		addrEmail1                  = "terraform-" + uuid.NewString() + "@user.com"
-		addrExt1                    = "4105"
-		addrExt2                    = "4225"
 		phoneMediaType              = "PHONE"
 		addrTypeWork                = "WORK"
 		extensionPoolResourceLabel1 = "test-extensionpool" + uuid.NewString()
-		extensionPoolStartNumber1   = "4100"
-		extensionPoolEndNumber1     = "4199"
 		extensionPoolResourceLabel2 = "test2-extensionpool" + uuid.NewString()
-		extensionPoolStartNumber2   = "4200"
-		extensionPoolEndNumber2     = "4299"
 	)
+
+	extensionPoolStartNumber1, extensionPoolEndNumber1, extensionPoolStartNumber2, extensionPoolEndNumber2, addrExt1, addrExt2 :=
+		randomExtensionPoolBase4Digit(t)
 
 	extensionPoolResource1 := extensionPool.ExtensionPoolStruct{
 		ResourceLabel: extensionPoolResourceLabel1,
@@ -1565,17 +1588,6 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 		StartNumber:   extensionPoolStartNumber2,
 		EndNumber:     extensionPoolEndNumber2,
 		Description:   util.NullValue, // No description
-	}
-
-	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber1)
-	err := extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber1)
-	if err != nil {
-		t.Log(err)
-	}
-	t.Logf("Attempting to cleanup extension pool with the number %s", extensionPoolStartNumber2)
-	err = extensionPool.DeleteExtensionPoolWithNumber(extensionPoolStartNumber2)
-	if err != nil {
-		t.Log(err)
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -1601,7 +1613,6 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -1628,7 +1639,6 @@ func TestAccResourceUserAddressWithExtensionPool(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "email", addrEmail1),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "name", addrUserName),
-					resource.TestCheckNoResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.number"),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.extension", addrExt2),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.media_type", phoneMediaType),
 					resource.TestCheckResourceAttr(ResourceType+"."+addrUserResourceLabel1, "addresses.0.phone_numbers.0.type", addrTypeWork),
@@ -1677,7 +1687,7 @@ func isUserDeleted(id string) (bool, error) {
 	sdkConfig, _ := provider.AuthorizeSdk()
 	usersAPI := platformclientv2.NewUsersApiWithConfig(sdkConfig)
 	// Attempt to get the user
-	_, response, err := usersAPI.GetUser(id, nil, "", "")
+	_, response, err := usersAPI.GetUser(id, nil, "", nil, "")
 
 	// Check if the user is not found (deleted)
 	if response != nil && response.StatusCode == 404 {

@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v176/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 )
 
 /*
@@ -39,7 +39,7 @@ func getAllAuthRoutingQueueOutboundEmailAddress(ctx context.Context, clientConfi
 	}
 
 	for _, queue := range *queues {
-		if queue.OutboundEmailAddress != nil && !isQueueEmailAddressEmpty(*queue.OutboundEmailAddress) {
+		if queue.OutboundEmailAddress != nil && !isQueueEmailAddressEmpty(queue.OutboundEmailAddress) {
 			resources[*queue.Id] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-email-address"}
 		}
 	}
