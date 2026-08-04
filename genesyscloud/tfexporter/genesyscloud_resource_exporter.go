@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1062,6 +1063,12 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 	tflog.Info(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Starting dependency resolution for flows")
 
 	if g.addDependsOn {
+		// Verify the dependency tracking index is operational before querying consumed resources.
+		// Without this check, the API may return stale or incomplete dependency data.
+		if diagErr := g.ensureDependencyTrackingOperational(); diagErr != nil {
+			return diagErr
+		}
+
 		tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution enabled, processing dependencies")
 		filterList, resources, err := g.processAndBuildDependencies()
 		if err != nil {
@@ -1086,6 +1093,69 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 		return nil
 	}
 	tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution disabled (addDependsOn=false)")
+	return nil
+}
+
+// ensureDependencyTrackingOperational checks if the Architect dependency tracking index
+// is in an OPERATIONAL state before querying consumed resources. If the index is not ready,
+// it triggers a rebuild and polls until it becomes operational.
+func (g *GenesysCloudResourceExporter) ensureDependencyTrackingOperational() diag.Diagnostics {
+	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	status, _, err := architectApi.GetArchitectDependencytrackingBuild()
+	if err != nil {
+		tflog.Warn(g.ctx, fmt.Sprintf("Failed to check dependency tracking status: %v, proceeding anyway", err))
+		return nil
+	}
+
+	if status != nil && status.Status != nil && *status.Status == "OPERATIONAL" {
+		tflog.Info(g.ctx, "Dependency tracking index is OPERATIONAL")
+		return nil
+	}
+
+	currentStatus := "unknown"
+	if status != nil && status.Status != nil {
+		currentStatus = *status.Status
+	}
+	tflog.Info(g.ctx, fmt.Sprintf("Dependency tracking index status is %s, triggering rebuild", currentStatus))
+
+	_, err = architectApi.PostArchitectDependencytrackingBuild()
+	if err != nil {
+		tflog.Warn(g.ctx, fmt.Sprintf("Failed to trigger dependency tracking rebuild: %v, proceeding anyway", err))
+		return nil
+	}
+
+	// Poll until OPERATIONAL with a timeout
+	maxAttempts := 30
+	for i := 0; i < maxAttempts; i++ {
+		time.Sleep(10 * time.Second)
+
+		status, _, err = architectApi.GetArchitectDependencytrackingBuild()
+		if err != nil {
+			tflog.Warn(g.ctx, fmt.Sprintf("Failed to get dependency tracking build status: %v, proceeding anyway", err))
+			return nil
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				tflog.Info(g.ctx, "Dependency tracking rebuild complete")
+				return nil
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				tflog.Debug(g.ctx, fmt.Sprintf("Dependency tracking status: %s, waiting...", *status.Status))
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				tflog.Warn(g.ctx, fmt.Sprintf("Dependency tracking rebuild failed with status: %s, proceeding anyway", *status.Status))
+				return nil
+			default:
+				tflog.Warn(g.ctx, fmt.Sprintf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status))
+				return nil
+			}
+		}
+	}
+
+	tflog.Warn(g.ctx, "Dependency tracking rebuild timed out, proceeding anyway")
 	return nil
 }
 
@@ -1130,6 +1200,14 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	// Thread-safe read of resources
 	resourcesList := g.getResources()
+
+	// Sort resources by ID to ensure deterministic processing order across runs.
+	// Without this, the order depends on goroutine scheduling during resource retrieval,
+	// which causes non-deterministic depends_on output.
+	sort.Slice(resourcesList, func(i, j int) bool {
+		return resourcesList[i].State.ID < resourcesList[j].State.ID
+	})
+
 	for _, resourceKeys := range resourcesList {
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Processing resource: type=%s, id=%s, label=%s", resourceKeys.Type, resourceKeys.State.ID, resourceKeys.BlockLabel))
 
