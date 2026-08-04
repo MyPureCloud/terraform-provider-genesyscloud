@@ -58,7 +58,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
 		var blockLabelParts []string
 
-		if externalContact.ExternalOrganization != nil {
+		if false {
 			externalOrg, resp, err := ep.getExternalContactsOrganizationById(ctx, *externalContact.ExternalOrganization.Id)
 			if err != nil {
 				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get external contact organization %s: %v", *externalContact.ExternalOrganization.Id, err), resp)
@@ -117,7 +117,7 @@ func createExternalContact(ctx context.Context, d *schema.ResourceData, meta int
 // readExternalContacts is used by the externalcontacts_contact resource to read an external contact from genesys cloud.
 func readExternalContact(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	ep := getExternalContactsContactsProxy(sdkConfig)
+	ep := newExternalContactsContactsProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceExternalContact(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading external contact %s", d.Id())
