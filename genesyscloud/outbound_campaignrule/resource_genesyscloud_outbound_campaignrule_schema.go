@@ -164,10 +164,10 @@ func ResourceOutboundCampaignrule() *schema.Resource {
 	campaignRuleParameters := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`operator`: {
-				Description:  `The operator for comparison. Required for a CampaignRuleCondition.`,
+				Description:  `The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"equals", "greaterThan", "greaterThanEqualTo", "lessThan", "lessThanEqualTo"}, true),
+				ValidateFunc: validation.StringInSlice([]string{"equals", "greaterThan", "greaterThanEqualTo", "lessThan", "lessThanEqualTo", "before", "after", "between", "in"}, true),
 			},
 			`value`: {
 				Description: `The value for comparison. Required for a CampaignRuleCondition.`,

@@ -129,7 +129,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -174,7 +174,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -216,7 +216,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
