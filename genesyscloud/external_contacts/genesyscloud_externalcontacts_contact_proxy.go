@@ -141,7 +141,7 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 			return nil, resp, fmt.Errorf("failed to get external contacts: %v", err)
 		}
 		response = resp
-		if externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
+		if externalContacts == nil || externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
 			break
 		}
 
