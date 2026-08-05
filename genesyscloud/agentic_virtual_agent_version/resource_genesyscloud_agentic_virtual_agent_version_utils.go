@@ -50,6 +50,7 @@ type AgenticVirtualAgentVersionUpdate struct {
 type AgenticVirtualAgentVersionDefinition struct {
 	Role         string                                `json:"role"`
 	Instructions []string                              `json:"instructions"`
+	Model        string                                `json:"model,omitempty"`
 	Guardrails   *AgenticVirtualAgentGuardrails        `json:"guardrails,omitempty"`
 	Tools        []AgenticVirtualAgentTool             `json:"tools,omitempty"`
 	Types        []AgenticVirtualAgentTypeDefinition   `json:"types,omitempty"`

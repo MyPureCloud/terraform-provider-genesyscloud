@@ -67,6 +67,13 @@ func definitionResource() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 			},
+			"model": {
+				Description:  "The model powering the virtual agent version. Where a new model version is available, Preview can be used to opt in.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Stable", "Preview"}, false),
+			},
 			"instructions": {
 				Description: "List of instructions, rules, or guidelines the virtual agent must always follow.",
 				Type:        schema.TypeList,

@@ -151,6 +151,11 @@ func buildDefinitionFromResourceData(d *schema.ResourceData) *AgenticVirtualAgen
 		Instructions: expandStringList(defMap["instructions"].([]interface{})),
 	}
 
+	// Model
+	if v, ok := defMap["model"].(string); ok && v != "" {
+		def.Model = v
+	}
+
 	// Guardrails
 	if v, ok := defMap["guardrails"].([]interface{}); ok && len(v) > 0 {
 		def.Guardrails = expandGuardrails(v[0].(map[string]interface{}))
@@ -445,6 +450,10 @@ func flattenDefinitionToResourceData(def *AgenticVirtualAgentVersionDefinition) 
 	defMap := map[string]interface{}{
 		"role":         def.Role,
 		"instructions": def.Instructions,
+	}
+
+	if def.Model != "" {
+		defMap["model"] = def.Model
 	}
 
 	if def.Guardrails != nil {
