@@ -88,6 +88,9 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email route and add a queue, language, and skill
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainResourceLabel,
 					domainId,
