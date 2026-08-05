@@ -1,16 +1,9 @@
 package journey_action_map
 
 import (
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
-
-	"testing"
-
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 
@@ -29,62 +22,11 @@ func runDataJourneyActionMapTestCase(t *testing.T, testCaseName string) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps:             generateDataJourneyActionMapTestSteps(testCaseName, testObjectFullName),
+		Steps: testrunner.GenerateDataJourneySourceTestSteps(ResourceType, testCaseName, []resource.TestCheckFunc{
+			resource.ComposeTestCheckFunc(
+				resource.TestCheckResourceAttrPair("data."+testObjectFullName, "id", testObjectFullName, "id"),
+				resource.TestCheckResourceAttr(testObjectFullName, "display_name", testObjectName+"_to_find"),
+			),
+		}),
 	})
-}
-
-// generateDataJourneyActionMapTestSteps generates test steps from the .tf files and appends
-// an import step with a pre-sleep to allow API eventual consistency in Jenkins environments.
-//
-// The test data directory is expected to have two .tf files:
-//   - 01_create_resource.tf: Creates the resource and its dependencies (no data source).
-//     This step allows the resource to stabilize in state before the data source queries it.
-//   - 02_find_by_name.tf: Includes the resource AND the data source lookup.
-//     Check functions are applied only on this step.
-func generateDataJourneyActionMapTestSteps(testCaseName string, testObjectFullName string) []resource.TestStep {
-	testObjectName := testrunner.TestObjectIdPrefix + testCaseName
-	testCasePath := testrunner.GetTestDataPath(testrunner.DataSourceTestType, ResourceType, testCaseName)
-	testCaseDirEntries, _ := os.ReadDir(testCasePath)
-
-	var testSteps []resource.TestStep
-	for _, entry := range testCaseDirEntries {
-		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".tf") {
-			stepFilePath := filepath.Join(testCasePath, entry.Name())
-			fileContent, _ := os.ReadFile(stepFilePath)
-			config := strings.ReplaceAll(string(fileContent), "-TEST-CASE-", testCaseName)
-
-			step := resource.TestStep{
-				PreConfig: func() { log.Printf("Executing test step config => %s", stepFilePath) },
-				Config:    config,
-			}
-
-			// Apply check functions only on the data source step (02_find_by_name.tf)
-			if strings.Contains(entry.Name(), "find_by_name") {
-				step.PreConfig = func() {
-					log.Printf("Waiting for API consistency before data source step for %s", testCaseName)
-					time.Sleep(20 * time.Second)
-					log.Printf("Executing test step config => %s", stepFilePath)
-				}
-				step.Check = resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair("data."+testObjectFullName, "id", testObjectFullName, "id"),
-					resource.TestCheckResourceAttr(testObjectFullName, "display_name", testObjectName+"_to_find"),
-				)
-			}
-
-			testSteps = append(testSteps, step)
-		}
-	}
-	log.Printf("Generated %d test steps for testcase => %s", len(testSteps), testCasePath)
-
-	// Import step with a sleep to allow API eventual consistency.
-	testSteps = append(testSteps, resource.TestStep{
-		PreConfig: func() {
-			log.Printf("Waiting for API consistency before import step for %s", testCaseName)
-			time.Sleep(20 * time.Second)
-		},
-		ResourceName:      ResourceType + "." + testrunner.TestObjectIdPrefix + testCaseName,
-		ImportState:       true,
-		ImportStateVerify: true,
-	})
-	return testSteps
 }
