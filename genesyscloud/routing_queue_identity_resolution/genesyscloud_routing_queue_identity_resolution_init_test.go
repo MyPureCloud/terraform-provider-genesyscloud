@@ -5,12 +5,17 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
 
-var providerDataSources map[string]*schema.Resource
-var providerResources map[string]*schema.Resource
+var (
+	sdkConfig           *platformclientv2.Configuration
+	providerDataSources map[string]*schema.Resource
+	providerResources   map[string]*schema.Resource
+)
 
 type registerTestInstance struct {
 	resourceMapMutex   sync.RWMutex
@@ -33,6 +38,8 @@ func (r *registerTestInstance) registerTestDataSources() {
 }
 
 func initTestResources() {
+	sdkConfig = provider.SdkConfigurationForTests()
+
 	providerDataSources = make(map[string]*schema.Resource)
 	providerResources = make(map[string]*schema.Resource)
 

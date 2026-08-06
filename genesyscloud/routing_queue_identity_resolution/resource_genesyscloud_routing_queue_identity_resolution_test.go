@@ -148,7 +148,7 @@ func verifyIdentityResolutionConfig(queueResourcePath string, resolveIdentities 
 			expectedDivisionId = divisionResource.Primary.ID
 		}
 
-		routingApi := platformclientv2.NewRoutingApi()
+		routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 		config, _, err := routingApi.GetRoutingQueueIdentityresolution(queueResource.Primary.ID)
 		if err != nil {
 			return err
@@ -187,7 +187,7 @@ func verifyIdentityResolutionDefault(queueResourcePath string) resource.TestChec
 			return fmt.Errorf("failed to find queue %s in state", queueResourcePath)
 		}
 
-		routingApi := platformclientv2.NewRoutingApi()
+		routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
 		config, _, err := routingApi.GetRoutingQueueIdentityresolution(queueResource.Primary.ID)
 		if err != nil {
 			return err
