@@ -31,6 +31,7 @@ func TestAccResourceRoutingQueueIdentityResolution(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		CheckDestroy:      testVerifyRoutingQueueIdentityResolutionDestroyed,
 		Steps: []resource.TestStep{
 			{
 				Config: homeDivisionConfig + routingQueue.GenerateRoutingQueueResourceBasic(
@@ -203,4 +204,34 @@ func verifyIdentityResolutionDefault(queueResourcePath string) resource.TestChec
 
 		return nil
 	}
+}
+
+// testVerifyRoutingQueueIdentityResolutionDestroyed verifies destroy reset IR config to the
+// platform default. Parent 404 is accepted because the final test destroy may also remove the queue.
+func testVerifyRoutingQueueIdentityResolutionDestroyed(state *terraform.State) error {
+	routingApi := platformclientv2.NewRoutingApiWithConfig(sdkConfig)
+
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != ResourceType {
+			continue
+		}
+
+		queueId := rs.Primary.Attributes["queue_id"]
+		if queueId == "" {
+			queueId = rs.Primary.ID
+		}
+
+		config, resp, err := routingApi.GetRoutingQueueIdentityresolution(queueId)
+		if util.IsStatus404(resp) {
+			continue
+		}
+		if err != nil {
+			return fmt.Errorf("unexpected error verifying identity resolution destroy for queue %s: %s", queueId, err)
+		}
+		if !isDefaultIdentityResolutionConfig(config) {
+			return fmt.Errorf("expected default identity resolution config after destroy for queue %s", queueId)
+		}
+	}
+
+	return nil
 }
