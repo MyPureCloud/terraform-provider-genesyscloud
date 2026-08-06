@@ -48,7 +48,7 @@ func ResourceRoutingQueueIdentityResolution() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 1,
+		SchemaVersion: 0,
 		Schema: map[string]*schema.Schema{
 			"queue_id": {
 				Description: "ID of the routing queue this identity resolution config belongs to.",
