@@ -8,6 +8,12 @@ import (
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
 
+/*
+The genesyscloud_routing_queue_identity_resolution_proxy.go file contains the proxy structures and methods that interact
+with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
+out during testing.
+*/
+
 var internalProxy *routingQueueIdentityResolutionProxy
 
 type getRoutingQueueIdentityResolutionFunc func(ctx context.Context, p *routingQueueIdentityResolutionProxy, queueId string) (*platformclientv2.Identityresolutionqueueconfig, *platformclientv2.APIResponse, error)
@@ -57,16 +63,19 @@ func (p *routingQueueIdentityResolutionProxy) getRoutingQueueById(ctx context.Co
 }
 
 func getRoutingQueueIdentityResolutionFn(ctx context.Context, p *routingQueueIdentityResolutionProxy, queueId string) (*platformclientv2.Identityresolutionqueueconfig, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.routingApi.GetRoutingQueueIdentityresolution(queueId)
 }
 
 func putRoutingQueueIdentityResolutionFn(ctx context.Context, p *routingQueueIdentityResolutionProxy, queueId string, config platformclientv2.Identityresolutionqueueconfig) (*platformclientv2.Identityresolutionqueueconfig, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.routingApi.PutRoutingQueueIdentityresolution(queueId, config)
 }
 
 func getRoutingQueueByIdFn(ctx context.Context, p *routingQueueIdentityResolutionProxy, queueId string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.routingApi.GetRoutingQueue(queueId, nil)
 }
