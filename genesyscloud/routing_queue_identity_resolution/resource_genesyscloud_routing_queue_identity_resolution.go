@@ -28,6 +28,9 @@ func getAllRoutingQueueIdentityResolution(ctx context.Context, clientConfig *pla
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, "failed to list routing queues for identity resolution export", resp)
 	}
+	if queues == nil {
+		return resources, nil
+	}
 
 	for _, queue := range *queues {
 		if queue.Id == nil || queue.Name == nil {
