@@ -123,6 +123,14 @@ func TestUnitFlattenCallOnBehalfOfQueue(t *testing.T) {
 			expectDivisionOmit: true,
 		},
 		{
+			name: "nil resolve_identities defaults to true",
+			config: &platformclientv2.Outboundqueueidentityresolutionconfig{
+				ResolveIdentities: nil,
+			},
+			expectResolve:      true,
+			expectDivisionOmit: true,
+		},
+		{
 			name: "division * omitted from state",
 			config: &platformclientv2.Outboundqueueidentityresolutionconfig{
 				ResolveIdentities: &resolveTrue,
