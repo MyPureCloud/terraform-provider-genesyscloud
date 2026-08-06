@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	outboundCampaign "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/outbound_campaign"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -85,6 +86,9 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 			},
 			{
 				// Update with a new name, status and repeat value
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: `data "genesyscloud_auth_division_home" "home" {}` + "\n" +
 					authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) +
 					outboundCampaign.GenerateOutboundCampaignBasic(
