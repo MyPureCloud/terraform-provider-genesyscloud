@@ -63,6 +63,8 @@ func flattenCallOnBehalfOfQueue(config *platformclientv2.Outboundqueueidentityre
 	result := map[string]interface{}{}
 	if config.ResolveIdentities != nil {
 		result["resolve_identities"] = *config.ResolveIdentities
+	} else {
+		result["resolve_identities"] = true
 	}
 	if config.Division != nil && config.Division.Id != nil {
 		divisionId := *config.Division.Id
