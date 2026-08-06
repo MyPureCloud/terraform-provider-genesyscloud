@@ -1,12 +1,12 @@
 package routing_queue_identity_resolution
 
 import (
-	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
-	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
 
 var providerDataSources map[string]*schema.Resource
