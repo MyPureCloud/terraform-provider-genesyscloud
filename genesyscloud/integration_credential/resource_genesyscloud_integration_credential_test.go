@@ -26,7 +26,7 @@ func TestAccResourceCredential(t *testing.T) {
 		credName2          = "Terraform Credential Test-" + uuid.NewString()
 
 		typeName1 = "basicAuth"
-		typeName2 = "callJourney"
+		typeName2 = "userDefined"
 
 		key1   = "userName"
 		val1   = "someUserName"

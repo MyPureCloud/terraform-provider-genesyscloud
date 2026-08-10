@@ -8,3 +8,4 @@ genesyscloud/integration_action/resource_genesyscloud_integration_action.go
 * [GET /api/v2/integrations/actions/{actionId}/draft](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft)
 * [GET /api/v2/integrations/actions/{actionId}/draft/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--draft-function)
 * [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--function)
+* [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations--integrationId-)

@@ -19,7 +19,7 @@ const (
 	// SubDirectory is the folder under the export directory where greeting audio files are written.
 	SubDirectory = "greeting_audio"
 	// DefaultFormatID is the Genesys Cloud greeting media format used when downloading audio.
-	DefaultFormatID = "WAV_8000_16"
+	DefaultFormatID = "WAV"
 	// S3Enabled indicates greeting audio export supports S3-backed file paths.
 	S3Enabled = true
 )

@@ -14,6 +14,8 @@ import (
 
 var internalProxy *journeyViewsProxy
 
+var journeyViewCache = rc.NewResourceCache[platformclientv2.Journeyview]()
+
 type getAllJourneyViewsFunc func(ctx context.Context, p *journeyViewsProxy, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
 type getJourneyViewByNameFunc func(ctx context.Context, p *journeyViewsProxy, name string) (string, *platformclientv2.APIResponse, error, bool)
 type getJourneyViewByViewIdFunc func(ctx context.Context, p *journeyViewsProxy, viewId string) (*platformclientv2.Journeyview, *platformclientv2.APIResponse, error)
@@ -35,7 +37,7 @@ type journeyViewsProxy struct {
 
 func newJourneyViewsProxy(clientConfig *platformclientv2.Configuration) *journeyViewsProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	journeyViewCache := rc.NewResourceCache[platformclientv2.Journeyview]()
+
 	return &journeyViewsProxy{
 		clientConfig:             clientConfig,
 		journeyViewsApi:          api,

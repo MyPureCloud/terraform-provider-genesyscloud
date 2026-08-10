@@ -13,6 +13,8 @@ import (
 
 var internalProxy *routingUtilizationLabelProxy
 
+var routingCache = rc.NewResourceCache[platformclientv2.Utilizationlabel]()
+
 type getAllRoutingUtilizationLabelsFunc func(ctx context.Context, p *routingUtilizationLabelProxy, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
 type createRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationLabelProxy, req *platformclientv2.Createutilizationlabelrequest) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
 type getRoutingUtilizationLabelFunc func(ctx context.Context, p *routingUtilizationLabelProxy, id string) (*platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type routingUtilizationLabelProxy struct {
 
 func newRoutingUtilizationLabelProxy(clientConfig *platformclientv2.Configuration) *routingUtilizationLabelProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	routingCache := rc.NewResourceCache[platformclientv2.Utilizationlabel]()
+
 	return &routingUtilizationLabelProxy{
 		clientConfig:                         clientConfig,
 		routingApi:                           api,

@@ -22,6 +22,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *taskManagementProxy
 
+var workitemSchemaCache = rc.NewResourceCache[platformclientv2.Dataschema]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createTaskManagementWorkitemSchemaFunc func(ctx context.Context, p *taskManagementProxy, schema *platformclientv2.Dataschema) (*platformclientv2.Dataschema, *platformclientv2.APIResponse, error)
 type getAllTaskManagementWorkitemSchemaFunc func(ctx context.Context, p *taskManagementProxy) (*[]platformclientv2.Dataschema, *platformclientv2.APIResponse, error)
@@ -49,7 +51,6 @@ type taskManagementProxy struct {
 // newTaskManagementProxy initializes the task management proxy with all of the data needed to communicate with Genesys Cloud
 func newTaskManagementProxy(clientConfig *platformclientv2.Configuration) *taskManagementProxy {
 	api := platformclientv2.NewTaskManagementApiWithConfig(clientConfig)
-	workitemSchemaCache := rc.NewResourceCache[platformclientv2.Dataschema]()
 
 	return &taskManagementProxy{
 		clientConfig:                                     clientConfig,

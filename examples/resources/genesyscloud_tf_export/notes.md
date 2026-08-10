@@ -1,1 +1,2 @@
 * The export resource calls GET APIs on all exported resource types. See the list of GET APIs on each resource.
+* By default, `genesyscloud_user` exports include both active and inactive users. Set `GENESYSCLOUD_SKIP_INACTIVE_USER_EXPORT` to omit inactive users from export listings.

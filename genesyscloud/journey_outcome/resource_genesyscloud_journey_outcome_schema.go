@@ -234,7 +234,8 @@ var (
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceJourneyOutcome())
 	regInstance.RegisterDataSource(ResourceType, DataSourceJourneyOutcome())
-	regInstance.RegisterExporter(ResourceType, JourneyOutcomeExporter())
+	// Exporter intentionally not registered — API endpoints have been removed (410 Gone).
+	// See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 }
 
 func JourneyOutcomeExporter() *resourceExporter.ResourceExporter {

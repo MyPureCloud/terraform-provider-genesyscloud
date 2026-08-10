@@ -14,6 +14,8 @@ import (
 
 var internalProxy *knowledgebaseProxy
 
+var knowledgebaseCache = rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
 // knowledgebaseCreateRequest and knowledgebaseResponse mirror the Knowledge API payloads.
 // The platform SDK does not yet include contentSearchEnabled on these models.
 type knowledgebaseCreateRequest struct {
@@ -52,7 +54,7 @@ type knowledgebaseProxy struct {
 
 func newKnowledgebaseProxy(clientConfig *platformclientv2.Configuration) *knowledgebaseProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgebaseCache := rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
 	return &knowledgebaseProxy{
 		clientConfig:                    clientConfig,
 		KnowledgeApi:                    api,

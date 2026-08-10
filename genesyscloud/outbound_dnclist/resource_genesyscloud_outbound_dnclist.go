@@ -152,19 +152,27 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
 		if d.HasChange("entries") {
-			if outboundDncList.DncSourceType == nil || *outboundDncList.DncSourceType != "rds" {
-				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
-			}
+			// Only modify entries when the user explicitly included them in config.
+			// When entries is omitted (Computed), GetRawConfig returns a null value and
+			// we must not touch the API — otherwise we would wipe all phone numbers.
+			entriesConfigVal := d.GetRawConfig().GetAttr("entries")
+			if entriesConfigVal.IsNull() || !entriesConfigVal.IsKnown() {
+				// entries omitted from config — do not touch existing API entries
+			} else {
+				if outboundDncList.DncSourceType == nil || *outboundDncList.DncSourceType != "rds" {
+					return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
+				}
 
-			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
-			if err != nil {
-				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
-			}
-
-			for _, entry := range entries {
-				resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
+				resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
+				}
+
+				for _, entry := range entries {
+					resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
+					if err != nil {
+						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
+					}
 				}
 			}
 		}

@@ -21,6 +21,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *conversationsMessagingIntegrationsWhatsappProxy
 
+var whatsappCache = rc.NewResourceCache[platformclientv2.Whatsappintegration]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, whatsAppEmbeddedSignupIntegrationRequest *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
 type getAllConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
@@ -47,7 +49,7 @@ type conversationsMessagingIntegrationsWhatsappProxy struct {
 // newConversationsMessagingIntegrationsWhatsappProxy initializes the conversations messaging integrations whatsapp proxy with all of the data needed to communicate with Genesys Cloud
 func newConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsWhatsappProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	whatsappCache := rc.NewResourceCache[platformclientv2.Whatsappintegration]()
+
 	return &conversationsMessagingIntegrationsWhatsappProxy{
 		clientConfig:     clientConfig,
 		conversationsApi: api,

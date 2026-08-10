@@ -12,6 +12,8 @@ import (
 
 var internalProxy *locationProxy
 
+var locationCache = rc.NewResourceCache[platformclientv2.Locationdefinition]()
+
 type getAllLocationFunc func(ctx context.Context, p *locationProxy) (*[]platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error)
 type createLocationFunc func(ctx context.Context, p *locationProxy, locationCreateDefinition *platformclientv2.Locationcreatedefinition) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error)
 type getLocationByIdFunc func(ctx context.Context, p *locationProxy, id string, expand []string) (*platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type locationProxy struct {
 // newLocationProxy initializes the location proxy with all of the data needed to communicate with Genesys Cloud
 func newLocationProxy(clientConfig *platformclientv2.Configuration) *locationProxy {
 	api := platformclientv2.NewLocationsApiWithConfig(clientConfig)
-	locationCache := rc.NewResourceCache[platformclientv2.Locationdefinition]()
+
 	return &locationProxy{
 		clientConfig:            clientConfig,
 		locationsApi:            api,

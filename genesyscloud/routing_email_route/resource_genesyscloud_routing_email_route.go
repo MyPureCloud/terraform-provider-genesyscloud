@@ -33,7 +33,7 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 
 	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, "Failed to get routing email route", respCode)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route error: %s", err), respCode)
 	}
 
 	if inboundRoutesMap == nil || len(*inboundRoutesMap) == 0 {
@@ -150,6 +150,10 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("reply_email_address", []interface{}{flattenedEmails})
 		} else {
 			_ = d.Set("reply_email_address", nil)
+		}
+
+		if route.MailboxFolders != nil {
+			_ = d.Set("mailbox_folders", *route.MailboxFolders)
 		}
 
 		log.Printf("Read routing email route %s", d.Id())

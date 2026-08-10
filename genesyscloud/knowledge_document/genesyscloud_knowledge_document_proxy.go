@@ -20,6 +20,13 @@ import (
 
 var internalProxy *knowledgeDocumentProxy
 
+var (
+	knowledgeDocumentCache  = rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
+	knowledgeLabelCache     = rc.NewResourceCache[platformclientv2.Labelresponse]()
+	knowledgeCategoryCache  = rc.NewResourceCache[platformclientv2.Categoryresponse]()
+	knowledgeVariationCache = rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
+)
+
 type getKnowledgeDocumentByTitleFunc func(ctx context.Context, p *knowledgeDocumentProxy, title string, knowledgeBaseName string, categoryName string) (string, bool, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseCategoryFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryId string) (*platformclientv2.Categoryresponse, *platformclientv2.APIResponse, error)
 type getKnowledgeKnowledgebaseCategoriesFunc func(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, categoryName string) (*platformclientv2.Categoryresponselisting, *platformclientv2.APIResponse, error)
@@ -57,10 +64,7 @@ type knowledgeDocumentProxy struct {
 
 func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *knowledgeDocumentProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgeDocumentCache := rc.NewResourceCache[platformclientv2.Knowledgedocumentresponse]()
-	knowledgeLabelCache := rc.NewResourceCache[platformclientv2.Labelresponse]()
-	knowledgeCategoryCache := rc.NewResourceCache[platformclientv2.Categoryresponse]()
-	knowledgeVariationCache := rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
+
 	return &knowledgeDocumentProxy{
 		clientConfig:                             clientConfig,
 		KnowledgeApi:                             api,

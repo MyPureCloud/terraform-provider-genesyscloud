@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -40,6 +41,10 @@ func buildSdkQuestionGroups(d *schema.ResourceData) *[]platformclientv2.Evaluati
 
 			visibilityCondition := questionGroupsMap["visibility_condition"].([]interface{})
 			sdkquestionGroup.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
+
+			if defaultAnswersTo, ok := questionGroupsMap["default_answers_to"].([]interface{}); ok {
+				sdkquestionGroup.DefaultAnswersTo = buildSdkDefaultAnswersTo(defaultAnswersTo)
+			}
 
 			evalQuestionGroups = append(evalQuestionGroups, sdkquestionGroup)
 		}
@@ -97,6 +102,14 @@ func buildSdkQuestions(questions []interface{}) *[]platformclientv2.Evaluationqu
 		visibilityCondition := questionsMap["visibility_condition"].([]interface{})
 		sdkQuestion.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
 
+		if defaultAnswerId, ok := questionsMap["default_answer_id"].(string); ok && defaultAnswerId != "" {
+			sdkQuestion.DefaultAnswer = &platformclientv2.Defaultanswer{Id: &defaultAnswerId}
+		}
+
+		if automatedScoringFocus, ok := questionsMap["automated_scoring_focus"].(string); ok && automatedScoringFocus != "" {
+			sdkQuestion.AutomatedScoringFocus = &automatedScoringFocus
+		}
+
 		sdkQuestions = append(sdkQuestions, sdkQuestion)
 	}
 
@@ -141,6 +154,14 @@ func buildSdkMultipleSelectOptionQuestions(optionQuestions []interface{}) *[]pla
 
 		visibilityCondition := optionMap["visibility_condition"].([]interface{})
 		sdkQuestion.VisibilityCondition = BuildSdkVisibilityCondition(visibilityCondition)
+
+		if defaultAnswerId, ok := optionMap["default_answer_id"].(string); ok && defaultAnswerId != "" {
+			sdkQuestion.DefaultAnswer = &platformclientv2.Defaultanswer{Id: &defaultAnswerId}
+		}
+
+		if automatedScoringFocus, ok := optionMap["automated_scoring_focus"].(string); ok && automatedScoringFocus != "" {
+			sdkQuestion.AutomatedScoringFocus = &automatedScoringFocus
+		}
 
 		sdkQuestions = append(sdkQuestions, sdkQuestion)
 	}
@@ -223,6 +244,174 @@ func BuildSdkVisibilityCondition(visibilityCondition []interface{}) *platformcli
 	}
 }
 
+func buildSdkDefaultAnswersTo(defaultAnswersTo []interface{}) *platformclientv2.Defaultanswersto {
+	if len(defaultAnswersTo) <= 0 {
+		return nil
+	}
+
+	defaultAnswersToMap, ok := defaultAnswersTo[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	highestScore := defaultAnswersToMap["highest_score"].(bool)
+	notApplicable := defaultAnswersToMap["not_applicable"].(bool)
+	lowestScore := defaultAnswersToMap["lowest_score"].(bool)
+	userDefined := defaultAnswersToMap["user_defined"].(bool)
+
+	return &platformclientv2.Defaultanswersto{
+		HighestScore:  &highestScore,
+		NotApplicable: &notApplicable,
+		LowestScore:   &lowestScore,
+		UserDefined:   &userDefined,
+	}
+}
+
+func hasEvaluationSettings(settings *platformclientv2.Evaluationsettings) bool {
+	if settings == nil {
+		return false
+	}
+	return (settings.RevisionsEnabled != nil && *settings.RevisionsEnabled) ||
+		(settings.DisputesEnabled != nil && *settings.DisputesEnabled)
+}
+
+func buildDisabledEvaluationSettings() *platformclientv2.Evaluationsettings {
+	revisionsEnabled := false
+	disputesEnabled := false
+	return &platformclientv2.Evaluationsettings{
+		RevisionsEnabled: &revisionsEnabled,
+		DisputesEnabled:  &disputesEnabled,
+	}
+}
+
+func buildSdkEvaluationSettings(evaluationSettings []interface{}) *platformclientv2.Evaluationsettings {
+	if len(evaluationSettings) <= 0 {
+		return buildDisabledEvaluationSettings()
+	}
+
+	settingsMap, ok := evaluationSettings[0].(map[string]interface{})
+	if !ok {
+		return buildDisabledEvaluationSettings()
+	}
+
+	revisionsEnabled := settingsMap["revisions_enabled"].(bool)
+	disputesEnabled := settingsMap["disputes_enabled"].(bool)
+
+	sdkSettings := &platformclientv2.Evaluationsettings{
+		RevisionsEnabled: &revisionsEnabled,
+		DisputesEnabled:  &disputesEnabled,
+	}
+
+	if disputesAllowed, ok := settingsMap["disputes_allowed_per_evaluation"].(int); ok {
+		sdkSettings.DisputesAllowedPerEvaluation = &disputesAllowed
+	}
+
+	if assignees, ok := settingsMap["disputes_assignees"].([]interface{}); ok && len(assignees) > 0 {
+		sdkSettings.DisputesAssignees = buildSdkDisputesAssignees(assignees)
+	}
+
+	return sdkSettings
+}
+
+func buildSdkDisputesAssignees(assignees []interface{}) *[]platformclientv2.Evaluationsettingsassignee {
+	sdkAssignees := make([]platformclientv2.Evaluationsettingsassignee, 0)
+	for _, assignee := range assignees {
+		assigneeMap, ok := assignee.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		assigneeType := assigneeMap["type"].(string)
+		sdkAssignee := platformclientv2.Evaluationsettingsassignee{
+			VarType: &assigneeType,
+		}
+
+		if userId, ok := assigneeMap["user_id"].(string); ok && userId != "" {
+			sdkAssignee.User = &platformclientv2.Userreferencewithname{Id: &userId}
+		}
+
+		sdkAssignees = append(sdkAssignees, sdkAssignee)
+	}
+
+	return &sdkAssignees
+}
+
+func buildClearedAiScoring() *platformclientv2.Aiscoringsettings {
+	return &platformclientv2.Aiscoringsettings{
+		QuestionGroupSettings: &[]platformclientv2.Questiongroupsettings{},
+	}
+}
+
+func hasAiScoring(aiScoring *platformclientv2.Aiscoringsettings) bool {
+	return aiScoring != nil && aiScoring.QuestionGroupSettings != nil && len(*aiScoring.QuestionGroupSettings) > 0
+}
+
+func buildSdkAiScoring(aiScoring []interface{}) *platformclientv2.Aiscoringsettings {
+	if len(aiScoring) <= 0 {
+		return nil
+	}
+
+	aiScoringMap, ok := aiScoring[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	sdkAiScoring := &platformclientv2.Aiscoringsettings{}
+
+	if id, ok := aiScoringMap["id"].(string); ok && id != "" {
+		sdkAiScoring.Id = &id
+	}
+
+	if groupSettings, ok := aiScoringMap["question_group_settings"].([]interface{}); ok && len(groupSettings) > 0 {
+		sdkAiScoring.QuestionGroupSettings = buildSdkAiScoringQuestionGroupSettings(groupSettings)
+	}
+
+	return sdkAiScoring
+}
+
+func buildSdkAiScoringQuestionGroupSettings(groupSettings []interface{}) *[]platformclientv2.Questiongroupsettings {
+	sdkGroupSettings := make([]platformclientv2.Questiongroupsettings, 0)
+	for _, groupSetting := range groupSettings {
+		groupSettingMap, ok := groupSetting.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		questionGroupContextId := groupSettingMap["question_group_context_id"].(string)
+		sdkGroupSetting := platformclientv2.Questiongroupsettings{
+			QuestionGroupContextId: &questionGroupContextId,
+		}
+
+		if questionSettings, ok := groupSettingMap["question_settings"].([]interface{}); ok && len(questionSettings) > 0 {
+			sdkGroupSetting.QuestionSettings = buildSdkAiScoringQuestionSettings(questionSettings)
+		}
+
+		sdkGroupSettings = append(sdkGroupSettings, sdkGroupSetting)
+	}
+
+	return &sdkGroupSettings
+}
+
+func buildSdkAiScoringQuestionSettings(questionSettings []interface{}) *[]platformclientv2.Questionsettings {
+	sdkQuestionSettings := make([]platformclientv2.Questionsettings, 0)
+	for _, questionSetting := range questionSettings {
+		questionSettingMap, ok := questionSetting.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		questionContextId := questionSettingMap["question_context_id"].(string)
+		enabled := questionSettingMap["enabled"].(bool)
+
+		sdkQuestionSettings = append(sdkQuestionSettings, platformclientv2.Questionsettings{
+			QuestionContextId: &questionContextId,
+			Settings:          &platformclientv2.Aiscoringsetting{Enabled: &enabled},
+		})
+	}
+
+	return &sdkQuestionSettings
+}
+
 func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestiongroup) []interface{} {
 	if questionGroups == nil {
 		return nil
@@ -234,6 +423,9 @@ func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestion
 		questionGroupMap := make(map[string]interface{})
 		if questionGroup.Id != nil {
 			questionGroupMap["id"] = *questionGroup.Id
+		}
+		if questionGroup.ContextId != nil {
+			questionGroupMap["context_id"] = *questionGroup.ContextId
 		}
 		if questionGroup.Name != nil {
 			questionGroupMap["name"] = *questionGroup.Name
@@ -259,6 +451,9 @@ func flattenQuestionGroups(questionGroups *[]platformclientv2.Evaluationquestion
 		if questionGroup.VisibilityCondition != nil {
 			questionGroupMap["visibility_condition"] = FlattenVisibilityCondition(questionGroup.VisibilityCondition)
 		}
+		if questionGroup.DefaultAnswersTo != nil {
+			questionGroupMap["default_answers_to"] = flattenDefaultAnswersTo(questionGroup.DefaultAnswersTo)
+		}
 
 		questionGroupList = append(questionGroupList, questionGroupMap)
 	}
@@ -283,6 +478,9 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 
 		if question.Id != nil {
 			questionMap["id"] = *question.Id
+		}
+		if question.ContextId != nil {
+			questionMap["context_id"] = *question.ContextId
 		}
 		if question.HelpText != nil {
 			questionMap["help_text"] = *question.HelpText
@@ -312,6 +510,12 @@ func flattenQuestions(questions *[]platformclientv2.Evaluationquestion) []interf
 			questionMap["multiple_select_option_questions"] = flattenMultipleSelectOptionQuestions(question.MultipleSelectOptionQuestions)
 			log.Printf("flattenQuestions: Question '%s' has %d multiple_select_option_questions", questionText, len(*question.MultipleSelectOptionQuestions))
 		}
+		if question.DefaultAnswer != nil && question.DefaultAnswer.Id != nil {
+			questionMap["default_answer_id"] = *question.DefaultAnswer.Id
+		}
+		if question.AutomatedScoringFocus != nil {
+			questionMap["automated_scoring_focus"] = *question.AutomatedScoringFocus
+		}
 
 		questionList = append(questionList, questionMap)
 	}
@@ -329,6 +533,9 @@ func flattenMultipleSelectOptionQuestions(optionQuestions *[]platformclientv2.Ev
 		optionMap := make(map[string]interface{})
 		if option.Id != nil {
 			optionMap["id"] = *option.Id
+		}
+		if option.ContextId != nil {
+			optionMap["context_id"] = *option.ContextId
 		}
 		if option.Text != nil {
 			optionMap["text"] = *option.Text
@@ -357,6 +564,12 @@ func flattenMultipleSelectOptionQuestions(optionQuestions *[]platformclientv2.Ev
 		if option.AnswerOptions != nil {
 			optionMap["answer_options"] = FlattenAnswerOptions(option.AnswerOptions)
 		}
+		if option.DefaultAnswer != nil && option.DefaultAnswer.Id != nil {
+			optionMap["default_answer_id"] = *option.DefaultAnswer.Id
+		}
+		if option.AutomatedScoringFocus != nil {
+			optionMap["automated_scoring_focus"] = *option.AutomatedScoringFocus
+		}
 
 		optionList = append(optionList, optionMap)
 	}
@@ -374,6 +587,9 @@ func FlattenAnswerOptions(answerOptions *[]platformclientv2.Answeroption) []inte
 		answerOptionMap := make(map[string]interface{})
 		if answerOption.Id != nil {
 			answerOptionMap["id"] = *answerOption.Id
+		}
+		if answerOption.ContextId != nil {
+			answerOptionMap["context_id"] = *answerOption.ContextId
 		}
 		if answerOption.Text != nil {
 			answerOptionMap["text"] = *answerOption.Text
@@ -427,16 +643,209 @@ func FlattenVisibilityCondition(visibilityCondition *platformclientv2.Visibility
 	return []interface{}{visibilityConditionMap}
 }
 
+func flattenDefaultAnswersTo(defaultAnswersTo *platformclientv2.Defaultanswersto) []interface{} {
+	if defaultAnswersTo == nil {
+		return nil
+	}
+
+	defaultAnswersToMap := make(map[string]interface{})
+	if defaultAnswersTo.HighestScore != nil {
+		defaultAnswersToMap["highest_score"] = *defaultAnswersTo.HighestScore
+	}
+	if defaultAnswersTo.NotApplicable != nil {
+		defaultAnswersToMap["not_applicable"] = *defaultAnswersTo.NotApplicable
+	}
+	if defaultAnswersTo.LowestScore != nil {
+		defaultAnswersToMap["lowest_score"] = *defaultAnswersTo.LowestScore
+	}
+	if defaultAnswersTo.UserDefined != nil {
+		defaultAnswersToMap["user_defined"] = *defaultAnswersTo.UserDefined
+	}
+
+	return []interface{}{defaultAnswersToMap}
+}
+
+func flattenEvaluationSettings(evaluationSettings *platformclientv2.Evaluationsettings) []interface{} {
+	if evaluationSettings == nil {
+		return nil
+	}
+
+	settingsMap := make(map[string]interface{})
+	if evaluationSettings.RevisionsEnabled != nil {
+		settingsMap["revisions_enabled"] = *evaluationSettings.RevisionsEnabled
+	}
+	if evaluationSettings.DisputesEnabled != nil {
+		settingsMap["disputes_enabled"] = *evaluationSettings.DisputesEnabled
+	}
+	if evaluationSettings.DisputesAllowedPerEvaluation != nil {
+		settingsMap["disputes_allowed_per_evaluation"] = *evaluationSettings.DisputesAllowedPerEvaluation
+	}
+	if evaluationSettings.DisputesAssignees != nil {
+		settingsMap["disputes_assignees"] = flattenDisputesAssignees(evaluationSettings.DisputesAssignees)
+	}
+
+	return []interface{}{settingsMap}
+}
+
+func flattenDisputesAssignees(assignees *[]platformclientv2.Evaluationsettingsassignee) []interface{} {
+	if assignees == nil {
+		return nil
+	}
+
+	var assigneeList []interface{}
+	for _, assignee := range *assignees {
+		assigneeMap := make(map[string]interface{})
+		if assignee.VarType != nil {
+			assigneeMap["type"] = *assignee.VarType
+		}
+		if assignee.User != nil && assignee.User.Id != nil {
+			assigneeMap["user_id"] = *assignee.User.Id
+		}
+		assigneeList = append(assigneeList, assigneeMap)
+	}
+
+	return assigneeList
+}
+
+func flattenAiScoring(aiScoring *platformclientv2.Aiscoringsettings) []interface{} {
+	if aiScoring == nil {
+		return nil
+	}
+
+	aiScoringMap := make(map[string]interface{})
+	if aiScoring.Id != nil {
+		aiScoringMap["id"] = *aiScoring.Id
+	}
+	if aiScoring.QuestionGroupSettings != nil {
+		aiScoringMap["question_group_settings"] = flattenAiScoringQuestionGroupSettings(aiScoring.QuestionGroupSettings)
+	}
+
+	return []interface{}{aiScoringMap}
+}
+
+func flattenAiScoringQuestionGroupSettings(groupSettings *[]platformclientv2.Questiongroupsettings) []interface{} {
+	if groupSettings == nil {
+		return nil
+	}
+
+	var groupSettingList []interface{}
+	for _, groupSetting := range *groupSettings {
+		groupSettingMap := make(map[string]interface{})
+		if groupSetting.QuestionGroupContextId != nil {
+			groupSettingMap["question_group_context_id"] = *groupSetting.QuestionGroupContextId
+		}
+		if groupSetting.QuestionSettings != nil {
+			groupSettingMap["question_settings"] = flattenAiScoringQuestionSettings(groupSetting.QuestionSettings)
+		}
+		groupSettingList = append(groupSettingList, groupSettingMap)
+	}
+
+	return groupSettingList
+}
+
+func flattenAiScoringQuestionSettings(questionSettings *[]platformclientv2.Questionsettings) []interface{} {
+	if questionSettings == nil {
+		return nil
+	}
+
+	var questionSettingList []interface{}
+	for _, questionSetting := range *questionSettings {
+		questionSettingMap := make(map[string]interface{})
+		if questionSetting.QuestionContextId != nil {
+			questionSettingMap["question_context_id"] = *questionSetting.QuestionContextId
+		}
+		if questionSetting.Settings != nil && questionSetting.Settings.Enabled != nil {
+			questionSettingMap["enabled"] = *questionSetting.Settings.Enabled
+		}
+		questionSettingList = append(questionSettingList, questionSettingMap)
+	}
+
+	return questionSettingList
+}
+
 func GenerateEvaluationFormResource(resourceLabel string, evaluationForm *EvaluationFormStruct) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 		name = "%s"
 		published = %v
 		%s
+		%s
+		%s
+		%s
 	}
 	`, ResourceType, resourceLabel,
 		evaluationForm.Name,
 		strconv.FormatBool(evaluationForm.Published),
+		generateFormDialect(evaluationForm.Dialect),
 		GenerateEvaluationFormQuestionGroups(&evaluationForm.QuestionGroups),
+		generateEvaluationSettings(evaluationForm.EvaluationSettings),
+		generateFormDependsOn(evaluationForm.DependsOn),
+	)
+}
+
+func generateFormDependsOn(dependsOn []string) string {
+	if len(dependsOn) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("depends_on = [%s]", strings.Join(dependsOn, ", "))
+}
+
+func generateFormDialect(dialect string) string {
+	if dialect == "" {
+		return ""
+	}
+	return fmt.Sprintf(`dialect = "%s"`, dialect)
+}
+
+func generateEvaluationSettings(settings *EvaluationSettingsStruct) string {
+	if settings == nil {
+		return ""
+	}
+	return fmt.Sprintf(`
+        evaluation_settings {
+            revisions_enabled               = %v
+            disputes_enabled                = %v
+            disputes_allowed_per_evaluation = %v
+            %s
+        }
+        `, settings.RevisionsEnabled,
+		settings.DisputesEnabled,
+		settings.DisputesAllowedPerEvaluation,
+		generateDisputesAssignees(settings.DisputesAssignees),
+	)
+}
+
+func generateDisputesAssignees(assignees []DisputesAssigneeStruct) string {
+	assigneesString := ""
+	for _, assignee := range assignees {
+		userIdString := ""
+		if assignee.UserId != "" {
+			userIdString = fmt.Sprintf(`user_id = %s`, assignee.UserId)
+		}
+		assigneesString += fmt.Sprintf(`
+        disputes_assignees {
+            type    = "%s"
+            %s
+        }
+        `, assignee.Type, userIdString)
+	}
+	return assigneesString
+}
+
+func generateDefaultAnswersTo(defaultAnswersTo *DefaultAnswersToStruct) string {
+	if defaultAnswersTo == nil {
+		return ""
+	}
+	return fmt.Sprintf(`
+        default_answers_to {
+            highest_score  = %v
+            not_applicable = %v
+            lowest_score   = %v
+            user_defined   = %v
+        }
+        `, defaultAnswersTo.HighestScore,
+		defaultAnswersTo.NotApplicable,
+		defaultAnswersTo.LowestScore,
+		defaultAnswersTo.UserDefined,
 	)
 }
 
@@ -458,6 +867,7 @@ func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuesti
             manual_weight = %v
             %s
             %s
+            %s
         }
         `, questionGroup.Name,
 			questionGroup.DefaultAnswersToHighest,
@@ -467,6 +877,7 @@ func GenerateEvaluationFormQuestionGroups(questionGroups *[]EvaluationFormQuesti
 			questionGroup.ManualWeight,
 			GenerateEvaluationFormQuestions(&questionGroup.Questions),
 			GenerateFormVisibilityCondition(&questionGroup.VisibilityCondition),
+			generateDefaultAnswersTo(questionGroup.DefaultAnswersTo),
 		)
 
 		questionGroupsString += questionGroupString
@@ -490,10 +901,14 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
 			optionsString = GenerateFormAnswerOptions(&question.AnswerOptions)
 		}
 
-		// Generate type field if specified
 		typeString := ""
 		if question.Type != "" {
 			typeString = fmt.Sprintf(`type = "%s"`, question.Type)
+		}
+
+		automatedScoringFocusString := ""
+		if question.AutomatedScoringFocus != "" {
+			automatedScoringFocusString = fmt.Sprintf(`automated_scoring_focus = "%s"`, question.AutomatedScoringFocus)
 		}
 
 		questionString := fmt.Sprintf(`
@@ -507,6 +922,7 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
             is_critical       = %v
             %s
             %s
+            %s
         }
         `, question.Text,
 			question.HelpText,
@@ -515,6 +931,7 @@ func GenerateEvaluationFormQuestions(questions *[]EvaluationFormQuestionStruct) 
 			question.CommentsRequired,
 			question.IsKill,
 			question.IsCritical,
+			automatedScoringFocusString,
 			GenerateFormVisibilityCondition(&question.VisibilityCondition),
 			optionsString,
 		)
@@ -533,7 +950,6 @@ func GenerateMultipleSelectOptionQuestions(optionQuestions *[]MultipleSelectOpti
 	optionsString := ""
 
 	for _, option := range *optionQuestions {
-		// Generate type field if specified
 		typeString := ""
 		if option.Type != "" {
 			typeString = fmt.Sprintf(`type = "%s"`, option.Type)
