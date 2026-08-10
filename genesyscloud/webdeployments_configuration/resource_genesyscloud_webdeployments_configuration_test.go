@@ -510,6 +510,54 @@ func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
 				),
 			},
 			{
+				// Step 3: Update video settings without channels to verify graceful handling of omitted channels
+				Config: knowledgeKnowledgebase.GenerateKnowledgeKnowledgebaseResource(
+					kbResourceLabel1,
+					kbName1,
+					kbDesc1,
+					kbCoreLang1,
+				) + complexConfigurationResource(
+					configName,
+					configDescription,
+					"genesyscloud_knowledge_knowledgebase."+kbResourceLabel1+".id",
+					generateWebDeploymentConfigCobrowseSettings(
+						util.FalseValue,
+						util.FalseValue,
+						util.FalseValue,
+						util.FalseValue,
+						channelsUpdate,
+						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+						[]string{strconv.Quote("selector-one"), strconv.Quote("selector-two")},
+						generatePauseCriteria("/sensitive", "Includes"),
+						generatePauseCriteria("/login", "Equals"),
+					),
+					generateVideoSettingsWithoutChannels(
+						util.TrueValue,
+						util.TrueValue,
+						util.FalseValue,
+						util.TrueValue,
+						"NONE",
+						util.TrueValue,
+						util.FalseValue,
+						util.TrueValue,
+					),
+					generateAuthenticationSettings(authenticationSettings2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "video.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.enabled", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_camera", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_screen_share", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.allow_microphone", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.agent.0.background", "NONE"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.#", "1"),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_camera", util.TrueValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_screen_share", util.FalseValue),
+					resource.TestCheckResourceAttr(resourcePath, "video.0.user.0.allow_microphone", util.TrueValue),
+				),
+			},
+			{
 				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,
@@ -1233,6 +1281,25 @@ func generateVideoSettings(enabled string, channels []string, agentAllowCamera, 
 		}
 	}
 `, enabled, strings.Join(channels, ", "), agentAllowCamera, agentAllowScreenShare, agentAllowMicrophone, agentBackground, userAllowCamera, userAllowScreenShare, userAllowMicrophone)
+}
+
+func generateVideoSettingsWithoutChannels(enabled string, agentAllowCamera, agentAllowScreenShare, agentAllowMicrophone, agentBackground, userAllowCamera, userAllowScreenShare, userAllowMicrophone string) string {
+	return fmt.Sprintf(`
+	video {
+		enabled = %s
+		agent {
+			allow_camera = %s
+			allow_screen_share = %s
+			allow_microphone = %s
+			background = "%s"
+		}
+		user {
+			allow_camera = %s
+			allow_screen_share = %s
+			allow_microphone = %s
+		}
+	}
+`, enabled, agentAllowCamera, agentAllowScreenShare, agentAllowMicrophone, agentBackground, userAllowCamera, userAllowScreenShare, userAllowMicrophone)
 }
 
 func generateSupportCenterSettings(supportCenter scConfig) string {

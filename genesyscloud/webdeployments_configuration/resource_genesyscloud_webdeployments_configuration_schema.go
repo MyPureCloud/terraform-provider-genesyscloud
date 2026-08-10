@@ -553,6 +553,7 @@ var (
 				Description: "List of channels through which video chat is available",
 				Type:        schema.TypeList,
 				Optional:    true,
+				Computed:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
 					ValidateFunc: validation.StringInSlice([]string{"Webmessaging", "Voice"}, false),

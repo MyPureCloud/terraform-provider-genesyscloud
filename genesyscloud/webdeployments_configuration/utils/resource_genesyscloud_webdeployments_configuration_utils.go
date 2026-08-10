@@ -271,7 +271,9 @@ func buildVideoSettings(d *schema.ResourceData) *platformclientv2.Videosettings 
 
 	if v, ok := cfg["channels"]; ok {
 		channels := lists.InterfaceListToStrings(v.([]interface{}))
-		videoSettings.Channels = &channels
+		if len(channels) > 0 {
+			videoSettings.Channels = &channels
+		}
 	}
 
 	if v, ok := cfg["agent"]; ok && v != nil {
