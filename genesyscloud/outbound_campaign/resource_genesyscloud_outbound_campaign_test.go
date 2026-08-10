@@ -32,7 +32,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // Add a special generator DEVENGAGE-1646.  Basically, the API makes it look like you need a full phone_columns field here.  However, the API ignores the type because the devs reused the phone_columns object.  However,
@@ -1498,6 +1498,151 @@ func addContactsToContactList(state *terraform.State) error {
 		return fmt.Errorf("could not post contacts to contact list")
 	}
 	return nil
+}
+
+// TestAccResourceOutboundCampaignPreciseDialing verifies that the precise_dialing_enabled
+// attribute can be created as true, updated to false, and is correctly persisted/imported.
+// The campaigns use progressive dialing.
+func TestAccResourceOutboundCampaignPreciseDialing(t *testing.T) {
+	var (
+		resourceLabel            = "campaign_precise_dialing"
+		name                     = "Test Campaign " + uuid.NewString()
+		contactListResourceLabel = "contact_list"
+		carResourceLabel         = "car"
+		queueLabel               = "queue"
+		queueNameAttr            = "tf test queue " + uuid.NewString()
+		scriptLabel              = "script"
+		scriptNameAttr           = "tf test script " + uuid.NewString()
+		scriptFilePath           = testrunner.GetTestDataPath("resource", scripts.ResourceType, "test_script.json")
+		wrapupCodeResourceLabel  = "wrapupcode"
+		outboundFlowFilePath     = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/outboundcall_flow_example.yaml")
+		flowName                 = "test flow " + uuid.NewString()
+		flowResourceLabel        = "flow"
+		divResourceLabel         = "test-division"
+		divName                  = "terraform-" + uuid.NewString()
+
+		resourcePath = ResourceType + "." + resourceLabel
+		description  = "Terraform test description"
+	)
+
+	referencedResources := obContactList.GenerateOutboundContactList(
+		contactListResourceLabel,
+		"contact list "+uuid.NewString(),
+		util.NullValue,
+		strconv.Quote("Cell"),
+		[]string{strconv.Quote("Cell")},
+		[]string{strconv.Quote("Cell"), strconv.Quote("Home"), strconv.Quote("zipcode")},
+		util.FalseValue,
+		util.NullValue,
+		util.NullValue,
+		obContactList.GeneratePhoneColumnsBlock(
+			"Cell",
+			"cell",
+			strconv.Quote("Cell"),
+		),
+		obContactList.GeneratePhoneColumnsBlock(
+			"Home",
+			"home",
+			strconv.Quote("Home"),
+		),
+	) + authDivision.GenerateAuthDivisionBasic(divResourceLabel, divName) + routingWrapupcode.GenerateRoutingWrapupcodeResource(
+		wrapupCodeResourceLabel,
+		"tf wrapup code"+uuid.NewString(),
+		"genesyscloud_auth_division."+divResourceLabel+".id",
+		description,
+	) + architect_flow.GenerateFlowResource(
+		flowResourceLabel,
+		outboundFlowFilePath,
+		"",
+		false,
+		util.GenerateSubstitutionsMap(map[string]string{
+			"flow_name":          flowName,
+			"home_division_name": "${data.genesyscloud_auth_division_home.home.name}",
+			"contact_list_name":  "${genesyscloud_outbound_contact_list." + contactListResourceLabel + ".name}",
+			"wrapup_code_name":   "${genesyscloud_routing_wrapupcode." + wrapupCodeResourceLabel + ".name}",
+		}),
+	) + obResponseSet.GenerateOutboundCallAnalysisResponseSetResource(
+		carResourceLabel,
+		"tf car "+uuid.NewString(),
+		util.FalseValue,
+		util.FalseValue,
+		strconv.Quote("Disabled"),
+		obResponseSet.GenerateCarsResponsesBlock(
+			obResponseSet.GenerateCarsResponse(
+				"callable_person",
+				"transfer_flow",
+				flowName,
+				"${genesyscloud_flow.flow.id}",
+			),
+		),
+	) + routingQueue.GenerateRoutingQueueResourceBasic(queueLabel, queueNameAttr) +
+		scripts.GenerateScriptResourceBasic(scriptLabel, scriptNameAttr, scriptFilePath) +
+		"\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"
+
+	// campaignConfig builds a minimal progressive campaign toggling precise_dialing_enabled.
+	campaignConfig := func(preciseDialingEnabled string) string {
+		return fmt.Sprintf(`
+			resource "%s" "%s" {
+				name                          = "%s"
+				dialing_mode                  = "progressive"
+				campaign_status               = "off"
+				abandon_rate                  = 3
+				contact_list_id               = genesyscloud_outbound_contact_list.%s.id
+				queue_id                      = genesyscloud_routing_queue.%s.id
+				script_id                     = genesyscloud_script.%s.id
+				call_analysis_response_set_id = genesyscloud_outbound_callanalysisresponseset.%s.id
+				precise_dialing_enabled       = %s
+				phone_columns {
+					column_name = "Cell"
+				}
+			}
+			`, ResourceType, resourceLabel, name, contactListResourceLabel, queueLabel, scriptLabel, carResourceLabel, preciseDialingEnabled)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create with precise_dialing_enabled = true
+				Config: referencedResources + campaignConfig(util.TrueValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", "progressive"),
+					resource.TestCheckResourceAttr(resourcePath, "precise_dialing_enabled", util.TrueValue),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
+						"genesyscloud_routing_queue."+queueLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "script_id",
+						scripts.ResourceType+"."+scriptLabel, "id"),
+				),
+			},
+			{
+				// Update to precise_dialing_enabled = false
+				Config: referencedResources + campaignConfig(util.FalseValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					resource.TestCheckResourceAttr(resourcePath, "dialing_mode", "progressive"),
+					resource.TestCheckResourceAttr(resourcePath, "precise_dialing_enabled", util.FalseValue),
+					resource.TestCheckResourceAttrPair(resourcePath, "contact_list_id",
+						"genesyscloud_outbound_contact_list."+contactListResourceLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "queue_id",
+						"genesyscloud_routing_queue."+queueLabel, "id"),
+					resource.TestCheckResourceAttrPair(resourcePath, "script_id",
+						scripts.ResourceType+"."+scriptLabel, "id"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            resourcePath,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"queue_id"},
+			},
+		},
+		CheckDestroy: testVerifyOutboundCampaignDestroyed,
+	})
 }
 
 func generateOutboundCampaign(

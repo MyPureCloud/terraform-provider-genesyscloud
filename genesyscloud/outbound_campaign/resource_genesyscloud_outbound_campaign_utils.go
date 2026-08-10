@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -40,6 +40,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(float64)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
+	preciseDialingEnabled := d.Get("precise_dialing_enabled").(bool)
 
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
@@ -66,6 +67,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
 		DiagnosticsSettings:            buildDiagnosticsSettings(d.Get("diagnostics_settings").([]interface{})),
 		AgentOwnedColumn:               resourcedata.GetNonZeroPointer[string](d, "agent_owned_column"),
+		PreciseDialingEnabled:          &preciseDialingEnabled,
 	}
 
 	if len(skillColumns) > 0 {
