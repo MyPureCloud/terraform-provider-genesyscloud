@@ -88,6 +88,9 @@ func TestAccResourceRoutingEmailRoute(t *testing.T) {
 			},
 			{
 				// Update email route and add a queue, language, and skill
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: routingEmailDomain.GenerateRoutingEmailDomainResource(
 					domainResourceLabel,
 					domainId,
@@ -321,10 +324,10 @@ func TestAccResourceRoutingEmailRouteSignature(t *testing.T) {
 		resp1ResourceLabel,
 		resp1Name,
 		[]string{"genesyscloud_responsemanagement_library." + libResourceLabel + ".id"},
-		util.NullValue,        // interaction_type
-		util.NullValue,        // substitutions_schema_id
-		`"Footer"`,            // response_type
-		[]string{},            // asset_ids
+		util.NullValue, // interaction_type
+		util.NullValue, // substitutions_schema_id
+		`"Footer"`,     // response_type
+		[]string{},     // asset_ids
 		responsemanagementResponse.GenerateTextsBlock("Email signature one", "text/plain", util.NullValue),
 		`footer { type = "Signature" }`,
 	)

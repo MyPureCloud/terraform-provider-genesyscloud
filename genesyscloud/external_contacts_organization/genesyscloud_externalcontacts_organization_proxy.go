@@ -21,6 +21,8 @@ out during testing.
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *externalContactsOrganizationProxy
 
+var externalOrganizationCache = rc.NewResourceCache[platformclientv2.Externalorganization]()
+
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy, externalOrganization *platformclientv2.Externalorganization) (*platformclientv2.Externalorganization, *platformclientv2.APIResponse, error)
 type getAllExternalContactsOrganizationFunc func(ctx context.Context, p *externalContactsOrganizationProxy) (*[]platformclientv2.Externalorganization, *platformclientv2.APIResponse, error)
@@ -45,7 +47,7 @@ type externalContactsOrganizationProxy struct {
 // newExternalContactsOrganizationProxy initializes the external contacts organization proxy with all of the data needed to communicate with Genesys Cloud
 func newExternalContactsOrganizationProxy(clientConfig *platformclientv2.Configuration) *externalContactsOrganizationProxy {
 	api := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
-	externalOrganizationCache := rc.NewResourceCache[platformclientv2.Externalorganization]()
+
 	return &externalContactsOrganizationProxy{
 		clientConfig:                                clientConfig,
 		externalContactsApi:                         api,

@@ -33,6 +33,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	outboundLineCount := d.Get("outbound_line_count").(int)
 	skipPreviewDisabled := d.Get("skip_preview_disabled").(bool)
 	previewTimeOutSeconds := d.Get("preview_time_out_seconds").(int)
+	previewAutoEnd := d.Get("preview_auto_end").(bool)
 	alwaysRunning := d.Get("always_running").(bool)
 	noAnswerTimeout := d.Get("no_answer_timeout").(int)
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
@@ -58,6 +59,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		CallAnalysisResponseSet:        util.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
 		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
+		PreviewAutoEnd:                 &previewAutoEnd,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
 		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),

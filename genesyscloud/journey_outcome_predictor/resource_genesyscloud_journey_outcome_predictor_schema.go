@@ -26,7 +26,8 @@ const ResourceType = "genesyscloud_journey_outcome_predictor"
 // SetRegistrar registers all of the resources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceJourneyOutcomePredictor())
-	regInstance.RegisterExporter(ResourceType, JourneyOutcomePredictorExporter())
+	// Exporter intentionally not registered — API endpoints have been removed (410 Gone).
+	// See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/
 }
 
 // ResourceJourneyOutcomePredictor registers the genesyscloud_journey_outcome_predictor resource with Terraform

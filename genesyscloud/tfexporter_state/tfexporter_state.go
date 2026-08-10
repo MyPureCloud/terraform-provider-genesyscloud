@@ -25,3 +25,9 @@ func ActivateExporterState() {
 func IsExporterActive() bool {
 	return exportState
 }
+
+// ResetExporterStateForTests clears export state so unit tests can control activation independently.
+func ResetExporterStateForTests() {
+	exportState = false
+	once = sync.Once{}
+}

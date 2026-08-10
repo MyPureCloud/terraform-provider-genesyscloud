@@ -28,6 +28,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/integrations/actions/{actionId}/draft/publish](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-integrations-actions--actionId--draft-publish)
 * [GET /api/v2/integrations/actions/{actionId}/function](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--function)
 * [GET /api/v2/integrations/actions/{actionId}/templates/{fileName}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations-actions--actionId--templates--fileName-)
+* [GET /api/v2/integrations/{integrationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-integrations--integrationId-)
 
 ## Permissions and Scopes
 
@@ -197,6 +198,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
 
 ### Read-Only
 
+- `action_type` (String) The type of the integration action. Computed based on the action ID prefix. Values: `static` (built-in actions shipped by Genesys Cloud) or `custom` (user-created actions).
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--config_request"></a>

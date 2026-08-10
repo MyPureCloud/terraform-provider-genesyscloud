@@ -1,11 +1,12 @@
 package external_user
 
 import (
+	"testing"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -53,7 +54,9 @@ func TestAccResourceExternalUser(t *testing.T) {
 			},
 			{
 				// Update
-
+				PreConfig: func() {
+					time.Sleep(5 * time.Second)
+				},
 				Config: userResource.GenerateBasicUserResource(
 					userResoureLabel,
 					userEmail,
