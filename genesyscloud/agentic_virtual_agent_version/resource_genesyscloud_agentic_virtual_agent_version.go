@@ -10,8 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 )
@@ -31,6 +33,39 @@ import (
 // Composite ID format: agentId/versionId
 func buildVersionId(agentId, versionId string) string {
 	return agentId + "/" + versionId
+}
+
+// getAllAgenticVirtualAgentVersions is used by the exporter to retrieve all versions across all agents.
+func getAllAgenticVirtualAgentVersions(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	proxy := getAgenticVirtualAgentVersionProxy(clientConfig)
+
+	log.Printf("Retrieving all Agentic Virtual Agent Versions")
+
+	// List all agents first, then get the latest version for each
+	agents, resp, err := proxy.getAllAgents(ctx)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get agentic virtual agents: %s", err), resp)
+	}
+
+	if agents == nil {
+		return resources, nil
+	}
+
+	for _, agent := range *agents {
+		if agent.LatestSavedVersion == nil || agent.LatestSavedVersion.Version == nil {
+			log.Printf("Skipping agent %s - no latest saved version available", *agent.Id)
+			continue
+		}
+
+		resourceId := *agent.Id + "/" + *agent.LatestSavedVersion.Version
+		resources[resourceId] = &resourceExporter.ResourceMeta{
+			BlockLabel: *agent.Name + "_version",
+		}
+	}
+
+	log.Printf("Successfully retrieved all Agentic Virtual Agent Versions")
+	return resources, nil
 }
 
 func parseVersionId(id string) (agentId string, versionId string, err error) {

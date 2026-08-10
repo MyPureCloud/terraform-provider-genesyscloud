@@ -276,3 +276,29 @@ type AgenticVirtualAgentVersionSettings struct {
 type AgenticVirtualAgentComfortStatementSettings struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
+
+// =============================================================================
+// Agent Summary (used by exporter to list agents and discover versions)
+// =============================================================================
+
+// AgentSummary is a minimal agent representation used to discover versions for export.
+type AgentSummary struct {
+	Id                 *string              `json:"id,omitempty"`
+	Name               *string              `json:"name,omitempty"`
+	LatestSavedVersion *AgentVersionRef     `json:"latestSavedVersion,omitempty"`
+}
+
+// AgentVersionRef is the version reference on the agent summary.
+type AgentVersionRef struct {
+	Version *string `json:"version,omitempty"`
+	SelfUri *string `json:"selfUri,omitempty"`
+}
+
+// AgentSummaryListing is the paginated list response for agents.
+type AgentSummaryListing struct {
+	Entities  *[]AgentSummary `json:"entities,omitempty"`
+	PageSize  *int            `json:"pageSize,omitempty"`
+	PageNumber *int           `json:"pageNumber,omitempty"`
+	Total     *int            `json:"total,omitempty"`
+	PageCount *int            `json:"pageCount,omitempty"`
+}

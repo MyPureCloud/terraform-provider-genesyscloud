@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 )
 
@@ -17,6 +18,7 @@ import (
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersion())
+	regInstance.RegisterExporter(ResourceType, AgenticVirtualAgentVersionExporter())
 }
 
 // ResourceAgenticVirtualAgentVersion registers the Terraform resource.
@@ -480,6 +482,16 @@ func versionSettingsResource() *schema.Resource {
 					},
 				},
 			},
+		},
+	}
+}
+
+// AgenticVirtualAgentVersionExporter returns the exporter configuration for versions.
+func AgenticVirtualAgentVersionExporter() *resourceExporter.ResourceExporter {
+	return &resourceExporter.ResourceExporter{
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAgenticVirtualAgentVersions),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"agent_id": {RefType: "genesyscloud_agentic_virtual_agent"},
 		},
 	}
 }

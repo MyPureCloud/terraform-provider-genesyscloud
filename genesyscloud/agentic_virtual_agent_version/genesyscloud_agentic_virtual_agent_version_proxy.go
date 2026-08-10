@@ -2,6 +2,7 @@ package agentic_virtual_agent_version
 
 import (
 	"context"
+	"fmt"
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -29,6 +30,7 @@ var internalProxy *agenticVirtualAgentVersionProxy
 type createVersionFunc func(ctx context.Context, p *agenticVirtualAgentVersionProxy, agentId string, version *AgenticVirtualAgentVersionCreate) (*AgenticVirtualAgentVersionResponse, *platformclientv2.APIResponse, error)
 type getVersionByIdFunc func(ctx context.Context, p *agenticVirtualAgentVersionProxy, agentId string, versionId string) (*AgenticVirtualAgentVersionResponse, *platformclientv2.APIResponse, error)
 type updateVersionFunc func(ctx context.Context, p *agenticVirtualAgentVersionProxy, agentId string, versionId string, version *AgenticVirtualAgentVersionUpdate) (*AgenticVirtualAgentVersionResponse, *platformclientv2.APIResponse, error)
+type getAllAgentsFunc func(ctx context.Context, p *agenticVirtualAgentVersionProxy) (*[]AgentSummary, *platformclientv2.APIResponse, error)
 
 // agenticVirtualAgentVersionProxy holds all the methods and clients needed to interact with the API.
 type agenticVirtualAgentVersionProxy struct {
@@ -37,6 +39,7 @@ type agenticVirtualAgentVersionProxy struct {
 	createVersionAttr  createVersionFunc
 	getVersionByIdAttr getVersionByIdFunc
 	updateVersionAttr  updateVersionFunc
+	getAllAgentsAttr   getAllAgentsFunc
 }
 
 // newAgenticVirtualAgentVersionProxy initializes the proxy.
@@ -47,6 +50,7 @@ func newAgenticVirtualAgentVersionProxy(clientConfig *platformclientv2.Configura
 		createVersionAttr:  createVersionFn,
 		getVersionByIdAttr: getVersionByIdFn,
 		updateVersionAttr:  updateVersionFn,
+		getAllAgentsAttr:   getAllAgentsFn,
 	}
 }
 
@@ -72,6 +76,10 @@ func (p *agenticVirtualAgentVersionProxy) updateVersion(ctx context.Context, age
 	return p.updateVersionAttr(ctx, p, agentId, versionId, version)
 }
 
+func (p *agenticVirtualAgentVersionProxy) getAllAgents(ctx context.Context) (*[]AgentSummary, *platformclientv2.APIResponse, error) {
+	return p.getAllAgentsAttr(ctx, p)
+}
+
 // Implementation functions
 
 func createVersionFn(ctx context.Context, p *agenticVirtualAgentVersionProxy, agentId string, version *AgenticVirtualAgentVersionCreate) (*AgenticVirtualAgentVersionResponse, *platformclientv2.APIResponse, error) {
@@ -90,4 +98,33 @@ func updateVersionFn(ctx context.Context, p *agenticVirtualAgentVersionProxy, ag
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	path := basePath + "/" + agentId + "/versions/" + versionId
 	return customapi.Do[AgenticVirtualAgentVersionResponse](ctx, p.customApiClient, customapi.MethodPatch, path, version, nil)
+}
+
+func getAllAgentsFn(ctx context.Context, p *agenticVirtualAgentVersionProxy) (*[]AgentSummary, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	var allAgents []AgentSummary
+	queryParams := customapi.NewQueryParams(map[string]string{"pageSize": "100", "pageNumber": "1"})
+
+	agents, resp, err := customapi.Do[AgentSummaryListing](ctx, p.customApiClient, customapi.MethodGet, basePath, nil, queryParams)
+	if err != nil {
+		return nil, resp, err
+	}
+	if agents.Entities == nil {
+		return &allAgents, resp, nil
+	}
+	allAgents = append(allAgents, *agents.Entities...)
+
+	for pageNum := 2; pageNum <= *agents.PageCount; pageNum++ {
+		queryParams.Set("pageNumber", fmt.Sprintf("%v", pageNum))
+		pageAgents, resp, err := customapi.Do[AgentSummaryListing](ctx, p.customApiClient, customapi.MethodGet, basePath, nil, queryParams)
+		if err != nil {
+			return nil, resp, err
+		}
+		if pageAgents.Entities != nil {
+			allAgents = append(allAgents, *pageAgents.Entities...)
+		}
+	}
+
+	return &allAgents, resp, nil
 }
