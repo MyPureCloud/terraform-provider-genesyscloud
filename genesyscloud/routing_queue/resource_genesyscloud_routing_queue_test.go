@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var (
@@ -904,6 +904,9 @@ func TestAccResourceRoutingQueueSkillgroupMembers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: routingSkill.GenerateRoutingSkillResource(
 					skillResourceLabel,
 					skillName,
@@ -986,6 +989,9 @@ func TestAccResourceRoutingQueueMembers(t *testing.T) {
 				),
 			},
 			{
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				// Update with another queue member and modify rings
 				Config: user.GenerateBasicUserResource(
 					queueMemberResourceLabel1,

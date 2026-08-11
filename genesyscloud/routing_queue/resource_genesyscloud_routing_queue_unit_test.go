@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -848,8 +848,10 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
 	subTypeMap := make(map[string]platformclientv2.Messagesubtypesettings)
 	baseMediaSettings := platformclientv2.Messagesubtypesettings{
-		EnableAutoAnswer:        platformclientv2.Bool(true),
-		EnableInactivityTimeout: platformclientv2.Bool(false),
+		EnableAutoAnswer: platformclientv2.Bool(true),
+		// EnableInactivityTimeout is intentionally nil here because the API
+		// only accepts this field when set to true. The build function omits
+		// false values to avoid a 400 error from the API.
 	}
 	subTypeMap["instagram"] = baseMediaSettings
 	return platformclientv2.Messagemediasettings{

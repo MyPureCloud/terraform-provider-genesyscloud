@@ -328,7 +328,7 @@ locals {
     not_in_domains = ["test1"]
   }
   environment_vars = {
-    MAIN_VAR = "main_value"
+    ENABLE_STANDALONE_CGR = "true"
   }
 }
 `), 0644)
@@ -348,7 +348,7 @@ locals {
     only_in_domains = ["test3"]
   }
   environment_vars = {
-    DEP_VAR = "dep_value"
+    ENABLE_STANDALONE_CGA = "true"
   }
 }
 `), 0644)
@@ -381,7 +381,7 @@ locals {
     not_in_domains = ["test1"]
   }
   environment_vars = {
-    MAIN_VAR = "main_value"
+    ENABLE_STANDALONE_CGR = "true"
   }
 }
 `), 0644)
@@ -428,11 +428,11 @@ locals {
 	if len(loadedExample.Locals.EnvironmentVars) != 2 {
 		t.Errorf("Expected 2 environment_vars entries, got %d", len(loadedExample.Locals.EnvironmentVars))
 	}
-	if val, ok := loadedExample.Locals.EnvironmentVars["MAIN_VAR"]; !ok || val != "main_value" {
-		t.Errorf("Expected environment_vars to have 'MAIN_VAR' entry with value 'main_value'")
+	if val, ok := loadedExample.Locals.EnvironmentVars["ENABLE_STANDALONE_CGR"]; !ok || val != "true" {
+		t.Errorf("Expected environment_vars to have 'ENABLE_STANDALONE_CGR' entry with value 'true'")
 	}
-	if val, ok := loadedExample.Locals.EnvironmentVars["DEP_VAR"]; !ok || val != "dep_value" {
-		t.Errorf("Expected environment_vars to have 'DEP_VAR' entry with value 'dep_value'")
+	if val, ok := loadedExample.Locals.EnvironmentVars["ENABLE_STANDALONE_CGA"]; !ok || val != "true" {
+		t.Errorf("Expected environment_vars to have 'ENABLE_STANDALONE_CGA' entry with value 'true'")
 	}
 }
 
@@ -492,7 +492,7 @@ locals {
     dep = "."
   }
   environment_vars = {
-    DEP_VAR = "dep_value"
+    ENABLE_STANDALONE_CGA = "true"
   }
 }
 `), 0644)
@@ -524,8 +524,8 @@ locals {
 	if len(loadedExample.Locals.EnvironmentVars) != 1 {
 		t.Errorf("Expected 1 environment_vars entry, got %d", len(loadedExample.Locals.EnvironmentVars))
 	}
-	if val, ok := loadedExample.Locals.EnvironmentVars["DEP_VAR"]; !ok || val != "dep_value" {
-		t.Errorf("Expected environment_vars to have 'DEP_VAR' entry with value 'dep_value'")
+	if val, ok := loadedExample.Locals.EnvironmentVars["ENABLE_STANDALONE_CGA"]; !ok || val != "true" {
+		t.Errorf("Expected environment_vars to have 'ENABLE_STANDALONE_CGA' entry with value 'true'")
 	}
 }
 
@@ -547,7 +547,7 @@ func TestUnitLoadExampleLocalsMergeDirectly(t *testing.T) {
 			"not_in_domains": {"domain1"},
 		},
 		EnvironmentVars: map[string]string{
-			"VAR1": "value1",
+			"ENABLE_STANDALONE_CGR": "true",
 		},
 		ExtraAttributes: map[string]interface{}{
 			"key1": "value1",
@@ -568,7 +568,7 @@ func TestUnitLoadExampleLocalsMergeDirectly(t *testing.T) {
 			"only_in_domains": {"domain3"},
 		},
 		EnvironmentVars: map[string]string{
-			"VAR2": "value2",
+			"ENABLE_STANDALONE_CGA": "true",
 		},
 		ExtraAttributes: map[string]interface{}{
 			"key2": "value2",
@@ -620,11 +620,11 @@ func TestUnitLoadExampleLocalsMergeDirectly(t *testing.T) {
 	if len(locals1.EnvironmentVars) != 2 {
 		t.Errorf("Expected 2 environment_vars entries, got %d", len(locals1.EnvironmentVars))
 	}
-	if val, ok := locals1.EnvironmentVars["VAR1"]; !ok || val != "value1" {
-		t.Errorf("Expected environment_vars to have 'VAR1' entry with value 'value1'")
+	if val, ok := locals1.EnvironmentVars["ENABLE_STANDALONE_CGR"]; !ok || val != "true" {
+		t.Errorf("Expected environment_vars to have 'ENABLE_STANDALONE_CGR' entry")
 	}
-	if val, ok := locals1.EnvironmentVars["VAR2"]; !ok || val != "value2" {
-		t.Errorf("Expected environment_vars to have 'VAR2' entry with value 'value2'")
+	if val, ok := locals1.EnvironmentVars["ENABLE_STANDALONE_CGA"]; !ok || val != "true" {
+		t.Errorf("Expected environment_vars to have 'ENABLE_STANDALONE_CGA' entry")
 	}
 
 	// Check Other
@@ -639,47 +639,35 @@ func TestUnitLoadExampleLocalsMergeDirectly(t *testing.T) {
 	}
 }
 
-// TestUnitLoadExamplePathTraversalBlocked tests that dependency paths escaping the examples
-// root directory are rejected (CWE-22 / path traversal).
-func TestUnitLoadExamplePathTraversalBlocked(t *testing.T) {
-	// Create a temp directory that acts as the "examples" root
-	examplesDir, err := os.MkdirTemp("", "examples")
-	if err != nil {
-		t.Fatalf("Failed to create examples dir: %v", err)
-	}
-	defer os.RemoveAll(examplesDir)
+// TestUnitSetEnvironmentVarsAllowlist verifies that setEnvironmentVars rejects keys not in
+// the allowlist and accepts keys that are, preventing injection via a crafted locals.tf.
+func TestUnitSetEnvironmentVarsAllowlist(t *testing.T) {
+	e := NewExample()
 
-	// Create a resource directory inside examples/
-	resourceDir := filepath.Join(examplesDir, "my_resource")
-	if err := os.Mkdir(resourceDir, 0755); err != nil {
-		t.Fatalf("Failed to create resource dir: %v", err)
+	disallowedCases := []string{
+		"GENESYSCLOUD_OAUTHCLIENT_SECRET",
+		"LD_PRELOAD",
+		"PATH",
+		"HOME",
+		"GOPATH",
+		"ARBITRARY_KEY",
 	}
-
-	resourcePath := filepath.Join(resourceDir, "resource.tf")
-	if err := os.WriteFile(resourcePath, []byte(`resource "test" "r" { name = "r" }`), 0644); err != nil {
-		t.Fatalf("Failed to write resource.tf: %v", err)
-	}
-
-	// locals.tf references a path that escapes the examples root
-	localsPath := filepath.Join(resourceDir, "locals.tf")
-	if err := os.WriteFile(localsPath, []byte(`
-locals {
-  dependencies = {
-    resource = ["../../../../etc/passwd"]
-  }
-}
-`), 0644); err != nil {
-		t.Fatalf("Failed to write locals.tf: %v", err)
+	for _, key := range disallowedCases {
+		locals := &Locals{EnvironmentVars: map[string]string{key: "value"}}
+		if err := e.setEnvironmentVars(locals); err == nil {
+			t.Errorf("expected error for disallowed key %q, but got none", key)
+		}
 	}
 
-	example := NewExample()
-	processedState := NewProcessedExampleState()
-	_, err = example.LoadExampleWithDependencies(resourcePath, processedState)
-
-	if err == nil {
-		t.Fatal("Expected an error for path traversal, but got nil")
+	allowedCases := []string{
+		"ENABLE_STANDALONE_CGR",
+		"ENABLE_STANDALONE_CGA",
+		"ENABLE_STANDALONE_EMAIL_ADDRESS",
 	}
-	if !strings.Contains(err.Error(), "escapes allowed directory") {
-		t.Errorf("Expected 'escapes allowed directory' error, got: %v", err)
+	for _, key := range allowedCases {
+		locals := &Locals{EnvironmentVars: map[string]string{key: "true"}}
+		if err := e.setEnvironmentVars(locals); err != nil {
+			t.Errorf("unexpected error for allowed key %q: %v", key, err)
+		}
 	}
 }

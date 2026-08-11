@@ -326,12 +326,25 @@ func (e *Example) processSkipConstraints(locals *Locals) {
 	}
 }
 
+// allowedEnvKeys is the explicit allowlist of environment variable keys that may be
+// set from a locals.tf file. Any key not present here will be rejected to prevent
+// a malicious locals.tf from overwriting sensitive process environment variables
+// (e.g. GENESYSCLOUD_OAUTHCLIENT_SECRET, LD_PRELOAD, PATH).
+var allowedEnvKeys = map[string]bool{
+	"ENABLE_STANDALONE_CGR":           true,
+	"ENABLE_STANDALONE_CGA":           true,
+	"ENABLE_STANDALONE_EMAIL_ADDRESS": true,
+}
+
 func (e *Example) setEnvironmentVars(locals *Locals) error {
 	if locals.EnvironmentVars == nil {
 		return nil
 	}
 
 	for k, v := range locals.EnvironmentVars {
+		if !allowedEnvKeys[k] {
+			return fmt.Errorf("environment variable %q is not in the allowedEnvKeys list and cannot be set from locals.tf", k)
+		}
 		if err := os.Setenv(k, v); err != nil {
 			return fmt.Errorf("error setting environment variable %s: %w", k, err)
 		}
