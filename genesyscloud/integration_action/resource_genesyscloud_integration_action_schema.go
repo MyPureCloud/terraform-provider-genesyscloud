@@ -13,6 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -25,7 +26,13 @@ resource_genesyscloud_integration_action_schema.go should hold four types of fun
 3.  The datasource schema definitions for the integration_action datasource.
 4.  The resource exporter configuration for the integration_action exporter.
 */
-const ResourceType = "genesyscloud_integration_action"
+const (
+	ResourceType = "genesyscloud_integration_action"
+	// S3Enabled indicates function zip paths may use local or S3-backed file paths for hashing.
+	S3Enabled = true
+	// FunctionZipExportSubDirectory is where export places placeholder paths for function zips.
+	FunctionZipExportSubDirectory = "function_zips"
+)
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
@@ -121,10 +128,20 @@ func ResourceIntegrationAction() *schema.Resource {
 				Computed:    true,
 			},
 			"file_path": {
-				Description:  "The zip file path containing the function data action's code. During the export just the name of the zip file will be exported",
+				Description: "Local path to the zip file containing the function data action code. " +
+					"Genesys Cloud does not allow downloading function zip files, so exports cannot retrieve the binary. " +
+					"After export, supply the zip at the exported path (or update file_path) before apply. " +
+					"See https://help.genesys.cloud/articles/add-function-configuration/",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validators.ValidatePath,
+			},
+			"file_content_hash": {
+				Description: "Hash value of the function zip file content. Used to detect changes. " +
+					"Typically set with filesha256(file_path). Computed by the provider when omitted.",
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -136,6 +153,9 @@ func ResourceIntegrationAction() *schema.Resource {
 		ReadContext:   provider.ReadWithPooledClient(readIntegrationAction),
 		UpdateContext: provider.UpdateWithPooledClient(updateIntegrationAction),
 		DeleteContext: provider.DeleteWithPooledClient(deleteIntegrationAction),
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf("function_config.0.file_content_hash", validators.ValidateFileContentHashChanged("function_config.0.file_path", "function_config.0.file_content_hash", S3Enabled)),
+		),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -148,16 +168,21 @@ func ResourceIntegrationAction() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"category": {
-				Description:  "Category of action. Can be up to 256 characters long. If the category contains 'function data action' (case-insensitive, underscores and hyphens treated as spaces), the action will be treated as a function data action and requires function_config to be set.",
+				Description: "Category of action. Can be up to 256 characters long. " +
+					"Function data actions are detected when the associated integration type is 'function-data-actions', " +
+					"or when the category contains 'function data action' (case-insensitive; underscores and hyphens treated as spaces). " +
+					"Function data actions require function_config to be set.",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringLenBetween(1, 256),
 			},
 			"integration_id": {
-				Description: "The ID of the integration this action is associated with. Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
+				Description: "The ID of the integration this action is associated with. " +
+					"When the integration type is 'function-data-actions', this action is created as a draft, the zip is uploaded, then published. " +
+					"Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 			"secure": {
 				Description: "Indication of whether or not the action is designed to accept sensitive data. Changing the secure attribute will cause the existing integration_action to be dropped and recreated with a new ID.",
@@ -228,6 +253,14 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: FunctionZipExportResolver,
+			SubDirectory:              FunctionZipExportSubDirectory,
+		},
+		ThirdPartyRefAttrs: []string{
+			"function_config.file_path",
+			"function_config.file_content_hash",
+		},
 		// Static (built-in) data actions are owned by Genesys Cloud and cannot be created,
 		// updated, or deleted via the public API. Export them as data sources so that other
 		// resources (e.g. Architect flows) can reference them by name + integration_id.
