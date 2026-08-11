@@ -116,6 +116,7 @@ import (
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupActivation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_activation"
 	routingQueueConditionalGroupRouting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_routing"
+	routingQueueIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_identity_resolution"
 	routingQueueOutboundEmailAddress "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_outbound_email_address"
 	routingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_settings"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
@@ -364,6 +365,7 @@ func registerResources() {
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue
 	routingQueueConditionalGroupActivation.SetRegistrar(regInstance)       //Registering routing queue conditional group activation
 	routingQueueConditionalGroupRouting.SetRegistrar(regInstance)          //Registering routing queue conditional group routing
+	routingQueueIdentityResolution.SetRegistrar(regInstance)               //Registering routing queue identity resolution
 	routingQueueOutboundEmailAddress.SetRegistrar(regInstance)             //Registering routing queue outbound email address
 	outboundContactListContact.SetRegistrar(regInstance)                   //Registering outbound contact list contact
 	routingSettings.SetRegistrar(regInstance)                              //Registering routing Settings
