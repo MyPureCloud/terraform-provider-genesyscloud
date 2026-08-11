@@ -84,6 +84,17 @@ func (e *Example) GenerateOutput() (string, error) {
 // The processedState parameter tracks which files have been processed and the current dependency chain.
 func (e *Example) LoadExampleWithDependencies(resourcePath string, processedState *ProcessedExampleState) (*Example, error) {
 
+	// Set the allowed base directory on the first call. Anchored to the parent of the initial
+	// resource's directory so that sibling resource directories (e.g. ../other/resource.tf)
+	// are permitted while still blocking traversal outside the examples tree.
+	if processedState.AllowedBaseDir == "" {
+		abs, err := filepath.Abs(resourcePath)
+		if err != nil {
+			return e, fmt.Errorf("error resolving absolute path for %s: %w", resourcePath, err)
+		}
+		processedState.AllowedBaseDir = filepath.Dir(filepath.Dir(abs))
+	}
+
 	// Check for cycles in dependency chain
 	absPAth, err := filepath.Abs(resourcePath)
 	if err != nil {
@@ -140,7 +151,7 @@ func (e *Example) LoadExampleWithDependencies(resourcePath string, processedStat
 	if !processedExampleFiles.isFileProcessed(resourcePath) {
 
 		// Load the resource.tf
-		resource, err := e.loadResource(resourcePath)
+		resource, err := e.loadResource(resourcePath, processedState.AllowedBaseDir)
 		if err != nil {
 			return e, fmt.Errorf("error loading %s: %w", resourcePath, err)
 		}
@@ -201,6 +212,15 @@ func (e *Example) loadDependencies(pathDir string, fileWithoutExt string, locals
 
 		for _, depPath := range dependencies {
 			depPath = filepath.Join(pathDir, depPath)
+			if processedState.AllowedBaseDir != "" {
+				abs, err := filepath.Abs(depPath)
+				if err != nil {
+					return fmt.Errorf("error resolving absolute path for dependency %s: %w", depPath, err)
+				}
+				if !strings.HasPrefix(abs, processedState.AllowedBaseDir+string(os.PathSeparator)) && abs != processedState.AllowedBaseDir {
+					return fmt.Errorf("dependency path %q escapes allowed directory %q", depPath, processedState.AllowedBaseDir)
+				}
+			}
 			depExample := NewExample()
 			depExample, err := depExample.LoadExampleWithDependencies(depPath, processedState)
 			if err != nil {
@@ -231,7 +251,16 @@ func (e *Example) loadDependencies(pathDir string, fileWithoutExt string, locals
 	return nil
 }
 
-func (e *Example) loadResource(path string) (*Resource, error) {
+func (e *Example) loadResource(path string, allowedBaseDir string) (*Resource, error) {
+	if allowedBaseDir != "" {
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return nil, fmt.Errorf("error resolving absolute path for %s: %w", path, err)
+		}
+		if !strings.HasPrefix(abs, allowedBaseDir+string(os.PathSeparator)) && abs != allowedBaseDir {
+			return nil, fmt.Errorf("dependency path %q escapes allowed directory %q", path, allowedBaseDir)
+		}
+	}
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -566,6 +595,9 @@ type ProcessedExampleState struct {
 	DirectoryTracker map[string]*ProcessedFiles
 	// DependencyChain tracks the current chain of dependencies being processed
 	DependencyChain []string
+	// AllowedBaseDir is the root directory that all dependency paths must remain within.
+	// It is set on the first call to LoadExampleWithDependencies and prevents path traversal.
+	AllowedBaseDir string
 }
 
 // NewProcessedExampleState creates a new initialized ProcessedExampleState
