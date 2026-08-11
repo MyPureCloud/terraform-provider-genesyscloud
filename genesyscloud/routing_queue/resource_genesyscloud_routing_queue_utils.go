@@ -1148,6 +1148,11 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	return nil, nil
 }
 
+// clearBullseyeRingMemberGroups clears member groups from bullseye rings before the main update.
+// The Genesys Cloud API rejects removing rings that have members attached. This function issues
+// a preliminary PUT that keeps the current ring count but sets MemberGroups to nil on all rings,
+// satisfying the API prerequisite. The caller's updateQueue.Bullseye (which holds the desired
+// final state — nil for all-rings-removed, or non-nil for partial removal) is left untouched.
 func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
@@ -1177,16 +1182,18 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 		clearedRings[i].MemberGroups = nil
 	}
 
-	updateQueue.Bullseye = &platformclientv2.Bullseye{
-		Rings: &clearedRings,
+	clearQueue := platformclientv2.Queuerequest{
+		Name: updateQueue.Name,
+		Bullseye: &platformclientv2.Bullseye{
+			Rings: &clearedRings,
+		},
 	}
 
-	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), &clearQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
 	}
 
-	updateQueue.Bullseye = nil
 	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
 	return nil
 }
