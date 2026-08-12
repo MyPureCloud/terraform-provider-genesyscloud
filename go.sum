@@ -219,8 +219,8 @@ github.com/mypurecloud/platform-client-sdk-go/v193 v193.0.0 h1:rW4L1rhLjRkPqY7c/
 github.com/mypurecloud/platform-client-sdk-go/v193 v193.0.0/go.mod h1:rcg072S3VMJJ3pYcmXlmiZ1KMfH3B7l/yuc7QCFe8NA=
 github.com/mypurecloud/platform-client-sdk-go/v195 v195.0.0 h1:wDiGrSmM+DvdE12TSZ8iK+T/M8pwZYXI1XEigGqI3pU=
 github.com/mypurecloud/platform-client-sdk-go/v195 v195.0.0/go.mod h1:8fFlzd867DK37M/YAXOBSSsn7V8v2q8EYsc9VhMnD5k=
-github.com/nyaruka/phonenumbers v1.6.11 h1:jXMpF1xGgw5z6yxr4KDbiTDPfji91gW8g0d04G7SYb8=
-github.com/nyaruka/phonenumbers v1.6.11/go.mod h1:IUu45lj2bSeYXQuxDyyuzOrdV10tyRa1YSsfH8EKN5c=
+github.com/nyaruka/phonenumbers v1.8.1 h1:2K9YMQuv1dCGqjjzB1DwmdCe89khT4KPBQb2CxAMMlU=
+github.com/nyaruka/phonenumbers v1.8.1/go.mod h1:fsKPJ70O9JetEA4ggnJadYTFWwtGPvu/lETTXNXq6Cs=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
 github.com/pelletier/go-toml/v2 v2.4.3 h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY=

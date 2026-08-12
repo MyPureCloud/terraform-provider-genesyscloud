@@ -17,7 +17,7 @@ require (
 	github.com/mozillazg/go-unidecode v0.2.0
 	github.com/mypurecloud/platform-client-sdk-go/v193 v193.0.0
 	github.com/mypurecloud/platform-client-sdk-go/v195 v195.0.0
-	github.com/nyaruka/phonenumbers v1.6.11
+	github.com/nyaruka/phonenumbers v1.8.1
 	github.com/rjNemo/underscore v0.10.0
 	github.com/shirou/gopsutil/v4 v4.26.2
 	github.com/zclconf/go-cty v1.18.0
