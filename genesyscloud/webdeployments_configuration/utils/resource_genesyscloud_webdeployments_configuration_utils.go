@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func buildCobrowseSettings(d *schema.ResourceData) *platformclientv2.Cobrowsesettings {
@@ -269,6 +269,13 @@ func buildVideoSettings(d *schema.ResourceData) *platformclientv2.Videosettings 
 		videoSettings.Enabled = &v
 	}
 
+	if v, ok := cfg["channels"]; ok {
+		channels := lists.InterfaceListToStrings(v.([]interface{}))
+		if len(channels) > 0 {
+			videoSettings.Channels = &channels
+		}
+	}
+
 	if v, ok := cfg["agent"]; ok && v != nil {
 		videoSettings.Agent = buildAgentVideoSettings(v.([]interface{}))
 	}
@@ -345,6 +352,10 @@ func FlattenVideoSettings(videoSettings *platformclientv2.Videosettings) []inter
 	result := map[string]interface{}{}
 	if videoSettings.Enabled != nil {
 		result["enabled"] = videoSettings.Enabled
+	}
+
+	if videoSettings.Channels != nil {
+		result["channels"] = *videoSettings.Channels
 	}
 
 	if videoSettings.Agent != nil {
