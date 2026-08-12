@@ -73,7 +73,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 			VarType: &platformclientv2.Worktypereference{
 				Id: &wi.worktype_id,
 			},
-			Language: &platformclientv2.Languagereference{
+			Language: &platformclientv2.Workitemlanguagereference{
 				Id: &wi.language_id,
 			},
 			Priority:        &wi.priority,
@@ -99,7 +99,7 @@ func TestUnitResourceWorkitemCreate(t *testing.T) {
 			Queue: &platformclientv2.Workitemqueuereference{
 				Id: &wi.queue_id,
 			},
-			Skills: &[]platformclientv2.Routingskillreference{
+			Skills: &[]platformclientv2.Workitemroutingskillreference{
 				{
 					Id: &wi.skills_ids[0],
 				},
@@ -213,7 +213,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 			VarType: &platformclientv2.Worktypereference{
 				Id: &wi.worktype_id,
 			},
-			Language: &platformclientv2.Languagereference{
+			Language: &platformclientv2.Workitemlanguagereference{
 				Id: &wi.language_id,
 			},
 			Priority:        &wi.priority,
@@ -239,7 +239,7 @@ func TestUnitResourceWorkitemRead(t *testing.T) {
 			Queue: &platformclientv2.Workitemqueuereference{
 				Id: &wi.queue_id,
 			},
-			Skills: &[]platformclientv2.Routingskillreference{
+			Skills: &[]platformclientv2.Workitemroutingskillreference{
 				{
 					Id: &wi.skills_ids[0],
 				},
@@ -377,7 +377,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 			VarType: &platformclientv2.Worktypereference{
 				Id: &wi.worktype_id,
 			},
-			Language: &platformclientv2.Languagereference{
+			Language: &platformclientv2.Workitemlanguagereference{
 				Id: &wi.language_id,
 			},
 			Priority:        &wi.priority,
@@ -403,7 +403,7 @@ func TestUnitResourceWorkitemUpdate(t *testing.T) {
 			Queue: &platformclientv2.Workitemqueuereference{
 				Id: &wi.queue_id,
 			},
-			Skills: &[]platformclientv2.Routingskillreference{
+			Skills: &[]platformclientv2.Workitemroutingskillreference{
 				{
 					Id: &wi.skills_ids[0],
 				},
