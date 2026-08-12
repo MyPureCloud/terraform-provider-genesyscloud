@@ -84,15 +84,17 @@ func (e *Example) GenerateOutput() (string, error) {
 // The processedState parameter tracks which files have been processed and the current dependency chain.
 func (e *Example) LoadExampleWithDependencies(resourcePath string, processedState *ProcessedExampleState) (*Example, error) {
 
-	// Set the allowed base directory on the first call. Anchored to the parent of the initial
-	// resource's directory so that sibling resource directories (e.g. ../other/resource.tf)
-	// are permitted while still blocking traversal outside the examples tree.
+	// Set the allowed base directory on the first call. Anchored to the examples root
+	// (three levels up from resource.tf) so that both sibling resource directories
+	// (e.g. ../other/resource.tf) and data-source dependencies
+	// (e.g. ../../data-sources/genesyscloud_auth_division_home/data-source.tf) are permitted
+	// while still blocking traversal outside the examples tree.
 	if processedState.AllowedBaseDir == "" {
 		abs, err := filepath.Abs(resourcePath)
 		if err != nil {
 			return e, fmt.Errorf("error resolving absolute path for %s: %w", resourcePath, err)
 		}
-		processedState.AllowedBaseDir = filepath.Dir(filepath.Dir(abs))
+		processedState.AllowedBaseDir = filepath.Dir(filepath.Dir(filepath.Dir(abs)))
 	}
 
 	// Check for cycles in dependency chain
