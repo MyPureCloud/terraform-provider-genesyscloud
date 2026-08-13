@@ -9,6 +9,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
+	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
+	agenticVirtualAgentVersionPublish "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version_publish"
 	aiStudioSummarySetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/ai_studio_summary_setting"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -254,6 +257,9 @@ func resourceMapsAreRegistered() bool {
 func registerResources() {
 	regInstance := &RegisterInstance{}
 	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
+	agenticVirtualAgent.SetRegistrar(regInstance)                           //Registering agentic virtual agent
+	agenticVirtualAgentVersion.SetRegistrar(regInstance)                    //Registering agentic virtual agent version
+	agenticVirtualAgentVersionPublish.SetRegistrar(regInstance)             //Registering agentic virtual agent version publish
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
