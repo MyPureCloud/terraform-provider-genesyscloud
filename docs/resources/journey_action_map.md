@@ -90,8 +90,6 @@ resource "genesyscloud_journey_action_map" "example_journey_action_map" {
 - `is_active` (Boolean) Whether the action map is active. Defaults to `true`.
 - `page_url_conditions` (Block Set) URL conditions that a page must match for web actions to be displayable. (see [below for nested schema](#nestedblock--page_url_conditions))
 - `trigger_with_event_conditions` (Block Set) List of event conditions that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_event_conditions))
-- `trigger_with_outcome_probability_conditions` (Block Set, Deprecated) *DEPRECATED: Journey Outcomes is being removed. Remove this attribute from your configuration. There is no replacement. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/* Probability conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_probability_conditions))
-- `trigger_with_outcome_quantile_conditions` (Block Set, Deprecated) *DEPRECATED: Journey Outcomes is being removed. Remove this attribute from your configuration. There is no replacement. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/* Quantile conditions for outcomes that must be satisfied to trigger the action map. (see [below for nested schema](#nestedblock--trigger_with_outcome_quantile_conditions))
 - `trigger_with_segments` (Set of String) Trigger action map if any segment in the list is assigned to a given customer.
 - `weight` (Number) Weight of the action map with higher number denoting higher weight. Low=1, Medium=2, High=3. Defaults to `2`.
 
@@ -214,30 +212,4 @@ Optional:
 
 - `event_name` (String) The name of the event for which this condition can be satisfied.
 - `operator` (String) The comparison operator. Valid values: containsAll, containsAny, notContainsAll, notContainsAny, equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, startsWith, endsWith. Defaults to `equal`.
-
-
-<a id="nestedblock--trigger_with_outcome_probability_conditions"></a>
-### Nested Schema for `trigger_with_outcome_probability_conditions`
-
-Required:
-
-- `maximum_probability` (Number) Probability value for the selected outcome at or above which the action map will trigger.
-- `outcome_id` (String) The outcome ID.
-
-Optional:
-
-- `probability` (Number) Additional probability condition, where if set, the action map will trigger if the current outcome probability is lower or equal to the value.
-
-
-<a id="nestedblock--trigger_with_outcome_quantile_conditions"></a>
-### Nested Schema for `trigger_with_outcome_quantile_conditions`
-
-Required:
-
-- `max_quantile_threshold` (Number) This Outcome Quantile Condition is met when sessionMaxQuantile of the OutcomeScore is above this value, (unless fallbackQuantile is set). Range 0.00-1.00
-- `outcome_id` (String) The outcome ID.
-
-Optional:
-
-- `fallback_quantile_threshold` (Number) If set, this Condition is met when max_quantile_threshold is met, AND the current quantile of the OutcomeScore is below this fallback_quantile_threshold. Range 0.00-1.00
 
