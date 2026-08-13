@@ -6,11 +6,32 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 )
+
+func TestDefaultFormatIDIsAPIAllowed(t *testing.T) {
+	t.Parallel()
+
+	// Allowable formatId values for GET /api/v2/greetings/{greetingId}/(groups/)downloads
+	allowed := map[string]struct{}{
+		"WAV":        {},
+		"WEBM":       {},
+		"WAV_ULAW":   {},
+		"OGG_VORBIS": {},
+		"OGG_OPUS":   {},
+		"MP3":        {},
+		"NONE":       {},
+	}
+	if _, ok := allowed[DefaultFormatID]; !ok {
+		t.Fatalf("DefaultFormatID = %q is not an allowable greeting download formatId", DefaultFormatID)
+	}
+	if DefaultFormatID != "WAV" {
+		t.Fatalf("DefaultFormatID = %q, want %q (API default)", DefaultFormatID, "WAV")
+	}
+}
 
 func TestBuildGreetingFileName(t *testing.T) {
 	t.Parallel()

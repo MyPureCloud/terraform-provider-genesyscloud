@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // Build Functions
@@ -44,7 +44,7 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
-		queueMediaSettings.Message = buildSdkMediaSettingsMessage(d, mediaSettingsMessage)
+		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
 	}
 
 	return queueMediaSettings
@@ -179,7 +179,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	return mediaSetting
 }
 
-func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platformclientv2.Messagemediasettings {
+func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemediasettings {
 	if len(settings) == 0 {
 		return nil
 	}
@@ -214,10 +214,14 @@ func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platf
 	}
 
 	if subTypeSettingsList, ok := settingsMap["sub_type_settings"].([]interface{}); ok {
-		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(d, subTypeSettingsList)
+		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
 	}
 
-	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableBool(d, "media_settings_message.0.enable_inactivity_timeout")
+	// The API only accepts EnableInactivityTimeout when set to true.
+	// Sending false explicitly causes a 400 error, so we only set EnableInactivityTimeout if the value is true.
+	if v, ok := settingsMap["enable_inactivity_timeout"].(bool); ok && v {
+		messageMediaSettings.EnableInactivityTimeout = &v
+	}
 
 	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
 		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
@@ -291,16 +295,17 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
 	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
 	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
+	callbackSettings.EdgeGroup = util.GetNillableDomainEntityRefFromMap(settingsMap, "edge_group_id")
 	callbackSettings.Site = util.GetNillableDomainEntityRefFromMap(settingsMap, "site_id")
 
 	return &callbackSettings
 }
 
-func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
+func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
 
 	returnObj := make(map[string]platformclientv2.Messagesubtypesettings)
 
-	for i, subTypeItem := range subTypeList {
+	for _, subTypeItem := range subTypeList {
 		if subTypeItem == nil {
 			continue
 		}
@@ -310,7 +315,11 @@ func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *ma
 		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableBool(d, fmt.Sprintf("media_settings_message.0.sub_type_settings.%d.enable_inactivity_timeout", i))
+		// The API only accepts EnableInactivityTimeout when set to true.
+		// Sending false explicitly causes a 400 error, so we only set EnableInactivityTimeout if the value is true.
+		if v, ok := subTypeMap["enable_inactivity_timeout"].(bool); ok && v {
+			subTypeSetting.EnableInactivityTimeout = &v
+		}
 		returnObj[mediaType] = subTypeSetting
 	}
 
@@ -865,6 +874,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "max_retry_count", settings.MaxRetryCount)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "retry_delay_seconds", settings.RetryDelaySeconds)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "edge_group_id", settings.EdgeGroup)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "site_id", settings.Site)
 
 	return []interface{}{settingsMap}

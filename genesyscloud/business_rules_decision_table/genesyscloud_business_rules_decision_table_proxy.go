@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -308,7 +308,7 @@ func createDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionT
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.businessRulesApi.PostBusinessrulesDecisiontableVersions(tableId)
+	return p.businessRulesApi.PostBusinessrulesDecisiontableVersions(tableId, platformclientv2.Createdecisiontableversionrequest{})
 }
 
 func publishDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {

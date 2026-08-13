@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -149,7 +149,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
-	if containsFunctionDataAction(category) {
+	if isFunctionDataActionIntegration(ctx, integrationId, iap) || containsFunctionDataAction(category) {
 		return createFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 
@@ -192,6 +192,20 @@ func containsFunctionDataAction(s string) bool {
 	normalized = strings.ReplaceAll(normalized, "_", " ")
 	normalized = strings.ReplaceAll(normalized, "-", " ")
 	return strings.Contains(normalized, "function data action")
+}
+
+// isFunctionDataActionIntegration checks if the integration with the given ID is of type "function-data-actions"
+// by making a GET API call to retrieve the integration details.
+func isFunctionDataActionIntegration(ctx context.Context, integrationId string, iap *integrationActionsProxy) bool {
+	integration, _, err := iap.integrationsApi.GetIntegration(integrationId, 1, 1, "", nil, "", "")
+	if err != nil {
+		log.Printf("Warning: failed to get integration %s to check type: %v. Falling back to category check.", integrationId, err)
+		return false
+	}
+	if integration != nil && integration.IntegrationType != nil && integration.IntegrationType.Id != nil {
+		return *integration.IntegrationType.Id == "function-data-actions"
+	}
+	return false
 }
 
 func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}, iap *integrationActionsProxy) diag.Diagnostics {
@@ -707,7 +721,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("config_response", nil)
 		}
 
-		if containsFunctionDataAction(*action.Category) {
+		if isFunctionDataActionIntegration(ctx, d.Get("integration_id").(string), iap) || containsFunctionDataAction(*action.Category) {
 			var functionData *platformclientv2.Functionconfig
 
 			log.Printf("DEBUG: Reading published function for integration action %s", d.Id())
@@ -770,7 +784,7 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 		return diagErr
 	}
 
-	if containsFunctionDataAction(category) {
+	if isFunctionDataActionIntegration(ctx, d.Get("integration_id").(string), iap) || containsFunctionDataAction(category) {
 		return updateFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 

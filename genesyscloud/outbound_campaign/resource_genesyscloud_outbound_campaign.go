@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -167,6 +167,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("skill_columns", *campaign.SkillColumns)
 		}
 		resourcedata.SetNillableValue(d, "auto_answer", campaign.CallbackAutoAnswer)
+		resourcedata.SetNillableValue(d, "precise_dialing_enabled", campaign.PreciseDialingEnabled)
 
 		if _, newVal := d.GetChange("campaign_status"); newVal == "on" && *campaign.CampaignStatus == "complete" {
 			// skips the consistency check so that the campaign can be re-enabled after completion
