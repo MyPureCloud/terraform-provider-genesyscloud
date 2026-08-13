@@ -12,6 +12,8 @@ import (
    schema and registration for the publish resource.
 */
 
+const ResourceType = "genesyscloud_agentic_virtual_agent_version_publish"
+
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersionPublish())

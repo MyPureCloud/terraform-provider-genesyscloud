@@ -84,7 +84,7 @@ func createPublish(ctx context.Context, d *schema.ResourceData, meta interface{}
 			if len(jobStatus.Errors) > 0 {
 				errMsg = fmt.Sprintf("publish job failed: %s (code: %s)", jobStatus.Errors[0].Message, jobStatus.Errors[0].Code)
 			}
-			return retry.NonRetryableError(fmt.Errorf("%s for version %s/%s: %s", errMsg, agentId, versionId, errMsg))
+			return retry.NonRetryableError(fmt.Errorf("publish failed for version %s/%s: %s", agentId, versionId, errMsg))
 		default:
 			return retry.RetryableError(fmt.Errorf("unexpected publish job status: %s", jobStatus.Status))
 		}
@@ -118,6 +118,12 @@ func readPublish(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			return nil
 		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read version %s/%s: %s", agentId, versionId, getErr), resp)
+	}
+
+	if versionResp == nil {
+		log.Printf("Version %s/%s returned nil response, removing publish from state", agentId, versionId)
+		d.SetId("")
+		return nil
 	}
 
 	currentStatus := ""

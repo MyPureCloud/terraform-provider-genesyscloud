@@ -19,7 +19,6 @@ import (
    - GET   /api/v2/agentic/virtualagents/{agentId}/versions/{versionId}           → Read version status
 */
 
-const ResourceType = "genesyscloud_agentic_virtual_agent_version_publish"
 const basePath = "/api/v2/agentic/virtualagents"
 
 var internalProxy *publishProxy

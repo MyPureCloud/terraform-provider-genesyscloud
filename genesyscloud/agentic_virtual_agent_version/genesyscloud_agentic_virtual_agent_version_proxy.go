@@ -21,7 +21,6 @@ import (
    - DELETE → Does not exist. Version destroy is state-only (no-op).
 */
 
-const ResourceType = "genesyscloud_agentic_virtual_agent_version"
 const basePath = "/api/v2/agentic/virtualagents"
 
 var internalProxy *agenticVirtualAgentVersionProxy

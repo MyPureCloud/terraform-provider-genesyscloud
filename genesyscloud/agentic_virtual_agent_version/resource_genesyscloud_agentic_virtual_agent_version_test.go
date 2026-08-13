@@ -21,9 +21,11 @@ func TestAccResourceAgenticVirtualAgentVersionBasic(t *testing.T) {
 		agentResourceLabel   = "test_agent"
 		versionResourceLabel = "test_version"
 		agentName            = "TF Version Test Agent " + uuid.NewString()
-		role                 = "You are a helpful banking assistant."
+		role1                = "You are a helpful banking assistant."
+		role2                = "You are a friendly customer support agent."
 		instruction1         = "Be polite and professional."
 		instruction2         = "Always verify the customer identity first."
+		instruction3         = "Escalate billing issues to a live agent."
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -33,13 +35,25 @@ func TestAccResourceAgenticVirtualAgentVersionBasic(t *testing.T) {
 			{
 				// Create with minimal definition
 				Config: generateAgentResource(agentResourceLabel, agentName) +
-					generateVersionResourceBasic(versionResourceLabel, agentResourceLabel, role, instruction1, instruction2),
+					generateVersionResourceBasic(versionResourceLabel, agentResourceLabel, role1, instruction1, instruction2),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "status", "Draft"),
-					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.role", role),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.role", role1),
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.instructions.0", instruction1),
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.instructions.1", instruction2),
+				),
+			},
+			{
+				// Update — change role and add an instruction
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceThreeInstructions(versionResourceLabel, agentResourceLabel, role2, instruction1, instruction2, instruction3),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.role", role2),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.instructions.0", instruction1),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.instructions.1", instruction2),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.instructions.2", instruction3),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "status", "Draft"),
 				),
 			},
 			{
@@ -134,6 +148,18 @@ func generateVersionResourceBasic(resourceLabel, agentResourceLabel, role, instr
 		}
 	}
 	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, instruction2)
+}
+
+func generateVersionResourceThreeInstructions(resourceLabel, agentResourceLabel, role, instruction1, instruction2, instruction3 string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role = "%s"
+			instructions = ["%s", "%s", "%s"]
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, instruction2, instruction3)
 }
 
 func generateVersionResourceWithGuardrails(resourceLabel, agentResourceLabel, role, instruction1 string) string {

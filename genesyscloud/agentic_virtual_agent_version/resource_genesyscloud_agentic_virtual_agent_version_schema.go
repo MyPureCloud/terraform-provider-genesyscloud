@@ -15,6 +15,8 @@ import (
    2. The resource schema definition for the agentic_virtual_agent_version resource.
 */
 
+const ResourceType = "genesyscloud_agentic_virtual_agent_version"
+
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersion())
