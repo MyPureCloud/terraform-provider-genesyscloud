@@ -1182,11 +1182,9 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 		clearedRings[i].MemberGroups = nil
 	}
 
-	clearQueue := platformclientv2.Queuerequest{
-		Name: updateQueue.Name,
-		Bullseye: &platformclientv2.Bullseye{
-			Rings: &clearedRings,
-		},
+	clearQueue := *updateQueue
+	clearQueue.Bullseye = &platformclientv2.Bullseye{
+		Rings: &clearedRings,
 	}
 
 	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), &clearQueue)
