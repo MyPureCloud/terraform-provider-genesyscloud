@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -58,7 +59,9 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 		log.Printf("Dealing with external contact id : %s", *externalContact.Id)
 		var blockLabelParts []string
 
-		if externalContact.ExternalOrganization != nil {
+		if externalContact.ExternalOrganization != nil &&
+			externalContact.ExternalOrganization.Id != nil &&
+			!feature_toggles.SimpleExternalContactBlockLabelToggleExists() {
 			externalOrg, resp, err := ep.getExternalContactsOrganizationById(ctx, *externalContact.ExternalOrganization.Id)
 			if err != nil {
 				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get external contact organization %s: %v", *externalContact.ExternalOrganization.Id, err), resp)
@@ -67,6 +70,7 @@ func getAllAuthExternalContacts(ctx context.Context, clientConfig *platformclien
 				blockLabelParts = append(blockLabelParts, *externalOrg.Name)
 			}
 		}
+
 		if externalContact.LastName != nil {
 			blockLabelParts = append(blockLabelParts, *externalContact.LastName)
 		}
