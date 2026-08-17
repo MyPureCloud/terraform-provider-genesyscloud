@@ -47,7 +47,7 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 	name := d.Get("name").(string)
 	createRoutingSkill.Name = &name
 
-	divisionId := d.Get("divisionId").(string)
+	divisionId := d.Get("division_id").(string)
 	if divisionId != "" {
 		createRoutingSkill.DivisionId = &divisionId
 	}
@@ -69,7 +69,7 @@ func updateRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 
 	var routingSkill platformclientv2.Updateskilldivisionrequest
 	skillId := d.Id()
-	divisionId := d.Get("divisionId").(string)
+	divisionId := d.Get("division_id").(string)
 	routingSkill.DivisionId = &divisionId
 
 	log.Printf("Updating skill %s", skillId)
@@ -105,7 +105,7 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		_ = d.Set("name", *skill.Name)
 		if skill.DivisionId != nil {
-			_ = d.Set("divisionId", *skill.DivisionId)
+			_ = d.Set("division_id", *skill.DivisionId)
 		}
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
 		return cc.CheckState(d)
@@ -157,7 +157,7 @@ func GenerateUpdateRoutingSkillResource(
 	divisionId string) string {
 	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
 		id = "%s",
-		divisionId = "%s"
+		division_id = "%s"
 	}
 	`, resourceLabel, id, divisionId)
 }

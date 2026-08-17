@@ -57,7 +57,7 @@ func ResourceRoutingSkill() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
-			"divisionId": {
+			"division_id": {
 				Description: "Division of a skill. Changing the division will cause the skill object object to dropped and recreated",
 				Type:        schema.TypeString,
 				ForceNew:    true,
