@@ -60,7 +60,6 @@ func sampleActionMapForFlatten() *platformclientv2.Actionmap {
 	ignoreFrequencyCap := false
 	activationType := "immediate"
 	mediaType := "openAction"
-	isPacingEnabled := true
 	startDate := time.Date(2022, 7, 4, 12, 0, 0, 0, time.UTC)
 	openActionID := "00000000-0000-0000-0000-000000000001"
 	openActionName := "export-repro-open-action"
@@ -75,8 +74,7 @@ func sampleActionMapForFlatten() *platformclientv2.Actionmap {
 			VarType: &activationType,
 		},
 		Action: &platformclientv2.Actionmapaction{
-			MediaType:       &mediaType,
-			IsPacingEnabled: &isPacingEnabled,
+			MediaType: &mediaType,
 			OpenActionFields: &platformclientv2.Openactionfields{
 				OpenAction: &platformclientv2.Domainentityref{
 					Id:   &openActionID,

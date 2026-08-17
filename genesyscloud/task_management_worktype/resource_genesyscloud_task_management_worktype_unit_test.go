@@ -109,7 +109,7 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 					DefaultPriority:           &wt.defaultPriority,
 					DefaultTtlSeconds:         &wt.defaultTtlS,
 
-					DefaultLanguage: &platformclientv2.Languagereference{
+					DefaultLanguage: &platformclientv2.Workitemlanguagereference{
 						Id: &wt.defaultLanguageId,
 					},
 					DefaultQueue: &platformclientv2.Workitemqueuereference{
@@ -144,13 +144,13 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 					DefaultPriority:           &wt.defaultPriority,
 					DefaultTtlSeconds:         &wt.defaultTtlS,
 
-					DefaultLanguage: &platformclientv2.Languagereference{
+					DefaultLanguage: &platformclientv2.Workitemlanguagereference{
 						Id: &wt.defaultLanguageId,
 					},
 					DefaultQueue: &platformclientv2.Workitemqueuereference{
 						Id: &wt.defaultQueueId,
 					},
-					DefaultSkills: &[]platformclientv2.Routingskillreference{
+					DefaultSkills: &[]platformclientv2.Workitemroutingskillreference{
 						{
 							Id: &wt.defaultSkillIds[0],
 						},
@@ -252,13 +252,13 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 			DefaultPriority:           &wt.defaultPriority,
 			DefaultTtlSeconds:         &wt.defaultTtlS,
 
-			DefaultLanguage: &platformclientv2.Languagereference{
+			DefaultLanguage: &platformclientv2.Workitemlanguagereference{
 				Id: &wt.defaultLanguageId,
 			},
 			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
-			DefaultSkills: &[]platformclientv2.Routingskillreference{
+			DefaultSkills: &[]platformclientv2.Workitemroutingskillreference{
 				{
 					Id: &wt.defaultSkillIds[0],
 				},
@@ -371,7 +371,7 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultPriority:           &wt.defaultPriority,
 			DefaultTtlSeconds:         &wt.defaultTtlS,
 
-			DefaultLanguage: &platformclientv2.Languagereference{
+			DefaultLanguage: &platformclientv2.Workitemlanguagereference{
 				Id: &wt.defaultLanguageId,
 			},
 			DefaultQueue: &platformclientv2.Workitemqueuereference{
@@ -407,13 +407,13 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultPriority:           &wt.defaultPriority,
 			DefaultTtlSeconds:         &wt.defaultTtlS,
 
-			DefaultLanguage: &platformclientv2.Languagereference{
+			DefaultLanguage: &platformclientv2.Workitemlanguagereference{
 				Id: &wt.defaultLanguageId,
 			},
 			DefaultQueue: &platformclientv2.Workitemqueuereference{
 				Id: &wt.defaultQueueId,
 			},
-			DefaultSkills: &[]platformclientv2.Routingskillreference{
+			DefaultSkills: &[]platformclientv2.Workitemroutingskillreference{
 				{
 					Id: &wt.defaultSkillIds[0],
 				},
