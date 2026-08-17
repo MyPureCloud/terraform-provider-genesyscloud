@@ -151,13 +151,9 @@ func GenerateRoutingSkillResource(
 	`, resourceLabel, name)
 }
 
-func GenerateUpdateRoutingSkillResource(
+func GenerateRoutingSkillResourceWithDivision(
 	resourceLabel string,
-	id string,
+	name string,
 	divisionId string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
-		id = "%s",
-		division_id = "%s"
-	}
-	`, resourceLabel, id, divisionId)
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {name = "%s" division_id = "%s" }`, resourceLabel, name, divisionId)
 }

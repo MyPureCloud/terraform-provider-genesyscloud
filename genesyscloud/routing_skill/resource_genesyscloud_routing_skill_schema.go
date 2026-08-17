@@ -58,9 +58,10 @@ func ResourceRoutingSkill() *schema.Resource {
 				ForceNew:    true,
 			},
 			"division_id": {
-				Description: "Division of a skill. Changing the division will cause the skill object object to dropped and recreated",
+				Description: "The division to which this skill belongs. If not set, the home division will be used.",
 				Type:        schema.TypeString,
-				ForceNew:    true,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -69,6 +70,8 @@ func ResourceRoutingSkill() *schema.Resource {
 func RoutingSkillExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingSkills),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }

@@ -17,8 +17,6 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 	var (
 		skillResourceLabel1 = "test-skill1"
 		skillName1          = "Terraform Skill" + uuid.NewString()
-		skillId1            = uuid.NewString()
-		skillDivision1      = uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -36,16 +34,18 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 				),
 			},
 			{
-				// Update
-				Config: GenerateUpdateRoutingSkillResource(
+				// Update with division from data source
+				Config: GenerateRoutingSkillResourceWithDivision(
 					skillResourceLabel1,
-					skillId1,
-					skillDivision1,
+					skillName1,
+					"data.genesyscloud_auth_division_home.home.id",
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "name", skillName1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "id", skillId1),
-					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "divisionId", skillDivision1),
+					resource.TestCheckResourceAttrPair(
+						"genesyscloud_routing_skill."+skillResourceLabel1, "division_id",
+						"data.genesyscloud_auth_division_home.home", "id",
+					),
 				),
 			},
 			{
