@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // Build Functions
@@ -295,6 +295,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
 	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
 	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
+	callbackSettings.EdgeGroup = util.GetNillableDomainEntityRefFromMap(settingsMap, "edge_group_id")
 	callbackSettings.Site = util.GetNillableDomainEntityRefFromMap(settingsMap, "site_id")
 
 	return &callbackSettings
@@ -873,6 +874,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "max_retry_count", settings.MaxRetryCount)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "retry_delay_seconds", settings.RetryDelaySeconds)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "edge_group_id", settings.EdgeGroup)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "site_id", settings.Site)
 
 	return []interface{}{settingsMap}
@@ -1148,6 +1150,11 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	return nil, nil
 }
 
+// clearBullseyeRingMemberGroups clears member groups from bullseye rings before the main update.
+// The Genesys Cloud API rejects removing rings that have members attached. This function issues
+// a preliminary PUT that keeps the current ring count but sets MemberGroups to nil on all rings,
+// satisfying the API prerequisite. The caller's updateQueue.Bullseye (which holds the desired
+// final state — nil for all-rings-removed, or non-nil for partial removal) is left untouched.
 func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
@@ -1177,16 +1184,16 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 		clearedRings[i].MemberGroups = nil
 	}
 
-	updateQueue.Bullseye = &platformclientv2.Bullseye{
+	clearQueue := *updateQueue
+	clearQueue.Bullseye = &platformclientv2.Bullseye{
 		Rings: &clearedRings,
 	}
 
-	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), &clearQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
 	}
 
-	updateQueue.Bullseye = nil
 	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
 	return nil
 }

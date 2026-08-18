@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func TestAccResourceIdpPing(t *testing.T) {
@@ -45,6 +45,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -55,6 +56,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -69,6 +71,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.TrueValue,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -80,6 +83,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "force_authn", util.FalseValue),
 				),
 			},
 			{
@@ -94,6 +98,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -106,6 +111,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -120,6 +126,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -132,6 +139,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -146,6 +154,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "name", name1),
@@ -159,6 +168,7 @@ func TestAccResourceIdpPing(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_ping.ping", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -181,7 +191,8 @@ func generateIdpPingResource(
 	disabled string,
 	sloURI string,
 	sloBinding string,
-	signAuthnRequests string) string {
+	signAuthnRequests string,
+	forceAuthn string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_ping" "ping" {
 		name = "%s"
 		certificates = %s
@@ -192,8 +203,9 @@ func generateIdpPingResource(
 		slo_uri = "%s"
 		slo_binding = "%s"
 		sign_authn_requests = %s
+		force_authn = %s
 	}
-	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding, signAuthnRequests)
+	`, name, certs, issuerURI, targetURI, partyID, disabled, sloURI, sloBinding, signAuthnRequests, forceAuthn)
 }
 
 func testVerifyIdpPingDestroyed(state *terraform.State) error {
