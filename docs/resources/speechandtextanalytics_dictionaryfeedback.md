@@ -95,3 +95,4 @@ Required:
 Optional:
 
 - `source` (String) The source of the given Example Phrase Defaults to `Manual`.
+
