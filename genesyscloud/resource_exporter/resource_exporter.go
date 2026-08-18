@@ -208,7 +208,26 @@ type ResourceExporter struct {
 	mutex                 sync.RWMutex
 }
 
+// exportFilterKey is the context key used to pass the export filter to GetResourcesFunc.
+// This allows resource-specific getAll functions to access the filter and optimize API calls
+// (e.g., only fetching rows from datatables that match the filter) without changing the
+// GetAllResourcesFunc signature that all exporters implement.
+type exportFilterKey struct{}
+
+// ExportFilterFromContext retrieves the export filter from the context, if present.
+// Returns nil if no filter was set.
+func ExportFilterFromContext(ctx context.Context) []string {
+	if filter, ok := ctx.Value(exportFilterKey{}).([]string); ok {
+		return filter
+	}
+	return nil
+}
+
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourceType string, filter []string) diag.Diagnostics {
+	// Inject the export filter into the context so that GetResourcesFunc implementations
+	// can optionally use it to optimize API calls (e.g., skip irrelevant resources).
+	ctx = context.WithValue(ctx, exportFilterKey{}, filter)
+
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err

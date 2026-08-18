@@ -51,17 +51,64 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	archProxy := getArchitectDatatableRowProxy(clientConfig)
 
-	tables, resp, err := archProxy.getAllArchitectDatatable(ctx)
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
+	// Check if an export filter is available in the context.
+	// If so, extract table name(s) from the filter and only fetch rows from matching tables
+	// to avoid unnecessary API calls to every datatable in the org.
+	filter := resourceExporter.ExportFilterFromContext(ctx)
+	tableNames := extractTableNamesFromFilter(ResourceType, filter)
+
+	if len(tableNames) > 0 {
+		log.Printf("[INFO] Export filter active for %s: narrowing to %d table name(s): %v", ResourceType, len(tableNames), tableNames)
+	} else {
+		log.Printf("[INFO] No export filter for %s: fetching all datatables", ResourceType)
+		tableNames = []string{""}
 	}
 
-	for _, tableMeta := range *tables {
+	var allTables []platformclientv2.Datatable
+	processedIds := make(map[string]bool)
+	for _, name := range tableNames {
+		nameCtx := context.WithValue(ctx, datatableNameFilterKey{}, name)
+		nameTables, nameResp, nameErr := archProxy.getAllArchitectDatatable(nameCtx)
+		if nameErr != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect datatables error: %s", nameErr), nameResp)
+		}
+		if nameTables != nil {
+			for _, t := range *nameTables {
+				if !processedIds[*t.Id] {
+					processedIds[*t.Id] = true
+					allTables = append(allTables, t)
+				}
+			}
+		}
+	}
+
+	// If name-based search returned 0 tables but we had a filter active, fall back to full fetch.
+	// This handles cases where the table name extraction was imprecise (e.g., table names with underscores).
+	if len(allTables) == 0 && len(filter) > 0 {
+		log.Printf("[INFO] %s: name-based filter returned no tables, falling back to full fetch", ResourceType)
+		nameCtx := context.WithValue(ctx, datatableNameFilterKey{}, "")
+		allTablesPtr, resp, err := archProxy.getAllArchitectDatatable(nameCtx)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
+		}
+		if allTablesPtr != nil {
+			allTables = *allTablesPtr
+		}
+	}
+
+	for _, tableMeta := range allTables {
+		log.Printf("[DEBUG] %s: fetching rows for datatable %q (id=%s)", ResourceType, *tableMeta.Name, *tableMeta.Id)
 		rows, resp, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
 
 		if err != nil {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect Datatable Rows error: %s", err), resp)
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect Datatable Rows for table %q (id=%s): %s", *tableMeta.Name, *tableMeta.Id, err), resp)
 		}
+
+		rowCount := 0
+		if rows != nil {
+			rowCount = len(*rows)
+		}
+		log.Printf("[DEBUG] %s: fetched %d rows from datatable %q (id=%s)", ResourceType, rowCount, *tableMeta.Name, *tableMeta.Id)
 
 		for _, row := range *rows {
 			if keyVal, ok := row["key"]; ok {
@@ -71,6 +118,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 		}
 	}
 
+	log.Printf("[INFO] %s: export discovered %d total row resource(s)", ResourceType, len(resources))
 	return resources, nil
 }
 
