@@ -17,9 +17,9 @@ import (
 
 func TestAccDataSourceAgenticVirtualAgent(t *testing.T) {
 	var (
-		agentResourceLabel     = "test_agent"
-		agentDataSourceLabel   = "agent_data"
-		agentName              = "Terraform DS Test Agent " + uuid.NewString()
+		agentResourceLabel   = "test_agent"
+		agentDataSourceLabel = "agent_data"
+		agentName            = "Terraform DS Test Agent " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
