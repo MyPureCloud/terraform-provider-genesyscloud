@@ -160,6 +160,7 @@ func TestAccResourceWebDeploymentsConfiguration(t *testing.T) {
 }
 
 func TestAccResourceWebDeploymentsConfigurationComplex(t *testing.T) {
+	t.Skip("Skipping: videoChat feature is not yet implemented in this environment")
 	var (
 		// Knowledge Base Settings
 		kbResourceLabel1 = "test-kb-1"

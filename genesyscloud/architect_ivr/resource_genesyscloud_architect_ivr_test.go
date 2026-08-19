@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
@@ -210,7 +211,7 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 
 		didRangeLength       = 100 // Should be at least 50 to avoid index out of bounds errors below
 		didPoolResourceLabel = "did_pool"
-		startNumber          = 35375550120
+		startNumber          = 4219550120
 		endNumber            = startNumber + didRangeLength
 		startNumberStr       = fmt.Sprintf("+%v", startNumber)
 		endNumberStr         = fmt.Sprintf("+%v", endNumber)
@@ -222,7 +223,7 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 	*/
 	lastNumber, err := getLastDidNumberAsInteger()
 	if err == nil {
-		startNumber = lastNumber + 5
+		startNumber = lastNumber + 1000
 		endNumber = startNumber + didRangeLength
 		startNumberStr = fmt.Sprintf("+%v", startNumber)
 		endNumberStr = fmt.Sprintf("+%v", endNumber)
@@ -300,6 +301,9 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 				),
 			},
 			{
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
 				Config: didPoolResource + GenerateIvrConfigResource(&IvrConfigStruct{
 					ResourceLabel: resourceLabel,
 					Name:          name,
