@@ -97,15 +97,8 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 
 	var totalRecords []platformclientv2.Datatable
 
-	// Check if a datatable name filter is available in the context.
-	// If present, pass it to the API to only return matching datatables.
-	nameFilter := ""
-	if name, ok := ctx.Value(datatableNameFilterKey{}).(string); ok && name != "" {
-		nameFilter = name
-	}
-
 	const pageSize = 100
-	tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, nameFilter)
+	tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", 1, pageSize, "", "", nil, "")
 	if getErr != nil {
 		return &totalRecords, apiResponse, getErr
 	}
@@ -120,7 +113,7 @@ func getAllArchitectDatatableFn(ctx context.Context, p *architectDatatableRowPro
 	}
 
 	for pageNum := 2; pageNum <= *tables.PageCount; pageNum++ {
-		tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, nameFilter)
+		tables, apiResponse, getErr := p.architectApi.GetFlowsDatatables("", pageNum, pageSize, "", "", nil, "")
 		if getErr != nil {
 			return &totalRecords, apiResponse, getErr
 		}

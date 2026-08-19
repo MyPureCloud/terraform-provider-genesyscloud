@@ -15,10 +15,6 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
-// datatableNameFilterKey is the context key used to pass a datatable name filter
-// to getAllArchitectDatatableFn so it can narrow API calls to specific tables.
-type datatableNameFilterKey struct{}
-
 // Row IDs structured as {table-id}/{key-value}
 func createDatatableRowId(tableId string, keyVal string) string {
 	return strings.Join([]string{tableId, keyVal}, "/")
@@ -137,18 +133,14 @@ func getArchitectDatatableCached(ctx context.Context, tableID string, config *pl
 	return datatable, nil
 }
 
-// extractTableNamesFromFilter parses the export filter list to extract datatable names.
-// The filter pattern uses "." as the separator between table name and row key
-// (e.g., "genesyscloud_architect_datatable_row::TableName.RowKey").
-// We extract the portion before the first "." as the table name.
-func extractTableNamesFromFilter(resourceType string, filter []string) []string {
+// extractFilterPatterns extracts the regex patterns from the export filter for this resource type.
+func extractFilterPatterns(resourceType string, filter []string) []string {
 	if len(filter) == 0 {
 		return nil
 	}
 
 	prefix := resourceType + "::"
-	tableNames := make([]string, 0)
-	seen := make(map[string]bool)
+	patterns := make([]string, 0)
 
 	for _, f := range filter {
 		if !strings.Contains(f, prefix) {
@@ -156,21 +148,20 @@ func extractTableNamesFromFilter(resourceType string, filter []string) []string 
 		}
 
 		pattern := f[strings.Index(f, "::")+2:]
-		if pattern == "" {
-			continue
-		}
-
-		// Split at the first "." — left side is the table name
-		tableName := pattern
-		if idx := strings.Index(pattern, "."); idx > 0 {
-			tableName = pattern[:idx]
-		}
-
-		if tableName != "" && !seen[tableName] {
-			tableNames = append(tableNames, tableName)
-			seen[tableName] = true
+		if pattern != "" {
+			patterns = append(patterns, pattern)
 		}
 	}
 
-	return tableNames
+	return patterns
+}
+
+// tableMatchesFilter checks if a table name could produce a BlockLabel that matches any of the filter patterns.
+func tableMatchesFilter(tableName string, filterPatterns []string) bool {
+	for _, pattern := range filterPatterns {
+		if strings.HasPrefix(pattern, tableName) {
+			return true
+		}
+	}
+	return false
 }
