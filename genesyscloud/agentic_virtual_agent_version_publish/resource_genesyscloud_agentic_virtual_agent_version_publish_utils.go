@@ -33,9 +33,9 @@ type VersionSummary struct {
 
 // JobError represents an error entry in a failed job response.
 type JobError struct {
-	Message string       `json:"message,omitempty"`
-	Code    string       `json:"code,omitempty"`
-	Status  int          `json:"status,omitempty"`
+	Message string        `json:"message,omitempty"`
+	Code    string        `json:"code,omitempty"`
+	Status  int           `json:"status,omitempty"`
 	Details []ErrorDetail `json:"details,omitempty"`
 }
 

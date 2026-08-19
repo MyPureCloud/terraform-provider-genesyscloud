@@ -8,15 +8,15 @@ package agentic_virtual_agent
 
 // AgenticVirtualAgent represents the full agent resource as returned by the API.
 type AgenticVirtualAgent struct {
-	Id                            *string                     `json:"id,omitempty"`
-	Name                          *string                     `json:"name,omitempty"`
-	ImageUri                      *string                     `json:"imageUri,omitempty"`
-	Status                        *string                     `json:"status,omitempty"`
-	LatestSavedVersion            *AgenticVirtualAgentVersion `json:"latestSavedVersion,omitempty"`
-	LatestProductionReadyVersion  *AgenticVirtualAgentVersion `json:"latestProductionReadyVersion,omitempty"`
-	DateCreated                   *string                     `json:"dateCreated,omitempty"`
-	DateModified                  *string                     `json:"dateModified,omitempty"`
-	SelfUri                       *string                     `json:"selfUri,omitempty"`
+	Id                           *string                     `json:"id,omitempty"`
+	Name                         *string                     `json:"name,omitempty"`
+	ImageUri                     *string                     `json:"imageUri,omitempty"`
+	Status                       *string                     `json:"status,omitempty"`
+	LatestSavedVersion           *AgenticVirtualAgentVersion `json:"latestSavedVersion,omitempty"`
+	LatestProductionReadyVersion *AgenticVirtualAgentVersion `json:"latestProductionReadyVersion,omitempty"`
+	DateCreated                  *string                     `json:"dateCreated,omitempty"`
+	DateModified                 *string                     `json:"dateModified,omitempty"`
+	SelfUri                      *string                     `json:"selfUri,omitempty"`
 }
 
 // AgenticVirtualAgentVersion represents the version reference object returned on the agent.
@@ -49,10 +49,10 @@ type AgenticVirtualAgentEntityListing struct {
 
 // AgenticVirtualAgentJob represents the async delete job resource.
 type AgenticVirtualAgentJob struct {
-	Id      string           `json:"id,omitempty"`
-	Status  string           `json:"status,omitempty"`
-	Errors  []JobErrorBody   `json:"errors,omitempty"`
-	SelfUri string           `json:"selfUri,omitempty"`
+	Id      string         `json:"id,omitempty"`
+	Status  string         `json:"status,omitempty"`
+	Errors  []JobErrorBody `json:"errors,omitempty"`
+	SelfUri string         `json:"selfUri,omitempty"`
 }
 
 // JobErrorBody represents an error entry in a failed job response.

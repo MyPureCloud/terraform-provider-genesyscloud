@@ -257,9 +257,9 @@ func resourceMapsAreRegistered() bool {
 func registerResources() {
 	regInstance := &RegisterInstance{}
 	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
-	agenticVirtualAgent.SetRegistrar(regInstance)                           //Registering agentic virtual agent
-	agenticVirtualAgentVersion.SetRegistrar(regInstance)                    //Registering agentic virtual agent version
-	agenticVirtualAgentVersionPublish.SetRegistrar(regInstance)             //Registering agentic virtual agent version publish
+	agenticVirtualAgent.SetRegistrar(regInstance)                          //Registering agentic virtual agent
+	agenticVirtualAgentVersion.SetRegistrar(regInstance)                   //Registering agentic virtual agent version
+	agenticVirtualAgentVersionPublish.SetRegistrar(regInstance)            //Registering agentic virtual agent version publish
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
