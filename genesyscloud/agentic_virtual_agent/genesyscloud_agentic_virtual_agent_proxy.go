@@ -7,7 +7,7 @@ import (
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
@@ -36,32 +36,32 @@ type getDeleteJobStatusFunc func(ctx context.Context, p *agenticVirtualAgentProx
 
 // agenticVirtualAgentProxy holds all the methods and clients needed to interact with the API.
 type agenticVirtualAgentProxy struct {
-	clientConfig                      *platformclientv2.Configuration
-	customApiClient                   *customapi.Client
-	createAgenticVirtualAgentAttr     createAgenticVirtualAgentFunc
-	getAgenticVirtualAgentByIdAttr    getAgenticVirtualAgentByIdFunc
-	getAgenticVirtualAgentByNameAttr  getAgenticVirtualAgentByNameFunc
-	getAllAgenticVirtualAgentsAttr    getAllAgenticVirtualAgentsFunc
-	updateAgenticVirtualAgentAttr     updateAgenticVirtualAgentFunc
-	deleteAgenticVirtualAgentAttr     deleteAgenticVirtualAgentFunc
-	getDeleteJobStatusAttr            getDeleteJobStatusFunc
-	agentCache                        rc.CacheInterface[AgenticVirtualAgent]
+	clientConfig                     *platformclientv2.Configuration
+	customApiClient                  *customapi.Client
+	createAgenticVirtualAgentAttr    createAgenticVirtualAgentFunc
+	getAgenticVirtualAgentByIdAttr   getAgenticVirtualAgentByIdFunc
+	getAgenticVirtualAgentByNameAttr getAgenticVirtualAgentByNameFunc
+	getAllAgenticVirtualAgentsAttr   getAllAgenticVirtualAgentsFunc
+	updateAgenticVirtualAgentAttr    updateAgenticVirtualAgentFunc
+	deleteAgenticVirtualAgentAttr    deleteAgenticVirtualAgentFunc
+	getDeleteJobStatusAttr           getDeleteJobStatusFunc
+	agentCache                       rc.CacheInterface[AgenticVirtualAgent]
 }
 
 // newAgenticVirtualAgentProxy initializes the proxy with all function implementations.
 func newAgenticVirtualAgentProxy(clientConfig *platformclientv2.Configuration) *agenticVirtualAgentProxy {
 	agentCache := rc.NewResourceCache[AgenticVirtualAgent]()
 	return &agenticVirtualAgentProxy{
-		clientConfig:                      clientConfig,
-		customApiClient:                   customapi.NewClient(clientConfig, ResourceType),
-		createAgenticVirtualAgentAttr:     createAgenticVirtualAgentFn,
-		getAgenticVirtualAgentByIdAttr:    getAgenticVirtualAgentByIdFn,
-		getAgenticVirtualAgentByNameAttr:  getAgenticVirtualAgentByNameFn,
-		getAllAgenticVirtualAgentsAttr:    getAllAgenticVirtualAgentsFn,
-		updateAgenticVirtualAgentAttr:     updateAgenticVirtualAgentFn,
-		deleteAgenticVirtualAgentAttr:     deleteAgenticVirtualAgentFn,
-		getDeleteJobStatusAttr:            getDeleteJobStatusFn,
-		agentCache:                        agentCache,
+		clientConfig:                     clientConfig,
+		customApiClient:                  customapi.NewClient(clientConfig, ResourceType),
+		createAgenticVirtualAgentAttr:    createAgenticVirtualAgentFn,
+		getAgenticVirtualAgentByIdAttr:   getAgenticVirtualAgentByIdFn,
+		getAgenticVirtualAgentByNameAttr: getAgenticVirtualAgentByNameFn,
+		getAllAgenticVirtualAgentsAttr:   getAllAgenticVirtualAgentsFn,
+		updateAgenticVirtualAgentAttr:    updateAgenticVirtualAgentFn,
+		deleteAgenticVirtualAgentAttr:    deleteAgenticVirtualAgentFn,
+		getDeleteJobStatusAttr:           getDeleteJobStatusFn,
+		agentCache:                       agentCache,
 	}
 }
 
