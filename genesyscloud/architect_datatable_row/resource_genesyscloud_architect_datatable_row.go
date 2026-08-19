@@ -56,16 +56,27 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect datatables error: %s", err), resp)
 	}
 
+	exportFilter := resourceExporter.ExportFilterFromContext(ctx)
+	resourceFilterPatterns := extractFilterPatterns(ResourceType, exportFilter)
+
 	for _, tableMeta := range *tables {
+		if len(resourceFilterPatterns) > 0 && !tableMatchesFilter(*tableMeta.Name, resourceFilterPatterns) {
+			continue
+		}
+
 		rows, resp, err := archProxy.getAllArchitectDatatableRows(ctx, *tableMeta.Id)
 
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get architect Datatable Rows error: %s", err), resp)
 		}
 
+		if rows == nil {
+			continue
+		}
+
 		for _, row := range *rows {
 			if keyVal, ok := row["key"]; ok {
-				keyStr := keyVal.(string) // Keys must be strings
+				keyStr := keyVal.(string)
 				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{BlockLabel: *tableMeta.Name + "_" + keyStr}
 			}
 		}
