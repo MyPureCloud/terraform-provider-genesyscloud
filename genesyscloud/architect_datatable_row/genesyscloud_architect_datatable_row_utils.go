@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
+
+var isDynamicPattern = regexp.MustCompile(`^[(\[.*]`)
 
 // Row IDs structured as {table-id}/{key-value}
 func createDatatableRowId(tableId string, keyVal string) string {
@@ -159,7 +162,13 @@ func extractFilterPatterns(resourceType string, filter []string) []string {
 // tableMatchesFilter checks if a table name could produce a BlockLabel that matches any of the filter patterns.
 func tableMatchesFilter(tableName string, filterPatterns []string) bool {
 	for _, pattern := range filterPatterns {
-		if strings.HasPrefix(pattern, tableName) {
+		p := strings.Trim(pattern, "^$")
+
+		if isDynamicPattern.MatchString(p) {
+			return true
+		}
+
+		if strings.HasPrefix(p, tableName) {
 			return true
 		}
 	}
