@@ -22,13 +22,13 @@ import "encoding/json"
 
 // AgenticVirtualAgentVersionResponse represents the full version response from the API.
 type AgenticVirtualAgentVersionResponse struct {
-	Version                *string                              `json:"version,omitempty"`
-	AgenticVirtualAgentId  *string                              `json:"agenticVirtualAgentId,omitempty"`
-	Status                 *string                              `json:"status,omitempty"`
-	Definition             *AgenticVirtualAgentVersionDefinition `json:"definition,omitempty"`
-	DateCreated            *string                              `json:"dateCreated,omitempty"`
-	DateModified           *string                              `json:"dateModified,omitempty"`
-	SelfUri                *string                              `json:"selfUri,omitempty"`
+	Version               *string                               `json:"version,omitempty"`
+	AgenticVirtualAgentId *string                               `json:"agenticVirtualAgentId,omitempty"`
+	Status                *string                               `json:"status,omitempty"`
+	Definition            *AgenticVirtualAgentVersionDefinition `json:"definition,omitempty"`
+	DateCreated           *string                               `json:"dateCreated,omitempty"`
+	DateModified          *string                               `json:"dateModified,omitempty"`
+	SelfUri               *string                               `json:"selfUri,omitempty"`
 }
 
 // AgenticVirtualAgentVersionCreate represents the request body for creating a version.
@@ -48,14 +48,14 @@ type AgenticVirtualAgentVersionUpdate struct {
 // AgenticVirtualAgentVersionDefinition is the core definition of a virtual agent version.
 // Required fields: role, instructions
 type AgenticVirtualAgentVersionDefinition struct {
-	Role         string                                `json:"role"`
-	Instructions []string                              `json:"instructions"`
-	Model        string                                `json:"model,omitempty"`
-	Guardrails   *AgenticVirtualAgentGuardrails        `json:"guardrails,omitempty"`
-	Tools        []AgenticVirtualAgentTool             `json:"tools,omitempty"`
-	Types        []AgenticVirtualAgentTypeDefinition   `json:"types,omitempty"`
-	Events       []AgenticVirtualAgentEventSettings    `json:"events,omitempty"`
-	Settings     *AgenticVirtualAgentVersionSettings   `json:"settings,omitempty"`
+	Role         string                              `json:"role"`
+	Instructions []string                            `json:"instructions"`
+	Model        string                              `json:"model,omitempty"`
+	Guardrails   *AgenticVirtualAgentGuardrails      `json:"guardrails,omitempty"`
+	Tools        []AgenticVirtualAgentTool           `json:"tools,omitempty"`
+	Types        []AgenticVirtualAgentTypeDefinition `json:"types,omitempty"`
+	Events       []AgenticVirtualAgentEventSettings  `json:"events,omitempty"`
+	Settings     *AgenticVirtualAgentVersionSettings `json:"settings,omitempty"`
 }
 
 // =============================================================================
@@ -84,11 +84,11 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 // DataAction-specific: errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
-	Type              string                                     `json:"type"`
-	Name              string                                     `json:"name"`
-	Description       string                                     `json:"description"`
-	Target            DomainEntityRef                            `json:"target"`
-	InputInstructions []string                                   `json:"inputInstructions,omitempty"`
+	Type               string                                     `json:"type"`
+	Name               string                                     `json:"name"`
+	Description        string                                     `json:"description"`
+	Target             DomainEntityRef                            `json:"target"`
+	InputInstructions  []string                                   `json:"inputInstructions,omitempty"`
 	OutputInstructions []AgenticVirtualAgentToolOutputInstruction `json:"outputInstructions,omitempty"`
 	// DataAction-specific fields
 	Errors          []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
@@ -123,7 +123,7 @@ type AgenticVirtualAgentToolOutputInstruction struct {
 
 // AgenticVirtualAgentStructuredOutputConditionGroup is a group of structured output rules.
 type AgenticVirtualAgentStructuredOutputConditionGroup struct {
-	Group string                                  `json:"group"`
+	Group string                                    `json:"group"`
 	Rules []AgenticVirtualAgentStructuredOutputRule `json:"rules"`
 }
 
@@ -133,7 +133,7 @@ type AgenticVirtualAgentStructuredOutputRule struct {
 	Operator string        `json:"operator,omitempty"`
 	Value    interface{}   `json:"value,omitempty"`
 	// Nested group support (rules can be groups themselves)
-	Group string                                  `json:"group,omitempty"`
+	Group string                                    `json:"group,omitempty"`
 	Rules []AgenticVirtualAgentStructuredOutputRule `json:"rules,omitempty"`
 }
 
@@ -152,8 +152,8 @@ type AgenticVirtualAgentInputValidation struct {
 
 // AgenticVirtualAgentStructuredConditionGroup is a group of structured input validation rules.
 type AgenticVirtualAgentStructuredConditionGroup struct {
-	Group string                                `json:"group"`
-	Rules []AgenticVirtualAgentStructuredRule   `json:"rules"`
+	Group string                              `json:"group"`
+	Rules []AgenticVirtualAgentStructuredRule `json:"rules"`
 }
 
 // AgenticVirtualAgentStructuredRule is a single structured input validation rule.
@@ -173,12 +173,12 @@ type AgenticVirtualAgentStructuredRule struct {
 // AgenticVirtualAgentToolInput represents an input for a DataAction tool.
 // Required: targetName, type, source
 type AgenticVirtualAgentToolInput struct {
-	TargetName    string        `json:"targetName"`
-	Type          string        `json:"type"`
-	Source        string        `json:"source"`
-	Required      *bool         `json:"required,omitempty"`
-	FallbackToUser *bool        `json:"fallbackToUser,omitempty"`
-	Mapping       []interface{} `json:"mapping,omitempty"`
+	TargetName     string        `json:"targetName"`
+	Type           string        `json:"type"`
+	Source         string        `json:"source"`
+	Required       *bool         `json:"required,omitempty"`
+	FallbackToUser *bool         `json:"fallbackToUser,omitempty"`
+	Mapping        []interface{} `json:"mapping,omitempty"`
 }
 
 // =============================================================================
@@ -224,17 +224,17 @@ type AgenticVirtualAgentAgentCardSkill struct {
 // AgenticVirtualAgentTypeDefinition defines a type used by tools.
 // Required: name
 type AgenticVirtualAgentTypeDefinition struct {
-	Name                   string                                    `json:"name"`
-	Description            string                                    `json:"description,omitempty"`
-	Direction              string                                    `json:"direction,omitempty"`
-	Type                   string                                    `json:"type,omitempty"`
-	UserUtteranceSubstring *bool                                     `json:"userUtteranceSubstring,omitempty"`
-	Undisclosed            *bool                                     `json:"undisclosed,omitempty"`
-	Properties             []AgenticVirtualAgentPropertyDefinition   `json:"properties,omitempty"`
-	Items                  string                                    `json:"items,omitempty"`
-	StatusCodes            []int                                     `json:"statusCodes,omitempty"`
-	DefaultInstruction     string                                    `json:"defaultInstruction,omitempty"`
-	Enum                   []string                                  `json:"enum,omitempty"`
+	Name                   string                                  `json:"name"`
+	Description            string                                  `json:"description,omitempty"`
+	Direction              string                                  `json:"direction,omitempty"`
+	Type                   string                                  `json:"type,omitempty"`
+	UserUtteranceSubstring *bool                                   `json:"userUtteranceSubstring,omitempty"`
+	Undisclosed            *bool                                   `json:"undisclosed,omitempty"`
+	Properties             []AgenticVirtualAgentPropertyDefinition `json:"properties,omitempty"`
+	Items                  string                                  `json:"items,omitempty"`
+	StatusCodes            []int                                   `json:"statusCodes,omitempty"`
+	DefaultInstruction     string                                  `json:"defaultInstruction,omitempty"`
+	Enum                   []string                                `json:"enum,omitempty"`
 }
 
 // AgenticVirtualAgentPropertyDefinition defines a property of an object type.
@@ -257,9 +257,9 @@ type AgenticVirtualAgentPropertyDefinition struct {
 // Common: type, message
 // Guardrails-specific: violationThreshold (required), violationThresholdCrossedMessage (required)
 type AgenticVirtualAgentEventSettings struct {
-	Type                            string `json:"type"`
-	Message                         string `json:"message,omitempty"`
-	ViolationThreshold              *int   `json:"violationThreshold,omitempty"`
+	Type                             string `json:"type"`
+	Message                          string `json:"message,omitempty"`
+	ViolationThreshold               *int   `json:"violationThreshold,omitempty"`
 	ViolationThresholdCrossedMessage string `json:"violationThresholdCrossedMessage,omitempty"`
 }
 
@@ -283,9 +283,9 @@ type AgenticVirtualAgentComfortStatementSettings struct {
 
 // AgentSummary is a minimal agent representation used to discover versions for export.
 type AgentSummary struct {
-	Id                 *string              `json:"id,omitempty"`
-	Name               *string              `json:"name,omitempty"`
-	LatestSavedVersion *AgentVersionRef     `json:"latestSavedVersion,omitempty"`
+	Id                 *string          `json:"id,omitempty"`
+	Name               *string          `json:"name,omitempty"`
+	LatestSavedVersion *AgentVersionRef `json:"latestSavedVersion,omitempty"`
 }
 
 // AgentVersionRef is the version reference on the agent summary.
@@ -296,9 +296,9 @@ type AgentVersionRef struct {
 
 // AgentSummaryListing is the paginated list response for agents.
 type AgentSummaryListing struct {
-	Entities  *[]AgentSummary `json:"entities,omitempty"`
-	PageSize  *int            `json:"pageSize,omitempty"`
-	PageNumber *int           `json:"pageNumber,omitempty"`
-	Total     *int            `json:"total,omitempty"`
-	PageCount *int            `json:"pageCount,omitempty"`
+	Entities   *[]AgentSummary `json:"entities,omitempty"`
+	PageSize   *int            `json:"pageSize,omitempty"`
+	PageNumber *int            `json:"pageNumber,omitempty"`
+	Total      *int            `json:"total,omitempty"`
+	PageCount  *int            `json:"pageCount,omitempty"`
 }
