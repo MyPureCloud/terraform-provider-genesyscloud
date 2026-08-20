@@ -64,6 +64,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
+	integrationConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_config"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
@@ -322,6 +323,7 @@ func registerResources() {
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
 	integrationActionDraft.SetRegistrar(regInstance)                       //Registering integrations action draft
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
+	integrationConfig.SetRegistrar(regInstance)                            //Registering integrations config (standalone)
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
