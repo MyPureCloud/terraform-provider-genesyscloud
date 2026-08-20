@@ -2332,7 +2332,7 @@ resource "%s" "%s" {
 			{
 				// Step 2: Export the flow after it has been fully published
 				PreConfig: func() {
-					time.Sleep(10 * time.Second)
+					time.Sleep(15 * time.Second)
 				},
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
