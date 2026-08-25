@@ -1367,7 +1367,75 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	if !g.ignoreCyclicDeps && len(cyclicDependsListCopy) > 0 {
 		return nil, nil, diag.Errorf("Cyclic Dependencies Identified:  %v ", strings.Join(cyclicDependsListCopy, "\n"))
 	}
+
+	// When ignoreCyclicDeps is true, proactively detect and remove bidirectional
+	// dependencies from dependsList to prevent Terraform "Error: Cycle"
+	if g.ignoreCyclicDeps {
+		g.dependsListMutex.Lock()
+		removed := g.removeCyclicDependencies()
+		g.dependsListMutex.Unlock()
+		if removed > 0 {
+			log.Printf("[processAndBuildDependencies] Removed %d cyclic dependency entries from dependsList", removed)
+		}
+	}
+
 	return filterList, totalResources, nil
+}
+
+// removeCyclicDependencies detects bidirectional dependencies in g.dependsList and removes
+// one side to break cycles. If resource A depends on B AND B depends on A, we remove B's
+// dependency on A (keeping A's dependency on B). This must be called while holding dependsListMutex.
+func (g *GenesysCloudResourceExporter) removeCyclicDependencies() int {
+	// dependsList format: map[resourceId][]string{"resourceType.dependencyId", ...}
+	removedCount := 0
+
+	// First pass: identify all cyclic pairs
+	type cyclicPair struct {
+		resourceA string
+		resourceB string
+	}
+	cyclicPairs := make([]cyclicPair, 0)
+
+	for resourceID, deps := range g.dependsList {
+		for _, dep := range deps {
+			parts := strings.SplitN(dep, ".", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			depID := parts[1]
+
+			// Check if the dependency also depends on us
+			if reverseDeps, exists := g.dependsList[depID]; exists {
+				for _, reverseDep := range reverseDeps {
+					reverseParts := strings.SplitN(reverseDep, ".", 2)
+					if len(reverseParts) == 2 && reverseParts[1] == resourceID {
+						cyclicPairs = append(cyclicPairs, cyclicPair{resourceA: resourceID, resourceB: depID})
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: remove all cyclic dependencies (both directions)
+	for _, pair := range cyclicPairs {
+		// Remove B from A's deps
+		if deps, exists := g.dependsList[pair.resourceA]; exists {
+			cleaned := make([]string, 0, len(deps))
+			for _, dep := range deps {
+				parts := strings.SplitN(dep, ".", 2)
+				if len(parts) == 2 && parts[1] == pair.resourceB {
+					log.Printf("[removeCyclicDependencies] Removing: %s -> %s", pair.resourceA, dep)
+					removedCount++
+					continue
+				}
+				cleaned = append(cleaned, dep)
+			}
+			g.dependsList[pair.resourceA] = cleaned
+		}
+	}
+
+	return removedCount
 }
 
 func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
