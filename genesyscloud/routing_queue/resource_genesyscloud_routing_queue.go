@@ -159,25 +159,19 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr := updateQueueMembers(d, sdkConfig)
 	if diagErr.HasError() {
-		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
+		// Preserve prior state on apply error (DEVTOOLING-1533).
+		d.Partial(true)
+		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
+		d.Partial(true)
+		return diagErr
 	}
 
 	log.Printf("Created Routing Queue %s", d.Id())
 	return readRoutingQueue(ctx, d, meta)
-}
-
-func syncStateOnPartialFailure(ctx context.Context, d *schema.ResourceData, meta interface{}, diagErr diag.Diagnostics) diag.Diagnostics {
-	consistency_checker.DeleteConsistencyCheck(d.Id())
-	log.Printf("Syncing queue %s state after partial failure", d.Id())
-	if readDiags := syncRoutingQueueStateFromAPI(ctx, d, meta); readDiags != nil {
-		diagErr = append(diagErr, readDiags...)
-	}
-	return diagErr
 }
 
 // setRoutingQueueStateFromQueue maps a Genesys Cloud queue API object onto Terraform resource state.
@@ -294,19 +288,27 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 	if diagErr != nil && diagErr.HasError() {
 		return diagErr
 	}
-	_ = d.Set("wrapup_codes", wrapupCodes)
+	var schemaWrapupCodes []string
+	if raw, ok := d.Get("wrapup_codes").([]interface{}); ok {
+		schemaWrapupCodes = lists.InterfaceListToStrings(raw)
+	}
+	_ = d.Set("wrapup_codes", organizeStringIdsForRead(schemaWrapupCodes, wrapupCodes))
 
 	if d.Get("ignore_members").(bool) {
 		log.Println("Not reading queue members because ignore_members is set to true. Queue ID: ", strconv.Quote(d.Id()))
 	} else if currentQueue.UserMemberCount == nil || *currentQueue.UserMemberCount == 0 {
 		log.Println("No user members belong to queue. Queue ID: ", strconv.Quote(d.Id()))
-		_ = d.Set("members", schema.NewSet(schema.HashResource(queueMemberResource), []any{}))
+		_ = d.Set("members", []interface{}{})
 	} else {
 		members, diagErr := flattenQueueMembers(d.Id(), "user", sdkConfig)
 		if diagErr != nil && diagErr.HasError() {
 			return diagErr
 		}
-		_ = d.Set("members", members)
+		var schemaMembers []interface{}
+		if raw, ok := d.Get("members").([]interface{}); ok {
+			schemaMembers = raw
+		}
+		_ = d.Set("members", organizeMembersForRead(schemaMembers, members))
 	}
 
 	_ = d.Set("skill_groups", flattenQueueMemberGroupsList(currentQueue, platformclientv2.String(groupTypeSkill)))
@@ -329,26 +331,6 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
-	return nil
-}
-
-// syncRoutingQueueStateFromAPI refreshes Terraform state from the API after a partial update failure.
-func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := GetRoutingQueueProxy(sdkConfig)
-
-	log.Printf("Syncing queue state from API for %s after partial update failure", d.Id())
-
-	currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
-	if getErr != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp)
-	}
-
-	if diagErr := setRoutingQueueStateFromQueue(ctx, d, currentQueue, proxy, sdkConfig); diagErr != nil {
-		return diagErr
-	}
-
-	log.Printf("Synced queue %s %s from API", d.Id(), *currentQueue.Name)
 	return nil
 }
 
@@ -446,22 +428,27 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	_, resp, err := proxy.updateRoutingQueue(ctx, d.Id(), &updateQueue)
 	if err != nil {
+		// Preserve prior state on apply error (DEVTOOLING-1533).
+		d.Partial(true)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update queue %s error: %s", *updateQueue.Name, err), resp)
 	}
 
 	diagErr = append(diagErr, util.UpdateObjectDivision(d, "QUEUE", sdkConfig)...)
 	if diagErr.HasError() {
+		d.Partial(true)
 		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueMembers(d, sdkConfig)...)
 	if diagErr.HasError() {
-		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
+		d.Partial(true)
+		return diagErr
 	}
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		return syncStateOnPartialFailure(ctx, d, meta, diagErr)
+		d.Partial(true)
+		return diagErr
 	}
 
 	log.Printf("Updated queue %s", *updateQueue.Name)
@@ -583,7 +570,7 @@ func updateQueueWrapupCodes(d *schema.ResourceData, sdkConfig *platformclientv2.
 			}
 
 			existingCodes := getWrapupCodeIds(codes)
-			configCodes := *lists.SetToStringList(codesConfig.(*schema.Set))
+			configCodes := wrapupCodesFromConfig(codesConfig)
 			codesToRemove := lists.SliceDifference(existingCodes, configCodes)
 
 			// Remove Wrapup Codes

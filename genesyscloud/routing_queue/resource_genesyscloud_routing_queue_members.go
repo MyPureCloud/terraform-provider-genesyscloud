@@ -89,8 +89,8 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
-	membersSet, ok := d.Get("members").(*schema.Set)
-	if !ok || membersSet.Len() == 0 {
+	membersList, ok := d.Get("members").([]interface{})
+	if !ok || len(membersList) == 0 {
 		if err := removeAllExistingUserMembersFromQueue(d.Id(), sdkConfig); err != nil {
 			return diag.FromErr(err)
 		}
@@ -100,7 +100,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 	log.Printf("Updating members for Queue %s", d.Get("name"))
 
 	// Get new and Existing users and ring nums
-	newUserIds, newUserRingNums := getNewUsersAndRingNums(membersSet)
+	newUserIds, newUserRingNums := getNewUsersAndRingNums(membersList)
 	oldUserIds, oldUserRingNums, err := getExistingUsersAndRingNums(d.Id(), sdkConfig)
 	if err != nil {
 		return err
@@ -239,15 +239,18 @@ func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, members []platfor
 	return nil
 }
 
-func getNewUsersAndRingNums(membersSet *schema.Set) ([]string, map[string]int) {
+func getNewUsersAndRingNums(membersList []interface{}) ([]string, map[string]int) {
 	newUserRingNums := make(map[string]int)
-	memberList := membersSet.List()
-	newUserIds := make([]string, len(memberList))
+	newUserIds := make([]string, 0, len(membersList))
 
-	for i, member := range memberList {
-		memberMap := member.(map[string]interface{})
-		newUserIds[i] = memberMap["user_id"].(string)
-		newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
+	for _, member := range membersList {
+		memberMap, ok := member.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		userID := memberMap["user_id"].(string)
+		newUserIds = append(newUserIds, userID)
+		newUserRingNums[userID] = memberMap["ring_num"].(int)
 	}
 	return newUserIds, newUserRingNums
 }
