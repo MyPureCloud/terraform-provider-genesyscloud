@@ -2,6 +2,7 @@ package routing_queue
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -39,10 +40,36 @@ func invalidateRoutingQueueListCache() {
 	routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
 }
 
-func storeRoutingQueueInCache(cache rc.CacheInterface[platformclientv2.Queue], queue *platformclientv2.Queue) {
-	if queue != nil && queue.Id != nil {
-		rc.SetCache(cache, *queue.Id, *queue)
+// cloneRoutingQueue returns a deep copy of queue so nested pointers (bullseye rings,
+// member groups, etc.) are not shared with list/SDK response buffers.
+// DEVTOOLING-1764: shallow *queue copies caused non-deterministic loss of bullseye
+// member_groups during export when the list cache was reused on Read.
+func cloneRoutingQueue(queue *platformclientv2.Queue) (platformclientv2.Queue, error) {
+	var clone platformclientv2.Queue
+	if queue == nil {
+		return clone, fmt.Errorf("queue is nil")
 	}
+	bytes, err := json.Marshal(queue)
+	if err != nil {
+		return clone, err
+	}
+	if err := json.Unmarshal(bytes, &clone); err != nil {
+		return clone, err
+	}
+	return clone, nil
+}
+
+func storeRoutingQueueInCache(cache rc.CacheInterface[platformclientv2.Queue], queue *platformclientv2.Queue) {
+	if queue == nil || queue.Id == nil {
+		return
+	}
+	clone, err := cloneRoutingQueue(queue)
+	if err != nil {
+		log.Printf("[WARN] Failed to deep-copy routing queue %s for cache; storing shallow copy: %v", *queue.Id, err)
+		rc.SetCache(cache, *queue.Id, *queue)
+		return
+	}
+	rc.SetCache(cache, *queue.Id, clone)
 }
 
 // queueWrapupCodesCache stores paginated wrapup code assignments per queue during export.
