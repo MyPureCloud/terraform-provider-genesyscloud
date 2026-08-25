@@ -110,10 +110,25 @@ func getAllAccessPolicyFn(ctx context.Context, p *accessPolicyProxy) (*[]platfor
 
 	var allPolicies []platformclientv2.Authorizationpolicy
 	const pageSize = 100
-	var after string
 
-	for {
-		policies, resp, err := p.authorizationApi.GetAuthorizationPolicies(after, pageSize)
+	policies, resp, err := p.authorizationApi.GetAuthorizationPolicies("", pageSize)
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to get access policies: %v", err)
+	}
+	if policies.Entities == nil || len(*policies.Entities) == 0 {
+		return &allPolicies, resp, nil
+	}
+
+	allPolicies = append(allPolicies, *policies.Entities...)
+
+	for len(*policies.Entities) >= pageSize {
+		entities := *policies.Entities
+		lastEntity := entities[len(entities)-1]
+		if lastEntity.Id == nil {
+			break
+		}
+
+		policies, resp, err = p.authorizationApi.GetAuthorizationPolicies(*lastEntity.Id, pageSize)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get access policies: %v", err)
 		}
@@ -122,23 +137,9 @@ func getAllAccessPolicyFn(ctx context.Context, p *accessPolicyProxy) (*[]platfor
 		}
 
 		allPolicies = append(allPolicies, *policies.Entities...)
-
-		// Cursor-based pagination: use NextUri to determine if there are more pages
-		if policies.NextUri == nil || *policies.NextUri == "" {
-			break
-		}
-
-		// Extract the "after" cursor from the last entity's ID
-		entities := *policies.Entities
-		lastEntity := entities[len(entities)-1]
-		if lastEntity.Id != nil {
-			after = *lastEntity.Id
-		} else {
-			break
-		}
 	}
 
-	return &allPolicies, nil, nil
+	return &allPolicies, resp, nil
 }
 
 // getAccessPolicyIdByNameFn is an implementation of the function to get a Genesys Cloud access policy by name
@@ -151,7 +152,7 @@ func getAccessPolicyIdByNameFn(ctx context.Context, p *accessPolicyProxy, name s
 		return "", false, resp, getErr
 	}
 
-	if policies == nil {
+	if policies == nil || len(*policies) == 0 {
 		return "", true, resp, fmt.Errorf("no access policy found with name %s", name)
 	}
 
