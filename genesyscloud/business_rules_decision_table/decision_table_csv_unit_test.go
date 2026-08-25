@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -100,10 +100,6 @@ func TestUnitImportDecisionTableRowsFromCSV_Success(t *testing.T) {
 		uploadDecisionTableImportFileAttr: func(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error {
 			uploaded = append([]byte(nil), body...)
 			return nil
-		},
-		patchDecisionTableImportJobAttr: func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string, request *platformclientv2.Updatedecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
-			t.Fatal("PATCH import job must not be used to start Processing; platform starts after upload")
-			return nil, nil, nil
 		},
 		getDecisionTableImportJobAttr: func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
 			status := importStatusComplete

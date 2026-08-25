@@ -23,7 +23,6 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/businessrules/decisiontables/{tableId}/exports/{exportJobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--exports--exportJobId-)
 * [POST /api/v2/businessrules/decisiontables/{tableId}/imports](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--imports)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/imports/{importJobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--imports--importJobId-)
-* [PATCH /api/v2/businessrules/decisiontables/{tableId}/imports/{importJobId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-businessrules-decisiontables--tableId--imports--importJobId-)
 * [POST /api/v2/businessrules/decisiontables/{tableId}/versions](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-businessrules-decisiontables--tableId--versions)
 * [DELETE /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
 * [GET /api/v2/businessrules/decisiontables/{tableId}/versions/{tableVersion}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-businessrules-decisiontables--tableId--versions--tableVersion-)
@@ -47,7 +46,6 @@ The following permissions are required to use this resource:
 * `businessrules:decisionTableExportJob:add`
 * `businessrules:decisionTableExportJob:view`
 * `businessrules:decisionTableImportJob:add`
-* `businessrules:decisionTableImportJob:edit`
 * `businessrules:decisionTableImportJob:view`
 * `businessrules:decisionTableRow:add`
 * `businessrules:decisionTableRow:delete`

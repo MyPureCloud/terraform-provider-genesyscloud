@@ -42,7 +42,6 @@ type deleteDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisi
 type deleteDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error)
 type createDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
 type getDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
-type patchDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string, request *platformclientv2.Updatedecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
 type uploadDecisionTableImportFileFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error
 type createDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
 type getDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
@@ -69,7 +68,6 @@ type BusinessRulesDecisionTableProxy struct {
 	deleteDecisionTableVersionAttr           deleteDecisionTableVersionFunc
 	createDecisionTableImportJobAttr         createDecisionTableImportJobFunc
 	getDecisionTableImportJobAttr            getDecisionTableImportJobFunc
-	patchDecisionTableImportJobAttr          patchDecisionTableImportJobFunc
 	uploadDecisionTableImportFileAttr        uploadDecisionTableImportFileFunc
 	createDecisionTableExportJobAttr         createDecisionTableExportJobFunc
 	getDecisionTableExportJobAttr            getDecisionTableExportJobFunc
@@ -102,7 +100,6 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 		deleteDecisionTableVersionAttr:           deleteDecisionTableVersionFn,
 		createDecisionTableImportJobAttr:         createDecisionTableImportJobFn,
 		getDecisionTableImportJobAttr:            getDecisionTableImportJobFn,
-		patchDecisionTableImportJobAttr:          patchDecisionTableImportJobFn,
 		uploadDecisionTableImportFileAttr:        uploadDecisionTableImportFileFn,
 		createDecisionTableExportJobAttr:         createDecisionTableExportJobFn,
 		getDecisionTableExportJobAttr:            getDecisionTableExportJobFn,
@@ -193,10 +190,6 @@ func (p *BusinessRulesDecisionTableProxy) createDecisionTableImportJob(ctx conte
 
 func (p *BusinessRulesDecisionTableProxy) getDecisionTableImportJob(ctx context.Context, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
 	return p.getDecisionTableImportJobAttr(ctx, p, tableId, importJobId)
-}
-
-func (p *BusinessRulesDecisionTableProxy) patchDecisionTableImportJob(ctx context.Context, tableId string, importJobId string, request *platformclientv2.Updatedecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
-	return p.patchDecisionTableImportJobAttr(ctx, p, tableId, importJobId, request)
 }
 
 func (p *BusinessRulesDecisionTableProxy) uploadImportFile(ctx context.Context, uploadUrl string, headers map[string]string, body []byte) error {
@@ -428,11 +421,6 @@ func createDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisio
 func getDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.businessRulesApi.GetBusinessrulesDecisiontableImport(tableId, importJobId)
-}
-
-func patchDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string, request *platformclientv2.Updatedecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.businessRulesApi.PatchBusinessrulesDecisiontableImport(tableId, importJobId, *request)
 }
 
 func uploadDecisionTableImportFileFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error {
