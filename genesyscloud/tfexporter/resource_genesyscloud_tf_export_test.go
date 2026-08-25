@@ -35,7 +35,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
@@ -979,7 +979,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user"),
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
-			strconv.Quote("genesyscloud_journey_outcome"),
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
@@ -2333,7 +2332,7 @@ resource "%s" "%s" {
 			{
 				// Step 2: Export the flow after it has been fully published
 				PreConfig: func() {
-					time.Sleep(10 * time.Second)
+					time.Sleep(15 * time.Second)
 				},
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(

@@ -4,7 +4,7 @@ package journey_action_map
 // @chat: #customer-journey-data
 // @pm: Angelo Cicchitto
 // @jira: CPR
-// @description: Action Map Qualification Service determines if actions should be triggered for customers based on configured action maps. Handles action templates and qualification logic for content offers, architect flows, webchat, web messaging, and open actions.
+// @description: Action Map Qualification Service determines if actions should be triggered for customers based on configured action maps. Handles action templates and qualification logic for content offers, architect flows, web messaging, and open actions.
 
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -43,20 +43,6 @@ var (
 			Type:        schema.TypeSet,
 			Optional:    true,
 			Elem:        eventConditionResource,
-		},
-		"trigger_with_outcome_probability_conditions": {
-			Description: "Probability conditions for outcomes that must be satisfied to trigger the action map.",
-			Type:        schema.TypeSet,
-			Optional:    true,
-			Elem:        outcomeProbabilityConditionResource,
-			Deprecated:  "Journey Outcomes is being removed. Remove this attribute from your configuration. There is no replacement. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
-		},
-		"trigger_with_outcome_quantile_conditions": {
-			Description: "Quantile conditions for outcomes that must be satisfied to trigger the action map.",
-			Type:        schema.TypeSet,
-			Optional:    true,
-			Elem:        outcomeQuantileConditionResource,
-			Deprecated:  "Journey Outcomes is being removed. Remove this attribute from your configuration. There is no replacement. See https://help.genesys.cloud/announcements/genesys-cloud/deprecation-journey-outcomes/",
 		},
 		"page_url_conditions": {
 			Description: "URL conditions that a page must match for web actions to be displayable.",
@@ -152,46 +138,6 @@ var (
 		},
 	}
 
-	outcomeProbabilityConditionResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"outcome_id": {
-				Description: "The outcome ID.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"maximum_probability": {
-				Description: "Probability value for the selected outcome at or above which the action map will trigger.",
-				Type:        schema.TypeFloat,
-				Required:    true,
-			},
-			"probability": {
-				Description: "Additional probability condition, where if set, the action map will trigger if the current outcome probability is lower or equal to the value.",
-				Type:        schema.TypeFloat,
-				Optional:    true,
-			},
-		},
-	}
-
-	outcomeQuantileConditionResource = &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"outcome_id": {
-				Description: "The outcome ID.",
-				Type:        schema.TypeString,
-				Required:    true,
-			},
-			"max_quantile_threshold": {
-				Description: "This Outcome Quantile Condition is met when sessionMaxQuantile of the OutcomeScore is above this value, (unless fallbackQuantile is set). Range 0.00-1.00",
-				Type:        schema.TypeFloat,
-				Required:    true,
-			},
-			"fallback_quantile_threshold": {
-				Description: "If set, this Condition is met when max_quantile_threshold is met, AND the current quantile of the OutcomeScore is below this fallback_quantile_threshold. Range 0.00-1.00",
-				Type:        schema.TypeFloat,
-				Optional:    true,
-			},
-		},
-	}
-
 	urlConditionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"values": {
@@ -233,10 +179,10 @@ var (
 				Optional:    true,
 			},
 			"media_type": {
-				Description:  "Media type of action. Valid values: webchat (deprecated), webMessagingOffer, contentOffer, architectFlow, openAction. Note: The 'webchat' media type is deprecated. ACD Chat v2.0 in Genesys Predictive Engagement is being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement.",
+				Description:  "Media type of action. Valid values: webMessagingOffer, contentOffer, architectFlow, openAction.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"webchat", "webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"webMessagingOffer", "contentOffer", "architectFlow", "openAction"}, false),
 			},
 			"architect_flow_fields": {
 				Description: "Architect Flow Id and input contract. For media type architectFlow.",
@@ -258,13 +204,6 @@ var (
 				Optional:    true,
 				MaxItems:    1,
 				Elem:        openActionFieldsResource,
-			},
-			"is_pacing_enabled": {
-				Description: "Whether this action should be throttled.",
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     true,
-				Deprecated:  "Web Chat is deprecated and being removed. See https://community.genesys.com/discussion/deprecation-acd-chat-v20-support-in-genesys-predictive-engagement",
 			},
 		},
 	}
@@ -388,16 +327,10 @@ func JourneyActionMapExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllJourneyActionMaps),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"trigger_with_segments":                                             {RefType: "genesyscloud_journey_segment"},
-			"trigger_with_outcome_probability_conditions.outcome_id":            {RefType: "genesyscloud_journey_outcome"},
-			"trigger_with_outcome_quantile_conditions.outcome_id":               {RefType: "genesyscloud_journey_outcome"},
 			"action.architect_flow_fields.architect_flow_id":                    {RefType: "genesyscloud_flow"},
 			"action_map_schedule_groups.action_map_schedule_group_id":           {RefType: "genesyscloud_architect_schedulegroups"},
 			"action_map_schedule_groups.emergency_action_map_schedule_group_id": {RefType: "genesyscloud_architect_schedulegroups"},
 			"action.action_template_id":                                         {RefType: "genesyscloud_journey_action_template"},
-		},
-		RemoveIfMissing: map[string][]string{
-			"trigger_with_outcome_probability_conditions": {"outcome_id"},
-			"trigger_with_outcome_quantile_conditions":    {"outcome_id"},
 		},
 	}
 }

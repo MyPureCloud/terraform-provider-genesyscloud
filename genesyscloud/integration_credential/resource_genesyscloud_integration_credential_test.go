@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -26,7 +26,7 @@ func TestAccResourceCredential(t *testing.T) {
 		credName2          = "Terraform Credential Test-" + uuid.NewString()
 
 		typeName1 = "basicAuth"
-		typeName2 = "callJourney"
+		typeName2 = "userDefined"
 
 		key1   = "userName"
 		val1   = "someUserName"

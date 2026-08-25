@@ -9,10 +9,12 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var internalProxy *knowledgebaseProxy
+
+var knowledgebaseCache = rc.NewResourceCache[platformclientv2.Knowledgebase]()
 
 // knowledgebaseCreateRequest and knowledgebaseResponse mirror the Knowledge API payloads.
 // The platform SDK does not yet include contentSearchEnabled on these models.
@@ -52,7 +54,7 @@ type knowledgebaseProxy struct {
 
 func newKnowledgebaseProxy(clientConfig *platformclientv2.Configuration) *knowledgebaseProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgebaseCache := rc.NewResourceCache[platformclientv2.Knowledgebase]()
+
 	return &knowledgebaseProxy{
 		clientConfig:                    clientConfig,
 		KnowledgeApi:                    api,

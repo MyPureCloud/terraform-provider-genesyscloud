@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -33,6 +33,8 @@ Each proxy implementation:
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *IntegrationCredsProxy
+
+var integrationCache = rc.NewResourceCache[platformclientv2.Integration]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllIntegrationCredsFunc func(ctx context.Context, p *IntegrationCredsProxy) (*[]platformclientv2.Credentialinfo, *platformclientv2.APIResponse, error)
@@ -70,7 +72,7 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *Int
 		updateIntegrationCredAttr:        updateIntegrationCredFn,
 		deleteIntegrationCredAttr:        deleteIntegrationCredFn,
 		getIntegrationByCredentialIdAttr: getIntegrationByCredentialIdFn,
-		integrationCache:                 rc.NewResourceCache[platformclientv2.Integration](),
+		integrationCache:                 integrationCache,
 	}
 }
 

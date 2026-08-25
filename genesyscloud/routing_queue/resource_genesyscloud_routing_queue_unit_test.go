@@ -7,12 +7,15 @@ import (
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnitResourceRoutingQueueCreate(t *testing.T) {
@@ -103,6 +106,8 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
+
+	_ = d.Set("ignore_members", true)
 
 	diag := createRoutingQueue(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
@@ -291,6 +296,8 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
+	_ = d.Set("ignore_members", true)
+
 	diag := updateRoutingQueue(ctx, d, gcloud)
 	assert.Equal(t, false, diag.HasError())
 	assert.Equal(t, tId, d.Id())
@@ -384,6 +391,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 					"live_voice_flow_id":               "123",
 					"answering_machine_reaction_type":  "Transfer",
 					"answering_machine_flow_id":        "321",
+					"edge_group_id":                    "edge-group-123",
+					"site_id":                          "site-456",
 				},
 			},
 			expected: &platformclientv2.Callbackmediasettings{
@@ -401,6 +410,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 				LiveVoiceFlow:                &platformclientv2.Domainentityref{Id: platformclientv2.String("123")},
 				AnsweringMachineReactionType: platformclientv2.String("Transfer"),
 				AnsweringMachineFlow:         &platformclientv2.Domainentityref{Id: platformclientv2.String("321")},
+				EdgeGroup:                    &platformclientv2.Domainentityref{Id: platformclientv2.String("edge-group-123")},
+				Site:                         &platformclientv2.Domainentityref{Id: platformclientv2.String("site-456")},
 			},
 		},
 		{
@@ -422,6 +433,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 					"live_voice_flow_id":               "",
 					"answering_machine_reaction_type":  "",
 					"answering_machine_flow_id":        "",
+					"edge_group_id":                    "",
+					"site_id":                          "",
 				},
 			},
 			expected: &platformclientv2.Callbackmediasettings{
@@ -439,6 +452,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 				LiveVoiceFlow:                nil,
 				AnsweringMachineReactionType: nil,
 				AnsweringMachineFlow:         nil,
+				EdgeGroup:                    nil,
+				Site:                         nil,
 			},
 		},
 		{
@@ -461,6 +476,8 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 				LiveVoiceFlow:                nil,
 				AnsweringMachineReactionType: nil,
 				AnsweringMachineFlow:         nil,
+				EdgeGroup:                    nil,
+				Site:                         nil,
 			},
 		},
 	}
@@ -490,6 +507,100 @@ func TestUnitBuildSdkMediaSettingCallback(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUnitGetAllRoutingQueueWrapupCodesPerQueueCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-cache-test"
+	cached := []platformclientv2.Wrapupcode{
+		{Id: platformclientv2.String("wc-1"), Name: platformclientv2.String("Code 1")},
+		{Id: platformclientv2.String("wc-2"), Name: platformclientv2.String("Code 2")},
+	}
+	rc.SetCache(queueWrapupCodesCache, queueID, cached)
+
+	codes, _, err := getAllRoutingQueueWrapupCodesFn(context.Background(), &RoutingQueueProxy{}, queueID)
+	require.NoError(t, err)
+	require.Len(t, *codes, 2)
+	assert.Equal(t, "wc-1", *(*codes)[0].Id)
+	assert.Equal(t, "wc-2", *(*codes)[1].Id)
+}
+
+func TestUnitGetRoutingQueueMembersPerQueueCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-member-cache-test"
+	cacheKey := queueMembersCacheKey(queueID, "user")
+	cached := []platformclientv2.Queuemember{
+		{Id: platformclientv2.String("user-1"), RingNumber: platformclientv2.Int(1)},
+		{Id: platformclientv2.String("user-2"), RingNumber: platformclientv2.Int(2)},
+	}
+	rc.SetCache(queueMembersCache, cacheKey, cached)
+
+	members, diagErr := getRoutingQueueMembers(queueID, "user", nil)
+	require.Nil(t, diagErr)
+	require.Len(t, members, 2)
+	assert.Equal(t, "user-1", *members[0].Id)
+	assert.Equal(t, "user-2", *members[1].Id)
+}
+
+func TestUnitGetAllRoutingQueuesListCacheHit(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	listKey := routingQueueListCacheKey("", false)
+	cached := []platformclientv2.Queue{
+		{Id: platformclientv2.String("queue-list-1"), Name: platformclientv2.String("Queue 1")},
+	}
+	rc.SetCache(routingQueueListCache, listKey, cached)
+
+	queues, _, err := GetAllRoutingQueuesFn(context.Background(), &RoutingQueueProxy{RoutingQueueCache: routingQueueCache}, "", false)
+	require.NoError(t, err)
+	require.Len(t, *queues, 1)
+	assert.Equal(t, "queue-list-1", *(*queues)[0].Id)
+}
+
+func TestUnitRoutingQueueCacheMergesNonPeerAndPeerQueues(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	nonPeer := []platformclientv2.Queue{
+		{Id: platformclientv2.String("non-peer-queue"), Name: platformclientv2.String("Non Peer")},
+	}
+	peer := []platformclientv2.Queue{
+		{Id: platformclientv2.String("peer-queue"), Name: platformclientv2.String("Peer"), PeerId: platformclientv2.String("peer-id")},
+	}
+
+	rc.SetCache(routingQueueListCache, routingQueueListCacheKey("", false), nonPeer)
+	for i := range nonPeer {
+		storeRoutingQueueInCache(routingQueueCache, &nonPeer[i])
+	}
+
+	rc.SetCache(routingQueueListCache, routingQueueListCacheKey("", true), peer)
+	for i := range peer {
+		storeRoutingQueueInCache(routingQueueCache, &peer[i])
+	}
+
+	nonPeerCached := rc.GetCacheItem(routingQueueCache, "non-peer-queue")
+	peerCached := rc.GetCacheItem(routingQueueCache, "peer-queue")
+	require.NotNil(t, nonPeerCached)
+	require.NotNil(t, peerCached)
+	assert.Equal(t, "Non Peer", *nonPeerCached.Name)
+	assert.Equal(t, "peer-id", *peerCached.PeerId)
+}
+
+func TestUnitStoreRoutingQueueInCache(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-write-through-test"
+	queue := platformclientv2.Queue{
+		Id:   platformclientv2.String(queueID),
+		Name: platformclientv2.String("Write Through Queue"),
+	}
+
+	storeRoutingQueueInCache(routingQueueCache, &queue)
+
+	cached := rc.GetCacheItem(routingQueueCache, queueID)
+	require.NotNil(t, cached)
+	assert.Equal(t, "Write Through Queue", *cached.Name)
 }
 
 // This test proves that the site_id field from the API is preserved through
@@ -696,6 +807,8 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		OutboundMessagingAddresses:   &messagingAddress,
 		CannedResponseLibraries:      &cannedResponseLibraries,
 		LastAgentRoutingMode:         &lastAgentRoutingMode,
+		UserMemberCount:              platformclientv2.Int(0),
+		MemberCount:                  platformclientv2.Int(0),
 	}
 }
 
@@ -745,8 +858,10 @@ func generateMediaSettings() platformclientv2.Mediasettings {
 func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasettings {
 	subTypeMap := make(map[string]platformclientv2.Messagesubtypesettings)
 	baseMediaSettings := platformclientv2.Messagesubtypesettings{
-		EnableAutoAnswer:        platformclientv2.Bool(true),
-		EnableInactivityTimeout: platformclientv2.Bool(false),
+		EnableAutoAnswer: platformclientv2.Bool(true),
+		// EnableInactivityTimeout is intentionally nil here because the API
+		// only accepts this field when set to true. The build function omits
+		// false values to avoid a 400 error from the API.
 	}
 	subTypeMap["instagram"] = baseMediaSettings
 	return platformclientv2.Messagemediasettings{

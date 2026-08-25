@@ -17,11 +17,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *architectUserPromptProxy
+
+var promptCache = rc.NewResourceCache[platformclientv2.Prompt]()
 
 type createArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, body platformclientv2.Prompt) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
 type getArchitectUserPromptFunc func(ctx context.Context, p *architectUserPromptProxy, id string, includeMediaUris bool, includeResources bool, language []string, checkCache bool) (*platformclientv2.Prompt, *platformclientv2.APIResponse, error)
@@ -61,7 +63,7 @@ type architectUserPromptProxy struct {
 
 func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *architectUserPromptProxy {
 	api := platformclientv2.NewArchitectApiWithConfig(clientConfig)
-	promptCache := rc.NewResourceCache[platformclientv2.Prompt]()
+
 	return &architectUserPromptProxy{
 		clientConfig:                                   clientConfig,
 		architectApi:                                   api,

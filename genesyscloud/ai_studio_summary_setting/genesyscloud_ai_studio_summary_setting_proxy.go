@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -18,6 +18,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *aiStudioSummarySettingProxy
+
+var summaryCache = rc.NewResourceCache[platformclientv2.Summarysetting]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createAiStudioSummarySettingFunc func(ctx context.Context, p *aiStudioSummarySettingProxy, summarySetting *platformclientv2.Summarysetting) (*platformclientv2.Summarysetting, *platformclientv2.APIResponse, error)
@@ -43,7 +45,7 @@ type aiStudioSummarySettingProxy struct {
 // newAiStudioSummarySettingProxy initializes the ai studio summary setting proxy with all of the data needed to communicate with Genesys Cloud
 func newAiStudioSummarySettingProxy(clientConfig *platformclientv2.Configuration) *aiStudioSummarySettingProxy {
 	api := platformclientv2.NewAIStudioApiWithConfig(clientConfig)
-	summaryCache := rc.NewResourceCache[platformclientv2.Summarysetting]()
+
 	return &aiStudioSummarySettingProxy{
 		clientConfig:                          clientConfig,
 		aIStudioApi:                           api,

@@ -22,7 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -94,7 +94,10 @@ func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 			},
 			{
 				//Lock the flow, deploy, and check to make sure the flow is locked
-				PreConfig: flowLocFunc, //This will lock the flow.
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+					flowLocFunc()
+				},
 				Config: GenerateFlowResource(
 					flowResourceLabel,
 					filePath,

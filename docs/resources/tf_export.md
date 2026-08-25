@@ -18,6 +18,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 
 * The export resource calls GET APIs on all exported resource types. See the list of GET APIs on each resource.
+* By default, `genesyscloud_user` exports include both active and inactive users. Set `GENESYSCLOUD_SKIP_INACTIVE_USER_EXPORT` to omit inactive users from export listings.
 
 ## Example Usage
 
@@ -74,7 +75,6 @@ resource "genesyscloud_tf_export" "exclude_filter" {
     "genesyscloud_journey_action_map",
     "genesyscloud_journey_action_template",
     "genesyscloud_journey_outcome_predictor",
-    "genesyscloud_journey_outcome",
     "genesyscloud_journey_segment",
     "genesyscloud_journey_view_schedule",
     "genesyscloud_knowledge_category",

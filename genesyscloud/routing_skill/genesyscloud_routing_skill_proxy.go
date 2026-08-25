@@ -7,8 +7,9 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 type getAllRoutingSkillsFunc func(ctx context.Context, p *routingSkillProxy, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
@@ -75,7 +76,7 @@ func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name strin
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allRoutingSkills []platformclientv2.Routingskill
-	const pageSize = 500
+	pageSize := page_size.ForResource(ResourceType, 500)
 
 	routingSkills, resp, err := p.routingApi.GetRoutingSkills(pageSize, 1, name, nil)
 	if err != nil {

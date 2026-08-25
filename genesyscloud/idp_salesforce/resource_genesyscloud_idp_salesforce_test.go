@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func TestAccResourceIdpSalesforce(t *testing.T) {
@@ -44,6 +44,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					util.NullValue, // no relying_party_identifier
 					util.NullValue, // Not disabled
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					util.ValidateStringInArray("genesyscloud_idp_salesforce.salesforce", "certificates", util.TestCert1),
@@ -53,6 +54,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "slo_uri", sloUri),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "slo_binding", sloBinding),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -67,6 +69,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					strconv.Quote(relyingPartyID1),
 					util.NullValue, // Not disabled
 					util.TrueValue,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "name", name),
@@ -78,6 +81,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "slo_binding", sloBinding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "relying_party_identifier", relyingPartyID1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "sign_authn_requests", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "force_authn", util.FalseValue),
 				),
 			},
 			{
@@ -92,6 +96,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					strconv.Quote(relyingPartyID2),
 					util.NullValue, // Not disabled
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "name", name),
@@ -104,6 +109,7 @@ func TestAccResourceIdpSalesforce(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "slo_binding", sloBinding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "relying_party_identifier", relyingPartyID2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_salesforce.salesforce", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -126,7 +132,8 @@ func generateIdpSalesforceResource(
 	sloBinding,
 	relyingPartyIdentifier,
 	disabled string,
-	signAuthnRequests string) string {
+	signAuthnRequests string,
+	forceAuthn string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_salesforce" "salesforce" {
 	    name         = %s
 		certificates = %s
@@ -137,8 +144,9 @@ func generateIdpSalesforceResource(
 		relying_party_identifier = %s
         disabled = %s
 		sign_authn_requests = %s
+		force_authn = %s
 	}
-	`, name, certs, issuerURI, targetURI, sloUri, sloBinding, relyingPartyIdentifier, disabled, signAuthnRequests)
+	`, name, certs, issuerURI, targetURI, sloUri, sloBinding, relyingPartyIdentifier, disabled, signAuthnRequests, forceAuthn)
 }
 
 func testVerifyIdpSalesforceDestroyed(state *terraform.State) error {

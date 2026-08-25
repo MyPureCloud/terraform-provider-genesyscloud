@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -87,11 +87,14 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
 		resourcedata.SetNillableValue(d, "description", team.Description)
 
-		members, err := readTeamMembers(ctx, d.Id(), sdkConfig)
-		if err != nil {
-			return retry.NonRetryableError(fmt.Errorf("%v", err))
+		_ = d.Set("member_ids", schema.NewSet(schema.HashString, []any{}))
+		if team.MemberCount != nil && *team.MemberCount > 0 {
+			members, err := readTeamMembers(ctx, d.Id(), sdkConfig)
+			if err != nil {
+				return retry.NonRetryableError(fmt.Errorf("%v", err))
+			}
+			_ = d.Set("member_ids", members)
 		}
-		_ = d.Set("member_ids", members)
 
 		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.ConsistencyChecks(), ResourceType)
 

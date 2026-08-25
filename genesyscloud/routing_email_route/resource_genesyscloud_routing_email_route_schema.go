@@ -199,6 +199,12 @@ func ResourceRoutingEmailRoute() *schema.Resource {
 				Optional:    true,
 				Elem:        signatureResource,
 			},
+			"mailbox_folders": {
+				Description: "The IMAP mailbox folders for this route",
+				Optional:    true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }

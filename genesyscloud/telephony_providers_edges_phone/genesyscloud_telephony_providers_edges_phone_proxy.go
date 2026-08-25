@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -35,6 +35,8 @@ Each proxy implementation:
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *phoneProxy
+
+var phoneCache = rc.NewResourceCache[platformclientv2.Phone]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllPhonesFunc func(ctx context.Context, p *phoneProxy) (*[]platformclientv2.Phone, *platformclientv2.APIResponse, error)
@@ -79,7 +81,6 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	stationsApi := platformclientv2.NewStationsApiWithConfig(clientConfig)
 	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
-	phoneCache := rc.NewResourceCache[platformclientv2.Phone]()
 
 	return &phoneProxy{
 		clientConfig: clientConfig,

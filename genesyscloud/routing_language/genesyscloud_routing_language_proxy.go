@@ -8,10 +8,12 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var internalProxy *routingLanguageProxy
+
+var routingLanguageCache = rc.NewResourceCache[platformclientv2.Language]()
 
 type getAllRoutingLanguagesFunc func(ctx context.Context, p *routingLanguageProxy, name string) (*[]platformclientv2.Language, *platformclientv2.APIResponse, error)
 type createRoutingLanguageFunc func(ctx context.Context, p *routingLanguageProxy, language *platformclientv2.Language) (*platformclientv2.Language, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type routingLanguageProxy struct {
 // newRoutingLanguageProxy initializes the routing language proxy with all of the data needed to communicate with Genesys Cloud
 func newRoutingLanguageProxy(clientConfig *platformclientv2.Configuration) *routingLanguageProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	routingLanguageCache := rc.NewResourceCache[platformclientv2.Language]()
+
 	return &routingLanguageProxy{
 		clientConfig:                   clientConfig,
 		routingApi:                     api,

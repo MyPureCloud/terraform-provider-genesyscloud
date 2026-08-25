@@ -8,10 +8,12 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var internalProxy *knowledgeLabelProxy
+
+var knowledgeLabelCache = rc.NewResourceCache[platformclientv2.Labelresponse]()
 
 type GetAllKnowledgebaseEntitiesFunc func(ctx context.Context, p *knowledgeLabelProxy, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error)
 type GetAllKnowledgeLabelEntitiesFunc func(ctx context.Context, p *knowledgeLabelProxy, knowledgeBase *platformclientv2.Knowledgebase) (*[]platformclientv2.Labelresponse, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type knowledgeLabelProxy struct {
 
 func newKnowledgeLabelProxy(clientConfig *platformclientv2.Configuration) *knowledgeLabelProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	knowledgeLabelCache := rc.NewResourceCache[platformclientv2.Labelresponse]()
+
 	return &knowledgeLabelProxy{
 		clientConfig:                     clientConfig,
 		KnowledgeApi:                     api,

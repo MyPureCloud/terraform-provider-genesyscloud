@@ -7,12 +7,14 @@ import (
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 )
 
 var internalProxy *guideProxy
+
+var guideCache = rc.NewResourceCache[Guide]()
 
 type getAllGuidesFunc func(ctx context.Context, p *guideProxy, name string) (*[]Guide, *platformclientv2.APIResponse, error)
 type createGuideFunc func(ctx context.Context, p *guideProxy, guide *CreateGuide) (*Guide, *platformclientv2.APIResponse, error)
@@ -34,7 +36,7 @@ type guideProxy struct {
 }
 
 func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
-	guideCache := rc.NewResourceCache[Guide]()
+
 	return &guideProxy{
 		clientConfig:               clientConfig,
 		customApiClient:            customapi.NewClient(clientConfig, ResourceType),

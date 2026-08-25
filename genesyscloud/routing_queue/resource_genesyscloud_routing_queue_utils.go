@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // Build Functions
@@ -44,7 +44,7 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
-		queueMediaSettings.Message = buildSdkMediaSettingsMessage(d, mediaSettingsMessage)
+		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
 	}
 
 	return queueMediaSettings
@@ -179,7 +179,7 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	return mediaSetting
 }
 
-func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platformclientv2.Messagemediasettings {
+func buildSdkMediaSettingsMessage(settings []any) *platformclientv2.Messagemediasettings {
 	if len(settings) == 0 {
 		return nil
 	}
@@ -214,10 +214,14 @@ func buildSdkMediaSettingsMessage(d *schema.ResourceData, settings []any) *platf
 	}
 
 	if subTypeSettingsList, ok := settingsMap["sub_type_settings"].([]interface{}); ok {
-		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(d, subTypeSettingsList)
+		messageMediaSettings.SubTypeSettings = buildSubTypeSettings(subTypeSettingsList)
 	}
 
-	messageMediaSettings.EnableInactivityTimeout = resourcedata.GetNillableBool(d, "media_settings_message.0.enable_inactivity_timeout")
+	// The API only accepts EnableInactivityTimeout when set to true.
+	// Sending false explicitly causes a 400 error, so we only set EnableInactivityTimeout if the value is true.
+	if v, ok := settingsMap["enable_inactivity_timeout"].(bool); ok && v {
+		messageMediaSettings.EnableInactivityTimeout = &v
+	}
 
 	if inactivityTimeoutSettings, ok := settingsMap["inactivity_timeout_settings"].([]interface{}); ok {
 		messageMediaSettings.InactivityTimeoutSettings = buildInactivityTimeoutSettings(inactivityTimeoutSettings)
@@ -291,16 +295,17 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
 	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
 	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
+	callbackSettings.EdgeGroup = util.GetNillableDomainEntityRefFromMap(settingsMap, "edge_group_id")
 	callbackSettings.Site = util.GetNillableDomainEntityRefFromMap(settingsMap, "site_id")
 
 	return &callbackSettings
 }
 
-func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
+func buildSubTypeSettings(subTypeList []interface{}) *map[string]platformclientv2.Messagesubtypesettings {
 
 	returnObj := make(map[string]platformclientv2.Messagesubtypesettings)
 
-	for i, subTypeItem := range subTypeList {
+	for _, subTypeItem := range subTypeList {
 		if subTypeItem == nil {
 			continue
 		}
@@ -310,7 +315,11 @@ func buildSubTypeSettings(d *schema.ResourceData, subTypeList []interface{}) *ma
 		subTypeSetting := platformclientv2.Messagesubtypesettings{
 			EnableAutoAnswer: &enableAutoAnswer,
 		}
-		subTypeSetting.EnableInactivityTimeout = resourcedata.GetNillableBool(d, fmt.Sprintf("media_settings_message.0.sub_type_settings.%d.enable_inactivity_timeout", i))
+		// The API only accepts EnableInactivityTimeout when set to true.
+		// Sending false explicitly causes a 400 error, so we only set EnableInactivityTimeout if the value is true.
+		if v, ok := subTypeMap["enable_inactivity_timeout"].(bool); ok && v {
+			subTypeSetting.EnableInactivityTimeout = &v
+		}
 		returnObj[mediaType] = subTypeSetting
 	}
 
@@ -865,6 +874,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "max_retry_count", settings.MaxRetryCount)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "retry_delay_seconds", settings.RetryDelaySeconds)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "edge_group_id", settings.EdgeGroup)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "site_id", settings.Site)
 
 	return []interface{}{settingsMap}
@@ -1140,6 +1150,11 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 	return nil, nil
 }
 
+// clearBullseyeRingMemberGroups clears member groups from bullseye rings before the main update.
+// The Genesys Cloud API rejects removing rings that have members attached. This function issues
+// a preliminary PUT that keeps the current ring count but sets MemberGroups to nil on all rings,
+// satisfying the API prerequisite. The caller's updateQueue.Bullseye (which holds the desired
+// final state — nil for all-rings-removed, or non-nil for partial removal) is left untouched.
 func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
@@ -1169,16 +1184,16 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 		clearedRings[i].MemberGroups = nil
 	}
 
-	updateQueue.Bullseye = &platformclientv2.Bullseye{
+	clearQueue := *updateQueue
+	clearQueue.Bullseye = &platformclientv2.Bullseye{
 		Rings: &clearedRings,
 	}
 
-	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), &clearQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
 	}
 
-	updateQueue.Bullseye = nil
 	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
 	return nil
 }
