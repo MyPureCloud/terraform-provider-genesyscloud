@@ -2,6 +2,8 @@ package business_rules_decision_table
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -11,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
@@ -785,6 +787,136 @@ func TestAccResourceBusinessRulesDecisionTableWhitespaceEdgeCases(t *testing.T) 
 				Config:             realChangeWithWhitespaceConfig,
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
+			},
+		},
+		CheckDestroy: testVerifyBusinessRulesDecisionTablesDestroyed,
+	})
+}
+
+// TestAccResourceBusinessRulesDecisionTableMigrateRowsToCSV creates with nested rows, then
+// switches to rows_csv_filepath in place (same resource address). Ensures no recreate and
+// CSV import publishes a new version.
+func TestAccResourceBusinessRulesDecisionTableMigrateRowsToCSV(t *testing.T) {
+	t.Parallel()
+
+	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
+	if !enabled {
+		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
+		return
+	}
+
+	var (
+		tableResourceLabel  = "test-dt-rows-to-csv"
+		schemaResourceLabel = "test-schema-rows-to-csv"
+		tableName           = "TF Test DT CSV Migrate-" + uuid.NewString()[:8]
+		tableDesc           = "Migrate nested rows to rows_csv_filepath"
+		schemaName          = "TF Test Schema CSV Migrate-" + uuid.NewString()[:8]
+		schemaDescription   = "Schema for rows→CSV migration ACC"
+		tableID             string
+	)
+
+	csvPath := filepath.Join(t.TempDir(), "migrate_rows.csv")
+	csvV1 := "customer_type::Equals,skill\nVIP,Premium Support\n"
+	csvV2 := "customer_type::Equals,skill\nVIP,Premium Support Updated\n"
+	if err := os.WriteFile(csvPath, []byte(csvV1), 0644); err != nil {
+		t.Fatal(err)
+	}
+	csvPathHCL := filepath.ToSlash(csvPath)
+
+	baseDeps := generateBusinessRulesSchemaResource(schemaResourceLabel, schemaName, schemaDescription) +
+		generateHomeDivisionReference()
+
+	nestedConfig := baseDeps + generateBusinessRulesDecisionTableResource(
+		tableResourceLabel,
+		tableName,
+		tableDesc,
+		"data.genesyscloud_auth_division_home.home.id",
+		"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+		generateMinimalColumnsForCSVMigration(),
+		generateMinimalRowsForCSVMigration(),
+	)
+
+	csvConfig := baseDeps + generateBusinessRulesDecisionTableResourceCSV(
+		tableResourceLabel,
+		tableName,
+		tableDesc,
+		"data.genesyscloud_auth_division_home.home.id",
+		"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+		generateMinimalColumnsForCSVMigration(),
+		csvPathHCL,
+	)
+
+	resourceAddr := "genesyscloud_business_rules_decision_table." + tableResourceLabel
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: nestedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceAddr, "name", tableName),
+					resource.TestCheckResourceAttr(resourceAddr, "version", "1"),
+					resource.TestCheckResourceAttr(resourceAddr, "rows.#", "1"),
+					resource.TestCheckResourceAttrSet(resourceAddr, "id"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources[resourceAddr]
+						if !ok {
+							return fmt.Errorf("not found: %s", resourceAddr)
+						}
+						tableID = rs.Primary.ID
+						if tableID == "" {
+							return fmt.Errorf("empty id for %s", resourceAddr)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				Config: csvConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceAddr, "name", tableName),
+					resource.TestCheckResourceAttr(resourceAddr, "rows_csv_filepath", csvPathHCL),
+					resource.TestCheckResourceAttr(resourceAddr, "rows_record_count", "1"),
+					resource.TestCheckResourceAttrSet(resourceAddr, "rows_csv_content_hash"),
+					resource.TestCheckResourceAttr(resourceAddr, "version", "2"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources[resourceAddr]
+						if !ok {
+							return fmt.Errorf("not found: %s", resourceAddr)
+						}
+						if rs.Primary.ID != tableID {
+							return fmt.Errorf("resource recreated on rows→CSV migrate: was %s, now %s", tableID, rs.Primary.ID)
+						}
+						if v, ok := rs.Primary.Attributes["rows.#"]; ok && v != "0" {
+							return fmt.Errorf("expected nested rows cleared after CSV migrate, got rows.#=%s", v)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				PreConfig: func() {
+					if err := os.WriteFile(csvPath, []byte(csvV2), 0644); err != nil {
+						t.Fatal(err)
+					}
+				},
+				Config: csvConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceAddr, "rows_record_count", "1"),
+					resource.TestCheckResourceAttrSet(resourceAddr, "rows_csv_content_hash"),
+					resource.TestCheckResourceAttr(resourceAddr, "version", "3"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources[resourceAddr]
+						if !ok {
+							return fmt.Errorf("not found: %s", resourceAddr)
+						}
+						if rs.Primary.ID != tableID {
+							return fmt.Errorf("resource recreated on CSV content update: was %s, now %s", tableID, rs.Primary.ID)
+						}
+						return nil
+					},
+				),
 			},
 		},
 		CheckDestroy: testVerifyBusinessRulesDecisionTablesDestroyed,

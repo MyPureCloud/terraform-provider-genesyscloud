@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -23,8 +23,8 @@ func TestAccResourceOrganizationPresenceDefinition(t *testing.T) {
 	t.Parallel()
 	var (
 		codeResourceLabel1 = "organization-presence-definition1"
-		languageLabelEnus  = "From Keyboard " + uuid.NewString()
-		languageLabelEs    = "del teclado " + uuid.NewString()
+		languageLabelEnus  = "From Keyboard " + uuid.NewString()[:8]
+		languageLabelEs    = "del teclado " + uuid.NewString()[:8]
 		languageLabels1    = map[string]string{"en_US": strconv.Quote(languageLabelEnus)}
 		languageLabelsStr1 = util.GenerateMapAttrWithMapProperties("language_labels", languageLabels1)
 		languageLabels2    = map[string]string{"en_US": strconv.Quote(languageLabelEnus), "es": strconv.Quote(languageLabelEs)}

@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -40,6 +41,10 @@ func getRoutingEmailRouteFromResourceData(d *schema.ResourceData) platformclient
 	}
 	if d.Get("allow_multiple_actions") != "" {
 		inboundRoute.AllowMultipleActions = platformclientv2.Bool(d.Get("allow_multiple_actions").(bool))
+	}
+	if v, ok := d.GetOk("mailbox_folders"); ok {
+		mailboxFolders := lists.InterfaceListToStrings(v.([]interface{}))
+		inboundRoute.MailboxFolders = &mailboxFolders
 	}
 	return inboundRoute
 }

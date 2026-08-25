@@ -94,6 +94,7 @@ resource "genesyscloud_routing_email_route" "example_route_reference_other_route
 - `from_email` (String) The sender email to use for outgoing replies. This should not be set if reply_email_address is specified.
 - `history_inclusion` (String) The configuration to indicate how the history of a conversation has to be included in a draft. Defaults to `Optional`.
 - `language_id` (String) The language to use for routing.
+- `mailbox_folders` (List of String) The IMAP mailbox folders for this route
 - `priority` (Number) The priority to use for routing.
 - `queue_id` (String) The queue to route the emails to. This should not be set if a flow_id is specified.
 - `reply_email_address` (Block List, Max: 1) The route to use for email replies. This should not be set if from_email or auto_bcc are specified. (see [below for nested schema](#nestedblock--reply_email_address))
