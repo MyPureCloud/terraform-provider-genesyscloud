@@ -34,6 +34,21 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 				),
 			},
 			{
+				// Update with division from data source
+				Config: GenerateRoutingSkillResourceWithDivision(
+					skillResourceLabel1,
+					skillName1,
+					"data.genesyscloud_auth_division_home.home.id",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_skill."+skillResourceLabel1, "name", skillName1),
+					resource.TestCheckResourceAttrPair(
+						"genesyscloud_routing_skill."+skillResourceLabel1, "division_id",
+						"data.genesyscloud_auth_division_home.home", "id",
+					),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_routing_skill." + skillResourceLabel1,
 				ImportState:       true,
