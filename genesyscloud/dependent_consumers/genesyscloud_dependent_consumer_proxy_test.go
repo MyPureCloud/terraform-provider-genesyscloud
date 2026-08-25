@@ -1,6 +1,7 @@
 package dependent_consumers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
@@ -234,4 +235,61 @@ func TestGetDependentConsumerProxy_NilConfig(t *testing.T) {
 
 	assert.NotNil(t, proxy)
 	assert.NotNil(t, proxy.GetPooledClientAttr)
+}
+
+func TestIsArchitectConsumerResource(t *testing.T) {
+	assert.True(t, isArchitectConsumerResource(gflow))
+	assert.True(t, isArchitectConsumerResource(gscript))
+	assert.False(t, isArchitectConsumerResource("genesyscloud_user"))
+}
+
+func TestIsRecursiveDependencyResource(t *testing.T) {
+	assert.True(t, isRecursiveDependencyResource(gflow))
+	assert.True(t, isRecursiveDependencyResource(gscript))
+	assert.False(t, isRecursiveDependencyResource("genesyscloud_integration_action"))
+}
+
+func TestIterateDependencies_AddsMappedDependencies(t *testing.T) {
+	dataActionID := "data-action-id"
+	dataActionName := "Test Data Action"
+	dataActionType := "DATAACTION"
+	scriptID := "script-id"
+	scriptName := "Nested Script"
+	scriptType := "COMPOSERSCRIPT"
+	parentKey := "parent-script-id"
+	parentLabel := "Parent Script"
+
+	entities := []platformclientv2.Dependency{
+		{Id: &dataActionID, Name: &dataActionName, VarType: &dataActionType},
+		{Id: &scriptID, Name: &scriptName, VarType: &scriptType},
+	}
+	listing := &platformclientv2.Consumedresourcesentitylisting{Entities: &entities}
+
+	resources := make(resourceExporter.ResourceIDMetaMap)
+	dependsMap := make(map[string][]string)
+	architectDependencies := make(map[string][]string)
+
+	proxy := &DependentConsumerProxy{}
+	// Mark nested script as already processed to avoid recursive API calls in unit test.
+	totalFlowResources := []string{scriptID}
+	updatedResources, _, _, _, err := iterateDependencies(
+		listing,
+		resources,
+		dependsMap,
+		context.Background(),
+		proxy,
+		parentKey,
+		architectDependencies,
+		nil,
+		parentLabel,
+		totalFlowResources,
+	)
+
+	assert.NoError(t, err)
+	assert.Contains(t, updatedResources, dataActionID)
+	assert.Equal(t, "genesyscloud_integration_action::::data-action-id", updatedResources[dataActionID].BlockLabel)
+	assert.Contains(t, updatedResources, scriptID)
+	assert.Equal(t, "genesyscloud_script::::script-id", updatedResources[scriptID].BlockLabel)
+	assert.Contains(t, architectDependencies[parentKey], dataActionID)
+	assert.Contains(t, architectDependencies[parentKey], scriptID)
 }

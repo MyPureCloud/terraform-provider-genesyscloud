@@ -22,11 +22,16 @@ import (
 type DependentConsumerProxy struct {
 	ClientConfig                   *platformclientv2.Configuration
 	ArchitectApi                   *platformclientv2.ArchitectApi
+	ScriptsApi                     *platformclientv2.ScriptsApi
 	RetrieveDependentConsumersAttr retrieveDependentConsumersFunc
 	GetPooledClientAttr            retrievePooledClientFunc
 }
 
-var gflow = "genesyscloud_flow"
+const (
+	gflow                    = "genesyscloud_flow"
+	gscript                  = "genesyscloud_script"
+	composerScriptObjectType = "COMPOSERSCRIPT"
+)
 
 func (p *DependentConsumerProxy) GetDependentConsumers(ctx context.Context, resourceKeys resourceExporter.ResourceInfo, totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, error) {
 	return p.RetrieveDependentConsumersAttr(ctx, p, resourceKeys, totalFlowResources)
@@ -58,9 +63,9 @@ func newDependentConsumerProxy(ClientConfig *platformclientv2.Configuration) *De
 	})
 
 	if ClientConfig != nil {
-		api := platformclientv2.NewArchitectApiWithConfig(ClientConfig)
 		InternalProxy.ClientConfig = ClientConfig
-		InternalProxy.ArchitectApi = api
+		InternalProxy.ArchitectApi = platformclientv2.NewArchitectApiWithConfig(ClientConfig)
+		InternalProxy.ScriptsApi = platformclientv2.NewScriptsApiWithConfig(ClientConfig)
 		InternalProxy.RetrieveDependentConsumersAttr = retrieveDependentConsumersFn
 	}
 	return InternalProxy
@@ -103,76 +108,133 @@ func fetchDepConsumers(ctx context.Context,
 	architectDependencies map[string][]string,
 	cyclicDependsList []string,
 	totalFlowResources []string) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, error, []string) {
-	if resType == gflow {
+	if isArchitectConsumerResource(resType) {
 		alreadyProcessed := util.StringExists(resourceKey, totalFlowResources)
-		log.Printf("[DEBUG_FLOW] fetchDepConsumers called: resourceKey=%s, resourceLabel=%s, alreadyInTotalFlowResources=%v, totalFlowResourcesCount=%d", resourceKey, resourceLabel, alreadyProcessed, len(totalFlowResources))
+		log.Printf("[DEBUG_DEPS] fetchDepConsumers called: resType=%s resourceKey=%s resourceLabel=%s alreadyProcessed=%v processedCount=%d",
+			resType, resourceKey, resourceLabel, alreadyProcessed, len(totalFlowResources))
 		if alreadyProcessed {
-			log.Printf("[DEBUG_FLOW] SKIPPING flow %s (%s) - already in totalFlowResources", resourceKey, resourceLabel)
+			log.Printf("[DEBUG_DEPS] SKIPPING %s %s (%s) - already processed", resType, resourceKey, resourceLabel)
+			return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
 		}
 	}
-	if resType == gflow && !util.StringExists(resourceKey, totalFlowResources) {
-		// Fetches MetaData for the Flow
+
+	objectType, versionID, ok := resolveConsumedResourceQuery(p, resType, resourceKey, resourceLabel)
+	if !ok {
+		log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
+		return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
+	}
+
+	totalFlowResources = append(totalFlowResources, resourceKey)
+	var err error
+	resources, dependsMap, cyclicDependsList, totalFlowResources, err = fetchPaginatedConsumedResources(
+		p, resourceKey, versionID, objectType, resources, dependsMap, ctx, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources,
+	)
+	if err != nil {
+		return nil, nil, nil, err, totalFlowResources
+	}
+
+	log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
+	return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
+}
+
+func isArchitectConsumerResource(resType string) bool {
+	return resType == gflow || resType == gscript
+}
+
+func isRecursiveDependencyResource(resType string) bool {
+	return resType == gflow || resType == gscript
+}
+
+func resolveConsumedResourceQuery(p *DependentConsumerProxy, resType, resourceKey, resourceLabel string) (objectType, versionID string, ok bool) {
+	switch resType {
+	case gflow:
 		data, _, err := p.ArchitectApi.GetFlow(resourceKey, false)
 		if err != nil {
 			log.Printf("Error calling GetFlow: %v\n", err)
+			return "", "", false
 		}
-		// Fetch Dependent Consumed Resources only for Published Versions
-		// Require VarType as well, since it is used to look up the flow type.
-		if data != nil && data.PublishedVersion != nil && data.PublishedVersion.Id != nil && data.VarType != nil {
-			flowTypeObjectMaps := SetFlowTypeObjectMaps()
-			objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
-			log.Printf("[DEBUG_FLOW] Flow %s (%s): VarType=%s, flowTypeExists=%v, objectType=%s", resourceKey, resourceLabel, *data.VarType, flowTypeExists, objectType)
-			if flowTypeExists {
-				// Mark this flow as being processed EARLY to prevent re-entry during recursive calls
-				// Only add after confirming: flow exists, has published version, and has valid flow type
-				totalFlowResources = append(totalFlowResources, resourceKey)
-				pageCount := 1
-				const pageSize = 100
-				dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageCount, pageSize)
-				if err != nil {
-					return nil, nil, nil, err, totalFlowResources
-				}
-				log.Printf("Retrieved dependencies for ID %s", resourceKey)
+		if data == nil || data.PublishedVersion == nil || data.PublishedVersion.Id == nil || data.VarType == nil {
+			return "", "", false
+		}
 
-				// return empty dependsMap and  resources
-				if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
-					log.Printf("Retrieved dependencies for ID  noresult %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
-					return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
-				}
+		flowTypeObjectMaps := SetFlowTypeObjectMaps()
+		objectType, flowTypeExists := flowTypeObjectMaps[*data.VarType]
+		log.Printf("[DEBUG_FLOW] Flow %s (%s): VarType=%s, flowTypeExists=%v, objectType=%s",
+			resourceKey, resourceLabel, *data.VarType, flowTypeExists, objectType)
+		if !flowTypeExists {
+			return "", "", false
+		}
+		return objectType, *data.PublishedVersion.Id, true
 
-				if dependencies.PageCount != nil {
-					pageCount = *dependencies.PageCount
-				}
+	case gscript:
+		data, _, err := p.ScriptsApi.GetScript(resourceKey)
+		if err != nil {
+			log.Printf("Error calling GetScript: %v\n", err)
+			return "", "", false
+		}
+		if data == nil || data.VersionId == nil {
+			return "", "", false
+		}
 
-				// iterate dependencies (already checked Entities is not nil above)
-				if pageCount < 2 {
-					resources, dependsMap, cyclicDependsList, totalFlowResources, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources)
-					if err != nil {
-						return nil, nil, nil, err, totalFlowResources
-					}
-					log.Printf("Retrieved dependencies for resourceKey %s, resources %v, length %d", resourceKey, resources, len(resources))
-					return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
-				}
+		log.Printf("[DEBUG_SCRIPT] Script %s (%s): versionId=%s, objectType=%s",
+			resourceKey, resourceLabel, *data.VersionId, composerScriptObjectType)
+		return composerScriptObjectType, *data.VersionId, true
 
-				for pageNum := 1; pageNum <= pageCount; pageNum++ {
-					dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, *data.PublishedVersion.Id, objectType, nil, pageNum, pageSize)
+	default:
+		return "", "", false
+	}
+}
 
-					if err != nil {
-						return nil, nil, nil, err, totalFlowResources
-					}
-					if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
-						break
-					}
-					resources, dependsMap, cyclicDependsList, totalFlowResources, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources)
-					if err != nil {
-						return nil, nil, nil, err, totalFlowResources
-					}
-				}
-			}
+func fetchPaginatedConsumedResources(
+	p *DependentConsumerProxy,
+	resourceKey string,
+	versionID string,
+	objectType string,
+	resources resourceExporter.ResourceIDMetaMap,
+	dependsMap map[string][]string,
+	ctx context.Context,
+	architectDependencies map[string][]string,
+	cyclicDependsList []string,
+	resourceLabel string,
+	totalFlowResources []string,
+) (resourceExporter.ResourceIDMetaMap, map[string][]string, []string, []string, error) {
+	pageCount := 1
+	const pageSize = 100
+
+	dependencies, _, err := p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, versionID, objectType, nil, pageCount, pageSize)
+	if err != nil {
+		return nil, nil, nil, totalFlowResources, err
+	}
+	log.Printf("Retrieved dependencies for ID %s", resourceKey)
+
+	if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
+		log.Printf("Retrieved dependencies for ID noresult %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
+		return resources, dependsMap, cyclicDependsList, totalFlowResources, nil
+	}
+
+	if dependencies.PageCount != nil {
+		pageCount = *dependencies.PageCount
+	}
+
+	if pageCount < 2 {
+		return iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources)
+	}
+
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
+		dependencies, _, err = p.ArchitectApi.GetArchitectDependencytrackingConsumedresources(resourceKey, versionID, objectType, nil, pageNum, pageSize)
+		if err != nil {
+			return nil, nil, nil, totalFlowResources, err
+		}
+		if dependencies.Entities == nil || len(*dependencies.Entities) == 0 {
+			break
+		}
+		resources, dependsMap, cyclicDependsList, totalFlowResources, err = iterateDependencies(dependencies, resources, dependsMap, ctx, p, resourceKey, architectDependencies, cyclicDependsList, resourceLabel, totalFlowResources)
+		if err != nil {
+			return nil, nil, nil, totalFlowResources, err
 		}
 	}
-	log.Printf("Retrieved dependencies for ID %v, resourceKey %s, length %d", resources, resourceKey, len(resources))
-	return resources, dependsMap, cyclicDependsList, nil, totalFlowResources
+
+	return resources, dependsMap, cyclicDependsList, totalFlowResources, nil
 }
 
 func buildDependsMap(resources resourceExporter.ResourceIDMetaMap, dependsMap map[string][]string, id string) map[string][]string {
@@ -212,26 +274,26 @@ func iterateDependencies(dependencies *platformclientv2.Consumedresourcesentityl
 	var err error
 	dependentConsumerMap := SetDependentObjectMaps()
 
-	log.Printf("[DEBUG_DEPS] iterateDependencies for flow key=%s, label=%s, entityCount=%d", key, resourceLabel, len(*dependencies.Entities))
+	log.Printf("[DEBUG_DEPS] iterateDependencies for resource key=%s, label=%s, entityCount=%d", key, resourceLabel, len(*dependencies.Entities))
 	for _, consumer := range *dependencies.Entities {
 		if consumer.Id == nil || consumer.VarType == nil || consumer.Name == nil {
 			continue
 		}
 
 		resourceType, exists := getResourceType(consumer, dependentConsumerMap)
-		log.Printf("[DEBUG_DEPS] Processing consumer: Id=%s, Name=%s, VarType=%s, mappedResourceType=%s, exists=%v (parent flow: %s)",
+		log.Printf("[DEBUG_DEPS] Processing consumer: Id=%s, Name=%s, VarType=%s, mappedResourceType=%s, exists=%v (parent: %s)",
 			*consumer.Id, *consumer.Name, *consumer.VarType, resourceType, exists, resourceLabel)
 		if exists {
 			resources, architectDependencies = processResource(consumer, resourceType, resources, architectDependencies, key)
 			log.Printf("[DEBUG_DEPS] Added resource %s.%s as dependency of %s (total resources now: %d)", resourceType, *consumer.Id, resourceLabel, len(resources))
-			if resourceType == gflow && *consumer.Id != key {
+			if isRecursiveDependencyResource(resourceType) && *consumer.Id != key {
 				if !isDependencyPresent(architectDependencies, *consumer.Id, key) {
 					resources, dependsMap, totalFlowResources, err = fetchAndProcessDependentConsumers(ctx, p, consumer, architectDependencies, resources, dependsMap, cyclicDependsList, totalFlowResources, resourceType)
 					if err != nil {
 						return nil, nil, nil, totalFlowResources, err
 					}
 				} else {
-					cyclicDependsList = append(cyclicDependsList, gflow+"."+*consumer.Name+" , "+gflow+"."+resourceLabel)
+					cyclicDependsList = append(cyclicDependsList, resourceType+"."+*consumer.Name+" , "+resourceType+"."+resourceLabel)
 					log.Printf("cyclic Dependencies Identified %v for %v", cyclicDependsList, *consumer.Name)
 					continue
 				}
