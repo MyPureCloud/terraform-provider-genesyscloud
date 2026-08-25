@@ -65,11 +65,11 @@ resource "genesyscloud_integration_action" "example_action" {
 }
 
 # Example with function configuration
-# Note: function_config is only required for function data actions (when category = "Genesys Cloud Data Action")
-# For regular integration actions, this section can be omitted
+# Required when the integration type is "function-data-actions" (or category contains "function data action").
+# Genesys Cloud cannot download function zips — keep the zip available locally / in your pipeline.
 resource "genesyscloud_integration_action" "example_function_action" {
   name                   = "Example Function Action"
-  category               = "Genesys Cloud Data Action"
+  category               = "Function Data Actions"
   integration_id         = genesyscloud_integration.example_gc_data_integration.id
   secure                 = true
   config_timeout_seconds = 20
@@ -98,11 +98,18 @@ resource "genesyscloud_integration_action" "example_function_action" {
     }
   })
 
+  config_request {
+    request_type         = "POST"
+    request_url_template = ""
+    request_template     = "$${input.rawRequest}"
+  }
+
   function_config {
-    description     = "Custom function for data processing"
-    handler         = "index.handler"
-    runtime         = "nodejs18.x"
-    timeout_seconds = 30
-    file_path       = "${local.working_dir.integration_action}/function.zip"
+    description       = "Custom function for data processing"
+    handler           = "index.handler"
+    runtime           = "nodejs22.x"
+    timeout_seconds   = 30
+    file_path         = "${local.working_dir.integration_action}/function.zip"
+    file_content_hash = filesha256("${local.working_dir.integration_action}/function.zip")
   }
 }
