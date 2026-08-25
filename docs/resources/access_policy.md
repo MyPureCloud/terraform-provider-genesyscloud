@@ -16,15 +16,24 @@ that provide granular control over user permissions and system access.
 
 The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-## APIs Used
+* [GET /api/v2/authorization/policies](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-policies)
+* [POST /api/v2/authorization/policies/targets/{targetName}](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-authorization-policies-targets--targetName-)
+* [DELETE /api/v2/authorization/policies/targets/{targetName}/subject/{subjectId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-authorization-policies-targets--targetName--subject--subjectId-)
+* [GET /api/v2/authorization/policies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-policies--policyId-)
+* [PUT /api/v2/authorization/policies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-authorization-policies--policyId-)
 
-The following Genesys Cloud APIs are used by this resource:
+## Permissions and Scopes
 
-- POST /api/v2/authorization/policies/targets/{targetName} - Create an access policy
-- GET /api/v2/authorization/policies/{policyId} - Get an access policy by ID
-- PUT /api/v2/authorization/policies/{policyId} - Update an access policy
-- DELETE /api/v2/authorization/policies/targets/{targetName}/subject/{subjectId} - Delete an access policy
-- GET /api/v2/authorization/policies - List all access policies
+The following permissions are required to use this resource:
+
+* `authorization:policy:add`
+* `authorization:policy:delete`
+* `authorization:policy:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `authorization`
+* `authorization:readonly`
 
 
 ## Example Usage
@@ -57,7 +66,7 @@ resource "genesyscloud_access_policy" "example_deny_role_grants" {
 
 - `effect` (String) The effect this policy has when conditions are met. Valid values: ALLOW, DENY.
 - `name` (String) The name of the access policy.
-- `subject_type` (String) The type of subject the policy applies to (e.g. 'ALL', 'USER', 'GROUP').
+- `subject_type` (String) The type of subject the policy applies to. Valid values: ALL, USER, CLIENT, GROUP, TEAM.
 - `target_resource` (String) The targeted resource to which the policy applies, in the form of domain:entity:action (e.g. 'authorization:role:add').
 
 ### Optional

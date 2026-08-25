@@ -14,7 +14,20 @@ Data source for Genesys Cloud Access Policies. Select a policy by name.
 
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
-**No APIs**
+* [GET /api/v2/authorization/policies](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-policies)
+* [GET /api/v2/authorization/policies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-policies--policyId-)
+
+## Permissions and Scopes
+
+The following permissions are required to use this resource:
+
+* `authorization:policy:view`
+
+The following OAuth scopes are required to use this resource:
+
+* `authorization`
+* `authorization:readonly`
+
 
 ## Example Usage
 

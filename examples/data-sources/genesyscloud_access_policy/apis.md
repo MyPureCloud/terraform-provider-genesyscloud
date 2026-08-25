@@ -1,9 +1,5 @@
 <!-- sources
 genesyscloud/access_policy/genesyscloud_access_policy_proxy.go
 -->
-
-## APIs Used
-
-The following Genesys Cloud APIs are used by this data source:
-
-- GET /api/v2/authorization/policies - List all access policies (used to find policy by name)
+* [GET /api/v2/authorization/policies](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-policies)
+* [GET /api/v2/authorization/policies/{policyId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-authorization-policies--policyId-)
