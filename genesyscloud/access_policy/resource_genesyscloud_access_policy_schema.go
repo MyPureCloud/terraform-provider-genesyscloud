@@ -6,6 +6,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -88,9 +89,10 @@ that provide granular control over user permissions and system access.`,
 				},
 			},
 			"condition_json": {
-				Description: "The condition tree as a JSON string. Use jsonencode() to construct this value. The condition defines when the policy effect is applied based on attribute comparisons.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "The condition tree as a JSON string. Use jsonencode() to construct this value. The condition defines when the policy effect is applied based on attribute comparisons.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 			"enabled": {
 				Description: "Whether the policy is actively enforced. Defaults to false.",
@@ -105,9 +107,10 @@ that provide granular control over user permissions and system access.`,
 				Default:     false,
 			},
 			"preset_attributes_json": {
-				Description: "A JSON string containing a map of preset attribute names and their typed values to use in policy condition evaluation.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "A JSON string containing a map of preset attribute names and their typed values to use in policy condition evaluation.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: util.SuppressEquivalentJsonDiffs,
 			},
 		},
 	}

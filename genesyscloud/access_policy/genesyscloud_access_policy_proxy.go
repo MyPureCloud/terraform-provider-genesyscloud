@@ -188,7 +188,9 @@ func updateAccessPolicyFn(ctx context.Context, p *accessPolicyProxy, id string, 
 	return updatedPolicy, resp, nil
 }
 
-// deleteAccessPolicyFn is an implementation function for deleting a Genesys Cloud access policy
+// deleteAccessPolicyFn is an implementation function for deleting a Genesys Cloud access policy.
+// Note: The API's delete endpoint uses targetResource + subjectId as the natural key for deletion,
+// not the policy ID. The id parameter is retained for logging purposes only.
 func deleteAccessPolicyFn(ctx context.Context, p *accessPolicyProxy, id string, targetResource string, subjectId string) (response *platformclientv2.APIResponse, err error) {
 	_ = provider.EnsureResourceContext(ctx, ResourceType)
 

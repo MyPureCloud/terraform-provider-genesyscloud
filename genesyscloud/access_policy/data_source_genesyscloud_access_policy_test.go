@@ -3,7 +3,6 @@ package access_policy
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -56,10 +55,6 @@ func TestAccDataSourceAccessPolicy(t *testing.T) {
 					name,
 					"genesyscloud_access_policy."+resourceLabel,
 				),
-				PreConfig: func() {
-					t.Log("sleeping to allow for eventual consistency")
-					time.Sleep(30 * time.Second)
-				},
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"data.genesyscloud_access_policy."+dataLabel, "id",

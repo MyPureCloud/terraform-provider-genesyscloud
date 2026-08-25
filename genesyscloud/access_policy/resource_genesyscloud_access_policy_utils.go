@@ -29,11 +29,9 @@ func buildAccessPolicyFromResourceData(d *schema.ResourceData) (*platformclientv
 		policy.TargetResource = &targetResource
 	}
 
-	// Set description
-	if v, ok := d.GetOk("description"); ok {
-		description := v.(string)
-		policy.Description = &description
-	}
+	// Set description - use d.Get instead of d.GetOk so clearing the field takes effect
+	description := d.Get("description").(string)
+	policy.Description = &description
 
 	// Build subject
 	subject := &platformclientv2.Subject{
