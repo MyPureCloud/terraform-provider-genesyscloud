@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	accessPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/access_policy"
 	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
 	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	agenticVirtualAgentVersionPublish "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version_publish"
@@ -357,6 +358,7 @@ func registerResources() {
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
+	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
 	phoneBaseSettings.SetRegistrar(regInstance)                            //Registering Phone Base Settings
 	lineBaseSettings.SetRegistrar(regInstance)                             //Registering Line Base Settings
