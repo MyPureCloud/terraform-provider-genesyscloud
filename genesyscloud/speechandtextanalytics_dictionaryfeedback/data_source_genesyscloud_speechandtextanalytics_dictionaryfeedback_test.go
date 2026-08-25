@@ -59,7 +59,9 @@ func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 func generateSpeechAndTextAnalyticsDictionaryFeedbackDataSource(resourceType, resourceName, term, dependsOn string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		term = "%s"
+		dialect = "en-AU"
+		transcription_engine = "%s"
 		depends_on = [%s]
 	}
-	`, resourceType, resourceName, term, dependsOn)
+	`, resourceType, resourceName, term, TranscriptionEngineGenesys, dependsOn)
 }

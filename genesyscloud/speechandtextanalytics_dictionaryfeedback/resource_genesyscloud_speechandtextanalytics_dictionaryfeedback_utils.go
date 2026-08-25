@@ -18,17 +18,30 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 
 // getDictionaryFeedbackFromResourceData maps data from schema ResourceData object to a platformclientv2.Dictionaryfeedback
 func getDictionaryFeedbackFromResourceData(d *schema.ResourceData) platformclientv2.Dictionaryfeedback {
-	// Force float32 conversion to stop type error
+	engine := d.Get("transcription_engine").(string)
+	dictionaryFeedback := platformclientv2.Dictionaryfeedback{
+		Term:                platformclientv2.String(d.Get("term").(string)),
+		Dialect:             platformclientv2.String(d.Get("dialect").(string)),
+		TranscriptionEngine: platformclientv2.String(engine),
+	}
+
+	if displayAs, ok := d.GetOk("display_as"); ok && displayAs.(string) != "" {
+		dictionaryFeedback.DisplayAs = platformclientv2.String(displayAs.(string))
+	}
+
+	// Native-only fields are not applicable for GenesysExtended
+	if engine == TranscriptionEngineGenesysExtended {
+		return dictionaryFeedback
+	}
+
 	float64Value := d.Get("boost_value").(float64)
 	float32Value := float32(float64Value)
-	return platformclientv2.Dictionaryfeedback{
-		Term:           platformclientv2.String(d.Get("term").(string)),
-		Dialect:        platformclientv2.String(d.Get("dialect").(string)),
-		BoostValue:     platformclientv2.Float32(float32Value),
-		Source:         platformclientv2.String(d.Get("source").(string)),
-		ExamplePhrases: buildDictionaryFeedbackExamplePhrases(d.Get("example_phrases").([]interface{})),
-		SoundsLike:     lists.SetToStringList(d.Get("sounds_like").(*schema.Set)),
-	}
+	dictionaryFeedback.BoostValue = platformclientv2.Float32(float32Value)
+	dictionaryFeedback.Source = platformclientv2.String(d.Get("source").(string))
+	dictionaryFeedback.ExamplePhrases = buildDictionaryFeedbackExamplePhrases(d.Get("example_phrases").([]interface{}))
+	dictionaryFeedback.SoundsLike = lists.SetToStringList(d.Get("sounds_like").(*schema.Set))
+
+	return dictionaryFeedback
 }
 
 // buildDictionaryFeedbackExamplePhrases maps an []interface{} into a Genesys Cloud *[]platformclientv2.Dictionaryfeedbackexamplephrase
@@ -70,9 +83,13 @@ func flattenDictionaryFeedbackExamplePhrases(dictionaryFeedbackExamplePhrases *[
 }
 
 func validateExamplePhrases(d *schema.ResourceData) error {
-	term := d.Get("term").(string)
-	phrases := d.Get("example_phrases").([]interface{})
+	if d.Get("transcription_engine").(string) == TranscriptionEngineGenesysExtended {
+		return nil
+	}
+	return validateExamplePhrasesValues(d.Get("term").(string), d.Get("example_phrases").([]interface{}))
+}
 
+func validateExamplePhrasesValues(term string, phrases []interface{}) error {
 	for i, p := range phrases {
 		phraseMap := p.(map[string]interface{})
 		phraseText := phraseMap["phrase"].(string)
@@ -86,4 +103,15 @@ func validateExamplePhrases(d *schema.ResourceData) error {
 		}
 	}
 	return nil
+}
+
+func dictionaryFeedbackExportLabel(dictionaryFeedback platformclientv2.Dictionaryfeedback) string {
+	label := *dictionaryFeedback.Term
+	if dictionaryFeedback.Dialect != nil && *dictionaryFeedback.Dialect != "" {
+		label = fmt.Sprintf("%s_%s", label, *dictionaryFeedback.Dialect)
+	}
+	if dictionaryFeedback.TranscriptionEngine != nil && *dictionaryFeedback.TranscriptionEngine != "" {
+		label = fmt.Sprintf("%s_%s", label, *dictionaryFeedback.TranscriptionEngine)
+	}
+	return label
 }
