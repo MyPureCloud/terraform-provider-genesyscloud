@@ -201,6 +201,18 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValue(d, "acw_timeout_ms", currentQueue.AcwSettings.TimeoutMs)
 	}
 
+	// Save the current config order for sub_type_settings before clearing
+	var messageSubTypeConfigOrder []interface{}
+	if v := d.Get("media_settings_message"); v != nil {
+		if msgList, ok := v.([]interface{}); ok && len(msgList) > 0 {
+			if msgMap, ok := msgList[0].(map[string]interface{}); ok {
+				if subTypes, ok := msgMap["sub_type_settings"].([]interface{}); ok {
+					messageSubTypeConfigOrder = subTypes
+				}
+			}
+		}
+	}
+
 	_ = d.Set("media_settings_call", nil)
 	_ = d.Set("media_settings_callback", nil)
 	_ = d.Set("media_settings_chat", nil)
@@ -213,7 +225,9 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_callback", currentQueue.MediaSettings.Callback, flattenMediaSettingCallback)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_chat", currentQueue.MediaSettings.Chat, flattenMediaSetting)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_email", currentQueue.MediaSettings.Email, flattenMediaEmailSetting)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "media_settings_message", currentQueue.MediaSettings.Message, flattenMediaSettingsMessage)
+		if currentQueue.MediaSettings.Message != nil {
+			_ = d.Set("media_settings_message", flattenMediaSettingsMessagePreserveOrder(currentQueue.MediaSettings.Message, messageSubTypeConfigOrder))
+		}
 	}
 	_ = d.Set("outbound_messaging_sms_address_id", nil)
 	_ = d.Set("outbound_messaging_whatsapp_recipient_id", nil)

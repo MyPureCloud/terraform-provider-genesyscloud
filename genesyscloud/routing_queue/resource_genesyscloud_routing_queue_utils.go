@@ -728,6 +728,31 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	return []interface{}{settingsMap}
 }
 
+func flattenMediaSettingsMessagePreserveOrder(settings *platformclientv2.Messagemediasettings, configOrder []interface{}) []any {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]any)
+
+	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	if settings.ServiceLevel != nil {
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
+	}
+	if settings.SubTypeSettings != nil {
+		settingsMap["sub_type_settings"] = flattenSubTypeSettingsWithOrder(*settings.SubTypeSettings, configOrder)
+	}
+
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_inactivity_timeout", settings.EnableInactivityTimeout)
+
+	if settings.InactivityTimeoutSettings != nil {
+		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(settings.InactivityTimeoutSettings)
+	}
+
+	return []any{settingsMap}
+}
+
 func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings) []any {
 	if settings == nil {
 		return nil
@@ -769,7 +794,54 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 		return nil
 	}
 
-	// Sort keys to ensure deterministic ordering and avoid phantom diffs
+	subTypeList := make([]interface{}, 0, len(subType))
+	for key, value := range subType {
+		subTypeMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
+		subTypeList = append(subTypeList, subTypeMap)
+	}
+	return subTypeList
+}
+
+func flattenSubTypeSettingsWithOrder(subType map[string]platformclientv2.Messagesubtypesettings, configOrder []interface{}) []interface{} {
+	if subType == nil {
+		return nil
+	}
+
+	// Build a map of media_type -> flattened settings from the API response
+	apiMap := make(map[string]map[string]interface{})
+	for key, value := range subType {
+		subTypeMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
+		apiMap[key] = subTypeMap
+	}
+
+	// If we have config order, preserve it — only return items that are in the config
+	if len(configOrder) > 0 {
+		result := make([]interface{}, 0, len(configOrder))
+
+		// Return items in the config's order, using API values
+		for _, item := range configOrder {
+			if m, ok := item.(map[string]interface{}); ok {
+				if mediaType, ok := m["media_type"].(string); ok {
+					if apiItem, exists := apiMap[mediaType]; exists {
+						result = append(result, apiItem)
+					} else {
+						// Item is in config but not in API response — keep config values
+						result = append(result, m)
+					}
+				}
+			}
+		}
+
+		return result
+	}
+
+	// No config order available, return all API items in sorted order
 	keys := make([]string, 0, len(subType))
 	for key := range subType {
 		keys = append(keys, key)
@@ -778,12 +850,7 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 
 	subTypeList := make([]interface{}, 0, len(subType))
 	for _, key := range keys {
-		value := subType[key]
-		subTypeMap := make(map[string]interface{})
-		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
-		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
-		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
-		subTypeList = append(subTypeList, subTypeMap)
+		subTypeList = append(subTypeList, apiMap[key])
 	}
 	return subTypeList
 }
