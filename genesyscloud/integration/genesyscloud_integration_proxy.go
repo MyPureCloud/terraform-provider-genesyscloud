@@ -207,6 +207,37 @@ func getIntegrationByNameFn(ctx context.Context, p *IntegrationsProxy, integrati
 	return foundIntegration, false, resp, nil
 }
 
+// getIntegrationByNameAndTypeFn is the implementation for getting a Genesys Cloud Integration by name and type
+func getIntegrationByNameAndTypeFn(ctx context.Context, p *IntegrationsProxy, integrationName string, integrationType string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	var foundIntegration *platformclientv2.Integration
+	var resp *platformclientv2.APIResponse
+	const pageSize = 100
+	for pageNum := 1; ; pageNum++ {
+		integrations, response, err := p.integrationsApi.GetIntegrations(pageSize, pageNum, "", nil, "", "", nil, "", "", "")
+		if err != nil {
+			return nil, false, resp, err
+		}
+		resp = response
+		if integrations.Entities == nil || len(*integrations.Entities) == 0 {
+			return nil, true, resp, fmt.Errorf("no integrations found with name: %s and integration_type: %s", integrationName, integrationType)
+		}
+
+		for _, integration := range *integrations.Entities {
+			if integration.Name != nil && *integration.Name == integrationName &&
+				integration.IntegrationType != nil && integration.IntegrationType.Id != nil && *integration.IntegrationType.Id == integrationType {
+				foundIntegration = &integration
+				break
+			}
+		}
+		if foundIntegration != nil {
+			break
+		}
+	}
+	return foundIntegration, false, resp, nil
+}
+
 // updateIntegrationFn is the implementation for updating a Genesys Cloud Integration
 func updateIntegrationFn(ctx context.Context, p *IntegrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
