@@ -1005,19 +1005,22 @@ func rowInputKey(rowMap map[string]interface{}, inputColumnIds, outputColumnIds 
 //
 // The hazard exists because rows are updated one at a time: if row A is moved
 // onto an input tuple that row B still holds (because B has not been updated
-// yet), the intermediate state has two rows on that tuple. We avoid it by
-// ordering the updates so the row vacating a tuple is always applied before the
-// row that claims it (a topological sort over "S must precede R" edges, where
-// S currently holds R's target tuple). Deletes are applied before updates by the
-// caller, so tuples freed by deletes are already available and impose no order.
+// yet), the intermediate state has two rows on that tuple. We avoid it with a
+// simple rule: only update a row once its target tuple is free, i.e. update the
+// row that is vacating a tuple before the row that wants to move onto it.
+//
+// Concretely, we repeatedly apply any row whose target tuple no other row still
+// occupies; doing so frees up more tuples, which lets more rows go, until all
+// updates are applied. Deletes are applied before updates by the caller, so
+// tuples freed by deletes are already available and impose no ordering.
 //
 // The order is deterministic (ties broken by row_id) so the same plan applies
 // identically on every run. A genuine, non-transient duplicate in the desired
 // state (two updates targeting the same tuple, or an update targeting a tuple
 // held by an unchanged row) is a real config error and is returned as such
 // rather than being reordered away. A true cycle (a set of rows swapping tuples
-// simultaneously) cannot be linearized with in-place PUTs and is reported with
-// the rows involved.
+// simultaneously, e.g. A<->B) can never be applied one row at a time without a
+// transient duplicate; it is reported with the rows involved.
 func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnIds, outputColumnIds []string) ([]map[string]interface{}, error) {
 	if len(changes.updates) == 0 {
 		return changes.updates, nil
@@ -1086,12 +1089,25 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		}
 	}
 
-	// Build edges S -> R: S currently occupies R's target tuple, so S must be
-	// updated (vacate) before R. Unchanged/deleted rows never move, so only
-	// other updated rows can create a real dependency here.
+	// Work out, for each updated row, which other updated rows must go before it,
+	// then apply them in an order that respects those constraints.
+	//
+	// Edge rowHolder -> rowTaker means "rowHolder must be applied before rowTaker":
+	// rowHolder currently occupies the input tuple that rowTaker wants to move
+	// onto, so rowHolder has to vacate it first. Once sorted, applying the updates
+	// in order guarantees a row's target tuple is always free at the moment it is
+	// PUT, so no intermediate state ever holds two rows on the same tuple.
+	// Unchanged and deleted rows never move, so they cannot be the rowHolder that
+	// vacates a tuple; only other updated rows can create a real dependency
+	// (permanent collisions with static rows were already rejected above).
+	//
+	// Bookkeeping (rowTaker waits on rowHolder):
+	//   byID       - row_id -> the row map, so we can emit rows in the final order
+	//   dependsOn  - rowTaker -> the rowHolders it is still waiting on (empty = free to apply now)
+	//   dependents - rowHolder -> the rowTakers waiting on it (so we can free them once it is applied)
 	byID := make(map[string]map[string]interface{}, len(changes.updates))
-	dependsOn := make(map[string]map[string]bool, len(changes.updates))  // R -> set of S
-	dependents := make(map[string]map[string]bool, len(changes.updates)) // S -> set of R
+	dependsOn := make(map[string]map[string]bool, len(changes.updates))  // rowTaker -> rowHolders it waits on
+	dependents := make(map[string]map[string]bool, len(changes.updates)) // rowHolder -> rowTakers waiting on it
 	ids := make([]string, 0, len(changes.updates))
 	for _, row := range changes.updates {
 		id := row["row_id"].(string)
@@ -1100,21 +1116,30 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		dependsOn[id] = map[string]bool{}
 		dependents[id] = map[string]bool{}
 	}
-	for _, r := range ids {
-		targetK := targetKeyByID[r]
-		for _, s := range ids {
-			if s == r {
+	for _, rowTaker := range ids {
+		targetK := targetKeyByID[rowTaker]
+		for _, rowHolder := range ids {
+			if rowHolder == rowTaker {
 				continue
 			}
-			// s holds targetK now, and s is going to move away from it.
-			if oldKeyByID[s] == targetK && targetKeyByID[s] != targetK {
-				dependsOn[r][s] = true
-				dependents[s][r] = true
+			// Add rowHolder -> rowTaker iff rowHolder currently holds rowTaker's
+			// target tuple (oldKeyByID[rowHolder] == targetK) AND rowHolder is
+			// actually moving off it (targetKeyByID[rowHolder] != targetK). If
+			// rowHolder were staying put on that tuple it would be a permanent
+			// duplicate, which is caught by the static/target checks above, not
+			// ordered around.
+			if oldKeyByID[rowHolder] == targetK && targetKeyByID[rowHolder] != targetK {
+				dependsOn[rowTaker][rowHolder] = true
+				dependents[rowHolder][rowTaker] = true
 			}
 		}
 	}
 
-	// Kahn's algorithm with deterministic tie-breaking by row_id.
+	// Work through the rows in waves. Start with every row that has nothing to
+	// wait on (its target tuple is already free). Apply one, then any row that was
+	// only waiting on it becomes free to apply next; repeat until none are left.
+	// Rows are sorted by row_id first so the emitted order is deterministic (Go
+	// map iteration is randomized), giving identical plans run to run.
 	sort.Strings(ids)
 	ready := make([]string, 0, len(ids))
 	for _, id := range ids {
@@ -1126,9 +1151,12 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 
 	ordered := make([]map[string]interface{}, 0, len(ids))
 	for len(ready) > 0 {
+		// Pop the next ready row and place it in the output.
 		id := ready[0]
 		ready = ready[1:]
 		ordered = append(ordered, byID[id])
+		// Placing id satisfies one prerequisite for each of its dependents; those
+		// that now have none left become ready.
 		newlyReady := make([]string, 0)
 		for r := range dependents[id] {
 			delete(dependsOn[r], id)
@@ -1140,6 +1168,10 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		ready = append(ready, newlyReady...)
 	}
 
+	// If not every row was emitted, the rows left with a non-empty dependsOn set
+	// are mutually waiting on each other: a cycle (e.g. a straight A<->B swap, or
+	// a longer rotation). No single-row-at-a-time ordering can break it without a
+	// scratch value, so surface the involved rows and how to work around it.
 	if len(ordered) != len(ids) {
 		remaining := make([]string, 0)
 		for _, id := range ids {

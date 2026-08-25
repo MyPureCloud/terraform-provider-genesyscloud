@@ -1220,7 +1220,8 @@ func generateChainRow(queueResourceLabel, customerType string) string {
 				type  = "stringList"
 			}
 		}
-	}`
+	}
+`
 }
 
 // GenerateRowsCSVFilepath returns HCL for the CSV filepath attribute.
