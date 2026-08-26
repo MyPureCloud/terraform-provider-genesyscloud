@@ -47,11 +47,6 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 	name := d.Get("name").(string)
 	createRoutingSkill.Name = &name
 
-	divisionId := d.Get("division_id").(string)
-	if divisionId != "" {
-		createRoutingSkill.DivisionId = &divisionId
-	}
-
 	log.Printf("Creating skill %s", name)
 	skill, resp, err := proxy.createRoutingSkill(ctx, &createRoutingSkill)
 	if err != nil {
@@ -60,6 +55,20 @@ func createRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interf
 
 	d.SetId(*skill.Id)
 	log.Printf("Created skill %s %s", name, *skill.Id)
+
+	// If a division_id is specified, move the skill to that division via PATCH
+	divisionId := d.Get("division_id").(string)
+	if divisionId != "" {
+		var updateReq platformclientv2.Updateskilldivisionrequest
+		updateReq.DivisionId = &divisionId
+
+		log.Printf("Moving skill %s to division %s", *skill.Id, divisionId)
+		_, resp, err := proxy.updateRoutingSkill(ctx, *skill.Id, &updateReq)
+		if err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to move skill %s to division %s error: %s", name, divisionId, err), resp)
+		}
+	}
+
 	return readRoutingSkill(ctx, d, meta)
 }
 
@@ -104,8 +113,8 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		_ = d.Set("name", *skill.Name)
-		if skill.DivisionId != nil {
-			_ = d.Set("division_id", *skill.DivisionId)
+		if skill.Division != nil && skill.Division.Id != nil {
+			_ = d.Set("division_id", *skill.Division.Id)
 		}
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
 		return cc.CheckState(d)
@@ -155,5 +164,9 @@ func GenerateRoutingSkillResourceWithDivision(
 	resourceLabel string,
 	name string,
 	divisionId string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {name = "%s" division_id = "%s" }`, resourceLabel, name, divisionId)
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
+		name        = "%s"
+		division_id = %s
+	}
+	`, resourceLabel, name, divisionId)
 }

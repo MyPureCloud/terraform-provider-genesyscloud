@@ -447,12 +447,28 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 
 	diagErr = append(diagErr, updateQueueWrapupCodes(d, sdkConfig)...)
 	if diagErr.HasError() {
-		d.Partial(true)
+		// Partial failure: clear consistency check and sync state from API (DEVTOOLING-1533).
+		consistency_checker.DeleteConsistencyCheck(d.Id())
+		syncDiags := syncRoutingQueueStateFromAPI(ctx, d, proxy, sdkConfig)
+		diagErr = append(diagErr, syncDiags...)
 		return diagErr
 	}
 
 	log.Printf("Updated queue %s", *updateQueue.Name)
 	return readRoutingQueue(ctx, d, meta)
+}
+
+// syncRoutingQueueStateFromAPI re-reads the queue from the API and updates Terraform state.
+// This is used after a partial failure to ensure state reflects reality.
+func syncRoutingQueueStateFromAPI(ctx context.Context, d *schema.ResourceData, proxy *RoutingQueueProxy, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
+	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), false)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s during state sync | error: %s", d.Id(), err), resp)
+	}
+	if diagErr := setRoutingQueueStateFromQueue(ctx, d, currentQueue, proxy, sdkConfig); diagErr != nil {
+		return diagErr
+	}
+	return nil
 }
 
 /*
