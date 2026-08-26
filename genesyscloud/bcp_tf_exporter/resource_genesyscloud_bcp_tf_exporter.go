@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -419,11 +419,10 @@ func getFlowDependencies(ctx context.Context, flowID string, resMeta *resourceEx
 		BlockLabel: resMeta.BlockLabel,
 	}
 
-	var proxy *bcpExporterProxy
+	proxy := getBcpExporterProxy(providerMeta.ClientConfig)
 
 	retrieveDependentConsumers := func(resourceKeys resourceExporter.ResourceInfo) func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
 		return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics) {
-			proxy = getBcpExporterProxy(clientConfig)
 			resources, dependsMap, err := proxy.GetFlowDependencies(ctx, resourceKeys)
 			if err != nil {
 				return nil, nil, []string{}, diag.Errorf("Failed to retrieve dependencies for flow %s: %s", resourceKeys.State.ID, err)

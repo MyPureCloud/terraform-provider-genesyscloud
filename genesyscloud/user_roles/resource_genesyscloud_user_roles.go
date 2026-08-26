@@ -3,13 +3,14 @@ package user_roles
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -39,7 +40,7 @@ func readUserRoles(ctx context.Context, d *schema.ResourceData, meta interface{}
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		roles, resp, err := flattenSubjectRoles(d, proxy)
 		if err != nil {
-			if util.IsStatus404ByInt(resp.StatusCode) {
+			if resp != nil && util.IsStatus404ByInt(resp.StatusCode) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for user %s | error: %v", d.Id(), err), resp))

@@ -22,6 +22,8 @@ import (
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/team"
+	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
+	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 )
 
@@ -267,6 +269,16 @@ var (
 				Optional:     true,
 				ValidateFunc: validation.IntBetween(60, 86400),
 			},
+			"edge_group_id": {
+				Description: "The identifier of the edge group that will place the calls. Can be set to specify a custom edge group instead of the default one.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"site_id": {
+				Description: "The identifier of the site to be used for dialing. If omitted, the default telephony site for the organization is used.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 		},
 	}
 
@@ -462,12 +474,17 @@ func ResourceRoutingQueue() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 2,
+		SchemaVersion: 3,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Version: 1,
 				Type:    resourceRoutingQueueV1().CoreConfigSchema().ImpliedType(),
 				Upgrade: stateUpgraderRoutingQueueV1ToV2,
+			},
+			{
+				Version: 2,
+				Type:    resourceRoutingQueueV2().CoreConfigSchema().ImpliedType(),
+				Upgrade: stateUpgraderRoutingQueueV2ToV3,
 			},
 		},
 		Schema: map[string]*schema.Schema{
@@ -805,19 +822,22 @@ func ResourceRoutingQueue() *schema.Resource {
 			},
 			"members": {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        queueMemberResource,
+				// TypeList instead of TypeSet: SDK gRPC forces planned TypeSet into state on apply
+				// errors even when d.Partial(true) is set (DEVTOOLING-1533).
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     queueMemberResource,
 				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
 					return d.Get("ignore_members").(bool)
 				},
 			},
 			"wrapup_codes": {
 				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				// TypeList instead of TypeSet: same SDK TypeSet-on-error state corruption (DEVTOOLING-1533).
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"direct_routing": {
 				Description: "The Direct Routing settings for the queue.",
@@ -879,6 +899,8 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
 			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
 			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
+			"media_settings_callback.site_id":                   {RefType: telephonyProvidersEdgesSite.ResourceType},
+			"media_settings_callback.edge_group_id":             {RefType: edgeGroup.ResourceType},
 			"media_settings_message.inactivity_timeout_settings.flow_id":                {RefType: architectFlow.ResourceType},
 			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
 			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},
@@ -888,7 +910,11 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"members":                {"user_id"},
 		},
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id", "conditional_group_routing_rules.queue_id", "conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id", "conditional_group_activation.rules.conditions.simple_metric.queue_id"},
-		AllowZeroValues:         []string{"bullseye_rings.expansion_timeout_seconds"},
+		AllowZeroValues: []string{
+			"bullseye_rings.expansion_timeout_seconds",
+			"conditional_group_activation.rules.conditions.value",
+			"conditional_group_activation.pilot_rule.conditions.value",
+		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},

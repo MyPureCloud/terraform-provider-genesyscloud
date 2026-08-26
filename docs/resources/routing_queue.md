@@ -405,7 +405,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `media_settings_chat` (Block List, Max: 1) Chat media settings. (see [below for nested schema](#nestedblock--media_settings_chat))
 - `media_settings_email` (Block List, Max: 1) Email media settings. (see [below for nested schema](#nestedblock--media_settings_email))
 - `media_settings_message` (Block List, Max: 1) Message media settings. (see [below for nested schema](#nestedblock--media_settings_message))
-- `members` (Block Set) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedblock--members))
+- `members` (Block List) Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown. (see [below for nested schema](#nestedblock--members))
 - `message_in_queue_flow_id` (String) The in-queue flow ID to use for message conversations waiting in queue.
 - `on_hold_prompt_id` (String) The audio to be played when calls on this queue are on hold. If not configured, the default on-hold music will play.
 - `outbound_email_address` (Block List, Max: 1) The outbound email address settings for this queue. **Note**: outbound_email_address is deprecated in genesyscloud_routing_queue. OEA is now a standalone resource, please set ENABLE_STANDALONE_EMAIL_ADDRESS in your environment variables to enable and use genesyscloud_routing_queue_outbound_email_address (see [below for nested schema](#nestedblock--outbound_email_address))
@@ -422,7 +422,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `suppress_in_queue_call_recording` (Boolean) Indicates whether recording in-queue calls is suppressed for this queue. Defaults to `true`.
 - `teams` (Set of String) List of ids assigned to the queue
 - `whisper_prompt_id` (String) The prompt ID used for whisper on the queue, if configured.
-- `wrapup_codes` (Set of String) IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.
+- `wrapup_codes` (List of String) IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.
 
 ### Read-Only
 
@@ -615,6 +615,7 @@ Optional:
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `auto_dial_delay_seconds` (Number) Time in seconds after agent connects to callback before outgoing call is auto-dialed. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.
 - `auto_end_delay_seconds` (Number) Time in seconds after agent disconnects from the outgoing call before the encasing callback is auto-ended. Allowable values in range 0 - 1200 seconds. Defaults to 300 seconds.
+- `edge_group_id` (String) The identifier of the edge group that will place the calls. Can be set to specify a custom edge group instead of the default one.
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
 - `enable_auto_dial_and_end` (Boolean) Flag to enable Auto-Dial and Auto-End automation for callbacks on this queue. Defaults to `false`.
 - `live_voice_flow_id` (String) The inbound flow to transfer to if a live voice is detected during the outbound call of a customer first callback.
@@ -626,6 +627,7 @@ Optional:
 - `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
 - `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
 - `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `site_id` (String) The identifier of the site to be used for dialing. If omitted, the default telephony site for the organization is used.
 
 
 <a id="nestedblock--media_settings_chat"></a>

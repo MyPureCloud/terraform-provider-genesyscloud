@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -148,6 +148,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 		}
 		resourcedata.SetNillableValue(d, "skip_preview_disabled", campaign.SkipPreviewDisabled)
 		resourcedata.SetNillableValue(d, "preview_time_out_seconds", campaign.PreviewTimeOutSeconds)
+		resourcedata.SetNillableValue(d, "preview_auto_end", campaign.PreviewAutoEnd)
 		resourcedata.SetNillableValue(d, "always_running", campaign.AlwaysRunning)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "contact_sorts", campaign.ContactSorts, flattenContactSorts)
 		resourcedata.SetNillableValue(d, "no_answer_timeout", campaign.NoAnswerTimeout)
@@ -166,6 +167,7 @@ func readOutboundCampaign(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("skill_columns", *campaign.SkillColumns)
 		}
 		resourcedata.SetNillableValue(d, "auto_answer", campaign.CallbackAutoAnswer)
+		resourcedata.SetNillableValue(d, "precise_dialing_enabled", campaign.PreciseDialingEnabled)
 
 		if _, newVal := d.GetChange("campaign_status"); newVal == "on" && *campaign.CampaignStatus == "complete" {
 			// skips the consistency check so that the campaign can be re-enabled after completion

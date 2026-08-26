@@ -11,10 +11,12 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var internalProxy *variationRequestProxy
+
+var variationCache = rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
 
 type createVariationFunc func(ctx context.Context, p *variationRequestProxy, documentVariationRequest *platformclientv2.Documentvariationrequest, knowledgeDocumentId, knowledgeBaseId string) (*platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
 type getAllVariationsFunc func(ctx context.Context, p *variationRequestProxy, knowledgeBaseId, documentId, documentState string, expand []string) (*[]platformclientv2.Documentvariationresponse, *platformclientv2.APIResponse, error)
@@ -45,7 +47,7 @@ type variationRequestProxy struct {
 // newVariationRequestProxy initializes the variation request proxy with all of the data needed to communicate with Genesys Cloud
 func newVariationRequestProxy(clientConfig *platformclientv2.Configuration) *variationRequestProxy {
 	api := platformclientv2.NewKnowledgeApiWithConfig(clientConfig)
-	variationCache := rc.NewResourceCache[platformclientv2.Documentvariationresponse]()
+
 	return &variationRequestProxy{
 		clientConfig:                                     clientConfig,
 		knowledgeApi:                                     api,

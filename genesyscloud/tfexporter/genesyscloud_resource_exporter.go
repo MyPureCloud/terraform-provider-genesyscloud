@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,7 +42,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -471,6 +472,16 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 
 	if g.resourceTypeFilter != nil && filterList != nil {
 		exports = g.resourceTypeFilter(exports, *filterList)
+	}
+
+	// Remove deprecated resource types if export_deprecated is false
+	if !g.exportDeprecated {
+		for resourceType := range exports {
+			if res, ok := providerResources[resourceType]; ok && res.DeprecationMessage != "" {
+				tflog.Info(g.ctx, fmt.Sprintf("Excluding deprecated resource type '%s' from export", resourceType))
+				delete(exports, resourceType)
+			}
+		}
 	}
 
 	// Thread-safe update of exporters
@@ -1052,6 +1063,12 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 	tflog.Info(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Starting dependency resolution for flows")
 
 	if g.addDependsOn {
+		// Verify the dependency tracking index is operational before querying consumed resources.
+		// Without this check, the API may return stale or incomplete dependency data.
+		if diagErr := g.ensureDependencyTrackingOperational(); diagErr != nil {
+			return diagErr
+		}
+
 		tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution enabled, processing dependencies")
 		filterList, resources, err := g.processAndBuildDependencies()
 		if err != nil {
@@ -1076,6 +1093,69 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 		return nil
 	}
 	tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution disabled (addDependsOn=false)")
+	return nil
+}
+
+// ensureDependencyTrackingOperational checks if the Architect dependency tracking index
+// is in an OPERATIONAL state before querying consumed resources. If the index is not ready,
+// it triggers a rebuild and polls until it becomes operational.
+func (g *GenesysCloudResourceExporter) ensureDependencyTrackingOperational() diag.Diagnostics {
+	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	status, _, err := architectApi.GetArchitectDependencytrackingBuild()
+	if err != nil {
+		tflog.Warn(g.ctx, fmt.Sprintf("Failed to check dependency tracking status: %v, proceeding anyway", err))
+		return nil
+	}
+
+	if status != nil && status.Status != nil && *status.Status == "OPERATIONAL" {
+		tflog.Info(g.ctx, "Dependency tracking index is OPERATIONAL")
+		return nil
+	}
+
+	currentStatus := "unknown"
+	if status != nil && status.Status != nil {
+		currentStatus = *status.Status
+	}
+	tflog.Info(g.ctx, fmt.Sprintf("Dependency tracking index status is %s, triggering rebuild", currentStatus))
+
+	_, err = architectApi.PostArchitectDependencytrackingBuild()
+	if err != nil {
+		tflog.Warn(g.ctx, fmt.Sprintf("Failed to trigger dependency tracking rebuild: %v, proceeding anyway", err))
+		return nil
+	}
+
+	// Poll until OPERATIONAL with a timeout
+	maxAttempts := 30
+	for i := 0; i < maxAttempts; i++ {
+		time.Sleep(10 * time.Second)
+
+		status, _, err = architectApi.GetArchitectDependencytrackingBuild()
+		if err != nil {
+			tflog.Warn(g.ctx, fmt.Sprintf("Failed to get dependency tracking build status: %v, proceeding anyway", err))
+			return nil
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				tflog.Info(g.ctx, "Dependency tracking rebuild complete")
+				return nil
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				tflog.Debug(g.ctx, fmt.Sprintf("Dependency tracking status: %s, waiting...", *status.Status))
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				tflog.Warn(g.ctx, fmt.Sprintf("Dependency tracking rebuild failed with status: %s, proceeding anyway", *status.Status))
+				return nil
+			default:
+				tflog.Warn(g.ctx, fmt.Sprintf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status))
+				return nil
+			}
+		}
+	}
+
+	tflog.Warn(g.ctx, "Dependency tracking rebuild timed out, proceeding anyway")
 	return nil
 }
 
@@ -1120,6 +1200,14 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	// Thread-safe read of resources
 	resourcesList := g.getResources()
+
+	// Sort resources by ID to ensure deterministic processing order across runs.
+	// Without this, the order depends on goroutine scheduling during resource retrieval,
+	// which causes non-deterministic depends_on output.
+	sort.Slice(resourcesList, func(i, j int) bool {
+		return resourcesList[i].State.ID < resourcesList[j].State.ID
+	})
+
 	for _, resourceKeys := range resourcesList {
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Processing resource: type=%s, id=%s, label=%s", resourceKeys.Type, resourceKeys.State.ID, resourceKeys.BlockLabel))
 
@@ -1136,10 +1224,10 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
-		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
-		// Data source flows are just referenced and not managed, so we don't need their dependencies
-		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
-			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+		// Data source flows and scripts are just referenced and not managed, so skip their dependencies.
+		if (resourceKeys.Type == "genesyscloud_flow" || resourceKeys.Type == "genesyscloud_script") &&
+			g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source %s %s", resourceKeys.Type, resourceKeys.State.ID))
 			skippedCount++
 			continue
 		}
@@ -1279,7 +1367,75 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	if !g.ignoreCyclicDeps && len(cyclicDependsListCopy) > 0 {
 		return nil, nil, diag.Errorf("Cyclic Dependencies Identified:  %v ", strings.Join(cyclicDependsListCopy, "\n"))
 	}
+
+	// When ignoreCyclicDeps is true, proactively detect and remove bidirectional
+	// dependencies from dependsList to prevent Terraform "Error: Cycle"
+	if g.ignoreCyclicDeps {
+		g.dependsListMutex.Lock()
+		removed := g.removeCyclicDependencies()
+		g.dependsListMutex.Unlock()
+		if removed > 0 {
+			log.Printf("[processAndBuildDependencies] Removed %d cyclic dependency entries from dependsList", removed)
+		}
+	}
+
 	return filterList, totalResources, nil
+}
+
+// removeCyclicDependencies detects bidirectional dependencies in g.dependsList and removes
+// one side to break cycles. If resource A depends on B AND B depends on A, we remove B's
+// dependency on A (keeping A's dependency on B). This must be called while holding dependsListMutex.
+func (g *GenesysCloudResourceExporter) removeCyclicDependencies() int {
+	// dependsList format: map[resourceId][]string{"resourceType.dependencyId", ...}
+	removedCount := 0
+
+	// First pass: identify all cyclic pairs
+	type cyclicPair struct {
+		resourceA string
+		resourceB string
+	}
+	cyclicPairs := make([]cyclicPair, 0)
+
+	for resourceID, deps := range g.dependsList {
+		for _, dep := range deps {
+			parts := strings.SplitN(dep, ".", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			depID := parts[1]
+
+			// Check if the dependency also depends on us
+			if reverseDeps, exists := g.dependsList[depID]; exists {
+				for _, reverseDep := range reverseDeps {
+					reverseParts := strings.SplitN(reverseDep, ".", 2)
+					if len(reverseParts) == 2 && reverseParts[1] == resourceID {
+						cyclicPairs = append(cyclicPairs, cyclicPair{resourceA: resourceID, resourceB: depID})
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: remove all cyclic dependencies (both directions)
+	for _, pair := range cyclicPairs {
+		// Remove B from A's deps
+		if deps, exists := g.dependsList[pair.resourceA]; exists {
+			cleaned := make([]string, 0, len(deps))
+			for _, dep := range deps {
+				parts := strings.SplitN(dep, ".", 2)
+				if len(parts) == 2 && parts[1] == pair.resourceB {
+					log.Printf("[removeCyclicDependencies] Removing: %s -> %s", pair.resourceA, dep)
+					removedCount++
+					continue
+				}
+				cleaned = append(cleaned, dep)
+			}
+			g.dependsList[pair.resourceA] = cleaned
+		}
+	}
+
+	return removedCount
 }
 
 func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
@@ -2103,19 +2259,21 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 		if prefix != "" {
 			fullPath = prefix + "." + name
 		}
-		// Remove any computed attributes if export computed exporter config not set
-		if s.Computed == true && !g.exportComputed {
-			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
-			excludedAttributes = append(excludedAttributes, fullPath)
-			continue
-		}
 		// Remove any computed read-only attributes from being exported regardless of exporter config
 		// because they cannot be set by a user when reapplying the configuration in a different org
 		if s.Computed == true && s.Optional == false {
-			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed attribute", fullPath, resourceType))
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a read-only computed attribute", fullPath, resourceType))
 			excludedAttributes = append(excludedAttributes, fullPath)
 			continue
 		}
+
+		// Remove any computed but optional attributes if export computed exporter config not set
+		if s.Computed == true && !g.exportComputed {
+			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed, but optional attribute and exclude_computed was set", fullPath, resourceType))
+			excludedAttributes = append(excludedAttributes, fullPath)
+			continue
+		}
+
 		// Remove deprecated attributes if export_deprecated is set to false
 		if s.Deprecated != "" && !g.exportDeprecated {
 			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a deprecated attribute", fullPath, resourceType))

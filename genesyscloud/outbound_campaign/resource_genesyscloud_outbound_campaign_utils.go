@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -33,6 +33,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	outboundLineCount := d.Get("outbound_line_count").(int)
 	skipPreviewDisabled := d.Get("skip_preview_disabled").(bool)
 	previewTimeOutSeconds := d.Get("preview_time_out_seconds").(int)
+	previewAutoEnd := d.Get("preview_auto_end").(bool)
 	alwaysRunning := d.Get("always_running").(bool)
 	noAnswerTimeout := d.Get("no_answer_timeout").(int)
 	callAnalysisLanguage := d.Get("call_analysis_language").(string)
@@ -40,6 +41,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 	maxCallsPerAgent := d.Get("max_calls_per_agent").(float64)
 	skillColumns := lists.InterfaceListToStrings(d.Get("skill_columns").([]interface{}))
 	autoAnswer := d.Get("auto_answer").(bool)
+	preciseDialingEnabled := d.Get("precise_dialing_enabled").(bool)
 
 	campaign := platformclientv2.Campaign{
 		Name:                           platformclientv2.String(d.Get("name").(string)),
@@ -58,6 +60,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		CallAnalysisResponseSet:        util.BuildSdkDomainEntityRef(d, "call_analysis_response_set_id"),
 		RuleSets:                       util.BuildSdkDomainEntityRefArr(d, "rule_set_ids"),
 		SkipPreviewDisabled:            &skipPreviewDisabled,
+		PreviewAutoEnd:                 &previewAutoEnd,
 		AlwaysRunning:                  &alwaysRunning,
 		ContactSorts:                   buildContactSorts(d.Get("contact_sorts").([]interface{})),
 		ContactListFilters:             util.BuildSdkDomainEntityRefArr(d, "contact_list_filter_ids"),
@@ -66,6 +69,7 @@ func getOutboundCampaignFromResourceData(d *schema.ResourceData) platformclientv
 		DynamicLineBalancingSettings:   buildLineBalancingSettings(d.Get("dynamic_line_balancing_settings").([]interface{})),
 		DiagnosticsSettings:            buildDiagnosticsSettings(d.Get("diagnostics_settings").([]interface{})),
 		AgentOwnedColumn:               resourcedata.GetNonZeroPointer[string](d, "agent_owned_column"),
+		PreciseDialingEnabled:          &preciseDialingEnabled,
 	}
 
 	if len(skillColumns) > 0 {

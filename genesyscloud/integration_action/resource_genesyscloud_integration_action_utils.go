@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
@@ -230,8 +230,10 @@ func FlattenActionConfigResponse(sdkResponse platformclientv2.Responseconfig) []
 	return []interface{}{responseMap}
 }
 
-// FlattenFunctionConfigRequest converts the platformclientv2.Functionconfig into a map
-func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig) []interface{} {
+// FlattenFunctionConfigRequest converts the platformclientv2.Functionconfig into a map.
+// existingFilePath and existingHash are preserved because Genesys Cloud does not return
+// the original local path or zip binary — only metadata such as Zip.Name.
+func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig, existingFilePath, existingHash string) []interface{} {
 	functionMap := make(map[string]interface{})
 
 	// Extract function settings from the Function field
@@ -243,11 +245,65 @@ func FlattenFunctionConfigRequest(functionConfig platformclientv2.Functionconfig
 		resourcedata.SetMapValueIfNotNil(functionMap, "zip_id", functionConfig.Function.ZipId)
 	}
 
-	if functionConfig.Zip != nil {
+	// Prefer the configured local path so terraform plan stays empty after apply.
+	// Fall back to Zip.Name for import / export when no local path is in state.
+	if existingFilePath != "" {
+		functionMap["file_path"] = existingFilePath
+	} else if functionConfig.Zip != nil {
 		resourcedata.SetMapValueIfNotNil(functionMap, "file_path", functionConfig.Zip.Name)
 	}
 
+	if existingHash != "" {
+		functionMap["file_content_hash"] = existingHash
+	}
+
 	return []interface{}{functionMap}
+}
+
+// getExistingFunctionConfigFileFields returns file_path and file_content_hash currently in state/config.
+func getExistingFunctionConfigFileFields(d *schema.ResourceData) (filePath, fileHash string) {
+	functionConfig := d.Get("function_config")
+	if functionConfig == nil {
+		return "", ""
+	}
+	configList, ok := functionConfig.([]interface{})
+	if !ok || len(configList) == 0 || configList[0] == nil {
+		return "", ""
+	}
+	configMap, ok := configList[0].(map[string]interface{})
+	if !ok {
+		return "", ""
+	}
+	if pathVal, exists := configMap["file_path"]; exists && pathVal != nil {
+		filePath, _ = pathVal.(string)
+	}
+	if hashVal, exists := configMap["file_content_hash"]; exists && hashVal != nil {
+		fileHash, _ = hashVal.(string)
+	}
+	return filePath, fileHash
+}
+
+// setFunctionConfigFileHash updates file_content_hash in the function_config block while preserving other fields.
+func setFunctionConfigFileHash(d *schema.ResourceData, hash string) {
+	functionConfig := d.Get("function_config")
+	if functionConfig == nil {
+		return
+	}
+	configList, ok := functionConfig.([]interface{})
+	if !ok || len(configList) == 0 || configList[0] == nil {
+		return
+	}
+	configMap, ok := configList[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	// Copy to avoid mutating the underlying state map in place unexpectedly
+	updated := make(map[string]interface{}, len(configMap)+1)
+	for k, v := range configMap {
+		updated[k] = v
+	}
+	updated["file_content_hash"] = hash
+	_ = d.Set("function_config", []interface{}{updated})
 }
 
 // BuildSdkFunctionConfig takes the resource data and builds the SDK platformclientv2.Functionconfig from it

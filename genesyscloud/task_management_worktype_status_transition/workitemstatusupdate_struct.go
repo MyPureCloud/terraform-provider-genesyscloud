@@ -77,17 +77,19 @@ func (o Workitemstatusupdate) MarshalJSON() ([]byte, error) {
 
 			// Apply value formatting overrides
 			if fieldValue == nil || reflect.ValueOf(fieldValue).IsNil() {
-				// Do nothing. Just catching this case to avoid trying to custom serialize a nil value
+				newObj[platformUtils.GetFieldName(reflect.TypeOf(&o), fieldName)] = nil
 			} else if platformUtils.Contains(dateTimeFields, fieldName) {
 				fieldValue = timeutil.Strftime(platformUtils.ToTime(fieldValue), "%Y-%m-%dT%H:%M:%S.%fZ")
+				newObj[platformUtils.GetFieldName(reflect.TypeOf(&o), fieldName)] = fieldValue
 			} else if platformUtils.Contains(localDateTimeFields, fieldName) {
 				fieldValue = timeutil.Strftime(platformUtils.ToTime(fieldValue), "%Y-%m-%dT%H:%M:%S.%f")
+				newObj[platformUtils.GetFieldName(reflect.TypeOf(&o), fieldName)] = fieldValue
 			} else if platformUtils.Contains(dateFields, fieldName) {
 				fieldValue = timeutil.Strftime(platformUtils.ToTime(fieldValue), "%Y-%m-%d")
+				newObj[platformUtils.GetFieldName(reflect.TypeOf(&o), fieldName)] = fieldValue
+			} else {
+				newObj[platformUtils.GetFieldName(reflect.TypeOf(&o), fieldName)] = fieldValue
 			}
-
-			// Assign value to field using JSON tag name
-			newObj[platformUtils.GetFieldName(reflect.TypeOf(&o), fieldName)] = fieldValue
 		}
 
 		// Marshal and return dynamically constructed interface

@@ -10,13 +10,14 @@ import (
 	"time"
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	chunksProcess "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var ctx = context.Background()
@@ -42,41 +43,42 @@ func postRoutingQueueMembers(queueID string, membersToUpdate []string, remove bo
 }
 
 func getRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, diag.Diagnostics) {
-	proxy := GetRoutingQueueProxy(sdkConfig)
+	cacheKey := queueMembersCacheKey(queueID, memberBy)
+	if cached := rc.GetCacheItem(queueMembersCache, cacheKey); cached != nil {
+		log.Printf("[MEMBER-CACHE] Queue %s (%s): cache hit (%d members)", queueID, memberBy, len(*cached))
+		return *cached, nil
+	}
+
+	members, apiCalls, diagErr := fetchRoutingQueueMembers(queueID, memberBy, sdkConfig)
+	if diagErr != nil {
+		return nil, diagErr
+	}
+
+	rc.SetCache(queueMembersCache, cacheKey, members)
+	log.Printf("[MEMBER-CACHE] Queue %s (%s): cached %d members (%d API calls)", queueID, memberBy, len(members), apiCalls)
+	return members, nil
+}
+
+func fetchRoutingQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]platformclientv2.Queuemember, int, diag.Diagnostics) {
 	var members []platformclientv2.Queuemember
-
-	// Need to call this method to find the member count for a queue. GetRoutingQueueMembers does not return a `total` property for us to use.
-	queue, resp, err := proxy.getRoutingQueueById(ctx, queueID, true)
-	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to find queue %s error: %s", queueID, err), resp)
-	}
-
-	if queue.MemberCount == nil {
-		log.Printf("no members belong to queue %s", queueID)
-		return members, nil
-	}
-
-	queueMembers := *queue.MemberCount
-	log.Printf("%d members belong to queue %s", queueMembers, queueID)
+	apiCalls := 0
+	const pageSize = 100
 
 	for pageNum := 1; ; pageNum++ {
-		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, 100, sdkConfig)
+		users, resp, err := sdkGetRoutingQueueMembers(ctx, queueID, memberBy, pageNum, pageSize, sdkConfig)
+		apiCalls++
 		if err != nil || resp.StatusCode != http.StatusOK {
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
+			return nil, apiCalls, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to query users for queue %s error: %s", queueID, err), resp)
 		}
 
 		if users == nil || users.Entities == nil || len(*users.Entities) == 0 {
-			membersFound := len(members)
-			log.Printf("%d queue members found for queue %s", membersFound, queueID)
-
-			if membersFound != queueMembers {
-				log.Printf("Member count is not equal to queue member found for queue %s, Correlation Id: %s", queueID, resp.CorrelationID)
-			}
-			return members, nil
+			break
 		}
 
 		members = append(members, *users.Entities...)
 	}
+
+	return members, apiCalls, nil
 }
 
 func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (diags diag.Diagnostics) {
@@ -87,8 +89,8 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 
 	proxy := GetRoutingQueueProxy(sdkConfig)
 
-	membersSet, ok := d.Get("members").(*schema.Set)
-	if !ok || membersSet.Len() == 0 {
+	membersList, ok := d.Get("members").([]interface{})
+	if !ok || len(membersList) == 0 {
 		if err := removeAllExistingUserMembersFromQueue(d.Id(), sdkConfig); err != nil {
 			return diag.FromErr(err)
 		}
@@ -98,7 +100,7 @@ func updateQueueMembers(d *schema.ResourceData, sdkConfig *platformclientv2.Conf
 	log.Printf("Updating members for Queue %s", d.Get("name"))
 
 	// Get new and Existing users and ring nums
-	newUserIds, newUserRingNums := getNewUsersAndRingNums(membersSet)
+	newUserIds, newUserRingNums := getNewUsersAndRingNums(membersList)
 	oldUserIds, oldUserRingNums, err := getExistingUsersAndRingNums(d.Id(), sdkConfig)
 	if err != nil {
 		return err
@@ -237,15 +239,18 @@ func verifyUserIsNotGroupMemberOfQueue(queueId, userId string, members []platfor
 	return nil
 }
 
-func getNewUsersAndRingNums(membersSet *schema.Set) ([]string, map[string]int) {
+func getNewUsersAndRingNums(membersList []interface{}) ([]string, map[string]int) {
 	newUserRingNums := make(map[string]int)
-	memberList := membersSet.List()
-	newUserIds := make([]string, len(memberList))
+	newUserIds := make([]string, 0, len(membersList))
 
-	for i, member := range memberList {
-		memberMap := member.(map[string]interface{})
-		newUserIds[i] = memberMap["user_id"].(string)
-		newUserRingNums[newUserIds[i]] = memberMap["ring_num"].(int)
+	for _, member := range membersList {
+		memberMap, ok := member.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		userID := memberMap["user_id"].(string)
+		newUserIds = append(newUserIds, userID)
+		newUserRingNums[userID] = memberMap["ring_num"].(int)
 	}
 	return newUserIds, newUserRingNums
 }

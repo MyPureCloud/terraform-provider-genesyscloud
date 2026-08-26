@@ -18,6 +18,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 
 * The export resource calls GET APIs on all exported resource types. See the list of GET APIs on each resource.
+* By default, `genesyscloud_user` exports include both active and inactive users. Set `GENESYSCLOUD_SKIP_INACTIVE_USER_EXPORT` to omit inactive users from export listings.
 
 ## Example Usage
 
@@ -74,7 +75,6 @@ resource "genesyscloud_tf_export" "exclude_filter" {
     "genesyscloud_journey_action_map",
     "genesyscloud_journey_action_template",
     "genesyscloud_journey_outcome_predictor",
-    "genesyscloud_journey_outcome",
     "genesyscloud_journey_segment",
     "genesyscloud_journey_view_schedule",
     "genesyscloud_knowledge_category",
@@ -133,7 +133,7 @@ resource "genesyscloud_tf_export" "exclude_filter" {
 
 - `compress` (Boolean) Compress exported results using zip format. Defaults to `false`.
 - `directory` (String) Directory where the config and state files will be exported. Defaults to `./genesyscloud`.
-- `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow resources with a list of resources that are referenced inside the flow configuration . This also resolves and exports all the dependent resources for any given resource. Resources mentioned in exclude_attributes will not be exported. Defaults to `false`.
+- `enable_dependency_resolution` (Boolean) Adds a "depends_on" attribute to genesyscloud_flow and genesyscloud_script resources with a list of resources that are referenced inside the flow or script configuration. This also resolves and exports all the dependent resources for any given resource. Resources mentioned in exclude_attributes will not be exported. Defaults to `false`.
 - `exclude_attributes` (List of String) Attributes to exclude from the config when exporting resources. Each value should be of the form {resource_type}.{attribute}, e.g. 'genesyscloud_user.skills'. Excluded attributes must be optional.
 - `exclude_filter_resources` (List of String) Exclude resources that match either a resource type or a resource type::regular expression.  See export guide for additional information.
 - `export_as_hcl` (Boolean) Export the config as HCL. Deprecated. Please use the export_format attribute instead Defaults to `false`.

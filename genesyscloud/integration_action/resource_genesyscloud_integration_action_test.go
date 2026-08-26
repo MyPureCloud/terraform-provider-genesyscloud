@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -254,10 +254,7 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 		runtime2     = "nodejs22.x"
 		filePath1    = zipPath1
 		filePath2    = zipPath2
-		// publish field is not in the schema, so removing these
-		// publish1         = "true"
-		// publish2         = "false"
-		headerVal2 = "no-store"
+		headerVal2   = "no-store"
 
 		// Request/Response configuration values
 		reqUrlTemplate1 = "/api/v2/users"
@@ -330,9 +327,11 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.handler", handler1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.runtime", runtime1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout1),
-					// file_path and file_content_hash are input-only fields not returned by the API
-					// so we can't verify them in the state
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_path", filePath1),
+					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_content_hash"),
 				),
+				// Function actions: API rewrites request_url_template to the function id and
+				// may omit empty header/translation maps. function_config (incl. file_path) stays stable.
 				ExpectNonEmptyPlan: true,
 			},
 			{
@@ -396,14 +395,17 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.handler", handler2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.runtime", runtime2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_path", filePath2),
+					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_content_hash"),
 				),
 				ExpectNonEmptyPlan: true,
 			},
 			{
-				// Import/Read
-				ResourceName:      "genesyscloud_integration_action." + actionResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				// Import/Read — zip path/hash are local-only and not returned by the API
+				ResourceName:            "genesyscloud_integration_action." + actionResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"function_config.0.file_path", "function_config.0.file_content_hash", "config_request.0.request_url_template"},
 			},
 		},
 		CheckDestroy: testVerifyIntegrationActionDestroyed,
@@ -449,8 +451,9 @@ func generateIntegrationActionFunctionConfig(description, handler, runtime, time
         runtime = %s
         timeout_seconds = %s
         file_path = %s
+        file_content_hash = filesha256(%s)
 	}
-	`, description, handler, runtime, timeoutSeconds, filePath)
+	`, description, handler, runtime, timeoutSeconds, filePath, filePath)
 }
 
 // createTempTestZipFile creates a temporary zip file with some test content for testing purposes

@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -19,6 +19,8 @@ out during testing.
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *siteOutboundRouteProxy
+
+var siteOutboundRouteCache = rc.NewResourceCache[platformclientv2.Outboundroutebase]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllSiteOutboundRoutesFunc func(ctx context.Context, p *siteOutboundRouteProxy, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error)
@@ -49,7 +51,6 @@ type siteOutboundRouteProxy struct {
 func newSiteOutboundRouteProxy(clientConfig *platformclientv2.Configuration) *siteOutboundRouteProxy {
 	edgesApi := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(clientConfig)
 	siteProxy := telephonyProvidersEdgesSite.GetSiteProxy(clientConfig)
-	siteOutboundRouteCache := rc.NewResourceCache[platformclientv2.Outboundroutebase]()
 
 	return &siteOutboundRouteProxy{
 		clientConfig: clientConfig,

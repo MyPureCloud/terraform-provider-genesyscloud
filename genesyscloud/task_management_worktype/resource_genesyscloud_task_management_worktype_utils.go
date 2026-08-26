@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -136,7 +136,7 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 }
 
 // flattenRoutingSkillReferences maps a Genesys Cloud *[]platformclientv2.Routingskillreference into a []interface{}
-func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Routingskillreference) []interface{} {
+func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Workitemroutingskillreference) []interface{} {
 	if len(*routingSkillReferences) == 0 {
 		return nil
 	}

@@ -11,13 +11,14 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -149,7 +150,7 @@ func createIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	iap := getIntegrationActionsProxy(sdkConfig)
 
-	if containsFunctionDataAction(category) {
+	if isFunctionDataActionIntegration(ctx, integrationId, iap) || containsFunctionDataAction(category) {
 		return createFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 
@@ -192,6 +193,20 @@ func containsFunctionDataAction(s string) bool {
 	normalized = strings.ReplaceAll(normalized, "_", " ")
 	normalized = strings.ReplaceAll(normalized, "-", " ")
 	return strings.Contains(normalized, "function data action")
+}
+
+// isFunctionDataActionIntegration checks if the integration with the given ID is of type "function-data-actions"
+// by making a GET API call to retrieve the integration details.
+func isFunctionDataActionIntegration(ctx context.Context, integrationId string, iap *integrationActionsProxy) bool {
+	integration, _, err := iap.integrationsApi.GetIntegration(integrationId, 1, 1, "", nil, "", "")
+	if err != nil {
+		log.Printf("Warning: failed to get integration %s to check type: %v. Falling back to category check.", integrationId, err)
+		return false
+	}
+	if integration != nil && integration.IntegrationType != nil && integration.IntegrationType.Id != nil {
+		return *integration.IntegrationType.Id == "function-data-actions"
+	}
+	return false
 }
 
 func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}, iap *integrationActionsProxy) diag.Diagnostics {
@@ -331,6 +346,10 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 	})
 	if diagErr != nil {
 		return diagErr
+	}
+
+	if err := hashAndSetFunctionConfigFile(ctx, d, filePath); err != nil {
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to hash function zip %s", filePath), err)
 	}
 
 	return readIntegrationActionFunction(ctx, d, meta)
@@ -483,7 +502,23 @@ func createFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		return diagErr
 	}
 
+	if err := hashAndSetFunctionConfigFile(ctx, d, filePath); err != nil {
+		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("failed to hash function zip %s", filePath), err)
+	}
+
 	return readIntegrationAction(ctx, d, meta)
+}
+
+func hashAndSetFunctionConfigFile(ctx context.Context, d *schema.ResourceData, filePath string) error {
+	if filePath == "" {
+		return nil
+	}
+	fileHash, err := files.HashFileContent(ctx, filePath, S3Enabled)
+	if err != nil {
+		return err
+	}
+	setFunctionConfigFileHash(d, fileHash)
+	return nil
 }
 
 // extractZipIdFromFunctionData extracts the zipId from the function data response
@@ -555,6 +590,13 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 		resourcedata.SetNillableValue(d, "secure", action.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
 
+		// Derive action_type from the ID prefix
+		if strings.HasPrefix(d.Id(), staticActionIDPrefix) {
+			_ = d.Set("action_type", "static")
+		} else {
+			_ = d.Set("action_type", "custom")
+		}
+
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
@@ -604,7 +646,8 @@ func readIntegrationActionFunction(ctx context.Context, d *schema.ResourceData, 
 
 		if functionData != nil {
 			action.Config.Request.RequestTemplate = reqTemp
-			_ = d.Set("function_config", FlattenFunctionConfigRequest(*functionData))
+			existingPath, existingHash := getExistingFunctionConfigFileFields(d)
+			_ = d.Set("function_config", FlattenFunctionConfigRequest(*functionData, existingPath, existingHash))
 		} else {
 			_ = d.Set("function_config", nil)
 		}
@@ -659,6 +702,13 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 		resourcedata.SetNillableValue(d, "secure", action.Secure)
 		resourcedata.SetNillableValue(d, "config_timeout_seconds", action.Config.TimeoutSeconds)
 
+		// Derive action_type from the ID prefix
+		if strings.HasPrefix(d.Id(), staticActionIDPrefix) {
+			_ = d.Set("action_type", "static")
+		} else {
+			_ = d.Set("action_type", "custom")
+		}
+
 		if action.Contract != nil && action.Contract.Input != nil && action.Contract.Input.InputSchema != nil {
 			input, err := flattenActionContract(*action.Contract.Input.InputSchema)
 			if err != nil {
@@ -693,7 +743,7 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 			_ = d.Set("config_response", nil)
 		}
 
-		if containsFunctionDataAction(*action.Category) {
+		if isFunctionDataActionIntegration(ctx, d.Get("integration_id").(string), iap) || containsFunctionDataAction(*action.Category) {
 			var functionData *platformclientv2.Functionconfig
 
 			log.Printf("DEBUG: Reading published function for integration action %s", d.Id())
@@ -709,7 +759,8 @@ func readIntegrationAction(ctx context.Context, d *schema.ResourceData, meta int
 
 			if functionData != nil {
 				action.Config.Request.RequestTemplate = reqTemp
-				_ = d.Set("function_config", FlattenFunctionConfigRequest(*functionData))
+				existingPath, existingHash := getExistingFunctionConfigFileFields(d)
+				_ = d.Set("function_config", FlattenFunctionConfigRequest(*functionData, existingPath, existingHash))
 			} else {
 				_ = d.Set("function_config", nil)
 			}
@@ -728,11 +779,17 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	name := d.Get("name").(string)
 	category := d.Get("category").(string)
 	id := d.Id()
+	integrationId := d.Get("integration_id").(string)
 
 	log.Printf("Updating integration action %s", name)
 
 	// Set resource context for SDK debug logging before entering retry loop
 	ctx = util.SetResourceContext(ctx, d, ResourceType)
+
+	// Function data actions must use the draft → upload → publish flow; skip published PATCH.
+	if isFunctionDataActionIntegration(ctx, integrationId, iap) || containsFunctionDataAction(category) {
+		return updateFunctionDataActionDraft(ctx, d, meta, iap)
+	}
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get the latest action version to send with PATCH
@@ -754,10 +811,6 @@ func updateIntegrationAction(ctx context.Context, d *schema.ResourceData, meta i
 	})
 	if diagErr != nil {
 		return diagErr
-	}
-
-	if containsFunctionDataAction(category) {
-		return updateFunctionDataActionDraft(ctx, d, meta, iap)
 	}
 
 	log.Printf("Updated integration action %s", name)

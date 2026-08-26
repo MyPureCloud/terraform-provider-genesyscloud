@@ -9,10 +9,12 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 var internalProxy *routingEmailDomainProxy
+
+var routingEmailDomainCache = rc.NewResourceCache[platformclientv2.Inbounddomain]()
 
 type getAllRoutingEmailDomainsFunc func(ctx context.Context, p *routingEmailDomainProxy) (*[]platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
 type createRoutingEmailDomainFunc func(ctx context.Context, p *routingEmailDomainProxy, inboundDomain *platformclientv2.Inbounddomaincreaterequest) (*platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error)
@@ -37,7 +39,7 @@ type routingEmailDomainProxy struct {
 // newRoutingEmailDomainProxy initializes the routing email domain proxy with all of the data needed to communicate with Genesys Cloud
 func newRoutingEmailDomainProxy(clientConfig *platformclientv2.Configuration) *routingEmailDomainProxy {
 	api := platformclientv2.NewRoutingApiWithConfig(clientConfig)
-	routingEmailDomainCache := rc.NewResourceCache[platformclientv2.Inbounddomain]()
+
 	return &routingEmailDomainProxy{
 		clientConfig:                      clientConfig,
 		routingApi:                        api,

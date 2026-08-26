@@ -1,6 +1,7 @@
 package telephony_providers_edges_phone
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -8,6 +9,38 @@ import (
 )
 
 /* Tests the GetLineProperties function to ensure that the NIL values are checked*/
+func TestUnitIsWebRtcPhoneAlreadyAssignedError(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "matching api error",
+			err:      fmt.Errorf("API Error: 400 - A web rtc phone has already been assigned to this user. (4692d3e3-0c6f-48ef-bdd9-0ec58991c5b5)"),
+			expected: true,
+		},
+		{
+			name:     "unrelated error",
+			err:      fmt.Errorf("API Error: 400 - invalid request"),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isWebRtcPhoneAlreadyAssignedError(tt.err); got != tt.expected {
+				t.Errorf("isWebRtcPhoneAlreadyAssignedError() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestUnitGetLineProperties(t *testing.T) {
 	tests := []struct {
 		name           string

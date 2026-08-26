@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -21,6 +21,8 @@ simulate these smaller parts, known as stubs, to ensure that each function behav
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *journeySegmentProxy
+
+var segmentCache = rc.NewResourceCache[platformclientv2.Journeysegment]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createJourneySegmentFunc func(ctx context.Context, p *journeySegmentProxy, segment *platformclientv2.Journeysegmentrequest) (*platformclientv2.Journeysegment, *platformclientv2.APIResponse, error)
@@ -57,7 +59,6 @@ seamlessly with the Genesys Cloud platform.
 */
 func newJourneySegmentProxy(clientConfig *platformclientv2.Configuration) *journeySegmentProxy {
 	api := platformclientv2.NewJourneyApiWithConfig(clientConfig)
-	segmentCache := rc.NewResourceCache[platformclientv2.Journeysegment]()
 
 	return &journeySegmentProxy{
 		clientConfig:                  clientConfig,

@@ -1,3 +1,3 @@
 resource "genesyscloud_journey_outcome_predictor" "example_journey_outcome_predictor" {
-  outcome_id = genesyscloud_journey_outcome.example_journey_outcome.id
+  outcome_id = "00000000-0000-0000-0000-000000000000"
 }

@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -35,6 +35,8 @@ Each proxy implementation:
 
 // internalProxy holds a proxy instance that can be used throughout the package
 var internalProxy *externalContactsContactsProxy
+
+var externalContactsCache = rc.NewResourceCache[platformclientv2.Externalcontact]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type getAllExternalContactsFunc func(ctx context.Context, p *externalContactsContactsProxy) (*[]platformclientv2.Externalcontact, *platformclientv2.APIResponse, error)
@@ -62,7 +64,7 @@ type externalContactsContactsProxy struct {
 // newExternalContactsContactsProxy initializes the External Contacts proxy with all of the data needed to communicate with Genesys Cloud
 func newExternalContactsContactsProxy(clientConfig *platformclientv2.Configuration) *externalContactsContactsProxy {
 	api := platformclientv2.NewExternalContactsApiWithConfig(clientConfig)
-	externalContactsCache := rc.NewResourceCache[platformclientv2.Externalcontact]()
+
 	return &externalContactsContactsProxy{
 		clientConfig:                            clientConfig,
 		externalContactsApi:                     api,
@@ -133,7 +135,7 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 	cursor := ""
 	var response *platformclientv2.APIResponse
 	for {
-		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContacts(100, cursor, "")
+		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContactsDivisionviewsAll(100, cursor)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get external contacts: %v", err)
 		}
