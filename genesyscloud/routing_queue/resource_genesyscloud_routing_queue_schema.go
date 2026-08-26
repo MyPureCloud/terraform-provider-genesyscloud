@@ -474,12 +474,17 @@ func ResourceRoutingQueue() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 2,
+		SchemaVersion: 3,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Version: 1,
 				Type:    resourceRoutingQueueV1().CoreConfigSchema().ImpliedType(),
 				Upgrade: stateUpgraderRoutingQueueV1ToV2,
+			},
+			{
+				Version: 2,
+				Type:    resourceRoutingQueueV2().CoreConfigSchema().ImpliedType(),
+				Upgrade: stateUpgraderRoutingQueueV2ToV3,
 			},
 		},
 		Schema: map[string]*schema.Schema{
@@ -817,19 +822,22 @@ func ResourceRoutingQueue() *schema.Resource {
 			},
 			"members": {
 				Description: "Users in the queue. If not set, this resource will not manage members. If a user is already assigned to this queue via a group, attempting to assign them using this field will cause an error to be thrown.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Elem:        queueMemberResource,
+				// TypeList instead of TypeSet: SDK gRPC forces planned TypeSet into state on apply
+				// errors even when d.Partial(true) is set (DEVTOOLING-1533).
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     queueMemberResource,
 				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
 					return d.Get("ignore_members").(bool)
 				},
 			},
 			"wrapup_codes": {
 				Description: "IDs of wrapup codes assigned to this queue. If not set, this resource will not manage wrapup codes.",
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				// TypeList instead of TypeSet: same SDK TypeSet-on-error state corruption (DEVTOOLING-1533).
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"direct_routing": {
 				Description: "The Direct Routing settings for the queue.",

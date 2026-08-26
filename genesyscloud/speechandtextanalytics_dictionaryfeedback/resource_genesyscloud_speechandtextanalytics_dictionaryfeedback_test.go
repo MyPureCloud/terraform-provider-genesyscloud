@@ -29,17 +29,21 @@ func cleanupDictionaryFeedbackByTerm(term, dialect string) {
 		return
 	}
 	api := platformclientv2.NewSpeechTextAnalyticsApiWithConfig(sdkConfig)
-	feedbacks, _, err := api.GetSpeechandtextanalyticsDictionaryfeedback(dialect, term, "", 100)
-	if err != nil {
-		log.Printf("failed to list dictionary feedback for cleanup: %v", err)
-		return
-	}
-	if feedbacks.Entities == nil {
-		return
-	}
-	for _, fb := range *feedbacks.Entities {
-		if fb.Id != nil {
-			log.Printf("Cleaning up dictionary feedback %s (term=%s, dialect=%s)", *fb.Id, term, dialect)
+
+	for _, engine := range []string{TranscriptionEngineGenesys, TranscriptionEngineGenesysExtended} {
+		feedbacks, _, err := api.GetSpeechandtextanalyticsDictionaryfeedback(dialect, engine, "", 100)
+		if err != nil {
+			log.Printf("failed to list dictionary feedback for cleanup (engine=%s): %v", engine, err)
+			continue
+		}
+		if feedbacks.Entities == nil {
+			continue
+		}
+		for _, fb := range *feedbacks.Entities {
+			if fb.Id == nil || fb.Term == nil || *fb.Term != term {
+				continue
+			}
+			log.Printf("Cleaning up dictionary feedback %s (term=%s, dialect=%s, engine=%s)", *fb.Id, term, dialect, engine)
 			for attempt := 0; attempt < 5; attempt++ {
 				_, err := api.DeleteSpeechandtextanalyticsDictionaryfeedbackDictionaryFeedbackId(*fb.Id)
 				if err == nil {
@@ -83,6 +87,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "term", term),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "dialect", dialect),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "transcription_engine", TranscriptionEngineGenesys),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrases.0.phrase", examplePhrase1),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrases.1.phrase", examplePhrase2),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrases.2.phrase", examplePhrase3),
@@ -94,6 +99,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "term", term),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "dialect", dialect),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "transcription_engine", TranscriptionEngineGenesys),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "boost_value", boostValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "source", source),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "example_phrases.0.phrase", examplePhrase1),
@@ -115,10 +121,56 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 	})
 }
 
+func TestAccResourceDictionaryFeedbackGenesysExtended(t *testing.T) {
+	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
+		t.Skipf("virtualAgent product not available in %s org", v)
+		return
+	}
+	var (
+		resourceName = "test-dictionary-feedback-extended"
+		term         = "covid"
+		dialect      = "en-US"
+		displayAs    = "COVID-19"
+	)
+
+	cleanupDictionaryFeedbackByTerm(term, dialect)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: GenerateExtendedSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, resourceName, term, dialect, displayAs),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "term", term),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "dialect", dialect),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "transcription_engine", TranscriptionEngineGenesysExtended),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "display_as", displayAs),
+				),
+			},
+			{
+				Config: GenerateExtendedSpeechAndTextAnalyticsDictionaryFeedbackResource(ResourceType, resourceName, term, dialect, "Covid-19"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "display_as", "Covid-19"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceName, "transcription_engine", TranscriptionEngineGenesysExtended),
+				),
+			},
+			{
+				ResourceName:            ResourceType + "." + resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"boost_value", "source"},
+			},
+		},
+		CheckDestroy: testVerifyDictionaryFeedbackDestroyed,
+	})
+}
+
 func GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3 string) string {
 	return fmt.Sprintf(`resource "%s" "%s" {
 	term = "%s"
 	dialect = "%s"
+	transcription_engine = "%s"
 	boost_value = "%s"
 	source = "%s"
 	sounds_like = ["%s"]
@@ -126,7 +178,7 @@ func GenerateFullSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, 
 	example_phrases { phrase = "%s" }
 	example_phrases { phrase = "%s" }
 	}
-	`, resourceType, resourceName, term, dialect, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3)
+	`, resourceType, resourceName, term, dialect, TranscriptionEngineGenesys, boostValue, source, soundsLike, examplePhrase1, examplePhrase2, examplePhrase3)
 }
 
 func GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, resourceLabel, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3 string) string {
@@ -138,6 +190,16 @@ func GenerateBasicSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType,
 		example_phrases { phrase = "%s" }
 	}
 	`, ResourceType, resourceLabel, term, dialect, examplePhrase1, examplePhrase2, examplePhrase3)
+}
+
+func GenerateExtendedSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceType, resourceLabel, term, dialect, displayAs string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		term = "%s"
+		dialect = "%s"
+		transcription_engine = "%s"
+		display_as = "%s"
+	}
+	`, resourceType, resourceLabel, term, dialect, TranscriptionEngineGenesysExtended, displayAs)
 }
 
 func testVerifyDictionaryFeedbackDestroyed(state *terraform.State) error {

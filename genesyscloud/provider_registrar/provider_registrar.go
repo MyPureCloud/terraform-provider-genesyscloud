@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	accessPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/access_policy"
 	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
 	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	agenticVirtualAgentVersionPublish "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version_publish"
@@ -64,6 +65,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
+	integrationConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_config"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
@@ -322,6 +324,7 @@ func registerResources() {
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
 	integrationActionDraft.SetRegistrar(regInstance)                       //Registering integrations action draft
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
+	integrationConfig.SetRegistrar(regInstance)                            //Registering integrations config (standalone)
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
@@ -355,6 +358,7 @@ func registerResources() {
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
+	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
 	phoneBaseSettings.SetRegistrar(regInstance)                            //Registering Phone Base Settings
 	lineBaseSettings.SetRegistrar(regInstance)                             //Registering Line Base Settings
