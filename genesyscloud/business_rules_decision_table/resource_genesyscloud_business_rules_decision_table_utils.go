@@ -977,13 +977,12 @@ func valuesEqual(val1, val2 interface{}) bool {
 	}
 }
 
-// applyRowChanges applies the detected changes to the draft version.
-// rowInputKey returns a canonical string identifying a row's input tuple - the
-// combination the API enforces uniqueness on (a "duplicate row" is two rows with
-// the same inputs). Rows are converted to SDK form first so the key reflects
-// exactly what is sent to the API (literals keyed by column id). The map is
-// JSON-marshaled, which emits keys in sorted order, so the result is stable and
-// comparable across rows regardless of column iteration order.
+// rowInputKey returns a stable string that identifies a row by its input values -
+// the combination the API treats as unique (a "duplicate row" is two rows with
+// the same inputs). The row is first converted to the form that is sent to the
+// API, then turned into JSON. JSON sorts the keys, so two rows with the same
+// inputs always produce the same string no matter what order the columns were
+// listed in.
 func rowInputKey(rowMap map[string]interface{}, inputColumnIds, outputColumnIds []string) (string, error) {
 	sdkRow, err := convertDecisionTableRowFromProviderToSDK(rowMap, inputColumnIds, outputColumnIds)
 	if err != nil {
@@ -1000,27 +999,29 @@ func rowInputKey(rowMap map[string]interface{}, inputColumnIds, outputColumnIds 
 }
 
 // orderUpdatesForApply returns changes.updates reordered so that applying them
-// as individual PUTs never passes through a state where two rows share the same
-// input tuple, which the API rejects with "409 duplicate decision table rows".
+// one at a time never reaches a point where two rows have the same input values,
+// which the API rejects with "409 duplicate decision table rows".
 //
-// The hazard exists because rows are updated one at a time: if row A is moved
-// onto an input tuple that row B still holds (because B has not been updated
-// yet), the intermediate state has two rows on that tuple. We avoid it with a
-// simple rule: only update a row once its target tuple is free, i.e. update the
-// row that is vacating a tuple before the row that wants to move onto it.
+// The problem happens because rows are updated one at a time: if row A is changed
+// to the input values that row B still has (because B has not been updated yet),
+// then for a moment two rows share those values. We avoid this with a simple
+// rule: only update a row once the input values it wants are free - that is,
+// update the row that is moving away from a set of values before the row that
+// wants to move onto them.
 //
-// Concretely, we repeatedly apply any row whose target tuple no other row still
-// occupies; doing so frees up more tuples, which lets more rows go, until all
-// updates are applied. Deletes are applied before updates by the caller, so
-// tuples freed by deletes are already available and impose no ordering.
+// In practice, we repeatedly apply any row whose wanted input values no other row
+// still has; doing so frees up more values, which lets more rows go, until every
+// update is applied. Deletes are applied before updates by the caller, so values
+// freed by a delete are already available and do not affect the ordering.
 //
-// The order is deterministic (ties broken by row_id) so the same plan applies
-// identically on every run. A genuine, non-transient duplicate in the desired
-// state (two updates targeting the same tuple, or an update targeting a tuple
-// held by an unchanged row) is a real config error and is returned as such
-// rather than being reordered away. A true cycle (a set of rows swapping tuples
-// simultaneously, e.g. A<->B) can never be applied one row at a time without a
-// transient duplicate; it is reported with the rows involved.
+// The order is repeatable (ties are broken by row_id) so the same plan is applied
+// the same way on every run. A real, lasting duplicate in the desired
+// configuration (two updates ending on the same input values, or an update moving
+// onto values held by a row that is not changing) is a genuine configuration
+// error and is returned as one, rather than being reordered away. A true cycle (a
+// set of rows swapping input values at the same time, for example A and B trading
+// values) can never be applied one row at a time without a temporary value; it is
+// reported with the rows involved.
 func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnIds, outputColumnIds []string) ([]map[string]interface{}, error) {
 	if len(changes.updates) == 0 {
 		return changes.updates, nil
@@ -1031,7 +1032,7 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		deleted[id] = true
 	}
 
-	// Old input tuple for every existing row, keyed by row_id.
+	// The current input values for every existing row, keyed by row_id.
 	oldKeyByID := make(map[string]string, len(oldRows))
 	for _, r := range oldRows {
 		rowMap, ok := r.(map[string]interface{})
@@ -1044,12 +1045,18 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		}
 		k, err := rowInputKey(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
-			return nil, fmt.Errorf("failed to compute input key for existing row %s: %s", id, err)
+			// An existing row that fails conversion (for example a legacy or
+			// malformed row in state) must not fail the whole apply - it may not
+			// even be part of this change. Skip it: at worst we miss a dependency
+			// involving it, which is no worse than the earlier behavior that never
+			// looked at existing rows.
+			log.Printf("[WARN] skipping existing row %s in update ordering; could not compute input key: %s", id, err)
+			continue
 		}
 		oldKeyByID[id] = k
 	}
 
-	// Target input tuple for each updated row, and the set of updated ids.
+	// The wanted input values for each updated row, and the set of updated row ids.
 	updatedIDs := make(map[string]bool, len(changes.updates))
 	targetKeyByID := make(map[string]string, len(changes.updates))
 	for _, row := range changes.updates {
@@ -1065,7 +1072,7 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		targetKeyByID[id] = k
 	}
 
-	// Two updates may not target the same tuple (permanent duplicate).
+	// Two updates cannot end on the same input values (that is a real duplicate).
 	seenTarget := make(map[string]string, len(targetKeyByID))
 	for id, k := range targetKeyByID {
 		if other, exists := seenTarget[k]; exists {
@@ -1074,8 +1081,8 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		seenTarget[k] = id
 	}
 
-	// Tuples held by rows that never move (existing, not deleted, not updated).
-	// An update targeting one of these is a permanent duplicate.
+	// Input values held by rows that do not change (existing, not deleted, not
+	// updated). An update moving onto one of these is a real duplicate.
 	staticKey := make(map[string]string)
 	for id, k := range oldKeyByID {
 		if deleted[id] || updatedIDs[id] {
@@ -1092,14 +1099,14 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 	// Work out, for each updated row, which other updated rows must go before it,
 	// then apply them in an order that respects those constraints.
 	//
-	// Edge rowHolder -> rowTaker means "rowHolder must be applied before rowTaker":
-	// rowHolder currently occupies the input tuple that rowTaker wants to move
-	// onto, so rowHolder has to vacate it first. Once sorted, applying the updates
-	// in order guarantees a row's target tuple is always free at the moment it is
-	// PUT, so no intermediate state ever holds two rows on the same tuple.
-	// Unchanged and deleted rows never move, so they cannot be the rowHolder that
-	// vacates a tuple; only other updated rows can create a real dependency
-	// (permanent collisions with static rows were already rejected above).
+	// "rowHolder must go before rowTaker" means: rowHolder currently has the input
+	// values that rowTaker wants to move onto, so rowHolder has to move away first.
+	// Applying the updates in this order means a row's wanted values are always
+	// free when it is written, so no two rows ever share the same values along the
+	// way. Rows that do not change and rows that are deleted never move, so they
+	// cannot be the rowHolder that moves away; only other updated rows can create a
+	// real dependency (lasting duplicates against unchanged rows were already
+	// rejected above).
 	//
 	// Bookkeeping (rowTaker waits on rowHolder):
 	//   byID       - row_id -> the row map, so we can emit rows in the final order
@@ -1122,12 +1129,12 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 			if rowHolder == rowTaker {
 				continue
 			}
-			// Add rowHolder -> rowTaker iff rowHolder currently holds rowTaker's
-			// target tuple (oldKeyByID[rowHolder] == targetK) AND rowHolder is
-			// actually moving off it (targetKeyByID[rowHolder] != targetK). If
-			// rowHolder were staying put on that tuple it would be a permanent
-			// duplicate, which is caught by the static/target checks above, not
-			// ordered around.
+			// Record that rowHolder must go before rowTaker only when rowHolder
+			// currently has rowTaker's wanted input values (oldKeyByID[rowHolder] ==
+			// targetK) AND rowHolder is actually moving away from them
+			// (targetKeyByID[rowHolder] != targetK). If rowHolder were keeping those
+			// values it would be a real duplicate, which the checks above already
+			// rejected, not something to reorder around.
 			if oldKeyByID[rowHolder] == targetK && targetKeyByID[rowHolder] != targetK {
 				dependsOn[rowTaker][rowHolder] = true
 				dependents[rowHolder][rowTaker] = true
@@ -1136,10 +1143,10 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 	}
 
 	// Work through the rows in waves. Start with every row that has nothing to
-	// wait on (its target tuple is already free). Apply one, then any row that was
-	// only waiting on it becomes free to apply next; repeat until none are left.
-	// Rows are sorted by row_id first so the emitted order is deterministic (Go
-	// map iteration is randomized), giving identical plans run to run.
+	// wait on (the input values it wants are already free). Apply one, then any
+	// row that was only waiting on it becomes free to apply next; repeat until none
+	// are left. Rows are sorted by row_id first so the order is repeatable (Go map
+	// iteration is random), giving the same plan on every run.
 	sort.Strings(ids)
 	ready := make([]string, 0, len(ids))
 	for _, id := range ids {
@@ -1168,10 +1175,10 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		ready = append(ready, newlyReady...)
 	}
 
-	// If not every row was emitted, the rows left with a non-empty dependsOn set
-	// are mutually waiting on each other: a cycle (e.g. a straight A<->B swap, or
-	// a longer rotation). No single-row-at-a-time ordering can break it without a
-	// scratch value, so surface the involved rows and how to work around it.
+	// If not every row was placed, the rows still waiting are waiting on each
+	// other: a cycle (for example a straight A and B swap, or a longer loop). No
+	// one-row-at-a-time order can break it without a temporary value, so report the
+	// rows involved and how to work around it.
 	if len(ordered) != len(ids) {
 		remaining := make([]string, 0)
 		for _, id := range ids {
@@ -1186,6 +1193,7 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 	return ordered, nil
 }
 
+// applyRowChanges applies the detected changes to the draft version.
 // priorRowCount is the number of rows already present in the draft version
 // before the adds are applied (kept rows = original rows minus deletes; updates
 // keep their slot). New rows are appended after these, so the i-th add lands at
@@ -1213,10 +1221,10 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		log.Printf("Successfully deleted row %s", rowId)
 	}
 
-	// Update existing rows in a collision-safe order. Rows are updated one at a
-	// time, so a naive order can transiently place two rows on the same input
-	// tuple and trigger a 409 duplicate-row error; orderUpdatesForApply sorts the
-	// updates so the row vacating a tuple always precedes the row claiming it.
+	// Update existing rows in a safe order. Rows are updated one at a time, so a
+	// careless order can briefly put two rows on the same input values and trigger
+	// a 409 duplicate-row error; orderUpdatesForApply orders the updates so the row
+	// moving away from a set of values always goes before the row moving onto them.
 	orderedUpdates, err := orderUpdatesForApply(changes, oldRows, inputColumnIds, outputColumnIds)
 	if err != nil {
 		return fmt.Errorf("failed to order row updates: %s", err)

@@ -33,9 +33,9 @@ var unitTestOrderInputCols = []string{"input-col-1"}
 var unitTestOrderOutputCols = []string{"output-col-1"}
 
 // TestUnitOrderUpdatesReordersChain reproduces RULES-1907: one row moves onto the
-// input value another row is vacating. Applied in config order the update PUTs
-// would transiently duplicate "passenger" and 409; the ordering must apply the
-// vacating row first regardless of the order the updates arrive in.
+// input value another row is moving away from. Applied in configuration order the
+// updates would briefly duplicate "passenger" and fail with a 409; the ordering
+// must apply the row moving away first, no matter what order the updates arrive in.
 func TestUnitOrderUpdatesReordersChain(t *testing.T) {
 	const (
 		mover   = "ab6f9490" // commercial -> passenger (claims "passenger")
@@ -85,7 +85,8 @@ func TestUnitOrderUpdatesIsDeterministic(t *testing.T) {
 }
 
 // TestUnitOrderUpdatesGenuineDuplicateTargets errors when two updated rows would
-// end up with identical inputs - a real config duplicate, not a transient one.
+// end up with identical inputs - a real duplicate in the configuration, not a
+// temporary one.
 func TestUnitOrderUpdatesGenuineDuplicateTargets(t *testing.T) {
 	oldRows := []interface{}{
 		unitTestRowWithInput("row-a", "a-old"),
@@ -139,4 +140,94 @@ func TestUnitOrderUpdatesDetectsCycle(t *testing.T) {
 	_, err := orderUpdatesForApply(changes, oldRows, unitTestOrderInputCols, unitTestOrderOutputCols)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "cyclic")
+}
+
+// unitTestRowIO builds a row with an explicit input and output value, for tests
+// that need to vary the output independently of the input.
+func unitTestRowIO(rowID, inputValue, outputValue string) map[string]interface{} {
+	return map[string]interface{}{
+		"row_id": rowID,
+		"inputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{"value": inputValue, "type": "string"},
+				},
+			},
+		},
+		"outputs": []interface{}{
+			map[string]interface{}{
+				"literal": []interface{}{
+					map[string]interface{}{"value": outputValue, "type": "string"},
+				},
+			},
+		},
+	}
+}
+
+// TestUnitOrderUpdatesMultiRowChain verifies a longer chain (3 rows) is ordered
+// so each row's target value is free when it is applied, regardless of the order
+// the updates arrive in.
+func TestUnitOrderUpdatesMultiRowChain(t *testing.T) {
+	oldRows := []interface{}{
+		unitTestRowWithInput("row-a", "a"),
+		unitTestRowWithInput("row-b", "b"),
+		unitTestRowWithInput("row-c", "c"),
+	}
+	// row-a moves to a fresh value (frees "a"); row-b takes "a"; row-c takes "b".
+	// Only safe order is a -> b -> c. Pass them in reverse to prove reordering.
+	changes := RowChange{
+		updates: []map[string]interface{}{
+			unitTestRowWithInput("row-c", "b"),
+			unitTestRowWithInput("row-b", "a"),
+			unitTestRowWithInput("row-a", "z"),
+		},
+	}
+
+	ordered, err := orderUpdatesForApply(changes, oldRows, unitTestOrderInputCols, unitTestOrderOutputCols)
+	assert.NoError(t, err)
+	assert.Len(t, ordered, 3)
+	got := []string{ordered[0]["row_id"].(string), ordered[1]["row_id"].(string), ordered[2]["row_id"].(string)}
+	assert.Equal(t, []string{"row-a", "row-b", "row-c"}, got, "each row must be applied after the row holding its target value moves")
+}
+
+// TestUnitOrderUpdatesDeleteFreesTuple verifies that a value vacated by a delete
+// is treated as available: an update claiming it has no dependency (deletes are
+// applied before updates by the caller) and does not error as a duplicate.
+func TestUnitOrderUpdatesDeleteFreesTuple(t *testing.T) {
+	oldRows := []interface{}{
+		unitTestRowWithInput("row-a", "a"),
+		unitTestRowWithInput("row-b", "b"),
+	}
+	// row-b is deleted (frees "b"); row-a moves onto "b".
+	changes := RowChange{
+		deletes: []string{"row-b"},
+		updates: []map[string]interface{}{
+			unitTestRowWithInput("row-a", "b"),
+		},
+	}
+
+	ordered, err := orderUpdatesForApply(changes, oldRows, unitTestOrderInputCols, unitTestOrderOutputCols)
+	assert.NoError(t, err)
+	assert.Len(t, ordered, 1)
+	assert.Equal(t, "row-a", ordered[0]["row_id"])
+}
+
+// TestUnitOrderUpdatesOutputOnlyChange verifies an update that changes only the
+// output (input values unchanged) is not flagged as a self-collision or cycle.
+func TestUnitOrderUpdatesOutputOnlyChange(t *testing.T) {
+	oldRows := []interface{}{
+		unitTestRowIO("row-a", "x", "out-1"),
+		unitTestRowIO("row-b", "y", "out-1"),
+	}
+	// row-a keeps input "x", only its output changes.
+	changes := RowChange{
+		updates: []map[string]interface{}{
+			unitTestRowIO("row-a", "x", "out-2"),
+		},
+	}
+
+	ordered, err := orderUpdatesForApply(changes, oldRows, unitTestOrderInputCols, unitTestOrderOutputCols)
+	assert.NoError(t, err)
+	assert.Len(t, ordered, 1)
+	assert.Equal(t, "row-a", ordered[0]["row_id"])
 }

@@ -1137,12 +1137,12 @@ func generateRowsWithRealContentChangeAndWhitespace(queueResourceLabel string) s
 }
 
 // generateChainRow produces a single decision table row for the RULES-1907
-// transient-duplicate reproduction. All input columns are held identical across
-// rows except customer_type, so two rows differ only by that value. Shifting
-// customer_type across an update (e.g. one row into the value another row still
-// holds) is exactly the chain that made the provider PUT rows through a
-// transient duplicate-tuple state and 409. queueResourceLabel wires the required
-// transfer_queue output to a real queue.
+// reproduction. All input columns are kept identical across rows except
+// customer_type, so two rows differ only by that value. Changing customer_type on
+// an update (for example moving one row onto the value another row still has) is
+// exactly the chain that made the provider update rows into a brief duplicate
+// state and fail with a 409. queueResourceLabel wires the required transfer_queue
+// output to a real queue.
 func generateChainRow(queueResourceLabel, customerType string) string {
 	return `rows {
 		inputs {
