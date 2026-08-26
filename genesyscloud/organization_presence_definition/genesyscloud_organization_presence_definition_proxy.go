@@ -5,7 +5,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -121,7 +121,7 @@ func getOrganizationPresenceDefinitionByIdFn(ctx context.Context, p *organizatio
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.presenceApi.GetPresenceDefinition(id, "")
+	return p.presenceApi.GetPresenceDefinition(id, "*")
 }
 
 // updateOrganizationPresenceDefinitionFn is an implementation of the function to update a Genesys Cloud organization presence definition

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
@@ -168,7 +168,7 @@ func WorktypeStatusRefResolver(attrName string) func(configMap map[string]interf
 }
 
 // WorktypeStatusArrayRefResolver resolves bare status IDs in a list attribute to proper Terraform references.
-// Used for attributes like destination_status_ids which are arrays of status IDs.
+// Used for attributes like destination_status_ids on worktype_status_transition resources.
 func WorktypeStatusArrayRefResolver(attrName string) func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
 	return func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
 		arrRaw, ok := configMap[attrName]

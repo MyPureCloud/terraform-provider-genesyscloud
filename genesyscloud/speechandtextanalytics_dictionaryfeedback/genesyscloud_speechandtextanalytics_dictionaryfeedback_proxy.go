@@ -7,7 +7,7 @@ import (
 
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -26,7 +26,7 @@ var dictionaryFeedbackCache = rc.NewResourceCache[platformclientv2.Dictionaryfee
 type (
 	createDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy, dictionaryFeedback *platformclientv2.Dictionaryfeedback) (*platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
 	getAllDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy) (*[]platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
-	getDictionaryFeedbackIdByTermFunc func(ctx context.Context, p *dictionaryFeedbackProxy, term string) (string, *platformclientv2.APIResponse, bool, error)
+	getDictionaryFeedbackIdByTermFunc func(ctx context.Context, p *dictionaryFeedbackProxy, term string, dialect string, transcriptionEngine string) (string, *platformclientv2.APIResponse, bool, error)
 	getDictionaryFeedbackByIdFunc     func(ctx context.Context, p *dictionaryFeedbackProxy, id string) (*platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
 	updateDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy, id string, dictionaryFeedback *platformclientv2.Dictionaryfeedback) (*platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error)
 	deleteDictionaryFeedbackFunc      func(ctx context.Context, p *dictionaryFeedbackProxy, id string) (*platformclientv2.APIResponse, error)
@@ -83,8 +83,8 @@ func (p *dictionaryFeedbackProxy) getAllDictionaryFeedback(ctx context.Context) 
 }
 
 // getDictionaryFeedbackIdByTerm returns a single Genesys Cloud dictionary feedback by a term
-func (p *dictionaryFeedbackProxy) getDictionaryFeedbackIdByTerm(ctx context.Context, term string) (string, *platformclientv2.APIResponse, bool, error) {
-	return p.getDictionaryFeedbackIdByTermAttr(ctx, p, term)
+func (p *dictionaryFeedbackProxy) getDictionaryFeedbackIdByTerm(ctx context.Context, term string, dialect string, transcriptionEngine string) (string, *platformclientv2.APIResponse, bool, error) {
+	return p.getDictionaryFeedbackIdByTermAttr(ctx, p, term, dialect, transcriptionEngine)
 }
 
 // getDictionaryFeedbackById returns a single Genesys Cloud dictionary feedback by Id
@@ -110,8 +110,7 @@ func createDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy,
 	return p.speechTextAnalyticsApi.PostSpeechandtextanalyticsDictionaryfeedback(*dictionaryFeedback)
 }
 
-// getAllDictionaryFeedbackFn is the implementation for retrieving all dictionary feedback in Genesys Cloud
-func getAllDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy) (*[]platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error) {
+func listDictionaryFeedbackForEngine(ctx context.Context, p *dictionaryFeedbackProxy, transcriptionEngine string) (*[]platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error) {
 	var (
 		nextPage               string
 		err                    error
@@ -120,7 +119,7 @@ func getAllDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy)
 	const pageSize = 100
 
 	for {
-		dictionaryFeedbacks, resp, getErr := p.speechTextAnalyticsApi.GetSpeechandtextanalyticsDictionaryfeedback("", "", nextPage, pageSize)
+		dictionaryFeedbacks, resp, getErr := p.speechTextAnalyticsApi.GetSpeechandtextanalyticsDictionaryfeedback("", transcriptionEngine, nextPage, pageSize)
 
 		if getErr != nil {
 			return nil, resp, getErr
@@ -157,13 +156,66 @@ func getAllDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy)
 	return &allDictionaryFeedbacks, nil, nil
 }
 
+// getAllDictionaryFeedbackFn is the implementation for retrieving all dictionary feedback in Genesys Cloud
+func getAllDictionaryFeedbackFn(ctx context.Context, p *dictionaryFeedbackProxy) (*[]platformclientv2.Dictionaryfeedback, *platformclientv2.APIResponse, error) {
+	seen := make(map[string]struct{})
+	var allDictionaryFeedbacks []platformclientv2.Dictionaryfeedback
+	var lastResp *platformclientv2.APIResponse
+
+	// Query each engine explicitly. An empty transcriptionEngine filter is not reliable across orgs/API versions.
+	for _, engine := range []string{TranscriptionEngineGenesys, TranscriptionEngineGenesysExtended} {
+		dictionaryFeedbacks, resp, err := listDictionaryFeedbackForEngine(ctx, p, engine)
+		lastResp = resp
+		if err != nil {
+			// GenesysExtended may be unavailable when the feature is not enabled for the org
+			if engine == TranscriptionEngineGenesysExtended {
+				log.Printf("Skipping GenesysExtended dictionary feedback listing: %v", err)
+				continue
+			}
+			return nil, resp, err
+		}
+
+		for _, feedback := range *dictionaryFeedbacks {
+			if feedback.Id == nil {
+				continue
+			}
+			if _, exists := seen[*feedback.Id]; exists {
+				continue
+			}
+			seen[*feedback.Id] = struct{}{}
+			allDictionaryFeedbacks = append(allDictionaryFeedbacks, feedback)
+		}
+	}
+
+	return &allDictionaryFeedbacks, lastResp, nil
+}
+
+func dictionaryFeedbackMatchesFilters(dictionaryFeedback platformclientv2.Dictionaryfeedback, term string, dialect string, transcriptionEngine string) bool {
+	if dictionaryFeedback.Term == nil || *dictionaryFeedback.Term != term {
+		return false
+	}
+	if dialect != "" && (dictionaryFeedback.Dialect == nil || *dictionaryFeedback.Dialect != dialect) {
+		return false
+	}
+	if transcriptionEngine != "" {
+		engine := TranscriptionEngineGenesys
+		if dictionaryFeedback.TranscriptionEngine != nil && *dictionaryFeedback.TranscriptionEngine != "" {
+			engine = *dictionaryFeedback.TranscriptionEngine
+		}
+		if engine != transcriptionEngine {
+			return false
+		}
+	}
+	return true
+}
+
 // getDictionaryFeedbackIdByTermFn is an implementation of the function to get a Genesys Cloud dictionary feedback by term
-func getDictionaryFeedbackIdByTermFn(ctx context.Context, p *dictionaryFeedbackProxy, term string) (string, *platformclientv2.APIResponse, bool, error) {
+func getDictionaryFeedbackIdByTermFn(ctx context.Context, p *dictionaryFeedbackProxy, term string, dialect string, transcriptionEngine string) (string, *platformclientv2.APIResponse, bool, error) {
 	// As there is no API to GET based on "term" used cache to get term and if not in cache then getAll
 	dictionaryFeedbacks := rc.GetCache(p.dictionaryFeedbackCache)
 	if dictionaryFeedbacks != nil {
 		for _, dictionaryFeedback := range *dictionaryFeedbacks {
-			if *dictionaryFeedback.Term == term {
+			if dictionaryFeedbackMatchesFilters(dictionaryFeedback, term, dialect, transcriptionEngine) {
 				log.Printf("Retrieved the dictionary feedback id %s by term %s from cache", *dictionaryFeedback.Id, term)
 				return *dictionaryFeedback.Id, nil, false, nil
 			}
@@ -176,7 +228,7 @@ func getDictionaryFeedbackIdByTermFn(ctx context.Context, p *dictionaryFeedbackP
 	}
 
 	for _, dictionaryFeedbackGet := range *dictionaryFeedbacksReq {
-		if *dictionaryFeedbackGet.Term == term {
+		if dictionaryFeedbackMatchesFilters(dictionaryFeedbackGet, term, dialect, transcriptionEngine) {
 			log.Printf("Retrieved the dictionary feedback id %s by term %s", *dictionaryFeedbackGet.Id, term)
 			return *dictionaryFeedbackGet.Id, nil, false, nil
 		}

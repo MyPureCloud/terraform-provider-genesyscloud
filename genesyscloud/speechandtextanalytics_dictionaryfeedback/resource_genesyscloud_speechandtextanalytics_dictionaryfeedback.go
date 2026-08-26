@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -37,7 +37,7 @@ func getAllAuthDictionaryFeedbacks(ctx context.Context, clientConfig *platformcl
 	}
 
 	for _, dictionaryFeedback := range *dictionaryFeedbacks {
-		resources[*dictionaryFeedback.Id] = &resourceExporter.ResourceMeta{BlockLabel: *dictionaryFeedback.Term}
+		resources[*dictionaryFeedback.Id] = &resourceExporter.ResourceMeta{BlockLabel: dictionaryFeedbackExportLabel(dictionaryFeedback)}
 	}
 
 	return resources, nil
@@ -86,10 +86,24 @@ func readDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta in
 
 		resourcedata.SetNillableValue(d, "term", dictionaryFeedback.Term)
 		resourcedata.SetNillableValue(d, "dialect", dictionaryFeedback.Dialect)
-		resourcedata.SetNillableValue(d, "boost_value", dictionaryFeedback.BoostValue)
-		resourcedata.SetNillableValue(d, "source", dictionaryFeedback.Source)
-		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "example_phrases", dictionaryFeedback.ExamplePhrases, flattenDictionaryFeedbackExamplePhrases)
-		resourcedata.SetNillableValue(d, "sounds_like", dictionaryFeedback.SoundsLike)
+
+		engine := TranscriptionEngineGenesys
+		if dictionaryFeedback.TranscriptionEngine != nil && *dictionaryFeedback.TranscriptionEngine != "" {
+			engine = *dictionaryFeedback.TranscriptionEngine
+		}
+		_ = d.Set("transcription_engine", engine)
+		resourcedata.SetStringValueIfNotNil(d, "display_as", dictionaryFeedback.DisplayAs)
+
+		if engine != TranscriptionEngineGenesysExtended {
+			resourcedata.SetNillableValue(d, "boost_value", dictionaryFeedback.BoostValue)
+			resourcedata.SetNillableValue(d, "source", dictionaryFeedback.Source)
+			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "example_phrases", dictionaryFeedback.ExamplePhrases, flattenDictionaryFeedbackExamplePhrases)
+			resourcedata.SetNillableValue(d, "sounds_like", dictionaryFeedback.SoundsLike)
+		} else {
+			// Clear native-only list attributes so Extended exports do not require example_phrases
+			_ = d.Set("example_phrases", nil)
+			_ = d.Set("sounds_like", nil)
+		}
 
 		log.Printf("Read dictionary feedback %s %s", d.Id(), *dictionaryFeedback.Term)
 		return cc.CheckState(d)

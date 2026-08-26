@@ -8,6 +8,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -17,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 /*
@@ -82,22 +83,36 @@ func createIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	d.SetId(*integration.Id)
 
 	//Update integration config separately
-	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	// Set attributes that can only be modified in a patch
-	if d.HasChange("intended_state") {
-		log.Printf("Updating additional attributes for integration %s", name)
-		_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
-			IntendedState: &intendedState,
-		})
-		if patchErr != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration %s error: %s", d.Id(), err), resp)
+	if !featureToggles.ICToggleExists() {
+		diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
+		if diagErr != nil {
+			return diagErr
 		}
+
+		// Set attributes that can only be modified in a patch
+		if d.HasChange("intended_state") {
+			log.Printf("Updating additional attributes for integration %s", name)
+			_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+				IntendedState: &intendedState,
+			})
+			if patchErr != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration %s error: %s", d.Id(), err), resp)
+			}
+		}
+		log.Printf("Created integration %s %s", name, *integration.Id)
+	} else {
+		log.Printf("%s is set, skipping config management in genesyscloud_integration %s", featureToggles.ICToggleName(), d.Id())
+		// Set attributes that can only be modified in a patch
+		if d.HasChange("intended_state") {
+			_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+				IntendedState: &intendedState,
+			})
+			if patchErr != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update integration %s error: %s", d.Id(), err), resp)
+			}
+		}
+		log.Printf("Created integration %s", *integration.Id)
 	}
-	log.Printf("Created integration %s %s", name, *integration.Id)
 	return readIntegration(ctx, d, meta)
 }
 
@@ -124,13 +139,17 @@ func readIntegration(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "intended_state", currentIntegration.IntendedState)
 
 		// Use returned ID to get current config, which contains complete configuration
-		integrationConfig, resp, err := ip.GetIntegrationConfig(ctx, *currentIntegration.Id)
+		if !featureToggles.ICToggleExists() {
+			integrationConfig, resp, err := ip.GetIntegrationConfig(ctx, *currentIntegration.Id)
 
-		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read config of integration %s | error: %s", d.Id(), getErr), resp))
+			if err != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read config of integration %s | error: %s", d.Id(), getErr), resp))
+			}
+
+			d.Set("config", flattenIntegrationConfig(integrationConfig, d.Id(), *currentIntegration.Name))
+		} else {
+			log.Printf("%s is set, not reading config in genesyscloud_integration %s", featureToggles.ICToggleName(), d.Id())
 		}
-
-		d.Set("config", flattenIntegrationConfig(integrationConfig, d.Id(), *currentIntegration.Name))
 		log.Printf("Read integration %s %s", d.Id(), *currentIntegration.Name)
 		return nil
 	})
@@ -142,21 +161,34 @@ func updateIntegration(ctx context.Context, d *schema.ResourceData, meta interfa
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ip := getIntegrationsProxy(sdkConfig)
 
-	diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	if d.HasChange("intended_state") {
-		log.Printf("Updating integration %s", name)
-		_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
-			IntendedState: &intendedState,
-		})
-		if patchErr != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Integration %s %s", d.Id(), patchErr), resp)
+	if !featureToggles.ICToggleExists() {
+		diagErr, name := updateIntegrationConfigFromResourceData(ctx, d, ip)
+		if diagErr != nil {
+			return diagErr
 		}
+
+		if d.HasChange("intended_state") {
+			log.Printf("Updating integration %s", name)
+			_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+				IntendedState: &intendedState,
+			})
+			if patchErr != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Integration %s %s", d.Id(), patchErr), resp)
+			}
+		}
+		log.Printf("Updated integration %s %s", name, d.Id())
+	} else {
+		log.Printf("%s is set, skipping config update in genesyscloud_integration %s", featureToggles.ICToggleName(), d.Id())
+		if d.HasChange("intended_state") {
+			_, resp, patchErr := ip.updateIntegration(ctx, d.Id(), &platformclientv2.Integration{
+				IntendedState: &intendedState,
+			})
+			if patchErr != nil {
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Integration %s %s", d.Id(), patchErr), resp)
+			}
+		}
+		log.Printf("Updated integration %s", d.Id())
 	}
-	log.Printf("Updated integration %s %s", name, d.Id())
 	return readIntegration(ctx, d, meta)
 }
 

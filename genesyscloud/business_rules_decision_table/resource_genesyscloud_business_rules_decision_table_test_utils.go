@@ -5,7 +5,7 @@ import (
 
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 // generateBusinessRulesDecisionTableResource generates a basic business rules decision table resource
@@ -26,6 +26,168 @@ func generateBusinessRulesDecisionTableResource(
 		%s
 	}
 	`, resourceLabel, name, description, divisionId, schemaId, columns, rows)
+}
+
+// generateBusinessRulesDecisionTableResourceCSV is the CSV-backed form of the resource (no nested rows).
+func generateBusinessRulesDecisionTableResourceCSV(
+	resourceLabel string,
+	name string,
+	description string,
+	divisionId string,
+	schemaId string,
+	columns string,
+	csvPath string) string {
+	return fmt.Sprintf(`resource "genesyscloud_business_rules_decision_table" "%s" {
+		name = "%s"
+		description = "%s"
+		division_id = %s
+		schema_id = %s
+		%s
+		rows_csv_filepath = "%s"
+	}
+	`, resourceLabel, name, description, divisionId, schemaId, columns, csvPath)
+}
+
+// generateMinimalColumnsForCSVMigration is a small column set for rows→CSV migration ACC tests.
+func generateMinimalColumnsForCSVMigration() string {
+	return `columns {
+		inputs {
+			defaults_to {
+				special = "Wildcard"
+			}
+			expression {
+				contractual {
+					schema_property_key = "customer_type"
+				}
+				comparator = "Equals"
+			}
+		}
+		outputs {
+			defaults_to {
+				special = "Null"
+			}
+			value {
+				schema_property_key = "skill"
+			}
+		}
+	}`
+}
+
+func generateMinimalRowsForCSVMigration() string {
+	return `rows {
+		inputs {
+			literal {
+				value = "VIP"
+				type  = "string"
+			}
+		}
+		outputs {
+			literal {
+				value = "Premium Support"
+				type  = "string"
+			}
+		}
+	}`
+}
+
+// generateColumnsForCSVStringList extends the minimal CSV column set with stringList
+// input/output columns (customer_tags::ContainsAny, assigned_skills) for ACC coverage
+// of the '||' CSV delimiter.
+func generateColumnsForCSVStringList() string {
+	return `columns {
+		inputs {
+			defaults_to {
+				special = "Wildcard"
+			}
+			expression {
+				contractual {
+					schema_property_key = "customer_type"
+				}
+				comparator = "Equals"
+			}
+		}
+		inputs {
+			defaults_to {
+				values = ["general", "support"]
+			}
+			expression {
+				contractual {
+					schema_property_key = "customer_tags"
+				}
+				comparator = "ContainsAny"
+			}
+		}
+		outputs {
+			defaults_to {
+				special = "Null"
+			}
+			value {
+				schema_property_key = "skill"
+			}
+		}
+		outputs {
+			defaults_to {
+				values = ["basic_support", "general_help"]
+			}
+			value {
+				schema_property_key = "assigned_skills"
+			}
+		}
+	}`
+}
+
+// generateColumnsForCSVQueue is a minimal column set with a queue output column
+// (transfer_queue) for CSV ACC tests that resolve queue friendly names.
+func generateColumnsForCSVQueue(queueResourceLabel string) string {
+	return fmt.Sprintf(`columns {
+		inputs {
+			defaults_to {
+				special = "Wildcard"
+			}
+			expression {
+				contractual {
+					schema_property_key = "customer_type"
+				}
+				comparator = "Equals"
+			}
+		}
+		outputs {
+			defaults_to {
+				value = genesyscloud_routing_queue.%s.id
+			}
+			value {
+				schema_property_key = "transfer_queue"
+				properties {
+					schema_property_key = "queue"
+					properties {
+						schema_property_key = "id"
+					}
+				}
+			}
+		}
+	}`, queueResourceLabel)
+}
+
+// generateBusinessRulesDecisionTableResourceBothRowsAndCSV is for ExactlyOneOf validation ACC.
+func generateBusinessRulesDecisionTableResourceBothRowsAndCSV(
+	resourceLabel string,
+	name string,
+	description string,
+	divisionId string,
+	schemaId string,
+	columns string,
+	rows string,
+	csvPath string) string {
+	return fmt.Sprintf(`resource "genesyscloud_business_rules_decision_table" "%s" {
+		name = "%s"
+		description = "%s"
+		division_id = %s
+		schema_id = %s
+		%s
+		%s
+		rows_csv_filepath = "%s"
+	}
+	`, resourceLabel, name, description, divisionId, schemaId, columns, rows, csvPath)
 }
 
 func generateColumns(queueResourceLabel string) string {
@@ -972,4 +1134,11 @@ func generateRowsWithRealContentChangeAndWhitespace(queueResourceLabel string) s
 			}
 		}
 	}`
+}
+
+// GenerateRowsCSVFilepath returns HCL for the CSV filepath attribute.
+func GenerateRowsCSVFilepath(path string) string {
+	return fmt.Sprintf(`
+	rows_csv_filepath = "%s"
+`, path)
 }
