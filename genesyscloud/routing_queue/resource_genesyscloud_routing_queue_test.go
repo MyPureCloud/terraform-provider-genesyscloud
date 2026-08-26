@@ -12,7 +12,6 @@ import (
 	"time"
 
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
@@ -673,14 +672,14 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 		userPromptResourceText1     = "This is a test greeting!"
 		userPromptResourceFileName2 = testrunner.GetTestDataPath("resource", userPrompt.ResourceType, "test-prompt-02.wav")
 		userPromptResourceTTS1      = "This is a test greeting!"
-		userPromptAsset1            = architect_user_prompt.UserPromptResourceStruct{
+		userPromptAsset1            = userPrompt.UserPromptResourceStruct{
 			Language:        userPromptResourceLang1,
 			Tts_string:      strconv.Quote(userPromptResourceTTS1),
 			Text:            util.NullValue,
 			Filename:        util.NullValue,
 			FileContentHash: util.NullValue,
 		}
-		userPromptAsset2 = architect_user_prompt.UserPromptResourceStruct{
+		userPromptAsset2 = userPrompt.UserPromptResourceStruct{
 			Language:        userPromptResourceLang1,
 			Tts_string:      util.NullValue,
 			Text:            strconv.Quote(userPromptResourceText1),
@@ -688,8 +687,8 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 			FileContentHash: userPromptResourceFileName2,
 		}
 
-		userPromptResources1 = []*architect_user_prompt.UserPromptResourceStruct{&userPromptAsset1}
-		userPromptResources2 = []*architect_user_prompt.UserPromptResourceStruct{&userPromptAsset2}
+		userPromptResources1 = []*userPrompt.UserPromptResourceStruct{&userPromptAsset1}
+		userPromptResources2 = []*userPrompt.UserPromptResourceStruct{&userPromptAsset2}
 	)
 
 	var homeDivisionName string
@@ -729,7 +728,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowFilePath3,
 					inQueueShortMessageFlowConfig,
 					false,
-				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
 					Name:          userPromptName1,
 					Description:   strconv.Quote(userPromptDescription1),
@@ -766,7 +765,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowFilePath3,
 					inQueueShortMessageFlowConfig,
 					false,
-				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
 					Name:          userPromptName1,
 					Description:   strconv.Quote(userPromptDescription1),
@@ -801,7 +800,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowFilePath3,
 					inQueueShortMessageFlowConfig,
 					false,
-				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
 					Name:          userPromptName1,
 					Description:   strconv.Quote(userPromptDescription1),

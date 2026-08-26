@@ -536,6 +536,11 @@ func TestUnitGetRoutingQueueMembersPerQueueCacheHit(t *testing.T) {
 
 func TestUnitGetAllRoutingQueuesListCacheHit(t *testing.T) {
 	tfexporter_state.ActivateExporterState()
+	t.Cleanup(func() {
+		routingQueueCache.InvalidateCache()
+		routingQueueListCache.InvalidateCache()
+		tfexporter_state.ResetExporterStateForTests()
+	})
 
 	listKey := routingQueueListCacheKey("", false)
 	cached := []platformclientv2.Queue{
@@ -543,7 +548,7 @@ func TestUnitGetAllRoutingQueuesListCacheHit(t *testing.T) {
 	}
 	rc.SetCache(routingQueueListCache, listKey, cached)
 
-	queues, _, err := GetAllRoutingQueuesFn(context.Background(), &RoutingQueueProxy{RoutingQueueCache: routingQueueCache}, "", false)
+	queues, _, err := GetAllRoutingQueuesFn(context.Background(), &RoutingQueueProxy{RoutingQueueCache: routingQueueCache}, "", false, true)
 	require.NoError(t, err)
 	require.Len(t, *queues, 1)
 	assert.Equal(t, "queue-list-1", *(*queues)[0].Id)
@@ -551,6 +556,11 @@ func TestUnitGetAllRoutingQueuesListCacheHit(t *testing.T) {
 
 func TestUnitRoutingQueueCacheMergesNonPeerAndPeerQueues(t *testing.T) {
 	tfexporter_state.ActivateExporterState()
+	t.Cleanup(func() {
+		routingQueueCache.InvalidateCache()
+		routingQueueListCache.InvalidateCache()
+		tfexporter_state.ResetExporterStateForTests()
+	})
 
 	nonPeer := []platformclientv2.Queue{
 		{Id: platformclientv2.String("non-peer-queue"), Name: platformclientv2.String("Non Peer")},
@@ -563,6 +573,10 @@ func TestUnitRoutingQueueCacheMergesNonPeerAndPeerQueues(t *testing.T) {
 	for i := range nonPeer {
 		storeRoutingQueueInCache(routingQueueCache, &nonPeer[i])
 	}
+
+	// Matches GetAllRoutingQueuesFn before a hasPeer=true fetch: drop that list key only.
+	routingQueueListCache.DeleteCacheItem(routingQueueListCacheKey("", true))
+	require.NotNil(t, rc.GetCacheItem(routingQueueCache, "non-peer-queue"), "per-queue cache must keep non-peer queues across a peer-list refresh")
 
 	rc.SetCache(routingQueueListCache, routingQueueListCacheKey("", true), peer)
 	for i := range peer {
@@ -579,6 +593,11 @@ func TestUnitRoutingQueueCacheMergesNonPeerAndPeerQueues(t *testing.T) {
 
 func TestUnitStoreRoutingQueueInCache(t *testing.T) {
 	tfexporter_state.ActivateExporterState()
+	t.Cleanup(func() {
+		routingQueueCache.InvalidateCache()
+		routingQueueListCache.InvalidateCache()
+		tfexporter_state.ResetExporterStateForTests()
+	})
 
 	queueID := "queue-write-through-test"
 	queue := platformclientv2.Queue{
