@@ -576,7 +576,7 @@ func updateDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTa
 	// kept rows (= existing rows minus deletes) precede the appended adds; used by
 	// the 504-ghost-row guard in applyRowChanges to compute each add's row index.
 	priorRowCount := len(oldRows) - len(changes.deletes)
-	err = applyRowChanges(ctx, proxy, tableId, newVersionNumber, changes, priorRowCount)
+	err = applyRowChanges(ctx, proxy, tableId, newVersionNumber, changes, priorRowCount, oldRows)
 	if err != nil {
 		return fmt.Errorf("failed to apply row changes: %s", err)
 	}
