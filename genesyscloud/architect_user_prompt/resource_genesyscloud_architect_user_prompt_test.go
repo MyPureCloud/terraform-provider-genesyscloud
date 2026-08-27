@@ -440,6 +440,57 @@ func TestAccResourceArchitectUserPromptFileToTTS(t *testing.T) {
 	})
 }
 
+func TestAccResourceArchitectUserPromptTTSOnly(t *testing.T) {
+	userPromptResourceLabel := "test-user_prompt_tts_only"
+	userPromptName := "TestUserPromptTTSOnly_" + strings.Replace(uuid.NewString(), "-", "", -1)
+	userPromptDescription := "Test prompt with TTS only and no audio file"
+	userPromptResourceLang := "en-us"
+	userPromptResourceTTS := "This is a TTS only greeting!"
+	userPromptResourceText := "This is a TTS only greeting!"
+	resourcePath := "genesyscloud_architect_user_prompt." + userPromptResourceLabel
+
+	ttsOnly := UserPromptResourceStruct{
+		Language:        userPromptResourceLang,
+		Tts_string:      strconv.Quote(userPromptResourceTTS),
+		Text:            strconv.Quote(userPromptResourceText),
+		Filename:        util.NullValue,
+		FileContentHash: util.NullValue,
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create TTS-only prompt (no filename). Read must not panic when
+				// the API returns resource tags without a usable filename value.
+				Config: GenerateUserPromptResource(&UserPromptStruct{
+					userPromptResourceLabel,
+					userPromptName,
+					strconv.Quote(userPromptDescription),
+					[]*UserPromptResourceStruct{&ttsOnly},
+				}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", userPromptName),
+					resource.TestCheckResourceAttr(resourcePath, "description", userPromptDescription),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.language", userPromptResourceLang),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.tts_string", userPromptResourceTTS),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.text", userPromptResourceText),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.filename", ""),
+					resource.TestCheckResourceAttr(resourcePath, "resources.0.file_content_hash", ""),
+				),
+			},
+			{
+				// Force another read through flattenPromptResources
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyUserPromptsDestroyed,
+	})
+}
+
 func testVerifyPromptResourceHasNoAudio(resourcePath, language string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourcePath]
