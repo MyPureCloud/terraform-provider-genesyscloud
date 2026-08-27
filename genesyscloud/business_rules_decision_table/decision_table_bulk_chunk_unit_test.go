@@ -161,3 +161,110 @@ func TestUnitBulkApplyRowChangesMultiChunkWithSmallLimits(t *testing.T) {
 	assert.Equal(t, []int{2, 2, 1}, bulkAddLens)
 	assert.Equal(t, []int{3, 3, 1}, bulkRemoveLens)
 }
+
+// TestUnitBulkApplyRowChangesSplitsDependentUpdatesAcrossRequests verifies a
+// chained input-value shift is sent as two bulk update requests even when both
+// rows would fit in one chunk. The bulk API validates uniqueness against the
+// current table, so putting both in one request 409s (RULES-1907).
+func TestUnitBulkApplyRowChangesSplitsDependentUpdatesAcrossRequests(t *testing.T) {
+	tId := uuid.NewString()
+	tSchemaId := uuid.NewString()
+
+	tColumns := &platformclientv2.Decisiontablecolumns{
+		Inputs: &[]platformclientv2.Decisiontableinputcolumn{
+			{
+				Id: platformclientv2.String("input-column-id-1"),
+				Expression: &platformclientv2.Decisiontableinputcolumnexpression{
+					Contractual: func() **platformclientv2.Contractual {
+						contractual := &platformclientv2.Contractual{
+							SchemaPropertyKey: platformclientv2.String("customer_type"),
+						}
+						return &contractual
+					}(),
+					Comparator: platformclientv2.String("Equals"),
+				},
+			},
+		},
+		Outputs: &[]platformclientv2.Decisiontableoutputcolumn{
+			{
+				Id: platformclientv2.String("output-column-id-1"),
+				Value: &platformclientv2.Outputvalue{
+					SchemaPropertyKey: platformclientv2.String("escalation_level"),
+				},
+			},
+		},
+	}
+
+	row := func(id, inputValue string) map[string]interface{} {
+		return map[string]interface{}{
+			"row_id": id,
+			"inputs": []interface{}{
+				map[string]interface{}{
+					"literal": []interface{}{
+						map[string]interface{}{"value": inputValue, "type": "string"},
+					},
+				},
+			},
+			"outputs": []interface{}{
+				map[string]interface{}{
+					"literal": []interface{}{
+						map[string]interface{}{"value": "VIP", "type": "string"},
+					},
+				},
+			},
+		}
+	}
+
+	const (
+		mover   = "row-mover"
+		vacater = "row-vacater"
+	)
+	var bulkUpdateCalls [][]string
+
+	proxy := &BusinessRulesDecisionTableProxy{}
+	proxy.getBusinessRulesDecisionTableVersionAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
+		return &platformclientv2.Decisiontableversion{
+			Id:      &tId,
+			Version: platformclientv2.Int(versionNumber),
+			Contract: &platformclientv2.Decisiontablecontract{
+				ParentSchema: &platformclientv2.Businessrulesparentschemaref{Id: &tSchemaId},
+			},
+			Columns: tColumns,
+		}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	proxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+		if len(rows) > 0 {
+			t.Fatal("bulk add should not be called in this test")
+		}
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	proxy.bulkRemoveDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowIds []string) (*platformclientv2.APIResponse, error) {
+		if len(rowIds) > 0 {
+			t.Fatal("bulk remove should not be called in this test")
+		}
+		return &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}, nil
+	}
+	proxy.bulkUpdateDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Row) (*platformclientv2.APIResponse, error) {
+		ids := make([]string, 0, len(rows))
+		for _, r := range rows {
+			if r.RowId != nil {
+				ids = append(ids, *r.RowId)
+			}
+		}
+		bulkUpdateCalls = append(bulkUpdateCalls, ids)
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	oldRows := []interface{}{
+		row(mover, "VIP"),
+		row(vacater, "Standard"),
+	}
+	err := applyRowChangesWithLimits(context.Background(), proxy, tId, 2, RowChange{
+		updates: []map[string]interface{}{
+			row(mover, "Standard"),
+			row(vacater, "Premium"),
+		},
+	}, 2, oldRows, 15, 15, 49)
+	assert.NoError(t, err)
+	assert.Equal(t, [][]string{{vacater}, {mover}}, bulkUpdateCalls)
+}

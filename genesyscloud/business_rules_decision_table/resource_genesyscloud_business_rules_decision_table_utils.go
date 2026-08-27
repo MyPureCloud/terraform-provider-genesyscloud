@@ -1007,8 +1007,28 @@ func rowInputKey(rowMap map[string]interface{}, inputColumnIds, outputColumnIds 
 // values) can never be applied one row at a time without a temporary value; it is
 // reported with the rows involved.
 func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnIds, outputColumnIds []string) ([]map[string]interface{}, error) {
+	waves, err := orderUpdateWavesForApply(changes, oldRows, inputColumnIds, outputColumnIds)
+	if err != nil {
+		return nil, err
+	}
+	ordered := make([]map[string]interface{}, 0, len(changes.updates))
+	for _, wave := range waves {
+		ordered = append(ordered, wave...)
+	}
+	return ordered, nil
+}
+
+// orderUpdateWavesForApply groups updates into dependency waves. Rows in the same
+// wave do not depend on each other and can share a bulk request; each later wave
+// must wait until earlier waves have been applied so the input values it wants
+// are actually free on the table.
+//
+// The bulk update API is not atomic with respect to uniqueness: it validates each
+// row against the current table, so a chain such as Standard->Premium then
+// VIP->Standard 409s if both rows are sent in one request.
+func orderUpdateWavesForApply(changes RowChange, oldRows []interface{}, inputColumnIds, outputColumnIds []string) ([][]map[string]interface{}, error) {
 	if len(changes.updates) == 0 {
-		return changes.updates, nil
+		return nil, nil
 	}
 
 	deleted := make(map[string]bool, len(changes.deletes))
@@ -1126,11 +1146,12 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		}
 	}
 
-	// Work through the rows in waves. Start with every row that has nothing to
-	// wait on (the input values it wants are already free). Apply one, then any
-	// row that was only waiting on it becomes free to apply next; repeat until none
-	// are left. Rows are sorted by row_id first so the order is repeatable (Go map
-	// iteration is random), giving the same plan on every run.
+	// Each wave is every row that is free to apply now. After a wave is sent as
+	// a bulk request, its old input values are free and the next wave can go.
+	// Independent updates stay in one wave (one bulk request, still chunked by
+	// limUpd). A chain such as Standard->Premium then VIP->Standard is two waves:
+	// putting both in one request 409s because uniqueness is checked against the
+	// current table, not the post-batch result.
 	sort.Strings(ids)
 	ready := make([]string, 0, len(ids))
 	for _, id := range ids {
@@ -1140,30 +1161,29 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 	}
 	sort.Strings(ready)
 
-	ordered := make([]map[string]interface{}, 0, len(ids))
+	waves := make([][]map[string]interface{}, 0)
+	placed := 0
 	for len(ready) > 0 {
-		// Pop the next ready row and place it in the output.
-		id := ready[0]
-		ready = ready[1:]
-		ordered = append(ordered, byID[id])
-		// Placing id satisfies one prerequisite for each of its dependents; those
-		// that now have none left become ready.
+		wave := make([]map[string]interface{}, 0, len(ready))
 		newlyReady := make([]string, 0)
-		for r := range dependents[id] {
-			delete(dependsOn[r], id)
-			if len(dependsOn[r]) == 0 {
-				newlyReady = append(newlyReady, r)
+		seenReady := make(map[string]bool, len(ready))
+		for _, id := range ready {
+			wave = append(wave, byID[id])
+			placed++
+			for r := range dependents[id] {
+				delete(dependsOn[r], id)
+				if len(dependsOn[r]) == 0 && !seenReady[r] {
+					seenReady[r] = true
+					newlyReady = append(newlyReady, r)
+				}
 			}
 		}
 		sort.Strings(newlyReady)
-		ready = append(ready, newlyReady...)
+		waves = append(waves, wave)
+		ready = newlyReady
 	}
 
-	// If not every row was placed, the rows still waiting are waiting on each
-	// other: a cycle (for example a straight A and B swap, or a longer loop). No
-	// one-row-at-a-time order can break it without a temporary value, so report the
-	// rows involved and how to work around it.
-	if len(ordered) != len(ids) {
+	if placed != len(ids) {
 		remaining := make([]string, 0)
 		for _, id := range ids {
 			if len(dependsOn[id]) > 0 {
@@ -1174,7 +1194,7 @@ func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnI
 		return nil, fmt.Errorf("rows %s form a cyclic input-value swap that cannot be applied one row at a time without a transient duplicate; split the change across separate applies (move one row to a temporary unused input value first)", strings.Join(remaining, ", "))
 	}
 
-	return ordered, nil
+	return waves, nil
 }
 
 // applyRowChanges applies the detected changes to the draft version.
@@ -1208,28 +1228,35 @@ func applyRowChangesWithLimits(ctx context.Context, proxy *BusinessRulesDecision
 		}
 	}
 
-	// Order updates so that across bulk chunks a row moving away from input values
-	// is applied before a row moving onto those values (RULES-1907). Within a single
-	// bulk transaction updates are atomic; ordering still matters across chunks.
-	orderedUpdates, err := orderUpdatesForApply(changes, oldRows, inputColumnIds, outputColumnIds)
+	// Order updates into dependency waves so a row moving away from input values
+	// is applied before a row moving onto those values (RULES-1907). The bulk
+	// update API is not atomic with respect to uniqueness: it validates each row
+	// against the current table, so dependent updates must be separate requests
+	// even when they would fit in one chunk. Independent updates in the same wave
+	// are still batched up to limUpd.
+	waves, err := orderUpdateWavesForApply(changes, oldRows, inputColumnIds, outputColumnIds)
 	if err != nil {
 		return fmt.Errorf("failed to order row updates: %s", err)
 	}
-	updatePayloads := make([]platformclientv2.Row, 0, len(orderedUpdates))
-	for _, row := range orderedUpdates {
-		body, err := buildBulkUpdateRowFromProviderMap(row, inputColumnIds, outputColumnIds)
-		if err != nil {
-			return fmt.Errorf("failed to build bulk update row: %s", err)
-		}
-		updatePayloads = append(updatePayloads, body)
+	totalUpdates := 0
+	for _, wave := range waves {
+		totalUpdates += len(wave)
 	}
-	if len(updatePayloads) > 0 {
-		start = 0
+	start = 0
+	for _, wave := range waves {
+		updatePayloads := make([]platformclientv2.Row, 0, len(wave))
+		for _, row := range wave {
+			body, err := buildBulkUpdateRowFromProviderMap(row, inputColumnIds, outputColumnIds)
+			if err != nil {
+				return fmt.Errorf("failed to build bulk update row: %s", err)
+			}
+			updatePayloads = append(updatePayloads, body)
+		}
 		for _, chunk := range chunks.ChunkBy(updatePayloads, limUpd) {
 			log.Printf("Bulk updating %d rows", len(chunk))
 			_, err := proxy.bulkUpdateDecisionTableRows(ctx, tableId, version, chunk)
 			if err != nil {
-				return fmt.Errorf("failed to bulk update rows (batch %d-%d of %d): %s", start, start+len(chunk)-1, len(updatePayloads), err)
+				return fmt.Errorf("failed to bulk update rows (batch %d-%d of %d): %s", start, start+len(chunk)-1, totalUpdates, err)
 			}
 			log.Printf("Successfully bulk updated %d rows", len(chunk))
 			start += len(chunk)

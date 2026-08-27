@@ -32,6 +32,36 @@ func unitTestRowWithInput(rowID, inputValue string) map[string]interface{} {
 var unitTestOrderInputCols = []string{"input-col-1"}
 var unitTestOrderOutputCols = []string{"output-col-1"}
 
+// TestUnitOrderUpdateWavesSplitsChain verifies a VIP->Standard / Standard->Premium
+// chain is two bulk waves: the vacating row in the first request, the claiming row
+// in a later request. Putting both in one bulk update 409s because the API is not
+// atomic with respect to uniqueness (RULES-1907).
+func TestUnitOrderUpdateWavesSplitsChain(t *testing.T) {
+	const (
+		mover   = "ab6f9490" // commercial -> passenger (claims "passenger")
+		vacater = "9f6602b4" // passenger -> watercraft (frees "passenger")
+	)
+
+	oldRows := []interface{}{
+		unitTestRowWithInput(mover, "commercial"),
+		unitTestRowWithInput(vacater, "passenger"),
+	}
+	changes := RowChange{
+		updates: []map[string]interface{}{
+			unitTestRowWithInput(mover, "passenger"),
+			unitTestRowWithInput(vacater, "watercraft"),
+		},
+	}
+
+	waves, err := orderUpdateWavesForApply(changes, oldRows, unitTestOrderInputCols, unitTestOrderOutputCols)
+	assert.NoError(t, err)
+	assert.Len(t, waves, 2)
+	assert.Len(t, waves[0], 1)
+	assert.Equal(t, vacater, waves[0][0]["row_id"])
+	assert.Len(t, waves[1], 1)
+	assert.Equal(t, mover, waves[1][0]["row_id"])
+}
+
 // TestUnitOrderUpdatesReordersChain reproduces RULES-1907: one row moves onto the
 // input value another row is moving away from. Applied in configuration order the
 // updates would briefly duplicate "passenger" and fail with a 409; the ordering
