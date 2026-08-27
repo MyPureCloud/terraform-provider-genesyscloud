@@ -151,9 +151,13 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 				labelIds = append(labelIds, fmt.Sprintf("%s,%s", *label.Id, knowledgeBaseId))
 			}
 			_ = d.Set("label_ids", labelIds)
+		} else {
+			_ = d.Set("label_ids", []string{})
 		}
 		if knowledgeDocument.Category != nil && knowledgeDocument.Category.Id != nil {
 			_ = d.Set("category_id", fmt.Sprintf("%s,%s", *knowledgeDocument.Category.Id, knowledgeBaseId))
+		} else {
+			_ = d.Set("category_id", "")
 		}
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
