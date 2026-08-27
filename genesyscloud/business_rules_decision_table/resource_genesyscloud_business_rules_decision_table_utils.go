@@ -2,8 +2,10 @@ package business_rules_decision_table
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -975,12 +977,228 @@ func valuesEqual(val1, val2 interface{}) bool {
 	}
 }
 
+// rowInputKey returns a stable string that identifies a row by its input values -
+// the combination the API treats as unique (a "duplicate row" is two rows with
+// the same inputs). The row is first converted to the form that is sent to the
+// API, then turned into JSON. JSON sorts the keys, so two rows with the same
+// inputs always produce the same string no matter what order the columns were
+// listed in.
+func rowInputKey(rowMap map[string]interface{}, inputColumnIds, outputColumnIds []string) (string, error) {
+	sdkRow, err := convertDecisionTableRowFromProviderToSDK(rowMap, inputColumnIds, outputColumnIds)
+	if err != nil {
+		return "", err
+	}
+	if sdkRow.Inputs == nil {
+		return "", nil
+	}
+	b, err := json.Marshal(*sdkRow.Inputs)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// orderUpdatesForApply returns changes.updates reordered so that applying them
+// one at a time never reaches a point where two rows have the same input values,
+// which the API rejects with "409 duplicate decision table rows".
+//
+// The problem happens because rows are updated one at a time: if row A is changed
+// to the input values that row B still has (because B has not been updated yet),
+// then for a moment two rows share those values. We avoid this with a simple
+// rule: only update a row once the input values it wants are free - that is,
+// update the row that is moving away from a set of values before the row that
+// wants to move onto them.
+//
+// In practice, we repeatedly apply any row whose wanted input values no other row
+// still has; doing so frees up more values, which lets more rows go, until every
+// update is applied. Deletes are applied before updates by the caller, so values
+// freed by a delete are already available and do not affect the ordering.
+//
+// The order is repeatable (ties are broken by row_id) so the same plan is applied
+// the same way on every run. A real, lasting duplicate in the desired
+// configuration (two updates ending on the same input values, or an update moving
+// onto values held by a row that is not changing) is a genuine configuration
+// error and is returned as one, rather than being reordered away. A true cycle (a
+// set of rows swapping input values at the same time, for example A and B trading
+// values) can never be applied one row at a time without a temporary value; it is
+// reported with the rows involved.
+func orderUpdatesForApply(changes RowChange, oldRows []interface{}, inputColumnIds, outputColumnIds []string) ([]map[string]interface{}, error) {
+	if len(changes.updates) == 0 {
+		return changes.updates, nil
+	}
+
+	deleted := make(map[string]bool, len(changes.deletes))
+	for _, id := range changes.deletes {
+		deleted[id] = true
+	}
+
+	// The current input values for every existing row, keyed by row_id.
+	oldKeyByID := make(map[string]string, len(oldRows))
+	for _, r := range oldRows {
+		rowMap, ok := r.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		id, _ := rowMap["row_id"].(string)
+		if id == "" {
+			continue
+		}
+		k, err := rowInputKey(rowMap, inputColumnIds, outputColumnIds)
+		if err != nil {
+			// An existing row that fails conversion (for example a legacy or
+			// malformed row in state) must not fail the whole apply - it may not
+			// even be part of this change. Skip it: at worst we miss a dependency
+			// involving it, which is no worse than the earlier behavior that never
+			// looked at existing rows.
+			log.Printf("[WARN] skipping existing row %s in update ordering; could not compute input key: %s", id, err)
+			continue
+		}
+		oldKeyByID[id] = k
+	}
+
+	// The wanted input values for each updated row, and the set of updated row ids.
+	updatedIDs := make(map[string]bool, len(changes.updates))
+	targetKeyByID := make(map[string]string, len(changes.updates))
+	for _, row := range changes.updates {
+		id, _ := row["row_id"].(string)
+		if id == "" {
+			return nil, fmt.Errorf("update row is missing row_id")
+		}
+		k, err := rowInputKey(row, inputColumnIds, outputColumnIds)
+		if err != nil {
+			return nil, fmt.Errorf("failed to compute input key for updated row %s: %s", id, err)
+		}
+		updatedIDs[id] = true
+		targetKeyByID[id] = k
+	}
+
+	// Two updates cannot end on the same input values (that is a real duplicate).
+	seenTarget := make(map[string]string, len(targetKeyByID))
+	for id, k := range targetKeyByID {
+		if other, exists := seenTarget[k]; exists {
+			return nil, fmt.Errorf("rows %s and %s would both have identical inputs; this is a duplicate row in the desired configuration, not a transient conflict", other, id)
+		}
+		seenTarget[k] = id
+	}
+
+	// Input values held by rows that do not change (existing, not deleted, not
+	// updated). An update moving onto one of these is a real duplicate.
+	staticKey := make(map[string]string)
+	for id, k := range oldKeyByID {
+		if deleted[id] || updatedIDs[id] {
+			continue
+		}
+		staticKey[k] = id
+	}
+	for id, k := range targetKeyByID {
+		if other, exists := staticKey[k]; exists {
+			return nil, fmt.Errorf("row %s would take inputs already held by unchanged row %s; this is a duplicate row in the desired configuration, not a transient conflict", id, other)
+		}
+	}
+
+	// Work out, for each updated row, which other updated rows must go before it,
+	// then apply them in an order that respects those constraints.
+	//
+	// "rowHolder must go before rowTaker" means: rowHolder currently has the input
+	// values that rowTaker wants to move onto, so rowHolder has to move away first.
+	// Applying the updates in this order means a row's wanted values are always
+	// free when it is written, so no two rows ever share the same values along the
+	// way. Rows that do not change and rows that are deleted never move, so they
+	// cannot be the rowHolder that moves away; only other updated rows can create a
+	// real dependency (lasting duplicates against unchanged rows were already
+	// rejected above).
+	//
+	// Bookkeeping (rowTaker waits on rowHolder):
+	//   byID       - row_id -> the row map, so we can emit rows in the final order
+	//   dependsOn  - rowTaker -> the rowHolders it is still waiting on (empty = free to apply now)
+	//   dependents - rowHolder -> the rowTakers waiting on it (so we can free them once it is applied)
+	byID := make(map[string]map[string]interface{}, len(changes.updates))
+	dependsOn := make(map[string]map[string]bool, len(changes.updates))  // rowTaker -> rowHolders it waits on
+	dependents := make(map[string]map[string]bool, len(changes.updates)) // rowHolder -> rowTakers waiting on it
+	ids := make([]string, 0, len(changes.updates))
+	for _, row := range changes.updates {
+		id := row["row_id"].(string)
+		byID[id] = row
+		ids = append(ids, id)
+		dependsOn[id] = map[string]bool{}
+		dependents[id] = map[string]bool{}
+	}
+	for _, rowTaker := range ids {
+		targetK := targetKeyByID[rowTaker]
+		for _, rowHolder := range ids {
+			if rowHolder == rowTaker {
+				continue
+			}
+			// Record that rowHolder must go before rowTaker only when rowHolder
+			// currently has rowTaker's wanted input values (oldKeyByID[rowHolder] ==
+			// targetK) AND rowHolder is actually moving away from them
+			// (targetKeyByID[rowHolder] != targetK). If rowHolder were keeping those
+			// values it would be a real duplicate, which the checks above already
+			// rejected, not something to reorder around.
+			if oldKeyByID[rowHolder] == targetK && targetKeyByID[rowHolder] != targetK {
+				dependsOn[rowTaker][rowHolder] = true
+				dependents[rowHolder][rowTaker] = true
+			}
+		}
+	}
+
+	// Work through the rows in waves. Start with every row that has nothing to
+	// wait on (the input values it wants are already free). Apply one, then any
+	// row that was only waiting on it becomes free to apply next; repeat until none
+	// are left. Rows are sorted by row_id first so the order is repeatable (Go map
+	// iteration is random), giving the same plan on every run.
+	sort.Strings(ids)
+	ready := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if len(dependsOn[id]) == 0 {
+			ready = append(ready, id)
+		}
+	}
+	sort.Strings(ready)
+
+	ordered := make([]map[string]interface{}, 0, len(ids))
+	for len(ready) > 0 {
+		// Pop the next ready row and place it in the output.
+		id := ready[0]
+		ready = ready[1:]
+		ordered = append(ordered, byID[id])
+		// Placing id satisfies one prerequisite for each of its dependents; those
+		// that now have none left become ready.
+		newlyReady := make([]string, 0)
+		for r := range dependents[id] {
+			delete(dependsOn[r], id)
+			if len(dependsOn[r]) == 0 {
+				newlyReady = append(newlyReady, r)
+			}
+		}
+		sort.Strings(newlyReady)
+		ready = append(ready, newlyReady...)
+	}
+
+	// If not every row was placed, the rows still waiting are waiting on each
+	// other: a cycle (for example a straight A and B swap, or a longer loop). No
+	// one-row-at-a-time order can break it without a temporary value, so report the
+	// rows involved and how to work around it.
+	if len(ordered) != len(ids) {
+		remaining := make([]string, 0)
+		for _, id := range ids {
+			if len(dependsOn[id]) > 0 {
+				remaining = append(remaining, id)
+			}
+		}
+		sort.Strings(remaining)
+		return nil, fmt.Errorf("rows %s form a cyclic input-value swap that cannot be applied one row at a time without a transient duplicate; split the change across separate applies (move one row to a temporary unused input value first)", strings.Join(remaining, ", "))
+	}
+
+	return ordered, nil
+}
+
 // applyRowChanges applies the detected changes to the draft version.
 // priorRowCount is the number of rows already present in the draft version
 // before the adds are applied (kept rows = original rows minus deletes; updates
 // keep their slot). New rows are appended after these, so the i-th add lands at
 // row index priorRowCount+i+1. This is needed for the 504-ghost-row guard below.
-func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, priorRowCount int) error {
+func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, changes RowChange, priorRowCount int, oldRows []interface{}) error {
 	// Get the table version to extract column mapping
 	tableVersion, _, err := proxy.getBusinessRulesDecisionTableVersion(ctx, tableId, version)
 	if err != nil {
@@ -1003,8 +1221,15 @@ func applyRowChanges(ctx context.Context, proxy *BusinessRulesDecisionTableProxy
 		log.Printf("Successfully deleted row %s", rowId)
 	}
 
-	// Update existing rows
-	for _, row := range changes.updates {
+	// Update existing rows in a safe order. Rows are updated one at a time, so a
+	// careless order can briefly put two rows on the same input values and trigger
+	// a 409 duplicate-row error; orderUpdatesForApply orders the updates so the row
+	// moving away from a set of values always goes before the row moving onto them.
+	orderedUpdates, err := orderUpdatesForApply(changes, oldRows, inputColumnIds, outputColumnIds)
+	if err != nil {
+		return fmt.Errorf("failed to order row updates: %s", err)
+	}
+	for _, row := range orderedUpdates {
 		rowId := row["row_id"].(string)
 		log.Printf("Updating row %s", rowId)
 

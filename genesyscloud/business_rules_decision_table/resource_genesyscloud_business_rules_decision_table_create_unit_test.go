@@ -201,7 +201,7 @@ func TestUnitApplyRowChangesSkipsGhostRowDuplicate(t *testing.T) {
 
 	err := applyRowChanges(context.Background(), proxy, tableID, version, RowChange{
 		adds: []map[string]interface{}{unitTestApplyRowChangesAddRow()},
-	}, priorRowCount)
+	}, priorRowCount, nil)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, createCalls, "ghost duplicate should be treated as success without retrying")
@@ -228,7 +228,7 @@ func TestUnitApplyRowChangesFailsOnGenuineDuplicate(t *testing.T) {
 
 	err := applyRowChanges(context.Background(), proxy, tableID, version, RowChange{
 		adds: []map[string]interface{}{unitTestApplyRowChangesAddRow()},
-	}, priorRowCount)
+	}, priorRowCount, nil)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to add new row 1/1")

@@ -922,3 +922,97 @@ func TestAccResourceBusinessRulesDecisionTableMigrateRowsToCSV(t *testing.T) {
 		CheckDestroy: testVerifyBusinessRulesDecisionTablesDestroyed,
 	})
 }
+
+// TestAccResourceBusinessRulesDecisionTableRowUpdateTransientDuplicate reproduces
+// RULES-1907 with a self-contained (non-customer) configuration on the nested-rows
+// path. Two rows are identical across every input column except customer_type. A
+// single apply then shifts them along a chain - VIP->Standard and Standard->Premium
+// - so the row moving to "Standard" wants the input values the other row still has
+// until it is updated. Applied in an unsafe order this briefly leaves two rows with
+// the same input values and the API rejects it with "409 duplicate decision table
+// rows"; with the safe ordering the row moving away is updated first and the single
+// apply succeeds.
+func TestAccResourceBusinessRulesDecisionTableRowUpdateTransientDuplicate(t *testing.T) {
+	t.Parallel()
+
+	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
+	if !enabled {
+		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
+		return
+	}
+
+	var (
+		tableResourceLabel  = "test-decision-table-chain"
+		schemaResourceLabel = "test-schema-chain"
+		queueResourceLabel  = "test-queue-chain"
+
+		tableName   = "TF Test DT Chain-" + uuid.NewString()[:8]
+		tableDesc   = "Terraform test decision table transient duplicate"
+		schemaName  = "TF Test Schema Chain-" + uuid.NewString()[:8]
+		schemaDesc  = "Test schema for transient duplicate chain"
+		queueName   = "TF Test Queue Chain-" + uuid.NewString()[:8]
+		resourceRef = "genesyscloud_business_rules_decision_table." + tableResourceLabel
+	)
+
+	// Initial rows: [VIP, Standard] - distinct (they differ only by customer_type).
+	initialRows := generateChainRow(queueResourceLabel, "VIP") +
+		generateChainRow(queueResourceLabel, "Standard")
+
+	// Shifted rows: [Standard, Premium]. The first row moves VIP->Standard onto the
+	// values the second row still has until it moves Standard->Premium. Matching by
+	// position keeps each row's generated row_id, so both are updates (not
+	// add/delete), which is what exercises the update ordering.
+	shiftedRows := generateChainRow(queueResourceLabel, "Standard") +
+		generateChainRow(queueResourceLabel, "Premium")
+
+	baseConfig := generateBusinessRulesSchemaResource(schemaResourceLabel, schemaName, schemaDesc) +
+		generateHomeDivisionReference() +
+		generateRoutingQueueResource(queueResourceLabel, queueName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the two distinct rows.
+				Config: baseConfig +
+					generateBusinessRulesDecisionTableResource(
+						tableResourceLabel,
+						tableName,
+						tableDesc,
+						"data.genesyscloud_auth_division_home.home.id",
+						"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+						generateColumns(queueResourceLabel),
+						initialRows,
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceRef, "version", "1"),
+					resource.TestCheckResourceAttr(resourceRef, "rows.#", "2"),
+					resource.TestCheckResourceAttr(resourceRef, "rows.0.inputs.0.literal.0.value", "VIP"),
+					resource.TestCheckResourceAttr(resourceRef, "rows.1.inputs.0.literal.0.value", "Standard"),
+				),
+			},
+			{
+				// Step 2: the chain shift in a single apply. This is the step that
+				// 409'd before the fix; it must now succeed.
+				Config: baseConfig +
+					generateBusinessRulesDecisionTableResource(
+						tableResourceLabel,
+						tableName,
+						tableDesc,
+						"data.genesyscloud_auth_division_home.home.id",
+						"genesyscloud_business_rules_schema."+schemaResourceLabel+".id",
+						generateColumns(queueResourceLabel),
+						shiftedRows,
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceRef, "version", "2"),
+					resource.TestCheckResourceAttr(resourceRef, "rows.#", "2"),
+					resource.TestCheckResourceAttr(resourceRef, "rows.0.inputs.0.literal.0.value", "Standard"),
+					resource.TestCheckResourceAttr(resourceRef, "rows.1.inputs.0.literal.0.value", "Premium"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyBusinessRulesDecisionTablesDestroyed,
+	})
+}
