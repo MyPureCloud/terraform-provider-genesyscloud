@@ -11,6 +11,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -55,22 +56,25 @@ func createTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	// adding members to the team
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
 	if diagErr != nil {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		readDiags := readTeam(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
+		// Preserve prior state on apply error (SDK #476).
+		// Partial causes State() to read from prior state instead of proposed config.
+		d.Partial(true)
 		return diagErr
 	}
 
 	log.Printf("Created team %s", *teamObj.Id)
-	return readTeam(ctx, d, meta)
+	diags := readTeam(ctx, d, meta)
+	if diags.HasError() {
+		d.Partial(true)
+	}
+	return diags
 }
 
 // readTeam is used by the team resource to read a team from genesys cloud
 func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTeamProxy(sdkConfig)
+	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading team %s", d.Id())
 
@@ -87,16 +91,20 @@ func readTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) dia
 		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", team.Division)
 		resourcedata.SetNillableValue(d, "description", team.Description)
 
-		_ = d.Set("member_ids", schema.NewSet(schema.HashString, []any{}))
+		var schemaMemberIds []string
+		if raw, ok := d.Get("member_ids").([]interface{}); ok {
+			schemaMemberIds = lists.InterfaceListToStrings(raw)
+		}
+
+		members := []string{}
 		if team.MemberCount != nil && *team.MemberCount > 0 {
-			members, err := readTeamMembers(ctx, d.Id(), sdkConfig)
+			apiMembers, err := readTeamMembers(ctx, d.Id(), sdkConfig)
 			if err != nil {
 				return retry.NonRetryableError(fmt.Errorf("%v", err))
 			}
-			_ = d.Set("member_ids", members)
+			members = apiMembers
 		}
-
-		cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTeam(), constants.ConsistencyChecks(), ResourceType)
+		_ = d.Set("member_ids", organizeMemberIdsForRead(schemaMemberIds, members))
 
 		log.Printf("Read team %s %s", d.Id(), *team.Name)
 		return cc.CheckState(d)
@@ -112,21 +120,23 @@ func updateTeam(ctx context.Context, d *schema.ResourceData, meta interface{}) d
 	log.Printf("Updating team %s", *team.Name)
 	teamObj, resp, err := proxy.updateTeam(ctx, d.Id(), &team)
 	if err != nil {
+		// Preserve prior state on apply error (SDK #476).
+		d.Partial(true)
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update team %s error: %s", *team.Name, err), resp)
 	}
 
 	diagErr := updateTeamMembers(ctx, d, sdkConfig)
 	if diagErr != nil {
-		consistency_checker.DeleteConsistencyCheck(d.Id())
-		readDiags := readTeam(ctx, d, meta)
-		if readDiags != nil {
-			diagErr = append(diagErr, readDiags...)
-		}
+		d.Partial(true)
 		return diagErr
 	}
 
 	log.Printf("Updated team %s", *teamObj.Id)
-	return readTeam(ctx, d, meta)
+	diags := readTeam(ctx, d, meta)
+	if diags.HasError() {
+		d.Partial(true)
+	}
+	return diags
 }
 
 // deleteTeam is used by the team resource to delete a team from Genesys cloud

@@ -134,11 +134,11 @@ resource "genesyscloud_integration_action" "example_action" {
 }
 
 # Example with function configuration
-# Note: function_config is only required for function data actions (when category = "Genesys Cloud Data Action")
-# For regular integration actions, this section can be omitted
+# Required when the integration type is "function-data-actions" (or category contains "function data action").
+# Genesys Cloud cannot download function zips — keep the zip available locally / in your pipeline.
 resource "genesyscloud_integration_action" "example_function_action" {
   name                   = "Example Function Action"
-  category               = "Genesys Cloud Data Action"
+  category               = "Function Data Actions"
   integration_id         = genesyscloud_integration.example_gc_data_integration.id
   secure                 = true
   config_timeout_seconds = 20
@@ -167,12 +167,19 @@ resource "genesyscloud_integration_action" "example_function_action" {
     }
   })
 
+  config_request {
+    request_type         = "POST"
+    request_url_template = ""
+    request_template     = "$${input.rawRequest}"
+  }
+
   function_config {
-    description     = "Custom function for data processing"
-    handler         = "index.handler"
-    runtime         = "nodejs18.x"
-    timeout_seconds = 30
-    file_path       = "${local.working_dir.integration_action}/function.zip"
+    description       = "Custom function for data processing"
+    handler           = "index.handler"
+    runtime           = "nodejs22.x"
+    timeout_seconds   = 30
+    file_path         = "${local.working_dir.integration_action}/function.zip"
+    file_content_hash = filesha256("${local.working_dir.integration_action}/function.zip")
   }
 }
 ```
@@ -182,10 +189,10 @@ resource "genesyscloud_integration_action" "example_function_action" {
 
 ### Required
 
-- `category` (String) Category of action. Can be up to 256 characters long. If the category contains 'function data action' (case-insensitive, underscores and hyphens treated as spaces), the action will be treated as a function data action and requires function_config to be set.
+- `category` (String) Category of action. Can be up to 256 characters long. Function data actions are detected when the associated integration type is 'function-data-actions', or when the category contains 'function data action' (case-insensitive; underscores and hyphens treated as spaces). Function data actions require function_config to be set.
 - `contract_input` (String) JSON Schema that defines the body of the request that the client (edge/architect/postman) is sending to the service, on the /execute path. Changing the contract_input attribute will cause the existing integration_action to be dropped and recreated with a new ID.
 - `contract_output` (String) JSON schema that defines the transformed, successful result that will be sent back to the caller. Changing the contract_output attribute will cause the existing integration_action to be dropped and recreated with a new ID.
-- `integration_id` (String) The ID of the integration this action is associated with. Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.
+- `integration_id` (String) The ID of the integration this action is associated with. When the integration type is 'function-data-actions', this action is created as a draft, the zip is uploaded, then published. Changing the integration_id attribute will cause the existing integration_action to be dropped and recreated with a new ID.
 - `name` (String) Name of the action. Can be up to 256 characters long
 
 ### Optional
@@ -230,11 +237,12 @@ Optional:
 
 Required:
 
-- `file_path` (String) The zip file path containing the function data action's code. During the export just the name of the zip file will be exported
+- `file_path` (String) Local path to the zip file containing the function data action code. Genesys Cloud does not allow downloading function zip files, so exports cannot retrieve the binary. After export, supply the zip at the exported path (or update file_path) before apply. See https://help.genesys.cloud/articles/add-function-configuration/
 
 Optional:
 
 - `description` (String) Description of the function.
+- `file_content_hash` (String) Hash value of the function zip file content. Used to detect changes. Typically set with filesha256(file_path). Computed by the provider when omitted.
 - `handler` (String) The handler function name.
 - `runtime` (String) The runtime environment for the function.
 - `timeout_seconds` (Number) Timeout in seconds for the function execution.

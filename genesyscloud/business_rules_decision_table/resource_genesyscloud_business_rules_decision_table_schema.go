@@ -13,11 +13,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 )
 
 const ResourceType = "genesyscloud_business_rules_decision_table"
@@ -265,7 +267,7 @@ func columnsSchemaFunc() *schema.Resource {
 // ResourceBusinessRulesDecisionTable registers the genesyscloud_business_rules_decision_table resource with Terraform
 func ResourceBusinessRulesDecisionTable() *schema.Resource {
 	return &schema.Resource{
-		Description: `Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation.`,
+		Description: `Genesys Cloud business rules decision table. Creates version 1 automatically with the specified columns. Columns cannot be modified after creation - requires resource recreation. Prefer rows_csv_filepath for row data; nested rows is deprecated.`,
 
 		CreateContext: provider.CreateWithPooledClient(createBusinessRulesDecisionTable),
 		ReadContext:   provider.ReadWithPooledClient(readBusinessRulesDecisionTable),
@@ -281,6 +283,13 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 			Delete: schema.DefaultTimeout(8 * time.Minute),
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf(
+				"rows_csv_content_hash",
+				validators.ValidateFileContentHashChanged("rows_csv_filepath", "rows_csv_content_hash", S3Enabled),
+			),
+			validateDecisionTableRowsCSV,
+		),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description:  "The decision table name.",
@@ -316,11 +325,29 @@ func ResourceBusinessRulesDecisionTable() *schema.Resource {
 				Elem:        columnsSchemaFunc(),
 			},
 			"rows": {
-				Description: "Decision table rows containing input conditions and output results. Rows are added to the latest draft version and published automatically. At least one row is required to publish the table.\n\nIMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns. The first input/output corresponds to the first column, second to second column, etc.",
-				Type:        schema.TypeList,
-				Required:    true,
-				MinItems:    1,
-				Elem:        rowSchemaFunc(),
+				Description:  "Deprecated. Use rows_csv_filepath instead. Decision table rows containing input conditions and output results. Mutually exclusive with rows_csv_filepath. When used, provide at least one row block.\n\nIMPORTANT: Row inputs and outputs must follow the same positional order as defined in the columns.",
+				Type:         schema.TypeList,
+				Optional:     true,
+				ExactlyOneOf: []string{"rows", "rows_csv_filepath"},
+				Deprecated:   "Use rows_csv_filepath instead. Nested rows will be removed in a later version.",
+				Elem:         rowSchemaFunc(),
+			},
+			"rows_csv_filepath": {
+				Description:  "Path to a CSV of decision table rows. Create and later CSV edits (path or content hash change) each run a decision table CSV import job in Replace mode, then publish the resulting draft version. Mutually exclusive with rows. CSV must have at least one data row. Headers must match the platform export shape (inputs as schema_property_key::Comparator, outputs as schema_property_key). Do not include a rowId column in the on-disk file: Replace import requires a rowId header with empty cell values, which the provider reinjects on upload and strips on export. stringList cells use '||' as the item delimiter (not commas). Queue and other platform object cells use friendly names resolved by the platform on import/export.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{"rows", "rows_csv_filepath"},
+				ValidateFunc: validators.ValidatePath,
+			},
+			"rows_csv_content_hash": {
+				Description: "Hash of the rows CSV. Stored in state to detect file content changes.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"rows_record_count": {
+				Description: "Number of data rows in the CSV at last successful import. Not refreshed from the API on read.",
+				Type:        schema.TypeInt,
+				Computed:    true,
 			},
 
 			"version": {
@@ -474,6 +501,16 @@ func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 			"rows.outputs.column_id",
 			"rows.row_id",
 			"rows.row_index",
+			"rows_csv_content_hash",
+			"rows_record_count",
+		},
+		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
+			RetrieveAndWriteFilesFunc: DecisionTableRowsExporterResolver,
+			SubDirectory:              "rows",
+		},
+		ThirdPartyRefAttrs: []string{
+			"rows_csv_filepath",
+			"rows_csv_content_hash",
 		},
 		// Note: To export routing queue resources that are referenced in decision tables,
 		// include "genesyscloud_routing_queue" in the export filter resources.
@@ -481,14 +518,11 @@ func BusinessRulesDecisionTableExporter() *resourceExporter.ResourceExporter {
 		// IMPORTANT: Resolver paths are matched by exact string against the attribute
 		// path the exporter framework computes while walking the config (see
 		// sanitizeConfigMap / sanitizeConfigArray in genesyscloud/tfexporter). That path
-		// is dot-separated attribute names with no array indices and no wildcards, so a
-		// row literal value is looked up as "rows.inputs.literal.value" — anything with
-		// "*" or numeric segments will silently never match and the resolver will not run.
+		// is dot-separated attribute names with no array indices and no wildcards.
+		// CSV-backed exports do not emit nested rows; QueueIdResolver applies to column defaults only.
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"columns.outputs.defaults_to.value": {ResolverFunc: QueueIdResolver},
 			"columns.inputs.defaults_to.value":  {ResolverFunc: QueueIdResolver},
-			"rows.inputs.literal.value":         {ResolverFunc: QueueIdResolver},
-			"rows.outputs.literal.value":        {ResolverFunc: QueueIdResolver},
 		},
 	}
 }

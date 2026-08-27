@@ -48,7 +48,6 @@ import (
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
 	knowledgeCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_category"
@@ -240,7 +239,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
-	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
@@ -297,7 +295,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(integrationInstagram.ResourceType, integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
 	RegisterExporter(journeyActionMap.ResourceType, journeyActionMap.JourneyActionMapExporter())
 	RegisterExporter(journeyActionTemplate.ResourceType, journeyActionTemplate.JourneyActionTemplateExporter())
-	RegisterExporter(journeyOutcome.ResourceType, journeyOutcome.JourneyOutcomeExporter())
 	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
 	RegisterExporter(knowledgeDocument.ResourceType, knowledgeDocument.KnowledgeDocumentExporter())
 	RegisterExporter(knowledgeDocumentVariation.ResourceType, knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())

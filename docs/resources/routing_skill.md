@@ -18,6 +18,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [POST /api/v2/routing/skills](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-routing-skills)
 * [DELETE /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-routing-skills--skillId-)
 * [GET /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-routing-skills--skillId-)
+* [PATCH /api/v2/routing/skills/{skillId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-routing-skills--skillId-)
 
 ## Permissions and Scopes
 
@@ -26,6 +27,7 @@ The following permissions are required to use this resource:
 * `routing:skill:create`
 * `routing:skill:delete`
 * `routing:skill:manage`
+* `routing:skill:update`
 * `routing:skill:view`
 
 The following OAuth scopes are required to use this resource:
@@ -52,6 +54,10 @@ resource "genesyscloud_routing_skill" "example_skill2" {
 ### Required
 
 - `name` (String) Skill name. Changing the name attribute will cause the skill object object to dropped and recreated with a new ID.
+
+### Optional
+
+- `division_id` (String) The division to which this skill belongs. If not set, the home division will be used.
 
 ### Read-Only
 

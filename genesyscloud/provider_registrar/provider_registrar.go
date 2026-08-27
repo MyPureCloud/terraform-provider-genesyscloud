@@ -9,6 +9,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	accessPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/access_policy"
+	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
+	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
+	agenticVirtualAgentVersionPublish "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version_publish"
 	aiStudioSummarySetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/ai_studio_summary_setting"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	dtr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
@@ -61,6 +65,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
+	integrationConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_config"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
@@ -68,7 +73,6 @@ import (
 	intentsCustomerintents "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/intents_customerintents"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeyOutcomePredictor "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome_predictor"
 	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
@@ -255,6 +259,9 @@ func resourceMapsAreRegistered() bool {
 func registerResources() {
 	regInstance := &RegisterInstance{}
 	aiStudioSummarySetting.SetRegistrar(regInstance)                       //Registering aiStudioSummarySetting
+	agenticVirtualAgent.SetRegistrar(regInstance)                          //Registering agentic virtual agent
+	agenticVirtualAgentVersion.SetRegistrar(regInstance)                   //Registering agentic virtual agent version
+	agenticVirtualAgentVersionPublish.SetRegistrar(regInstance)            //Registering agentic virtual agent version publish
 	authRole.SetRegistrar(regInstance)                                     //Registering auth_role
 	authDivision.SetRegistrar(regInstance)                                 //Registering auth_division
 	oauth.SetRegistrar(regInstance)                                        //Registering oauth_client
@@ -317,6 +324,7 @@ func registerResources() {
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
 	integrationActionDraft.SetRegistrar(regInstance)                       //Registering integrations action draft
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
+	integrationConfig.SetRegistrar(regInstance)                            //Registering integrations config (standalone)
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
@@ -350,6 +358,7 @@ func registerResources() {
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
+	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
 	phoneBaseSettings.SetRegistrar(regInstance)                            //Registering Phone Base Settings
 	lineBaseSettings.SetRegistrar(regInstance)                             //Registering Line Base Settings
@@ -359,7 +368,6 @@ func registerResources() {
 	user.SetRegistrar(regInstance)                                         //Registering user
 	journeyOutcomePredictor.SetRegistrar(regInstance)                      //Registering journey outcome predictor
 	journeyActionTemplate.SetRegistrar(regInstance)                        //Registering journey action template
-	journeyOutcome.SetRegistrar(regInstance)                               //Registering journey outcome
 	group.SetRegistrar(regInstance)                                        //Registering group
 	userPrompt.SetRegistrar(regInstance)                                   //Registering user prompt
 	routingQueue.SetRegistrar(regInstance)                                 //Registering routing queue

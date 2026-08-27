@@ -94,7 +94,10 @@ func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 			},
 			{
 				//Lock the flow, deploy, and check to make sure the flow is locked
-				PreConfig: flowLocFunc, //This will lock the flow.
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+					flowLocFunc()
+				},
 				Config: GenerateFlowResource(
 					flowResourceLabel,
 					filePath,

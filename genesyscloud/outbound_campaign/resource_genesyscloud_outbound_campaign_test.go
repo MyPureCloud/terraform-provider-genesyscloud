@@ -1688,10 +1688,17 @@ func TestAccResourceOutboundCampaignPreciseDialing(t *testing.T) {
 		flowResourceLabel        = "flow"
 		divResourceLabel         = "test-division"
 		divName                  = "terraform-" + uuid.NewString()
+		locationResourceLabel    = "location"
+		siteResourceLabel        = "site"
 
 		resourcePath = ResourceType + "." + resourceLabel
 		description  = "Terraform test description"
 	)
+
+	emergencyNumber := "+13178793429"
+	if err := edgeSite.DeleteLocationWithNumber(emergencyNumber, sdkConfig); err != nil {
+		t.Skipf("failed to delete location with number %s: %v", emergencyNumber, err)
+	}
 
 	referencedResources := obContactList.GenerateOutboundContactList(
 		contactListResourceLabel,
@@ -1745,7 +1752,34 @@ func TestAccResourceOutboundCampaignPreciseDialing(t *testing.T) {
 		),
 	) + routingQueue.GenerateRoutingQueueResourceBasic(queueLabel, queueNameAttr) +
 		scripts.GenerateScriptResourceBasic(scriptLabel, scriptNameAttr, scriptFilePath) +
-		"\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n"
+		"\ndata \"genesyscloud_auth_division_home\" \"home\" {}\n" +
+		location.GenerateLocationResource(
+			locationResourceLabel,
+			"tf location "+uuid.NewString(),
+			"HQ1",
+			[]string{},
+			location.GenerateLocationEmergencyNum(
+				emergencyNumber,
+				util.NullValue,
+			),
+			location.GenerateLocationAddress(
+				"7601 Interactive Way",
+				"Indianapolis",
+				"IN",
+				"US",
+				"46278",
+			),
+		) + edgeSite.GenerateSiteResourceWithCustomAttrs(
+		siteResourceLabel,
+		"tf site "+uuid.NewString(),
+		"test description",
+		"genesyscloud_location."+locationResourceLabel+".id",
+		"Cloud",
+		false,
+		util.AssignRegion(),
+		util.NullValue,
+		util.NullValue,
+	)
 
 	// campaignConfig builds a minimal progressive campaign toggling precise_dialing_enabled.
 	campaignConfig := func(preciseDialingEnabled string) string {
@@ -1755,6 +1789,9 @@ func TestAccResourceOutboundCampaignPreciseDialing(t *testing.T) {
 				dialing_mode                  = "progressive"
 				campaign_status               = "off"
 				abandon_rate                  = 3
+				caller_name                   = "Test Caller"
+				caller_address                = "+12174181234"
+				site_id                       = genesyscloud_telephony_providers_edges_site.%s.id
 				contact_list_id               = genesyscloud_outbound_contact_list.%s.id
 				queue_id                      = genesyscloud_routing_queue.%s.id
 				script_id                     = genesyscloud_script.%s.id
@@ -1764,7 +1801,7 @@ func TestAccResourceOutboundCampaignPreciseDialing(t *testing.T) {
 					column_name = "Cell"
 				}
 			}
-			`, ResourceType, resourceLabel, name, contactListResourceLabel, queueLabel, scriptLabel, carResourceLabel, preciseDialingEnabled)
+			`, ResourceType, resourceLabel, name, siteResourceLabel, contactListResourceLabel, queueLabel, scriptLabel, carResourceLabel, preciseDialingEnabled)
 	}
 
 	resource.Test(t, resource.TestCase{

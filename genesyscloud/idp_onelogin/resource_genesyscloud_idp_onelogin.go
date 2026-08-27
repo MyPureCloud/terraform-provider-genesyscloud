@@ -91,6 +91,7 @@ func readIdpOnelogin(ctx context.Context, d *schema.ResourceData, meta interface
 		resourcedata.SetNillableValue(d, "slo_binding", oneLogin.SloBinding)
 		resourcedata.SetNillableValue(d, "relying_party_identifier", oneLogin.RelyingPartyIdentifier)
 		resourcedata.SetNillableValue(d, "sign_authn_requests", oneLogin.SignAuthnRequests)
+		resourcedata.SetNillableValue(d, "force_authn", oneLogin.ForceAuthn)
 
 		log.Printf("Read idp onelogin")
 		return cc.CheckState(d)
@@ -160,5 +161,6 @@ func getIdpOneloginFromResourceData(d *schema.ResourceData) platformclientv2.One
 		SloBinding:             platformclientv2.String(d.Get("slo_binding").(string)),
 		RelyingPartyIdentifier: platformclientv2.String(d.Get("relying_party_identifier").(string)),
 		SignAuthnRequests:      platformclientv2.Bool(d.Get("sign_authn_requests").(bool)),
+		ForceAuthn:             platformclientv2.Bool(d.Get("force_authn").(bool)),
 	}
 }

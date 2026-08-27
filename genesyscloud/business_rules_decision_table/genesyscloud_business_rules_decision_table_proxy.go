@@ -1,9 +1,13 @@
 package business_rules_decision_table
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
@@ -36,6 +40,12 @@ type publishDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesD
 type getDecisionTableRowsFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, pageNumber string, pageSize string) (*platformclientv2.Decisiontablerowlisting, *platformclientv2.APIResponse, error)
 type createDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
 type deleteDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error)
+type createDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
+type getDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
+type uploadDecisionTableImportFileFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error
+type createDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
+type getDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
+type downloadDecisionTableExportFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, downloadUri string) ([]byte, error)
 
 // BusinessRulesDecisionTableProxy contains all the methods that call genesys cloud APIs.
 type BusinessRulesDecisionTableProxy struct {
@@ -56,6 +66,12 @@ type BusinessRulesDecisionTableProxy struct {
 	getDecisionTableRowsAttr                 getDecisionTableRowsFunc
 	createDecisionTableVersionAttr           createDecisionTableVersionFunc
 	deleteDecisionTableVersionAttr           deleteDecisionTableVersionFunc
+	createDecisionTableImportJobAttr         createDecisionTableImportJobFunc
+	getDecisionTableImportJobAttr            getDecisionTableImportJobFunc
+	uploadDecisionTableImportFileAttr        uploadDecisionTableImportFileFunc
+	createDecisionTableExportJobAttr         createDecisionTableExportJobFunc
+	getDecisionTableExportJobAttr            getDecisionTableExportJobFunc
+	downloadDecisionTableExportAttr          downloadDecisionTableExportFunc
 
 	BusinessRulesDecisionTableCache rc.CacheInterface[platformclientv2.Decisiontable]
 }
@@ -82,6 +98,12 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 		getDecisionTableRowsAttr:                 getDecisionTableRowsFn,
 		createDecisionTableVersionAttr:           createDecisionTableVersionFn,
 		deleteDecisionTableVersionAttr:           deleteDecisionTableVersionFn,
+		createDecisionTableImportJobAttr:         createDecisionTableImportJobFn,
+		getDecisionTableImportJobAttr:            getDecisionTableImportJobFn,
+		uploadDecisionTableImportFileAttr:        uploadDecisionTableImportFileFn,
+		createDecisionTableExportJobAttr:         createDecisionTableExportJobFn,
+		getDecisionTableExportJobAttr:            getDecisionTableExportJobFn,
+		downloadDecisionTableExportAttr:          downloadDecisionTableExportFn,
 
 		BusinessRulesDecisionTableCache: businessRulesDecisionTableCache,
 	}
@@ -162,6 +184,30 @@ func (p *BusinessRulesDecisionTableProxy) deleteDecisionTableVersion(ctx context
 	return p.deleteDecisionTableVersionAttr(ctx, p, tableId, version)
 }
 
+func (p *BusinessRulesDecisionTableProxy) createDecisionTableImportJob(ctx context.Context, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	return p.createDecisionTableImportJobAttr(ctx, p, tableId, request)
+}
+
+func (p *BusinessRulesDecisionTableProxy) getDecisionTableImportJob(ctx context.Context, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	return p.getDecisionTableImportJobAttr(ctx, p, tableId, importJobId)
+}
+
+func (p *BusinessRulesDecisionTableProxy) uploadImportFile(ctx context.Context, uploadUrl string, headers map[string]string, body []byte) error {
+	return p.uploadDecisionTableImportFileAttr(ctx, p, uploadUrl, headers, body)
+}
+
+func (p *BusinessRulesDecisionTableProxy) createDecisionTableExportJob(ctx context.Context, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	return p.createDecisionTableExportJobAttr(ctx, p, tableId, request)
+}
+
+func (p *BusinessRulesDecisionTableProxy) getDecisionTableExportJob(ctx context.Context, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	return p.getDecisionTableExportJobAttr(ctx, p, tableId, exportJobId)
+}
+
+func (p *BusinessRulesDecisionTableProxy) downloadExportFile(ctx context.Context, downloadUri string) ([]byte, error) {
+	return p.downloadDecisionTableExportAttr(ctx, p, downloadUri)
+}
+
 // Function implementations that make the actual API calls
 func createBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, createRequest *platformclientv2.Createdecisiontablerequest) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
@@ -205,7 +251,8 @@ func deleteBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDec
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontable(tableId, false)
+	// forceDelete=true cancels active import/export jobs so create-rollback and destroy are not blocked by 409.
+	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontable(tableId, true)
 	if err == nil {
 		// Remove from cache after successful deletion
 		rc.DeleteCacheItem(p.BusinessRulesDecisionTableCache, tableId)
@@ -337,4 +384,76 @@ func deleteDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionT
 
 	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersion(tableId, version)
 	return resp, err
+}
+
+func createDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.PostBusinessrulesDecisiontableImports(tableId, *request)
+}
+
+func getDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.GetBusinessrulesDecisiontableImport(tableId, importJobId)
+}
+
+func uploadDecisionTableImportFileFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadUrl, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to create import upload request: %w", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "text/csv")
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to upload import CSV: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("import CSV upload returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+	return nil
+}
+
+func createDecisionTableExportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.PostBusinessrulesDecisiontableExports(tableId, *request)
+}
+
+func getDecisionTableExportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.GetBusinessrulesDecisiontableExport(tableId, exportJobId)
+}
+
+func downloadDecisionTableExportFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, downloadUri string) ([]byte, error) {
+	url := downloadUri
+	if !strings.HasPrefix(downloadUri, "http://") && !strings.HasPrefix(downloadUri, "https://") {
+		url = strings.TrimRight(p.clientConfig.BasePath, "/") + downloadUri
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create export download request: %w", err)
+	}
+	if p.clientConfig.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download export CSV: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("export CSV download returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+	return io.ReadAll(resp.Body)
 }

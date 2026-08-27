@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -138,6 +139,12 @@ func testVerifyRoutingEmailDomainDestroyed(state *terraform.State) error {
 }
 
 func TestAccResourceRoutingEmailDomainGraphApi(t *testing.T) {
+	// This test requires Azure Graph Api integration which is only available in us-east-1
+	region := os.Getenv("GENESYSCLOUD_REGION")
+	if region != "us-east-1" {
+		t.Skipf("Skipping TestAccResourceRoutingEmailDomainGraphApi: Azure Graph Api integration only available in us-east-1 (current region: %s)", region)
+	}
+
 	var (
 		domainResourceLabel = "routing-domain-graph"
 		domainId            = fmt.Sprintf("defaultgraph%04d.inindca.com", rand.Intn(10000))
