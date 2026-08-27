@@ -239,6 +239,8 @@ func flattenKnowledgeDocument(ctx context.Context, documentIn *platformclientv2.
 			}
 		}
 		documentOut["label_names"] = labelNames
+	} else {
+		documentOut["label_names"] = []string{}
 	}
 
 	return []interface{}{documentOut}, nil
