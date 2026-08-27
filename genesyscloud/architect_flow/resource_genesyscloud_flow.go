@@ -209,7 +209,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		if flowJob.Status != nil && *flowJob.Status == "Failure" {
 			log.Printf("Failed to Get flow %s, %s, %s", flowName, d.Id(), jobId)
 			if flowJob.Messages == nil {
-				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s,  no tracing messages available", jobId, flowName), response))
+				return retry.NonRetryableError(util.BuildCodedWithRetriesApiDiagnosticError(
+					ResourceType,
+					util.DiagnosticCodeFlowPublishFailed,
+					fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s,  no tracing messages available", jobId, flowName),
+					jobId,
+					response,
+				))
 			}
 			messages := make([]string, 0)
 			for _, m := range *flowJob.Messages {
@@ -220,7 +226,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 					log.Printf("API Message for flow %s, jobId %s: <nil message>", flowName, jobId)
 				}
 			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s, tracing messages: %v ", jobId, flowName, strings.Join(messages, "\n\n")), response))
+			return retry.NonRetryableError(util.BuildCodedWithRetriesApiDiagnosticError(
+				ResourceType,
+				util.DiagnosticCodeFlowPublishFailed,
+				fmt.Sprintf("flow publish failed. JobID: %s, flowName: %s, tracing messages: %v ", jobId, flowName, strings.Join(messages, "\n\n")),
+				jobId,
+				response,
+			))
 		}
 
 		if flowJob.Status != nil && *flowJob.Status == "Success" {
@@ -235,7 +247,13 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		}
 
 		time.Sleep(15 * time.Second) // Wait 15 seconds for next retry
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Job (%s) could not finish in 16 minutes and timed out ", jobId), response))
+		return retry.RetryableError(util.BuildCodedWithRetriesApiDiagnosticError(
+			ResourceType,
+			util.DiagnosticCodeFlowPublishTimeout,
+			fmt.Sprintf("Job (%s) could not finish in 16 minutes and timed out ", jobId),
+			jobId,
+			response,
+		))
 	})
 
 	if retryErr != nil {

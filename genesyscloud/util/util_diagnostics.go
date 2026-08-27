@@ -9,6 +9,12 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
+// Stable diagnostic codes for machine classification (e.g. by MRMO replicator).
+const (
+	DiagnosticCodeFlowPublishFailed  = "flow_publish_failed"
+	DiagnosticCodeFlowPublishTimeout = "flow_publish_timeout"
+)
+
 type detailedDiagnosticInfo struct {
 	ResourceType        string        `json:"resourceType,omitempty"`
 	Method              string        `json:"method,omitempty"`
@@ -18,6 +24,8 @@ type detailedDiagnosticInfo struct {
 	ErrorMessageContext interface{}   `json:"errorMessageContext,omitempty"`
 	ErrorMessageDetails []interface{} `json:"errorMessageDetails,omitempty"`
 	CorrelationID       string        `json:"correlationId,omitempty"`
+	Code                string        `json:"code,omitempty"`
+	JobID               string        `json:"jobId,omitempty"`
 }
 
 func convertResponseToWrapper(resourceType string, apiResponse *platformclientv2.APIResponse) *detailedDiagnosticInfo {
@@ -96,4 +104,57 @@ func BuildWithRetriesApiDiagnosticError(resourceType string, summary string, api
 		errorMsg += fmt.Sprintf("%s\n%s\n", diags.Summary, diags.Detail)
 	}
 	return errors.New(errorMsg)
+}
+
+// BuildCodedAPIDiagnosticError builds an API diagnostic with a stable machine-readable code and optional job ID.
+func BuildCodedAPIDiagnosticError(resourceType, code, summary, jobId string, apiResponse *platformclientv2.APIResponse) diag.Diagnostics {
+	if apiResponse == nil {
+		err := fmt.Errorf("unable to build a message from the response because the APIResponse does not contain the appropriate data.%s", "")
+		diags := BuildDiagnosticError(resourceType, summary, err)
+		return withDiagnosticCodeAndJobID(diags, code, jobId)
+	}
+	diagInfo := convertResponseToWrapper(resourceType, apiResponse)
+	diagInfo.Code = code
+	diagInfo.JobID = jobId
+	diagInfoByte, err := json.Marshal(diagInfo)
+	if err != nil {
+		err = fmt.Errorf("unable to unmarshal diagnostic info while building diagnostic error. Error: %w", err)
+		return withDiagnosticCodeAndJobID(BuildDiagnosticError(resourceType, summary, err), code, jobId)
+	}
+
+	dg := diag.Diagnostic{Severity: diag.Error, Summary: summary, Detail: string(diagInfoByte)}
+	return diag.Diagnostics{dg}
+}
+
+// BuildCodedWithRetriesApiDiagnosticError is like BuildWithRetriesApiDiagnosticError but includes
+// a stable diagnostic code and job ID in the JSON Detail for downstream classification.
+func BuildCodedWithRetriesApiDiagnosticError(resourceType, code, summary, jobId string, apiResponse *platformclientv2.APIResponse) error {
+	var errorMsg string
+	diagnostic := BuildCodedAPIDiagnosticError(resourceType, code, summary, jobId, apiResponse)
+	for _, d := range diagnostic {
+		errorMsg += fmt.Sprintf("%s\n%s\n", d.Summary, d.Detail)
+	}
+	return errors.New(errorMsg)
+}
+
+func withDiagnosticCodeAndJobID(diags diag.Diagnostics, code, jobId string) diag.Diagnostics {
+	if len(diags) == 0 || (code == "" && jobId == "") {
+		return diags
+	}
+	info := &detailedDiagnosticInfo{}
+	if err := json.Unmarshal([]byte(diags[0].Detail), info); err != nil {
+		info = &detailedDiagnosticInfo{}
+	}
+	if code != "" {
+		info.Code = code
+	}
+	if jobId != "" {
+		info.JobID = jobId
+	}
+	diagInfoByte, err := json.Marshal(info)
+	if err != nil {
+		return diags
+	}
+	diags[0].Detail = string(diagInfoByte)
+	return diags
 }
