@@ -14,6 +14,7 @@ type CacheInterface[T any] interface {
 	SetCache(id string, item T)
 	DeleteCacheItem(id string)
 	GetCacheSize() int
+	InvalidateCache()
 	NewResourceCache() CacheInterface[T]
 
 	// Backward compatibility methods
@@ -72,6 +73,13 @@ func (rc *ResourceCache[T]) DeleteCacheItem(id string) {
 	rc.mutex.Lock()
 	defer rc.mutex.Unlock()
 	delete(rc.cache, id)
+}
+
+// InvalidateCache removes all items from the cache
+func (rc *ResourceCache[T]) InvalidateCache() {
+	rc.mutex.Lock()
+	defer rc.mutex.Unlock()
+	rc.cache = make(map[string]T)
 }
 
 // GetCacheSize returns the number of items in the cache
