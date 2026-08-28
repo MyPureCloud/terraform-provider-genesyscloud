@@ -1,7 +1,7 @@
 
 resource "genesyscloud_business_rules_decision_table" "simplest_decision_table" {
   name        = "Simplest Decision Table"
-  description = "Minimal configuration example"
+  description = "Minimal configuration example using rows_csv_filepath"
   division_id = data.genesyscloud_auth_division_home.home.id
   schema_id   = genesyscloud_business_rules_schema.example_business_rules_schema.id
 
@@ -28,18 +28,6 @@ resource "genesyscloud_business_rules_decision_table" "simplest_decision_table" 
     }
   }
 
-  rows {
-    inputs {
-      literal {
-        value = "option_1"
-        type  = "string"
-      }
-    }
-    outputs {
-      literal {
-        value = "high"
-        type  = "string"
-      }
-    }
-  }
+  # Prefer CSV for rows (nested rows { } is deprecated). Do not include a rowId column.
+  rows_csv_filepath = "${path.module}/rows/example.csv"
 }

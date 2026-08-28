@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
@@ -208,7 +208,21 @@ type ResourceExporter struct {
 	mutex                 sync.RWMutex
 }
 
+// exportFilterKey is a context key for passing the export filter to GetResourcesFunc implementations.
+type exportFilterKey struct{}
+
+// ExportFilterFromContext retrieves the export filter from the context.
+// Returns nil if no filter was set.
+func ExportFilterFromContext(ctx context.Context) []string {
+	if filter, ok := ctx.Value(exportFilterKey{}).([]string); ok {
+		return filter
+	}
+	return nil
+}
+
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourceType string, filter []string) diag.Diagnostics {
+	ctx = context.WithValue(ctx, exportFilterKey{}, filter)
+
 	result, err := r.GetResourcesFunc(ctx)
 	if err != nil {
 		return err

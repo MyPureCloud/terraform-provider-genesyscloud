@@ -12,10 +12,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/stringmap"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/typeconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Actionmap) {
@@ -23,8 +22,6 @@ func flattenActionMap(d *schema.ResourceData, actionMap *platformclientv2.Action
 	d.Set("display_name", *actionMap.DisplayName)
 	d.Set("trigger_with_segments", lists.StringListToSetOrNil(actionMap.TriggerWithSegments))
 	resourcedata.SetNillableValue(d, "trigger_with_event_conditions", lists.FlattenList(actionMap.TriggerWithEventConditions, flattenEventCondition))
-	resourcedata.SetNillableValue(d, "trigger_with_outcome_probability_conditions", lists.FlattenList(actionMap.TriggerWithOutcomeProbabilityConditions, flattenOutcomeProbabilityCondition))
-	resourcedata.SetNillableValue(d, "trigger_with_outcome_quantile_conditions", lists.FlattenList(actionMap.TriggerWithOutcomeQuantileConditions, flattenOutcomeQuantileCondition))
 	resourcedata.SetNillableValue(d, "page_url_conditions", lists.FlattenList(actionMap.PageUrlConditions, flattenUrlCondition))
 	d.Set("activation", lists.FlattenAsList(actionMap.Activation, flattenActivation))
 	d.Set("weight", *actionMap.Weight)
@@ -40,8 +37,6 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	displayName := actionMap.Get("display_name").(string)
 	triggerWithSegments := lists.BuildSdkStringList(actionMap, "trigger_with_segments")
 	triggerWithEventConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_event_conditions", buildSdkEventCondition)
-	triggerWithOutcomeProbabilityConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition)
-	triggerWithOutcomeQuantileConditions := resourcedata.BuildSdkList(actionMap, "trigger_with_outcome_quantile_conditions", buildSdkOutcomeQuantileCondition)
 	pageUrlConditions := resourcedata.BuildSdkList(actionMap, "page_url_conditions", buildSdkUrlCondition)
 	activation := resourcedata.BuildSdkListFirstElement(actionMap, "activation", buildSdkActivation, true)
 	weight := actionMap.Get("weight").(int)
@@ -52,20 +47,18 @@ func buildSdkActionMap(actionMap *schema.ResourceData) *platformclientv2.Actionm
 	endDate := resourcedata.GetNillableTime(actionMap, "end_date")
 
 	return &platformclientv2.Actionmap{
-		IsActive:                                &isActive,
-		DisplayName:                             &displayName,
-		TriggerWithSegments:                     triggerWithSegments,
-		TriggerWithEventConditions:              triggerWithEventConditions,
-		TriggerWithOutcomeProbabilityConditions: triggerWithOutcomeProbabilityConditions,
-		TriggerWithOutcomeQuantileConditions:    triggerWithOutcomeQuantileConditions,
-		PageUrlConditions:                       pageUrlConditions,
-		Activation:                              activation,
-		Weight:                                  &weight,
-		Action:                                  action,
-		ActionMapScheduleGroups:                 actionMapScheduleGroups,
-		IgnoreFrequencyCap:                      &ignoreFrequencyCap,
-		StartDate:                               startDate,
-		EndDate:                                 endDate,
+		IsActive:                   &isActive,
+		DisplayName:                &displayName,
+		TriggerWithSegments:        triggerWithSegments,
+		TriggerWithEventConditions: triggerWithEventConditions,
+		PageUrlConditions:          pageUrlConditions,
+		Activation:                 activation,
+		Weight:                     &weight,
+		Action:                     action,
+		ActionMapScheduleGroups:    actionMapScheduleGroups,
+		IgnoreFrequencyCap:         &ignoreFrequencyCap,
+		StartDate:                  startDate,
+		EndDate:                    endDate,
 	}
 }
 
@@ -74,8 +67,6 @@ func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclient
 	displayName := patchActionMap.Get("display_name").(string)
 	triggerWithSegments := lists.BuildSdkStringList(patchActionMap, "trigger_with_segments")
 	triggerWithEventConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_event_conditions", buildSdkEventCondition))
-	triggerWithOutcomeProbabilityConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_probability_conditions", buildSdkOutcomeProbabilityCondition))
-	triggerWithOutcomeQuantileConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "trigger_with_outcome_quantile_conditions", buildSdkOutcomeQuantileCondition))
 	pageUrlConditions := lists.NilToEmptyList(resourcedata.BuildSdkList(patchActionMap, "page_url_conditions", buildSdkUrlCondition))
 	activation := resourcedata.BuildSdkListFirstElement(patchActionMap, "activation", buildSdkActivation, true)
 	weight := patchActionMap.Get("weight").(int)
@@ -90,8 +81,6 @@ func buildSdkPatchActionMap(patchActionMap *schema.ResourceData) *platformclient
 	sdkPatchActionMap.SetField("DisplayName", &displayName)
 	sdkPatchActionMap.SetField("TriggerWithSegments", triggerWithSegments)
 	sdkPatchActionMap.SetField("TriggerWithEventConditions", triggerWithEventConditions)
-	sdkPatchActionMap.SetField("TriggerWithOutcomeProbabilityConditions", triggerWithOutcomeProbabilityConditions)
-	sdkPatchActionMap.SetField("TriggerWithOutcomeQuantileConditions", triggerWithOutcomeQuantileConditions)
 	sdkPatchActionMap.SetField("PageUrlConditions", pageUrlConditions)
 	sdkPatchActionMap.SetField("Activation", activation)
 	sdkPatchActionMap.SetField("Weight", &weight)
@@ -132,48 +121,6 @@ func buildSdkEventCondition(eventCondition map[string]interface{}) *platformclie
 	}
 }
 
-func flattenOutcomeProbabilityCondition(outcomeProbabilityCondition *platformclientv2.Outcomeprobabilitycondition) map[string]interface{} {
-	outcomeProbabilityConditionMap := make(map[string]interface{})
-	outcomeProbabilityConditionMap["outcome_id"] = *outcomeProbabilityCondition.OutcomeId
-	outcomeProbabilityConditionMap["maximum_probability"] = *typeconv.Float32to64(outcomeProbabilityCondition.MaximumProbability)
-	stringmap.SetValueIfNotNil(outcomeProbabilityConditionMap, "probability", typeconv.Float32to64(outcomeProbabilityCondition.Probability))
-	return outcomeProbabilityConditionMap
-}
-
-func buildSdkOutcomeProbabilityCondition(outcomeProbabilityCondition map[string]interface{}) *platformclientv2.Outcomeprobabilitycondition {
-	outcomeId := outcomeProbabilityCondition["outcome_id"].(string)
-	maximumProbability64 := outcomeProbabilityCondition["maximum_probability"].(float64)
-	maximumProbability := typeconv.Float64to32(&maximumProbability64)
-	probability := typeconv.Float64to32(stringmap.GetNonDefaultValue[float64](outcomeProbabilityCondition, "probability"))
-
-	return &platformclientv2.Outcomeprobabilitycondition{
-		OutcomeId:          &outcomeId,
-		MaximumProbability: maximumProbability,
-		Probability:        probability,
-	}
-}
-
-func flattenOutcomeQuantileCondition(outcomeQuantileCondition *platformclientv2.Outcomequantilecondition) map[string]interface{} {
-	outcomeQuantileConditionMap := make(map[string]interface{})
-	outcomeQuantileConditionMap["outcome_id"] = *outcomeQuantileCondition.OutcomeId
-	outcomeQuantileConditionMap["max_quantile_threshold"] = *typeconv.Float32to64(outcomeQuantileCondition.MaxQuantileThreshold)
-	stringmap.SetValueIfNotNil(outcomeQuantileConditionMap, "fallback_quantile_threshold", typeconv.Float32to64(outcomeQuantileCondition.FallbackQuantileThreshold))
-	return outcomeQuantileConditionMap
-}
-
-func buildSdkOutcomeQuantileCondition(outcomeQuantileCondition map[string]interface{}) *platformclientv2.Outcomequantilecondition {
-	outcomeId := outcomeQuantileCondition["outcome_id"].(string)
-	maxQuantileThreshold64 := outcomeQuantileCondition["max_quantile_threshold"].(float64)
-	maxQuantileThreshold := typeconv.Float64to32(&maxQuantileThreshold64)
-	fallbackQuantileThreshold := typeconv.Float64to32(stringmap.GetNonDefaultValue[float64](outcomeQuantileCondition, "fallback_quantile_threshold"))
-
-	return &platformclientv2.Outcomequantilecondition{
-		OutcomeId:                 &outcomeId,
-		MaxQuantileThreshold:      maxQuantileThreshold,
-		FallbackQuantileThreshold: fallbackQuantileThreshold,
-	}
-}
-
 func flattenUrlCondition(urlCondition *platformclientv2.Urlcondition) map[string]interface{} {
 	urlConditionMap := make(map[string]interface{})
 	urlConditionMap["values"] = lists.StringListToSet(*urlCondition.Values)
@@ -211,7 +158,6 @@ func buildSdkActivation(activation map[string]interface{}) *platformclientv2.Act
 func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) map[string]interface{} {
 	actionMapActionMap := make(map[string]interface{})
 	actionMapActionMap["media_type"] = *actionMapAction.MediaType
-	actionMapActionMap["is_pacing_enabled"] = *actionMapAction.IsPacingEnabled
 	if actionMapAction.ActionTemplate != nil {
 		stringmap.SetValueIfNotNil(actionMapActionMap, "action_template_id", actionMapAction.ActionTemplate.Id)
 	}
@@ -223,7 +169,6 @@ func flattenActionMapAction(actionMapAction *platformclientv2.Actionmapaction) m
 
 func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformclientv2.Actionmapaction {
 	mediaType := actionMapAction["media_type"].(string)
-	isPacingEnabled := actionMapAction["is_pacing_enabled"].(bool)
 	actionMapActionTemplate := getActionMapActionTemplate(actionMapAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(actionMapAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(actionMapAction, "web_messaging_offer_fields", buildSdkWebMessagingOfferFields, true)
@@ -231,7 +176,6 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 
 	return &platformclientv2.Actionmapaction{
 		MediaType:               &mediaType,
-		IsPacingEnabled:         &isPacingEnabled,
 		ActionTemplate:          actionMapActionTemplate,
 		ArchitectFlowFields:     architectFlowFields,
 		WebMessagingOfferFields: webMessagingOfferFields,
@@ -241,7 +185,6 @@ func buildSdkActionMapAction(actionMapAction map[string]interface{}) *platformcl
 
 func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.Patchaction {
 	mediaType := patchAction["media_type"].(string)
-	isPacingEnabled := patchAction["is_pacing_enabled"].(bool)
 	actionMapActionTemplate := getActionMapActionTemplate(patchAction)
 	architectFlowFields := stringmap.BuildSdkListFirstElement(patchAction, "architect_flow_fields", buildSdkArchitectFlowFields, true)
 	webMessagingOfferFields := stringmap.BuildSdkListFirstElement(patchAction, "web_messaging_offer_fields", buildSdkPatchWebMessagingOfferFields, true)
@@ -249,7 +192,6 @@ func buildSdkPatchAction(patchAction map[string]interface{}) *platformclientv2.P
 
 	sdkPatchAction := platformclientv2.Patchaction{}
 	sdkPatchAction.SetField("MediaType", &mediaType)
-	sdkPatchAction.SetField("IsPacingEnabled", &isPacingEnabled)
 	sdkPatchAction.SetField("ActionTemplate", actionMapActionTemplate)
 	sdkPatchAction.SetField("ArchitectFlowFields", architectFlowFields)
 	sdkPatchAction.SetField("WebMessagingOfferFields", webMessagingOfferFields)

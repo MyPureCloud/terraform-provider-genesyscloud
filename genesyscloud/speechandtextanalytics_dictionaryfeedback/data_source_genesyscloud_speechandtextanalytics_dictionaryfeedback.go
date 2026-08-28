@@ -25,9 +25,11 @@ func dataSourceDictionaryFeedbackRead(ctx context.Context, d *schema.ResourceDat
 	proxy := newDictionaryFeedbackProxy(sdkConfig)
 
 	term := d.Get("term").(string)
+	dialect := d.Get("dialect").(string)
+	transcriptionEngine := d.Get("transcription_engine").(string)
 
 	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
-		dictionaryFeedbackId, resp, retryable, err := proxy.getDictionaryFeedbackIdByTerm(ctx, term)
+		dictionaryFeedbackId, resp, retryable, err := proxy.getDictionaryFeedbackIdByTerm(ctx, term, dialect, transcriptionEngine)
 
 		if err != nil && !retryable {
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error searching dictionary feedback %s | error: %s", term, err), resp))

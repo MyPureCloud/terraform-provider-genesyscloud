@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func TestAccResourceIdpOkta(t *testing.T) {
@@ -42,6 +42,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "name", name1),
@@ -52,6 +53,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -66,6 +68,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.TrueValue,
+					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "name", name1),
@@ -77,6 +80,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "sign_authn_requests", util.TrueValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "force_authn", util.FalseValue),
 				),
 			},
 			{
@@ -91,6 +95,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "name", name1),
@@ -103,6 +108,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -117,6 +123,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					uri3,
 					slo_binding2,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "name", name1),
@@ -129,6 +136,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_binding", slo_binding2),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -143,6 +151,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					uri3,
 					slo_binding1,
 					util.FalseValue,
+					util.TrueValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "name", name1),
@@ -156,6 +165,7 @@ func TestAccResourceIdpOkta(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_uri", uri3),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "slo_binding", slo_binding1),
 					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "sign_authn_requests", util.FalseValue),
+					resource.TestCheckResourceAttr("genesyscloud_idp_okta.okta", "force_authn", util.TrueValue),
 				),
 			},
 			{
@@ -178,7 +188,8 @@ func generateIdpOktaResource(
 	partyID string,
 	sloURI string,
 	sloBinding string,
-	signAuthnRequests string) string {
+	signAuthnRequests string,
+	forceAuthn string) string {
 	return fmt.Sprintf(`resource "genesyscloud_idp_okta" "okta" {
 		name = "%s"
 		certificates = %s
@@ -189,8 +200,9 @@ func generateIdpOktaResource(
 		slo_uri = "%s"
 		slo_binding = "%s"
 		sign_authn_requests = %s
+		force_authn = %s
 	}
-	`, name, certs, issuerURI, targetURI, disabled, partyID, sloURI, sloBinding, signAuthnRequests)
+	`, name, certs, issuerURI, targetURI, disabled, partyID, sloURI, sloBinding, signAuthnRequests, forceAuthn)
 }
 
 func testVerifyIdpOktaDestroyed(state *terraform.State) error {

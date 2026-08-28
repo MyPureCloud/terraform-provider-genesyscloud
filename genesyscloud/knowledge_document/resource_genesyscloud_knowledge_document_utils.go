@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 const documentIDSeparator = ","
@@ -239,6 +239,8 @@ func flattenKnowledgeDocument(ctx context.Context, documentIn *platformclientv2.
 			}
 		}
 		documentOut["label_names"] = labelNames
+	} else {
+		documentOut["label_names"] = []string{}
 	}
 
 	return []interface{}{documentOut}, nil

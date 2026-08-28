@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 func getAllKnowledgeDocuments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -143,6 +143,22 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 		}
 
 		_ = d.Set("knowledge_document", flattenedDocument)
+
+		// Set top-level label_ids and category_id for export dependency resolution
+		if knowledgeDocument.Labels != nil && len(*knowledgeDocument.Labels) > 0 {
+			labelIds := make([]string, 0)
+			for _, label := range *knowledgeDocument.Labels {
+				labelIds = append(labelIds, fmt.Sprintf("%s,%s", *label.Id, knowledgeBaseId))
+			}
+			_ = d.Set("label_ids", labelIds)
+		} else {
+			_ = d.Set("label_ids", []string{})
+		}
+		if knowledgeDocument.Category != nil && knowledgeDocument.Category.Id != nil {
+			_ = d.Set("category_id", fmt.Sprintf("%s,%s", *knowledgeDocument.Category.Id, knowledgeBaseId))
+		} else {
+			_ = d.Set("category_id", "")
+		}
 
 		log.Printf("Read Knowledge document %s", *knowledgeDocument.Id)
 		return cc.CheckState(d)

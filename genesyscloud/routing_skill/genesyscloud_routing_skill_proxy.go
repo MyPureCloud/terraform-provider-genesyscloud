@@ -9,11 +9,12 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
 type getAllRoutingSkillsFunc func(ctx context.Context, p *routingSkillProxy, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type createRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, routingSkill *platformclientv2.Createroutingskill) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
+type updateRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, skillId string, routingSkill *platformclientv2.Updateskilldivisionrequest) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type getRoutingSkillByIdFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type getRoutingSkillIdByNameFunc func(ctx context.Context, p *routingSkillProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type deleteRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error)
@@ -25,6 +26,7 @@ type routingSkillProxy struct {
 	clientConfig                *platformclientv2.Configuration
 	routingApi                  *platformclientv2.RoutingApi
 	createRoutingSkillAttr      createRoutingSkillFunc
+	updateRoutingSkillAttr      updateRoutingSkillFunc
 	getAllRoutingSkillsAttr     getAllRoutingSkillsFunc
 	getRoutingSkillIdByNameAttr getRoutingSkillIdByNameFunc
 	getRoutingSkillByIdAttr     getRoutingSkillByIdFunc
@@ -39,6 +41,7 @@ func newRoutingSkillProxy(clientConfig *platformclientv2.Configuration) *routing
 		clientConfig:                clientConfig,
 		routingApi:                  api,
 		createRoutingSkillAttr:      createRoutingSkillFn,
+		updateRoutingSkillAttr:      updateRoutingSkillFn,
 		getAllRoutingSkillsAttr:     getAllRoutingSkillsFn,
 		getRoutingSkillIdByNameAttr: getRoutingSkillIdByNameFn,
 		getRoutingSkillByIdAttr:     getRoutingSkillByIdFn,
@@ -57,6 +60,10 @@ func (p *routingSkillProxy) getAllRoutingSkills(ctx context.Context, name string
 
 func (p *routingSkillProxy) createRoutingSkill(ctx context.Context, routingSkill *platformclientv2.Createroutingskill) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
 	return p.createRoutingSkillAttr(ctx, p, routingSkill)
+}
+
+func (p *routingSkillProxy) updateRoutingSkill(ctx context.Context, skillId string, routingSkill *platformclientv2.Updateskilldivisionrequest) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
+	return p.updateRoutingSkillAttr(ctx, p, skillId, routingSkill)
 }
 
 func (p *routingSkillProxy) getRoutingSkillById(ctx context.Context, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
@@ -126,6 +133,13 @@ func createRoutingSkillFn(ctx context.Context, p *routingSkillProxy, routingSkil
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	return p.routingApi.PostRoutingSkills(*routingSkill)
+}
+
+func updateRoutingSkillFn(ctx context.Context, p *routingSkillProxy, skillId string, routingSkill *platformclientv2.Updateskilldivisionrequest) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	return p.routingApi.PatchRoutingSkill(skillId, *routingSkill)
 }
 
 func getRoutingSkillByIdFn(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
