@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -65,6 +66,59 @@ func TestAccResourceAgenticVirtualAgentVersionPublishProductionReady(t *testing.
 			},
 		},
 	})
+}
+
+// TestAccResourceAgenticVirtualAgentVersionPublishLifecycle publishes a version to TestReady
+// and then, in a second step, publishes a newer version to ProductionReady. This exercises the
+// publish lifecycle across versions (TestReady -> ProductionReady on a subsequent version) and
+// verifies cleanup via CheckDestroy on the parent agent.
+func TestAccResourceAgenticVirtualAgentVersionPublishLifecycle(t *testing.T) {
+	var (
+		agentResourceLabel    = "test_agent"
+		versionResourceLabel1 = "test_version_1"
+		versionResourceLabel2 = "test_version_2"
+		publishResourceLabel  = "test_publish"
+		agentName             = "TF Publish Lifecycle Agent " + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Publish the first version to TestReady
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResource(versionResourceLabel1, agentResourceLabel) +
+					generatePublishResource(publishResourceLabel, agentResourceLabel, versionResourceLabel1, "TestReady"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+publishResourceLabel, "status", "TestReady"),
+				),
+			},
+			{
+				// Create a newer version and publish it to ProductionReady.
+				// The publish resource's status is ForceNew, so this replaces the publish.
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResource(versionResourceLabel2, agentResourceLabel) +
+					generatePublishResource(publishResourceLabel, agentResourceLabel, versionResourceLabel2, "ProductionReady"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+publishResourceLabel, "status", "ProductionReady"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyAgenticVirtualAgentPublishParentDestroyed,
+	})
+}
+
+// testVerifyAgenticVirtualAgentPublishParentDestroyed verifies the parent agent is destroyed.
+// The publish resource itself has a no-op delete (no unpublish API), so destruction is verified
+// via the parent agent being removed.
+func testVerifyAgenticVirtualAgentPublishParentDestroyed(state *terraform.State) error {
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type == "genesyscloud_agentic_virtual_agent" {
+			return fmt.Errorf("agentic virtual agent %s still exists in state after destroy", rs.Primary.ID)
+		}
+	}
+	return nil
 }
 
 // =============================================================================
