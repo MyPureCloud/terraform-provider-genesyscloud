@@ -2,17 +2,68 @@ package integration_config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
+
+// cleanupDataActionIntegrations removes stale purecloud-data-actions integrations left over from
+// previous test runs. The API caps this integration type at 10 per org; leaked test integrations
+// fill the quota and cause "maximum number of integrations" 400 errors on create. This sweep keeps
+// the org under the cap by deleting DISABLED integrations whose name looks test-generated.
+func cleanupDataActionIntegrations(t *testing.T) {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		t.Logf("cleanupDataActionIntegrations: skipping, could not authorize SDK: %v", err)
+		return
+	}
+	api := platformclientv2.NewIntegrationsApiWithConfig(config)
+	for pageNum := 1; ; pageNum++ {
+		integrations, _, listErr := api.GetIntegrations(100, pageNum, "", nil, "", "", nil, "", "", "")
+		if listErr != nil || integrations.Entities == nil {
+			break
+		}
+		for _, integ := range *integrations.Entities {
+			if integ.Id == nil || integ.IntegrationType == nil || integ.IntegrationType.Id == nil {
+				continue
+			}
+			if *integ.IntegrationType.Id != "purecloud-data-actions" {
+				continue
+			}
+			// Only remove things that look test-generated and are not enabled/live.
+			name := ""
+			if integ.Name != nil {
+				name = *integ.Name
+			}
+			state := ""
+			if integ.IntendedState != nil {
+				state = *integ.IntendedState
+			}
+			isTestArtifact := strings.Contains(name, "Genesys Cloud Data Actions (") ||
+				strings.Contains(strings.ToLower(name), "test")
+			if state != "ENABLED" && isTestArtifact {
+				if _, _, delErr := api.DeleteIntegration(*integ.Id); delErr != nil {
+					log.Printf("cleanupDataActionIntegrations: failed to delete %s (%s): %v", name, *integ.Id, delErr)
+				} else {
+					log.Printf("cleanupDataActionIntegrations: deleted stale integration %s (%s)", name, *integ.Id)
+				}
+			}
+		}
+		if integrations.PageCount == nil || pageNum >= *integrations.PageCount {
+			break
+		}
+	}
+}
 
 func TestAccResourceIntegrationConfigBasic(t *testing.T) {
 	var (
@@ -23,6 +74,9 @@ func TestAccResourceIntegrationConfigBasic(t *testing.T) {
 		configNotes1             = "Initial test notes"
 		configNotes2             = "Updated test notes"
 	)
+
+	// Remove stale data-action integrations from prior runs so we don't hit the per-type cap (10).
+	cleanupDataActionIntegrations(t)
 
 	// Enable the feature toggle
 	err := os.Setenv(featureToggles.ICToggleName(), "1")

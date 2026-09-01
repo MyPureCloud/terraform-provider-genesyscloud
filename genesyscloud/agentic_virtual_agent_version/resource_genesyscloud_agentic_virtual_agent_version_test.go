@@ -284,8 +284,10 @@ func TestAccResourceAgenticVirtualAgentVersionWithKnowledgeBaseTool(t *testing.T
 }
 
 // TestAccResourceAgenticVirtualAgentVersionWithDataActionTool tests create with a DataAction
-// tool referencing a real integration_action. This exercises the most complex tool expand/flatten
-// paths: inputs (source/mapping), output, errors, input_validation (Python), and output_instructions.
+// tool referencing a real integration_action. This exercises the DataAction tool expand/flatten
+// paths that the AVA API round-trips: inputs (source), output, errors, and output_instructions.
+// Note: input_validation is intentionally not exercised here — the AVA version API accepts it on
+// write but does not return it on read, so asserting/declaring it produces a perpetual plan diff.
 func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 	var (
 		agentResourceLabel   = "test_agent"
@@ -322,8 +324,6 @@ func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output", "CustomerResult"),
 					// Error handling
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.errors.0.type", "HttpError"),
-					// Input validation (Python)
-					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.input_validation.0.type", "Python"),
 					// Output instructions (Python)
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output_instructions.0.type", "Python"),
 				),
@@ -551,8 +551,9 @@ resource "genesyscloud_integration_action" "%[2]s" {
 }
 
 // generateVersionResourceWithDataActionTool creates a version with a DataAction tool that
-// references the integration_action, exercising inputs, output, errors, input_validation, and
-// output_instructions.
+// references the integration_action, exercising inputs, output, errors, input_instructions, and
+// output_instructions. input_validation is omitted because the AVA version API does not return it
+// on read (write-only), which would otherwise cause a perpetual plan diff.
 func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1 string) string {
 	return fmt.Sprintf(`resource "%[1]s" "%[2]s" {
 		agent_id = genesyscloud_agentic_virtual_agent.%[3]s.id
@@ -578,9 +579,10 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 			}
 
 			types {
-				name         = "HttpError"
-				type         = "DataActionHttpError"
-				status_codes = [404, 500]
+				name                = "HttpError"
+				type                = "DataActionHttpError"
+				status_codes        = [404, 500]
+				default_instruction = "Inform the user the request failed."
 			}
 
 			tools {
@@ -591,6 +593,8 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 					id   = genesyscloud_integration_action.%[6]s.id
 					name = genesyscloud_integration_action.%[6]s.name
 				}
+
+				input_instructions = ["Use when the user asks to look up a customer"]
 
 				inputs {
 					target_name = "customerId"
@@ -604,12 +608,6 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 				errors {
 					type        = "HttpError"
 					instruction = "Tell the user the lookup failed."
-				}
-
-				input_validation {
-					type             = "Python"
-					if_condition     = "len(customerId) > 0"
-					else_instruction = "Ask the user for a valid customer id."
 				}
 
 				output_instructions {
