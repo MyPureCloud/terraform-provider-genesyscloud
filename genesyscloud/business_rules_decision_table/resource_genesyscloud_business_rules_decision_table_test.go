@@ -19,12 +19,6 @@ import (
 func TestAccResourceBusinessRulesDecisionTableHappyPath(t *testing.T) {
 	t.Parallel()
 
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
-
 	var (
 		// Resource labels
 		tableResourceLabel  = "test-decision-table"
@@ -361,12 +355,6 @@ func testVerifyBusinessRulesDecisionTablesDestroyed(state *terraform.State) erro
 func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T) {
 	t.Parallel()
 
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
-
 	var (
 		schemaResourceLabel = "test-schema"
 		schemaName          = "tf_schema_" + uuid.NewString()[:8]
@@ -482,12 +470,6 @@ func TestAccResourceBusinessRulesDecisionTableInvalidLiteralValues(t *testing.T)
 func TestAccResourceBusinessRulesDecisionTableRequiredFieldsValidation(t *testing.T) {
 	t.Parallel()
 
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
-
 	var (
 		schemaResourceLabel = "test-schema"
 		schemaName          = "tf_schema_" + uuid.NewString()[:8]
@@ -554,12 +536,6 @@ func TestAccResourceBusinessRulesDecisionTableRequiredFieldsValidation(t *testin
 
 func TestAccResourceBusinessRulesDecisionTableInvalidColumnReferences(t *testing.T) {
 	t.Parallel()
-
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
 
 	var (
 		schemaResourceLabel = "test-schema"
@@ -687,12 +663,6 @@ func generateHomeDivisionReference() string {
 func TestAccResourceBusinessRulesDecisionTableWhitespaceEdgeCases(t *testing.T) {
 	t.Parallel()
 
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
-
 	var (
 		tableResourceLabel  = "test-whitespace-dt"
 		schemaResourceLabel = "test-whitespace-schema"
@@ -798,12 +768,6 @@ func TestAccResourceBusinessRulesDecisionTableWhitespaceEdgeCases(t *testing.T) 
 // CSV import publishes a new version.
 func TestAccResourceBusinessRulesDecisionTableMigrateRowsToCSV(t *testing.T) {
 	t.Parallel()
-
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
 
 	var (
 		tableResourceLabel  = "test-dt-rows-to-csv"
@@ -934,12 +898,6 @@ func TestAccResourceBusinessRulesDecisionTableMigrateRowsToCSV(t *testing.T) {
 // apply succeeds.
 func TestAccResourceBusinessRulesDecisionTableRowUpdateTransientDuplicate(t *testing.T) {
 	t.Parallel()
-
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
 
 	var (
 		tableResourceLabel  = "test-decision-table-chain"
