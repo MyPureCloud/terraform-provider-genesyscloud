@@ -578,9 +578,10 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 			}
 
 			types {
-				name         = "HttpError"
-				type         = "DataActionHttpError"
-				status_codes = [404, 500]
+				name                = "HttpError"
+				type                = "DataActionHttpError"
+				status_codes        = [404, 500]
+				default_instruction = "Inform the user the request failed."
 			}
 
 			tools {
@@ -591,6 +592,8 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 					id   = genesyscloud_integration_action.%[6]s.id
 					name = genesyscloud_integration_action.%[6]s.name
 				}
+
+				input_instructions = ["Use when the user asks to look up a customer"]
 
 				inputs {
 					target_name = "customerId"
