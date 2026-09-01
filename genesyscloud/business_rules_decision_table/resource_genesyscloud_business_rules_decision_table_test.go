@@ -894,8 +894,9 @@ func TestAccResourceBusinessRulesDecisionTableMigrateRowsToCSV(t *testing.T) {
 // - so the row moving to "Standard" wants the input values the other row still has
 // until it is updated. Applied in an unsafe order this briefly leaves two rows with
 // the same input values and the API rejects it with "409 duplicate decision table
-// rows"; with the safe ordering the row moving away is updated first and the single
-// apply succeeds.
+// rows"; with the safe ordering the row moving away is updated first. On the bulk
+// path those two updates must also be separate requests, because uniqueness is
+// checked against the current table.
 func TestAccResourceBusinessRulesDecisionTableRowUpdateTransientDuplicate(t *testing.T) {
 	t.Parallel()
 
