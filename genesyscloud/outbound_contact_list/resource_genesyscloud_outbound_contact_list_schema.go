@@ -15,11 +15,11 @@ import (
 
 func normalizeOutboundContactListTimeColumnFields(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
 	// Normalize plan-time values so the deprecated `*_time_column` and new `*_time_column_name`
-	// attributes don't cause TypeSet element mismatches/diffs during migration.
+	// attributes don't cause element mismatches/diffs during migration.
 	if v := diff.Get("phone_columns"); v != nil {
-		if s, ok := v.(*schema.Set); ok && s.Len() > 0 {
-			newSet := schema.NewSet(hashOutboundContactListPhoneColumn, []interface{}{})
-			for _, item := range s.List() {
+		if list, ok := v.([]interface{}); ok && len(list) > 0 {
+			newList := make([]interface{}, 0, len(list))
+			for _, item := range list {
 				m, ok := item.(map[string]interface{})
 				if !ok {
 					continue
@@ -29,9 +29,9 @@ func normalizeOutboundContactListTimeColumnFields(_ context.Context, diff *schem
 						m["callable_time_column_name"] = oldName
 					}
 				}
-				newSet.Add(m)
+				newList = append(newList, m)
 			}
-			_ = diff.SetNew("phone_columns", newSet)
+			_ = diff.SetNew("phone_columns", newList)
 		}
 	}
 
@@ -89,6 +89,31 @@ func hashOutboundContactListEmailColumn(v interface{}) int {
 	}
 
 	return schema.HashString(fmt.Sprintf("%s|%s|%s", columnName, colType, timeColName))
+}
+
+func validateUniquePhoneColumnNames(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	v := diff.Get("phone_columns")
+	list, ok := v.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	seen := make(map[string]int, len(list))
+	for i, item := range list {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		name, _ := m["column_name"].(string)
+		if name == "" {
+			continue
+		}
+		if prev, exists := seen[name]; exists {
+			return fmt.Errorf("phone_columns has duplicate column_name %q at index %d (first at index %d)", name, i, prev)
+		}
+		seen[name] = i
+	}
+	return nil
 }
 
 /*
@@ -221,18 +246,24 @@ func ResourceOutboundContactList() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 3,
+		SchemaVersion: 4,
 		StateUpgraders: []schema.StateUpgrader{
 			{
 				Version: 2,
 				Type:    resourceOutboundContactListV2().CoreConfigSchema().ImpliedType(),
 				Upgrade: stateUpgraderOutboundContactListV2ToV3,
 			},
+			{
+				Version: 3,
+				Type:    resourceOutboundContactListV3().CoreConfigSchema().ImpliedType(),
+				Upgrade: stateUpgraderOutboundContactListV3ToV4,
+			},
 		},
 		CustomizeDiff: customdiff.All(
 			customdiff.ComputedIf("contacts_file_content_hash", validators.ValidateFileContentHashChanged("contacts_filepath", "contacts_file_content_hash", S3Enabled)),
 			validators.ValidateCSVWithColumns("contacts_filepath", "column_names"),
 			normalizeOutboundContactListTimeColumnFields,
+			validateUniquePhoneColumnNames,
 		),
 		Schema: map[string]*schema.Schema{
 			`name`: {
@@ -254,11 +285,10 @@ func ResourceOutboundContactList() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`phone_columns`: {
-				Description: `Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns or whats_app_columns is empty`,
+				Description: `Indicates which columns are phone numbers. The configured order is preserved on the contact list and is used as the stored phone column sequence (including dial priority when campaigns inherit this order). Changing the phone_columns attribute will cause the outbound_contact_list object to be dropped and recreated with a new ID. Required if email_columns or whats_app_columns is empty`,
 				Optional:    true,
 				ForceNew:    true,
-				Type:        schema.TypeSet,
-				Set:         hashOutboundContactListPhoneColumn,
+				Type:        schema.TypeList,
 				Elem:        outboundContactListContactPhoneNumberColumnResource,
 			},
 			`email_columns`: {
@@ -535,5 +565,106 @@ func stateUpgraderOutboundContactListV2ToV3(_ context.Context, rawState map[stri
 		migrateSet(v, "contactable_time_column", "contactable_time_column_name")
 	}
 
+	return rawState, nil
+}
+
+func resourceOutboundContactListV3() *schema.Resource {
+	return &schema.Resource{
+		SchemaVersion: 3,
+		Schema: map[string]*schema.Schema{
+			`name`: {
+				Required: true,
+				Type:     schema.TypeString,
+			},
+			`division_id`: {
+				Optional: true,
+				Computed: true,
+				Type:     schema.TypeString,
+			},
+			`column_names`: {
+				Required: true,
+				ForceNew: true,
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			`phone_columns`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeSet,
+				Set:      hashOutboundContactListPhoneColumn,
+				Elem:     outboundContactListContactPhoneNumberColumnResource,
+			},
+			`email_columns`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeSet,
+				Set:      hashOutboundContactListEmailColumn,
+				Elem:     outboundContactListEmailColumnResource,
+			},
+			`whats_app_columns`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeSet,
+				Elem:     outboundContactListWhatsAppColumnResource,
+			},
+			`preview_mode_column_name`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+			`preview_mode_accepted_values`: {
+				Optional: true,
+				Type:     schema.TypeList,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			`attempt_limit_id`: {
+				Optional: true,
+				Type:     schema.TypeString,
+			},
+			`automatic_time_zone_mapping`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeBool,
+			},
+			`zip_code_column_name`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeString,
+			},
+			`column_data_type_specifications`: {
+				Optional: true,
+				ForceNew: true,
+				Type:     schema.TypeList,
+				Elem:     outboundContactListColumnDataTypeSpecification,
+			},
+			`trim_whitespace`: {
+				Optional: true,
+				Type:     schema.TypeBool,
+			},
+			`contacts_filepath`: {
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validators.ValidatePath,
+				RequiredWith: []string{"contacts_filepath", "contacts_id_name"},
+			},
+			`contacts_id_name`: {
+				Optional:     true,
+				Type:         schema.TypeString,
+				RequiredWith: []string{"contacts_id_name", "contacts_filepath"},
+			},
+			`contacts_file_content_hash`: {
+				Computed: true,
+				Type:     schema.TypeString,
+			},
+			`contacts_record_count`: {
+				Computed: true,
+				Type:     schema.TypeInt,
+			},
+		},
+	}
+}
+
+func stateUpgraderOutboundContactListV3ToV4(_ context.Context, rawState map[string]interface{}, _ interface{}) (map[string]interface{}, error) {
+	// JSON state already stores TypeSet as an array of objects. TypeList uses the same
+	// representation; order is the previous set-hash order until the next read/replace.
 	return rawState, nil
 }
