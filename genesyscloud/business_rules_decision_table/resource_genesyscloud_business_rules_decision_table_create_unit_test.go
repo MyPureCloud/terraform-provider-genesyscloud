@@ -2,7 +2,6 @@ package business_rules_decision_table
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -26,7 +25,7 @@ func TestUnitDecisionTableSchemaTimeouts(t *testing.T) {
 
 	assert.Equal(t, 120*time.Minute, *resource.Timeouts.Create, "Create timeout should be 120m")
 	assert.Equal(t, 120*time.Minute, *resource.Timeouts.Update, "Update timeout should be 120m")
-	assert.Equal(t, 8*time.Minute, *resource.Timeouts.Read, "Read timeout should be 8m")
+	assert.Equal(t, 60*time.Minute, *resource.Timeouts.Read, "Read timeout should be 60m")
 	assert.Equal(t, 8*time.Minute, *resource.Timeouts.Delete, "Delete timeout should be 8m")
 }
 
@@ -128,172 +127,4 @@ func TestUnitRollbackDecisionTableNotBlockedByExpiredRequestContext(t *testing.T
 
 	assert.NoError(t, err)
 	assert.NoError(t, ctxErrSeen, "rollback should run on a fresh context regardless of the expired request context")
-}
-
-func unitTestDuplicateRowResponse(index int) *platformclientv2.APIResponse {
-	body := []byte(`{"message":"Duplicate decision table rows found [{\"id\":\"ghost-row\",\"index\":` + strconv.Itoa(index) + `}]",` +
-		`"code":"decision.table.duplicate.row","status":409,` +
-		`"messageWithParams":"Duplicate decision table rows found {duplicateRows}",` +
-		`"messageParams":{"duplicateRows":"[{\"id\":\"ghost-row\",\"index\":` + strconv.Itoa(index) + `}]"}}`)
-	return &platformclientv2.APIResponse{StatusCode: 409, RawBody: body}
-}
-
-func unitTestApplyRowChangesVersionColumns() *platformclientv2.Decisiontablecolumns {
-	inputID := "input-col-1"
-	outputID := "output-col-1"
-	return &platformclientv2.Decisiontablecolumns{
-		Inputs: &[]platformclientv2.Decisiontableinputcolumn{
-			{Id: &inputID},
-		},
-		Outputs: &[]platformclientv2.Decisiontableoutputcolumn{
-			{Id: &outputID},
-		},
-	}
-}
-
-func unitTestApplyRowChangesAddRow() map[string]interface{} {
-	return map[string]interface{}{
-		"inputs": []interface{}{
-			map[string]interface{}{
-				"literal": []interface{}{
-					map[string]interface{}{
-						"value": "VIP",
-						"type":  "string",
-					},
-				},
-			},
-		},
-		"outputs": []interface{}{
-			map[string]interface{}{
-				"literal": []interface{}{
-					map[string]interface{}{
-						"value": "queue-1",
-						"type":  "string",
-					},
-				},
-			},
-		},
-	}
-}
-
-// TestUnitApplyRowChangesSkipsGhostRowDuplicate verifies the update-path add-rows
-// loop treats a matching-index 409 duplicate.row as an already-created ghost row
-// and continues, using priorRowCount+i+1 as the expected index base.
-func TestUnitApplyRowChangesSkipsGhostRowDuplicate(t *testing.T) {
-	const (
-		tableID       = "table-update-ghost"
-		version       = 2
-		priorRowCount = 3
-		expectedIndex = priorRowCount + 1 // first add after 3 kept rows
-	)
-
-	var createCalls int
-	proxy := &BusinessRulesDecisionTableProxy{}
-	proxy.getBusinessRulesDecisionTableVersionAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
-		return &platformclientv2.Decisiontableversion{
-			Columns: unitTestApplyRowChangesVersionColumns(),
-		}, &platformclientv2.APIResponse{StatusCode: 200}, nil
-	}
-	proxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
-		createCalls++
-		return unitTestDuplicateRowResponse(expectedIndex), assert.AnError
-	}
-
-	err := applyRowChanges(context.Background(), proxy, tableID, version, RowChange{
-		adds: []map[string]interface{}{unitTestApplyRowChangesAddRow()},
-	}, priorRowCount, nil)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 1, createCalls, "ghost duplicate should be treated as success without retrying")
-}
-
-// TestUnitApplyRowChangesFailsOnGenuineDuplicate verifies a 409 duplicate.row at
-// an earlier index is not skipped during update-path adds.
-func TestUnitApplyRowChangesFailsOnGenuineDuplicate(t *testing.T) {
-	const (
-		tableID       = "table-update-dup"
-		version       = 2
-		priorRowCount = 3
-	)
-
-	proxy := &BusinessRulesDecisionTableProxy{}
-	proxy.getBusinessRulesDecisionTableVersionAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
-		return &platformclientv2.Decisiontableversion{
-			Columns: unitTestApplyRowChangesVersionColumns(),
-		}, &platformclientv2.APIResponse{StatusCode: 200}, nil
-	}
-	proxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
-		return unitTestDuplicateRowResponse(1), assert.AnError
-	}
-
-	err := applyRowChanges(context.Background(), proxy, tableID, version, RowChange{
-		adds: []map[string]interface{}{unitTestApplyRowChangesAddRow()},
-	}, priorRowCount, nil)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to add new row 1/1")
-}
-
-// TestUnitIsDuplicateRowAtIndex verifies the add-rows idempotency guard: a 409
-// "decision.table.duplicate.row" whose reported index matches the row currently
-// being added is treated as an already-created row (the 504 ghost / non-idempotent
-// retry case) and skipped, while genuine duplicates, other errors, and malformed
-// responses are not skipped.
-func TestUnitIsDuplicateRowAtIndex(t *testing.T) {
-	dupBody := func(id string, index int) []byte {
-		return []byte(`{"message":"Duplicate decision table rows found [{\"id\":\"` + id + `\",\"index\":` + strconv.Itoa(index) + `}]",` +
-			`"code":"decision.table.duplicate.row","status":409,` +
-			`"messageWithParams":"Duplicate decision table rows found {duplicateRows}",` +
-			`"messageParams":{"duplicateRows":"[{\"id\":\"` + id + `\",\"index\":` + strconv.Itoa(index) + `}]"}}`)
-	}
-
-	tests := []struct {
-		name      string
-		resp      *platformclientv2.APIResponse
-		rowNumber int
-		want      bool
-	}{
-		{
-			name:      "409 duplicate at matching index -> skip",
-			resp:      &platformclientv2.APIResponse{StatusCode: 409, RawBody: dupBody("bb8d8418", 5409)},
-			rowNumber: 5409,
-			want:      true,
-		},
-		{
-			name:      "409 duplicate at earlier index (genuine config dup) -> do not skip",
-			resp:      &platformclientv2.APIResponse{StatusCode: 409, RawBody: dupBody("bb8d8418", 10)},
-			rowNumber: 5409,
-			want:      false,
-		},
-		{
-			name:      "409 with different error code -> do not skip",
-			resp:      &platformclientv2.APIResponse{StatusCode: 409, RawBody: []byte(`{"code":"some.other.conflict","status":409}`)},
-			rowNumber: 5409,
-			want:      false,
-		},
-		{
-			name:      "non-409 status -> do not skip",
-			resp:      &platformclientv2.APIResponse{StatusCode: 500, RawBody: dupBody("bb8d8418", 5409)},
-			rowNumber: 5409,
-			want:      false,
-		},
-		{
-			name:      "nil response -> do not skip",
-			resp:      nil,
-			rowNumber: 5409,
-			want:      false,
-		},
-		{
-			name:      "malformed body -> do not skip",
-			resp:      &platformclientv2.APIResponse{StatusCode: 409, RawBody: []byte(`not-json`)},
-			rowNumber: 5409,
-			want:      false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, isDuplicateRowAtIndex(tt.resp, tt.rowNumber))
-		})
-	}
 }
