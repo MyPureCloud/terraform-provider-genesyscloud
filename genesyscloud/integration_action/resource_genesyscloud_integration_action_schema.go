@@ -116,10 +116,12 @@ func ResourceIntegrationAction() *schema.Resource {
 				Computed:    true,
 			},
 			"timeout_seconds": {
-				Description: "Timeout in seconds for the function execution.",
+				Description: "Timeout in seconds for the function execution. Range allowed 1 to 15. Default value 15 seconds.",
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Computed:    true,
+				//timeout_seconds ranges between 1 to 15 as per API documentation.
+				ValidateFunc: validation.IntBetween(1, 15),
 			},
 			"zip_id": {
 				Description: "The ID of the uploaded zip file containing the function code.",
