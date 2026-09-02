@@ -31,6 +31,7 @@ func generateAuthSettingsData(domainAllowList []string, ipAllowList []string) pl
 
 	return platformclientv2.Orgauthsettings{
 		MultifactorAuthenticationRequired: platformclientv2.Bool(true),
+		UniversalLogout:                   platformclientv2.Bool(false),
 		DomainAllowlistEnabled:            platformclientv2.Bool(false),
 		DomainAllowlist:                   &domainAllowList,
 		IpAddressAllowlist:                &ipAllowList,
@@ -79,7 +80,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsRead(t *testing.T) {
 	// Get defined Schema
 	resourceSchema := ResourceOrganizationAuthenticationSettings().Schema
 	//Setup map of values
-	resourceDataMap := buildOrgAuthSettingsDataMap(*testOrgAuthSettings.MultifactorAuthenticationRequired, *testOrgAuthSettings.DomainAllowlistEnabled, allowList, ipAddressAllowList, *testOrgAuthSettings.PasswordRequirements)
+	resourceDataMap := buildOrgAuthSettingsDataMap(*testOrgAuthSettings.MultifactorAuthenticationRequired, *testOrgAuthSettings.UniversalLogout, *testOrgAuthSettings.DomainAllowlistEnabled, allowList, ipAddressAllowList, *testOrgAuthSettings.PasswordRequirements)
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
 
@@ -143,7 +144,7 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 
 	resourceSchema := ResourceOrganizationAuthenticationSettings().Schema
 
-	resourceDataMap := buildOrgAuthSettingsDataMap(*testOrgAuthSettings.MultifactorAuthenticationRequired, *testOrgAuthSettings.DomainAllowlistEnabled, allowList, ipAddressAllowList, *testOrgAuthSettings.PasswordRequirements)
+	resourceDataMap := buildOrgAuthSettingsDataMap(*testOrgAuthSettings.MultifactorAuthenticationRequired, *testOrgAuthSettings.UniversalLogout, *testOrgAuthSettings.DomainAllowlistEnabled, allowList, ipAddressAllowList, *testOrgAuthSettings.PasswordRequirements)
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 	d.SetId(tId)
@@ -154,9 +155,10 @@ func TestUnitResourceOrganizationAuthenticationSettingsUpdate(t *testing.T) {
 	assert.Equal(t, *testOrgAuthSettings.DomainAllowlist, domainAllowList)
 }
 
-func buildOrgAuthSettingsDataMap(tMultifactorAuthRequired bool, tDomainAllowListEnabled bool, tDomainAllowList []interface{}, tIpAddressAllowList []interface{}, tPasswordRequirements platformclientv2.Passwordrequirements) map[string]interface{} {
+func buildOrgAuthSettingsDataMap(tMultifactorAuthRequired bool, tUniversalLogout bool, tDomainAllowListEnabled bool, tDomainAllowList []interface{}, tIpAddressAllowList []interface{}, tPasswordRequirements platformclientv2.Passwordrequirements) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"multifactor_authentication_required": tMultifactorAuthRequired,
+		"universal_logout":                    tUniversalLogout,
 		"domain_allowlist_enabled":            tDomainAllowListEnabled,
 		"domain_allowlist":                    tDomainAllowList,
 		"ip_address_allowlist":                tIpAddressAllowList,
