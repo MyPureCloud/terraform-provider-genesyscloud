@@ -42,7 +42,7 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 		maxAttemptsPerContactUpdated = "4"
 		maxAttemptsPerNumberUpdated  = "3"
 		timeZoneIdUpdated            = "Etc/GMT"
-		resetPeriodUpdated           = "NEVER"
+		resetPeriodUpdated           = "DAYS_30"
 
 		updatedRecallEntryType1                = "no_answer"
 		updatedRecallEntryNbrAttempts1         = "2"
