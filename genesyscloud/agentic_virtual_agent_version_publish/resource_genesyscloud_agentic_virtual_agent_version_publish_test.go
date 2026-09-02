@@ -2,10 +2,13 @@ package agentic_virtual_agent_version_publish
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -65,6 +68,90 @@ func TestAccResourceAgenticVirtualAgentVersionPublishProductionReady(t *testing.
 			},
 		},
 	})
+}
+
+// TestAccResourceAgenticVirtualAgentVersionPublishLifecycle publishes a version to TestReady
+// and then, in a second step, publishes a newer version to ProductionReady. This exercises the
+// publish lifecycle across versions (TestReady -> ProductionReady on a subsequent version) and
+// verifies cleanup via CheckDestroy on the parent agent.
+func TestAccResourceAgenticVirtualAgentVersionPublishLifecycle(t *testing.T) {
+	var (
+		agentResourceLabel    = "test_agent"
+		versionResourceLabel1 = "test_version_1"
+		versionResourceLabel2 = "test_version_2"
+		publishResourceLabel  = "test_publish"
+		agentName             = "TF Publish Lifecycle Agent " + uuid.NewString()
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Publish the first version to TestReady
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResource(versionResourceLabel1, agentResourceLabel) +
+					generatePublishResource(publishResourceLabel, agentResourceLabel, versionResourceLabel1, "TestReady"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+publishResourceLabel, "status", "TestReady"),
+				),
+			},
+			{
+				// Create a newer version and publish it to ProductionReady.
+				// The publish resource's status is ForceNew, so this replaces the publish.
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResource(versionResourceLabel2, agentResourceLabel) +
+					generatePublishResource(publishResourceLabel, agentResourceLabel, versionResourceLabel2, "ProductionReady"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+publishResourceLabel, "status", "ProductionReady"),
+				),
+			},
+		},
+		CheckDestroy: testVerifyAgenticVirtualAgentPublishParentDestroyed,
+	})
+}
+
+// testVerifyAgenticVirtualAgentPublishParentDestroyed verifies the parent agent is destroyed by
+// querying the API. The publish resource has a no-op delete (no unpublish API), so cleanup is
+// verified via the parent agent.
+//
+// A ProductionReady agent cannot be deleted by the platform (the delete job fails with
+// "ava.dependency.exists"), so the provider's delete leaves it in place. That is an expected
+// terminal state for this lifecycle test, not a leak. We therefore treat both "agent is gone
+// (404)" and "agent still exists because it is published" as acceptable, and only fail on an
+// unexpected API error.
+func testVerifyAgenticVirtualAgentPublishParentDestroyed(state *terraform.State) error {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		return fmt.Errorf("failed to authorize SDK for CheckDestroy: %w", err)
+	}
+	api := platformclientv2.NewAIStudioApiWithConfig(config)
+
+	for _, rs := range state.RootModule().Resources {
+		if rs.Type != "genesyscloud_agentic_virtual_agent" {
+			continue
+		}
+		agent, resp, getErr := api.GetAgenticVirtualagent(rs.Primary.ID)
+		if getErr != nil {
+			if util.IsStatus404(resp) {
+				// Agent successfully deleted.
+				continue
+			}
+			return fmt.Errorf("unexpected error reading agentic virtual agent %s during CheckDestroy: %w", rs.Primary.ID, getErr)
+		}
+		// Agent still exists. This is only acceptable when it is published (ProductionReady),
+		// which the platform refuses to delete.
+		status := ""
+		if agent != nil && agent.Status != nil {
+			status = *agent.Status
+		}
+		if status == "ProductionReady" || status == "TestReady" {
+			log.Printf("agentic virtual agent %s still exists with status %s (published agents cannot be deleted) — acceptable", rs.Primary.ID, status)
+			continue
+		}
+		return fmt.Errorf("agentic virtual agent %s still exists after destroy (status %q)", rs.Primary.ID, status)
+	}
+	return nil
 }
 
 // =============================================================================

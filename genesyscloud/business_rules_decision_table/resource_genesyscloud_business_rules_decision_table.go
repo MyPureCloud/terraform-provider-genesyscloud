@@ -2,11 +2,9 @@ package business_rules_decision_table
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -264,50 +262,6 @@ func readBusinessRulesDecisionTable(ctx context.Context, d *schema.ResourceData,
 	})
 }
 
-// decisionTableDuplicateRowCode is the API error code returned when a row being
-// added duplicates a row that already exists on the table version.
-const decisionTableDuplicateRowCode = "decision.table.duplicate.row"
-
-// isDuplicateRowAtIndex reports whether resp is a 409 duplicate-row error whose
-// reported duplicate index matches the 1-based position of the row currently
-// being added. This indicates the row was already created server-side by a prior
-// attempt - typically a POST that returned 504 at the gateway but succeeded on
-// the backend, whose non-idempotent retry then collides with the ghost row. In
-// that case the add is safe to treat as a no-op and continue.
-//
-// The index guard is what keeps this from masking a genuine duplicate in config:
-// a real config duplicate reports the index of the earlier (first) occurrence,
-// which will not equal the position of the row currently being added.
-func isDuplicateRowAtIndex(resp *platformclientv2.APIResponse, rowNumber int) bool {
-	if resp == nil || resp.StatusCode != http.StatusConflict || len(resp.RawBody) == 0 {
-		return false
-	}
-
-	var apiErr struct {
-		Code          string `json:"code"`
-		MessageParams struct {
-			DuplicateRows string `json:"duplicateRows"`
-		} `json:"messageParams"`
-	}
-	if err := json.Unmarshal(resp.RawBody, &apiErr); err != nil || apiErr.Code != decisionTableDuplicateRowCode {
-		return false
-	}
-
-	var dups []struct {
-		Id    string `json:"id"`
-		Index int    `json:"index"`
-	}
-	if err := json.Unmarshal([]byte(apiErr.MessageParams.DuplicateRows), &dups); err != nil {
-		return false
-	}
-	for _, d := range dups {
-		if d.Index == rowNumber {
-			return true
-		}
-	}
-	return false
-}
-
 // addRowsToVersion adds all rows to a specific decision table version
 func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableId string, version int, terraformRows []interface{}) error {
 	// Get the table version to extract column mapping
@@ -319,33 +273,20 @@ func addRowsToVersion(ctx context.Context, proxy *BusinessRulesDecisionTableProx
 	// Get column IDs in order for column order mapping
 	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 
-	// Convert and add each row individually using column order mapping
+	sdkRows := make([]platformclientv2.Createdecisiontablerowrequest, 0, len(terraformRows))
 	for i, row := range terraformRows {
 		rowMap := row.(map[string]interface{})
 
-		// Convert row from Terraform to SDK format using column order mapping
 		sdkRow, err := convertDecisionTableRowFromProviderToSDK(rowMap, inputColumnIds, outputColumnIds)
 		if err != nil {
 			return fmt.Errorf("failed to convert row %d (table %s, version %d): %s", i+1, tableId, version, err)
 		}
-
-		// Add the row to the version
-		resp, err := proxy.createDecisionTableRow(ctx, tableId, version, &sdkRow)
-		if err != nil {
-			if isDuplicateRowAtIndex(resp, i+1) {
-				// A prior attempt (e.g. a POST that returned 504 at the gateway but
-				// succeeded server-side) already created this row; the non-idempotent
-				// retry collided with that ghost row. Treat as added and continue.
-				log.Printf("[WARN] row %d already exists on decision table %s version %d (409 %s at matching index); treating as added and continuing", i+1, tableId, version, decisionTableDuplicateRowCode)
-				continue
-			}
-			return fmt.Errorf("failed to add row %d: %s", i+1, err)
-		}
-
-		log.Printf("Successfully added row %d to decision table %s version %d", i+1, tableId, version)
+		sdkRow.RowIndex = nil
+		sdkRows = append(sdkRows, sdkRow)
 	}
 
-	return nil
+	limAdd, _, _ := getBulkChunkLimits()
+	return bulkAddConvertedRows(ctx, proxy, tableId, version, sdkRows, limAdd, 0)
 }
 
 // publishDecisionTableVersion publishes a decision table version
@@ -365,45 +306,55 @@ func publishDecisionTableVersion(ctx context.Context, proxy *BusinessRulesDecisi
 	return nil
 }
 
-// getDecisionTableRows retrieves all rows from a specific decision table version
+// getDecisionTableRows retrieves all rows from a specific decision table version.
+// Page 1 is fetched on the caller's proxy; pages 2–N use provider.FetchPagesConcurrently
+// (sequential when max_concurrent_pages is 1, the default).
 func getDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTableProxy, tableVersion *platformclientv2.Decisiontableversion) ([]interface{}, error) {
-	// Extract tableId and version from tableVersion
 	tableId := *tableVersion.Id
 	version := *tableVersion.Version
-
-	var allRows []platformclientv2.Decisiontablerow
 	const pageSize = 100
-	pageNum := 1
+	pageSizeStr := fmt.Sprintf("%d", pageSize)
 
-	for {
-		rowListing, _, err := proxy.getDecisionTableRows(ctx, tableId, version, fmt.Sprintf("%d", pageNum), fmt.Sprintf("%d", pageSize))
-		if err != nil {
-			return nil, fmt.Errorf("failed to get rows for version %d page %d: %s", version, pageNum, err)
-		}
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-		if rowListing == nil || rowListing.Entities == nil || len(*rowListing.Entities) == 0 {
-			break
-		}
-
-		allRows = append(allRows, *rowListing.Entities...)
-
-		// Check if there are more pages
-		if rowListing.PageCount == nil || pageNum >= *rowListing.PageCount {
-			break
-		}
-		pageNum++
+	first, resp, err := proxy.getDecisionTableRows(ctx, tableId, version, "1", pageSizeStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows for version %d page 1: %s", version, err)
+	}
+	if first == nil || first.Entities == nil || len(*first.Entities) == 0 {
+		return []interface{}{}, nil
 	}
 
-	// Get column IDs in order for column order mapping
-	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
+	allRows := append([]platformclientv2.Decisiontablerow{}, *first.Entities...)
 
-	// Convert SDK rows to Terraform format using column order mapping
+	totalPages := 1
+	if first.PageCount != nil {
+		totalPages = *first.PageCount
+	}
+
+	allRows, _, err = provider.FetchPagesConcurrently(ctx, ResourceType, allRows, resp, totalPages, proxy.clientConfig,
+		func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
+			ctx = provider.EnsureResourceContext(ctx, ResourceType)
+			pageProxy := newBusinessRulesDecisionTableProxy(clientConfig)
+			pageList, pageResp, pageErr := pageProxy.getDecisionTableRows(ctx, tableId, version, fmt.Sprintf("%d", pageNum), pageSizeStr)
+			if pageErr != nil {
+				return nil, pageResp, fmt.Errorf("failed to get rows for version %d page %d: %w", version, pageNum, pageErr)
+			}
+			if pageList == nil || pageList.Entities == nil || len(*pageList.Entities) == 0 {
+				return []platformclientv2.Decisiontablerow{}, pageResp, nil
+			}
+			return *pageList.Entities, pageResp, nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	inputColumnIds, outputColumnIds := extractColumnOrder(tableVersion.Columns)
 	terraformRows := make([]interface{}, len(allRows))
 	for i, row := range allRows {
-		// For now, use a simple conversion that includes all columns
 		terraformRows[i] = convertSDKRowToProvider(row, inputColumnIds, outputColumnIds)
 	}
-
 	return terraformRows, nil
 }
 
@@ -573,8 +524,7 @@ func updateDecisionTableRows(ctx context.Context, proxy *BusinessRulesDecisionTa
 	log.Printf("Detected changes: %d adds, %d updates, %d deletes", len(changes.adds), len(changes.updates), len(changes.deletes))
 
 	// Step 4: Apply changes to the draft version
-	// kept rows (= existing rows minus deletes) precede the appended adds; used by
-	// the 504-ghost-row guard in applyRowChanges to compute each add's row index.
+	// kept rows (= existing rows minus deletes) precede appended adds; used by the bulk ghost-chunk guard.
 	priorRowCount := len(oldRows) - len(changes.deletes)
 	err = applyRowChanges(ctx, proxy, tableId, newVersionNumber, changes, priorRowCount, oldRows)
 	if err != nil {
