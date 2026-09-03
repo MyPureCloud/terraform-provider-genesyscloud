@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -16,7 +17,8 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
-var isDynamicPattern = regexp.MustCompile(`^[(\[.*]`)
+// anchoredPrefixRegex captures the literal prefix of a "^"-anchored pattern.
+var anchoredPrefixRegex = regexp.MustCompile(`^\^([0-9A-Za-z_-]+)`)
 
 // Row IDs structured as {table-id}/{key-value}
 func createDatatableRowId(tableId string, keyVal string) string {
@@ -159,18 +161,32 @@ func extractFilterPatterns(resourceType string, filter []string) []string {
 	return patterns
 }
 
-// tableMatchesFilter checks if a table name could produce a BlockLabel that matches any of the filter patterns.
+// tableMatchesFilter reports whether a table could produce a row label ("<tableName>_<rowKey>") matching any filter pattern, keeping the table unless it is provably impossible.
 func tableMatchesFilter(tableName string, filterPatterns []string) bool {
+	rawPrefix := tableName + "_"
+	sanitizer := resourceExporter.NewSanitizerProvider()
+	sanitizedPrefix := sanitizer.S.SanitizeResourceBlockLabel(tableName) + "_"
+
 	for _, pattern := range filterPatterns {
-		p := strings.Trim(pattern, "^$")
-
-		if isDynamicPattern.MatchString(p) {
-			return true
-		}
-
-		if strings.HasPrefix(p, tableName) {
+		if !patternCannotMatchTable(pattern, rawPrefix, sanitizedPrefix) {
 			return true
 		}
 	}
 	return false
+}
+
+// patternCannotMatchTable reports whether a "^"-anchored pattern's required prefix is incompatible with every candidate label prefix; unanchored patterns can always match.
+func patternCannotMatchTable(pattern string, candidateLabelPrefixes ...string) bool {
+	match := anchoredPrefixRegex.FindStringSubmatch(pattern)
+	if match == nil {
+		return false
+	}
+
+	requiredPrefix := match[1]
+	for _, labelPrefix := range candidateLabelPrefixes {
+		if strings.HasPrefix(labelPrefix, requiredPrefix) || strings.HasPrefix(requiredPrefix, labelPrefix) {
+			return false
+		}
+	}
+	return true
 }
