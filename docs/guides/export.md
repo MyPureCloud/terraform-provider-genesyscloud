@@ -165,4 +165,10 @@ resource "genesyscloud_tf_export" "example" {
 
 After running terraform apply with the example configuration above, all Architect flows matching "ExampleFlowName" will be exported to `./genesyscloud/flows/architect_flows/` in YAML format.
 
+# Export Function Data Action Zip Files
+
+Genesys Cloud does not allow downloading uploaded function zip files. See [Limitations of the Genesys Cloud Function data actions integration](https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/).
+
+When `genesyscloud_integration_action` Function Data Actions are exported, `function_config.file_path` is emitted as a Terraform variable (the same pattern the legacy Architect flow exporter uses when flow YAML cannot be retrieved). Set that variable to a local or S3 zip path in the generated `terraform.tfvars` before plan or apply. The zip binary is not written to the export directory.
+
 

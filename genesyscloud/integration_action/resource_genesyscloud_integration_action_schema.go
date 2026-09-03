@@ -30,8 +30,6 @@ const (
 	ResourceType = "genesyscloud_integration_action"
 	// S3Enabled indicates function zip paths may use local or S3-backed file paths for hashing.
 	S3Enabled = true
-	// FunctionZipExportSubDirectory is where export places placeholder paths for function zips.
-	FunctionZipExportSubDirectory = "function_zips"
 )
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
@@ -130,8 +128,8 @@ func ResourceIntegrationAction() *schema.Resource {
 			"file_path": {
 				Description: "Local path to the zip file containing the function data action code. " +
 					"Genesys Cloud does not allow downloading function zip files, so exports cannot retrieve the binary. " +
-					"After export, supply the zip at the exported path (or update file_path) before apply. " +
-					"See https://help.genesys.cloud/articles/add-function-configuration/",
+					"Export sets this attribute to a Terraform variable; assign the variable to your zip path before apply. " +
+					"See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/",
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validators.ValidatePath,
@@ -147,7 +145,9 @@ func ResourceIntegrationAction() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/",
+		Description: `Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
+
+Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for ` + "`function_config.file_path`" + `; set it to a local or S3 zip path before plan or apply.`,
 
 		CreateContext: provider.CreateWithPooledClient(createIntegrationAction),
 		ReadContext:   provider.ReadWithPooledClient(readIntegrationAction),
@@ -246,6 +246,7 @@ func ResourceIntegrationAction() *schema.Resource {
 
 // IntegrationActionExporter returns the resourceExporter object used to hold the genesyscloud_integration_action exporter's config
 func IntegrationActionExporter() *resourceExporter.ResourceExporter {
+	functionConfigSchema := ResourceIntegrationAction().Schema["function_config"].Elem.(*schema.Resource).Schema
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllIntegrationActions),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
@@ -253,9 +254,16 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 		},
 		JsonEncodeAttributes: []string{"contract_input", "contract_output"},
 		AllowZeroValuesInMap: []string{"config_response.translation_map_defaults"},
-		CustomFileWriter: resourceExporter.CustomFileWriterSettings{
-			RetrieveAndWriteFilesFunc: FunctionZipExportResolver,
-			SubDirectory:              FunctionZipExportSubDirectory,
+		// Function zip binaries cannot be downloaded from Genesys Cloud. Treat file_path like
+		// the legacy architect flow exporter treats filepath: emit a Terraform variable so
+		// apply in another org does not fail looking for a missing local zip.
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"function_config.file_path": functionConfigSchema["file_path"],
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"function_config.file_content_hash": {
+				ResolverFunc: stripFunctionConfigFileContentHash,
+			},
 		},
 		ThirdPartyRefAttrs: []string{
 			"function_config.file_path",
@@ -266,6 +274,13 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 		// resources (e.g. Architect flows) can reference them by name + integration_id.
 		ExportAsDataFunc: shouldExportIntegrationActionAsDataSource,
 	}
+}
+
+// stripFunctionConfigFileContentHash drops the hash on export. Without the zip binary the
+// hash is meaningless; the provider recomputes it from file_path on apply.
+func stripFunctionConfigFileContentHash(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
+	delete(configMap, "file_content_hash")
+	return nil
 }
 
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source
