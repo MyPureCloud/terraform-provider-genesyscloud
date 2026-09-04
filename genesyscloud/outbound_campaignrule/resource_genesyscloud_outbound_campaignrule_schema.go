@@ -431,8 +431,6 @@ func validateCampaignRuleConditions(ctx context.Context, d *schema.ResourceDiff,
 		}
 	}
 
-	// for_duration validation is FROZEN pending DEVTOOLING-1759 (field disabled in schema).
-
 	return nil
 }
 
@@ -478,28 +476,24 @@ func validateNoTimeBasedConditionsInLegacy(conditions []interface{}) error {
 			return fmt.Errorf("campaign_wait_time_settings requires campaign_rule_processing = \"v2\" with condition_groups; it cannot be used in legacy campaign_rule_conditions")
 		}
 
-		// FROZEN pending DEVTOOLING-1759: for_duration is disabled in the schema, so this
-		// legacy-reject is moot. Re-enable together with the for_duration field.
-		/*
-			// Reject for_duration in legacy condition parameters
-			paramsRaw := condMap["parameters"]
-			var paramsMap map[string]interface{}
-			switch p := paramsRaw.(type) {
-			case *schema.Set:
-				if p != nil && p.Len() > 0 {
-					paramsMap, _ = p.List()[0].(map[string]interface{})
-				}
-			case []interface{}:
-				if len(p) > 0 && p[0] != nil {
-					paramsMap, _ = p[0].(map[string]interface{})
-				}
+		// Reject for_duration in legacy condition parameters
+		paramsRaw := condMap["parameters"]
+		var paramsMap map[string]interface{}
+		switch p := paramsRaw.(type) {
+		case *schema.Set:
+			if p != nil && p.Len() > 0 {
+				paramsMap, _ = p.List()[0].(map[string]interface{})
 			}
-			if paramsMap != nil {
-				if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
-					return fmt.Errorf("for_duration requires campaign_rule_processing = \"v2\" with condition_groups; it cannot be used in legacy campaign_rule_conditions")
-				}
+		case []interface{}:
+			if len(p) > 0 && p[0] != nil {
+				paramsMap, _ = p[0].(map[string]interface{})
 			}
-		*/
+		}
+		if paramsMap != nil {
+			if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+				return fmt.Errorf("for_duration requires campaign_rule_processing = \"v2\" with condition_groups; it cannot be used in legacy campaign_rule_conditions")
+			}
+		}
 	}
 	return nil
 }
@@ -735,9 +729,7 @@ func validateOperatorFields(condMap map[string]interface{}, condType string, dat
 
 // paramSchemaOptions controls which fields are included in the campaign rule parameter schema.
 type paramSchemaOptions struct {
-	// FROZEN pending DEVTOOLING-1759: Go SDK serializes Duration as an object (causes 400).
-	// Re-enable for_duration when the SDK is fixed.
-	// includeForDuration       bool
+	includeForDuration       bool
 	includeDateTimeOperators bool
 }
 
@@ -879,28 +871,24 @@ func campaignRuleParameterSchema(opts paramSchemaOptions) map[string]*schema.Sch
 		},
 	}
 
-	// FROZEN pending DEVTOOLING-1759 (Go SDK serializes Duration as an object, causing 400).
-	// Re-enable this block when the SDK is fixed.
-	/*
-		if opts.includeForDuration {
-			params[`for_duration`] = &schema.Schema{
-				Description: `Duration (in seconds) for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2".`,
-				Optional:    true,
-				MaxItems:    1,
-				Type:        schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						`seconds`: {
-							Description:  `Duration in seconds.`,
-							Required:     true,
-							Type:         schema.TypeInt,
-							ValidateFunc: validation.IntAtLeast(1),
-						},
+	if opts.includeForDuration {
+		params[`for_duration`] = &schema.Schema{
+			Description: `Duration for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2".`,
+			Optional:    true,
+			MaxItems:    1,
+			Type:        schema.TypeList,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					`seconds`: {
+						Description:  `Duration in whole seconds. Sub-second precision is not supported: a duration set outside Terraform with a fractional value is read as whole seconds.`,
+						Required:     true,
+						Type:         schema.TypeInt,
+						ValidateFunc: validation.IntAtLeast(1),
 					},
 				},
-			}
+			},
 		}
-	*/
+	}
 
 	return params
 }
@@ -908,8 +896,7 @@ func campaignRuleParameterSchema(opts paramSchemaOptions) map[string]*schema.Sch
 // ResourceOutboundCampaignrule registers the genesyscloud_outbound_campaignrule resource with Terraform
 func ResourceOutboundCampaignrule() *schema.Resource {
 	campaignRuleParameters := &schema.Resource{
-		// FROZEN pending DEVTOOLING-1759: includeForDuration omitted (was true).
-		Schema: campaignRuleParameterSchema(paramSchemaOptions{includeDateTimeOperators: true}),
+		Schema: campaignRuleParameterSchema(paramSchemaOptions{includeForDuration: true, includeDateTimeOperators: true}),
 	}
 
 	// Action parameters: no for_duration, no date/time operators
