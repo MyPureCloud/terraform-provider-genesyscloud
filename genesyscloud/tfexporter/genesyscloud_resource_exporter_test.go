@@ -1729,6 +1729,113 @@ func TestUnitSanitizeConfigMapOmitUnresolvedRefs(t *testing.T) {
 	})
 }
 
+func TestUnitSanitizeConfigMapNestedUnresolvableAttrs(t *testing.T) {
+	resourceType := "genesyscloud_integration_action"
+	resourceLabel := "Get_Ticket_Status"
+
+	exporter := &resourceExporter.ResourceExporter{
+		UnResolvableAttributes: map[string]*schema.Schema{
+			"function_config.file_path": {
+				Type:        schema.TypeString,
+				Description: "Local path to the zip file containing the function data action code.",
+			},
+			"filepath": {
+				Type:        schema.TypeString,
+				Description: "YAML file path for flow configuration.",
+			},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"function_config.file_content_hash": {
+				ResolverFunc: func(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
+					delete(configMap, "file_content_hash")
+					return nil
+				},
+			},
+		},
+	}
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		resourceType: exporter,
+	}
+
+	resource := resourceExporter.ResourceInfo{
+		Type:       resourceType,
+		BlockLabel: resourceLabel,
+		BlockType:  "resource",
+		State:      &terraform.InstanceState{ID: "action-id"},
+	}
+
+	g := setupGenesysCloudResourceExporter(t)
+
+	t.Run("nested file_path becomes a terraform variable and hash is stripped", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"name": "Get Ticket Status",
+			"function_config": []interface{}{
+				map[string]interface{}{
+					"handler":           "dist/index.handler",
+					"file_path":         "fda_code.zip",
+					"file_content_hash": "sha256:should-be-removed",
+				},
+			},
+		}
+
+		unresolvable, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+		require.True(t, ok)
+
+		fc := configMap["function_config"].([]interface{})[0].(map[string]interface{})
+		expectedVar := "${var.genesyscloud_integration_action_Get_Ticket_Status_function_config_file_path}"
+		assert.Equal(t, expectedVar, fc["file_path"])
+		_, hashPresent := fc["file_content_hash"]
+		assert.False(t, hashPresent, "file_content_hash should be stripped on export")
+
+		require.Len(t, unresolvable, 1)
+		assert.Equal(t, resourceType, unresolvable[0].ResourceType)
+		assert.Equal(t, resourceLabel, unresolvable[0].ResourceLabel)
+		assert.Equal(t, "function_config_file_path", unresolvable[0].Name)
+	})
+
+	t.Run("top-level unresolvable attributes still emit variables", func(t *testing.T) {
+		flowType := "genesyscloud_flow"
+		flowExporter := &resourceExporter.ResourceExporter{
+			UnResolvableAttributes: map[string]*schema.Schema{
+				"filepath": {
+					Type:        schema.TypeString,
+					Description: "YAML file path for flow configuration.",
+				},
+			},
+		}
+		flowExporters := map[string]*resourceExporter.ResourceExporter{
+			flowType: flowExporter,
+		}
+		flowResource := resourceExporter.ResourceInfo{
+			Type:       flowType,
+			BlockLabel: "INBOUNDCALL_example",
+			BlockType:  "resource",
+			State:      &terraform.InstanceState{ID: "flow-id"},
+		}
+		configMap := map[string]interface{}{
+			"name":     "example",
+			"filepath": "missing.yaml",
+		}
+
+		unresolvable, ok := g.sanitizeConfigMap(flowResource, configMap, "", flowExporters, false, "hcl", true)
+		require.True(t, ok)
+		assert.Equal(t, "${var.genesyscloud_flow_INBOUNDCALL_example_filepath}", configMap["filepath"])
+		require.Len(t, unresolvable, 1)
+		assert.Equal(t, "filepath", unresolvable[0].Name)
+	})
+
+	t.Run("regular actions without function_config are unchanged", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"name":     "Regular Action",
+			"category": "Genesys Cloud Data Action",
+		}
+		unresolvable, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+		require.True(t, ok)
+		assert.Empty(t, unresolvable)
+		assert.Equal(t, "Regular Action", configMap["name"])
+	})
+}
+
 func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
 	resourceType := "genesyscloud_test_resource"
 
