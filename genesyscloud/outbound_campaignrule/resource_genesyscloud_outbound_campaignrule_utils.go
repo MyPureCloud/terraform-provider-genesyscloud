@@ -2,7 +2,10 @@ package outbound_campaignrule
 
 import (
 	"fmt"
+	"log"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -63,17 +66,14 @@ func validateNoTimeBasedConditionsInLegacyFromResourceData(conditions []interfac
 			return fmt.Errorf("campaign_rule_conditions[%d]: campaign_wait_time_settings is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
 		}
 
-		// FROZEN pending DEVTOOLING-1759: for_duration disabled in schema, so this check is moot.
-		/*
-			// Check for_duration in parameters
-			params := condMap["parameters"].(*schema.Set)
-			if params != nil && params.Len() > 0 {
-				paramsMap := params.List()[0].(map[string]interface{})
+		// Check for_duration in parameters
+		if params, ok := condMap["parameters"].(*schema.Set); ok && params != nil && params.Len() > 0 {
+			if paramsMap, ok := params.List()[0].(map[string]interface{}); ok {
 				if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
 					return fmt.Errorf("campaign_rule_conditions[%d]: for_duration is only valid with campaign_rule_processing = \"v2\" and condition_groups", i)
 				}
 			}
-		*/
+		}
 	}
 	return nil
 }
@@ -280,17 +280,11 @@ func buildCampaignRuleParameters(set *schema.Set) *platformclientv2.Campaignrule
 	sdkCampaignRuleParameters.EmailContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "email_content_template_id")
 	sdkCampaignRuleParameters.SmsContentTemplate = util.GetNillableDomainEntityRefFromMap(paramsMap, "sms_content_template_id")
 
-	// FROZEN pending DEVTOOLING-1759 (Go SDK serializes Duration as an object, causing 400).
-	// Re-enable this block when the SDK is fixed.
-	/*
-		if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
-			durationMap := v[0].(map[string]interface{})
-			seconds := durationMap["seconds"].(int)
-			sdkCampaignRuleParameters.ForDuration = &platformclientv2.Duration{
-				Seconds: &seconds,
-			}
-		}
-	*/
+	if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+		durationMap := v[0].(map[string]interface{})
+		seconds := durationMap["seconds"].(int)
+		sdkCampaignRuleParameters.ForDuration = platformclientv2.String(secondsToISO8601Duration(seconds))
+	}
 
 	return &sdkCampaignRuleParameters
 }
@@ -538,12 +532,9 @@ func flattenRuleParameters(params *platformclientv2.Campaignruleparameters) []in
 		paramsMap["email_messages_per_minute"] = strconv.Itoa(*params.EmailMessagesPerMinute)
 	}
 
-	// FROZEN pending DEVTOOLING-1759: re-enable together with the for_duration field.
-	/*
-		if params.ForDuration != nil {
-			paramsMap["for_duration"] = flattenForDuration(params.ForDuration)
-		}
-	*/
+	if params.ForDuration != nil {
+		paramsMap["for_duration"] = flattenForDuration(params.ForDuration)
+	}
 
 	return []interface{}{paramsMap}
 }
@@ -756,19 +747,92 @@ func flattenWeekDayOfMonth(sdk *platformclientv2.Campaignruleweekdayofmonth) map
 	return m
 }
 
-// FROZEN pending DEVTOOLING-1759: re-enable together with the for_duration field.
-/*
-func flattenForDuration(sdk *platformclientv2.Duration) []interface{} {
-	if sdk == nil {
+// iso8601DurationPattern matches the duration form the campaign rules API emits, which is Java's
+// Duration.toString(): PT followed by any of an hours, minutes and seconds component, the seconds
+// optionally fractional.
+//
+// There is deliberately no day component. The API rolls days into hours — PT90000S is returned as
+// PT25H — so hours are unbounded and P1DT... never appears.
+var iso8601DurationPattern = regexp.MustCompile(`^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$`)
+
+// secondsToISO8601Duration renders whole seconds in the ISO-8601 form the API accepts. The API
+// canonicalises what it receives, so PT900S comes back as PT15M, but the rewrite is lossless and
+// parseISO8601DurationSeconds recovers the same number.
+func secondsToISO8601Duration(seconds int) string {
+	return fmt.Sprintf("PT%dS", seconds)
+}
+
+// parseISO8601DurationSeconds converts a duration returned by the API into whole seconds.
+//
+// exact reports whether the value survived the conversion: it is false when a non-zero fractional
+// seconds part had to be dropped, which the schema's integer seconds cannot represent.
+// ok reports whether the value matched the grammar at all; when it does not, the caller should
+// leave the field out of state rather than invent a number.
+func parseISO8601DurationSeconds(v string) (seconds int, exact bool, ok bool) {
+	groups := iso8601DurationPattern.FindStringSubmatch(v)
+	if groups == nil {
+		return 0, false, false
+	}
+
+	hours, minutes, secs := groups[1], groups[2], groups[3]
+	if hours == "" && minutes == "" && secs == "" {
+		// A bare "PT" matches the pattern but carries no duration.
+		return 0, false, false
+	}
+
+	total := 0
+	if hours != "" {
+		parsed, err := strconv.Atoi(hours)
+		if err != nil {
+			return 0, false, false
+		}
+		total += parsed * 3600
+	}
+	if minutes != "" {
+		parsed, err := strconv.Atoi(minutes)
+		if err != nil {
+			return 0, false, false
+		}
+		total += parsed * 60
+	}
+
+	exact = true
+	if secs != "" {
+		whole, fraction, hasFraction := strings.Cut(secs, ".")
+		parsed, err := strconv.Atoi(whole)
+		if err != nil {
+			return 0, false, false
+		}
+		total += parsed
+		if hasFraction && strings.Trim(fraction, "0") != "" {
+			exact = false
+		}
+	}
+
+	return total, exact, true
+}
+
+// flattenForDuration converts the API's ISO-8601 duration into the for_duration block.
+//
+// Neither failure mode returns an error: a read that failed would break terraform import and
+// tf export against a rule someone else created through the GUI or the API. Both are logged
+// instead, so an unexpected value is visible without being fatal.
+func flattenForDuration(iso *string) []interface{} {
+	if iso == nil || *iso == "" {
 		return nil
 	}
-	m := make(map[string]interface{})
-	if sdk.Seconds != nil {
-		m["seconds"] = *sdk.Seconds
+
+	seconds, exact, ok := parseISO8601DurationSeconds(*iso)
+	if !ok {
+		log.Printf("[WARN] outbound_campaignrule: could not parse forDuration %q as an ISO-8601 duration; leaving for_duration unset in state", *iso)
+		return nil
 	}
-	return []interface{}{m}
+	if !exact {
+		log.Printf("[WARN] outbound_campaignrule: forDuration %q carries sub-second precision, which for_duration.seconds cannot represent; state will hold %d seconds and a later apply would overwrite the value held by the API", *iso, seconds)
+	}
+
+	return []interface{}{map[string]interface{}{"seconds": seconds}}
 }
-*/
 
 func nilToEmpty(s *string) string {
 	if s == nil {
