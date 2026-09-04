@@ -277,12 +277,7 @@ func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, gener
 		}
 	}
 
-	var resourceDataList []*schema.ResourceData
-	if g.resourcesExportedForMrMo == nil {
-		resourceDataList = make([]*schema.ResourceData, 0)
-	} else {
-		resourceDataList = (*g.resourcesExportedForMrMo)[resType]
-	}
+	resourceDataList := g.mrMoResourceDataList(resType)
 
 	return &MrMoExportByTypeResponse{
 		Config: util.JsonMap{
