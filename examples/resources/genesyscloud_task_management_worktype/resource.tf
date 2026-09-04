@@ -18,6 +18,9 @@ resource "genesyscloud_task_management_worktype" "example_worktype" {
   default_script_id   = genesyscloud_script.example_script.id
 
   assignment_enabled = true
+
+  service_level_target                 = 90
+  unassigned_division_contacts_enabled = true
 }
 
 resource "genesyscloud_task_management_worktype" "example_worktype_without_assignment" {
