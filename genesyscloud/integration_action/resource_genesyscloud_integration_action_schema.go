@@ -145,9 +145,8 @@ func ResourceIntegrationAction() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Description: `Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
-
-Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for ` + "`function_config.file_path`" + `; set it to a local or S3 zip path before plan or apply.`,
+		Description: "Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/\n" +
+			"Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for function_config.file_path; set it to a local or S3 zip path before plan or apply.",
 
 		CreateContext: provider.CreateWithPooledClient(createIntegrationAction),
 		ReadContext:   provider.ReadWithPooledClient(readIntegrationAction),

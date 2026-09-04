@@ -3,16 +3,14 @@ page_title: "genesyscloud_integration_action Resource - terraform-provider-genes
 subcategory: ""
 description: |-
   Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
-
-  Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for `function_config.file_path`; set it to a local or S3 zip path before plan or apply.
+  Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for function_config.file_path; set it to a local or S3 zip path before plan or apply.
 ---
 # genesyscloud_integration_action (Resource)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
 Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
-
-Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for `function_config.file_path`; set it to a local or S3 zip path before plan or apply.
+Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for function_config.file_path; set it to a local or S3 zip path before plan or apply.
 
 ## API Usage
 

@@ -171,4 +171,3 @@ Genesys Cloud does not allow downloading uploaded function zip files. See [Limit
 
 When `genesyscloud_integration_action` Function Data Actions are exported, `function_config.file_path` is emitted as a Terraform variable (the same pattern the legacy Architect flow exporter uses when flow YAML cannot be retrieved). Set that variable to a local or S3 zip path in the generated `terraform.tfvars` before plan or apply. The zip binary is not written to the export directory.
 
-
