@@ -43,12 +43,24 @@ func TestAccDataSourceRecordingSettings(t *testing.T) {
 						"genesyscloud_recording_settings."+resourceLabel, "max_simultaneous_streams",
 					),
 					resource.TestCheckResourceAttrPair(
+						"data.genesyscloud_recording_settings."+dataSourceLabel, "max_configurable_screen_recording_streams",
+						"genesyscloud_recording_settings."+resourceLabel, "max_configurable_screen_recording_streams",
+					),
+					resource.TestCheckResourceAttrPair(
 						"data.genesyscloud_recording_settings."+dataSourceLabel, "recording_playback_url_ttl",
 						"genesyscloud_recording_settings."+resourceLabel, "recording_playback_url_ttl",
 					),
 					resource.TestCheckResourceAttrPair(
+						"data.genesyscloud_recording_settings."+dataSourceLabel, "recording_batch_download_url_ttl",
+						"genesyscloud_recording_settings."+resourceLabel, "recording_batch_download_url_ttl",
+					),
+					resource.TestCheckResourceAttrPair(
 						"data.genesyscloud_recording_settings."+dataSourceLabel, "regional_recording_storage_enabled",
 						"genesyscloud_recording_settings."+resourceLabel, "regional_recording_storage_enabled",
+					),
+					resource.TestCheckResourceAttrPair(
+						"data.genesyscloud_recording_settings."+dataSourceLabel, "stop_recording_when_only_external_participants",
+						"genesyscloud_recording_settings."+resourceLabel, "stop_recording_when_only_external_participants",
 					),
 				),
 			},

@@ -47,7 +47,6 @@ func getAllRecordingSettings(ctx context.Context, clientConfig *platformclientv2
 // createRecordingSettings is used by the recording_settings resource to create Genesys Cloud recording settings.
 // Since the API has no create operation, we assign a fixed ID and delegate to update.
 func createRecordingSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("Creating recording settings")
 	d.SetId(recordingSettingsId)
 	return updateRecordingSettings(ctx, d, meta)
 }

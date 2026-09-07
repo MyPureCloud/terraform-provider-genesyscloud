@@ -17,11 +17,15 @@ and unmarshal data into formats consumable by Terraform and/or Genesys Cloud.
 // is intentionally not included in the update body.
 func getRecordingSettingsFromResourceData(d *schema.ResourceData) platformclientv2.Recordingsettings {
 	return platformclientv2.Recordingsettings{
-		MaxSimultaneousStreams:                    resourcedata.GetNillableValue[int](d, "max_simultaneous_streams"),
-		RegionalRecordingStorageEnabled:           resourcedata.GetNillableValue[bool](d, "regional_recording_storage_enabled"),
+		MaxSimultaneousStreams: resourcedata.GetNillableValue[int](d, "max_simultaneous_streams"),
+		// Booleans must be read with d.Get (not GetOk-based helpers): GetOk reports a false
+		// bool as "not set", which would drop the field from the PUT body and make it impossible
+		// to toggle these settings from true back to false. This is a full-replace (PUT) endpoint,
+		// so the current value is always sent.
+		RegionalRecordingStorageEnabled:           platformclientv2.Bool(d.Get("regional_recording_storage_enabled").(bool)),
 		RecordingPlaybackUrlTtl:                   resourcedata.GetNillableValue[int](d, "recording_playback_url_ttl"),
 		RecordingBatchDownloadUrlTtl:              resourcedata.GetNillableValue[int](d, "recording_batch_download_url_ttl"),
-		StopRecordingWhenOnlyExternalParticipants: resourcedata.GetNillableValue[bool](d, "stop_recording_when_only_external_participants"),
+		StopRecordingWhenOnlyExternalParticipants: platformclientv2.Bool(d.Get("stop_recording_when_only_external_participants").(bool)),
 	}
 }
 

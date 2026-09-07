@@ -2,7 +2,9 @@ package recording_settings
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -179,4 +181,75 @@ func TestUnitDataSourceRecordingSettingsRead(t *testing.T) {
 	assert.Equal(t, *testSettings.RecordingPlaybackUrlTtl, d.Get("recording_playback_url_ttl").(int))
 	assert.Equal(t, *testSettings.RecordingBatchDownloadUrlTtl, d.Get("recording_batch_download_url_ttl").(int))
 	assert.Equal(t, *testSettings.StopRecordingWhenOnlyExternalParticipants, d.Get("stop_recording_when_only_external_participants").(bool))
+}
+
+// TestUnitResourceRecordingSettingsReadError verifies that a non-404 API error from the
+// proxy surfaces as an error diagnostic from the resource read. The custom retry timeout
+// is forced to 0 so the read fails fast instead of retrying for the default 5 minutes.
+func TestUnitResourceRecordingSettingsReadError(t *testing.T) {
+	originalEnv := os.Getenv("GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT")
+	os.Setenv("GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT", "0")
+	defer os.Setenv("GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT", originalEnv)
+
+	proxy := &recordingSettingsProxy{}
+	proxy.getRecordingSettingsAttr = func(ctx context.Context, p *recordingSettingsProxy) (*platformclientv2.Recordingsettings, *platformclientv2.APIResponse, error) {
+		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusInternalServerError}, fmt.Errorf("boom")
+	}
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := ResourceRecordingSettings().Schema
+	d := schema.TestResourceDataRaw(t, resourceSchema, map[string]interface{}{})
+	d.SetId(recordingSettingsId)
+
+	diag := readRecordingSettings(ctx, d, gcloud)
+	assert.Equal(t, true, diag.HasError())
+}
+
+// TestUnitResourceRecordingSettingsUpdateError verifies that an error returned by the PUT
+// (update) call surfaces as an error diagnostic and short-circuits before the read-back.
+func TestUnitResourceRecordingSettingsUpdateError(t *testing.T) {
+	testSettings := generateRecordingSettingsData()
+
+	proxy := &recordingSettingsProxy{}
+	proxy.updateRecordingSettingsAttr = func(ctx context.Context, p *recordingSettingsProxy, settings *platformclientv2.Recordingsettings) (*platformclientv2.Recordingsettings, *platformclientv2.APIResponse, error) {
+		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusBadRequest}, fmt.Errorf("bad request")
+	}
+	// getRecordingSettingsAttr intentionally left unset: update must fail before any read-back.
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := ResourceRecordingSettings().Schema
+	resourceDataMap := buildRecordingSettingsDataMap(testSettings)
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	d.SetId(recordingSettingsId)
+
+	diag := updateRecordingSettings(ctx, d, gcloud)
+	assert.Equal(t, true, diag.HasError())
+}
+
+// TestUnitDataSourceRecordingSettingsReadError verifies that an API error from the proxy
+// surfaces as an error diagnostic from the data source read.
+func TestUnitDataSourceRecordingSettingsReadError(t *testing.T) {
+	proxy := &recordingSettingsProxy{}
+	proxy.getRecordingSettingsAttr = func(ctx context.Context, p *recordingSettingsProxy) (*platformclientv2.Recordingsettings, *platformclientv2.APIResponse, error) {
+		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusInternalServerError}, fmt.Errorf("boom")
+	}
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	dataSourceSchema := DataSourceRecordingSettings().Schema
+	d := schema.TestResourceDataRaw(t, dataSourceSchema, map[string]interface{}{})
+
+	diag := dataSourceRecordingSettingsRead(ctx, d, gcloud)
+	assert.Equal(t, true, diag.HasError())
 }
