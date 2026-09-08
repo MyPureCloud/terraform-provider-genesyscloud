@@ -114,17 +114,21 @@ func getAllResponsemanagementResponseFn(ctx context.Context, p *responsemanageme
 	const pageSize = 100
 
 	if libraryId != "" {
-		responses, resp, getErr := p.responseManagementApi.GetResponsemanagementResponses(libraryId, 1, pageSize, "")
-		if getErr != nil {
-			return nil, resp, fmt.Errorf("Error requesting page of Responsemanagement Response: %s", getErr)
-		}
+		var resp *platformclientv2.APIResponse
+		for pageNum := 1; ; pageNum++ {
+			responses, apiResp, getErr := p.responseManagementApi.GetResponsemanagementResponses(libraryId, pageNum, pageSize, "")
+			resp = apiResp
+			if getErr != nil {
+				return nil, resp, fmt.Errorf("Error requesting page of Responsemanagement Response: %s", getErr)
+			}
 
-		if responses.Entities == nil || len(*responses.Entities) == 0 {
-			return &allResponseManagementResponses, resp, nil
-		}
+			if responses.Entities == nil || len(*responses.Entities) == 0 {
+				break
+			}
 
-		for _, response := range *responses.Entities {
-			allResponseManagementResponses = append(allResponseManagementResponses, response)
+			for _, response := range *responses.Entities {
+				allResponseManagementResponses = append(allResponseManagementResponses, response)
+			}
 		}
 
 		return &allResponseManagementResponses, resp, nil
