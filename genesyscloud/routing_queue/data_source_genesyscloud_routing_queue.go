@@ -49,7 +49,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 
 	log.Printf("Hydrating cache for data source %s", ResourceType)
 
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false, false)
 	if err != nil {
 		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
 	}
@@ -58,7 +58,7 @@ func hydrateRoutingQueueCacheFn(c *rc.DataSourceCache, ctx context.Context) erro
 		allQueues = append(allQueues, *queues...)
 	}
 
-	trueQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "", true)
+	trueQueues, resp, err := proxy.GetAllRoutingQueues(ctx, "", true, false)
 	if err != nil {
 		return fmt.Errorf("failed to get routing queues. Error: %s | API Response: %s", err.Error(), resp)
 	}
