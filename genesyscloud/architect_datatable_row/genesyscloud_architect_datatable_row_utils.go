@@ -20,6 +20,9 @@ import (
 // anchoredPrefixRegex captures the literal prefix of a "^"-anchored pattern.
 var anchoredPrefixRegex = regexp.MustCompile(`^\^([0-9A-Za-z_-]+)`)
 
+// blockLabelSanitizer is reused across tableMatchesFilter calls to avoid rebuilding it per table.
+var blockLabelSanitizer = resourceExporter.NewSanitizerProvider()
+
 // Row IDs structured as {table-id}/{key-value}
 func createDatatableRowId(tableId string, keyVal string) string {
 	return strings.Join([]string{tableId, keyVal}, "/")
@@ -164,8 +167,7 @@ func extractFilterPatterns(resourceType string, filter []string) []string {
 // tableMatchesFilter reports whether a table could produce a row label ("<tableName>_<rowKey>") matching any filter pattern, keeping the table unless it is provably impossible.
 func tableMatchesFilter(tableName string, filterPatterns []string) bool {
 	rawPrefix := tableName + "_"
-	sanitizer := resourceExporter.NewSanitizerProvider()
-	sanitizedPrefix := sanitizer.S.SanitizeResourceBlockLabel(tableName) + "_"
+	sanitizedPrefix := blockLabelSanitizer.S.SanitizeResourceBlockLabel(tableName) + "_"
 
 	for _, pattern := range filterPatterns {
 		if !patternCannotMatchTable(pattern, rawPrefix, sanitizedPrefix) {
@@ -177,6 +179,12 @@ func tableMatchesFilter(tableName string, filterPatterns []string) bool {
 
 // patternCannotMatchTable reports whether a "^"-anchored pattern's required prefix is incompatible with every candidate label prefix; unanchored patterns can always match.
 func patternCannotMatchTable(pattern string, candidateLabelPrefixes ...string) bool {
+	// A top-level alternation ("^Foo|Bar") does not force the label to start
+	// with the leading literal, so we cannot use it to exclude a table.
+	if strings.Contains(pattern, "|") {
+		return false
+	}
+
 	match := anchoredPrefixRegex.FindStringSubmatch(pattern)
 	if match == nil {
 		return false

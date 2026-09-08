@@ -16,17 +16,17 @@ func TestExtractFilterPatterns(t *testing.T) {
 		},
 		{
 			name:     "single matching pattern",
-			filter:   []string{ResourceType + "::Prioridades_ATR_AGENTES"},
-			expected: []string{"Prioridades_ATR_AGENTES"},
+			filter:   []string{ResourceType + "::SampleTable_row_key_one"},
+			expected: []string{"SampleTable_row_key_one"},
 		},
 		{
 			name: "mixed resource types",
 			filter: []string{
 				"genesyscloud_architect_datatable::SomeTable",
-				ResourceType + "::Prioridades_ATR_AGENTES",
+				ResourceType + "::SampleTable_row_key_one",
 				"genesyscloud_user::someuser",
 			},
-			expected: []string{"Prioridades_ATR_AGENTES"},
+			expected: []string{"SampleTable_row_key_one"},
 		},
 		{
 			name:     "prefix present but empty pattern is skipped",
@@ -62,103 +62,103 @@ func TestTableMatchesFilter(t *testing.T) {
 		{
 			// Reported case: bare row key that itself contains underscores.
 			name:      "bare row key with underscores is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"ATR_AGENTES"},
+			tableName: "SampleTable",
+			patterns:  []string{"row_key_one"},
 			want:      true,
 		},
 		{
 			name:      "bare row key without underscore is kept",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"somekey"},
 			want:      true,
 		},
 		{
 			name:      "row key matching another table name is kept",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"OtherTable_key"},
 			want:      true,
 		},
 		{
 			// The ".*" workaround must still work.
 			name:      "leading wildcard is kept",
-			tableName: "Prioridades",
-			patterns:  []string{".*ATR_AGENTES"},
+			tableName: "SampleTable",
+			patterns:  []string{".*row_key_one"},
 			want:      true,
 		},
 		{
 			name:      "alternation regex is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"(Prioridades|Other)_key"},
+			tableName: "SampleTable",
+			patterns:  []string{"(SampleTable|Other)_key"},
 			want:      true,
 		},
 		{
 			name:      "full literal label spanning table and key is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"Prioridades_ATR_AGENTES"},
+			tableName: "SampleTable",
+			patterns:  []string{"SampleTable_row_key_one"},
 			want:      true,
 		},
 		{
 			name:      "partial table name is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"Prio"},
+			tableName: "SampleTable",
+			patterns:  []string{"Sample"},
 			want:      true,
 		},
 		{
 			// Fragment straddling table name and row key.
 			name:      "substring spanning table and key is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"dades_ATR"},
+			tableName: "SampleTable",
+			patterns:  []string{"Table_row"},
 			want:      true,
 		},
 		{
 			name:      "character class regex is kept",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"row_[0-9]+"},
 			want:      true,
 		},
 		{
 			// End-anchored only ($) has no leading ^ literal, so keep.
 			name:      "end anchored pattern is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"ATR_AGENTES$"},
+			tableName: "SampleTable",
+			patterns:  []string{"row_key_one$"},
 			want:      true,
 		},
 		{
 			// "^" immediately followed by "(" yields no literal prefix, so keep.
 			name:      "anchor followed by alternation is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"^(Prioridades|Other)_key"},
+			tableName: "SampleTable",
+			patterns:  []string{"^(SampleTable|Other)_key"},
 			want:      true,
 		},
 		{
 			// "^" immediately followed by "." yields no literal prefix, so keep.
 			name:      "anchor followed by wildcard is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"^.*ATR_AGENTES"},
+			tableName: "SampleTable",
+			patterns:  []string{"^.*row_key_one"},
 			want:      true,
 		},
 		{
 			// "^" immediately followed by "[" yields no literal prefix, so keep.
 			name:      "anchor followed by character class is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"^[PD]rioridades"},
+			tableName: "SampleTable",
+			patterns:  []string{"^[SD]ampleTable"},
 			want:      true,
 		},
 		{
 			name:      "anchored to this table prefix is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"^Prioridades_ATR_AGENTES"},
+			tableName: "SampleTable",
+			patterns:  []string{"^SampleTable_row_key_one"},
 			want:      true,
 		},
 		{
 			name:      "anchored partial table name is kept",
-			tableName: "Prioridades",
-			patterns:  []string{"^Prio"},
+			tableName: "SampleTable",
+			patterns:  []string{"^Sample"},
 			want:      true,
 		},
 		{
 			name:      "any one matching pattern keeps the table",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"^Other_key", "somekey"},
 			want:      true,
 		},
@@ -167,7 +167,7 @@ func TestTableMatchesFilter(t *testing.T) {
 			// this pre-filter; it is never ^-anchored, so all tables are kept
 			// and FilterResourceById does the actual id matching.
 			name:      "by-id pattern (guid/key) is kept",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"c1d2e3f4-0000-0000-0000-000000000000/row_0000"},
 			want:      true,
 		},
@@ -193,22 +193,39 @@ func TestTableMatchesFilter(t *testing.T) {
 			want:      true,
 		},
 
+		{
+			// Top-level alternation: "^" only anchors the first branch, so the
+			// second branch could still match this table. Must keep.
+			name:      "anchored alternation spanning tables is kept",
+			tableName: "SampleTable",
+			patterns:  []string{"^Foo|SampleTable_x"},
+			want:      true,
+		},
+		{
+			// Alternation where neither branch names this table still cannot be
+			// excluded, because "|" disables prefix reasoning entirely.
+			name:      "anchored alternation of other tables is kept",
+			tableName: "SampleTable",
+			patterns:  []string{"^Foo_x|Bar_y"},
+			want:      true,
+		},
+
 		// Optimization cases: may safely skip the table (false).
 		{
 			name:      "anchored to a different table is skipped",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"^OtherTable_key"},
 			want:      false,
 		},
 		{
 			name:      "anchored to a different table (all anchored) is skipped",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{"^DecoyTable_row1", "^AnotherTable_row2"},
 			want:      false,
 		},
 		{
 			name:      "no patterns skips",
-			tableName: "Prioridades",
+			tableName: "SampleTable",
 			patterns:  []string{},
 			want:      false,
 		},
