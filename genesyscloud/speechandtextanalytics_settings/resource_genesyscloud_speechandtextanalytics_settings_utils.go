@@ -29,10 +29,11 @@ func getSpeechAndTextAnalyticsSettingsFromResourceData(d *schema.ResourceData) p
 // into a schema ResourceData object. Shared by both the resource read and the data source read.
 func setSpeechAndTextAnalyticsSettingsToResourceData(d *schema.ResourceData, settings *platformclientv2.Speechtextanalyticssettingsresponse) {
 	// The response returns the default program as an object; flatten it down to its ID for the schema.
+	// Use SetStringValueIfNotNil so that when the API returns no default program we leave the
+	// attribute null rather than coercing it to "" (which would produce a null -> "" plan
+	// inconsistency for the optional string field).
 	if settings.DefaultProgram != nil {
-		resourcedata.SetNillableValue(d, "default_program_id", settings.DefaultProgram.Id)
-	} else {
-		_ = d.Set("default_program_id", nil)
+		resourcedata.SetStringValueIfNotNil(d, "default_program_id", settings.DefaultProgram.Id)
 	}
 	resourcedata.SetNillableValue(d, "expected_dialects", settings.ExpectedDialects)
 	resourcedata.SetNillableValue(d, "text_analytics_enabled", settings.TextAnalyticsEnabled)

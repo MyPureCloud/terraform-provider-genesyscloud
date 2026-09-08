@@ -62,7 +62,6 @@ func (p *speechAndTextAnalyticsSettingsProxy) updateSpeechAndTextAnalyticsSettin
 
 // getSpeechAndTextAnalyticsSettingsFn is an implementation of the function to get the Genesys Cloud Speech & Text Analytics settings
 func getSpeechAndTextAnalyticsSettingsFn(ctx context.Context, p *speechAndTextAnalyticsSettingsProxy) (*platformclientv2.Speechtextanalyticssettingsresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	settings, resp, err := p.speechTextAnalyticsApi.GetSpeechandtextanalyticsSettings()
@@ -74,7 +73,6 @@ func getSpeechAndTextAnalyticsSettingsFn(ctx context.Context, p *speechAndTextAn
 
 // updateSpeechAndTextAnalyticsSettingsFn is an implementation of the function to update the Genesys Cloud Speech & Text Analytics settings
 func updateSpeechAndTextAnalyticsSettingsFn(ctx context.Context, p *speechAndTextAnalyticsSettingsProxy, settings *platformclientv2.Speechtextanalyticssettingsrequest) (*platformclientv2.Speechtextanalyticssettingsresponse, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	updated, resp, err := p.speechTextAnalyticsApi.PutSpeechandtextanalyticsSettings(*settings)

@@ -49,6 +49,8 @@ func TestAccResourceSpeechAndTextAnalyticsSettings(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "expected_dialects.#", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "expected_dialects.0", "en-US"),
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "expected_dialects.1", "es-US"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "text_analytics_enabled", util.FalseValue),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "agent_empathy_enabled", util.TrueValue),
 				),

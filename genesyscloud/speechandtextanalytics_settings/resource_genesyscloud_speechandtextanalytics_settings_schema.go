@@ -42,6 +42,7 @@ func ResourceSpeechAndTextAnalyticsSettings() *schema.Resource {
 				Description: "The ID of the default program used for topic detection.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 			},
 			"expected_dialects": {
 				Description: "The list of expected dialects, e.g. en-US.",

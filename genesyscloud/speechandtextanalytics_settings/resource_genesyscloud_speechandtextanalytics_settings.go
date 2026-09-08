@@ -46,7 +46,6 @@ func getAllSpeechAndTextAnalyticsSettings(ctx context.Context, clientConfig *pla
 // createSpeechAndTextAnalyticsSettings is used by the resource to create the settings.
 // This is a singleton resource, so create sets a fixed ID and delegates to update.
 func createSpeechAndTextAnalyticsSettings(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	log.Printf("Creating speech and text analytics settings")
 	d.SetId(speechAndTextAnalyticsSettingsId)
 	return updateSpeechAndTextAnalyticsSettings(ctx, d, meta)
 }
