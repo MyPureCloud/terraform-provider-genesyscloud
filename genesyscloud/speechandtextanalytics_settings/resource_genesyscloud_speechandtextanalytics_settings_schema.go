@@ -48,6 +48,7 @@ func ResourceSpeechAndTextAnalyticsSettings() *schema.Resource {
 				Description: "The list of expected dialects, e.g. en-US.",
 				Type:        schema.TypeList,
 				Optional:    true,
+				MaxItems:    3,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"text_analytics_enabled": {
