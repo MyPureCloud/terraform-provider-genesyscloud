@@ -32,9 +32,9 @@ func TestUnitResourceArchitectIvrRead(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
+	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Name:             &tName,
@@ -94,16 +94,16 @@ func TestUnitResourceArchitectIvrDeleteStandard(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
+	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
+	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return apiResponse, nil
 	}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
@@ -147,16 +147,16 @@ func TestUnitResourceArchitectIvrDeleteSoftDelete(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
+	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
+	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return apiResponse, nil
 	}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		state := "deleted"
 		ivr := &platformclientv2.Ivr{
@@ -211,8 +211,8 @@ func TestUnitResourceArchitectIvrCreate(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy := &ArchitectIvrProxy{}
+	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Id:               &tId,
@@ -230,7 +230,7 @@ func TestUnitResourceArchitectIvrCreate(t *testing.T) {
 		return ivr, apiResponse, nil
 	}
 
-	archProxy.createArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.createArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *ivr.Name, "ivr.Name check failed in create createArchitectIvrAttr")
 		assert.Equal(t, tDescription, *ivr.Description, "ivr.Description check failed in create createArchitectIvrAttr")
 		assert.ElementsMatch(t, tDnis, *ivr.Dnis, "ivr.Dnis check failed in create createArchitectIvrAttr")
@@ -282,8 +282,8 @@ func TestUnitResourceArchitectIvrUpdate(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy := &ArchitectIvrProxy{}
+	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Id:               &tId,
@@ -301,7 +301,7 @@ func TestUnitResourceArchitectIvrUpdate(t *testing.T) {
 		return ivr, apiResponse, nil
 	}
 
-	archProxy.updateArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.updateArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *ivr.Name, "ivr.Name check failed in create updateArchitectIvrAttr")
 		assert.Equal(t, tDescription, *ivr.Description, "ivr.Description check failed in updateArchitectIvrAttr")
 		assert.ElementsMatch(t, tDnis, *ivr.Dnis, "ivr.Dnis check failed in updateArchitectIvrAttr")
