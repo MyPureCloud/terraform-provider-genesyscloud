@@ -2311,7 +2311,15 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 			// adds no value, so collapse the child exclusions into a single exclusion of the whole
 			// block path. This only applies when EVERY child is excluded; blocks that retain at
 			// least one user-settable child keep the block and just drop their computed leaves.
-			if allChildrenExcluded(elem.Schema, fullPath, childExcluded) {
+			//
+			// Gated to !g.exportComputed: read-only computed leaves are always excluded regardless
+			// of export_computed, so a block made up solely of such leaves (e.g. a metadata block
+			// containing only a read-only "version" field) would otherwise collapse even when
+			// export_computed=true or export_deprecated=false, changing output on paths this fix is
+			// not meant to touch. Under export_computed=true that block still exports as an empty
+			// shell, matching pre-fix behavior; this collapse is intentionally scoped to the
+			// export_computed=false case described in GitHub issue #2417.
+			if !g.exportComputed && allChildrenExcluded(elem.Schema, fullPath, childExcluded) {
 				tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' block to be excluded from the '%s' resource type export because all of its children are excluded", fullPath, resourceType))
 				excludedAttributes = append(excludedAttributes, fullPath)
 			} else {

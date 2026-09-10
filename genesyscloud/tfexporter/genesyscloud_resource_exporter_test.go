@@ -2260,6 +2260,281 @@ func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
 			expected: []string{"settings"},
 		},
 		{
+			// Regression test for PR #2554 review comment: the block-collapse behavior must be
+			// scoped to export_computed=false. Under export_computed=true (even with
+			// export_deprecated=false), a block whose only child is deprecated must NOT collapse -
+			// only the deprecated leaf is excluded, matching pre-fix behavior for this setting.
+			name:             "All-deprecated block does NOT collapse when exportComputed is true",
+			exportComputed:   true,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"old_field": {Type: schema.TypeString, Optional: true, Deprecated: "use new_field"},
+						},
+					},
+				},
+			},
+			expected: []string{"block.old_field"},
+		},
+		{
+			// Regression test for PR #2554 review comment: a block whose only child is a pure
+			// read-only computed field (e.g. workforcemanagement_businessunits' metadata.version)
+			// is always excluded regardless of export_computed, but under the DEFAULT settings
+			// (export_computed=true) the block itself must NOT collapse - only pre-existing
+			// behavior (empty shell) is preserved on this path.
+			name:             "All-readonly-computed block does NOT collapse when exportComputed is true (default)",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"metadata": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"version": {Type: schema.TypeInt, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"metadata.version"},
+		},
+		{
+			// Companion case: the SAME all-readonly-computed block DOES collapse to the block
+			// path when export_computed=false, since that's the scenario the collapse behavior
+			// is meant to cover.
+			name:             "All-readonly-computed block collapses when exportComputed is false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"metadata": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"version": {Type: schema.TypeInt, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"metadata"},
+		},
+		{
+			// A nested BLOCK itself (not just a leaf) that is pure read-only (Computed, not
+			// Optional, not Required) is excluded in full without recursing into its children,
+			// even when a child is a normal user-settable field, and regardless of exportComputed.
+			// This is intentional and predates the #2417 fix: unlike an Optional+Computed block,
+			// a purely-Computed block can never be written by a user in HCL at all, so there is
+			// nothing to preserve by recursing into it.
+			name:             "Purely read-only BLOCK (Computed, not Optional) is excluded whole, even with a normal child, exportComputed true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"readonly_block": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"child": {Type: schema.TypeString, Optional: true},
+						},
+					},
+				},
+			},
+			expected: []string{"readonly_block"},
+		},
+		{
+			// Same purely read-only BLOCK case, but with exportComputed=false - behavior is
+			// identical, confirming this exclusion does not depend on exportComputed at all.
+			name:             "Purely read-only BLOCK (Computed, not Optional) is excluded whole, exportComputed false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"readonly_block": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"child": {Type: schema.TypeString, Optional: true},
+						},
+					},
+				},
+			},
+			expected: []string{"readonly_block"},
+		},
+		{
+			// Mixed reasons INSIDE a block that is itself Optional+Computed: one child computed,
+			// one child deprecated, one child a normal survivor. Only the two problem children
+			// should be excluded; the block and the surviving normal child must remain.
+			name:             "Computed parent block with computed AND deprecated children, one normal child survives",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"computed_child":   {Type: schema.TypeString, Optional: true, Computed: true},
+							"deprecated_child": {Type: schema.TypeString, Optional: true, Deprecated: "old"},
+							"normal_child":     {Type: schema.TypeString, Optional: true},
+						},
+					},
+				},
+			},
+			expected: []string{"block.computed_child", "block.deprecated_child"},
+		},
+		{
+			// Same shape as above, but ALL children are excluded (computed + deprecated only,
+			// no normal survivor) with export_computed=false AND export_deprecated=false. The
+			// block should collapse to the whole block path.
+			name:             "Computed parent block with computed AND deprecated children, none survive, collapses",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"computed_child":   {Type: schema.TypeString, Optional: true, Computed: true},
+							"deprecated_child": {Type: schema.TypeString, Optional: true, Deprecated: "old"},
+						},
+					},
+				},
+			},
+			expected: []string{"block"},
+		},
+		{
+			// A block that is Optional+Computed, with a nested SUB-block as its only child, where
+			// that sub-block itself becomes fully excluded (collapses to its own path). The outer
+			// block should then ALSO collapse, since its only child (the sub-block path) is excluded.
+			name:             "Two levels of Optional+Computed blocks, both all-computed, both collapse",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"outer": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"inner": {
+								Type:     schema.TypeList,
+								Optional: true,
+								Computed: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"generated": {Type: schema.TypeString, Optional: true, Computed: true},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"outer"},
+		},
+		{
+			// Same two-level nesting, but the INNER block has one normal child. The inner block
+			// should NOT collapse (child survives), and therefore the OUTER block must also NOT
+			// collapse, since its only child ("inner") is not in the excluded set.
+			name:             "Two levels of Optional+Computed blocks, inner has a surviving child, neither collapses",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"outer": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"inner": {
+								Type:     schema.TypeList,
+								Optional: true,
+								Computed: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"generated": {Type: schema.TypeString, Optional: true, Computed: true},
+										"notes":     {Type: schema.TypeString, Optional: true},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"outer.inner.generated"},
+		},
+		{
+			// A block that is Optional (NOT computed) but ends up with all children excluded
+			// (all computed leaves, export_computed=false). Confirms the collapse behavior does
+			// not require the container itself to be Computed - it only cares whether every
+			// child ends up excluded.
+			name:             "Non-computed Optional block with all-computed children collapses when exportComputed false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"plain_block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated_a": {Type: schema.TypeString, Optional: true, Computed: true},
+							"generated_b": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"plain_block"},
+		},
+		{
+			// Same non-computed Optional block, but export_computed=true: children survive
+			// (Optional+Computed leaves are kept when exportComputed=true), so nothing at all
+			// should be excluded and the block stays fully intact.
+			name:             "Non-computed Optional block with all-computed children: nothing excluded when exportComputed true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"plain_block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated_a": {Type: schema.TypeString, Optional: true, Computed: true},
+							"generated_b": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			expected: nil,
+		},
+		{
+			// A block (TypeSet, not TypeList) that is Optional+Computed with all-computed
+			// children - confirms the collapse logic applies to TypeSet blocks too, not just
+			// TypeList.
+			name:             "TypeSet Optional+Computed block with all-computed children collapses",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"tag_set": {
+					Type:     schema.TypeSet,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"tag_set"},
+		},
+		{
 			name:             "Deeply nested with mixed exclusion reasons",
 			exportComputed:   false,
 			exportDeprecated: false,
