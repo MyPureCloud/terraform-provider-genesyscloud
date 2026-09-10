@@ -38,6 +38,7 @@ type getAllIntegrationsFunc func(ctx context.Context, p *IntegrationsProxy) (*[]
 type createIntegrationFunc func(ctx context.Context, p *IntegrationsProxy, integration *platformclientv2.Createintegrationrequest) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
 type getIntegrationByIdFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string) (integration *platformclientv2.Integration, response *platformclientv2.APIResponse, err error)
 type getIntegrationByNameFunc func(ctx context.Context, p *IntegrationsProxy, integrationName string) (integration *platformclientv2.Integration, retryable bool, response *platformclientv2.APIResponse, err error)
+type getIntegrationByNameAndTypeFunc func(ctx context.Context, p *IntegrationsProxy, integrationName string, integrationType string) (integration *platformclientv2.Integration, retryable bool, response *platformclientv2.APIResponse, err error)
 type updateIntegrationFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string, integration *platformclientv2.Integration) (*platformclientv2.Integration, *platformclientv2.APIResponse, error)
 type deleteIntegrationFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string) (response *platformclientv2.APIResponse, err error)
 type getIntegrationConfigFunc func(ctx context.Context, p *IntegrationsProxy, integrationId string) (config *platformclientv2.Integrationconfiguration, response *platformclientv2.APIResponse, err error)
@@ -45,32 +46,34 @@ type updateIntegrationConfigFunc func(ctx context.Context, p *IntegrationsProxy,
 
 // integrationProxy contains all of the methods that call genesys cloud APIs.
 type IntegrationsProxy struct {
-	clientConfig                *platformclientv2.Configuration
-	integrationsApi             *platformclientv2.IntegrationsApi
-	getAllIntegrationsAttr      getAllIntegrationsFunc
-	createIntegrationAttr       createIntegrationFunc
-	getIntegrationByIdAttr      getIntegrationByIdFunc
-	getIntegrationByNameAttr    getIntegrationByNameFunc
-	updateIntegrationAttr       updateIntegrationFunc
-	updateIntegrationConfigAttr updateIntegrationConfigFunc
-	deleteIntegrationAttr       deleteIntegrationFunc
-	getIntegrationConfigAttr    getIntegrationConfigFunc
+	clientConfig                    *platformclientv2.Configuration
+	integrationsApi                 *platformclientv2.IntegrationsApi
+	getAllIntegrationsAttr          getAllIntegrationsFunc
+	createIntegrationAttr           createIntegrationFunc
+	getIntegrationByIdAttr          getIntegrationByIdFunc
+	getIntegrationByNameAttr        getIntegrationByNameFunc
+	getIntegrationByNameAndTypeAttr getIntegrationByNameAndTypeFunc
+	updateIntegrationAttr           updateIntegrationFunc
+	updateIntegrationConfigAttr     updateIntegrationConfigFunc
+	deleteIntegrationAttr           deleteIntegrationFunc
+	getIntegrationConfigAttr        getIntegrationConfigFunc
 }
 
 // newIntegrationsProxy initializes the Integrations proxy with all of the data needed to communicate with Genesys Cloud
 func newIntegrationsProxy(clientConfig *platformclientv2.Configuration) *IntegrationsProxy {
 	api := platformclientv2.NewIntegrationsApiWithConfig(clientConfig)
 	return &IntegrationsProxy{
-		clientConfig:                clientConfig,
-		integrationsApi:             api,
-		getAllIntegrationsAttr:      getAllIntegrationsFn,
-		createIntegrationAttr:       createIntegrationFn,
-		getIntegrationByIdAttr:      getIntegrationByIdFn,
-		getIntegrationByNameAttr:    getIntegrationByNameFn,
-		updateIntegrationAttr:       updateIntegrationFn,
-		updateIntegrationConfigAttr: updateIntegrationConfigFn,
-		deleteIntegrationAttr:       deleteIntegrationFn,
-		getIntegrationConfigAttr:    getIntegrationConfigFn,
+		clientConfig:                    clientConfig,
+		integrationsApi:                 api,
+		getAllIntegrationsAttr:          getAllIntegrationsFn,
+		createIntegrationAttr:           createIntegrationFn,
+		getIntegrationByIdAttr:          getIntegrationByIdFn,
+		getIntegrationByNameAttr:        getIntegrationByNameFn,
+		getIntegrationByNameAndTypeAttr: getIntegrationByNameAndTypeFn,
+		updateIntegrationAttr:           updateIntegrationFn,
+		updateIntegrationConfigAttr:     updateIntegrationConfigFn,
+		deleteIntegrationAttr:           deleteIntegrationFn,
+		getIntegrationConfigAttr:        getIntegrationConfigFn,
 	}
 }
 
@@ -106,6 +109,11 @@ func (p *IntegrationsProxy) getIntegrationById(ctx context.Context, integrationI
 // getIntegrationByName gets a Genesys Cloud Integration by name
 func (p *IntegrationsProxy) getIntegrationByName(ctx context.Context, integrationName string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
 	return p.getIntegrationByNameAttr(ctx, p, integrationName)
+}
+
+// getIntegrationByNameAndType gets a Genesys Cloud Integration by name and integration type
+func (p *IntegrationsProxy) getIntegrationByNameAndType(ctx context.Context, integrationName string, integrationType string) (*platformclientv2.Integration, bool, *platformclientv2.APIResponse, error) {
+	return p.getIntegrationByNameAndTypeAttr(ctx, p, integrationName, integrationType)
 }
 
 // updateIntegration updates a Genesys Cloud Integration

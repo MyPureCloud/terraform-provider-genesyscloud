@@ -37,7 +37,7 @@ func dataSourceIntegrationRead(ctx context.Context, d *schema.ResourceData, m in
 		var err error
 
 		if integrationType != "" {
-			integration, retryable, resp, err = getIntegrationByNameAndTypeFn(ctx, ip, integrationName, integrationType)
+			integration, retryable, resp, err = ip.getIntegrationByNameAndType(ctx, integrationName, integrationType)
 		} else {
 			integration, retryable, resp, err = ip.getIntegrationByName(ctx, integrationName)
 		}
