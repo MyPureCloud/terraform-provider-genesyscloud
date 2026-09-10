@@ -79,8 +79,17 @@ func readArchitectIvrIdentityResolution(ctx context.Context, d *schema.ResourceD
 		}
 
 		_ = d.Set("ivr_id", ivrId)
-		_ = d.Set("resolve_identities", config.ResolveIdentities)
-		_ = d.Set("division_id", config.Division.Id)
+
+		if config.ResolveIdentities != nil {
+			_ = d.Set("resolve_identities", *config.ResolveIdentities)
+		} else {
+			_ = d.Set("resolve_identities", false)
+		}
+		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
+			_ = d.Set("division_id", *config.Division.Id)
+		} else {
+			_ = d.Set("division_id", "")
+		}
 
 		log.Printf("read identity resolution for IVR %s", ivrId)
 		return cc.CheckState(d)

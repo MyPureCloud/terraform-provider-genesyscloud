@@ -62,6 +62,9 @@ func TestUnitResourceArchitectIvrIdentityResolutionRead(t *testing.T) {
 		apiResponse := platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return &platformclientv2.Ivridentityresolutionconfig{
 			ResolveIdentities: &resolveIdentities,
+			Division: &platformclientv2.Writablestarrabledivision{
+				Id: &tDivisionId,
+			},
 		}, &apiResponse, nil
 	}
 
@@ -81,11 +84,8 @@ func TestUnitResourceArchitectIvrIdentityResolutionRead(t *testing.T) {
 	assert.Equal(t, tIvrId, d.Id())
 	assert.Equal(t, tIvrId, d.Get("ivr_id").(string))
 
-	blocks := d.Get("resolve_identities").([]interface{})
-	assert.Len(t, blocks, 1)
-	block := blocks[0].(map[string]interface{})
-	assert.Equal(t, false, block["resolve_identities"])
-	assert.Equal(t, tDivisionId, block["division_id"])
+	assert.Equal(t, false, d.Get("resolve_identities"))
+	assert.Equal(t, tDivisionId, d.Get("division_id"))
 }
 
 func TestUnitResourceArchitectIvrIdentityResolutionDelete(t *testing.T) {

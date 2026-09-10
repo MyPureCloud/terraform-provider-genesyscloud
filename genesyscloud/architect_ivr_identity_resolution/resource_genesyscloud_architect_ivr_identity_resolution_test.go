@@ -201,7 +201,7 @@ func verifyIdentityResolutionDefault(ivrResourcePath string) resource.TestCheckF
 
 		if !isDefaultIdentityResolutionConfig(config) {
 			resolveIdentities := "nil"
-			if config.ResolveIdentities != nil && config.ResolveIdentities != nil {
+			if config.ResolveIdentities != nil {
 				resolveIdentities = fmt.Sprintf("%t", *config.ResolveIdentities)
 			}
 			return fmt.Errorf("expected default identity resolution config for ivr %s, got resolve_identities=%s", ivrResource.Primary.ID, resolveIdentities)
