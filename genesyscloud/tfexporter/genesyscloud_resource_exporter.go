@@ -769,6 +769,21 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 				g.addUnresolvedAttrs(unresolvableAttrs)
 			}
 
+			// 5.5. When computed attributes are being excluded (export_computed=false), a nested
+			// block can be left with all of its fields nil: its computed fields were excluded and
+			// its remaining user fields held zero values that sanitization nil'd out. Such a block
+			// would render as an empty `foo {}` shell, which is confusing (a user may think a value
+			// is required) and carries no information. Remove blocks whose fields are ALL nil.
+			//
+			// This deliberately treats only all-nil blocks as empty. Attributes preserved by
+			// AllowEmptyArrays are set to a non-nil empty slice ([]interface{}{}) during sanitization,
+			// so a block retaining such an attribute is NOT all-nil and is correctly kept. Gated to
+			// export_computed=false so the default (export_computed=true) output is unchanged.
+			// See GitHub issue #2417.
+			if !g.exportComputed {
+				removeAllNilNestedBlocks(configMap)
+			}
+
 			// 6. Handle custom write attributes (i.e. exporting files like prompts, flows, scripts, etc)
 			if !result.isDataSource {
 				diagErr = g.customWriteAttributes(configMap, resource)
@@ -2267,8 +2282,16 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 			continue
 		}
 
-		// Remove any computed but optional attributes if export computed exporter config not set
-		if s.Computed == true && !g.exportComputed {
+		// Remove any computed but optional attributes if export computed exporter config not set.
+		//
+		// Exception: a nested block (Elem is *schema.Resource) may be flagged Computed at the
+		// container level while still holding user-settable children (e.g.
+		// genesyscloud_integration.config, whose name/notes/credentials are user input). Excluding
+		// the whole block here would drop those user-set fields and produce a non-portable export
+		// (see GitHub issue #2417). For such blocks we skip the wholesale exclusion and instead fall
+		// through to the recursion below, which excludes only the genuinely computed leaf children.
+		_, isNestedBlock := s.Elem.(*schema.Resource)
+		if s.Computed == true && !g.exportComputed && !isNestedBlock {
 			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed, but optional attribute and exclude_computed was set", fullPath, resourceType))
 			excludedAttributes = append(excludedAttributes, fullPath)
 			continue
@@ -2281,10 +2304,50 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 			continue
 		}
 		if elem, ok := s.Elem.(*schema.Resource); ok {
-			excludedAttributes = append(excludedAttributes, g.collectSchemaBasedExcludedAttributes(resourceType, elem.Schema, fullPath)...)
+			childExcluded := g.collectSchemaBasedExcludedAttributes(resourceType, elem.Schema, fullPath)
+
+			// If recursion excluded every child of this block, the block would export as an
+			// empty `foo {}` shell. That is confusing (a user may think they must fill it in) and
+			// adds no value, so collapse the child exclusions into a single exclusion of the whole
+			// block path. This only applies when EVERY child is excluded; blocks that retain at
+			// least one user-settable child keep the block and just drop their computed leaves.
+			//
+			// Gated to !g.exportComputed: read-only computed leaves are always excluded regardless
+			// of export_computed, so a block made up solely of such leaves (e.g. a metadata block
+			// containing only a read-only "version" field) would otherwise collapse even when
+			// export_computed=true or export_deprecated=false, changing output on paths this fix is
+			// not meant to touch. Under export_computed=true that block still exports as an empty
+			// shell, matching pre-fix behavior; this collapse is intentionally scoped to the
+			// export_computed=false case described in GitHub issue #2417.
+			if !g.exportComputed && allChildrenExcluded(elem.Schema, fullPath, childExcluded) {
+				tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' block to be excluded from the '%s' resource type export because all of its children are excluded", fullPath, resourceType))
+				excludedAttributes = append(excludedAttributes, fullPath)
+			} else {
+				excludedAttributes = append(excludedAttributes, childExcluded...)
+			}
 		}
 	}
 	return excludedAttributes
+}
+
+// allChildrenExcluded reports whether every direct child of a nested block (identified by
+// blockPath, with the block's element schema childSchema) is present in the excluded set.
+// A child that is itself a nested block counts as excluded when the block path is excluded
+// (the recursion collapses fully-excluded sub-blocks into their block path).
+func allChildrenExcluded(childSchema map[string]*schema.Schema, blockPath string, excluded []string) bool {
+	if len(childSchema) == 0 {
+		return false
+	}
+	excludedSet := make(map[string]bool, len(excluded))
+	for _, e := range excluded {
+		excludedSet[e] = true
+	}
+	for name := range childSchema {
+		if !excludedSet[blockPath+"."+name] {
+			return false
+		}
+	}
+	return true
 }
 
 func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, resType string) (*terraform.InstanceState, diag.Diagnostics) {
@@ -2947,6 +3010,62 @@ func removeExcludedAttrsFromMap(configMap util.JsonMap, excludedAttrs []string, 
 			}
 		}
 	}
+}
+
+// removeAllNilNestedBlocks removes nested block values (a map, or a list/set of maps) from a
+// sanitized config map when the block carries no information at all — i.e. every field inside
+// the block is nil. It recurses depth-first so that a block emptied only by the removal of a
+// deeper empty child block is itself removed.
+//
+// It is intentionally conservative: only nil values count as "empty". Any non-nil value keeps
+// the block, including a non-nil empty slice ([]interface{}{}) produced by AllowEmptyArrays and
+// any scalar/zero value the exporter chose to keep. Non-map arrays (e.g. lists of strings) are
+// never treated as blocks and are left untouched.
+func removeAllNilNestedBlocks(configMap map[string]interface{}) {
+	for key, val := range configMap {
+		switch v := val.(type) {
+		case map[string]interface{}:
+			removeAllNilNestedBlocks(v)
+			if isAllNilMap(v) {
+				delete(configMap, key)
+			}
+		case []interface{}:
+			// Only treat this as a block list if its elements are maps. Leave lists of
+			// scalars (and AllowEmptyArrays empty slices) exactly as they are.
+			kept := make([]interface{}, 0, len(v))
+			sawMap := false
+			for _, item := range v {
+				if itemMap, ok := item.(map[string]interface{}); ok {
+					sawMap = true
+					removeAllNilNestedBlocks(itemMap)
+					if !isAllNilMap(itemMap) {
+						kept = append(kept, itemMap)
+					}
+				} else {
+					kept = append(kept, item)
+				}
+			}
+			if !sawMap {
+				// Not a block list (scalars only, or empty slice) — leave untouched.
+				continue
+			}
+			if len(kept) == 0 {
+				delete(configMap, key)
+			} else {
+				configMap[key] = kept
+			}
+		}
+	}
+}
+
+// isAllNilMap reports whether a map has no entries, or every entry has a nil value.
+func isAllNilMap(m map[string]interface{}) bool {
+	for _, v := range m {
+		if v != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {

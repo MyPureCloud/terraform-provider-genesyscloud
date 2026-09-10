@@ -302,6 +302,138 @@ func TestUnitTfExportAllowEmptyArray(t *testing.T) {
 	assert.Len(t, configMap["arr_attr_3"], 1)
 }
 
+// TestUnitRemoveAllNilNestedBlocks directly exercises removeAllNilNestedBlocks to confirm it
+// only removes blocks that are entirely nil, and leaves every other shape (real values, maps
+// with real entries like credentials, AllowEmptyArrays-style non-nil empty slices, and plain
+// scalar/string arrays) completely untouched. This backs the GitHub issue #2417 fix that
+// suppresses an empty `config {}` shell without disturbing unrelated exporter behaviors.
+func TestUnitRemoveAllNilNestedBlocks(t *testing.T) {
+	t.Run("all-nil single block is removed", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"integration_type": "purecloud-data-actions",
+			"config": []interface{}{
+				map[string]interface{}{
+					"name":        nil,
+					"properties":  nil,
+					"advanced":    nil,
+					"notes":       nil,
+					"credentials": nil,
+				},
+			},
+		}
+		removeAllNilNestedBlocks(configMap)
+		assert.NotContains(t, configMap, "config", "all-nil config block should be removed entirely")
+		assert.Equal(t, "purecloud-data-actions", configMap["integration_type"], "sibling scalar attribute must be untouched")
+	})
+
+	t.Run("block with a real map value (credentials) is kept", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"config": []interface{}{
+				map[string]interface{}{
+					"name":       nil,
+					"properties": nil,
+					"advanced":   nil,
+					"notes":      nil,
+					"credentials": map[string]interface{}{
+						"pureCloudOAuthClient": "some-credential-guid",
+					},
+				},
+			},
+		}
+		removeAllNilNestedBlocks(configMap)
+		require.Contains(t, configMap, "config", "block holding a real credentials map must be kept")
+		cfg := configMap["config"].([]interface{})[0].(map[string]interface{})
+		assert.Equal(t, map[string]interface{}{"pureCloudOAuthClient": "some-credential-guid"}, cfg["credentials"])
+	})
+
+	t.Run("block with a real string value (notes) is kept", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"config": []interface{}{
+				map[string]interface{}{
+					"name":       nil,
+					"properties": nil,
+					"advanced":   nil,
+					"notes":      "user notes",
+				},
+			},
+		}
+		removeAllNilNestedBlocks(configMap)
+		require.Contains(t, configMap, "config")
+		cfg := configMap["config"].([]interface{})[0].(map[string]interface{})
+		assert.Equal(t, "user notes", cfg["notes"])
+	})
+
+	t.Run("AllowEmptyArrays non-nil empty slice keeps the parent block", func(t *testing.T) {
+		// Mirrors what AllowForEmptyArrays produces during sanitize: configMap[key] = []interface{}{}
+		configMap := map[string]interface{}{
+			"nested": []interface{}{
+				map[string]interface{}{
+					"computed_field": nil,
+					"arr_attr":       []interface{}{}, // non-nil empty slice, not nil
+				},
+			},
+		}
+		removeAllNilNestedBlocks(configMap)
+		require.Contains(t, configMap, "nested", "block retaining a non-nil AllowEmptyArrays slice must be kept")
+		nested := configMap["nested"].([]interface{})[0].(map[string]interface{})
+		assert.NotNil(t, nested["arr_attr"])
+		assert.Len(t, nested["arr_attr"], 0)
+	})
+
+	t.Run("plain scalar array is left untouched even if empty", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"tags": []interface{}{},
+		}
+		removeAllNilNestedBlocks(configMap)
+		assert.Contains(t, configMap, "tags", "non-block (scalar) arrays must never be touched by this function")
+	})
+
+	t.Run("plain scalar array with values is left untouched", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"tags": []interface{}{"a", "b"},
+		}
+		removeAllNilNestedBlocks(configMap)
+		assert.Equal(t, []interface{}{"a", "b"}, configMap["tags"])
+	})
+
+	t.Run("mixed list: one all-nil element removed, one real element kept", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"items": []interface{}{
+				map[string]interface{}{"a": nil, "b": nil},
+				map[string]interface{}{"a": "value", "b": nil},
+			},
+		}
+		removeAllNilNestedBlocks(configMap)
+		items := configMap["items"].([]interface{})
+		require.Len(t, items, 1, "only the all-nil element should be dropped")
+		assert.Equal(t, "value", items[0].(map[string]interface{})["a"])
+	})
+
+	t.Run("nested empty map inside a block collapses the parent too", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"outer": []interface{}{
+				map[string]interface{}{
+					"inner": map[string]interface{}{
+						"leaf": nil,
+					},
+				},
+			},
+		}
+		removeAllNilNestedBlocks(configMap)
+		assert.NotContains(t, configMap, "outer", "a block whose only child (also emptied) leaves it all-nil should be removed")
+	})
+
+	t.Run("resource with no nested blocks at all is unaffected", func(t *testing.T) {
+		configMap := map[string]interface{}{
+			"integration_type": "purecloud-data-actions",
+			"intended_state":   "ENABLED",
+		}
+		removeAllNilNestedBlocks(configMap)
+		assert.Equal(t, "purecloud-data-actions", configMap["integration_type"])
+		assert.Equal(t, "ENABLED", configMap["intended_state"])
+	})
+}
+
 // TestUnitTfExportRemoveTrailingZerosRrule will test if rrule is properly sanaitized before export.
 func TestUnitTfExportRemoveTrailingZerosRrule(t *testing.T) {
 	testCases := []struct {
@@ -2057,7 +2189,7 @@ func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
 			expected:         []string{},
 		},
 		{
-			name:             "Computed parent block with nested children",
+			name:             "Computed parent block with non-computed child is recursed, child preserved",
 			exportComputed:   false,
 			exportDeprecated: true,
 			schemaMap: map[string]*schema.Schema{
@@ -2075,8 +2207,332 @@ func TestUnitCollectSchemaBasedExcludedAttributes(t *testing.T) {
 					},
 				},
 			},
-			// The parent itself is computed, so it gets excluded without recursing
-			expected: []string{"computed_block"},
+			// The parent is a nested block flagged Computed, but its child is user-settable.
+			// We must recurse instead of excluding the whole block (GitHub issue #2417), so the
+			// non-computed child is preserved and nothing is excluded.
+			expected: nil,
+		},
+		{
+			name:             "Computed parent block with mixed children excludes only computed leaves",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				// Mirrors genesyscloud_integration.config: block itself Computed, some children
+				// user-set (notes/credentials) and some computed (name/properties/advanced).
+				"config": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"name":        {Type: schema.TypeString, Optional: true, Computed: true},
+							"notes":       {Type: schema.TypeString, Optional: true},
+							"properties":  {Type: schema.TypeString, Optional: true, Computed: true},
+							"advanced":    {Type: schema.TypeString, Optional: true, Computed: true},
+							"credentials": {Type: schema.TypeMap, Optional: true, Elem: &schema.Schema{Type: schema.TypeString}},
+						},
+					},
+				},
+			},
+			// The block is preserved; only the computed leaf children are excluded.
+			expected: []string{"config.name", "config.properties", "config.advanced"},
+		},
+		{
+			name:             "Computed parent block with ALL computed children collapses to the block path",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				// Every child is computed, so the block would export as an empty `settings {}`.
+				// We collapse to excluding the whole block instead of emitting an empty shell.
+				"settings": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated_a": {Type: schema.TypeString, Optional: true, Computed: true},
+							"generated_b": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			// Whole block excluded (not "settings.generated_a"/"settings.generated_b").
+			expected: []string{"settings"},
+		},
+		{
+			// Regression test for PR #2554 review comment: the block-collapse behavior must be
+			// scoped to export_computed=false. Under export_computed=true (even with
+			// export_deprecated=false), a block whose only child is deprecated must NOT collapse -
+			// only the deprecated leaf is excluded, matching pre-fix behavior for this setting.
+			name:             "All-deprecated block does NOT collapse when exportComputed is true",
+			exportComputed:   true,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"old_field": {Type: schema.TypeString, Optional: true, Deprecated: "use new_field"},
+						},
+					},
+				},
+			},
+			expected: []string{"block.old_field"},
+		},
+		{
+			// Regression test for PR #2554 review comment: a block whose only child is a pure
+			// read-only computed field (e.g. workforcemanagement_businessunits' metadata.version)
+			// is always excluded regardless of export_computed, but under the DEFAULT settings
+			// (export_computed=true) the block itself must NOT collapse - only pre-existing
+			// behavior (empty shell) is preserved on this path.
+			name:             "All-readonly-computed block does NOT collapse when exportComputed is true (default)",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"metadata": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"version": {Type: schema.TypeInt, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"metadata.version"},
+		},
+		{
+			// Companion case: the SAME all-readonly-computed block DOES collapse to the block
+			// path when export_computed=false, since that's the scenario the collapse behavior
+			// is meant to cover.
+			name:             "All-readonly-computed block collapses when exportComputed is false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"metadata": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"version": {Type: schema.TypeInt, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"metadata"},
+		},
+		{
+			// A nested BLOCK itself (not just a leaf) that is pure read-only (Computed, not
+			// Optional, not Required) is excluded in full without recursing into its children,
+			// even when a child is a normal user-settable field, and regardless of exportComputed.
+			// This is intentional and predates the #2417 fix: unlike an Optional+Computed block,
+			// a purely-Computed block can never be written by a user in HCL at all, so there is
+			// nothing to preserve by recursing into it.
+			name:             "Purely read-only BLOCK (Computed, not Optional) is excluded whole, even with a normal child, exportComputed true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"readonly_block": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"child": {Type: schema.TypeString, Optional: true},
+						},
+					},
+				},
+			},
+			expected: []string{"readonly_block"},
+		},
+		{
+			// Same purely read-only BLOCK case, but with exportComputed=false - behavior is
+			// identical, confirming this exclusion does not depend on exportComputed at all.
+			name:             "Purely read-only BLOCK (Computed, not Optional) is excluded whole, exportComputed false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"readonly_block": {
+					Type:     schema.TypeList,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"child": {Type: schema.TypeString, Optional: true},
+						},
+					},
+				},
+			},
+			expected: []string{"readonly_block"},
+		},
+		{
+			// Mixed reasons INSIDE a block that is itself Optional+Computed: one child computed,
+			// one child deprecated, one child a normal survivor. Only the two problem children
+			// should be excluded; the block and the surviving normal child must remain.
+			name:             "Computed parent block with computed AND deprecated children, one normal child survives",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"computed_child":   {Type: schema.TypeString, Optional: true, Computed: true},
+							"deprecated_child": {Type: schema.TypeString, Optional: true, Deprecated: "old"},
+							"normal_child":     {Type: schema.TypeString, Optional: true},
+						},
+					},
+				},
+			},
+			expected: []string{"block.computed_child", "block.deprecated_child"},
+		},
+		{
+			// Same shape as above, but ALL children are excluded (computed + deprecated only,
+			// no normal survivor) with export_computed=false AND export_deprecated=false. The
+			// block should collapse to the whole block path.
+			name:             "Computed parent block with computed AND deprecated children, none survive, collapses",
+			exportComputed:   false,
+			exportDeprecated: false,
+			schemaMap: map[string]*schema.Schema{
+				"block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"computed_child":   {Type: schema.TypeString, Optional: true, Computed: true},
+							"deprecated_child": {Type: schema.TypeString, Optional: true, Deprecated: "old"},
+						},
+					},
+				},
+			},
+			expected: []string{"block"},
+		},
+		{
+			// A block that is Optional+Computed, with a nested SUB-block as its only child, where
+			// that sub-block itself becomes fully excluded (collapses to its own path). The outer
+			// block should then ALSO collapse, since its only child (the sub-block path) is excluded.
+			name:             "Two levels of Optional+Computed blocks, both all-computed, both collapse",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"outer": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"inner": {
+								Type:     schema.TypeList,
+								Optional: true,
+								Computed: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"generated": {Type: schema.TypeString, Optional: true, Computed: true},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"outer"},
+		},
+		{
+			// Same two-level nesting, but the INNER block has one normal child. The inner block
+			// should NOT collapse (child survives), and therefore the OUTER block must also NOT
+			// collapse, since its only child ("inner") is not in the excluded set.
+			name:             "Two levels of Optional+Computed blocks, inner has a surviving child, neither collapses",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"outer": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"inner": {
+								Type:     schema.TypeList,
+								Optional: true,
+								Computed: true,
+								Elem: &schema.Resource{
+									Schema: map[string]*schema.Schema{
+										"generated": {Type: schema.TypeString, Optional: true, Computed: true},
+										"notes":     {Type: schema.TypeString, Optional: true},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []string{"outer.inner.generated"},
+		},
+		{
+			// A block that is Optional (NOT computed) but ends up with all children excluded
+			// (all computed leaves, export_computed=false). Confirms the collapse behavior does
+			// not require the container itself to be Computed - it only cares whether every
+			// child ends up excluded.
+			name:             "Non-computed Optional block with all-computed children collapses when exportComputed false",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"plain_block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated_a": {Type: schema.TypeString, Optional: true, Computed: true},
+							"generated_b": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"plain_block"},
+		},
+		{
+			// Same non-computed Optional block, but export_computed=true: children survive
+			// (Optional+Computed leaves are kept when exportComputed=true), so nothing at all
+			// should be excluded and the block stays fully intact.
+			name:             "Non-computed Optional block with all-computed children: nothing excluded when exportComputed true",
+			exportComputed:   true,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"plain_block": {
+					Type:     schema.TypeList,
+					Optional: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated_a": {Type: schema.TypeString, Optional: true, Computed: true},
+							"generated_b": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			expected: nil,
+		},
+		{
+			// A block (TypeSet, not TypeList) that is Optional+Computed with all-computed
+			// children - confirms the collapse logic applies to TypeSet blocks too, not just
+			// TypeList.
+			name:             "TypeSet Optional+Computed block with all-computed children collapses",
+			exportComputed:   false,
+			exportDeprecated: true,
+			schemaMap: map[string]*schema.Schema{
+				"tag_set": {
+					Type:     schema.TypeSet,
+					Optional: true,
+					Computed: true,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"generated": {Type: schema.TypeString, Optional: true, Computed: true},
+						},
+					},
+				},
+			},
+			expected: []string{"tag_set"},
 		},
 		{
 			name:             "Deeply nested with mixed exclusion reasons",
