@@ -40,7 +40,7 @@ type createArchitectIvrFunc func(context.Context, *ArchitectIvrProxy, platformcl
 type getArchitectIvrFunc func(context.Context, *ArchitectIvrProxy, string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
 type updateArchitectIvrFunc func(context.Context, *ArchitectIvrProxy, string, platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
 type deleteArchitectIvrFunc func(context.Context, *ArchitectIvrProxy, string) (*platformclientv2.APIResponse, error)
-type getAllArchitectIvrsFunc func(context.Context, *ArchitectIvrProxy, string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error)
+type GetAllArchitectIvrsFunc func(context.Context, *ArchitectIvrProxy, string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error)
 type getArchitectIvrIdByNameFunc func(context.Context, *ArchitectIvrProxy, string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
 
 // ArchitectIvrProxy contains all methods that call genesys cloud APIs.
@@ -52,7 +52,7 @@ type ArchitectIvrProxy struct {
 	getArchitectIvrAttr         getArchitectIvrFunc
 	updateArchitectIvrAttr      updateArchitectIvrFunc
 	deleteArchitectIvrAttr      deleteArchitectIvrFunc
-	getAllArchitectIvrsAttr     getAllArchitectIvrsFunc
+	GetAllArchitectIvrsAttr     GetAllArchitectIvrsFunc
 	getArchitectIvrIdByNameAttr getArchitectIvrIdByNameFunc
 
 	maxDnisPerRequest int
@@ -73,7 +73,7 @@ func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *Archite
 		getArchitectIvrAttr:         getArchitectIvrFn,
 		updateArchitectIvrAttr:      updateArchitectIvrFn,
 		deleteArchitectIvrAttr:      deleteArchitectIvrFn,
-		getAllArchitectIvrsAttr:     getAllArchitectIvrsFn,
+		GetAllArchitectIvrsAttr:     getAllArchitectIvrsFn,
 		getArchitectIvrIdByNameAttr: getArchitectIvrIdByNameFn,
 
 		maxDnisPerRequest: maxDnisPerRequest,
@@ -94,7 +94,7 @@ func GetArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *Archite
 
 // getAllArchitectIvrs retrieves all Genesys Cloud Architect IVRs
 func (a *ArchitectIvrProxy) GetAllArchitectIvrs(ctx context.Context, name string) (*[]platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	return a.getAllArchitectIvrsAttr(ctx, a, name)
+	return a.GetAllArchitectIvrsAttr(ctx, a, name)
 }
 
 // getArchitectIvrIdByName retrieves a Genesys Cloud Architect IVR ID by name
