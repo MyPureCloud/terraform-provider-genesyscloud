@@ -3,7 +3,7 @@ package conversations_settings
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v198/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 var internalProxy *conversationsSettingsProxy
