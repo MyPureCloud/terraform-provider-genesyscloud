@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
+	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
@@ -248,6 +250,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[businessRulesSchema.ResourceType] = businessRulesSchema.ResourceBusinessRulesSchema()
 	providerResources[businessRulesDecisionTable.ResourceType] = businessRulesDecisionTable.ResourceBusinessRulesDecisionTable()
+	providerResources[agenticVirtualAgent.ResourceType] = agenticVirtualAgent.ResourceAgenticVirtualAgent()
+	providerResources[agenticVirtualAgentVersion.ResourceType] = agenticVirtualAgentVersion.ResourceAgenticVirtualAgentVersion()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -364,6 +368,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(guideVersion.ResourceType, guideVersion.GuideVersionExporter())
 	RegisterExporter(businessRulesSchema.ResourceType, businessRulesSchema.BusinessRulesSchemaExporter())
 	RegisterExporter(businessRulesDecisionTable.ResourceType, businessRulesDecisionTable.BusinessRulesDecisionTableExporter())
+	RegisterExporter(agenticVirtualAgent.ResourceType, agenticVirtualAgent.AgenticVirtualAgentExporter())
+	RegisterExporter(agenticVirtualAgentVersion.ResourceType, agenticVirtualAgentVersion.AgenticVirtualAgentVersionExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

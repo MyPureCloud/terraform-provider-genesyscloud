@@ -147,6 +147,12 @@ func ResourceRoutingUtilization() *schema.Resource {
 				Computed:    true,
 				Elem:        UtilizationLabelResource,
 			},
+			"max_inbound_calls": {
+				Description: "Max number of inbound voice calls. This limits the total inbound calls (ACD + non-ACD) an agent can receive.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -154,7 +160,7 @@ func ResourceRoutingUtilization() *schema.Resource {
 func RoutingUtilizationExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingUtilization),
-		AllowZeroValues:  []string{"maximum_capacity"},
+		AllowZeroValues:  []string{"maximum_capacity", "max_inbound_calls"},
 		IsSingleton:      true,
 		ExportId:         ResourceType,
 	}

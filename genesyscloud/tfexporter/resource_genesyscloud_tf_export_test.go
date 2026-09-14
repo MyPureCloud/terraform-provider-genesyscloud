@@ -2993,3 +2993,101 @@ func keysOf(m map[string]interface{}) []string {
 	}
 	return out
 }
+
+// TestAccResourceTfExportAgenticVirtualAgent exercises the exporter pipeline for the
+// Agentic Virtual Agent resources. It creates an agent and a version, runs an export with
+// dependency resolution enabled, and verifies that:
+//   - both the agent and version resource blocks are exported, and
+//   - the version's agent_id is rewritten to a ${genesyscloud_agentic_virtual_agent...id}
+//     reference rather than a raw UUID (exporter RefAttrs resolution).
+func TestAccResourceTfExportAgenticVirtualAgent(t *testing.T) {
+	testSetup(t)
+
+	var (
+		uniqueSuffix  = uuid.NewString()[:8]
+		agentName     = "tf_test_ava_export_agent_" + uniqueSuffix
+		exportTestDir = testrunner.GetTestTempPath(".terraform_ava_export_" + uuid.NewString())
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	baseConfig := fmt.Sprintf(`
+resource "genesyscloud_agentic_virtual_agent" "ava_agent" {
+  name = "%[1]s"
+}
+
+resource "genesyscloud_agentic_virtual_agent_version" "ava_version" {
+  agent_id = genesyscloud_agentic_virtual_agent.ava_agent.id
+
+  definition {
+    role         = "You are a helpful export test agent."
+    instructions = ["Be concise and helpful."]
+  }
+}
+`, agentName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the agent and version.
+				Config: baseConfig,
+			},
+			{
+				// Step 2: export both resources with dependency resolution so the
+				// version's agent_id resolves to a resource reference.
+				Config: baseConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					"ava_export",
+					exportTestDir,
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format
+					util.TrueValue,        // enable_dependency_resolution
+					[]string{
+						strconv.Quote("genesyscloud_agentic_virtual_agent::" + agentName),
+						strconv.Quote("genesyscloud_agentic_virtual_agent_version"),
+					},
+					[]string{
+						"genesyscloud_agentic_virtual_agent.ava_agent",
+						"genesyscloud_agentic_virtual_agent_version.ava_version",
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					assertAgenticVirtualAgentExport(configPath, agentName),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// assertAgenticVirtualAgentExport verifies the exported tf.json contains the agent and
+// version resources, and that the version's agent_id is a resource reference (not a raw UUID).
+func assertAgenticVirtualAgentExport(configPath, agentName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		data, err := os.ReadFile(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read exported config %s: %w", configPath, err)
+		}
+		content := string(data)
+
+		// The agent block must be present.
+		if !strings.Contains(content, `"genesyscloud_agentic_virtual_agent"`) {
+			return fmt.Errorf("exported config does not contain a genesyscloud_agentic_virtual_agent resource")
+		}
+		// The version block must be present.
+		if !strings.Contains(content, `"genesyscloud_agentic_virtual_agent_version"`) {
+			return fmt.Errorf("exported config does not contain a genesyscloud_agentic_virtual_agent_version resource")
+		}
+		// The version's agent_id must be resolved to a resource reference, not a raw UUID.
+		if !strings.Contains(content, "${genesyscloud_agentic_virtual_agent.") {
+			return fmt.Errorf("exported version agent_id was not resolved to a ${genesyscloud_agentic_virtual_agent...} reference")
+		}
+		return nil
+	}
+}

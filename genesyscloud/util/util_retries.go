@@ -25,6 +25,10 @@ func WithRetries(ctx context.Context, timeout time.Duration, method func() *retr
 
 const maxWithRetriesAttempts = 2
 
+// maxWithRetriesForReadAttempts bounds the recursive re-entry of the read retry
+// wrapper so a persistently retryable/timeout read cannot loop indefinitely.
+const maxWithRetriesForReadAttempts = 2
+
 func withRetriesInternal(ctx context.Context, timeout time.Duration, method func() *retry.RetryError, attempt int) diag.Diagnostics {
 	method = wrapReadMethodWithRecover(method)
 	err := diag.FromErr(retry.RetryContext(ctx, timeout, method))
@@ -52,8 +56,11 @@ func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func
 // A timeout of 0 means no retries - the method is called once and if it returns a 404,
 // the resource is immediately removed from state (fail-fast behavior).
 func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
-	method = wrapReadMethodWithRecover(method)
+	// Wrap once so the panic-recovery wrapper isn't re-applied on each recursion.
+	return withRetriesForReadInternal(ctx, timeout, d, wrapReadMethodWithRecover(method), 0)
+}
 
+func withRetriesForReadInternal(ctx context.Context, timeout time.Duration, d *schema.ResourceData, method func() *retry.RetryError, attempt int) diag.Diagnostics {
 	// Special handling for zero timeout: execute once without retry
 	if timeout <= 0 {
 		retryErr := method()
@@ -82,9 +89,19 @@ func WithRetriesForReadCustomTimeout(ctx context.Context, timeout time.Duration,
 		}
 
 		if IsTimeoutError(err) {
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			// Stop after max attempts to prevent the unbounded recursion that
+			// caused prolonged read hangs on large decision tables.
+			if attempt >= maxWithRetriesForReadAttempts {
+				if d.Id() != "" {
+					consistency_checker.DeleteConsistencyCheck(d.Id())
+				}
+				return diag.FromErr(err)
+			}
+			// Derive from the parent ctx so Terraform's operation deadline /
+			// cancellation still bounds the loop (previously context.Background()).
+			retryCtx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
-			return WithRetriesForRead(ctx, d, method)
+			return withRetriesForReadInternal(retryCtx, timeout, d, method, attempt+1)
 		}
 		if d.Id() != "" {
 			consistency_checker.DeleteConsistencyCheck(d.Id())
