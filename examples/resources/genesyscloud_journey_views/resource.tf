@@ -96,7 +96,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name    = "New Chart B"
     version = 1
-    rank    = 1
+    rank    = 2
     group_by_attributes {
       element_id = var.element_second_id
       attribute  = "vendor"
