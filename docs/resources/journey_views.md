@@ -186,7 +186,6 @@ Required:
 
 Optional:
 
-
 - `display_attributes` (Block List, Max: 1) Optional display attributes for rendering the chart (see [below for nested schema](#nestedblock--charts--display_attributes))
 - `group_by_attributes` (Block List) A list of attributes to group the metrics by (see [below for nested schema](#nestedblock--charts--group_by_attributes))
 - `group_by_max` (Number) A maximum on the number of values being grouped by
