@@ -1,6 +1,6 @@
 ---
 name: resource-creation
-description: Create a new Terraform resource (and its data source, exporter, unit tests, acceptance tests, examples, and docs) in terraform-provider-genesyscloud, end-to-end, following the codebase's proxy/schema/resource layering. Trigger this whenever the user asks to "create a resource", "add a new resource", "wrap an API endpoint as a resource", "build a data source", or gives a Genesys Cloud API endpoint (e.g. /api/v2/...) and asks to expose it through the provider.
+description: Creates a new Terraform resource in terraform-provider-genesyscloud end-to-end — resource, data source, exporter, unit tests, acceptance tests, examples, docs, and registration — following the codebase's proxy/schema/resource layering. Use this when the user asks to "create a resource", "add a new resource", "wrap an API endpoint as a resource", or "build a data source", or gives a Genesys Cloud API endpoint (e.g. /api/v2/...) and asks to expose it through the provider.
 ---
 
 # Resource Creation — Genesys Cloud Terraform Provider
@@ -102,25 +102,9 @@ Follow the examples/registrar sections in `references/code-templates.md`:
 2. Register in `genesyscloud/provider_registrar/provider_registrar.go` — import alias **and** `SetRegistrar` call; grep-verify both landed.
 3. `go generate ./...` — must exit 0 with no "Missing APIs file". Never hand-edit `docs/`.
 
-## Phase 5 — Automated verification
+## Phase 5 — Automated verification, Phase 6 — Live verification
 
-Run these yourself; state plainly which passed. Full detail in `references/verification.md`.
-
-```bash
-gofmt -w genesyscloud/<name>/ && gofmt -l genesyscloud/<name>/   # empty output = clean
-go vet ./genesyscloud/<name>/...
-make testunit                                                   # go build + whole-repo unit suite
-make docs                                                       # apidocs generator + go generate; exit 0, no "Missing APIs file"
-```
-
-## Phase 6 — Live verification (the user's step; run only if asked)
-
-This repo uses a **filesystem plugin mirror**, NOT `dev_overrides`. Open `references/verification.md` for the test config + export HCL. Sequence:
-
-1. `make sideload` — build + copy the binary to `~/.terraform.d/plugins/genesys.com/mypurecloud/genesyscloud/0.1.0/<os>_<arch>/`.
-2. `strings <mirror>/terraform-provider-genesyscloud | grep genesyscloud_<name>` — confirm the new resource is actually in the binary (catches a stale sideload).
-3. In a clean dir (`source = "genesys.com/mypurecloud/genesyscloud"`, version `0.1.0`), `terraform init && terraform apply` -> CREATE+READ; edit values + apply -> UPDATE must be `~ in-place`; `plan` again -> **"No changes"** (drift check); out-of-range value -> validation fails at plan time; `terraform import ... <fixedId>` -> no diff after.
-4. Add a `genesyscloud_tf_export` block and apply -> exported `.tf` has all writable fields, NO read-only/computed fields, and round-trips with a clean `terraform plan`.
+**Open `references/verification.md`** and follow it. Phase 5 (gofmt, `go vet`, `make testunit`, `make docs`) you run yourself — state plainly which passed. Phase 6 (`make sideload` + `terraform apply`/plan/import/export against a live org) is the user's step — hand it over, or run it only if asked.
 
 ## Common pitfalls (learned the hard way)
 
