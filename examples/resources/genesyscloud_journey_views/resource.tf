@@ -80,6 +80,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name          = "New Chart"
     version       = 1
+    rank          = 1
     group_by_time = "Day"
     metrics {
       id         = "36b3f717-f309-425d-9d5e-3af2071ad0a4"
@@ -95,6 +96,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name    = "New Chart B"
     version = 1
+    rank    = 1
     group_by_attributes {
       element_id = var.element_second_id
       attribute  = "vendor"
