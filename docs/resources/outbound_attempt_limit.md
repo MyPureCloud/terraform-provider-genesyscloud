@@ -66,7 +66,7 @@ resource "genesyscloud_outbound_attempt_limit" "attempt_limit" {
 - `max_attempts_per_number` (Number) The maximum number of times a phone number can be called within the resetPeriod. Required if maxAttemptsPerContact is not defined.
 - `name` (String) The name for the attempt limit.
 - `recall_entries` (Block List, Max: 1) Configuration for recall attempts. (see [below for nested schema](#nestedblock--recall_entries))
-- `reset_period` (String) After how long the number of attempts will be set back to 0. Defaults to `NEVER`.
+- `reset_period` (String) After how long the number of attempts will be set back to 0. Valid values: NEVER, TODAY, or DAYS_xx where xx is 2 through 30 (for example DAYS_30). Defaults to `NEVER`.
 - `time_zone_id` (String) If the resetPeriod is TODAY, this specifies the timezone in which TODAY occurs. Required if the resetPeriod is TODAY.
 
 ### Read-Only
