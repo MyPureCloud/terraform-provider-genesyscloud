@@ -124,6 +124,16 @@ func modifyTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 		if err == nil {
 			return nil
 		}
+		// Empty destination_status_ids means "all other statuses". The API treats that as a no-op
+		// when destinations are already unrestricted, and returns 400. Treat it as success only
+		// when a follow-up read already matches the desired config (do not swallow a failed unset).
+		if util.IsStatus400(resp) && isNoChangeForRecordError(err, resp) {
+			currentStatus, _, getErr := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
+			if getErr == nil && workitemStatusTransitionMatchesConfig(d, currentStatus) {
+				workitemStatus = currentStatus
+				return nil
+			}
+		}
 		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
 		// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
 		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
@@ -162,15 +172,11 @@ func readTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema.R
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read task management worktype %s status %s: %s", worktypeId, statusId, getErr), resp))
 		}
+		// Capture before writing worktype_id: import reads start with only the resource ID.
+		importing := d.Get("worktype_id").(string) == ""
 		resourcedata.SetNillableValue(d, "worktype_id", workitemStatus.Worktype.Id)
 		_ = d.Set("status_id", *workitemStatus.Worktype.Id+"/"+*workitemStatus.Id)
-		if workitemStatus.DestinationStatuses != nil {
-			destinationStatuses := make([]interface{}, len(*workitemStatus.DestinationStatuses))
-			for i, v := range *workitemStatus.DestinationStatuses {
-				destinationStatuses[i] = *v.Id
-			}
-			_ = d.Set("destination_status_ids", destinationStatuses)
-		}
+		setDestinationStatusIdsState(d, workitemStatus, importing)
 		if workitemStatus.DefaultDestinationStatus != nil && workitemStatus.DefaultDestinationStatus.Id != nil {
 			_ = d.Set("default_destination_status_id", *workitemStatus.DefaultDestinationStatus.Id)
 		} else {
@@ -238,38 +244,44 @@ func deleteTaskManagementWorkTypeStatusTransition(ctx context.Context, d *schema
 
 	// Build a list of destination status IDs that are managed by the API but not by Terraform.
 	// This preserves any status IDs that were set outside of Terraform.
+	// An empty Terraform list means "all destinations"; do not copy the API-expanded list
+	// back into the PATCH or the API returns 400 "No change for the record is obtained".
 	destinationStatusIds := []string{}
 	stateDestinationStatusIds := lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids")
-	apiDestinationStatusIds := workitemStatus.DestinationStatuses
-	for _, v := range *apiDestinationStatusIds {
-		if !lists.ItemInSlice[string](*v.Id, *stateDestinationStatusIds) {
-			destinationStatusIds = append(destinationStatusIds, *v.Id)
+	if stateDestinationStatusIds != nil && len(*stateDestinationStatusIds) > 0 && workitemStatus.DestinationStatuses != nil {
+		for _, v := range *workitemStatus.DestinationStatuses {
+			if v.Id != nil && !lists.ItemInSlice[string](*v.Id, *stateDestinationStatusIds) {
+				destinationStatusIds = append(destinationStatusIds, *v.Id)
+			}
 		}
 	}
 
 	log.Printf("%s task management worktype %s status %s %s in progress", "delete", worktypeId, statusId, *workitemStatus.Name)
 
-	taskManagementWorktypeStatus := &Workitemstatusupdate{
-		Name:                       workitemStatus.Name,
-		Description:                workitemStatus.Description,
-		DestinationStatusIds:       &destinationStatusIds,
-		DefaultDestinationStatusId: defaultDestinationStatusId,
-	}
+	taskManagementWorktypeStatus := &Workitemstatusupdate{}
+	taskManagementWorktypeStatus.SetField("Name", workitemStatus.Name)
+	taskManagementWorktypeStatus.SetField("Description", workitemStatus.Description)
+	taskManagementWorktypeStatus.SetField("DestinationStatusIds", &destinationStatusIds)
+	taskManagementWorktypeStatus.SetField("DefaultDestinationStatusId", defaultDestinationStatusId)
 
 	diagErr = util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		workitemStatus, resp, err = proxy.patchTaskManagementWorktypeStatusTransition(ctx, worktypeId, statusId, taskManagementWorktypeStatus)
-		if err != nil {
-			// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
-			if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp))
+		if err == nil {
+			return nil
 		}
-		return nil
+		if util.IsStatus400(resp) && isNoChangeForRecordError(err, resp) {
+			return nil
+		}
+		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update task management worktype %s status %s: %s", worktypeId, statusId, err), resp)
+		// The api can throw a 400 if we operate on statuses asynchronously. Retry if we encounter this
+		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "Database transaction was cancelled") {
+			return retry.RetryableError(builtDiagErr)
+		}
+		return retry.NonRetryableError(builtDiagErr)
 	})
 	if diagErr != nil {
 		return diagErr
 	}
-	log.Printf("%s task management worktype %s status  transition %s %s, completed", "delete", worktypeId, *workitemStatus.Id, *workitemStatus.Name)
+	log.Printf("%s task management worktype %s status transition %s, completed", "delete", worktypeId, statusId)
 	return nil
 }
