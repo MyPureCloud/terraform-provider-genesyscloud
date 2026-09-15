@@ -1,12 +1,33 @@
 package routing_queue_conditional_group_activation
 
 import (
+	"strings"
+
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
+
+// conditionalGroupActivationIdSuffix disambiguates this resource's ID from the routing queue's
+// own ID, since a conditional group activation resource is 1:1 with (and keyed off of) its queue.
+const conditionalGroupActivationIdSuffix = "/cga"
+
+// BuildConditionalGroupActivationId builds the routing_queue_conditional_group_activation
+// composite resource ID, which is always in the format <queue-id>/cga. Exported so that
+// external consumers of this provider's resources don't need to duplicate this logic themselves.
+func BuildConditionalGroupActivationId(queueId string) (id string) {
+	return queueId + conditionalGroupActivationIdSuffix
+}
+
+// SplitConditionalGroupActivationId splits the routing_queue_conditional_group_activation
+// composite resource ID, which is always in the format <queue-id>/cga, back into the queue ID.
+// Exported so that external consumers of this provider's resources don't need to duplicate
+// this logic themselves.
+func SplitConditionalGroupActivationId(id string) (queueId string) {
+	return strings.Split(id, "/")[0]
+}
 
 func buildConditionalGroupActivation(d map[string]interface{}) platformclientv2.Conditionalgroupactivation {
 	var sdkCga platformclientv2.Conditionalgroupactivation

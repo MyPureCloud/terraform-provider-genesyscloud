@@ -1,10 +1,29 @@
 package knowledge_category
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
+
+const knowledgeCategoryIdSeparator = ","
+
+// BuildKnowledgeCategoryId builds the knowledge_category composite resource ID, which is
+// always in the format <knowledge-category-id>,<knowledge-base-id>. Exported so that external
+// consumers of this provider's resources don't need to duplicate this logic themselves.
+func BuildKnowledgeCategoryId(knowledgeCategoryId, knowledgeBaseId string) (id string) {
+	return fmt.Sprintf("%s%s%s", knowledgeCategoryId, knowledgeCategoryIdSeparator, knowledgeBaseId)
+}
+
+// SplitKnowledgeCategoryId splits the knowledge_category composite resource ID, which is
+// always in the format <knowledge-category-id>,<knowledge-base-id>, back into its parts.
+// Exported so that external consumers of this provider's resources don't need to duplicate
+// this logic themselves.
+func SplitKnowledgeCategoryId(id string) (knowledgeCategoryId string, knowledgeBaseId string) {
+	parts := strings.Split(id, knowledgeCategoryIdSeparator)
+	return parts[0], parts[1]
+}
 
 func buildKnowledgeCategoryUpdate(categoryIn map[string]interface{}) *platformclientv2.Categoryupdaterequest {
 	name := categoryIn["name"].(string)
@@ -18,9 +37,8 @@ func buildKnowledgeCategoryUpdate(categoryIn map[string]interface{}) *platformcl
 	}
 
 	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
-		if strings.Contains(parentId, ",") {
-			ids := strings.Split(parentId, ",")
-			parent_Id := ids[0]
+		if strings.Contains(parentId, knowledgeCategoryIdSeparator) {
+			parent_Id, _ := SplitKnowledgeCategoryId(parentId)
 			categoryOut.ParentCategoryId = &parent_Id
 		} else {
 			categoryOut.ParentCategoryId = &parentId
@@ -40,9 +58,8 @@ func buildKnowledgeCategoryCreate(categoryIn map[string]interface{}) *platformcl
 		categoryOut.Description = &description
 	}
 	if parentId, ok := categoryIn["parent_id"].(string); ok && parentId != "" {
-		if strings.Contains(parentId, ",") {
-			ids := strings.Split(parentId, ",")
-			parent_Id := ids[0]
+		if strings.Contains(parentId, knowledgeCategoryIdSeparator) {
+			parent_Id, _ := SplitKnowledgeCategoryId(parentId)
 			categoryOut.ParentCategoryId = &parent_Id
 		} else {
 			categoryOut.ParentCategoryId = &parentId
@@ -62,7 +79,7 @@ func flattenKnowledgeCategory(categoryIn platformclientv2.Categoryresponse) []in
 		categoryOut["description"] = *categoryIn.Description
 	}
 	if categoryIn.ParentCategory != nil && (*categoryIn.ParentCategory).Id != nil {
-		categoryOut["parent_id"] = *(*categoryIn.ParentCategory).Id + "," + *(*categoryIn.KnowledgeBase).Id
+		categoryOut["parent_id"] = BuildKnowledgeCategoryId(*(*categoryIn.ParentCategory).Id, *(*categoryIn.KnowledgeBase).Id)
 	}
 
 	return []interface{}{categoryOut}

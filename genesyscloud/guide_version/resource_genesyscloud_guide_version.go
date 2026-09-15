@@ -71,7 +71,7 @@ func createGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	version.Id = &version.Version
-	d.SetId(guideId + "/" + version.Version)
+	d.SetId(BuildGuideVersionId(guideId, version.Version))
 
 	log.Printf("Created Guide Version: %s for Guide: %s", version.Version, guideId)
 
@@ -88,7 +88,7 @@ func readGuideVersion(ctx context.Context, d *schema.ResourceData, meta interfac
 	proxy := getGuideVersionProxy(skdConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceGuideVersion(), constants.ConsistencyChecks(), ResourceType)
 
-	guideId, versionId, err := parseId(d.Id())
+	guideId, versionId, err := ParseGuideVersionId(d.Id())
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "Failed to parse guide id", err)
 	}
@@ -163,7 +163,7 @@ func updateGuideVersion(ctx context.Context, d *schema.ResourceData, meta interf
 		}
 	}
 
-	d.SetId(guideId + "/" + version.Version)
+	d.SetId(BuildGuideVersionId(guideId, version.Version))
 
 	publishErr := publishGuideVersion(ctx, d, meta)
 	if publishErr != nil {
@@ -179,7 +179,7 @@ func publishGuideVersion(ctx context.Context, d *schema.ResourceData, meta inter
 	proxy := getGuideVersionProxy(skdConfig)
 	state := "ProductionReady"
 
-	guideId, versionId, err := parseId(d.Id())
+	guideId, versionId, err := ParseGuideVersionId(d.Id())
 	if err != nil {
 		return util.BuildDiagnosticError(ResourceType, "Failed to parse guide id", err)
 	}

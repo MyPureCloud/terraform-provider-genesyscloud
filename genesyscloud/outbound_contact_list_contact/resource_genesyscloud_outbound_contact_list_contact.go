@@ -39,7 +39,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	}
 	contactId := *contactResponseBody[0].Id
 	_ = d.Set("contact_id", contactId)
-	id := buildComplexContactId(contactListId, contactId)
+	id := BuildComplexContactId(contactListId, contactId)
 	d.SetId(id)
 	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
@@ -54,7 +54,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		cp        = getContactProxy(sdkConfig)
 	)
 
-	contactListId, contactId := splitComplexContactId(d.Id())
+	contactListId, contactId := SplitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}
@@ -95,7 +95,7 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	cp := getContactProxy(sdkConfig)
 
 	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId, contactId := splitComplexContactId(d.Id())
+	contactListId, contactId := SplitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}
@@ -118,7 +118,7 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getContactProxy(sdkConfig)
 
-	contactListId, contactId := splitComplexContactId(d.Id())
+	contactListId, contactId := SplitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}

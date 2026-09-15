@@ -134,7 +134,7 @@ func ArchitectGrammarLanguageResolver(languageId, exportDirectory, subDirectory 
 		return err
 	}
 
-	grammarId, languageCode := splitGrammarLanguageId(languageId)
+	grammarId, languageCode := SplitGrammarLanguageId(languageId)
 	language, _, err := proxy.getArchitectGrammarLanguageById(context.Background(), grammarId, languageCode)
 	if err != nil {
 		return err
@@ -263,13 +263,18 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 	}
 }
 
-// Language id is always in format <grammar-id>:<language-code>
-func buildGrammarLanguageId(grammarId string, languageCode string) (grammarLanguageId string) {
+// BuildGrammarLanguageId builds the architect_grammar_language composite resource ID,
+// which is always in the format <grammar-id>:<language-code>. Exported so that external
+// consumers of this provider's resources don't need to duplicate this logic themselves.
+func BuildGrammarLanguageId(grammarId string, languageCode string) (grammarLanguageId string) {
 	return fmt.Sprintf("%s:%s", grammarId, languageCode)
 }
 
-// Language id is always in format <grammar-id>:<language-code>
-func splitGrammarLanguageId(languageId string) (grammarId string, languageCode string) {
+// SplitGrammarLanguageId splits the architect_grammar_language composite resource ID,
+// which is always in the format <grammar-id>:<language-code>, back into its parts.
+// Exported so that external consumers of this provider's resources don't need to
+// duplicate this logic themselves.
+func SplitGrammarLanguageId(languageId string) (grammarId string, languageCode string) {
 	split := strings.SplitN(languageId, ":", 2)
 	if len(split) == 2 {
 		return split[0], split[1]

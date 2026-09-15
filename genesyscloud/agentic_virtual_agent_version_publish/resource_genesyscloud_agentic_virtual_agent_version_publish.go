@@ -25,12 +25,17 @@ import (
    - All fields are ForceNew — any change requires a new publish
 */
 
-// Composite ID format: agentId/versionId/status
-func buildPublishId(agentId, versionId, status string) string {
+// BuildPublishId builds the agentic_virtual_agent_version_publish composite resource ID, which
+// is always in the format <agent-id>/<version-id>/<status>. Exported so that external
+// consumers of this provider's resources don't need to duplicate this logic themselves.
+func BuildPublishId(agentId, versionId, status string) (id string) {
 	return agentId + "/" + versionId + "/" + status
 }
 
-func parsePublishId(id string) (agentId, versionId, status string, err error) {
+// ParsePublishId splits the agentic_virtual_agent_version_publish composite resource ID, which
+// is always in the format <agent-id>/<version-id>/<status>, back into its parts. Exported so
+// that external consumers of this provider's resources don't need to duplicate this logic themselves.
+func ParsePublishId(id string) (agentId, versionId, status string, err error) {
 	parts := strings.Split(id, "/")
 	if len(parts) != 3 {
 		return "", "", "", fmt.Errorf("invalid publish resource ID format: %s (expected agentId/versionId/status)", id)
@@ -94,7 +99,7 @@ func createPublish(ctx context.Context, d *schema.ResourceData, meta interface{}
 		return pollErr
 	}
 
-	d.SetId(buildPublishId(agentId, versionId, status))
+	d.SetId(BuildPublishId(agentId, versionId, status))
 	return readPublish(ctx, d, meta)
 }
 
@@ -103,7 +108,7 @@ func readPublish(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getPublishProxy(sdkConfig)
 
-	agentId, versionId, expectedStatus, err := parsePublishId(d.Id())
+	agentId, versionId, expectedStatus, err := ParsePublishId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}

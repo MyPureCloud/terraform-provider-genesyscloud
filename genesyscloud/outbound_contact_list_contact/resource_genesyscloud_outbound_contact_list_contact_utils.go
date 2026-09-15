@@ -198,11 +198,17 @@ func GenerateColumnStatus(column, contactable string) string {
 		}`, column, contactable)
 }
 
-func buildComplexContactId(contactListId string, contactId string) string {
+// BuildComplexContactId builds the outbound_contact_list_contact composite resource ID, which
+// is always in the format <contact-list-id>:<contact-id>. Exported so that external consumers
+// of this provider's resources don't need to duplicate this logic themselves.
+func BuildComplexContactId(contactListId string, contactId string) (complexContactId string) {
 	return fmt.Sprintf("%s:%s", contactListId, contactId)
 }
 
-func splitComplexContactId(complexContactId string) (string, string) {
+// SplitComplexContactId splits the outbound_contact_list_contact composite resource ID, which
+// is always in the format <contact-list-id>:<contact-id>, back into its parts. Exported so that
+// external consumers of this provider's resources don't need to duplicate this logic themselves.
+func SplitComplexContactId(complexContactId string) (contactListId string, contactId string) {
 	if strings.Contains(complexContactId, ":") {
 		split := strings.SplitN(complexContactId, ":", 2)
 		return split[0], split[1]

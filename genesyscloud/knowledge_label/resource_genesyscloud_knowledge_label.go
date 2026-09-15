@@ -52,7 +52,7 @@ func getAllKnowledgeLabels(ctx context.Context, clientConfig *platformclientv2.C
 		}
 
 		for _, knowledgeLabel := range *partialEntities {
-			id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
+			id := BuildKnowledgeLabelId(*knowledgeLabel.Id, *knowledgeBase.Id)
 			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeLabel.Name}
 		}
 	}
@@ -75,7 +75,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create knowledge label %s error: %s", knowledgeBaseId, err), resp)
 	}
 
-	id := fmt.Sprintf("%s,%s", *knowledgeLabelResponse.Id, knowledgeBaseId)
+	id := BuildKnowledgeLabelId(*knowledgeLabelResponse.Id, knowledgeBaseId)
 	d.SetId(id)
 
 	log.Printf("Created knowledge label %s", *knowledgeLabelResponse.Id)
@@ -83,9 +83,7 @@ func createKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeLabelId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeLabelId, knowledgeBaseId := SplitKnowledgeLabelId(d.Id())
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeLabelProxy(sdkConfig)
@@ -102,7 +100,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read knowledge label %s | error: %s", knowledgeLabelId, getErr), resp))
 		}
 
-		newId := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, knowledgeBaseId)
+		newId := BuildKnowledgeLabelId(*knowledgeLabel.Id, knowledgeBaseId)
 		d.SetId(newId)
 		_ = d.Set("knowledge_base_id", knowledgeBaseId)
 		_ = d.Set("knowledge_label", flattenKnowledgeLabel(knowledgeLabel))
@@ -112,9 +110,7 @@ func readKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeLabelId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeLabelId, knowledgeBaseId := SplitKnowledgeLabelId(d.Id())
 	knowledgeLabel := d.Get("knowledge_label").([]interface{})[0].(map[string]interface{})
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -146,14 +142,12 @@ func updateKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeLabelId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeLabelId, knowledgeBaseId := SplitKnowledgeLabelId(d.Id())
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeLabelProxy(sdkConfig)
 
-	log.Printf("Deleting knowledge label %s", id)
+	log.Printf("Deleting knowledge label %s", d.Id())
 	_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
 	if err != nil {
 		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
@@ -164,10 +158,10 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 			time.Sleep(10 * time.Second)
 			_, resp, err = proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
 			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
+				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", d.Id(), err), resp)
 			}
 		} else {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", id, err), resp)
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", d.Id(), err), resp)
 		}
 	}
 
