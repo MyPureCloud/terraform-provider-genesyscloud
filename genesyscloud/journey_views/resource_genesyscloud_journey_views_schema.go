@@ -372,7 +372,7 @@ var (
 			"rank": {
 				Description: "The rank of the journey view chart for ordering display",
 				Type:        schema.TypeInt,
-				Required:    false,
+				Optional:    true,
 			},
 			"metrics": {
 				Description: "A set of metrics to be displayed on the chart.",
