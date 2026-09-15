@@ -151,6 +151,24 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeBool,
 				Default:     false,
 			},
+			`open_status_default`: {
+				Description: `When true, marks the auto-created "Open" status (created automatically when the Worktype ` +
+					`is created, unless disable_default_status_creation is set) as the Worktype's default status. ` +
+					`A Worktype must always have exactly one default status, so this cannot be set to false to "unset" it; ` +
+					`to change the default status, set 'default = true' on a different genesyscloud_task_management_worktype_status ` +
+					`resource instead. Omitting this field leaves the current default status unchanged.`,
+				Optional: true,
+				Computed: true,
+				Type:     schema.TypeBool,
+			},
+			`closed_status_auto_terminate`: {
+				Description: `When set, controls whether the auto-created "Closed" status (created automatically when the ` +
+					`Worktype is created, unless disable_default_status_creation is set) automatically terminates Workitems ` +
+					`that enter it. Omitting this field leaves the current value unchanged.`,
+				Optional: true,
+				Computed: true,
+				Type:     schema.TypeBool,
+			},
 		},
 	}
 }

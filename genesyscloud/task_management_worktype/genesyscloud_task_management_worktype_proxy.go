@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
@@ -30,11 +31,14 @@ type getTaskManagementWorktypeByNameFunc func(ctx context.Context, p *TaskManage
 type getTaskManagementWorktypeByIdFunc func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (worktype *platformclientv2.Worktype, response *platformclientv2.APIResponse, err error)
 type updateTaskManagementWorktypeFunc func(ctx context.Context, p *TaskManagementWorktypeProxy, id string, worktype *platformclientv2.Worktypeupdate) (*platformclientv2.Worktype, *platformclientv2.APIResponse, error)
 type deleteTaskManagementWorktypeFunc func(ctx context.Context, p *TaskManagementWorktypeProxy, id string) (response *platformclientv2.APIResponse, err error)
+type getWorktypeStatusByCategoryFunc func(ctx context.Context, p *TaskManagementWorktypeProxy, worktypeId string, category string) (status *platformclientv2.Workitemstatus, resp *platformclientv2.APIResponse, err error)
+type patchWorktypeStatusAutoTerminateFunc func(ctx context.Context, p *TaskManagementWorktypeProxy, worktypeId string, statusId string, autoTerminate bool) (*platformclientv2.APIResponse, error)
 
 // TaskManagementWorktypeProxy contains all the methods that call genesys cloud APIs.
 type TaskManagementWorktypeProxy struct {
 	clientConfig                          *platformclientv2.Configuration
 	taskManagementApi                     *platformclientv2.TaskManagementApi
+	customApiClient                       *customapi.Client
 	createTaskManagementWorktypeAttr      createTaskManagementWorktypeFunc
 	getAllTaskManagementWorktypeAttr      getAllTaskManagementWorktypeFunc
 	getTaskManagementWorktypeIdByNameAttr getTaskManagementWorktypeIdByNameFunc
@@ -42,6 +46,8 @@ type TaskManagementWorktypeProxy struct {
 	getTaskManagementWorktypeByNameAttr   getTaskManagementWorktypeByNameFunc
 	updateTaskManagementWorktypeAttr      updateTaskManagementWorktypeFunc
 	deleteTaskManagementWorktypeAttr      deleteTaskManagementWorktypeFunc
+	getWorktypeStatusByCategoryAttr       getWorktypeStatusByCategoryFunc
+	patchWorktypeStatusAutoTerminateAttr  patchWorktypeStatusAutoTerminateFunc
 	worktypeCache                         rc.CacheInterface[platformclientv2.Worktype]
 }
 
@@ -52,6 +58,7 @@ func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration
 	return &TaskManagementWorktypeProxy{
 		clientConfig:                          clientConfig,
 		taskManagementApi:                     api,
+		customApiClient:                       customapi.NewClient(clientConfig, ResourceType),
 		createTaskManagementWorktypeAttr:      createTaskManagementWorktypeFn,
 		getAllTaskManagementWorktypeAttr:      getAllTaskManagementWorktypeFn,
 		getTaskManagementWorktypeIdByNameAttr: getTaskManagementWorktypeIdByNameFn,
@@ -59,6 +66,8 @@ func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration
 		getTaskManagementWorktypeByIdAttr:     getTaskManagementWorktypeByIdFn,
 		updateTaskManagementWorktypeAttr:      updateTaskManagementWorktypeFn,
 		deleteTaskManagementWorktypeAttr:      deleteTaskManagementWorktypeFn,
+		getWorktypeStatusByCategoryAttr:       getWorktypeStatusByCategoryFn,
+		patchWorktypeStatusAutoTerminateAttr:  patchWorktypeStatusAutoTerminateFn,
 		worktypeCache:                         worktypeCache,
 	}
 }
@@ -245,4 +254,65 @@ func deleteTaskManagementWorktypeFn(ctx context.Context, p *TaskManagementWorkty
 	}
 	rc.DeleteCacheItem(p.worktypeCache, id)
 	return resp, nil
+}
+
+// getWorktypeStatusByCategory finds a worktype's status by its Category (e.g. "Open", "Closed").
+// Category is used instead of display name because it is a stable, non-localized server-side
+// enum value, unlike a status's user-facing name.
+func (p *TaskManagementWorktypeProxy) getWorktypeStatusByCategory(ctx context.Context, worktypeId string, category string) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	if p.getWorktypeStatusByCategoryAttr == nil {
+		return nil, nil, fmt.Errorf("getWorktypeStatusByCategoryAttr is not configured on this proxy")
+	}
+	return p.getWorktypeStatusByCategoryAttr(ctx, p, worktypeId, category)
+}
+
+// patchWorktypeStatusAutoTerminate sets auto_terminate_workitem on a worktype status.
+func (p *TaskManagementWorktypeProxy) patchWorktypeStatusAutoTerminate(ctx context.Context, worktypeId string, statusId string, autoTerminate bool) (*platformclientv2.APIResponse, error) {
+	if p.patchWorktypeStatusAutoTerminateAttr == nil {
+		return nil, fmt.Errorf("patchWorktypeStatusAutoTerminateAttr is not configured on this proxy")
+	}
+	return p.patchWorktypeStatusAutoTerminateAttr(ctx, p, worktypeId, statusId, autoTerminate)
+}
+
+// getWorktypeStatusByCategoryFn is the implementation for finding a worktype status by category.
+// There is no dedicated API for filtering statuses by category, so all statuses for the worktype
+// are listed and the first one with a matching Category is returned. Genesys Cloud creates at most
+// one status per category automatically (Open/Closed), so this is expected to be unambiguous for
+// the categories this feature relies on.
+func getWorktypeStatusByCategoryFn(ctx context.Context, p *TaskManagementWorktypeProxy, worktypeId string, category string) (*platformclientv2.Workitemstatus, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	statuses, resp, err := p.taskManagementApi.GetTaskmanagementWorktypeStatuses(worktypeId)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if statuses == nil || statuses.Entities == nil {
+		return nil, resp, fmt.Errorf("no statuses found for worktype %s", worktypeId)
+	}
+
+	for _, status := range *statuses.Entities {
+		if status.Category != nil && *status.Category == category {
+			return &status, resp, nil
+		}
+	}
+
+	return nil, resp, fmt.Errorf("unable to find a status with category %s for worktype %s", category, worktypeId)
+}
+
+// workitemStatusAutoTerminatePatch is a minimal request body for patching auto_terminate_workitem.
+// A hand-built body is used (instead of the generated Workitemstatusupdate SDK model) because the
+// SDK model omits false boolean values from its JSON via `omitempty`, so it cannot explicitly clear
+// auto_terminate_workitem back to false.
+type workitemStatusAutoTerminatePatch struct {
+	AutoTerminateWorkitem bool `json:"autoTerminateWorkitem"`
+}
+
+// patchWorktypeStatusAutoTerminateFn is the implementation for setting auto_terminate_workitem on a
+// worktype status via a raw PATCH request.
+func patchWorktypeStatusAutoTerminateFn(ctx context.Context, p *TaskManagementWorktypeProxy, worktypeId string, statusId string, autoTerminate bool) (*platformclientv2.APIResponse, error) {
+	path := "/api/v2/taskmanagement/worktypes/" + worktypeId + "/statuses/" + statusId
+	body := workitemStatusAutoTerminatePatch{AutoTerminateWorkitem: autoTerminate}
+	_, resp, err := customapi.Do[platformclientv2.Workitemstatus](ctx, p.customApiClient, customapi.MethodPatch, path, body, nil)
+	return resp, err
 }
