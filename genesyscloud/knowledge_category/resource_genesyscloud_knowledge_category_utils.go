@@ -10,16 +10,13 @@ import (
 const knowledgeCategoryIdSeparator = ","
 
 // BuildKnowledgeCategoryId builds the knowledge_category composite resource ID, which is
-// always in the format <knowledge-category-id>,<knowledge-base-id>. Exported so that external
-// consumers of this provider's resources don't need to duplicate this logic themselves.
+// always in the format <knowledge-category-id>,<knowledge-base-id>.
 func BuildKnowledgeCategoryId(knowledgeCategoryId, knowledgeBaseId string) (id string) {
 	return fmt.Sprintf("%s%s%s", knowledgeCategoryId, knowledgeCategoryIdSeparator, knowledgeBaseId)
 }
 
 // SplitKnowledgeCategoryId splits the knowledge_category composite resource ID, which is
 // always in the format <knowledge-category-id>,<knowledge-base-id>, back into its parts.
-// Exported so that external consumers of this provider's resources don't need to duplicate
-// this logic themselves.
 func SplitKnowledgeCategoryId(id string) (knowledgeCategoryId string, knowledgeBaseId string) {
 	parts := strings.Split(id, knowledgeCategoryIdSeparator)
 	return parts[0], parts[1]

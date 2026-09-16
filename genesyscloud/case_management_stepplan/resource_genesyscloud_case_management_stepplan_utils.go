@@ -13,16 +13,13 @@ import (
 const stepplanResourceIDSeparator = "|"
 
 // FormatStepplanResourceID builds the case_management_stepplan composite resource ID, which
-// is always in the format <caseplan-id>|<stage-number>|<stepplan-id>. Exported so that
-// external consumers of this provider's resources don't need to duplicate this logic themselves.
+// is always in the format <caseplan-id>|<stage-number>|<stepplan-id>.
 func FormatStepplanResourceID(caseplanID string, stageNumber int, stepplanID string) (id string) {
 	return fmt.Sprintf("%s%s%d%s%s", caseplanID, stepplanResourceIDSeparator, stageNumber, stepplanResourceIDSeparator, stepplanID)
 }
 
 // ParseStepplanResourceID splits the case_management_stepplan composite resource ID, which
 // is always in the format <caseplan-id>|<stage-number>|<stepplan-id>, back into its parts.
-// Exported so that external consumers of this provider's resources don't need to duplicate
-// this logic themselves.
 func ParseStepplanResourceID(id string) (caseplanID string, stageNumber int, stepplanID string, err error) {
 	parts := strings.Split(id, stepplanResourceIDSeparator)
 	if len(parts) != 3 {

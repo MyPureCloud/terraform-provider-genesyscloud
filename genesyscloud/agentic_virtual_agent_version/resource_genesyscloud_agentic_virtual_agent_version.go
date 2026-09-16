@@ -31,8 +31,7 @@ import (
 */
 
 // BuildVersionId builds the agentic_virtual_agent_version composite resource ID, which is
-// always in the format <agent-id>/<version-id>. Exported so that external consumers of this
-// provider's resources don't need to duplicate this logic themselves.
+// always in the format <agent-id>/<version-id>.
 func BuildVersionId(agentId, versionId string) (id string) {
 	return agentId + "/" + versionId
 }
@@ -71,8 +70,7 @@ func getAllAgenticVirtualAgentVersions(ctx context.Context, clientConfig *platfo
 }
 
 // ParseVersionId splits the agentic_virtual_agent_version composite resource ID, which is
-// always in the format <agent-id>/<version-id>, back into its parts. Exported so that
-// external consumers of this provider's resources don't need to duplicate this logic themselves.
+// always in the format <agent-id>/<version-id>, back into its parts.
 func ParseVersionId(id string) (agentId string, versionId string, err error) {
 	parts := strings.Split(id, "/")
 	if len(parts) != 2 {

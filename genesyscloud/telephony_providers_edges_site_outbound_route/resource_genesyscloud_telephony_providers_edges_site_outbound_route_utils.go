@@ -46,8 +46,6 @@ func buildOutboundRoutes(d *schema.ResourceData) *platformclientv2.Outboundroute
 
 // BuildSiteAndOutboundRouteId builds the telephony_providers_edges_site_outbound_route
 // composite resource ID, which is always in the format <site-id>:<outbound-route-id>.
-// Exported so that external consumers of this provider's resources don't need to duplicate
-// this logic themselves.
 func BuildSiteAndOutboundRouteId(siteId string, outboundRouteId string) (fullOutboundRouteId string) {
 	fullOutboundRouteId = fmt.Sprintf("%s:%s", siteId, outboundRouteId)
 	return fullOutboundRouteId
@@ -55,8 +53,7 @@ func BuildSiteAndOutboundRouteId(siteId string, outboundRouteId string) (fullOut
 
 // SplitSiteAndOutboundRouteId splits the telephony_providers_edges_site_outbound_route
 // composite resource ID, which is always in the format <site-id>:<outbound-route-id>, back
-// into its parts. Exported so that external consumers of this provider's resources don't
-// need to duplicate this logic themselves.
+// into its parts.
 func SplitSiteAndOutboundRouteId(dId string) (siteId string, outboundRouteId string) {
 	split := strings.SplitN(dId, ":", 2)
 	if len(split) == 2 {

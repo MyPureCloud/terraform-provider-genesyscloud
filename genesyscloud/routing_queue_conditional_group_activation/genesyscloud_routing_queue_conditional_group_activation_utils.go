@@ -15,16 +15,13 @@ import (
 const conditionalGroupActivationIdSuffix = "/cga"
 
 // BuildConditionalGroupActivationId builds the routing_queue_conditional_group_activation
-// composite resource ID, which is always in the format <queue-id>/cga. Exported so that
-// external consumers of this provider's resources don't need to duplicate this logic themselves.
+// composite resource ID, which is always in the format <queue-id>/cga.
 func BuildConditionalGroupActivationId(queueId string) (id string) {
 	return queueId + conditionalGroupActivationIdSuffix
 }
 
 // SplitConditionalGroupActivationId splits the routing_queue_conditional_group_activation
 // composite resource ID, which is always in the format <queue-id>/cga, back into the queue ID.
-// Exported so that external consumers of this provider's resources don't need to duplicate
-// this logic themselves.
 func SplitConditionalGroupActivationId(id string) (queueId string) {
 	return strings.Split(id, "/")[0]
 }

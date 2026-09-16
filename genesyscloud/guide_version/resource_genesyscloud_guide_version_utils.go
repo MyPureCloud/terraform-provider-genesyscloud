@@ -9,15 +9,13 @@ import (
 )
 
 // BuildGuideVersionId builds the guide_version composite resource ID, which is always in
-// the format <guide-id>/<version-id>. Exported so that external consumers of this
-// provider's resources don't need to duplicate this logic themselves.
+// the format <guide-id>/<version-id>.
 func BuildGuideVersionId(guideId string, versionId string) (id string) {
 	return guideId + "/" + versionId
 }
 
 // ParseGuideVersionId splits the guide_version composite resource ID, which is always in
-// the format <guide-id>/<version-id>, back into its parts. Exported so that external
-// consumers of this provider's resources don't need to duplicate this logic themselves.
+// the format <guide-id>/<version-id>, back into its parts.
 func ParseGuideVersionId(id string) (guideId string, versionId string, err error) {
 	ids := strings.Split(id, "/")
 	if len(ids) != 2 {

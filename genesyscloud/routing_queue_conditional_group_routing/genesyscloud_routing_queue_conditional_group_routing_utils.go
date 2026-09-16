@@ -16,16 +16,13 @@ import (
 const conditionalGroupRoutingIdSuffix = "/rule"
 
 // BuildConditionalGroupRoutingId builds the routing_queue_conditional_group_routing composite
-// resource ID, which is always in the format <queue-id>/rule. Exported so that external
-// consumers of this provider's resources don't need to duplicate this logic themselves.
+// resource ID, which is always in the format <queue-id>/rule.
 func BuildConditionalGroupRoutingId(queueId string) (id string) {
 	return queueId + conditionalGroupRoutingIdSuffix
 }
 
 // SplitConditionalGroupRoutingId splits the routing_queue_conditional_group_routing composite
-// resource ID, which is always in the format <queue-id>/rule, back into the queue ID. Exported
-// so that external consumers of this provider's resources don't need to duplicate this logic
-// themselves.
+// resource ID, which is always in the format <queue-id>/rule, back into the queue ID.
 func SplitConditionalGroupRoutingId(id string) (queueId string) {
 	return strings.Split(id, "/")[0]
 }

@@ -264,16 +264,13 @@ func (d *grammarLanguageDownloader) updatePathsInExportConfigMap() {
 }
 
 // BuildGrammarLanguageId builds the architect_grammar_language composite resource ID,
-// which is always in the format <grammar-id>:<language-code>. Exported so that external
-// consumers of this provider's resources don't need to duplicate this logic themselves.
+// which is always in the format <grammar-id>:<language-code>.
 func BuildGrammarLanguageId(grammarId string, languageCode string) (grammarLanguageId string) {
 	return fmt.Sprintf("%s:%s", grammarId, languageCode)
 }
 
 // SplitGrammarLanguageId splits the architect_grammar_language composite resource ID,
 // which is always in the format <grammar-id>:<language-code>, back into its parts.
-// Exported so that external consumers of this provider's resources don't need to
-// duplicate this logic themselves.
 func SplitGrammarLanguageId(languageId string) (grammarId string, languageCode string) {
 	split := strings.SplitN(languageId, ":", 2)
 	if len(split) == 2 {

@@ -19,16 +19,13 @@ import (
 const documentIDSeparator = ","
 
 // BuildDocumentResourceDataID builds the knowledge_document composite resource ID, which is
-// always in the format <knowledge-document-id>,<knowledge-base-id>. Exported so that external
-// consumers of this provider's resources don't need to duplicate this logic themselves.
+// always in the format <knowledge-document-id>,<knowledge-base-id>.
 func BuildDocumentResourceDataID(knowledgeDocumentId, knowledgeBaseId string) (id string) {
 	return knowledgeDocumentId + documentIDSeparator + knowledgeBaseId
 }
 
 // ParseDocumentResourceDataID splits the knowledge_document composite resource ID, which is
 // always in the format <knowledge-document-id>,<knowledge-base-id>, back into its parts.
-// Exported so that external consumers of this provider's resources don't need to duplicate
-// this logic themselves.
 func ParseDocumentResourceDataID(id string) (knowledgeDocumentID, knowledgeBaseID string) {
 	split := strings.Split(id, documentIDSeparator)
 	return split[0], split[1]

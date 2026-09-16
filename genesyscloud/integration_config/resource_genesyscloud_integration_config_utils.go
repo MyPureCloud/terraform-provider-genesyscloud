@@ -14,16 +14,13 @@ import (
 const integrationConfigIdSuffix = "/config"
 
 // BuildIntegrationConfigId builds the integration_config composite resource ID, which is
-// always in the format <integration-id>/config. Exported so that external consumers of this
-// provider's resources don't need to duplicate this logic themselves.
+// always in the format <integration-id>/config.
 func BuildIntegrationConfigId(integrationId string) (id string) {
 	return integrationId + integrationConfigIdSuffix
 }
 
 // SplitIntegrationConfigId splits the integration_config composite resource ID, which is
-// always in the format <integration-id>/config, back into the integration ID. Exported so
-// that external consumers of this provider's resources don't need to duplicate this logic
-// themselves.
+// always in the format <integration-id>/config, back into the integration ID.
 func SplitIntegrationConfigId(id string) (integrationId string) {
 	return strings.Split(id, "/")[0]
 }

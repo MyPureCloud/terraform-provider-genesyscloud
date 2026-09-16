@@ -19,15 +19,13 @@ import (
 var isDynamicPattern = regexp.MustCompile(`^[(\[.*]`)
 
 // CreateDatatableRowId builds the architect_datatable_row composite resource ID, which is
-// always in the format <table-id>/<key-value>. Exported so that external consumers of this
-// provider's resources don't need to duplicate this logic themselves.
+// always in the format <table-id>/<key-value>.
 func CreateDatatableRowId(tableId string, keyVal string) (rowId string) {
 	return strings.Join([]string{tableId, keyVal}, "/")
 }
 
 // SplitDatatableRowId splits the architect_datatable_row composite resource ID, which is
-// always in the format <table-id>/<key-value>, back into its parts. Exported so that external
-// consumers of this provider's resources don't need to duplicate this logic themselves.
+// always in the format <table-id>/<key-value>, back into its parts.
 func SplitDatatableRowId(rowId string) (tableId string, keyVal string) {
 	split := strings.SplitN(rowId, "/", 2)
 	if len(split) == 2 {

@@ -10,15 +10,13 @@ import (
 const knowledgeLabelIdSeparator = ","
 
 // BuildKnowledgeLabelId builds the knowledge_label composite resource ID, which is always in
-// the format <knowledge-label-id>,<knowledge-base-id>. Exported so that external consumers of
-// this provider's resources don't need to duplicate this logic themselves.
+// the format <knowledge-label-id>,<knowledge-base-id>.
 func BuildKnowledgeLabelId(knowledgeLabelId, knowledgeBaseId string) (id string) {
 	return fmt.Sprintf("%s%s%s", knowledgeLabelId, knowledgeLabelIdSeparator, knowledgeBaseId)
 }
 
 // SplitKnowledgeLabelId splits the knowledge_label composite resource ID, which is always in
-// the format <knowledge-label-id>,<knowledge-base-id>, back into its parts. Exported so that
-// external consumers of this provider's resources don't need to duplicate this logic themselves.
+// the format <knowledge-label-id>,<knowledge-base-id>, back into its parts.
 func SplitKnowledgeLabelId(id string) (knowledgeLabelId string, knowledgeBaseId string) {
 	parts := strings.Split(id, knowledgeLabelIdSeparator)
 	return parts[0], parts[1]

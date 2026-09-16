@@ -1680,16 +1680,14 @@ func nillableFloat32FromMap(m map[string]interface{}, key string) *float32 {
 }
 
 // BuildVariationId builds the knowledge_document_variation composite resource ID, which is
-// always in the format <base-id> <document-resource-data-id> <variation-id>. Exported so that
-// external consumers of this provider's resources don't need to duplicate this logic themselves.
+// always in the format <base-id> <document-resource-data-id> <variation-id>.
 func BuildVariationId(baseID, documentID, variationID string) (id string) {
 	return baseID + variationIdSeparator + documentID + variationIdSeparator + variationID
 }
 
 // ParseVariationId splits the knowledge_document_variation composite resource ID, which is
 // always in the format <base-id> <document-resource-data-id> <variation-id>, back into its
-// parts. Exported so that external consumers of this provider's resources don't need to
-// duplicate this logic themselves.
+// parts.
 func ParseVariationId(id string) (baseID, documentResourceDataID, variationID string, err error) {
 	parts := strings.Split(id, variationIdSeparator)
 
