@@ -58,6 +58,9 @@ resource "genesyscloud_task_management_worktype" "example_worktype" {
   default_script_id   = genesyscloud_script.example_script.id
 
   assignment_enabled = true
+
+  service_level_target                 = 90
+  unassigned_division_contacts_enabled = true
 }
 
 resource "genesyscloud_task_management_worktype" "example_worktype_without_assignment" {
@@ -109,6 +112,8 @@ resource "genesyscloud_task_management_worktype" "example_worktype_without_assig
 - `flow_rules_enabled` (Boolean) When set to true, the worktype's flow rules will be processed. Default value is false. Defaults to `false`.
 - `schema_id` (String) Id of the workitem schema.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.
+- `service_level_target` (Number) The target service level for Workitems created from the Worktype. The default value is 100.
+- `unassigned_division_contacts_enabled` (Boolean) When set to true, will allow Workitems to be associated with External Contacts that are not assigned to any division. Default value is true.
 
 ### Read-Only
 
