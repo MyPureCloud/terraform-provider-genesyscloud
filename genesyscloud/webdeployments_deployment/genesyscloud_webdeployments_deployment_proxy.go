@@ -16,16 +16,16 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
 
-var internalProxy *webDeploymentsProxy
+var internalProxy *WebDeploymentsProxy
 
-type getAllWebDeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error)
-type getWebDeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
-type createWebdeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
-type updateWebdeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
-type deleteWebdeploymentsFunc func(ctx context.Context, p *webDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error)
-type determineLatestVersionFunc func(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics)
+type getAllWebDeploymentsFunc func(ctx context.Context, p *WebDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error)
+type getWebDeploymentsFunc func(ctx context.Context, p *WebDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
+type createWebdeploymentsFunc func(ctx context.Context, p *WebDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
+type updateWebdeploymentsFunc func(ctx context.Context, p *WebDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error)
+type deleteWebdeploymentsFunc func(ctx context.Context, p *WebDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error)
+type determineLatestVersionFunc func(ctx context.Context, p *WebDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics)
 
-type webDeploymentsProxy struct {
+type WebDeploymentsProxy struct {
 	clientConfig      *platformclientv2.Configuration
 	webDeploymentsApi *platformclientv2.WebDeploymentsApi
 
@@ -37,10 +37,10 @@ type webDeploymentsProxy struct {
 	determineLatestVersionAttr determineLatestVersionFunc
 }
 
-func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsProxy {
+func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *WebDeploymentsProxy {
 	webDeploymentsApi := platformclientv2.NewWebDeploymentsApiWithConfig(clientConfig)
 
-	return &webDeploymentsProxy{
+	return &WebDeploymentsProxy{
 		clientConfig:               clientConfig,
 		webDeploymentsApi:          webDeploymentsApi,
 		getAllWebDeploymentsAttr:   getAllWebDeploymentsFn,
@@ -52,37 +52,37 @@ func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDe
 	}
 }
 
-func GetWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsProxy {
+func GetWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *WebDeploymentsProxy {
 	if internalProxy == nil {
 		internalProxy = newWebDeploymentsProxy(clientConfig)
 	}
 	return internalProxy
 }
 
-func (p *webDeploymentsProxy) GetWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
+func (p *WebDeploymentsProxy) GetWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
 	return p.getAllWebDeploymentsAttr(ctx, p)
 }
 
-func (p *webDeploymentsProxy) getWebDeployment(ctx context.Context, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+func (p *WebDeploymentsProxy) getWebDeployment(ctx context.Context, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	return p.getWebDeploymentAttr(ctx, p, deployId)
 }
-func (p *webDeploymentsProxy) determineLatestVersion(ctx context.Context, configurationId string) (string, []string, diag.Diagnostics) {
+func (p *WebDeploymentsProxy) determineLatestVersion(ctx context.Context, configurationId string) (string, []string, diag.Diagnostics) {
 	return p.determineLatestVersionAttr(ctx, p, configurationId)
 }
 
-func (p *webDeploymentsProxy) createWebDeployment(ctx context.Context, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+func (p *WebDeploymentsProxy) createWebDeployment(ctx context.Context, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	return p.createWebDeploymentAttr(ctx, p, deployment)
 }
 
-func (p *webDeploymentsProxy) updateWebDeployment(ctx context.Context, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+func (p *WebDeploymentsProxy) updateWebDeployment(ctx context.Context, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	return p.updateWebDeploymentAttr(ctx, p, deploymentId, deployment)
 }
 
-func (p *webDeploymentsProxy) deleteWebDeployment(ctx context.Context, deploymentId string) (*platformclientv2.APIResponse, error) {
+func (p *WebDeploymentsProxy) deleteWebDeployment(ctx context.Context, deploymentId string) (*platformclientv2.APIResponse, error) {
 	return p.deleteWebDeploymentAttr(ctx, p, deploymentId)
 }
 
-func getAllWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
+func getAllWebDeploymentsFn(ctx context.Context, p *WebDeploymentsProxy) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var allDeployments []platformclientv2.Expandablewebdeployment
@@ -117,27 +117,27 @@ func getAllWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy) (*platf
 	return result, response, nil
 }
 
-func getWebDeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+func getWebDeploymentsFn(ctx context.Context, p *WebDeploymentsProxy, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.GetWebdeploymentsDeployment(deployId, []string{})
 }
 
-func createWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+func createWebdeploymentsFn(ctx context.Context, p *WebDeploymentsProxy, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PostWebdeploymentsDeployments(deployment)
 }
 
-func updateWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
+func updateWebdeploymentsFn(ctx context.Context, p *WebDeploymentsProxy, deploymentId string, deployment platformclientv2.Webdeployment) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.PutWebdeploymentsDeployment(deploymentId, deployment)
 }
 
-func deleteWebdeploymentsFn(ctx context.Context, p *webDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error) {
+func deleteWebdeploymentsFn(ctx context.Context, p *WebDeploymentsProxy, deploymentId string) (*platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.webDeploymentsApi.DeleteWebdeploymentsDeployment(deploymentId)
 }
 
-func determineLatestVersionFn(ctx context.Context, p *webDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics) {
+func determineLatestVersionFn(ctx context.Context, p *WebDeploymentsProxy, configurationId string) (string, []string, diag.Diagnostics) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	version := ""
 	draft := "DRAFT"
