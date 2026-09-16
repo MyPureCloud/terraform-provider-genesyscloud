@@ -105,7 +105,7 @@ Required:
 
 Optional:
 
-- `column_data_type` (String) The data type of the column selected for dynamic queueing (TEXT, NUMERIC or TIMESTAMP)
+- `column_data_type` (String) The data type of the column selected for dynamic queueing (TEXT, NUMERIC, TIMESTAMP or DATETIME)
 - `max` (Number) The maximum length of the numeric column selected for dynamic queueing.
 - `max_length` (Number) The maximum length of the text column selected for dynamic queueing.
 - `min` (Number) The minimum length of the numeric column selected for dynamic queueing.

@@ -164,11 +164,11 @@ var (
 				Type:        schema.TypeString,
 			},
 			`column_data_type`: {
-				Description:  `The data type of the column selected for dynamic queueing (TEXT, NUMERIC or TIMESTAMP)`,
+				Description:  `The data type of the column selected for dynamic queueing (TEXT, NUMERIC, TIMESTAMP or DATETIME)`,
 				Optional:     true,
 				Computed:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{"TEXT", "NUMERIC", "TIMESTAMP"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"TEXT", "NUMERIC", "TIMESTAMP", "DATETIME"}, false),
 			},
 			`min`: {
 				Description: `The minimum length of the numeric column selected for dynamic queueing.`,
