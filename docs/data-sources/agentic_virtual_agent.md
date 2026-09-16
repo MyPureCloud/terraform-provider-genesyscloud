@@ -16,7 +16,6 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 
 
-
 ## Example Usage
 
 ```terraform

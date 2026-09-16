@@ -52,7 +52,6 @@ The following permissions are required to use this resource:
 * `directory:user:add`
 * `directory:user:delete`
 * `directory:user:edit`
-* `directory:user:hardDelete`
 * `directory:user:setPassword`
 * `directory:user:view`
 * `directory:userProfile:edit`
