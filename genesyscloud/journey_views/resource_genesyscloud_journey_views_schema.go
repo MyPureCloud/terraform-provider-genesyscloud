@@ -369,6 +369,11 @@ var (
 				Type:        schema.TypeInt,
 				Required:    true,
 			},
+			"rank": {
+				Description: "The rank of the journey view chart for ordering display",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 			"metrics": {
 				Description: "A set of metrics to be displayed on the chart.",
 				Type:        schema.TypeList,
