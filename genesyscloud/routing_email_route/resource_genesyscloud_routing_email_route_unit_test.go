@@ -20,10 +20,10 @@ func TestUnitGetAllRoutingEmailRoutes(t *testing.T) {
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
 	ctx := context.Background()
 
-	mockGetAllFunc := func(_ context.Context, _ *routingEmailRouteProxy, _, _ string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+	mockGetAllFunc := func(_ context.Context, _ *RoutingEmailRouteProxy, _, _ string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 		return nil, nil, nil
 	}
-	internalProxy = &routingEmailRouteProxy{
+	internalProxy = &RoutingEmailRouteProxy{
 		getAllRoutingEmailRouteAttr: mockGetAllFunc,
 	}
 
@@ -40,10 +40,10 @@ func TestUnitGetAllRoutingEmailRoutes(t *testing.T) {
 		t.Errorf("Expected resource map length to be 0, got %d", len(resourceMap))
 	}
 
-	mockGetAllFunc = func(_ context.Context, _ *routingEmailRouteProxy, _, _ string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+	mockGetAllFunc = func(_ context.Context, _ *RoutingEmailRouteProxy, _, _ string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 		return nil, nil, fmt.Errorf("mock error")
 	}
-	internalProxy = &routingEmailRouteProxy{
+	internalProxy = &RoutingEmailRouteProxy{
 		getAllRoutingEmailRouteAttr: mockGetAllFunc,
 	}
 
