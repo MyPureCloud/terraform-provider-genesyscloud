@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -211,6 +212,59 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.success_template", strings.ReplaceAll(successTemplate, "$${", "${")),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.translation_map."+transMapAttr, transMapVal2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "config_response.0.translation_map_defaults."+transMapAttr, transMapValDefault2),
+				),
+			},
+			{
+				// Settle step: the previous step set secure=true, which forces a brand new
+				// action to be created (ForceNew). The newly created action id is not always
+				// immediately readable, which causes the following import step to fail with
+				// "Cannot import non-existent remote object". Re-apply the same config after a
+				// short wait so the recreated action is consistent before the import/read.
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
+				Config: integration.GenerateIntegrationResource(
+					integResourceLabel1,
+					util.NullValue,
+					strconv.Quote(integTypeID),
+				) + generateIntegrationActionResource(
+					actionResourceLabel1,
+					actionName2,
+					actionCateg2,
+					"genesyscloud_integration."+integResourceLabel1+".id",
+					util.TrueValue, // Secure
+					util.NullValue, // time default
+					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
+					generateIntegrationActionConfigRequest(
+						reqUrlTemplate2,
+						reqType2,
+						strconv.Quote(reqTemp),
+						util.GenerateMapAttrWithMapProperties(
+							"headers",
+							map[string]string{
+								headerKey: strconv.Quote(headerVal2),
+							},
+						),
+					),
+					generateIntegrationActionConfigResponse(
+						strconv.Quote(successTemplate),
+						util.GenerateMapAttrWithMapProperties(
+							"translation_map",
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapVal2),
+							},
+						),
+						util.GenerateMapAttrWithMapProperties(
+							"translation_map_defaults",
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapValDefault2),
+							},
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "id"),
 				),
 			},
 			{

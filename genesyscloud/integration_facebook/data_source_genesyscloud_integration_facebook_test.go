@@ -2,9 +2,10 @@ package integration_facebook
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -18,15 +19,16 @@ Test Class for the integration facebook Data Source
 */
 
 func TestAccDataSourceIntegrationFacebook(t *testing.T) {
-	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
 		testResourceLabel1 = "test_sample"
 		testResourceLabel2 = "test_sample2"
-		name1              = "test_sample"
-		pageAccessToken1   = uuid.NewString()
-		appId              = ""
-		appSecret          = ""
+		// Use a unique name so the data source's lookup-by-name matches the integration this
+		// test creates, not a leftover "test_sample" integration from a prior run.
+		name1            = "test_sample-" + uuid.NewString()
+		pageAccessToken1 = uuid.NewString()
+		appId            = ""
+		appSecret        = ""
 
 		nameSupportedContent          = "TestTerraformSupportedContent-" + uuid.NewString()
 		resourceLabelSupportedContent = "testSupportedContent"

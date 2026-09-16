@@ -2,6 +2,7 @@ package tfexporter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -20,6 +21,7 @@ import (
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -2330,9 +2332,8 @@ resource "%s" "%s" {
 				),
 			},
 			{
-				// Step 2: Export the flow after it has been fully published
 				PreConfig: func() {
-					time.Sleep(15 * time.Second)
+					time.Sleep(60 * time.Second)
 				},
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
@@ -2346,6 +2347,126 @@ resource "%s" "%s" {
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+// TestAccResourceTfExportRoutingUtilizationMaxInboundCalls (AS-5418, PR #2544) verifies
+// max_inbound_calls survives an export, which the resource-level import test does not cover.
+func TestAccResourceTfExportRoutingUtilizationMaxInboundCalls(t *testing.T) {
+	testSetup(t)
+
+	var (
+		exportResourceLabel = "export"
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath      = "genesyscloud_tf_export." + exportResourceLabel
+		pathToExportedJSON  = filepath.Join(exportTestDir, defaultTfJSONFile)
+
+		maxCapacity     = "1"
+		maxInboundCalls = "2"
+
+		// Fixed block label the exporter writes for this resource.
+		exportedResourceLabel = "routing_utilization"
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occurred while removing directory '%s': %s", path, err)
+		}
+	}(exportTestDir)
+
+	utilizationConfig := fmt.Sprintf(`
+resource "genesyscloud_routing_utilization" "routing-util" {
+	%s
+	%s
+	%s
+	%s
+	%s
+	max_inbound_calls = %s
+}
+`,
+		routingUtilization.GenerateRoutingUtilMediaType("call", maxCapacity, util.TrueValue),
+		routingUtilization.GenerateRoutingUtilMediaType("callback", maxCapacity, util.FalseValue),
+		routingUtilization.GenerateRoutingUtilMediaType("chat", maxCapacity, util.FalseValue),
+		routingUtilization.GenerateRoutingUtilMediaType("email", maxCapacity, util.FalseValue),
+		routingUtilization.GenerateRoutingUtilMediaType("message", maxCapacity, util.FalseValue),
+		maxInboundCalls,
+	)
+
+	exportConfig := utilizationConfig + fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+	directory                = "%s"
+	include_state_file       = %s
+	export_format            = %s
+	include_filter_resources = [%s]
+	depends_on               = [genesyscloud_routing_utilization.routing-util]
+}
+`, exportResourceLabel, exportTestDir, util.TrueValue, strconv.Quote("json"),
+		strconv.Quote("genesyscloud_routing_utilization"))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Set max_inbound_calls.
+				Config: utilizationConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "max_inbound_calls", maxInboundCalls),
+				),
+			},
+			{
+				// Export and verify the field is present in the exported JSON.
+				Config: exportConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(exportFullPath, "id"),
+					validateRoutingUtilizationExportMaxInboundCalls(pathToExportedJSON, exportedResourceLabel, maxInboundCalls),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// validateRoutingUtilizationExportMaxInboundCalls asserts the exported JSON block has max_inbound_calls == expected.
+func validateRoutingUtilizationExportMaxInboundCalls(filePath, resourceLabel, expected string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		raw, err := getResourceDefinition(filePath, "genesyscloud_routing_utilization")
+		if err != nil {
+			return err
+		}
+		if raw == nil {
+			return fmt.Errorf("no genesyscloud_routing_utilization resources found in export %s", filePath)
+		}
+		blockRaw, ok := raw[resourceLabel]
+		if !ok || blockRaw == nil {
+			return fmt.Errorf("routing utilization block %q not found in export %s", resourceLabel, filePath)
+		}
+
+		var attrs map[string]interface{}
+		if err := json.Unmarshal(*blockRaw, &attrs); err != nil {
+			return fmt.Errorf("failed to unmarshal routing utilization block: %w", err)
+		}
+
+		val, exists := attrs["max_inbound_calls"]
+		if !exists {
+			return fmt.Errorf("max_inbound_calls not found in exported routing utilization block; got attributes: %v", attrs)
+		}
+
+		// JSON numbers unmarshal to float64; compare as integer string.
+		var got string
+		switch v := val.(type) {
+		case float64: // JSON numbers decode to float64
+			got = strconv.Itoa(int(v))
+		case string:
+			got = v
+		default:
+			got = fmt.Sprintf("%v", v)
+		}
+
+		if got != expected {
+			return fmt.Errorf("exported max_inbound_calls = %s, expected %s", got, expected)
+		}
+		return nil
+	}
 }
 
 // TestUnitTestForExportCycles creates a directed graph of exported resources to their references. Report any potential graph cycles in this test.
