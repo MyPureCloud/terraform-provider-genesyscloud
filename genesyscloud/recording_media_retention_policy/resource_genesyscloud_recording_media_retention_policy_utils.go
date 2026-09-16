@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 /*
@@ -616,48 +616,6 @@ func flattenInitiateScreenRecording(recording *platformclientv2.Initiatescreenre
 	return []interface{}{recordingMap}
 }
 
-func buildMediaTranscriptions(transcriptions []interface{}) *[]platformclientv2.Mediatranscription {
-	mediaTranscriptions := make([]platformclientv2.Mediatranscription, 0)
-
-	for _, transcription := range transcriptions {
-		transcriptionMap, ok := transcription.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		displayName := transcriptionMap["display_name"].(string)
-		transcriptionProvider := transcriptionMap["transcription_provider"].(string)
-		integrationId := transcriptionMap["integration_id"].(string)
-
-		mediaTranscriptions = append(mediaTranscriptions, platformclientv2.Mediatranscription{
-			DisplayName:           &displayName,
-			TranscriptionProvider: &transcriptionProvider,
-			IntegrationId:         &integrationId,
-		})
-	}
-
-	return &mediaTranscriptions
-}
-
-func flattenMediaTranscriptions(transcriptions *[]platformclientv2.Mediatranscription) []interface{} {
-	if transcriptions == nil {
-		return nil
-	}
-
-	mediaTranscriptions := make([]interface{}, 0)
-
-	for _, transcription := range *transcriptions {
-		transcriptionMap := make(map[string]interface{})
-
-		resourcedata.SetMapValueIfNotNil(transcriptionMap, "display_name", transcription.DisplayName)
-		resourcedata.SetMapValueIfNotNil(transcriptionMap, "transcription_provider", transcription.TranscriptionProvider)
-		resourcedata.SetMapValueIfNotNil(transcriptionMap, "integration_id", transcription.IntegrationId)
-
-		mediaTranscriptions = append(mediaTranscriptions, transcriptionMap)
-	}
-
-	return mediaTranscriptions
-}
-
 func buildIntegrationExport(integrationExport []interface{}) *platformclientv2.Integrationexport {
 	if len(integrationExport) <= 0 {
 		return nil
@@ -739,7 +697,6 @@ func buildPolicyActionsFromMediaPolicy(actions []interface{}, pp *policyProxy, c
 		AssignSurveys:                  surveys,
 		RetentionDuration:              buildRetentionDuration(actionsMap["retention_duration"].([]interface{})),
 		InitiateScreenRecording:        buildInitiateScreenRecording(actionsMap["initiate_screen_recording"].([]interface{})),
-		MediaTranscriptions:            buildMediaTranscriptions(actionsMap["media_transcriptions"].([]interface{})),
 		IntegrationExport:              buildIntegrationExport(actionsMap["integration_export"].([]interface{})),
 	}
 }
@@ -777,7 +734,6 @@ func flattenPolicyActions(actions *platformclientv2.Policyactions, pp *policyPro
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "assign_surveys", actions.AssignSurveys, flattenAssignSurveys)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "retention_duration", actions.RetentionDuration, flattenRetentionDuration)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "initiate_screen_recording", actions.InitiateScreenRecording, flattenInitiateScreenRecording)
-	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "media_transcriptions", actions.MediaTranscriptions, flattenMediaTranscriptions)
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(actionsMap, "integration_export", actions.IntegrationExport, flattenIntegrationExport)
 
 	return err, []interface{}{actionsMap}
@@ -1822,7 +1778,6 @@ func buildPolicyActionsFromResource(d *schema.ResourceData, pp *policyProxy, ctx
 			AssignSurveys:                  surveys,
 			RetentionDuration:              buildRetentionDuration(actionsMap["retention_duration"].([]interface{})),
 			InitiateScreenRecording:        buildInitiateScreenRecording(actionsMap["initiate_screen_recording"].([]interface{})),
-			MediaTranscriptions:            buildMediaTranscriptions(actionsMap["media_transcriptions"].([]interface{})),
 			IntegrationExport:              buildIntegrationExport(actionsMap["integration_export"].([]interface{})),
 		}, nil
 	}
