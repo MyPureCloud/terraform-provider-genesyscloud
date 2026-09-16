@@ -21,6 +21,7 @@ import (
 	grammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	architectIvrIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr_identity_resolution"
 	architectSchedulegroups "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
@@ -341,6 +342,7 @@ func registerResources() {
 	did.SetRegistrar(regInstance)                                          //Registering telephony did
 	didPool.SetRegistrar(regInstance)                                      //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)                                      //Registering architect ivr
+	architectIvrIdentityResolution.SetRegistrar(regInstance)               //Registering architect ivr identity resolution
 	workbin.SetRegistrar(regInstance)                                      //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype

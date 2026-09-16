@@ -1,24 +1,24 @@
-inboundEmail:
-    name: Terraform Flow Test-a3b27309-4634-40b3-b8a8-1fee3d0292a7
-    description: test description 1
-    startUpRef: "/inboundEmail/states/state[Initial State_10]"
-    defaultLanguage: en-us
-    supportedLanguages:
-        en-us:
-            defaultLanguageSkill:
-                noValue: true
-    settingsInboundEmailHandling:
-        emailHandling:
-            disconnect:
-                none: true
-    settingsErrorHandling:
-        errorHandling:
-            disconnect:
-                none: true
-    states:
-        - state:
-            name: Initial State
-            refId: Initial State_10
-            actions:
-                - disconnect:
-                    name: Disconnect
+
+inqueueShortMessage:
+  name: TF Test inqueueShortMessage Flow 7d17da2f-e3ac-4fea-8898-6040036079b3
+  defaultLanguage: en-us
+  supportedLanguages:
+    en-us:
+      defaultLanguageSkill:
+        noValue: true
+  settingsErrorHandling:
+    errorHandling:
+      endInQueueState:
+        none: true
+  startUpState:
+    name: Initial State
+    refId: Initial State_10
+    actions:
+      - endState:
+          name: End State
+  periodicState:
+    name: Recurring State
+    refId: Recurring State_12
+    actions:
+      - endState:
+          name: End State
