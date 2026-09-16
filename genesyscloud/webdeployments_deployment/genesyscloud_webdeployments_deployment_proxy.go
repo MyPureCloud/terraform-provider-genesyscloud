@@ -52,14 +52,14 @@ func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDe
 	}
 }
 
-func getWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsProxy {
+func GetWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsProxy {
 	if internalProxy == nil {
 		internalProxy = newWebDeploymentsProxy(clientConfig)
 	}
 	return internalProxy
 }
 
-func (p *webDeploymentsProxy) getWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
+func (p *webDeploymentsProxy) GetWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
 	return p.getAllWebDeploymentsAttr(ctx, p)
 }
 

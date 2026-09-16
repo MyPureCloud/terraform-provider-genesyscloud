@@ -24,9 +24,9 @@ import (
 
 func getAllWebDeployments(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	resources := make(resourceExporter.ResourceIDMetaMap)
-	wd := getWebDeploymentsProxy(clientConfig)
+	wd := GetWebDeploymentsProxy(clientConfig)
 
-	deployments, resp, getErr := wd.getWebDeployments(ctx)
+	deployments, resp, getErr := wd.GetWebDeployments(ctx)
 	if getErr != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get web deployments error: %s", getErr), resp)
 	}
@@ -49,7 +49,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	wd := getWebDeploymentsProxy(sdkConfig)
+	wd := GetWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Creating web deployment %s", name)
 
@@ -129,7 +129,7 @@ func createWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv2.Configuration, id string) diag.Diagnostics {
-	wd := getWebDeploymentsProxy(sdkConfig)
+	wd := GetWebDeploymentsProxy(sdkConfig)
 	return util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		deployment, resp, err := wd.getWebDeployment(ctx, id)
 		if err != nil {
@@ -149,7 +149,7 @@ func waitForDeploymentToBeActive(ctx context.Context, sdkConfig *platformclientv
 
 func readWebDeployment(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	wd := getWebDeploymentsProxy(sdkConfig)
+	wd := GetWebDeploymentsProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceWebDeployment(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading web deployment %s", d.Id())
@@ -208,7 +208,7 @@ func updateWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	}
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	wd := getWebDeploymentsProxy(sdkConfig)
+	wd := GetWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Updating web deployment %s", name)
 
@@ -279,7 +279,7 @@ func deleteWebDeployment(ctx context.Context, d *schema.ResourceData, meta inter
 	name := d.Get("name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	wd := getWebDeploymentsProxy(sdkConfig)
+	wd := GetWebDeploymentsProxy(sdkConfig)
 
 	log.Printf("Deleting web deployment %s", name)
 	resp, err := wd.deleteWebDeployment(ctx, d.Id())
