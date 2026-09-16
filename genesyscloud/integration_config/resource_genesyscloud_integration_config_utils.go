@@ -3,10 +3,27 @@ package integration_config
 import (
 	"encoding/json"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
+
+// integrationConfigIdSuffix disambiguates this resource's ID from the integration's own ID,
+// since an integration_config resource is 1:1 with (and keyed off of) its integration.
+const integrationConfigIdSuffix = "/config"
+
+// BuildIntegrationConfigId builds the integration_config composite resource ID, which is
+// always in the format <integration-id>/config.
+func BuildIntegrationConfigId(integrationId string) (id string) {
+	return integrationId + integrationConfigIdSuffix
+}
+
+// SplitIntegrationConfigId splits the integration_config composite resource ID, which is
+// always in the format <integration-id>/config, back into the integration ID.
+func SplitIntegrationConfigId(id string) (integrationId string) {
+	return strings.Split(id, "/")[0]
+}
 
 // buildIntegrationConfig converts Terraform ResourceData into SDK Integrationconfiguration struct
 func buildIntegrationConfig(d *schema.ResourceData, currentVersion *int) *platformclientv2.Integrationconfiguration {

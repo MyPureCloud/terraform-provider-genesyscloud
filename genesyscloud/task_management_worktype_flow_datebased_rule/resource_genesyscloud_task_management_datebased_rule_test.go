@@ -111,7 +111,7 @@ func testVerifyTaskManagementDateBasedRuleDestroyed(state *terraform.State) erro
 			continue
 		}
 
-		worktypeId, dateBasedRuleId := splitWorktypeBasedTerraformId(res.Primary.ID)
+		worktypeId, dateBasedRuleId := SplitWorktypeBasedTerraformId(res.Primary.ID)
 		dateBasedRule, resp, err := taskManagementApi.GetTaskmanagementWorktypeFlowsDatebasedRule(worktypeId, dateBasedRuleId)
 		if dateBasedRule != nil {
 			return fmt.Errorf("task management datebased rule (%s) still exists", res.Primary.ID)

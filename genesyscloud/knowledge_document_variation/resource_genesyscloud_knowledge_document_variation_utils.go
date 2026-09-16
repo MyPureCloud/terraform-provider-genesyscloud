@@ -1679,22 +1679,36 @@ func nillableFloat32FromMap(m map[string]interface{}, key string) *float32 {
 	return nil
 }
 
-func buildVariationId(baseID, documentID, variationID string) string {
+// BuildVariationId builds the knowledge_document_variation composite resource ID, which is
+// always in the format <base-id> <document-resource-data-id> <variation-id>.
+func BuildVariationId(baseID, documentID, variationID string) (id string) {
 	return baseID + variationIdSeparator + documentID + variationIdSeparator + variationID
 }
 
-func parseResourceIDs(id string) (*resourceIDs, error) {
+// ParseVariationId splits the knowledge_document_variation composite resource ID, which is
+// always in the format <base-id> <document-resource-data-id> <variation-id>, back into its
+// parts.
+func ParseVariationId(id string) (baseID, documentResourceDataID, variationID string, err error) {
 	parts := strings.Split(id, variationIdSeparator)
 
 	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid resource ID: %s", id)
+		return "", "", "", fmt.Errorf("invalid resource ID: %s", id)
+	}
+
+	return parts[0], parts[1], parts[2], nil
+}
+
+func parseResourceIDs(id string) (*resourceIDs, error) {
+	baseID, documentResourceDataID, variationID, err := ParseVariationId(id)
+	if err != nil {
+		return nil, err
 	}
 
 	return &resourceIDs{
-		knowledgeDocumentVariationID:    parts[2],
-		knowledgeBaseID:                 parts[0],
-		knowledgeDocumentResourceDataID: parts[1],
-		knowledgeDocumentID:             strings.Split(parts[1], ",")[0],
+		knowledgeDocumentVariationID:    variationID,
+		knowledgeBaseID:                 baseID,
+		knowledgeDocumentResourceDataID: documentResourceDataID,
+		knowledgeDocumentID:             strings.Split(documentResourceDataID, ",")[0],
 	}, nil
 }
 

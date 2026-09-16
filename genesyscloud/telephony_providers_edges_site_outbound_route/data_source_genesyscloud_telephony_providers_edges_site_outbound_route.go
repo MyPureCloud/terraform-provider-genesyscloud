@@ -31,7 +31,7 @@ func dataSourceSiteOutboundRouteRead(ctx context.Context, d *schema.ResourceData
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("error requesting outbound route %s | error: %s", name, err), resp))
 		}
 
-		outboundRouteId := buildSiteAndOutboundRouteId(siteId, routeId)
+		outboundRouteId := BuildSiteAndOutboundRouteId(siteId, routeId)
 
 		d.SetId(outboundRouteId)
 		_ = d.Set("site_id", siteId)

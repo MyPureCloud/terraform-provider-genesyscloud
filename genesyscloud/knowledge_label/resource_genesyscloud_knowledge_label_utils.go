@@ -1,8 +1,26 @@
 package knowledge_label
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
+
+const knowledgeLabelIdSeparator = ","
+
+// BuildKnowledgeLabelId builds the knowledge_label composite resource ID, which is always in
+// the format <knowledge-label-id>,<knowledge-base-id>.
+func BuildKnowledgeLabelId(knowledgeLabelId, knowledgeBaseId string) (id string) {
+	return fmt.Sprintf("%s%s%s", knowledgeLabelId, knowledgeLabelIdSeparator, knowledgeBaseId)
+}
+
+// SplitKnowledgeLabelId splits the knowledge_label composite resource ID, which is always in
+// the format <knowledge-label-id>,<knowledge-base-id>, back into its parts.
+func SplitKnowledgeLabelId(id string) (knowledgeLabelId string, knowledgeBaseId string) {
+	parts := strings.Split(id, knowledgeLabelIdSeparator)
+	return parts[0], parts[1]
+}
 
 func buildKnowledgeLabel(labelIn map[string]interface{}) platformclientv2.Labelcreaterequest {
 	name := labelIn["name"].(string)

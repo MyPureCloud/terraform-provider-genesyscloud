@@ -2,6 +2,7 @@ package routing_queue_conditional_group_routing
 
 import (
 	"fmt"
+	"strings"
 
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -9,6 +10,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
 )
+
+// conditionalGroupRoutingIdSuffix disambiguates this resource's ID from the routing queue's own
+// ID, since a conditional group routing resource is 1:1 with (and keyed off of) its queue.
+const conditionalGroupRoutingIdSuffix = "/rule"
+
+// BuildConditionalGroupRoutingId builds the routing_queue_conditional_group_routing composite
+// resource ID, which is always in the format <queue-id>/rule.
+func BuildConditionalGroupRoutingId(queueId string) (id string) {
+	return queueId + conditionalGroupRoutingIdSuffix
+}
+
+// SplitConditionalGroupRoutingId splits the routing_queue_conditional_group_routing composite
+// resource ID, which is always in the format <queue-id>/rule, back into the queue ID.
+func SplitConditionalGroupRoutingId(id string) (queueId string) {
+	return strings.Split(id, "/")[0]
+}
 
 func buildConditionalGroupRouting(rules []interface{}) ([]platformclientv2.Conditionalgrouproutingrule, error) {
 	var sdkRules []platformclientv2.Conditionalgrouproutingrule

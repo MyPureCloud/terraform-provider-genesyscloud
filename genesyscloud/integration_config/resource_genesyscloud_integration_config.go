@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -44,7 +43,7 @@ func getAllIntegrationConfigs(ctx context.Context, clientConfig *platformclientv
 
 		for _, integration := range *integrations.Entities {
 			if integration.Id != nil && integration.Name != nil {
-				resources[*integration.Id+"/config"] = &resourceExporter.ResourceMeta{BlockLabel: *integration.Name + "_config"}
+				resources[BuildIntegrationConfigId(*integration.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *integration.Name + "_config"}
 			}
 		}
 
@@ -82,7 +81,7 @@ func createIntegrationConfig(ctx context.Context, d *schema.ResourceData, meta i
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create config for integration %s: %s", integrationId, err), resp)
 	}
 
-	d.SetId(integrationId + "/config")
+	d.SetId(BuildIntegrationConfigId(integrationId))
 	log.Printf("Created integration config for integration %s", integrationId)
 
 	return readIntegrationConfig(ctx, d, meta)
@@ -99,7 +98,7 @@ func readIntegrationConfig(ctx context.Context, d *schema.ResourceData, meta int
 	proxy := getIntegrationConfigProxy(sdkConfig)
 	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceIntegrationConfig(), constants.ConsistencyChecks(), ResourceType)
 
-	integrationId := strings.Split(d.Id(), "/")[0]
+	integrationId := SplitIntegrationConfigId(d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		log.Printf("Reading integration config for integration %s", integrationId)
@@ -130,7 +129,7 @@ func updateIntegrationConfig(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntegrationConfigProxy(sdkConfig)
 
-	integrationId := strings.Split(d.Id(), "/")[0]
+	integrationId := SplitIntegrationConfigId(d.Id())
 	log.Printf("Updating integration config for integration %s", integrationId)
 
 	// Retry on version mismatch (optimistic locking)
@@ -161,7 +160,7 @@ func deleteIntegrationConfig(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getIntegrationConfigProxy(sdkConfig)
 
-	integrationId := strings.Split(d.Id(), "/")[0]
+	integrationId := SplitIntegrationConfigId(d.Id())
 	log.Printf("Deleting (clearing) integration config for integration %s", integrationId)
 
 	// Get current config for version

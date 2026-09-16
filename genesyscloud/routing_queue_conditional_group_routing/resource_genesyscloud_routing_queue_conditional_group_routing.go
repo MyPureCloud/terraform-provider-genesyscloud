@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	consistencyChecker "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -40,7 +39,7 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 
 	for _, queue := range *queues {
 		if queue.ConditionalGroupRouting != nil && queue.ConditionalGroupRouting.Rules != nil {
-			resources[*queue.Id+"/rules"] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-rules"}
+			resources[BuildConditionalGroupRoutingId(*queue.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-rules"}
 		}
 	}
 
@@ -55,7 +54,7 @@ func createRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 
 	queueId := d.Get("queue_id").(string)
 	log.Printf("creating conditional group routing rules for queue %s", queueId)
-	d.SetId(queueId + "/rule") // Adding /rule to the id so the id doesn't conflict with the id of the routing queue these rules belong to
+	d.SetId(BuildConditionalGroupRoutingId(queueId)) // disambiguate this id from the id of the routing queue these rules belong to
 
 	return updateRoutingQueueConditionalRoutingGroup(ctx, d, meta)
 }
@@ -69,7 +68,7 @@ func readRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Reso
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
 	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupRouting(), constants.ConsistencyChecks(), ResourceType)
-	queueId := strings.Split(d.Id(), "/")[0]
+	queueId := SplitConditionalGroupRoutingId(d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		log.Printf("Reading routing queue %s conditional group routing rules", queueId)
@@ -98,7 +97,7 @@ func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
 
-	queueId := strings.Split(d.Id(), "/")[0]
+	queueId := SplitConditionalGroupRoutingId(d.Id())
 	rules := d.Get("rules").([]interface{})
 
 	sdkRules, err := buildConditionalGroupRouting(rules)
@@ -120,7 +119,7 @@ func updateRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.Re
 func deleteRoutingQueueConditionalRoutingGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupRoutingProxy(sdkConfig)
-	queueId := strings.Split(d.Id(), "/")[0]
+	queueId := SplitConditionalGroupRoutingId(d.Id())
 
 	log.Printf("Removing rules from queue %s", queueId)
 

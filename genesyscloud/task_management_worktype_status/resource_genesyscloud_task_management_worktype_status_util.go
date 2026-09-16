@@ -34,6 +34,11 @@ func SplitWorktypeStatusTerraformId(id string) (worktypeId string, statusId stri
 	return strings.Split(id, "/")[0], strings.Split(id, "/")[1]
 }
 
+// BuildWorktypeStatusTerraformId builds the status resource id in the form <worktypeId>/<statusId>.
+func BuildWorktypeStatusTerraformId(worktypeId string, statusId string) (id string) {
+	return worktypeId + "/" + statusId
+}
+
 // validateSchema checks if status_transition_delay_seconds was provided with default_destination_status_id
 func validateSchema(d *schema.ResourceData) error {
 	if d.Get("default_destination_status_id").(string) != "" {

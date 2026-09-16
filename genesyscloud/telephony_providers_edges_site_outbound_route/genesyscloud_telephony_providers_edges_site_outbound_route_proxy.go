@@ -152,7 +152,7 @@ func getAllSiteOutboundRoutesFn(ctx context.Context, p *siteOutboundRouteProxy, 
 
 	// Populate the site cache
 	for _, outboundRoute := range allOutboundRoutes {
-		rc.SetCache(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, *outboundRoute.Id), outboundRoute)
+		rc.SetCache(p.siteOutboundRouteCache, BuildSiteAndOutboundRouteId(siteId, *outboundRoute.Id), outboundRoute)
 	}
 
 	return &allOutboundRoutes, resp, nil
@@ -165,7 +165,7 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Check if site's outbound route exist in cache
-	route := rc.GetCacheItem(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId))
+	route := rc.GetCacheItem(p.siteOutboundRouteCache, BuildSiteAndOutboundRouteId(siteId, outboundRouteId))
 	if route != nil {
 		return route, nil, nil
 	}
@@ -175,7 +175,7 @@ func getSiteOutboundRouteByIdFn(ctx context.Context, p *siteOutboundRouteProxy, 
 		return nil, resp, err
 	}
 
-	rc.SetCache(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId), *outboundRoute)
+	rc.SetCache(p.siteOutboundRouteCache, BuildSiteAndOutboundRouteId(siteId, outboundRouteId), *outboundRoute)
 
 	return outboundRoute, resp, nil
 }
@@ -233,6 +233,6 @@ func deleteSiteOutboundRouteFn(ctx context.Context, p *siteOutboundRouteProxy, s
 		return resp, err
 	}
 
-	rc.DeleteCacheItem(p.siteOutboundRouteCache, buildSiteAndOutboundRouteId(siteId, outboundRouteId))
+	rc.DeleteCacheItem(p.siteOutboundRouteCache, BuildSiteAndOutboundRouteId(siteId, outboundRouteId))
 	return resp, nil
 }

@@ -12,11 +12,15 @@ import (
 
 const stepplanResourceIDSeparator = "|"
 
-func formatStepplanResourceID(caseplanID string, stageNumber int, stepplanID string) string {
+// FormatStepplanResourceID builds the case_management_stepplan composite resource ID, which
+// is always in the format <caseplan-id>|<stage-number>|<stepplan-id>.
+func FormatStepplanResourceID(caseplanID string, stageNumber int, stepplanID string) (id string) {
 	return fmt.Sprintf("%s%s%d%s%s", caseplanID, stepplanResourceIDSeparator, stageNumber, stepplanResourceIDSeparator, stepplanID)
 }
 
-func parseStepplanResourceID(id string) (caseplanID string, stageNumber int, stepplanID string, err error) {
+// ParseStepplanResourceID splits the case_management_stepplan composite resource ID, which
+// is always in the format <caseplan-id>|<stage-number>|<stepplan-id>, back into its parts.
+func ParseStepplanResourceID(id string) (caseplanID string, stageNumber int, stepplanID string, err error) {
 	parts := strings.Split(id, stepplanResourceIDSeparator)
 	if len(parts) != 3 {
 		return "", 0, "", fmt.Errorf("invalid id %q: expected caseplan_id|stage_number|stepplan_id", id)

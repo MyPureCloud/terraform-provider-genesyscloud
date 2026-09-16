@@ -49,7 +49,7 @@ func getAllAuthTaskManagementDateBasedRule(ctx context.Context, clientConfig *pl
 		}
 
 		for _, dateBasedRule := range *dateBasedRules {
-			resources[composeWorktypeBasedTerraformId(*worktype.Id, *dateBasedRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *dateBasedRule.Name}
+			resources[ComposeWorktypeBasedTerraformId(*worktype.Id, *dateBasedRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *dateBasedRule.Name}
 		}
 	}
 	return resources, nil
@@ -70,7 +70,7 @@ func createTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 	}
 	log.Printf("Created the base task management datebased rule %s for worktype %s", *dateBasedRule.Id, worktypeId)
 
-	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *dateBasedRule.Id))
+	d.SetId(ComposeWorktypeBasedTerraformId(worktypeId, *dateBasedRule.Id))
 
 	return readTaskManagementDateBasedRule(ctx, d, meta)
 }
@@ -81,7 +81,7 @@ func readTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceData
 	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementDateBasedRule(), constants.ConsistencyChecks(), ResourceType)
 
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management datebased rule %s for worktype %s", id, worktypeId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -108,7 +108,7 @@ func updateTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 
 	dateBasedRuleUpdate := getWorkitemdatebasedruleupdateFromResourceData(d)
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Updating datebased rule %s for worktype %s", id, worktypeId)
 	_, resp, err := proxy.updateTaskManagementDateBasedRule(ctx, worktypeId, id, &dateBasedRuleUpdate)
@@ -126,7 +126,7 @@ func deleteTaskManagementDateBasedRule(ctx context.Context, d *schema.ResourceDa
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementDateBasedRuleProxy(sdkConfig)
 
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	resp, err := proxy.deleteTaskManagementDateBasedRule(ctx, worktypeId, id)
 	if err != nil {
