@@ -175,7 +175,6 @@ Optional:
 - `delete_recording` (Boolean) true to delete the recording associated with the conversation. If retainRecording = true, this will be ignored.
 - `initiate_screen_recording` (Block List, Max: 1) (see [below for nested schema](#nestedblock--actions--initiate_screen_recording))
 - `integration_export` (Block List, Max: 1) Policy action for exporting recordings using an integration to 3rd party s3. (see [below for nested schema](#nestedblock--actions--integration_export))
-- `media_transcriptions` (Block List) (see [below for nested schema](#nestedblock--actions--media_transcriptions))
 - `retain_recording` (Boolean) true to retain the recording associated with the conversation.
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--actions--retention_duration))
 
@@ -296,16 +295,6 @@ Optional:
 - `should_export_screen_recordings` (Boolean) True if the policy should export screen recordings in addition to the other conversation media. Defaults to `true`.
 
 
-<a id="nestedblock--actions--media_transcriptions"></a>
-### Nested Schema for `actions.media_transcriptions`
-
-Optional:
-
-- `display_name` (String)
-- `integration_id` (String)
-- `transcription_provider` (String)
-
-
 <a id="nestedblock--actions--retention_duration"></a>
 ### Nested Schema for `actions.retention_duration`
 
@@ -413,7 +402,6 @@ Optional:
 - `delete_recording` (Boolean) true to delete the recording associated with the conversation. If retainRecording = true, this will be ignored.
 - `initiate_screen_recording` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--initiate_screen_recording))
 - `integration_export` (Block List, Max: 1) Policy action for exporting recordings using an integration to 3rd party s3. (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--integration_export))
-- `media_transcriptions` (Block List) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--media_transcriptions))
 - `retain_recording` (Boolean) true to retain the recording associated with the conversation.
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--call_policy--actions--retention_duration))
 
@@ -534,16 +522,6 @@ Optional:
 - `should_export_screen_recordings` (Boolean) True if the policy should export screen recordings in addition to the other conversation media. Defaults to `true`.
 
 
-<a id="nestedblock--media_policies--call_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.call_policy.actions.media_transcriptions`
-
-Optional:
-
-- `display_name` (String)
-- `integration_id` (String)
-- `transcription_provider` (String)
-
-
 <a id="nestedblock--media_policies--call_policy--actions--retention_duration"></a>
 ### Nested Schema for `media_policies.call_policy.actions.retention_duration`
 
@@ -641,7 +619,6 @@ Optional:
 - `delete_recording` (Boolean) true to delete the recording associated with the conversation. If retainRecording = true, this will be ignored.
 - `initiate_screen_recording` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--initiate_screen_recording))
 - `integration_export` (Block List, Max: 1) Policy action for exporting recordings using an integration to 3rd party s3. (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--integration_export))
-- `media_transcriptions` (Block List) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--media_transcriptions))
 - `retain_recording` (Boolean) true to retain the recording associated with the conversation.
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--chat_policy--actions--retention_duration))
 
@@ -762,16 +739,6 @@ Optional:
 - `should_export_screen_recordings` (Boolean) True if the policy should export screen recordings in addition to the other conversation media. Defaults to `true`.
 
 
-<a id="nestedblock--media_policies--chat_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.chat_policy.actions.media_transcriptions`
-
-Optional:
-
-- `display_name` (String)
-- `integration_id` (String)
-- `transcription_provider` (String)
-
-
 <a id="nestedblock--media_policies--chat_policy--actions--retention_duration"></a>
 ### Nested Schema for `media_policies.chat_policy.actions.retention_duration`
 
@@ -868,7 +835,6 @@ Optional:
 - `delete_recording` (Boolean) true to delete the recording associated with the conversation. If retainRecording = true, this will be ignored.
 - `initiate_screen_recording` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--initiate_screen_recording))
 - `integration_export` (Block List, Max: 1) Policy action for exporting recordings using an integration to 3rd party s3. (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--integration_export))
-- `media_transcriptions` (Block List) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--media_transcriptions))
 - `retain_recording` (Boolean) true to retain the recording associated with the conversation.
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--email_policy--actions--retention_duration))
 
@@ -989,16 +955,6 @@ Optional:
 - `should_export_screen_recordings` (Boolean) True if the policy should export screen recordings in addition to the other conversation media. Defaults to `true`.
 
 
-<a id="nestedblock--media_policies--email_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.email_policy.actions.media_transcriptions`
-
-Optional:
-
-- `display_name` (String)
-- `integration_id` (String)
-- `transcription_provider` (String)
-
-
 <a id="nestedblock--media_policies--email_policy--actions--retention_duration"></a>
 ### Nested Schema for `media_policies.email_policy.actions.retention_duration`
 
@@ -1084,7 +1040,6 @@ Optional:
 - `delete_recording` (Boolean) true to delete the recording associated with the conversation. If retainRecording = true, this will be ignored.
 - `initiate_screen_recording` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--initiate_screen_recording))
 - `integration_export` (Block List, Max: 1) Policy action for exporting recordings using an integration to 3rd party s3. (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--integration_export))
-- `media_transcriptions` (Block List) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--media_transcriptions))
 - `retain_recording` (Boolean) true to retain the recording associated with the conversation.
 - `retention_duration` (Block List, Max: 1) (see [below for nested schema](#nestedblock--media_policies--message_policy--actions--retention_duration))
 
@@ -1203,16 +1158,6 @@ Optional:
 
 - `integration_id` (String) The aws-s3-recording-bulk-actions-integration that the policy uses for exports.
 - `should_export_screen_recordings` (Boolean) True if the policy should export screen recordings in addition to the other conversation media. Defaults to `true`.
-
-
-<a id="nestedblock--media_policies--message_policy--actions--media_transcriptions"></a>
-### Nested Schema for `media_policies.message_policy.actions.media_transcriptions`
-
-Optional:
-
-- `display_name` (String)
-- `integration_id` (String)
-- `transcription_provider` (String)
 
 
 <a id="nestedblock--media_policies--message_policy--actions--retention_duration"></a>

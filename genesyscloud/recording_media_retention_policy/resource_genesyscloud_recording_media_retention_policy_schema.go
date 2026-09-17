@@ -678,27 +678,6 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 		},
 	}
 
-	mediaTranscription := &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"display_name": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-			"transcription_provider": {
-				Description:  "",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"VOCI", "CALLJOURNEY"}, false),
-			},
-			"integration_id": {
-				Description: "",
-				Type:        schema.TypeString,
-				Optional:    true,
-			},
-		},
-	}
-
 	integrationExport := &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"integration_id": {
@@ -775,12 +754,6 @@ func ResourceMediaRetentionPolicy() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Elem:        initiateScreenRecording,
-			},
-			"media_transcriptions": {
-				Description: "",
-				Type:        schema.TypeList,
-				Optional:    true,
-				Elem:        mediaTranscription,
 			},
 			"integration_export": {
 				Description: "Policy action for exporting recordings using an integration to 3rd party s3.",
@@ -1049,7 +1022,6 @@ func MediaRetentionPolicyExporter() *resourceExporter.ResourceExporter {
 			"media_policies.chat_policy.actions.integration_export.integration_id":                        {RefType: "genesyscloud_integration"},
 			"media_policies.message_policy.actions.integration_export.integration_id":                     {RefType: "genesyscloud_integration"},
 			"media_policies.email_policy.actions.integration_export.integration_id":                       {RefType: "genesyscloud_integration"},
-			"actions.media_transcriptions.integration_id":                                                 {RefType: "genesyscloud_integration"},
 			"media_policies.call_policy.actions.assign_surveys.flow_id":                                   {RefType: "genesyscloud_flow"},
 			"media_policies.chat_policy.actions.assign_surveys.flow_id":                                   {RefType: "genesyscloud_flow"},
 			"media_policies.message_policy.actions.assign_surveys.flow_id":                                {RefType: "genesyscloud_flow"},

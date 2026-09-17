@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 /*
@@ -75,7 +75,6 @@ type Policyactions struct {
 	AssignSurveys                  []Surveyassignment
 	RetentionDuration              Retentionduration
 	InitiateScreenRecording        Initiatescreenrecording
-	MediaTranscriptions            []Mediatranscription
 	IntegrationExport              Integrationexport
 }
 
@@ -124,12 +123,6 @@ type Initiatescreenrecording struct {
 	RecordACW        bool
 	ArchiveRetention Archiveretention
 	DeleteRetention  Deleteretention
-}
-
-type Mediatranscription struct {
-	DisplayName           string
-	TranscriptionProvider string
-	IntegrationId         string
 }
 
 type Integrationexport struct {
@@ -2235,7 +2228,6 @@ func generatePolicyActions(actions *Policyactions) string {
             %s
             %s
             %s
-            %s
         }
         `, actions.RetainRecording,
 		actions.DeleteRecording,
@@ -2247,7 +2239,6 @@ func generatePolicyActions(actions *Policyactions) string {
 		generateAssignSurveys(&actions.AssignSurveys),
 		generateRetentionDuration(&actions.RetentionDuration),
 		generateInitiateScreenRecording(&actions.InitiateScreenRecording),
-		generateMediaTranscriptions(&actions.MediaTranscriptions),
 		generateIntegrationExport(&actions.IntegrationExport),
 	)
 
@@ -2269,30 +2260,6 @@ func generateIntegrationExport(integrationExport *Integrationexport) string {
 	)
 
 	return integrationExportString
-}
-
-func generateMediaTranscriptions(transcriptions *[]Mediatranscription) string {
-	if *transcriptions == nil || len(*transcriptions) <= 0 {
-		return ""
-	}
-
-	transcriptionsString := ""
-	for _, transcription := range *transcriptions {
-		transcriptionString := fmt.Sprintf(`
-        	media_transcriptions {
-        	    display_name = "%s"
-        	    transcription_provider = "%s"
-        	    integration_id = genesyscloud_integration.%s.id
-        	}
-        	`, transcription.DisplayName,
-			transcription.TranscriptionProvider,
-			integrationResourceLabel1,
-		)
-
-		transcriptionsString += transcriptionString
-	}
-
-	return transcriptionsString
 }
 
 func generateInitiateScreenRecording(initiateScreenRecording *Initiatescreenrecording) string {
