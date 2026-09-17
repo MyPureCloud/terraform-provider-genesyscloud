@@ -203,13 +203,6 @@ func TestUnitGetAllArchitectIvrIdentityResolutionListError(t *testing.T) {
 }
 
 func buildIdentityResolutionResourceMap(ivrId string, resolveIdentities bool, divisionId string) map[string]interface{} {
-	block := map[string]interface{}{
-		"resolve_identities": resolveIdentities,
-	}
-	if divisionId != "" {
-		block["division_id"] = divisionId
-	}
-
 	return map[string]interface{}{
 		"ivr_id":             ivrId,
 		"resolve_identities": resolveIdentities,

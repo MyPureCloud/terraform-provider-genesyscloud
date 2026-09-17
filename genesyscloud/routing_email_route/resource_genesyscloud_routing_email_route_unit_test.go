@@ -24,7 +24,7 @@ func TestUnitGetAllRoutingEmailRoutes(t *testing.T) {
 		return nil, nil, nil
 	}
 	internalProxy = &RoutingEmailRouteProxy{
-		getAllRoutingEmailRouteAttr: mockGetAllFunc,
+		GetAllRoutingEmailRouteAttr: mockGetAllFunc,
 	}
 
 	resourceMap, diagErr := getAllRoutingEmailRoutes(ctx, sdkConfig)
@@ -44,7 +44,7 @@ func TestUnitGetAllRoutingEmailRoutes(t *testing.T) {
 		return nil, nil, fmt.Errorf("mock error")
 	}
 	internalProxy = &RoutingEmailRouteProxy{
-		getAllRoutingEmailRouteAttr: mockGetAllFunc,
+		GetAllRoutingEmailRouteAttr: mockGetAllFunc,
 	}
 
 	resourceMap, diagErr = getAllRoutingEmailRoutes(ctx, sdkConfig)

@@ -22,7 +22,7 @@ const (
 
 func TestAccResourceArchitectIvrIdentityResolution(t *testing.T) {
 	var (
-		identityResolutionResourceLabel = "test-dentity-resolution"
+		identityResolutionResourceLabel = "test-identity-resolution"
 		ivrResourceLabel                = "test-ivr"
 		ivrName                         = "Terraform Test IVR-" + uuid.NewString()
 		homeDivisionConfig              = gcloud.GenerateAuthDivisionHomeDataSource(homeDivisionDataSourceLabel)

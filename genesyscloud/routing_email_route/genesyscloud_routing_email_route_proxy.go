@@ -33,7 +33,7 @@ type RoutingEmailRouteProxy struct {
 	clientConfig                        *platformclientv2.Configuration
 	routingApi                          *platformclientv2.RoutingApi
 	createRoutingEmailRouteAttr         createRoutingEmailRouteFunc
-	getAllRoutingEmailRouteAttr         getAllRoutingEmailRouteFunc
+	GetAllRoutingEmailRouteAttr         getAllRoutingEmailRouteFunc
 	getRoutingEmailRouteIdByPatternAttr getRoutingEmailRouteIdByPatternFunc
 	getRoutingEmailRouteByIdAttr        getRoutingEmailRouteByIdFunc
 	updateRoutingEmailRouteAttr         updateRoutingEmailRouteFunc
@@ -47,7 +47,7 @@ func newRoutingEmailRouteProxy(clientConfig *platformclientv2.Configuration) *Ro
 		clientConfig:                        clientConfig,
 		routingApi:                          api,
 		createRoutingEmailRouteAttr:         createRoutingEmailRouteFn,
-		getAllRoutingEmailRouteAttr:         getAllRoutingEmailRouteFn,
+		GetAllRoutingEmailRouteAttr:         getAllRoutingEmailRouteFn,
 		getRoutingEmailRouteIdByPatternAttr: getRoutingEmailRouteIdByPatternFn,
 		getRoutingEmailRouteByIdAttr:        getRoutingEmailRouteByIdFn,
 		updateRoutingEmailRouteAttr:         updateRoutingEmailRouteFn,
@@ -71,7 +71,7 @@ func (p *RoutingEmailRouteProxy) createRoutingEmailRoute(ctx context.Context, do
 
 // GetAllRoutingEmailRoute retrieves all Genesys Cloud routing email route
 func (p *RoutingEmailRouteProxy) GetAllRoutingEmailRoute(ctx context.Context, domainId string, pattern string) (*map[string][]platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
-	return p.getAllRoutingEmailRouteAttr(ctx, p, domainId, pattern)
+	return p.GetAllRoutingEmailRouteAttr(ctx, p, domainId, pattern)
 }
 
 // getRoutingEmailRouteIdByName returns a single Genesys Cloud routing email route by a pattern
