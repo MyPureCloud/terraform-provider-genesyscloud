@@ -347,6 +347,29 @@ func ResourceOutboundContactList() *schema.Resource {
 				Required:    false,
 				Type:        schema.TypeInt,
 			},
+			`retention_type`: {
+				Description:  `The type of retention for this contact list. Valid values: Never, Today, RetentionDays.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
+			},
+			`retention_days`: {
+				Description: `The number of days to retain this contact list. Required when retention_type is RetentionDays.`,
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+			`time_zone`: {
+				Description: `The time zone for this contact list's retention; for example, Africa/Abidjan. Time zones are represented as a string of the zone name as found in the IANA time zone database.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
+			`date_expiration`: {
+				Description: `The expiration date of the contact list, computed from retention_type, retention_days, and time_zone. Date time is represented as an ISO-8601 string.`,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
