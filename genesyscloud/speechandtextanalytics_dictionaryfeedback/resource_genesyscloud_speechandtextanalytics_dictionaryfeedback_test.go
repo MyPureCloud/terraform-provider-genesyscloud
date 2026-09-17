@@ -3,7 +3,6 @@ package speechandtextanalytics_dictionaryfeedback
 import (
 	"fmt"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -58,10 +57,6 @@ func cleanupDictionaryFeedbackByTerm(term, dialect string) {
 
 func TestAccResourceDictionaryFeedback(t *testing.T) {
 	//t.Parallel()
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
 	var (
 		resourceName   = "test-dictionary-feedback"
 		term           = "genesys"
@@ -122,10 +117,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 }
 
 func TestAccResourceDictionaryFeedbackGenesysExtended(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
+
 	var (
 		resourceName = "test-dictionary-feedback-extended"
 		term         = "covid"

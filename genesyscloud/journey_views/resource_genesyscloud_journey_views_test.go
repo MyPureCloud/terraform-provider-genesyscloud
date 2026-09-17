@@ -14,6 +14,7 @@ import (
 )
 
 func TestAccResourceJourneyViewsBasic(t *testing.T) {
+	// TEMP: eusc skip removed to observe real result
 	var (
 		name                        = "test journey from tf Nicolas"
 		nameUpdated                 = "test journey from tf 1 updated"

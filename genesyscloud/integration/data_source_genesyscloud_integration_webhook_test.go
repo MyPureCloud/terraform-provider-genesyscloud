@@ -34,7 +34,33 @@ func TestAccDataSourceIntegrationWebhook(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create webhook integration (attributes will be auto-populated)
+				// Step 1: Create the webhook integration only.
+				// The webhookId/invocationUrl attributes are populated asynchronously by
+				// Genesys Cloud after the integration is created. Creating the integration
+				// in its own step gives those attributes time to be generated before the
+				// data source (which has a short internal retry window) reads them.
+				Config: GenerateIntegrationResource(
+					inteResourceLabel1,
+					util.NullValue, //Empty intended_state, default value is "DISABLED"
+					strconv.Quote(typeID),
+					GenerateIntegrationConfig(
+						strconv.Quote(inteName1),
+						util.NullValue, //Empty notes
+						"",             //Empty credential ID
+						util.NullValue, //Empty properties
+						util.NullValue, //Empty advanced JSON
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("genesyscloud_integration."+inteResourceLabel1, "id"),
+				),
+			},
+			{
+				// Step 2: Read the webhook integration through the data source after the
+				// asynchronously-populated attributes have had time to appear. The PreConfig
+				// sleep runs before this apply, so the webhookId is available by the time the
+				// data source's internal retry loop runs.
+				PreConfig: func() { time.Sleep(30 * time.Second) },
 				Config: GenerateIntegrationResource(
 					inteResourceLabel1,
 					util.NullValue, //Empty intended_state, default value is "DISABLED"
@@ -49,7 +75,6 @@ func TestAccDataSourceIntegrationWebhook(t *testing.T) {
 				) + generateIntegrationWebhookDataSource(inteResourceLabel2,
 					inteName1,
 					"genesyscloud_integration."+inteResourceLabel1),
-				PreConfig: func() { time.Sleep(30 * time.Second) },
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair("data.genesyscloud_integration_webhook."+inteResourceLabel2, "id", "genesyscloud_integration."+inteResourceLabel1, "id"),
 					// Note: web_hook_id and invocation_url will be populated from the integration's attributes

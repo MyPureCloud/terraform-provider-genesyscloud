@@ -662,7 +662,6 @@ func TestUnitContainsElement(t *testing.T) {
 }
 
 func TestUnitGetResourceStateRemovesComputedAttributes(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1322 is resolved")
 
 	testCases := []struct {
 		name            string

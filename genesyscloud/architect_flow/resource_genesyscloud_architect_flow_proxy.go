@@ -308,7 +308,7 @@ func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*pla
 	if resourceCtx == nil {
 		ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	}
-	return p.api.PostFlowsJobs(nil)
+	return p.api.PostFlowsJobs(platformclientv2.Registerarchitectjobrequest{})
 }
 
 func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
