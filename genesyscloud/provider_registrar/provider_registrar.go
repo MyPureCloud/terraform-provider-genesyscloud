@@ -117,6 +117,7 @@ import (
 	responsemanagementResponseasset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingEmailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupActivation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_activation"
@@ -339,6 +340,7 @@ func registerResources() {
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 	routingEmailRoute.SetRegistrar(regInstance)                            //Registering routing email route
+	routingEmailRouteIdentityResolution.SetRegistrar(regInstance)          //Registering routing email route identity resolution
 	did.SetRegistrar(regInstance)                                          //Registering telephony did
 	didPool.SetRegistrar(regInstance)                                      //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)                                      //Registering architect ivr
