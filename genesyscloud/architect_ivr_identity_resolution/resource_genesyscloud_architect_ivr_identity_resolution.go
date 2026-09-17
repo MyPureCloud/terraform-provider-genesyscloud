@@ -22,7 +22,7 @@ func getAllArchitectIvrIdentityResolution(ctx context.Context, clientConfig *pla
 
 	IVRs, resp, err := proxy.architectIvrProxy.GetAllArchitectIvrs(ctx, "")
 	if err != nil {
-		return nil, util.BuildAPIDiagnosticError(ResourceType, "failed to list arhitect IVRs for identity resolution export", resp)
+		return nil, util.BuildAPIDiagnosticError(ResourceType, "failed to list architect IVRs for identity resolution export", resp)
 	}
 	if IVRs == nil {
 		return resources, nil
@@ -126,7 +126,7 @@ func deleteArchitectIvrIdentityResolution(ctx context.Context, d *schema.Resourc
 	_, resp, getErr := proxy.getArchitectIvrById(ctx, ivrId)
 	if getErr != nil {
 		if util.IsStatus404(resp) {
-			log.Printf("parend IVR %s already deleted", ivrId)
+			log.Printf("parent IVR %s already deleted", ivrId)
 			return nil
 		}
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to verify IVR %s before resetting identity resolution", ivrId), resp)
