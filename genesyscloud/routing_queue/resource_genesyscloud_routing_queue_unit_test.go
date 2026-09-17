@@ -49,6 +49,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.CallingPartyName, routingQueue.CallingPartyName, "Calling Party Name Not Equal")
 		assert.Equal(t, testRoutingQueue.CallingPartyNumber, routingQueue.CallingPartyNumber, "Calling Party Number Not Equal")
 		assert.Equal(t, testRoutingQueue.PeerId, routingQueue.PeerId, "Peer ID Not Equal")
+		assert.Equal(t, testRoutingQueue.DefaultMediaLanguage, routingQueue.DefaultMediaLanguage, "Default Media Language Not Equal")
 		assert.Equal(t, testRoutingQueue.AcwSettings, routingQueue.AcwSettings, "ACW Settings Not Equal")
 		assert.Equal(t, testRoutingQueue.OutboundMessagingAddresses, routingQueue.OutboundMessagingAddresses, "Outbound Messaging Addresses Not Equal")
 		assert.Equal(t, testRoutingQueue.SuppressInQueueCallRecording, routingQueue.SuppressInQueueCallRecording, "Suppress In-Queue Call Recording Not Equal")
@@ -188,6 +189,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.CallingPartyName, routingQueue.CallingPartyName, "Calling Party Name Not Equal")
 	assert.Equal(t, testRoutingQueue.CallingPartyNumber, routingQueue.CallingPartyNumber, "Calling Party Number Not Equal")
 	assert.Equal(t, testRoutingQueue.PeerId, routingQueue.PeerId, "Peer ID Not Equal")
+	assert.Equal(t, testRoutingQueue.DefaultMediaLanguage, routingQueue.DefaultMediaLanguage, "Default Media Language Not Equal")
 	assert.Equal(t, testRoutingQueue.AcwSettings, routingQueue.AcwSettings, "ACW Settings Not Equal")
 	assert.Equal(t, testRoutingQueue.OutboundMessagingAddresses, routingQueue.OutboundMessagingAddresses, "Outbound Messaging Addresses Not Equal")
 	assert.Equal(t, testRoutingQueue.SuppressInQueueCallRecording, routingQueue.SuppressInQueueCallRecording, "Suppress In-Queue Call Recording Not Equal")
@@ -237,6 +239,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.CallingPartyName, routingQueue.CallingPartyName, "Calling Party Name Not Equal")
 		assert.Equal(t, testRoutingQueue.CallingPartyNumber, routingQueue.CallingPartyNumber, "Calling Party Number Not Equal")
 		assert.Equal(t, testRoutingQueue.PeerId, routingQueue.PeerId, "Peer ID Not Equal")
+		assert.Equal(t, testRoutingQueue.DefaultMediaLanguage, routingQueue.DefaultMediaLanguage, "Default Media Language Not Equal")
 		assert.Equal(t, testRoutingQueue.AcwSettings, routingQueue.AcwSettings, "ACW Settings Not Equal")
 		assert.Equal(t, testRoutingQueue.OutboundMessagingAddresses, routingQueue.OutboundMessagingAddresses, "Outbound Messaging Addresses Not Equal")
 		assert.Equal(t, testRoutingQueue.SuppressInQueueCallRecording, routingQueue.SuppressInQueueCallRecording, "Suppress In-Queue Call Recording Not Equal")
@@ -651,6 +654,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"calling_party_name":                *testRoutingQueue.CallingPartyName,
 		"calling_party_number":              *testRoutingQueue.CallingPartyNumber,
 		"peer_id":                           *testRoutingQueue.PeerId,
+		"default_media_language":            *testRoutingQueue.DefaultMediaLanguage,
 		"source_queue_id":                   *testRoutingQueue.SourceQueueId,
 		"acw_timeout_ms":                    *testRoutingQueue.AcwSettings.TimeoutMs,
 		"acw_wrapup_prompt":                 *testRoutingQueue.AcwSettings.WrapupPrompt,
@@ -686,6 +690,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		callingPartyName      = "Unit Test Inc."
 		callingPartyNumber    = "123"
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
+		defaultMediaLanguage  = "en-US"
 		sourceQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		backupQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		lastAgentRoutingMode  = "QueueMembersOnly"
@@ -791,6 +796,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		CallingPartyName:             &callingPartyName,
 		CallingPartyNumber:           &callingPartyNumber,
 		PeerId:                       &peerId,
+		DefaultMediaLanguage:         &defaultMediaLanguage,
 		SourceQueueId:                &sourceQueueId,
 		AcwSettings:                  &acwSettings,
 		SuppressInQueueCallRecording: platformclientv2.Bool(true),
@@ -826,6 +832,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		CallingPartyName:             req.CallingPartyName,
 		CallingPartyNumber:           req.CallingPartyNumber,
 		PeerId:                       req.PeerId,
+		DefaultMediaLanguage:         req.DefaultMediaLanguage,
 		AcwSettings:                  req.AcwSettings,
 		OutboundMessagingAddresses:   req.OutboundMessagingAddresses,
 		SuppressInQueueCallRecording: req.SuppressInQueueCallRecording,

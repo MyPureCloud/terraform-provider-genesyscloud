@@ -71,6 +71,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	divisionID := d.Get("division_id").(string)
 	scoringMethod := d.Get("scoring_method").(string)
 	peerId := d.Get("peer_id").(string)
+	defaultMediaLanguage := d.Get("default_media_language").(string)
 	sourceQueueId := d.Get("source_queue_id").(string)
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
 	groups := buildMemberGroupList(d, "groups", "GROUP")
@@ -137,6 +138,9 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		createQueue.PeerId = &peerId
+	}
+	if defaultMediaLanguage != "" {
+		createQueue.DefaultMediaLanguage = &defaultMediaLanguage
 	}
 	if sourceQueueId != "" {
 		createQueue.SourceQueueId = &sourceQueueId
@@ -275,6 +279,7 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 	resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
 	resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 	resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
+	resourcedata.SetNillableValue(d, "default_media_language", currentQueue.DefaultMediaLanguage)
 	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 	resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
 
@@ -373,6 +378,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 	peerId := d.Get("peer_id").(string)
+	defaultMediaLanguage := d.Get("default_media_language").(string)
 	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	updateQueue := platformclientv2.Queuerequest{
@@ -413,6 +419,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		updateQueue.PeerId = &peerId
+	}
+	if defaultMediaLanguage != "" {
+		updateQueue.DefaultMediaLanguage = &defaultMediaLanguage
 	}
 	if lastAgentRoutingMode != "" {
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
