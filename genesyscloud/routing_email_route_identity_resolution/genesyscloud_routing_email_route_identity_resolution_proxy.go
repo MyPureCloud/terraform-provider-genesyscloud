@@ -18,14 +18,12 @@ var internalProxy *routingEmailRouteIdentityResolutionProxy
 
 type getRoutingEmailRouteIdentityResolutionFunc func(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string) (*platformclientv2.Routeidentityresolutionconfig, *platformclientv2.APIResponse, error)
 type putRoutingEmailRouteIdentityResolutionFunc func(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string, config platformclientv2.Routeidentityresolutionconfig) (*platformclientv2.Routeidentityresolutionconfig, *platformclientv2.APIResponse, error)
-type getRoutingEmailRouteByIdFunc func(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error)
 
 type routingEmailRouteIdentityResolutionProxy struct {
 	clientConfig                               *platformclientv2.Configuration
 	routingApi                                 *platformclientv2.RoutingApi
 	getRoutingEmailRouteIdentityResolutionAttr getRoutingEmailRouteIdentityResolutionFunc
 	putRoutingEmailRouteIdentityResolutionAttr putRoutingEmailRouteIdentityResolutionFunc
-	getRoutingEmailRouteByIdAttr               getRoutingEmailRouteByIdFunc
 	routingEmailRouteProxy                     *routingEmailRoute.RoutingEmailRouteProxy
 }
 
@@ -37,7 +35,6 @@ func newRoutingEmailRouteIdentityResolutionProxy(clientConfig *platformclientv2.
 		routingApi:   api,
 		getRoutingEmailRouteIdentityResolutionAttr: getRoutingEmailRouteIdentityResolutionFn,
 		putRoutingEmailRouteIdentityResolutionAttr: putRoutingEmailRouteIdentityResolutionFn,
-		getRoutingEmailRouteByIdAttr:               getRoutingEmailRouteByIdFn,
 		routingEmailRouteProxy:                     routingEmailRoute.GetRoutingEmailRouteProxy(clientConfig),
 	}
 }
@@ -57,10 +54,6 @@ func (p *routingEmailRouteIdentityResolutionProxy) putRoutingEmailRouteIdentityR
 	return p.putRoutingEmailRouteIdentityResolutionAttr(ctx, p, domainName, routeId, config)
 }
 
-func (p *routingEmailRouteIdentityResolutionProxy) getRoutingEmailRouteById(ctx context.Context, domainName string, routeId string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
-	return p.getRoutingEmailRouteByIdAttr(ctx, p, domainName, routeId)
-}
-
 func getRoutingEmailRouteIdentityResolutionFn(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string) (*platformclientv2.Routeidentityresolutionconfig, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
@@ -71,10 +64,4 @@ func putRoutingEmailRouteIdentityResolutionFn(ctx context.Context, p *routingEma
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.routingApi.PutRoutingEmailDomainRouteIdentityresolution(domainName, routeId, config)
-}
-
-func getRoutingEmailRouteByIdFn(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.routingApi.GetRoutingEmailDomainRoute(domainName, routeId, nil)
 }

@@ -18,14 +18,12 @@ var internalProxy *architectIvrIdentityResolutionProxy
 
 type getArchitectIvrIdentityResolutionFunc func(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string) (*platformclientv2.Ivridentityresolutionconfig, *platformclientv2.APIResponse, error)
 type putArchitectIvrIdentityResolutionFunc func(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string, config platformclientv2.Ivridentityresolutionconfig) (*platformclientv2.Ivridentityresolutionconfig, *platformclientv2.APIResponse, error)
-type getArchitectIvrByIdFunc func(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error)
 
 type architectIvrIdentityResolutionProxy struct {
 	clientConfig                          *platformclientv2.Configuration
 	architectApi                          *platformclientv2.ArchitectApi
 	getArchitectIvrIdentityResolutionAttr getArchitectIvrIdentityResolutionFunc
 	putArchitectIvrIdentityResolutionAttr putArchitectIvrIdentityResolutionFunc
-	getArchitectIvrByIdAttr               getArchitectIvrByIdFunc
 	architectIvrProxy                     *architectIvr.ArchitectIvrProxy
 }
 
@@ -37,7 +35,6 @@ func newArchitectIvrIdentityResolutionProxy(clientConfig *platformclientv2.Confi
 		architectApi:                          api,
 		getArchitectIvrIdentityResolutionAttr: getArchitectIvrIdentityResolutionFn,
 		putArchitectIvrIdentityResolutionAttr: putArchitectIvrIdentityResolutionFn,
-		getArchitectIvrByIdAttr:               getArchitectIvrByIdFn,
 		architectIvrProxy:                     architectIvr.GetArchitectIvrProxy(clientConfig),
 	}
 }
@@ -57,10 +54,6 @@ func (p *architectIvrIdentityResolutionProxy) putArchitectIvrIdentityResolution(
 	return p.putArchitectIvrIdentityResolutionAttr(ctx, p, ivrId, config)
 }
 
-func (p *architectIvrIdentityResolutionProxy) getArchitectIvrById(ctx context.Context, ivrId string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	return p.getArchitectIvrByIdAttr(ctx, p, ivrId)
-}
-
 func getArchitectIvrIdentityResolutionFn(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string) (*platformclientv2.Ivridentityresolutionconfig, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
@@ -71,10 +64,4 @@ func putArchitectIvrIdentityResolutionFn(ctx context.Context, p *architectIvrIde
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.architectApi.PutArchitectIvrIdentityresolution(ivrId, config)
-}
-
-func getArchitectIvrByIdFn(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.architectApi.GetArchitectIvr(ivrId)
 }

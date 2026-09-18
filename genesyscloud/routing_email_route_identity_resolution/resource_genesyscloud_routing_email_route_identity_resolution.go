@@ -57,7 +57,7 @@ func getAllRoutingEmailRouteIdentityResolution(ctx context.Context, clientConfig
 func createRoutingEmailRouteIdentityResolution(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	domainName := d.Get("domain_name").(string)
 	routeId := d.Get("route_id").(string)
-	log.Printf("creating identity resolution for routing email route %s", routeId)
+	log.Printf("creating identity resolution for routing email route %s/%s", domainName, routeId)
 	d.SetId(domainName + "/" + routeId)
 
 	return updateRoutingEmailRouteIdentityResolution(ctx, d, meta)
@@ -92,12 +92,10 @@ func readRoutingEmailRouteIdentityResolution(ctx context.Context, d *schema.Reso
 		if config.ResolveIdentities != nil {
 			_ = d.Set("resolve_identities", *config.ResolveIdentities)
 		} else {
-			_ = d.Set("resolve_identities", false)
+			_ = d.Set("resolve_identities", true)
 		}
 		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
 			_ = d.Set("division_id", *config.Division.Id)
-		} else {
-			_ = d.Set("division_id", "")
 		}
 
 		log.Printf("read identity resolution for routing email route %s/%s", domainName, routeId)
@@ -119,10 +117,10 @@ func updateRoutingEmailRouteIdentityResolution(ctx context.Context, d *schema.Re
 		return util.BuildDiagnosticError(ResourceType, "failed to build identity resolution config", err)
 	}
 
-	log.Printf("updating identity resolution for routing email route %s", routeId)
+	log.Printf("updating identity resolution for routing email route %s/%s", domainName, routeId)
 	_, resp, putErr := proxy.putRoutingEmailRouteIdentityResolution(ctx, domainName, routeId, config)
 	if putErr != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to update identity resolution for routing email route %s", routeId), resp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to update identity resolution for routing email route %s/%s", domainName, routeId), resp)
 	}
 
 	log.Printf("updated identity resolution for routing email route %s/%s", domainName, routeId)
@@ -138,9 +136,9 @@ func deleteRoutingEmailRouteIdentityResolution(ctx context.Context, d *schema.Re
 	}
 	domainName, routeId := parts[0], parts[1]
 
-	log.Printf("resetting identity resolution for routing email route %s to default", routeId)
+	log.Printf("resetting identity resolution for routing email route %s/%s to default", domainName, routeId)
 
-	_, resp, getErr := proxy.getRoutingEmailRouteById(ctx, domainName, routeId)
+	_, resp, getErr := proxy.routingEmailRouteProxy.GetRoutingEmailRouteById(ctx, domainName, routeId)
 	if getErr != nil {
 		if util.IsStatus404(resp) {
 			log.Printf("parent Email route %s/%s already deleted", domainName, routeId)
@@ -152,7 +150,7 @@ func deleteRoutingEmailRouteIdentityResolution(ctx context.Context, d *schema.Re
 	defaultConfig := buildDefaultIdentityResolutionRoutingEmailRouteConfig()
 	_, putResp, putErr := proxy.putRoutingEmailRouteIdentityResolution(ctx, domainName, routeId, defaultConfig)
 	if putErr != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to reset identity resolution for routing email route %s", routeId), putResp)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to reset identity resolution for routing email route %s/%s", domainName, routeId), putResp)
 	}
 
 	log.Printf("reset identity resolution for routing email route %s/%s to default", domainName, routeId)

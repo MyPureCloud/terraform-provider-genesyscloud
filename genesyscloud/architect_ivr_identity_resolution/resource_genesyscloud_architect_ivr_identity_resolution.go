@@ -83,12 +83,10 @@ func readArchitectIvrIdentityResolution(ctx context.Context, d *schema.ResourceD
 		if config.ResolveIdentities != nil {
 			_ = d.Set("resolve_identities", *config.ResolveIdentities)
 		} else {
-			_ = d.Set("resolve_identities", false)
+			_ = d.Set("resolve_identities", true)
 		}
 		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
 			_ = d.Set("division_id", *config.Division.Id)
-		} else {
-			_ = d.Set("division_id", "")
 		}
 
 		log.Printf("read identity resolution for IVR %s", ivrId)
@@ -123,7 +121,7 @@ func deleteArchitectIvrIdentityResolution(ctx context.Context, d *schema.Resourc
 
 	log.Printf("resetting identity resolution for IVR %s to default", ivrId)
 
-	_, resp, getErr := proxy.getArchitectIvrById(ctx, ivrId)
+	_, resp, getErr := proxy.architectIvrProxy.GetArchitectIvr(ctx, ivrId)
 	if getErr != nil {
 		if util.IsStatus404(resp) {
 			log.Printf("parent IVR %s already deleted", ivrId)

@@ -70,7 +70,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	// If the isSelfReferenceRoute() is set to false, we use the route id provided by the terraform script
 	if replyEmail && !isSelfReferenceRouteSet(d) {
 		// We need to pass the route pattern that matches the route id
-		replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
+		replyRoute, _, err := proxy.GetRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
 		if err != nil {
 			return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route %s error: %s", replyRouteID, err), nil)
 		}
@@ -108,7 +108,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("Reading routing email route %s", d.Id())
 	return util.WithRetriesForReadCustomTimeout(ctx, 7*time.Minute, d, func() *retry.RetryError {
-		route, resp, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		route, resp, err := proxy.GetRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(err)
@@ -182,7 +182,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(domainId, d.Id(), d.Get("pattern").(string))
 		} else if !isSelfReferenceRouteSet(d) {
 			// We need to pass the route pattern that matches the route id
-			replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
+			replyRoute, _, err := proxy.GetRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
 			if err != nil {
 				return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route %s error: %s", replyRouteID, err), nil)
 			}
@@ -216,7 +216,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err = proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		_, resp, err = proxy.GetRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted routing email route %s", d.Id())

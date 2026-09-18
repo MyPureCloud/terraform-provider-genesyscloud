@@ -97,14 +97,17 @@ func TestUnitResourceRoutingEmailRouteIdentityResolutionDelete(t *testing.T) {
 	tDomainName := uuid.NewString()
 	tRouteId := uuid.NewString()
 
-	proxy := &routingEmailRouteIdentityResolutionProxy{}
-	proxy.getRoutingEmailRouteByIdAttr = func(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
+	routeProxy := &routingEmailRoute.RoutingEmailRouteProxy{}
+	routeProxy.GetRoutingEmailRouteByIdAttr = func(ctx context.Context, p *routingEmailRoute.RoutingEmailRouteProxy, domainName string, routeId string) (*platformclientv2.Inboundroute, *platformclientv2.APIResponse, error) {
 		apiResponse := platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return &platformclientv2.Inboundroute{
 			Id: &tRouteId,
 		}, &apiResponse, nil
 	}
 
+	proxy := &routingEmailRouteIdentityResolutionProxy{
+		routingEmailRouteProxy: routeProxy,
+	}
 	proxy.putRoutingEmailRouteIdentityResolutionAttr = func(ctx context.Context, p *routingEmailRouteIdentityResolutionProxy, domainName string, routeId string, config platformclientv2.Routeidentityresolutionconfig) (*platformclientv2.Routeidentityresolutionconfig, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tDomainName, domainName)
 		assert.Equal(t, tRouteId, routeId)

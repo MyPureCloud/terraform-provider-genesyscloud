@@ -91,12 +91,15 @@ func TestUnitResourceArchitectIvrIdentityResolutionRead(t *testing.T) {
 func TestUnitResourceArchitectIvrIdentityResolutionDelete(t *testing.T) {
 	tIvrId := uuid.NewString()
 
-	proxy := &architectIvrIdentityResolutionProxy{}
-	proxy.getArchitectIvrByIdAttr = func(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	ivrProxy := &architectIvr.ArchitectIvrProxy{}
+	ivrProxy.GetArchitectIvrAttr = func(ctx context.Context, p *architectIvr.ArchitectIvrProxy, ivrId string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		apiResponse := platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return &platformclientv2.Ivr{Id: &tIvrId}, &apiResponse, nil
 	}
 
+	proxy := &architectIvrIdentityResolutionProxy{
+		architectIvrProxy: ivrProxy,
+	}
 	proxy.putArchitectIvrIdentityResolutionAttr = func(ctx context.Context, p *architectIvrIdentityResolutionProxy, ivrId string, config platformclientv2.Ivridentityresolutionconfig) (*platformclientv2.Ivridentityresolutionconfig, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tIvrId, ivrId)
 		assert.NotNil(t, config.ResolveIdentities)

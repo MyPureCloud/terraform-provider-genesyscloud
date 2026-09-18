@@ -80,7 +80,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 
 	log.Printf("Reading IVR config %s", d.Id())
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		ivrConfig, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
+		ivrConfig, resp, getErr := ap.GetArchitectIvr(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IVR config %s | error: %s", d.Id(), getErr), resp))
@@ -122,7 +122,7 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
 		// Get current version
-		ivr, resp, getErr := ap.getArchitectIvr(ctx, d.Id())
+		ivr, resp, getErr := ap.GetArchitectIvr(ctx, d.Id())
 		if getErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read IVR config %s error: %s", d.Id(), getErr), resp)
 		}
@@ -167,7 +167,7 @@ func deleteIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}
 
 	return util.WithRetries(ctx, 30*time.Second, func() *retry.RetryError {
-		ivr, resp, err := ap.getArchitectIvr(ctx, d.Id())
+		ivr, resp, err := ap.GetArchitectIvr(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				// IVR config deleted

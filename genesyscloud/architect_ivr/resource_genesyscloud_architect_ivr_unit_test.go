@@ -34,7 +34,7 @@ func TestUnitResourceArchitectIvrRead(t *testing.T) {
 
 	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Name:             &tName,
@@ -103,7 +103,7 @@ func TestUnitResourceArchitectIvrDeleteStandard(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
@@ -156,7 +156,7 @@ func TestUnitResourceArchitectIvrDeleteSoftDelete(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		state := "deleted"
 		ivr := &platformclientv2.Ivr{
@@ -212,7 +212,7 @@ func TestUnitResourceArchitectIvrCreate(t *testing.T) {
 	tDivisionId := uuid.NewString()
 
 	archProxy := &ArchitectIvrProxy{}
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Id:               &tId,
@@ -283,7 +283,7 @@ func TestUnitResourceArchitectIvrUpdate(t *testing.T) {
 	tDivisionId := uuid.NewString()
 
 	archProxy := &ArchitectIvrProxy{}
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Id:               &tId,
