@@ -114,7 +114,7 @@ func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
@@ -197,7 +197,7 @@ func TestAccResourceArchitectFlowStandard(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
 			},
 			{
 				// Create inboundemail flow
@@ -216,7 +216,69 @@ func TestAccResourceArchitectFlowStandard(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResourceLabel2,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+}
+
+// Tests that the create_stubs option is accepted and sent in the POST body of the architect flows jobs endpoint.
+func TestAccResourceArchitectFlowCreateStubs(t *testing.T) {
+	var (
+		flowResourceLabel = "test_create_stubs_flow"
+		flowResourcePath  = "genesyscloud_flow." + flowResourceLabel
+		flowName          = "Terraform Flow Test CreateStubs-" + uuid.NewString()
+		flowType          = "INBOUNDCALL"
+		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+
+		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Publish the flow with create_stubs enabled
+				Config: GenerateFlowResource(
+					flowResourceLabel,
+					filePath,
+					inboundcallConfig,
+					false,
+					"create_stubs = true",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(flowResourcePath, "create_stubs", util.TrueValue),
+					validateFlow(flowResourcePath, flowName, "", flowType),
+				),
+			},
+			{
+				// Republish the same flow with create_stubs disabled
+				Config: GenerateFlowResource(
+					flowResourceLabel,
+					filePath,
+					inboundcallConfig,
+					false,
+					"create_stubs = false",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(flowResourcePath, "create_stubs", util.FalseValue),
+					validateFlow(flowResourcePath, flowName, "", flowType),
+				),
+			},
+			{
+				// create_stubs defaults to false when not set
+				Config: GenerateFlowResource(
+					flowResourceLabel,
+					filePath,
+					inboundcallConfig,
+					false,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(flowResourcePath, "create_stubs", util.FalseValue),
+					validateFlow(flowResourcePath, flowName, "", flowType),
+				),
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
