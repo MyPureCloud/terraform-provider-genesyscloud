@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	platformclientv2 "github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	platformclientv2 "github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
