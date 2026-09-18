@@ -174,6 +174,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   enable_audio_monitoring  = true
   enable_manual_assignment = true
   calling_party_name       = "Example Inc."
+  default_media_language   = "en-US"            # Canonical language code used as the queue's default media language
   last_agent_routing_mode  = "QueueMembersOnly" # Valid values: Disabled, QueueMembersOnly, AnyAgent
   groups                   = [genesyscloud_group.example_group.id, genesyscloud_group.example_group2.id]
 
@@ -389,6 +390,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `canned_response_libraries` (Block List, Max: 1) Canned response library IDs and mode with which they are associated with the queue. (see [below for nested schema](#nestedblock--canned_response_libraries))
 - `conditional_group_activation` (Block List, Max: 1) The Conditional Group Activation settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_activation))
 - `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Important:** conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing. When ENABLE_STANDALONE_CGR is set, this attribute will not be read or exported. The two approaches are mutually exclusive to prevent duplicate data during org exports. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `default_media_language` (String) The canonical language code (e.g. en-US) used for the default media language on the queue.
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) The Direct Routing settings for the queue. (see [below for nested schema](#nestedblock--direct_routing))
