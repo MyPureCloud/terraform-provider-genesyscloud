@@ -29,6 +29,7 @@ type S3Uploader struct {
 	reader        io.Reader
 	formData      map[string]io.Reader
 	bodyBuf       *bytes.Buffer
+	bodyPrepared  bool
 	Writer        *multipart.Writer
 	substitutions map[string]interface{}
 	headers       map[string]string
@@ -83,21 +84,30 @@ func (s *S3Uploader) UploadWithRetries(ctx context.Context, filePath string, tim
 }
 
 func UploadFn(s *S3Uploader) ([]byte, error) {
-	if s.formData != nil {
-		if err := s.createFormData(); err != nil {
-			return nil, err
+	// The body is assembled once and then reused for every attempt. Both the source reader and the
+	// multipart writer are single-use, so reassembling on a retry yields an empty or truncated body.
+	// S3 answers a zero length PUT with a 200, so the retry would look successful while storing
+	// nothing, and the failure would only surface much later as an unprocessable upload.
+	if !s.bodyPrepared {
+		if s.formData != nil {
+			if err := s.createFormData(); err != nil {
+				return nil, err
+			}
+			s.headers["Content-Type"] = s.Writer.FormDataContentType()
+		} else {
+			_, err := io.Copy(s.bodyBuf, s.reader)
+			if err != nil {
+				return nil, fmt.Errorf("failed to copy file content to the handler. Error: %s ", err)
+			}
 		}
-		s.headers["Content-Type"] = s.Writer.FormDataContentType()
-	} else {
-		_, err := io.Copy(s.bodyBuf, s.reader)
-		if err != nil {
-			return nil, fmt.Errorf("failed to copy file content to the handler. Error: %s ", err)
-		}
+
+		s.substituteValues()
+		s.bodyPrepared = true
 	}
 
-	s.substituteValues()
-
-	req, _ := http.NewRequest(s.httpMethod, s.presignedUrl, s.bodyBuf)
+	// Read over a copy of the bytes rather than handing bodyBuf itself to the request, since sending
+	// the request drains whatever reader it is given.
+	req, _ := http.NewRequest(s.httpMethod, s.presignedUrl, bytes.NewReader(s.bodyBuf.Bytes()))
 	for key, value := range s.headers {
 		req.Header.Set(key, value)
 	}

@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 	testrunner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
@@ -206,6 +208,137 @@ func TestUnitScriptUploadSuccess(t *testing.T) {
 	if resultsStr != scriptFile {
 		t.Errorf(`expected %s got %s`, scriptFile, resultsStr)
 	}
+}
+
+// recordingUploadServer answers the first request with a 503 and every one after it with a 200,
+// collecting the body of each attempt so a retry can be compared against the original send.
+func recordingUploadServer(t *testing.T, response string) (*httptest.Server, func() []string) {
+	t.Helper()
+
+	var (
+		mutex  sync.Mutex
+		bodies []string
+	)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("failed to read request body: %v", err)
+		}
+
+		mutex.Lock()
+		bodies = append(bodies, string(body))
+		attempt := len(bodies)
+		mutex.Unlock()
+
+		if attempt == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(response))
+	}))
+
+	return server, func() []string {
+		mutex.Lock()
+		defer mutex.Unlock()
+		return append([]string(nil), bodies...)
+	}
+}
+
+// TestUnitS3UploadRetryResendsFileContent covers a retried upload re-sending the file it was given.
+// The source reader and the body buffer are both spent by the first attempt, so a retry used to send
+// an empty body, which S3 accepts with a 200 and stores as a zero byte object.
+func TestUnitS3UploadRetryResendsFileContent(t *testing.T) {
+	const yamlFile = `inboundEmail:
+  name: Inbound Email Flow
+  description: An example inbound Email Flow
+`
+
+	mockServer, recordedBodies := recordingUploadServer(t, "upload complete")
+	defer mockServer.Close()
+
+	// UploadWithRetries stats the path to report the file size when an attempt fails.
+	filePath := filepath.Join(t.TempDir(), "inbound_email_flow.yaml")
+	if err := os.WriteFile(filePath, []byte(yamlFile), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	s3Uploader := NewS3Uploader(strings.NewReader(yamlFile), nil, make(map[string]interface{}), make(map[string]string), "PUT", mockServer.URL+"/s3/presigned")
+
+	if _, err := s3Uploader.UploadWithRetries(context.Background(), filePath, 30*time.Second); err != nil {
+		t.Fatalf("expected the retried upload to succeed, got %v", err)
+	}
+
+	bodies := recordedBodies()
+	assert.Len(t, bodies, 2, "expected the first attempt to fail and be retried")
+	for attempt, body := range bodies {
+		assert.Equal(t, yamlFile, body, "attempt %d sent the wrong body", attempt+1)
+	}
+}
+
+// TestUnitS3UploadRetryAppliesSubstitutionsOnce covers substituted content surviving a retry without
+// being substituted a second time against an already spent buffer.
+func TestUnitS3UploadRetryAppliesSubstitutionsOnce(t *testing.T) {
+	const origYamlFile = `inboundCall:
+  name: {{name}}
+`
+	const expectedYamlFile = `inboundCall:
+  name: SimpleFinancialIvr
+`
+
+	mockServer, recordedBodies := recordingUploadServer(t, "upload complete")
+	defer mockServer.Close()
+
+	filePath := filepath.Join(t.TempDir(), "inbound_call_flow.yaml")
+	if err := os.WriteFile(filePath, []byte(origYamlFile), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	substitutions := map[string]interface{}{"name": "SimpleFinancialIvr"}
+	s3Uploader := NewS3Uploader(strings.NewReader(origYamlFile), nil, substitutions, make(map[string]string), "PUT", mockServer.URL+"/s3/presigned")
+
+	if _, err := s3Uploader.UploadWithRetries(context.Background(), filePath, 30*time.Second); err != nil {
+		t.Fatalf("expected the retried upload to succeed, got %v", err)
+	}
+
+	bodies := recordedBodies()
+	assert.Len(t, bodies, 2, "expected the first attempt to fail and be retried")
+	for attempt, body := range bodies {
+		assert.Equal(t, expectedYamlFile, body, "attempt %d sent the wrong body", attempt+1)
+	}
+}
+
+// TestUnitScriptUploadRetryResendsFormData covers the multipart path, where the writer is closed by
+// the first attempt and so cannot be rebuilt for a retry.
+func TestUnitScriptUploadRetryResendsFormData(t *testing.T) {
+	const scriptName = "testScript"
+
+	mockServer, recordedBodies := recordingUploadServer(t, "upload complete")
+	defer mockServer.Close()
+
+	filePath := filepath.Join(t.TempDir(), "test.json")
+	if err := os.WriteFile(filePath, []byte(`{"id": "123"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	formData := map[string]io.Reader{
+		"file":       strings.NewReader(`{"id": "123"}`),
+		"scriptName": strings.NewReader(scriptName),
+	}
+	headers := map[string]string{"Authorization": "Bearer 1234abcd"}
+
+	s3Uploader := NewS3Uploader(nil, formData, nil, headers, "POST", mockServer.URL+"/uploads/v2/scripter")
+
+	if _, err := s3Uploader.UploadWithRetries(context.Background(), filePath, 30*time.Second); err != nil {
+		t.Fatalf("expected the retried upload to succeed, got %v", err)
+	}
+
+	bodies := recordedBodies()
+	assert.Len(t, bodies, 2, "expected the first attempt to fail and be retried")
+	assert.Contains(t, bodies[0], scriptName, "the first attempt did not carry the form data")
+	assert.Equal(t, bodies[0], bodies[1], "the retry sent a different body than the first attempt")
 }
 
 func TestUnitDownloadOrOpenFile(t *testing.T) {
