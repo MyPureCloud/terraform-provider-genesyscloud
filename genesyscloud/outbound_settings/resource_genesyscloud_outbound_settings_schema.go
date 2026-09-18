@@ -155,6 +155,24 @@ func ResourceOutboundSettings() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
+			`contact_list_default_retention_type`: {
+				Description:  "The default type of retention for newly created contact lists and contact list templates. Valid values: Never, Today, RetentionDays.",
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
+			},
+			`contact_list_default_retention_days`: {
+				Description: "The default number of days to retain newly created contact lists and contact list templates. Only applicable when contact_list_default_retention_type is RetentionDays.",
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+			`time_zone`: {
+				Description: "The time zone for newly created lists' retention when contact_list_default_retention_type is Today; for example, Africa/Abidjan. Time zones are represented as a string of the zone name as found in the IANA time zone database.",
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
