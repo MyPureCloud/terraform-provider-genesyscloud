@@ -78,6 +78,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "timeout_settings", tokenTimeOut, flattenTimeOutSettings)
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
+		resourcedata.SetNillableValue(d, "universal_logout", orgAuthSettings.UniversalLogout)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
 		resourcedata.SetNillableValue(d, "domain_allowlist", orgAuthSettings.DomainAllowlist)
 		resourcedata.SetNillableValue(d, "ip_address_allowlist", orgAuthSettings.IpAddressAllowlist)
