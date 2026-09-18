@@ -37,6 +37,36 @@ func TestUnitWorktypeStatusRefResolver_HappyPath(t *testing.T) {
 	}
 }
 
+func TestUnitWorktypeStatusRefResolver_CompositeStatusId(t *testing.T) {
+	worktypeId := "wt-111"
+	statusId := "st-222"
+	compositeId := worktypeId + "/" + statusId
+	blockLabel := "MyWorktype_MyStatus"
+
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		ResourceType: {
+			SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+				compositeId: &resourceExporter.ResourceMeta{BlockLabel: blockLabel},
+			},
+		},
+	}
+
+	configMap := map[string]interface{}{
+		"status_id": compositeId,
+	}
+
+	resolver := WorktypeStatusRefResolver("status_id")
+	err := resolver(configMap, exporters, "test_label")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := fmt.Sprintf("${%s.%s.id}", ResourceType, blockLabel)
+	if configMap["status_id"] != expected {
+		t.Errorf("expected %s, got %s", expected, configMap["status_id"])
+	}
+}
+
 func TestUnitWorktypeStatusRefResolver_AlreadyResolved(t *testing.T) {
 	exporters := map[string]*resourceExporter.ResourceExporter{
 		ResourceType: {
@@ -160,6 +190,44 @@ func TestUnitWorktypeStatusArrayRefResolver_HappyPath(t *testing.T) {
 
 	configMap := map[string]interface{}{
 		"destination_status_ids": []interface{}{statusId1, statusId2},
+	}
+
+	resolver := WorktypeStatusArrayRefResolver("destination_status_ids")
+	err := resolver(configMap, exporters, "test_label")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	arr := configMap["destination_status_ids"].([]interface{})
+	expected1 := fmt.Sprintf("${%s.%s.id}", ResourceType, "Worktype_StatusA")
+	expected2 := fmt.Sprintf("${%s.%s.id}", ResourceType, "Worktype_StatusB")
+
+	if arr[0] != expected1 {
+		t.Errorf("expected %s, got %s", expected1, arr[0])
+	}
+	if arr[1] != expected2 {
+		t.Errorf("expected %s, got %s", expected2, arr[1])
+	}
+}
+
+func TestUnitWorktypeStatusArrayRefResolver_CompositeIds(t *testing.T) {
+	worktypeId := "wt-111"
+	statusId1 := "st-aaa"
+	statusId2 := "st-bbb"
+	composite1 := worktypeId + "/" + statusId1
+	composite2 := worktypeId + "/" + statusId2
+
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		ResourceType: {
+			SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+				composite1: &resourceExporter.ResourceMeta{BlockLabel: "Worktype_StatusA"},
+				composite2: &resourceExporter.ResourceMeta{BlockLabel: "Worktype_StatusB"},
+			},
+		},
+	}
+
+	configMap := map[string]interface{}{
+		"destination_status_ids": []interface{}{composite1, composite2},
 	}
 
 	resolver := WorktypeStatusArrayRefResolver("destination_status_ids")
