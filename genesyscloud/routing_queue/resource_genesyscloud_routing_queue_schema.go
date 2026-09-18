@@ -7,6 +7,9 @@ package routing_queue
 // @description: Routing configuration service for queues, skills, wrapup codes, and utilization settings. Manages how contacts are distributed to agents based on skills, capacity, and routing rules across all interaction channels.
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
@@ -25,6 +28,7 @@ import (
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 const ResourceType = "genesyscloud_routing_queue"
@@ -463,6 +467,48 @@ var (
 	}
 )
 
+// validateAllOutboundEmailAddresses enforces the API contract that, when all_outbound_email_addresses
+// is set, the default outbound_email_address must also be set and must be one of the entries in the
+// list. Catching this at plan time gives a clear error instead of the opaque API 400
+// "Default outbound email address missing from outbound email address list".
+//
+// This only applies when the OEA feature toggle (ENABLE_STANDALONE_EMAIL_ADDRESS) is off, i.e. when
+// outbound_email_address is managed on the queue itself.
+func validateAllOutboundEmailAddresses(_ context.Context, d *schema.ResourceDiff, _ interface{}) error {
+	if featureToggles.OEAToggleExists() {
+		return nil
+	}
+
+	allAddresses := d.Get("all_outbound_email_addresses").([]interface{})
+	if len(allAddresses) == 0 {
+		return nil
+	}
+
+	outboundEmailAddress := d.Get("outbound_email_address").([]interface{})
+	if len(outboundEmailAddress) == 0 {
+		return fmt.Errorf("outbound_email_address (the default outbound email address) must be set when all_outbound_email_addresses is used, and must match one of its entries")
+	}
+
+	defaultAddr, ok := outboundEmailAddress[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	defaultDomain, _ := defaultAddr["domain_id"].(string)
+	defaultRoute, _ := defaultAddr["route_id"].(string)
+
+	for _, addr := range allAddresses {
+		addrMap, ok := addr.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if addrMap["domain_id"] == defaultDomain && addrMap["route_id"] == defaultRoute {
+			return nil // default is present in the list
+		}
+	}
+
+	return fmt.Errorf("outbound_email_address (domain_id %q, route_id %q) must be one of the entries in all_outbound_email_addresses", defaultDomain, defaultRoute)
+}
+
 func ResourceRoutingQueue() *schema.Resource {
 	return &schema.Resource{
 		Description: "Genesys Cloud Routing Queue",
@@ -474,6 +520,7 @@ func ResourceRoutingQueue() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: validateAllOutboundEmailAddresses,
 		SchemaVersion: 3,
 		StateUpgraders: []schema.StateUpgrader{
 			{
@@ -814,6 +861,26 @@ func ResourceRoutingQueue() *schema.Resource {
 					},
 				},
 			},
+			"all_outbound_email_addresses": {
+				Description: "The list of all outbound email addresses (domain + route) assigned to the queue. Supports multiple email domains/routes, unlike the deprecated single outbound_email_address block. Requires the multiple outbound email addresses feature to be enabled on the org. When set, outbound_email_address (the default outbound email address) must also be set and must be one of the entries in this list.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"domain_id": {
+							Description: "Unique ID of the email domain. e.g. \"test.example.com\"",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"route_id": {
+							Description: "Unique ID of the email route.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
 			"ignore_members": {
 				Description:   "If true, queue members will not be managed through Terraform state or API updates. This provides backwards compatibility for configurations where queue members are managed outside of Terraform.",
 				Type:          schema.TypeBool,
@@ -879,35 +946,38 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"division_id":                                       {RefType: authDivision.ResourceType},
-			"queue_flow_id":                                     {RefType: architectFlow.ResourceType},
-			"email_in_queue_flow_id":                            {RefType: architectFlow.ResourceType},
-			"message_in_queue_flow_id":                          {RefType: architectFlow.ResourceType},
-			"whisper_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
-			"on_hold_prompt_id":                                 {RefType: architectUserPrompt.ResourceType},
-			"default_script_ids.*":                              {RefType: scripts.ResourceType},
-			"outbound_email_address.route_id":                   {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
-			"outbound_email_address.domain_id":                  {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
-			"bullseye_rings.skills_to_remove":                   {RefType: routingSkill.ResourceType},
-			"members.user_id":                                   {RefType: user.ResourceType},
-			"wrapup_codes":                                      {RefType: routingWrapupcode.ResourceType},
-			"skill_groups":                                      {RefType: routingSkillGroup.ResourceType},
-			"teams":                                             {RefType: team.ResourceType},
-			"groups":                                            {RefType: group.ResourceType},
-			"conditional_group_routing_rules.queue_id":          {RefType: ResourceType},
-			"direct_routing.backup_queue_id":                    {RefType: ResourceType},
-			"canned_response_libraries.library_ids":             {RefType: responseManagementLibrary.ResourceType},
-			"media_settings_callback.live_voice_flow_id":        {RefType: architectFlow.ResourceType},
-			"media_settings_callback.answering_machine_flow_id": {RefType: architectFlow.ResourceType},
-			"media_settings_callback.site_id":                   {RefType: telephonyProvidersEdgesSite.ResourceType},
-			"media_settings_callback.edge_group_id":             {RefType: edgeGroup.ResourceType},
-			"media_settings_message.inactivity_timeout_settings.flow_id":                {RefType: architectFlow.ResourceType},
+			"division_id":                                                {RefType: authDivision.ResourceType},
+			"queue_flow_id":                                              {RefType: architectFlow.ResourceType},
+			"email_in_queue_flow_id":                                     {RefType: architectFlow.ResourceType},
+			"message_in_queue_flow_id":                                   {RefType: architectFlow.ResourceType},
+			"whisper_prompt_id":                                          {RefType: architectUserPrompt.ResourceType},
+			"on_hold_prompt_id":                                          {RefType: architectUserPrompt.ResourceType},
+			"default_script_ids.*":                                       {RefType: scripts.ResourceType},
+			"outbound_email_address.route_id":                            {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
+			"outbound_email_address.domain_id":                           {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
+			"all_outbound_email_addresses.route_id":                      {RefType: "genesyscloud_routing_email_route"},  // must be hard-coded to avoid import cycle
+			"all_outbound_email_addresses.domain_id":                     {RefType: "genesyscloud_routing_email_domain"}, // must be hard-coded to avoid import cycle
+			"bullseye_rings.skills_to_remove":                            {RefType: routingSkill.ResourceType},
+			"members.user_id":                                            {RefType: user.ResourceType},
+			"wrapup_codes":                                               {RefType: routingWrapupcode.ResourceType},
+			"skill_groups":                                               {RefType: routingSkillGroup.ResourceType},
+			"teams":                                                      {RefType: team.ResourceType},
+			"groups":                                                     {RefType: group.ResourceType},
+			"conditional_group_routing_rules.queue_id":                   {RefType: ResourceType},
+			"direct_routing.backup_queue_id":                             {RefType: ResourceType},
+			"canned_response_libraries.library_ids":                      {RefType: responseManagementLibrary.ResourceType},
+			"media_settings_callback.live_voice_flow_id":                 {RefType: architectFlow.ResourceType},
+			"media_settings_callback.answering_machine_flow_id":          {RefType: architectFlow.ResourceType},
+			"media_settings_callback.site_id":                            {RefType: telephonyProvidersEdgesSite.ResourceType},
+			"media_settings_callback.edge_group_id":                      {RefType: edgeGroup.ResourceType},
+			"media_settings_message.inactivity_timeout_settings.flow_id": {RefType: architectFlow.ResourceType},
 			"conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id": {RefType: ResourceType},
 			"conditional_group_activation.rules.conditions.simple_metric.queue_id":      {RefType: ResourceType},
 		},
 		RemoveIfMissing: map[string][]string{
-			"outbound_email_address": {"route_id"},
-			"members":                {"user_id"},
+			"outbound_email_address":       {"route_id"},
+			"all_outbound_email_addresses": {"route_id"},
+			"members":                      {"user_id"},
 		},
 		RemoveIfSelfReferential: []string{"direct_routing.backup_queue_id", "conditional_group_routing_rules.queue_id", "conditional_group_activation.pilot_rule.conditions.simple_metric.queue_id", "conditional_group_activation.rules.conditions.simple_metric.queue_id"},
 		AllowZeroValues: []string{

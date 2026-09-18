@@ -331,6 +331,12 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
+	if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Email != nil && currentQueue.MediaSettings.Email.AllOutboundEmailAddresses != nil {
+		_ = d.Set("all_outbound_email_addresses", flattenAllOutboundEmailAddresses(currentQueue.MediaSettings.Email.AllOutboundEmailAddresses))
+	} else {
+		_ = d.Set("all_outbound_email_addresses", nil)
+	}
+
 	return nil
 }
 

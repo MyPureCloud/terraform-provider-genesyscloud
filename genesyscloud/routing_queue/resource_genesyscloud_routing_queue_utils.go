@@ -42,6 +42,13 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 		queueMediaSettings.Email = buildSdkMediaEmailSetting(mediaSettingsEmail)
 	}
 
+	if allOutboundEmailAddresses := buildSdkAllOutboundEmailAddresses(d); allOutboundEmailAddresses != nil {
+		if queueMediaSettings.Email == nil {
+			queueMediaSettings.Email = &platformclientv2.Emailmediasettings{}
+		}
+		queueMediaSettings.Email.AllOutboundEmailAddresses = allOutboundEmailAddresses
+	}
+
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
 		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
@@ -693,6 +700,32 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 	return nil
 }
 
+func buildSdkAllOutboundEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Queueemailaddress {
+	allOutboundEmailAddresses, ok := d.GetOk("all_outbound_email_addresses")
+	if !ok {
+		return nil
+	}
+
+	addressList := allOutboundEmailAddresses.([]interface{})
+	emailAddresses := make([]platformclientv2.Queueemailaddress, 0, len(addressList))
+	for _, address := range addressList {
+		settingsMap, ok := address.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: platformclientv2.String(settingsMap["route_id"].(string)),
+		}
+		emailAddresses = append(emailAddresses, platformclientv2.Queueemailaddress{
+			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
+			Route:  &inboundRoute,
+		})
+	}
+
+	return &emailAddresses
+}
+
 func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
 	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
 		if len(agentOwnedRouting) > 0 {
@@ -1183,6 +1216,18 @@ func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[s
 	}
 
 	return settingsMap
+}
+
+func flattenAllOutboundEmailAddresses(addresses *[]platformclientv2.Queueemailaddress) []interface{} {
+	if addresses == nil {
+		return nil
+	}
+
+	addressList := make([]interface{}, 0, len(*addresses))
+	for _, address := range *addresses {
+		addressList = append(addressList, FlattenQueueEmailAddress(address))
+	}
+	return addressList
 }
 
 func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]interface{}, diag.Diagnostics) {
