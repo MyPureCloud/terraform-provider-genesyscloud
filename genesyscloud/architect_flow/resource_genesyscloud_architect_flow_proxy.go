@@ -21,7 +21,7 @@ var internalProxy *architectFlowProxy
 type getArchitectFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error)
 type forceUnlockFlowFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.APIResponse, error)
 type deleteArchitectFlowFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.APIResponse, error)
-type createArchitectFlowJobsFunc func(context.Context, *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error)
+type createArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, bool) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error)
 type getArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error)
 type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string, []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
 type getFlowIdByNameAndTypeFunc func(ctx context.Context, a *architectFlowProxy, name string, varType string) (id string, resp *platformclientv2.APIResponse, retryable bool, err error)
@@ -94,8 +94,19 @@ func (a *architectFlowProxy) DeleteFlow(ctx context.Context, id string) (*platfo
 	return a.deleteArchitectFlowAttr(ctx, a, id)
 }
 
-func (a *architectFlowProxy) CreateFlowsDeployJob(ctx context.Context) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
-	return a.createArchitectFlowJobsAttr(ctx, a)
+// CreateFlowsDeployJob registers an architect flow deploy job.
+// Implementation function: createArchitectFlowJobsFn
+//
+// Parameters:
+//   - ctx: Context for the operation
+//   - createStubs: When true, the job will create flow stubs for any dependencies that do not yet exist in the org
+//
+// Returns:
+//   - *platformclientv2.Registerarchitectjobresponse: The registered job, including the presigned URL used to upload the flow
+//   - *platformclientv2.APIResponse: The raw API response
+//   - error: An error if the job could not be registered
+func (a *architectFlowProxy) CreateFlowsDeployJob(ctx context.Context, createStubs bool) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
+	return a.createArchitectFlowJobsAttr(ctx, a, createStubs)
 }
 
 func (a *architectFlowProxy) GetFlowsDeployJob(ctx context.Context, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {
@@ -298,7 +309,7 @@ func deleteArchitectFlowFn(ctx context.Context, p *architectFlowProxy, flowId st
 	return resp, err
 }
 
-func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
+func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, createStubs bool) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
 	// Only set resource context if it doesn't already exist
 	// This preserves resource_name and resource_id that may have been set by the caller
 	var resourceCtx interface{}
@@ -308,7 +319,18 @@ func createArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy) (*pla
 	if resourceCtx == nil {
 		ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	}
-	return p.api.PostFlowsJobs(platformclientv2.Registerarchitectjobrequest{})
+	return p.api.PostFlowsJobs(buildRegisterArchitectJobRequest(createStubs))
+}
+
+// buildRegisterArchitectJobRequest builds the POST body for the architect flows jobs endpoint.
+// createStubs is only included in the payload when true, so that the request body remains
+// empty for the default case and the API applies its own default of false.
+func buildRegisterArchitectJobRequest(createStubs bool) platformclientv2.Registerarchitectjobrequest {
+	body := platformclientv2.Registerarchitectjobrequest{}
+	if createStubs {
+		body.CreateStubs = platformclientv2.Bool(true)
+	}
+	return body
 }
 
 func getArchitectFlowJobsFn(ctx context.Context, p *architectFlowProxy, jobId string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error) {

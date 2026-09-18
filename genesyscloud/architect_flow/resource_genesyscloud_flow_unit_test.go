@@ -1,6 +1,8 @@
 package architect_flow
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -218,6 +220,92 @@ func TestUnitPollExportJobForDownloadUrlFn(t *testing.T) {
 			}
 			if url != tt.expectedUrl {
 				t.Errorf("expected URL %q, got %q", tt.expectedUrl, url)
+			}
+		})
+	}
+}
+
+func TestUnitBuildRegisterArchitectJobRequest(t *testing.T) {
+	tests := []struct {
+		name         string
+		createStubs  bool
+		expectedBody string
+	}{
+		{
+			name:         "Should omit createStubs when false",
+			createStubs:  false,
+			expectedBody: `{}`,
+		},
+		{
+			name:         "Should include createStubs when true",
+			createStubs:  true,
+			expectedBody: `{"createStubs":true}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			body := buildRegisterArchitectJobRequest(tt.createStubs)
+
+			if tt.createStubs {
+				if body.CreateStubs == nil {
+					t.Fatal("expected CreateStubs to be set, got nil")
+				}
+				if !*body.CreateStubs {
+					t.Errorf("expected CreateStubs to be true, got %v", *body.CreateStubs)
+				}
+			} else if body.CreateStubs != nil {
+				t.Errorf("expected CreateStubs to be nil, got %v", *body.CreateStubs)
+			}
+
+			marshalled, err := json.Marshal(body)
+			if err != nil {
+				t.Fatalf("unexpected error marshalling request body: %v", err)
+			}
+			if string(marshalled) != tt.expectedBody {
+				t.Errorf("expected POST body %s, got %s", tt.expectedBody, string(marshalled))
+			}
+		})
+	}
+}
+
+func TestUnitCreateFlowsDeployJob(t *testing.T) {
+	tests := []struct {
+		name        string
+		createStubs bool
+	}{
+		{
+			name:        "Should forward create_stubs false to the implementation function",
+			createStubs: false,
+		},
+		{
+			name:        "Should forward create_stubs true to the implementation function",
+			createStubs: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var receivedCreateStubs bool
+
+			proxyInstance := &architectFlowProxy{
+				createArchitectFlowJobsAttr: func(ctx context.Context, a *architectFlowProxy, createStubs bool) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error) {
+					receivedCreateStubs = createStubs
+					return &platformclientv2.Registerarchitectjobresponse{
+						Id: platformclientv2.String("mock-job-id"),
+					}, nil, nil
+				},
+			}
+
+			job, _, err := proxyInstance.CreateFlowsDeployJob(context.Background(), tt.createStubs)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if job == nil || job.Id == nil {
+				t.Fatal("expected a job response with an ID")
+			}
+			if receivedCreateStubs != tt.createStubs {
+				t.Errorf("expected createStubs %v to be passed to the implementation function, got %v", tt.createStubs, receivedCreateStubs)
 			}
 		})
 	}
