@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -662,7 +662,6 @@ func TestUnitContainsElement(t *testing.T) {
 }
 
 func TestUnitGetResourceStateRemovesComputedAttributes(t *testing.T) {
-	t.Skip("Skipping until DEVTOOLING-1322 is resolved")
 
 	testCases := []struct {
 		name            string

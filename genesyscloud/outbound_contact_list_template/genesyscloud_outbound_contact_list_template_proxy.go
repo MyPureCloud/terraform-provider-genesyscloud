@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 /*
@@ -109,7 +109,7 @@ func getAllOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 	var allContactlisttemplates []platformclientv2.Contactlisttemplate
 	const pageSize = 100
 
-	Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, 1, true, "", name, "", "")
+	Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, 1, true, "", name, "", "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get page of contact list template: %v", err)
 	}
@@ -123,7 +123,7 @@ func getAllOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 	}
 
 	for pageNum := 2; pageNum <= *Contactlisttemplates.PageCount; pageNum++ {
-		Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, pageNum, true, "", name, "", "")
+		Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, pageNum, true, "", name, "", "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page of contact list template: %v", err)
 		}
