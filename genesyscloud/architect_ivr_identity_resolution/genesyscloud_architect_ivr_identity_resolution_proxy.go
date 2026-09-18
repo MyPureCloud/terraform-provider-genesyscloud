@@ -3,7 +3,7 @@ package architect_ivr_identity_resolution
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	architectIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )

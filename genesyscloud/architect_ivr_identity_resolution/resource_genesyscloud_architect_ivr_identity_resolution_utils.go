@@ -2,7 +2,7 @@ package architect_ivr_identity_resolution
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 func buildIdentityResolutionIVRConfig(d *schema.ResourceData) (platformclientv2.Ivridentityresolutionconfig, error) {

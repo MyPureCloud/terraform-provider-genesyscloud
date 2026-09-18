@@ -3,7 +3,7 @@ package routing_email_route_identity_resolution
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	provider "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 )
