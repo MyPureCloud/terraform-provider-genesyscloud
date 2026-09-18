@@ -28,10 +28,10 @@ The resource_genesyscloud_routing_email_route.go contains all the methods that p
 
 // getAllAuthRoutingEmailRoute retrieves all the routing email route via Terraform in the Genesys Cloud and is used for the exporter
 func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getRoutingEmailRouteProxy(clientConfig)
+	proxy := GetRoutingEmailRouteProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	inboundRoutesMap, respCode, err := proxy.getAllRoutingEmailRoute(ctx, "", "")
+	inboundRoutesMap, respCode, err := proxy.GetAllRoutingEmailRoute(ctx, "", "")
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route error: %s", err), respCode)
 	}
@@ -54,7 +54,7 @@ func getAllRoutingEmailRoutes(ctx context.Context, clientConfig *platformclientv
 // createRoutingEmailRoute is used by the routing_email_route resource to create Genesys cloud routing email route
 func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingEmailRouteProxy(sdkConfig)
+	proxy := GetRoutingEmailRouteProxy(sdkConfig)
 	domainId := d.Get("domain_id").(string)
 
 	routingEmailRoute := getRoutingEmailRouteFromResourceData(d)
@@ -70,7 +70,7 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	// If the isSelfReferenceRoute() is set to false, we use the route id provided by the terraform script
 	if replyEmail && !isSelfReferenceRouteSet(d) {
 		// We need to pass the route pattern that matches the route id
-		replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
+		replyRoute, _, err := proxy.GetRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
 		if err != nil {
 			return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route %s error: %s", replyRouteID, err), nil)
 		}
@@ -102,13 +102,13 @@ func createRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 // readRoutingEmailRoute is used by the routing_email_route resource to read a routing email route from genesys cloud
 func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingEmailRouteProxy(sdkConfig)
+	proxy := GetRoutingEmailRouteProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingEmailRoute(), constants.ConsistencyChecks(), ResourceType)
 	domainId := d.Get("domain_id").(string)
 
 	log.Printf("Reading routing email route %s", d.Id())
 	return util.WithRetriesForReadCustomTimeout(ctx, 7*time.Minute, d, func() *retry.RetryError {
-		route, resp, err := proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		route, resp, err := proxy.GetRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(err)
@@ -164,7 +164,7 @@ func readRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta int
 // updateRoutingEmailRoute is used by the routing_email_route resource to update an routing email route in Genesys Cloud
 func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingEmailRouteProxy(sdkConfig)
+	proxy := GetRoutingEmailRouteProxy(sdkConfig)
 	domainId := d.Get("domain_id").(string)
 
 	routingEmailRoute := getRoutingEmailRouteFromResourceData(d)
@@ -182,7 +182,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 			routingEmailRoute.ReplyEmailAddress = buildReplyEmailAddress(domainId, d.Id(), d.Get("pattern").(string))
 		} else if !isSelfReferenceRouteSet(d) {
 			// We need to pass the route pattern that matches the route id
-			replyRoute, _, err := proxy.getRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
+			replyRoute, _, err := proxy.GetRoutingEmailRouteById(ctx, replyDomainID, replyRouteID)
 			if err != nil {
 				return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Failed to get routing email route %s error: %s", replyRouteID, err), nil)
 			}
@@ -203,7 +203,7 @@ func updateRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 // deleteRoutingEmailRoute is used by the routing_email_route resource to delete an routing email route from Genesys cloud
 func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingEmailRouteProxy(sdkConfig)
+	proxy := GetRoutingEmailRouteProxy(sdkConfig)
 	domainId := d.Get("domain_id").(string)
 
 	resp, err := proxy.deleteRoutingEmailRoute(ctx, domainId, d.Id())
@@ -216,7 +216,7 @@ func deleteRoutingEmailRoute(ctx context.Context, d *schema.ResourceData, meta i
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err = proxy.getRoutingEmailRouteById(ctx, domainId, d.Id())
+		_, resp, err = proxy.GetRoutingEmailRouteById(ctx, domainId, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				log.Printf("Deleted routing email route %s", d.Id())
