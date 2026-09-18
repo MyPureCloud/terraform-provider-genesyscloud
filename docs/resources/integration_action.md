@@ -177,7 +177,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
     description       = "Custom function for data processing"
     handler           = "index.handler"
     runtime           = "nodejs22.x"
-    timeout_seconds   = 30
+    timeout_seconds   = 15 //ranges from 1 to 15 seconds
     file_path         = "${local.working_dir.integration_action}/function.zip"
     file_content_hash = filesha256("${local.working_dir.integration_action}/function.zip")
   }
@@ -245,6 +245,6 @@ Optional:
 - `file_content_hash` (String) Hash value of the function zip file content. Used to detect changes. Typically set with filesha256(file_path). Computed by the provider when omitted.
 - `handler` (String) The handler function name.
 - `runtime` (String) The runtime environment for the function.
-- `timeout_seconds` (Number) Timeout in seconds for the function execution.
+- `timeout_seconds` (Number) Timeout in seconds for the function execution. Range allowed 1 to 15. Default value 15 seconds.
 - `zip_id` (String) The ID of the uploaded zip file containing the function code.
 
