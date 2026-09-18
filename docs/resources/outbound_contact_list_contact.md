@@ -133,9 +133,12 @@ Only applicable on the creation of a contact, so updating this field will force 
 - `phone_number_status` (Block Set) A map of phone number columns to PhoneNumberStatuses, which indicate if the phone number is callable or not. (see [below for nested schema](#nestedblock--phone_number_status))
 - `priority` (Boolean) Contact priority. True means the contact(s) will be dialed next; false means the contact will go to the end of the contact queue.
 Only applicable on the creation of a contact, so updating this field will force the contact to be deleted from the contact list and re-uploaded.
+- `retention_days` (Number) The number of days to retain this contact. Required when retention_type is RetentionDays.
+- `retention_type` (String) The type of retention for this contact, overriding the contact list's retention setting. Valid values: Never, Today, RetentionDays.
 
 ### Read-Only
 
+- `date_expiration` (String) The expiration date of the contact, computed from retention_type and retention_days. Date time is represented as an ISO-8601 string.
 - `id` (String) The ID of this resource.
 
 <a id="nestedblock--contactable_status"></a>
