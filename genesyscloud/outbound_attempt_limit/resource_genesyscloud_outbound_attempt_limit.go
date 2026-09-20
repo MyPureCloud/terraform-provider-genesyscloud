@@ -27,6 +27,15 @@ const (
 	ResourceType = "genesyscloud_outbound_attempt_limit"
 )
 
+// validResetPeriods is NEVER, TODAY, and DAYS_2 through DAYS_30 (Genesys Cloud UI/API).
+var validResetPeriods = func() []string {
+	periods := []string{`NEVER`, `TODAY`}
+	for i := 2; i <= 30; i++ {
+		periods = append(periods, fmt.Sprintf(`DAYS_%d`, i))
+	}
+	return periods
+}()
+
 var (
 	recallSettings = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -138,11 +147,11 @@ func ResourceOutboundAttemptLimit() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`reset_period`: {
-				Description:  `After how long the number of attempts will be set back to 0.`,
+				Description:  `After how long the number of attempts will be set back to 0. Valid values: NEVER, TODAY, or DAYS_xx where xx is 2 through 30 (for example DAYS_30).`,
 				Optional:     true,
 				Type:         schema.TypeString,
 				Default:      `NEVER`,
-				ValidateFunc: validation.StringInSlice([]string{`NEVER`, `TODAY`}, true),
+				ValidateFunc: validation.StringInSlice(validResetPeriods, true),
 			},
 			`recall_entries`: {
 				Description: `Configuration for recall attempts.`,
