@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -93,11 +94,7 @@ func newCaseManagementCaseplanProxy(clientConfig *platformclientv2.Configuration
 // getCaseManagementCaseplanProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getCaseManagementCaseplanProxy(clientConfig *platformclientv2.Configuration) *caseManagementCaseplanProxy {
-	if internalProxy == nil {
-		internalProxy = newCaseManagementCaseplanProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newCaseManagementCaseplanProxy)
 }
 
 // createCaseManagementCaseplan creates a Genesys Cloud case management caseplan

@@ -82,10 +82,7 @@ func newExternalContactsContactsProxy(clientConfig *platformclientv2.Configurati
 // getExternalContactsContactsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getExternalContactsContactsProxy(clientConfig *platformclientv2.Configuration) *externalContactsContactsProxy {
-	if internalProxy == nil {
-		internalProxy = newExternalContactsContactsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExternalContactsContactsProxy)
 }
 
 // getAllExternalContacts retrieves all Genesys Cloud External Contacts

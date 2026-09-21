@@ -71,10 +71,7 @@ func newBusinessRulesSchemaProxy(clientConfig *platformclientv2.Configuration) *
 // getBusinessRulesSchemaProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getBusinessRulesSchemaProxy(clientConfig *platformclientv2.Configuration) *businessRulesSchemaProxy {
-	if internalProxy == nil {
-		internalProxy = newBusinessRulesSchemaProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newBusinessRulesSchemaProxy)
 }
 
 // createBusinessRulesSchema creates a Genesys Cloud business rules schema

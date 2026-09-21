@@ -57,10 +57,7 @@ func newOutboundContactlistfilterProxy(clientConfig *platformclientv2.Configurat
 // getOutboundContactlistfilterProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundContactlistfilterProxy(clientConfig *platformclientv2.Configuration) *outboundContactlistfilterProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundContactlistfilterProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundContactlistfilterProxy)
 }
 
 // createOutboundContactlistfilter creates a Genesys Cloud outbound contactlistfilter

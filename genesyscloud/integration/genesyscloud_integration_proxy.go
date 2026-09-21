@@ -77,10 +77,7 @@ func newIntegrationsProxy(clientConfig *platformclientv2.Configuration) *Integra
 // getIntegrationsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIntegrationsProxy(clientConfig *platformclientv2.Configuration) *IntegrationsProxy {
-	if internalProxy == nil {
-		internalProxy = newIntegrationsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIntegrationsProxy)
 }
 
 // GetIntegrationsProxy returns the proxy instance for use by other packages (e.g. tests)

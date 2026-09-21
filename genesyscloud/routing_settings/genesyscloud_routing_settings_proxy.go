@@ -50,10 +50,7 @@ func newRoutingSettingsProxy(clientConfig *platformclientv2.Configuration) *rout
 }
 
 func getRoutingSettingsProxy(clientConfig *platformclientv2.Configuration) *routingSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingSettingsProxy)
 }
 
 func (p *routingSettingsProxy) getRoutingSettings(ctx context.Context) (*platformclientv2.Routingsettings, *platformclientv2.APIResponse, error) {

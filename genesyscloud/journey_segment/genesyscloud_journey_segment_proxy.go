@@ -81,10 +81,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func getJourneySegmentProxy(clientConfig *platformclientv2.Configuration) *journeySegmentProxy {
-	if internalProxy == nil {
-		internalProxy = newJourneySegmentProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newJourneySegmentProxy)
 }
 
 // createJourneySegment creates a Genesys Cloud journey segment

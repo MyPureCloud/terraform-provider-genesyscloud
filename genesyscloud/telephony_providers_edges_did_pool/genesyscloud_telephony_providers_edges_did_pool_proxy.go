@@ -69,13 +69,10 @@ func newTelephonyProvidersEdgesDidPoolProxy(clientConfig *platformclientv2.Confi
 	}
 }
 
-// getTelephonyDidPoolProxy acts as a singleton for the internalProxy. It also ensures
-// that we can still proxy our tests by directly setting internalProxy package variable
+// getTelephonyDidPoolProxy returns a fresh proxy in MRMO standalone mode or the legacy
+// package singleton for Terraform CLI and unit tests (internalProxy can be stubbed).
 func getTelephonyDidPoolProxy(clientConfig *platformclientv2.Configuration) *telephonyDidPoolProxy {
-	if internalProxy == nil {
-		internalProxy = newTelephonyProvidersEdgesDidPoolProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTelephonyProvidersEdgesDidPoolProxy)
 }
 
 // createTelephonyDidPool creates a Genesys Cloud did pool

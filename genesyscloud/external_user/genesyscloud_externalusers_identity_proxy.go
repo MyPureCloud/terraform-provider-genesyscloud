@@ -49,11 +49,7 @@ func newExternalUserIdentityProxy(clientConfig *platformclientv2.Configuration) 
 }
 
 func getExternalUserIdentityProxy(clientConfig *platformclientv2.Configuration) *externalUserIdentityProxy {
-	if internalProxy == nil {
-		internalProxy = newExternalUserIdentityProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExternalUserIdentityProxy)
 }
 
 func (p *externalUserIdentityProxy) createExternalUserIdentity(ctx context.Context, userId string, externalIdentity platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {

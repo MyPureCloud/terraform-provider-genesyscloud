@@ -71,10 +71,7 @@ func newSiteOutboundRouteProxy(clientConfig *platformclientv2.Configuration) *si
 // getSiteOutboundRouteProxy acts as a singleton for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getSiteOutboundRouteProxy(clientConfig *platformclientv2.Configuration) *siteOutboundRouteProxy {
-	if internalProxy == nil {
-		internalProxy = newSiteOutboundRouteProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSiteOutboundRouteProxy)
 }
 
 func (p *siteOutboundRouteProxy) getAllSiteOutboundRoutes(ctx context.Context, siteId string) (*[]platformclientv2.Outboundroutebase, *platformclientv2.APIResponse, error) {

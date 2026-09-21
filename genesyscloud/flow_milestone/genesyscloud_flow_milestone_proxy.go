@@ -57,10 +57,7 @@ func newFlowMilestoneProxy(clientConfig *platformclientv2.Configuration) *flowMi
 // getFlowMilestoneProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getFlowMilestoneProxy(clientConfig *platformclientv2.Configuration) *flowMilestoneProxy {
-	if internalProxy == nil {
-		internalProxy = newFlowMilestoneProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newFlowMilestoneProxy)
 }
 
 // createFlowMilestone creates a Genesys Cloud flow milestone

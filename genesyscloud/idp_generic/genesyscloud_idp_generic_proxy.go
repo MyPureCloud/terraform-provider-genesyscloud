@@ -46,11 +46,7 @@ func newIdpGenericProxy(clientConfig *platformclientv2.Configuration) *idpGeneri
 // getIdpGenericProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIdpGenericProxy(clientConfig *platformclientv2.Configuration) *idpGenericProxy {
-	if internalProxy == nil {
-		internalProxy = newIdpGenericProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIdpGenericProxy)
 }
 
 // getIdpGeneric retrieves all Genesys Cloud idp generic

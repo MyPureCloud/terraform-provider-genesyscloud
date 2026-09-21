@@ -66,10 +66,7 @@ func newTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration
 // GetTaskManagementWorktypeProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func GetTaskManagementWorktypeProxy(clientConfig *platformclientv2.Configuration) *TaskManagementWorktypeProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementWorktypeProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementWorktypeProxy)
 }
 
 // createTaskManagementWorktype creates a Genesys Cloud task management worktype

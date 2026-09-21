@@ -76,10 +76,7 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 }
 
 func getArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *architectFlowProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectFlowProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectFlowProxy)
 }
 
 func (a *architectFlowProxy) GetFlow(ctx context.Context, id string) (*platformclientv2.Flow, *platformclientv2.APIResponse, error) {

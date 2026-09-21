@@ -57,11 +57,7 @@ func newConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformc
 // getConversationsMessagingIntegrationsInstagramProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsInstagramProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsInstagramProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsInstagramProxy)
 }
 
 // createConversationsMessagingIntegrationsInstagram creates a Genesys Cloud conversations messaging integrations instagram
