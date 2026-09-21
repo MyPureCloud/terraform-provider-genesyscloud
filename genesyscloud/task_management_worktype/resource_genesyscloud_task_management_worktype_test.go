@@ -84,10 +84,12 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 				fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResourceLabel1),
 				fmt.Sprintf("genesyscloud_routing_skill.%s.id", skillResourceLabel2),
 			},
-			assignmentEnabled: false,
-			schemaId:          fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
-			schemaVersion:     1,
-			defaultScriptId:   fmt.Sprintf("genesyscloud_script.%s.id", scriptResourceLabel),
+			assignmentEnabled:                 false,
+			schemaId:                          fmt.Sprintf("genesyscloud_task_management_workitem_schema.%s.id", wsResourceLabel),
+			schemaVersion:                     1,
+			defaultScriptId:                   fmt.Sprintf("genesyscloud_script.%s.id", scriptResourceLabel),
+			serviceLevelTarget:                80,
+			unassignedDivisionContactsEnabled: false,
 		}
 	)
 
@@ -140,6 +142,9 @@ func TestAccResourceTaskManagementWorktype(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "schema_version", fmt.Sprintf("%v", wtRes.schemaVersion)),
 
 					resource.TestCheckResourceAttrPair(ResourceType+"."+wtRes.resourceLabel, "default_script_id", fmt.Sprintf("genesyscloud_script.%s", scriptResourceLabel), "id"),
+
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "service_level_target", fmt.Sprintf("%v", wtRes.serviceLevelTarget)),
+					resource.TestCheckResourceAttr(ResourceType+"."+wtRes.resourceLabel, "unassigned_division_contacts_enabled", fmt.Sprintf("%v", wtRes.unassignedDivisionContactsEnabled)),
 				),
 			},
 		},
@@ -189,6 +194,8 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		assignment_enabled = %v
 		schema_version = %v
 		default_script_id = %v
+		service_level_target = %v
+		unassigned_division_contacts_enabled = %v
 	}
 		`, ResourceType,
 		wt.resourceLabel,
@@ -208,6 +215,8 @@ func generateWorktypeResource(wt worktypeConfig) string {
 		wt.assignmentEnabled,
 		wt.schemaVersion,
 		wt.defaultScriptId,
+		wt.serviceLevelTarget,
+		wt.unassignedDivisionContactsEnabled,
 	)
 	return tfConfig
 }

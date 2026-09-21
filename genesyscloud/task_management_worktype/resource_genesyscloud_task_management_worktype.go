@@ -123,6 +123,9 @@ func readTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, met
 			resourcedata.SetNillableValue(d, "flow_rules_enabled", worktype.RuleSettings.FlowRulesEnabled)
 		}
 
+		resourcedata.SetNillableValue(d, "service_level_target", worktype.ServiceLevelTarget)
+		resourcedata.SetNillableValue(d, "unassigned_division_contacts_enabled", worktype.UnassignedDivisionContactsEnabled)
+
 		// disable_default_status_creation is a write-only (create-time) flag in the API/SDK.
 		// Keep state aligned with config to avoid perpetual diffs/invalid plans on refresh.
 		if v := resourcedata.GetNillableBool(d, "disable_default_status_creation"); v != nil {
