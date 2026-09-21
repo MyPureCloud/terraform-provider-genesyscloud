@@ -28,9 +28,9 @@ func TestUnitIntegrationInstagramCreate(t *testing.T) {
 		messagingsettingrequestreference = &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId1}
 	)
 
-	instagramProxy := &conversationsMessagingIntegrationsInstagramProxy{}
+	instagramProxy := &ConversationsMessagingIntegrationsInstagramProxy{}
 
-	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, instagramId, id)
 		integrationInstagramConfig := platformclientv2.Instagramintegration{
 			Name:             &name,
@@ -45,7 +45,7 @@ func TestUnitIntegrationInstagramCreate(t *testing.T) {
 		return &integrationInstagramConfig, apiResponse, nil
 	}
 
-	instagramProxy.createConversationsMessagingIntegrationsInstagramAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, instagramIntegrationRequest *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+	instagramProxy.createConversationsMessagingIntegrationsInstagramAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, instagramIntegrationRequest *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 		integrationInstagramProxy := platformclientv2.Instagramintegration{}
 
 		assert.Equal(t, name, *instagramIntegrationRequest.Name, "instagramIntegrationRequest.Name check failed in create createConversationsMessagingIntegrationsInstagramAttr")
@@ -94,9 +94,9 @@ func TestUnitIntegrationInstagramRead(t *testing.T) {
 		messagingsettingreference = &platformclientv2.Messagingsettingreference{Id: &messagingSettingId1}
 	)
 
-	instagramProxy := &conversationsMessagingIntegrationsInstagramProxy{}
+	instagramProxy := &ConversationsMessagingIntegrationsInstagramProxy{}
 
-	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, instagramId, id)
 		integrationInstagramConfig := platformclientv2.Instagramintegration{
 			Name:             &name,
@@ -151,15 +151,15 @@ func TestUnitIntegrationInstagramDelete(t *testing.T) {
 		pageAccessToken1    = uuid.NewString()
 	)
 
-	instagramProxy := &conversationsMessagingIntegrationsInstagramProxy{}
+	instagramProxy := &ConversationsMessagingIntegrationsInstagramProxy{}
 
-	instagramProxy.deleteConversationsMessagingIntegrationsInstagramAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error) {
+	instagramProxy.deleteConversationsMessagingIntegrationsInstagramAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, instagramId, id)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}
 		return apiResponse, nil
 	}
 
-	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, instagramId, id)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
 		return nil, apiResponse, fmt.Errorf("Not found")
@@ -199,9 +199,9 @@ func TestUnitIntegrationInstagramUpdate(t *testing.T) {
 		messagingsettingrequestreference = &platformclientv2.Messagingsettingrequestreference{Id: &messagingSettingId1}
 	)
 
-	instagramProxy := &conversationsMessagingIntegrationsInstagramProxy{}
+	instagramProxy := &ConversationsMessagingIntegrationsInstagramProxy{}
 
-	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+	instagramProxy.getConversationsMessagingIntegrationsInstagramByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, instagramId, id)
 		integrationInstagramConfig := platformclientv2.Instagramintegration{
 			Name:             &name,
@@ -216,7 +216,7 @@ func TestUnitIntegrationInstagramUpdate(t *testing.T) {
 		return &integrationInstagramConfig, apiResponse, nil
 	}
 
-	instagramProxy.updateConversationsMessagingIntegrationsInstagramAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string, instagramIntegrationRequest *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+	instagramProxy.updateConversationsMessagingIntegrationsInstagramAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string, instagramIntegrationRequest *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 		integrationInstagramProxy := platformclientv2.Instagramintegration{}
 
 		assert.Equal(t, name, *instagramIntegrationRequest.Name, "instagramIntegrationRequest.Name check failed in create createConversationsMessagingIntegrationsInstagramAttr")
@@ -256,8 +256,8 @@ func TestUnitIntegrationInstagramUpdate(t *testing.T) {
 func TestUnitDataSourceInstagramRead(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
-	instagramProxy := &conversationsMessagingIntegrationsInstagramProxy{}
-	instagramProxy.getConversationsMessagingIntegrationsInstagramIdByNameAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	instagramProxy := &ConversationsMessagingIntegrationsInstagramProxy{}
+	instagramProxy.getConversationsMessagingIntegrationsInstagramIdByNameAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, targetName, name)
 		return targetId, false, nil, nil
 	}
