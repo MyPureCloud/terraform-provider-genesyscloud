@@ -160,6 +160,7 @@ import (
 	usersRules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/users_rules"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	webDeployIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment_identity_resolution"
 	workforcemanagementBusinessunits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
 )
 
@@ -357,6 +358,7 @@ func registerResources() {
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
+	webDeployIdentityResolution.SetRegistrar(regInstance)                  //Registering webdeployments identity resolution
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
 	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
