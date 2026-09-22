@@ -29,7 +29,7 @@ type WebDeploymentsProxy struct {
 	clientConfig      *platformclientv2.Configuration
 	webDeploymentsApi *platformclientv2.WebDeploymentsApi
 
-	getAllWebDeploymentsAttr   getAllWebDeploymentsFunc
+	GetAllWebDeploymentsAttr   getAllWebDeploymentsFunc
 	getWebDeploymentAttr       getWebDeploymentsFunc
 	createWebDeploymentAttr    createWebdeploymentsFunc
 	updateWebDeploymentAttr    updateWebdeploymentsFunc
@@ -43,7 +43,7 @@ func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *WebDe
 	return &WebDeploymentsProxy{
 		clientConfig:               clientConfig,
 		webDeploymentsApi:          webDeploymentsApi,
-		getAllWebDeploymentsAttr:   getAllWebDeploymentsFn,
+		GetAllWebDeploymentsAttr:   getAllWebDeploymentsFn,
 		getWebDeploymentAttr:       getWebDeploymentsFn,
 		createWebDeploymentAttr:    createWebdeploymentsFn,
 		updateWebDeploymentAttr:    updateWebdeploymentsFn,
@@ -60,7 +60,7 @@ func GetWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *WebDe
 }
 
 func (p *WebDeploymentsProxy) GetWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {
-	return p.getAllWebDeploymentsAttr(ctx, p)
+	return p.GetAllWebDeploymentsAttr(ctx, p)
 }
 
 func (p *WebDeploymentsProxy) getWebDeployment(ctx context.Context, deployId string) (*platformclientv2.Webdeployment, *platformclientv2.APIResponse, error) {
