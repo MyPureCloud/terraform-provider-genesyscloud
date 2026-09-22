@@ -79,10 +79,7 @@ func newIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *Int
 // getIntegrationCredsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIntegrationCredsProxy(clientConfig *platformclientv2.Configuration) *IntegrationCredsProxy {
-	if internalProxy == nil {
-		internalProxy = newIntegrationCredsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIntegrationCredsProxy)
 }
 
 // GetIntegrationCredsProxy returns the proxy instance for use by other packages (e.g. tests)

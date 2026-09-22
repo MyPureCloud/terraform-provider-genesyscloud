@@ -64,11 +64,7 @@ func newSupportedContentProxy(clientConfig *platformclientv2.Configuration) *sup
 // getSupportedContentProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getSupportedContentProxy(clientConfig *platformclientv2.Configuration) *supportedContentProxy {
-	if internalProxy == nil {
-		internalProxy = newSupportedContentProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSupportedContentProxy)
 }
 
 // createSupportedContent creates a Genesys Cloud supported content

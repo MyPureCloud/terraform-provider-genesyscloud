@@ -105,10 +105,7 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 //	proxy := GetOutboundContactlistProxy(sdkConfig)
 //	contactList, err := proxy.GetOutboundContactList(contactListId)
 func GetOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *OutboundContactlistProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundContactlistProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundContactlistProxy)
 }
 
 // createOutboundContactlist creates a Genesys Cloud outbound contactlist

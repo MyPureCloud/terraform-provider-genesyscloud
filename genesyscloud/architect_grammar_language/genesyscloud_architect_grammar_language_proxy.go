@@ -74,11 +74,7 @@ func newArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configurati
 // getArchitectGrammarLanguageProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configuration) *architectGrammarLanguageProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectGrammarLanguageProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectGrammarLanguageProxy)
 }
 
 // createArchitectGrammarLanguage creates a Genesys Cloud Architect Grammar Language

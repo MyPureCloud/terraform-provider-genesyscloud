@@ -41,11 +41,7 @@ func newRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Con
 }
 
 func getRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Configuration) *routingQueueOutboundEmailAddressProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueOutboundEmailAddressProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueOutboundEmailAddressProxy)
 }
 
 // getRoutingQueueOutboundEmailAddress gets the Outbound Email Address for a queue

@@ -59,10 +59,7 @@ func newConversationsMessagingSettingsProxy(clientConfig *platformclientv2.Confi
 // getConversationsMessagingSettingsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getConversationsMessagingSettingsProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingSettingsProxy)
 }
 
 // getConversationsMessagingSettings retrieves all Genesys Cloud conversations messaging settings

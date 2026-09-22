@@ -44,11 +44,7 @@ func newArchitectEmergencyGroupProxy(clientConfig *platformclientv2.Configuratio
 }
 
 func getArchitectEmergencyGroupProxy(clientConfig *platformclientv2.Configuration) *architectEmergencyGroupProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectEmergencyGroupProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectEmergencyGroupProxy)
 }
 
 func (p *architectEmergencyGroupProxy) getAllArchitectEmergencyGroups(ctx context.Context) (*[]platformclientv2.Emergencygroup, *platformclientv2.APIResponse, error) {

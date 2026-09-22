@@ -42,11 +42,7 @@ func newArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *a
 }
 
 func getArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *architectDatatableProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectDatatableProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectDatatableProxy)
 }
 
 func (p *architectDatatableProxy) createArchitectDatatable(ctx context.Context, datatable *Datatable) (*Datatable, *platformclientv2.APIResponse, error) {

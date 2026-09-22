@@ -44,10 +44,7 @@ func newOutboundSettingsProxy(clientConfig *platformclientv2.Configuration) *out
 // getOutboundSettingsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundSettingsProxy(clientConfig *platformclientv2.Configuration) *outboundSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundSettingsProxy)
 }
 
 // getOutboundSettings returns a single Genesys Cloud outbound settings by Id

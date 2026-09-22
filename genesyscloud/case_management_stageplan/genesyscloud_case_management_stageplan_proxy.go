@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 /*
@@ -42,10 +43,7 @@ func newCaseManagementStageplanProxy(clientConfig *platformclientv2.Configuratio
 }
 
 func getCaseManagementStageplanProxy(clientConfig *platformclientv2.Configuration) *caseManagementStageplanProxy {
-	if internalProxy == nil {
-		internalProxy = newCaseManagementStageplanProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newCaseManagementStageplanProxy)
 }
 
 func (p *caseManagementStageplanProxy) listStageplansForCaseplan(ctx context.Context, caseplanID string) ([]platformclientv2.Stageplan, *platformclientv2.APIResponse, error) {
