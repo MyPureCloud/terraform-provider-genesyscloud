@@ -8,6 +8,12 @@ import (
 	webDeploymentsDeployment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 )
 
+/*
+The genesyscloud_webdeployments_deployment_identity_resolution_proxy.go file contains the proxy structures and methods that interact
+with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
+out during testing.
+*/
+
 var internalProxy *webDeploymentIdentityResolutionProxy
 
 type getWebDeploymentIdentityResolutionFunc func(ctx context.Context, p *webDeploymentIdentityResolutionProxy, deploymentId string) (*platformclientv2.Deploymentidentityresolutionconfig, *platformclientv2.APIResponse, error)
