@@ -5,14 +5,25 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
+	"sync/atomic"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 )
 
 var internalProxy *greetingProxy
 var greetingCache = rc.NewResourceCache[platformclientv2.Greeting]()
+
+const (
+	userGreetingsPageSize          = 100
+	defaultUserGreetingConcurrency = 10
+	maxUserGreetingConcurrency     = 20
+	userGreetingProgressInterval   = 500
+)
 
 type getAllGreetingsFunc func(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error)
 type getUserGreetingByIdFunc func(ctx context.Context, p *greetingProxy, userId string, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error)
@@ -23,7 +34,6 @@ type deleteUserGreetingFunc func(ctx context.Context, p *greetingProxy, id strin
 type greetingProxy struct {
 	clientConfig        *platformclientv2.Configuration
 	greetingsApi        *platformclientv2.GreetingsApi
-	usersApi            *platformclientv2.UsersApi
 	getAllGreetingsAttr getAllGreetingsFunc
 	createGreetingAttr  createUserGreetingFunc
 	getGreetingByIdAttr getUserGreetingByIdFunc
@@ -34,11 +44,9 @@ type greetingProxy struct {
 
 func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
 	api := platformclientv2.NewGreetingsApiWithConfig(clientConfig)
-	usersApi := platformclientv2.NewUsersApiWithConfig(clientConfig)
 	return &greetingProxy{
 		clientConfig:        clientConfig,
 		greetingsApi:        api,
-		usersApi:            usersApi,
 		getAllGreetingsAttr: getAllGreetingsFn,
 		createGreetingAttr:  createUserGreetingFn,
 		getGreetingByIdAttr: getUserGreetingByIdFn,
@@ -75,63 +83,212 @@ func (p *greetingProxy) deleteUserGreeting(ctx context.Context, id string) (*pla
 	rc.DeleteCacheItem(p.greetingCache, id)
 	return p.deleteGreetingAttr(ctx, p, id)
 }
+
+type userGreetingCollectResult struct {
+	entities []platformclientv2.Domainentity
+	resp     *platformclientv2.APIResponse
+	err      error
+}
+
 func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error) {
-	var allGreetings []platformclientv2.Domainentity
-	const pageSize = 100
-	allUsers, resp, err := getAllUsersFn(ctx, p)
+	allUsers, resp, err := getAllUsersForGreetingExport(ctx, p.clientConfig)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get users %s", err)
+		return nil, resp, fmt.Errorf("failed to get users: %w", err)
+	}
+	if allUsers == nil || len(*allUsers) == 0 {
+		empty := []platformclientv2.Domainentity{}
+		return &empty, resp, nil
 	}
 
-	for _, user := range *allUsers {
-		userGreetings, resp, err := p.greetingsApi.GetUserGreetings(*user.Id, pageSize, 1)
-		if err != nil {
-			return nil, resp, fmt.Errorf("failed to get greetings for user %s: %s", *user.Id, err)
-		}
-		if userGreetings.Entities != nil {
-			allGreetings = append(allGreetings, *userGreetings.Entities...)
-			if tfexporter_state.IsExporterActive() {
-				for _, entity := range *userGreetings.Entities {
-					if entity.Id == nil {
-						continue
-					}
-					g, _, gErr := p.greetingsApi.GetGreeting(*entity.Id)
-					if gErr != nil {
-						log.Printf("failed to cache greeting %s: %v", *entity.Id, gErr)
-						continue
-					}
-					if g != nil && g.Id != nil {
-						rc.SetCache(p.greetingCache, *g.Id, *g)
-					}
-				}
-			}
-		}
-		for pageNum := 2; pageNum <= *userGreetings.PageCount; pageNum++ {
-			userGreetings, resp, err := p.greetingsApi.GetUserGreetings(*user.Id, pageSize, pageNum)
-			if err != nil {
-				return nil, resp, fmt.Errorf("failed to get greetings for user %s: %s", *user.Id, err)
-			}
-			if userGreetings.Entities != nil {
-				allGreetings = append(allGreetings, *userGreetings.Entities...)
-				if tfexporter_state.IsExporterActive() {
-					for _, entity := range *userGreetings.Entities {
-						if entity.Id == nil {
-							continue
-						}
-						g, _, gErr := p.greetingsApi.GetGreeting(*entity.Id)
-						if gErr != nil {
-							log.Printf("failed to cache greeting %s: %v", *entity.Id, gErr)
-							continue
-						}
-						if g != nil && g.Id != nil {
-							rc.SetCache(p.greetingCache, *g.Id, *g)
-						}
-					}
-				}
-			}
+	userIDs := make([]string, 0, len(*allUsers))
+	for _, u := range *allUsers {
+		if u.Id != nil {
+			userIDs = append(userIDs, *u.Id)
 		}
 	}
-	return &allGreetings, resp, nil
+	if len(userIDs) == 0 {
+		empty := []platformclientv2.Domainentity{}
+		return &empty, resp, nil
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	concurrency := userGreetingFetchConcurrency()
+	if concurrency > len(userIDs) {
+		concurrency = len(userIDs)
+	}
+	log.Printf("Discovering user greetings for %d users (concurrency=%d)", len(userIDs), concurrency)
+
+	jobs := make(chan string, len(userIDs))
+	for _, userID := range userIDs {
+		jobs <- userID
+	}
+	close(jobs)
+
+	results := make(chan userGreetingCollectResult, concurrency)
+	var wg sync.WaitGroup
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			greetingsApi, releaseGreetingsApi, apiErr := greetingsApiForWorker(ctx, p.clientConfig)
+			if apiErr != nil {
+				results <- userGreetingCollectResult{err: fmt.Errorf("failed to acquire greetings API client: %w", apiErr)}
+				return
+			}
+			defer releaseGreetingsApi()
+
+			for userID := range jobs {
+				if ctx.Err() != nil {
+					return
+				}
+				entities, pageResp, pageErr := collectUserGreetingsForUser(ctx, p, greetingsApi, userID)
+				results <- userGreetingCollectResult{entities: entities, resp: pageResp, err: pageErr}
+				if pageErr != nil {
+					return
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var allGreetings []platformclientv2.Domainentity
+	var lastResp *platformclientv2.APIResponse
+	var collectErr error
+	var processedUsers int64
+
+	for result := range results {
+		if result.err != nil {
+			if collectErr == nil {
+				collectErr = result.err
+				cancel()
+			}
+			continue
+		}
+		if result.resp != nil {
+			lastResp = result.resp
+		}
+		if len(result.entities) > 0 {
+			allGreetings = append(allGreetings, result.entities...)
+		}
+		completed := atomic.AddInt64(&processedUsers, 1)
+		if completed%userGreetingProgressInterval == 0 || completed == int64(len(userIDs)) {
+			log.Printf("User greeting discovery progress: %d/%d users processed", completed, len(userIDs))
+		}
+	}
+
+	if collectErr != nil {
+		return nil, lastResp, collectErr
+	}
+
+	return &allGreetings, lastResp, nil
+}
+
+func getAllUsersForGreetingExport(ctx context.Context, clientConfig *platformclientv2.Configuration) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
+	userProxy := user.GetUserProxy(clientConfig)
+	return userProxy.GetAllUser(ctx)
+}
+
+func userGreetingFetchConcurrency() int {
+	concurrency := defaultUserGreetingConcurrency
+	if provider.SdkClientPool != nil {
+		if poolSize := provider.SdkClientPool.GetMaxClients(); poolSize > 0 {
+			concurrency = poolSize
+		}
+	}
+	if concurrency > maxUserGreetingConcurrency {
+		return maxUserGreetingConcurrency
+	}
+	return concurrency
+}
+
+func greetingsApiForWorker(ctx context.Context, baseConfig *platformclientv2.Configuration) (*platformclientv2.GreetingsApi, func(), error) {
+	if provider.SdkClientPool != nil {
+		clientConfig, err := provider.SdkClientPool.Acquire(ctx)
+		if err != nil {
+			return nil, func() {}, err
+		}
+		return platformclientv2.NewGreetingsApiWithConfig(clientConfig), func() {
+			if releaseErr := provider.SdkClientPool.Release(clientConfig); releaseErr != nil {
+				log.Printf("failed to release SDK client after user greeting fetch: %v", releaseErr)
+			}
+		}, nil
+	}
+	return platformclientv2.NewGreetingsApiWithConfig(baseConfig), func() {}, nil
+}
+
+func collectUserGreetingsForUser(ctx context.Context, p *greetingProxy, greetingsApi *platformclientv2.GreetingsApi, userID string) ([]platformclientv2.Domainentity, *platformclientv2.APIResponse, error) {
+	var collected []platformclientv2.Domainentity
+
+	userGreetings, resp, err := greetingsApi.GetUserGreetings(userID, userGreetingsPageSize, 1)
+	if err != nil {
+		if isGreetingsPermissionDenied(resp) {
+			log.Printf("Skipping greetings for user %s: permission denied (403)", userID)
+			return collected, resp, nil
+		}
+		return nil, resp, fmt.Errorf("failed to get greetings for user %s: %w", userID, err)
+	}
+
+	collected = appendGreetingPage(p, greetingsApi, collected, userGreetings.Entities)
+
+	pageCount := 1
+	if userGreetings != nil && userGreetings.PageCount != nil {
+		pageCount = *userGreetings.PageCount
+	}
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
+		if err := ctx.Err(); err != nil {
+			return nil, resp, err
+		}
+
+		userGreetings, resp, err = greetingsApi.GetUserGreetings(userID, userGreetingsPageSize, pageNum)
+		if err != nil {
+			if isGreetingsPermissionDenied(resp) {
+				log.Printf("Skipping greetings for user %s page %d: permission denied (403)", userID, pageNum)
+				return collected, resp, nil
+			}
+			return nil, resp, fmt.Errorf("failed to get greetings for user %s: %w", userID, err)
+		}
+		collected = appendGreetingPage(p, greetingsApi, collected, userGreetings.Entities)
+	}
+
+	return collected, resp, nil
+}
+
+func isGreetingsPermissionDenied(resp *platformclientv2.APIResponse) bool {
+	return resp != nil && resp.StatusCode == http.StatusForbidden
+}
+
+func appendGreetingPage(p *greetingProxy, greetingsApi *platformclientv2.GreetingsApi, collected []platformclientv2.Domainentity, entities *[]platformclientv2.Domainentity) []platformclientv2.Domainentity {
+	if entities == nil {
+		return collected
+	}
+	collected = append(collected, *entities...)
+	warmGreetingExportCacheFromEntities(p, greetingsApi, entities)
+	return collected
+}
+
+func warmGreetingExportCacheFromEntities(p *greetingProxy, greetingsApi *platformclientv2.GreetingsApi, entities *[]platformclientv2.Domainentity) {
+	if !tfexporter_state.IsExporterActive() {
+		return
+	}
+	for _, entity := range *entities {
+		if entity.Id == nil {
+			continue
+		}
+		g, _, gErr := greetingsApi.GetGreeting(*entity.Id)
+		if gErr != nil {
+			log.Printf("failed to cache greeting %s: %v", *entity.Id, gErr)
+			continue
+		}
+		if g != nil && g.Id != nil {
+			rc.SetCache(p.greetingCache, *g.Id, *g)
+		}
+	}
 }
 
 func createUserGreetingFn(ctx context.Context, p *greetingProxy, body *platformclientv2.Greeting) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
@@ -172,7 +329,11 @@ func getGreetingFromUser(ctx context.Context, p *greetingProxy, userId string, i
 		return greeting, resp, nil
 	}
 
-	for pageNum := 2; pageNum <= *userGreetings.PageCount; pageNum++ {
+	pageCount := 1
+	if userGreetings != nil && userGreetings.PageCount != nil {
+		pageCount = *userGreetings.PageCount
+	}
+	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		userGreetings, resp, err = p.greetingsApi.GetUserGreetings(userId, pageSize, pageNum)
 		if err != nil {
 			return nil, resp, err
@@ -216,32 +377,4 @@ func updateUserGreetingFn(ctx context.Context, p *greetingProxy, greetingId stri
 }
 func deleteUserGreetingFn(ctx context.Context, p *greetingProxy, id string) (*platformclientv2.APIResponse, error) {
 	return p.greetingsApi.DeleteGreeting(id)
-}
-func getAllUsersFn(ctx context.Context, p *greetingProxy) (*[]platformclientv2.User, *platformclientv2.APIResponse, error) {
-	var allUsers []platformclientv2.User
-	const pageSize = 100
-
-	users, resp, err := p.usersApi.GetUsers(pageSize, 1, nil, nil, "", nil, "", nil, "")
-	if err != nil {
-		return nil, resp, fmt.Errorf("failed to get users %s", err)
-	}
-
-	if users.Entities == nil || len(*users.Entities) == 0 {
-		return &allUsers, resp, nil
-	}
-	allUsers = append(allUsers, *users.Entities...)
-
-	for pageNum := 2; pageNum <= *users.PageCount; pageNum++ {
-		users, resp, err := p.usersApi.GetUsers(pageSize, pageNum, nil, nil, "", nil, "", nil, "")
-		if err != nil {
-			return nil, resp, fmt.Errorf("failed to get users %s", err)
-		}
-
-		if users.Entities == nil || len(*users.Entities) == 0 {
-			return &allUsers, resp, nil
-		}
-
-		allUsers = append(allUsers, *users.Entities...)
-	}
-	return &allUsers, resp, nil
 }
