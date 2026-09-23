@@ -38,6 +38,11 @@ The following OAuth scopes are required to use this resource:
 ## Example Usage
 
 ```terraform
+resource "genesyscloud_speechandtextanalytics_topic" "example_topic" {
+  name        = "Example Topic"
+  description = "A sample topic"
+}
+
 resource "genesyscloud_speechandtextanalytics_program" "example_program" {
   name        = "Example Program"
   description = "Example Speech & Text Analytics Program"
@@ -59,7 +64,7 @@ resource "genesyscloud_speechandtextanalytics_program" "example_program" {
 
 - `description` (String) The program description.
 - `tags` (Set of String) The program tags.
-- `topic_ids` (Set of String) The IDs of topics associated to the program.
+- `topic_ids` (Set of String) The IDs of topics associated to the program. Topics are managed by the genesyscloud_speechandtextanalytics_topic resource.
 
 ### Read-Only
 
