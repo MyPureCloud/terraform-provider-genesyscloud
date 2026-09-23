@@ -65,13 +65,13 @@ func (p *conversationsMessagingIntegrationsInstagramIdentityResolutionProxy) get
 func getConversationsMessagingIntegrationsInstagramIdentityResolutionFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramIdentityResolutionProxy, instagramIntegrationId string) (instagramIdentityResolution *platformclientv2.Instagramidentityresolutionconfig, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.conversationsApi.GetConversationsMessagingIntegrationsInstagramIdentityresolution(instagramIntegrationId)
+	return p.conversationsApi.GetConversationsMessagingIdentityresolutionIntegrationsInstagramIntegrationId(instagramIntegrationId)
 }
 
 func putConversationsMessagingIntegrationsInstagramIdentityResolutionFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramIdentityResolutionProxy, instagramIntegrationId string, config *platformclientv2.Instagramidentityresolutionconfig) (instagramIdentityResolution *platformclientv2.Instagramidentityresolutionconfig, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.conversationsApi.PutConversationsMessagingIntegrationsInstagramIdentityresolution(instagramIntegrationId, *config)
+	return p.conversationsApi.PutConversationsMessagingIdentityresolutionIntegrationsInstagramIntegrationId(instagramIntegrationId, *config)
 }
 
 func getConversationsMessagingIntegrationsInstagramByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramIdentityResolutionProxy, instagramIntegrationId string) (instagramIntegration *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {

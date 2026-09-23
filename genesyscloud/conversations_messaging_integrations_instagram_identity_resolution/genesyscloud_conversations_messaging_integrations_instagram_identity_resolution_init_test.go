@@ -4,6 +4,9 @@ import (
 	"sync"
 	"testing"
 
+	cmMessagingSetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
+	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
@@ -28,6 +31,8 @@ func (r *registerTestInstance) registerTestResources() {
 
 	providerResources[ResourceType] = ResourceConversationsMessagingIntegrationsInstagramIdentityResolution()
 	providerResources[instagram.ResourceType] = instagram.ResourceConversationsMessagingIntegrationsInstagram()
+	providerResources[cmSupportedContent.ResourceType] = cmSupportedContent.ResourceSupportedContent()
+	providerResources[cmMessagingSetting.ResourceType] = cmMessagingSetting.ResourceConversationsMessagingSettings()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {

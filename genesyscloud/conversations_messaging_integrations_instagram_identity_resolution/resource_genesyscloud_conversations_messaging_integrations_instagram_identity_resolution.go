@@ -83,7 +83,14 @@ func readConversationsMessagingIntegrationsInstagramIdentityResolution(ctx conte
 		}
 
 		_ = d.Set("instagram_integration_id", instagramIntegrationId)
-		_ = d.Set("resolve_identities", config.ResolveIdentities)
+		if config.ResolveIdentities != nil {
+			_ = d.Set("resolve_identities", *config.ResolveIdentities)
+		} else {
+			_ = d.Set("resolve_identities", true)
+		}
+		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
+			_ = d.Set("division_id", *config.Division.Id)
+		}
 
 		log.Printf("read identity resolution for instagram integration %s", instagramIntegrationId)
 		return cc.CheckState(d)
