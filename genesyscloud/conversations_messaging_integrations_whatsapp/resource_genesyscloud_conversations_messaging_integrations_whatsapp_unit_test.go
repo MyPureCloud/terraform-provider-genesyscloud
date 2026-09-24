@@ -342,7 +342,7 @@ func TestUnitDataSourceWhatsappRead(t *testing.T) {
 		assert.Equal(t, targetName, name)
 		return targetId, false, nil, nil
 	}
-	whatsappProxy.getAllConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy) (conversationsMessagingIntegrationsWhatsapp *[]platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.GetAllConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy) (conversationsMessagingIntegrationsWhatsapp *[]platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		return &[]platformclientv2.Whatsappintegration{
 			{
 				Id:   &targetId,
