@@ -24,9 +24,9 @@ func TestUnitIntegrationWhatsappCreate(t *testing.T) {
 		embeddedSignupAccessToken = uuid.NewString()
 	)
 
-	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy := &ConversationsMessagingIntegrationsWhatsappProxy{}
 
-	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, whatsappIntegrationId, id)
 
 		integrationWhatsappConfig := platformclientv2.Whatsappintegration{
@@ -46,7 +46,7 @@ func TestUnitIntegrationWhatsappCreate(t *testing.T) {
 		return &integrationWhatsappConfig, apiResponse, nil
 	}
 
-	whatsappProxy.createConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, conversationsMessagingIntegrationsWhatsappRequest *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+	whatsappProxy.createConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, conversationsMessagingIntegrationsWhatsappRequest *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 		integrationWhatsappProxy := platformclientv2.Whatsappintegration{}
 
 		assert.Equal(t, name, *conversationsMessagingIntegrationsWhatsappRequest.Name, "conversationsMessagingIntegrationsWhatsappRequest.Name check failed in create createConversationsMessagingIntegrationsWhatsappAttr")
@@ -89,9 +89,9 @@ func TestUnitIntegrationWhatsappRead(t *testing.T) {
 		embeddedSignupAccessToken = uuid.NewString()
 	)
 
-	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy := &ConversationsMessagingIntegrationsWhatsappProxy{}
 
-	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, whatsappIntegrationId, id)
 
 		integrationWhatsappConfig := platformclientv2.Whatsappintegration{
@@ -144,9 +144,9 @@ func TestUnitIntegrationWhatsappDelete(t *testing.T) {
 		embeddedSignupAccessToken = uuid.NewString()
 	)
 
-	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy := &ConversationsMessagingIntegrationsWhatsappProxy{}
 
-	whatsappProxy.deleteConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (*platformclientv2.APIResponse, error) {
+	whatsappProxy.deleteConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, whatsappIntegrationId, id)
 
 		apiResponse := &platformclientv2.APIResponse{
@@ -156,7 +156,7 @@ func TestUnitIntegrationWhatsappDelete(t *testing.T) {
 		return apiResponse, nil
 	}
 
-	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, whatsappIntegrationId, id)
 		apiResponse := &platformclientv2.APIResponse{
 			StatusCode: http.StatusNotFound,
@@ -195,9 +195,9 @@ func TestUnitIntegrationWhatsappUpdate(t *testing.T) {
 		embeddedSignupAccessToken = uuid.NewString()
 	)
 
-	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy := &ConversationsMessagingIntegrationsWhatsappProxy{}
 
-	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, whatsappIntegrationId, id)
 
 		integrationWhatsappConfig := platformclientv2.Whatsappintegration{
@@ -218,7 +218,7 @@ func TestUnitIntegrationWhatsappUpdate(t *testing.T) {
 		return &integrationWhatsappConfig, apiResponse, nil
 	}
 
-	whatsappProxy.updateConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+	whatsappProxy.updateConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 
 		assert.Equal(t, wName, *conversationsMessagingIntegrationsWhatsapp.Name, "conversationsMessagingIntegrationsWhatsapp.Name check failed in updateConversationsMessagingIntegrationsWhatsappAttr")
 		assert.Equal(t, supportedContentId, *conversationsMessagingIntegrationsWhatsapp.SupportedContent.Id, "conversationsMessagingIntegrationsWhatsapp.SupportedContent check failed in updateConversationsMessagingIntegrationsWhatsappAttr")
@@ -272,9 +272,9 @@ func TestUnitIntegrationWhatsappActivate(t *testing.T) {
 		pin                       = "1234"
 	)
 
-	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy := &ConversationsMessagingIntegrationsWhatsappProxy{}
 
-	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappByIdAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, whatsappIntegrationId, id)
 
 		integrationWhatsappConfig := platformclientv2.Whatsappintegration{
@@ -295,7 +295,7 @@ func TestUnitIntegrationWhatsappActivate(t *testing.T) {
 		return &integrationWhatsappConfig, apiResponse, nil
 	}
 
-	whatsappProxy.updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+	whatsappProxy.updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, phoneNumber, *conversationsMessagingIntegrationsWhatsapp.PhoneNumber, "conversationsMessagingIntegrationsWhatsapp.PhoneNumber check failed in updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr")
 		assert.Equal(t, pin, *conversationsMessagingIntegrationsWhatsapp.Pin, "conversationsMessagingIntegrationsWhatsapp.Pin check failed in updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr")
 
@@ -337,12 +337,12 @@ func TestUnitIntegrationWhatsappActivate(t *testing.T) {
 func TestUnitDataSourceWhatsappRead(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
-	whatsappProxy := &conversationsMessagingIntegrationsWhatsappProxy{}
-	whatsappProxy.getConversationsMessagingIntegrationsWhatsappIdByNameAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy := &ConversationsMessagingIntegrationsWhatsappProxy{}
+	whatsappProxy.getConversationsMessagingIntegrationsWhatsappIdByNameAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 		assert.Equal(t, targetName, name)
 		return targetId, false, nil, nil
 	}
-	whatsappProxy.getAllConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy) (conversationsMessagingIntegrationsWhatsapp *[]platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+	whatsappProxy.getAllConversationsMessagingIntegrationsWhatsappAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy) (conversationsMessagingIntegrationsWhatsapp *[]platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 		return &[]platformclientv2.Whatsappintegration{
 			{
 				Id:   &targetId,

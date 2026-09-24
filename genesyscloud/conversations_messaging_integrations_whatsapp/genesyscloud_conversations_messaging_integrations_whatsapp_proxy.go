@@ -19,21 +19,21 @@ out during testing.
 */
 
 // internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *conversationsMessagingIntegrationsWhatsappProxy
+var internalProxy *ConversationsMessagingIntegrationsWhatsappProxy
 
 var whatsappCache = rc.NewResourceCache[platformclientv2.Whatsappintegration]()
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, whatsAppEmbeddedSignupIntegrationRequest *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
-type getAllConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
-type getConversationsMessagingIntegrationsWhatsappIdByNameFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
-type getConversationsMessagingIntegrationsWhatsappByIdFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error)
-type updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
-type updateConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, whatsAppEmbeddedSignupIntegrationRequest *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
-type deleteConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (response *platformclientv2.APIResponse, err error)
+type createConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, whatsAppEmbeddedSignupIntegrationRequest *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
+type getAllConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
+type getConversationsMessagingIntegrationsWhatsappIdByNameFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getConversationsMessagingIntegrationsWhatsappByIdFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error)
+type updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
+type updateConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string, whatsAppEmbeddedSignupIntegrationRequest *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error)
+type deleteConversationsMessagingIntegrationsWhatsappFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (response *platformclientv2.APIResponse, err error)
 
-// conversationsMessagingIntegrationsWhatsappProxy contains all of the methods that call genesys cloud APIs.
-type conversationsMessagingIntegrationsWhatsappProxy struct {
+// ConversationsMessagingIntegrationsWhatsappProxy contains all of the methods that call genesys cloud APIs.
+type ConversationsMessagingIntegrationsWhatsappProxy struct {
 	clientConfig                                                       *platformclientv2.Configuration
 	conversationsApi                                                   *platformclientv2.ConversationsApi
 	createConversationsMessagingIntegrationsWhatsappAttr               createConversationsMessagingIntegrationsWhatsappFunc
@@ -47,10 +47,10 @@ type conversationsMessagingIntegrationsWhatsappProxy struct {
 }
 
 // newConversationsMessagingIntegrationsWhatsappProxy initializes the conversations messaging integrations whatsapp proxy with all of the data needed to communicate with Genesys Cloud
-func newConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsWhatsappProxy {
+func newConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsWhatsappProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
 
-	return &conversationsMessagingIntegrationsWhatsappProxy{
+	return &ConversationsMessagingIntegrationsWhatsappProxy{
 		clientConfig:     clientConfig,
 		conversationsApi: api,
 		createConversationsMessagingIntegrationsWhatsappAttr:               createConversationsMessagingIntegrationsWhatsappFn,
@@ -64,9 +64,9 @@ func newConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformcl
 	}
 }
 
-// getConversationsMessagingIntegrationsWhatsappProxy acts as a singleton to for the internalProxy.  It also ensures
+// GetConversationsMessagingIntegrationsWhatsappProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsWhatsappProxy {
+func GetConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsWhatsappProxy {
 	if internalProxy == nil {
 		internalProxy = newConversationsMessagingIntegrationsWhatsappProxy(clientConfig)
 	}
@@ -75,41 +75,41 @@ func getConversationsMessagingIntegrationsWhatsappProxy(clientConfig *platformcl
 }
 
 // createConversationsMessagingIntegrationsWhatsapp creates a Genesys Cloud conversations messaging integrations whatsapp
-func (p *conversationsMessagingIntegrationsWhatsappProxy) createConversationsMessagingIntegrationsWhatsapp(ctx context.Context, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) createConversationsMessagingIntegrationsWhatsapp(ctx context.Context, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	return p.createConversationsMessagingIntegrationsWhatsappAttr(ctx, p, conversationsMessagingIntegrationsWhatsapp)
 }
 
 // getConversationsMessagingIntegrationsWhatsapp retrieves all Genesys Cloud conversations messaging integrations whatsapp
-func (p *conversationsMessagingIntegrationsWhatsappProxy) getAllConversationsMessagingIntegrationsWhatsapp(ctx context.Context) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) GetAllConversationsMessagingIntegrationsWhatsapp(ctx context.Context) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	return p.getAllConversationsMessagingIntegrationsWhatsappAttr(ctx, p)
 }
 
 // getConversationsMessagingIntegrationsWhatsappIdByName returns a single Genesys Cloud conversations messaging integrations whatsapp by a name
-func (p *conversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsWhatsappIdByNameAttr(ctx, p, name)
 }
 
-// getConversationsMessagingIntegrationsWhatsappById returns a single Genesys Cloud conversations messaging integrations whatsapp by Id
-func (p *conversationsMessagingIntegrationsWhatsappProxy) getConversationsMessagingIntegrationsWhatsappById(ctx context.Context, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+// GetConversationsMessagingIntegrationsWhatsappById returns a single Genesys Cloud conversations messaging integrations whatsapp by Id
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) GetConversationsMessagingIntegrationsWhatsappById(ctx context.Context, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsWhatsappByIdAttr(ctx, p, id)
 }
 
-func (p *conversationsMessagingIntegrationsWhatsappProxy) updateConversationsMessagingIntegrationsWhatsappEmbeddedSignup(ctx context.Context, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) updateConversationsMessagingIntegrationsWhatsappEmbeddedSignup(ctx context.Context, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	return p.updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupAttr(ctx, p, id, conversationsMessagingIntegrationsWhatsapp)
 }
 
 // updateConversationsMessagingIntegrationsWhatsapp updates a Genesys Cloud conversations messaging integrations whatsapp
-func (p *conversationsMessagingIntegrationsWhatsappProxy) updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	return p.updateConversationsMessagingIntegrationsWhatsappAttr(ctx, p, id, conversationsMessagingIntegrationsWhatsapp)
 }
 
 // deleteConversationsMessagingIntegrationsWhatsapp deletes a Genesys Cloud conversations messaging integrations whatsapp by Id
-func (p *conversationsMessagingIntegrationsWhatsappProxy) deleteConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsWhatsappProxy) deleteConversationsMessagingIntegrationsWhatsapp(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteConversationsMessagingIntegrationsWhatsappAttr(ctx, p, id)
 }
 
 // createConversationsMessagingIntegrationsWhatsappFn is an implementation function for creating a Genesys Cloud conversations messaging integrations whatsapp
-func createConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func createConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -117,7 +117,7 @@ func createConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *
 }
 
 // getAllConversationsMessagingIntegrationsWhatsappFn is the implementation for retrieving all conversations messaging integrations whatsapp in Genesys Cloud
-func getAllConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func getAllConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy) (*[]platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -155,7 +155,7 @@ func getAllConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *
 }
 
 // getConversationsMessagingIntegrationsWhatsappIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations whatsapp by name
-func getConversationsMessagingIntegrationsWhatsappIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func getConversationsMessagingIntegrationsWhatsappIdByNameFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -179,7 +179,7 @@ func getConversationsMessagingIntegrationsWhatsappIdByNameFn(ctx context.Context
 }
 
 // getConversationsMessagingIntegrationsWhatsappByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations whatsapp by Id
-func getConversationsMessagingIntegrationsWhatsappByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
+func getConversationsMessagingIntegrationsWhatsappByIdFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegration, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -190,7 +190,7 @@ func getConversationsMessagingIntegrationsWhatsappByIdFn(ctx context.Context, p 
 	return p.conversationsApi.GetConversationsMessagingIntegrationsWhatsappIntegrationId(id, "")
 }
 
-func updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappembeddedsignupintegrationactivationrequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -198,7 +198,7 @@ func updateConversationsMessagingIntegrationsWhatsappEmbeddedSignupFn(ctx contex
 }
 
 // updateConversationsMessagingIntegrationsWhatsappFn is an implementation of the function to update a Genesys Cloud conversations messaging integrations whatsapp
-func updateConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
+func updateConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string, conversationsMessagingIntegrationsWhatsapp *platformclientv2.Whatsappintegrationupdaterequest) (*platformclientv2.Whatsappintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -206,7 +206,7 @@ func updateConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *
 }
 
 // deleteConversationsMessagingIntegrationsWhatsappFn is an implementation function for deleting a Genesys Cloud conversations messaging integrations whatsapp
-func deleteConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *conversationsMessagingIntegrationsWhatsappProxy, id string) (response *platformclientv2.APIResponse, err error) {
+func deleteConversationsMessagingIntegrationsWhatsappFn(ctx context.Context, p *ConversationsMessagingIntegrationsWhatsappProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
