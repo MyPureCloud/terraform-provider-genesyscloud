@@ -305,6 +305,11 @@ func writeConfig(jsonMap map[string]interface{}, path string) diag.Diagnostics {
 
 func postProcessJsonBytes(resource []byte) []byte {
 	resourceStr := string(resource)
+
+	for placeholderId, val := range attributesDecoded {
+		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
+	}
+
 	resourceStr = correctDependsOn(resourceStr, false)
 	return []byte(resourceStr)
 }
