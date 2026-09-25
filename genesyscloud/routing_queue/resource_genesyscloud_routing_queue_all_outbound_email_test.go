@@ -98,9 +98,10 @@ func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
 				),
 			},
 			{
-				// SWAP the declared order (route2 first, route1 second). With a TypeList this is the
-				// scenario that would surface an order-sensitivity problem. Kept as its own step so
-				// the behavior is explicit and observable if the reviewer's concern materializes.
+				// SWAP the declared order (route2 first, route1 second). Asserts state reflects the
+				// NEW declared order — proving reorder-on-read (organizeAllOutboundEmailAddressesForRead)
+				// keeps config order rather than the API's, so there is no perpetual diff. Combined
+				// with the framework's post-apply empty-plan check, this is a real reorder guard.
 				PreConfig: func() { time.Sleep(5 * time.Second) },
 				Config: emailDeps + generateRoutingQueueWithAllOutboundEmail(
 					queueResourceLabel, queueName,
@@ -110,6 +111,9 @@ func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(queuePath, "all_outbound_email_addresses.#", "2"),
+					// State must match the swapped config order: route2 at index 0, route1 at index 1.
+					resource.TestCheckResourceAttrPair(queuePath, "all_outbound_email_addresses.0.route_id", "genesyscloud_routing_email_route."+routeResourceLabel2, "id"),
+					resource.TestCheckResourceAttrPair(queuePath, "all_outbound_email_addresses.1.route_id", "genesyscloud_routing_email_route."+routeResourceLabel1, "id"),
 				),
 			},
 			{
@@ -117,6 +121,18 @@ func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
 				ResourceName:      queuePath,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// all_outbound_email_addresses is an order-sensitive TypeList whose order the API
+				// does not guarantee. On a normal read we reorder to match config
+				// (organizeAllOutboundEmailAddressesForRead), but import has no prior config to
+				// anchor ordering to, so the imported order can differ from the pre-import state.
+				// The set of addresses is still verified via the create/re-apply/swap steps above;
+				// only the import-time ordering of this one attribute is exempted here.
+				ImportStateVerifyIgnore: []string{
+					"all_outbound_email_addresses.0.route_id",
+					"all_outbound_email_addresses.1.route_id",
+					"all_outbound_email_addresses.0.domain_id",
+					"all_outbound_email_addresses.1.domain_id",
+				},
 			},
 		},
 	})
