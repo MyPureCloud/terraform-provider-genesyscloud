@@ -17,46 +17,46 @@ out during testing.
 */
 
 // internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *conversationsMessagingIntegrationsOpenProxy
+var internalProxy *ConversationsMessagingIntegrationsOpenProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, openIntegrationRequest *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error)
-type getAllConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error)
-type getConversationsMessagingIntegrationsOpenIdByNameFunc func(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
-type getConversationsMessagingIntegrationsOpenByIdFunc func(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string) (openIntegrationRequest *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error)
-type updateConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string, openIntegrationRequest *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error)
-type deleteConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string) (response *platformclientv2.APIResponse, err error)
+type createConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, openIntegrationRequest *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error)
+type getAllConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error)
+type getConversationsMessagingIntegrationsOpenIdByNameFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type GetConversationsMessagingIntegrationsOpenByIdFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, id string) (openIntegrationRequest *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error)
+type updateConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, id string, openIntegrationRequest *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error)
+type deleteConversationsMessagingIntegrationsOpenFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, id string) (response *platformclientv2.APIResponse, err error)
 
-// conversationsMessagingIntegrationsOpenProxy contains all of the methods that call genesys cloud APIs.
-type conversationsMessagingIntegrationsOpenProxy struct {
+// ConversationsMessagingIntegrationsOpenProxy contains all of the methods that call genesys cloud APIs.
+type ConversationsMessagingIntegrationsOpenProxy struct {
 	clientConfig                                          *platformclientv2.Configuration
 	conversationsApi                                      *platformclientv2.ConversationsApi
 	createConversationsMessagingIntegrationsOpenAttr      createConversationsMessagingIntegrationsOpenFunc
 	getAllConversationsMessagingIntegrationsOpenAttr      getAllConversationsMessagingIntegrationsOpenFunc
 	getConversationsMessagingIntegrationsOpenIdByNameAttr getConversationsMessagingIntegrationsOpenIdByNameFunc
-	getConversationsMessagingIntegrationsOpenByIdAttr     getConversationsMessagingIntegrationsOpenByIdFunc
+	GetConversationsMessagingIntegrationsOpenByIdAttr     GetConversationsMessagingIntegrationsOpenByIdFunc
 	updateConversationsMessagingIntegrationsOpenAttr      updateConversationsMessagingIntegrationsOpenFunc
 	deleteConversationsMessagingIntegrationsOpenAttr      deleteConversationsMessagingIntegrationsOpenFunc
 }
 
 // newConversationsMessagingIntegrationsOpenProxy initializes the conversations messaging integrations open proxy with all of the data needed to communicate with Genesys Cloud
-func newConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsOpenProxy {
+func newConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsOpenProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	return &conversationsMessagingIntegrationsOpenProxy{
+	return &ConversationsMessagingIntegrationsOpenProxy{
 		clientConfig:     clientConfig,
 		conversationsApi: api,
 		createConversationsMessagingIntegrationsOpenAttr:      createConversationsMessagingIntegrationsOpenFn,
 		getAllConversationsMessagingIntegrationsOpenAttr:      getAllConversationsMessagingIntegrationsOpenFn,
 		getConversationsMessagingIntegrationsOpenIdByNameAttr: getConversationsMessagingIntegrationsOpenIdByNameFn,
-		getConversationsMessagingIntegrationsOpenByIdAttr:     getConversationsMessagingIntegrationsOpenByIdFn,
+		GetConversationsMessagingIntegrationsOpenByIdAttr:     GetConversationsMessagingIntegrationsOpenByIdFn,
 		updateConversationsMessagingIntegrationsOpenAttr:      updateConversationsMessagingIntegrationsOpenFn,
 		deleteConversationsMessagingIntegrationsOpenAttr:      deleteConversationsMessagingIntegrationsOpenFn,
 	}
 }
 
-// getConversationsMessagingIntegrationsOpenProxy acts as a singleton to for the internalProxy.  It also ensures
+// GetConversationsMessagingIntegrationsOpenProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsOpenProxy {
+func GetConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsOpenProxy {
 	if internalProxy == nil {
 		internalProxy = newConversationsMessagingIntegrationsOpenProxy(clientConfig)
 	}
@@ -65,37 +65,37 @@ func getConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclient
 }
 
 // createConversationsMessagingIntegrationsOpen creates a Genesys Cloud conversations messaging integrations open
-func (p *conversationsMessagingIntegrationsOpenProxy) createConversationsMessagingIntegrationsOpen(ctx context.Context, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsOpenProxy) createConversationsMessagingIntegrationsOpen(ctx context.Context, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	return p.createConversationsMessagingIntegrationsOpenAttr(ctx, p, conversationsMessagingIntegrationsOpen)
 }
 
 // getConversationsMessagingIntegrationsOpen retrieves all Genesys Cloud conversations messaging integrations open
-func (p *conversationsMessagingIntegrationsOpenProxy) getAllConversationsMessagingIntegrationsOpen(ctx context.Context) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsOpenProxy) GetAllConversationsMessagingIntegrationsOpen(ctx context.Context) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	return p.getAllConversationsMessagingIntegrationsOpenAttr(ctx, p)
 }
 
 // getConversationsMessagingIntegrationsOpenIdByName returns a single Genesys Cloud conversations messaging integrations open by a name
-func (p *conversationsMessagingIntegrationsOpenProxy) getConversationsMessagingIntegrationsOpenIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsOpenProxy) getConversationsMessagingIntegrationsOpenIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsOpenIdByNameAttr(ctx, p, name)
 }
 
-// getConversationsMessagingIntegrationsOpenById returns a single Genesys Cloud conversations messaging integrations open by Id
-func (p *conversationsMessagingIntegrationsOpenProxy) getConversationsMessagingIntegrationsOpenById(ctx context.Context, id string) (conversationsMessagingIntegrationsOpen *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error) {
-	return p.getConversationsMessagingIntegrationsOpenByIdAttr(ctx, p, id)
+// GetConversationsMessagingIntegrationsOpenById returns a single Genesys Cloud conversations messaging integrations open by Id
+func (p *ConversationsMessagingIntegrationsOpenProxy) GetConversationsMessagingIntegrationsOpenById(ctx context.Context, id string) (conversationsMessagingIntegrationsOpen *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error) {
+	return p.GetConversationsMessagingIntegrationsOpenByIdAttr(ctx, p, id)
 }
 
 // updateConversationsMessagingIntegrationsOpen updates a Genesys Cloud conversations messaging integrations open
-func (p *conversationsMessagingIntegrationsOpenProxy) updateConversationsMessagingIntegrationsOpen(ctx context.Context, id string, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsOpenProxy) updateConversationsMessagingIntegrationsOpen(ctx context.Context, id string, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	return p.updateConversationsMessagingIntegrationsOpenAttr(ctx, p, id, conversationsMessagingIntegrationsOpen)
 }
 
 // deleteConversationsMessagingIntegrationsOpen deletes a Genesys Cloud conversations messaging integrations open by Id
-func (p *conversationsMessagingIntegrationsOpenProxy) deleteConversationsMessagingIntegrationsOpen(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsOpenProxy) deleteConversationsMessagingIntegrationsOpen(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteConversationsMessagingIntegrationsOpenAttr(ctx, p, id)
 }
 
 // createConversationsMessagingIntegrationsOpenFn is an implementation function for creating a Genesys Cloud conversations messaging integrations open
-func createConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func createConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationrequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -103,7 +103,7 @@ func createConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 }
 
 // getAllConversationsMessagingIntegrationsOpenFn is the implementation for retrieving all conversations messaging integrations open in Genesys Cloud
-func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -137,7 +137,7 @@ func getAllConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 }
 
 // getConversationsMessagingIntegrationsOpenIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations open by name
-func getConversationsMessagingIntegrationsOpenIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func getConversationsMessagingIntegrationsOpenIdByNameFn(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -160,8 +160,8 @@ func getConversationsMessagingIntegrationsOpenIdByNameFn(ctx context.Context, p 
 	return "", true, resp, fmt.Errorf("Unable to find conversations messaging integrations open with name %s", name)
 }
 
-// getConversationsMessagingIntegrationsOpenByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations open by Id
-func getConversationsMessagingIntegrationsOpenByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string) (conversationsMessagingIntegrationsOpen *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error) {
+// GetConversationsMessagingIntegrationsOpenByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations open by Id
+func GetConversationsMessagingIntegrationsOpenByIdFn(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, id string) (conversationsMessagingIntegrationsOpen *platformclientv2.Openintegration, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -174,7 +174,7 @@ func getConversationsMessagingIntegrationsOpenByIdFn(ctx context.Context, p *con
 }
 
 // updateConversationsMessagingIntegrationsOpenFn is an implementation of the function to update a Genesys Cloud conversations messaging integrations open
-func updateConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
+func updateConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, id string, conversationsMessagingIntegrationsOpen *platformclientv2.Openintegrationupdaterequest) (*platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -182,7 +182,7 @@ func updateConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conv
 }
 
 // deleteConversationsMessagingIntegrationsOpenFn is an implementation function for deleting a Genesys Cloud conversations messaging integrations open
-func deleteConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *conversationsMessagingIntegrationsOpenProxy, id string) (response *platformclientv2.APIResponse, err error) {
+func deleteConversationsMessagingIntegrationsOpenFn(ctx context.Context, p *ConversationsMessagingIntegrationsOpenProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
