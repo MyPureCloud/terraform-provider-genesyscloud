@@ -382,6 +382,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW (Min: 1 sec, Max: 60 min). Can only be used when ACW is AGENT_REQUESTED, MANDATORY_TIMEOUT or MANDATORY_FORCED_TIMEOUT.
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
 - `agent_owned_routing` (Block List, Max: 1) The Agent Owned Routing settings for the queue. (see [below for nested schema](#nestedblock--agent_owned_routing))
+- `all_outbound_email_addresses` (Block List) The list of all outbound email addresses (domain + route) assigned to the queue. Supports multiple email domains/routes, unlike the deprecated single outbound_email_address block. Requires the multiple outbound email addresses feature to be enabled on the org. When set, outbound_email_address (the default outbound email address) must also be set and must be one of the entries in this list. (see [below for nested schema](#nestedblock--all_outbound_email_addresses))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
 - `bullseye_rings` (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
@@ -436,6 +437,15 @@ Optional:
 - `enable_agent_owned_callbacks` (Boolean) Indicates if Agent Owned Callbacks are enabled for the queue.
 - `max_owned_callback_delay_hours` (Number) The max amount of time a callback can be scheduled out into the future (in hours). Allowable range 1 - 720 hour(s) (inclusive).
 - `max_owned_callback_hours` (Number) The max amount of time a callback can be owned (in hours). Allowable range 1 - 168 hour(s) (inclusive).
+
+
+<a id="nestedblock--all_outbound_email_addresses"></a>
+### Nested Schema for `all_outbound_email_addresses`
+
+Required:
+
+- `domain_id` (String) Unique ID of the email domain. e.g. "test.example.com"
+- `route_id` (String) Unique ID of the email route.
 
 
 <a id="nestedblock--bullseye_rings"></a>
