@@ -248,7 +248,7 @@ func TestUnitGetAllAppleIntegrations(t *testing.T) {
 	)
 
 	appleProxy := &ConversationsMessagingIntegrationsAppleProxy{}
-	appleProxy.getAllConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.GetAllConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		return &[]platformclientv2.Appleintegration{
 			{
 				Id:   &id1,
@@ -282,7 +282,7 @@ func TestUnitDataSourceConversationsMessagingIntegrationsAppleRead(t *testing.T)
 		assert.Equal(t, targetName, name)
 		return targetId, nil, false, nil
 	}
-	appleProxy.getAllConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	appleProxy.GetAllConversationsMessagingIntegrationsAppleAttr = func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 		return &[]platformclientv2.Appleintegration{
 			{
 				Id:   &targetId,

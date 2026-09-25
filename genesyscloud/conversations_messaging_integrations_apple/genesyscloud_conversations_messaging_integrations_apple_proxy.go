@@ -32,7 +32,7 @@ type ConversationsMessagingIntegrationsAppleProxy struct {
 	clientConfig                                           *platformclientv2.Configuration
 	conversationsApi                                       *platformclientv2.ConversationsApi
 	createConversationsMessagingIntegrationsAppleAttr      createConversationsMessagingIntegrationsAppleFunc
-	getAllConversationsMessagingIntegrationsAppleAttr      getAllConversationsMessagingIntegrationsAppleFunc
+	GetAllConversationsMessagingIntegrationsAppleAttr      getAllConversationsMessagingIntegrationsAppleFunc
 	getConversationsMessagingIntegrationsAppleIdByNameAttr getConversationsMessagingIntegrationsAppleIdByNameFunc
 	GetConversationsMessagingIntegrationsAppleByIdAttr     GetConversationsMessagingIntegrationsAppleByIdFunc
 	updateConversationsMessagingIntegrationsAppleAttr      updateConversationsMessagingIntegrationsAppleFunc
@@ -46,7 +46,7 @@ func newConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclien
 		clientConfig:     clientConfig,
 		conversationsApi: api,
 		createConversationsMessagingIntegrationsAppleAttr:      createConversationsMessagingIntegrationsAppleFn,
-		getAllConversationsMessagingIntegrationsAppleAttr:      getAllConversationsMessagingIntegrationsAppleFn,
+		GetAllConversationsMessagingIntegrationsAppleAttr:      getAllConversationsMessagingIntegrationsAppleFn,
 		getConversationsMessagingIntegrationsAppleIdByNameAttr: getConversationsMessagingIntegrationsAppleIdByNameFn,
 		GetConversationsMessagingIntegrationsAppleByIdAttr:     GetConversationsMessagingIntegrationsAppleByIdFn,
 		updateConversationsMessagingIntegrationsAppleAttr:      updateConversationsMessagingIntegrationsAppleFn,
@@ -71,7 +71,7 @@ func (p *ConversationsMessagingIntegrationsAppleProxy) createConversationsMessag
 
 // getAppleIntegration retrieves all Genesys Cloud apple integration
 func (p *ConversationsMessagingIntegrationsAppleProxy) GetAllConversationsMessagingIntegrationsApple(ctx context.Context) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
-	return p.getAllConversationsMessagingIntegrationsAppleAttr(ctx, p)
+	return p.GetAllConversationsMessagingIntegrationsAppleAttr(ctx, p)
 }
 
 // getAppleIntegrationIdByName returns a single Genesys Cloud apple integration by a name

@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	integrationApple "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple"
+	integrationAppleIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple_identity_resolution"
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
 	integrationWhatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -331,6 +332,7 @@ func registerResources() {
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationInstagramIdentityResolution.SetRegistrar(regInstance)       //Registering integrations Instagram identity resolution
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
+	integrationAppleIdentityResolution.SetRegistrar(regInstance)           //Registering conversations messaging integrations apple identity resolution
 	intentsCustomerintents.SetRegistrar(regInstance)                       //Registering customer intent
 	intentsCategories.SetRegistrar(regInstance)                            //Registering intent category
 	caseManagementCaseplan.SetRegistrar(regInstance)                       //Registering case management caseplan
