@@ -58,7 +58,7 @@ func TestUnitIsDefaultIdentityResolutionConfig(t *testing.T) {
 	}
 }
 
-func TestUnitArchitectIvrIdentityResolutionExporterRefAttrs(t *testing.T) {
+func TestUnitConversationsMessagingIntegrationsIdentityResolutionExporterRefAttrs(t *testing.T) {
 	exporter := ConversationsMessagingIntegrationsInstagramIdentityResolutionExporter()
 
 	assert.Equal(t, "genesyscloud_conversations_messaging_integrations_instagram", exporter.RefAttrs["instagram_integration_id"].RefType)

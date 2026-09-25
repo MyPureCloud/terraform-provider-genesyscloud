@@ -123,7 +123,7 @@ func TestUnitResourceConversationsMessagingIntegrationsInstagramIdentityResoluti
 	assert.False(t, diag.HasError(), diag)
 }
 
-func TestUnitGetAllArchitectIvrIdentityResolution(t *testing.T) {
+func TestUnitGetAllConversationsMessagingIntegrationsIdentityResolution(t *testing.T) {
 	defaultInstagramIntegrationId := uuid.NewString()
 	defaultInstagramIntegrationName := "Default Instagram Integration"
 	customInstagramIntegrationId := uuid.NewString()

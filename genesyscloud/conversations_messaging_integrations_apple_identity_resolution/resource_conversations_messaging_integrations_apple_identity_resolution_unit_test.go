@@ -123,7 +123,7 @@ func TestUnitResourceConversationsMessagingIntegrationsAppleIdentityResolutionDe
 	assert.False(t, diag.HasError(), diag)
 }
 
-func TestUnitGetAllArchitectIvrIdentityResolution(t *testing.T) {
+func TestUnitGetAllConversationsMessagingIntegrationsIdentityResolution(t *testing.T) {
 	defaultAppleIntegrationId := uuid.NewString()
 	defaultAppleIntegrationName := "Default Apple Integration"
 	customAppleIntegrationId := uuid.NewString()

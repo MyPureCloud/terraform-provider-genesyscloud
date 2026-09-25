@@ -123,7 +123,7 @@ func TestUnitResourceConversationsMessagingIntegrationsWhatsappIdentityResolutio
 	assert.False(t, diag.HasError(), diag)
 }
 
-func TestUnitGetAllArchitectIvrIdentityResolution(t *testing.T) {
+func TestUnitGetAllConversationsMessagingIntegrationsIdentityResolution(t *testing.T) {
 	defaultWhatsappIntegrationId := uuid.NewString()
 	defaultWhatsappIntegrationName := "Default Whatsapp Integration"
 	customWhatsappIntegrationId := uuid.NewString()

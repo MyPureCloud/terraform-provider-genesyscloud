@@ -58,7 +58,7 @@ func TestUnitIsDefaultIdentityResolutionConfig(t *testing.T) {
 	}
 }
 
-func TestUnitArchitectIvrIdentityResolutionExporterRefAttrs(t *testing.T) {
+func TestUnitConversationsMessagingIntegrationsIdentityResolutionExporterRefAttrs(t *testing.T) {
 	exporter := ConversationsMessagingIntegrationsAppleIdentityResolutionExporter()
 
 	assert.Equal(t, "genesyscloud_conversations_messaging_integrations_apple", exporter.RefAttrs["apple_integration_id"].RefType)
