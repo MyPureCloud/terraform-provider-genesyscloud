@@ -32,7 +32,7 @@ type ConversationsMessagingIntegrationsOpenProxy struct {
 	clientConfig                                          *platformclientv2.Configuration
 	conversationsApi                                      *platformclientv2.ConversationsApi
 	createConversationsMessagingIntegrationsOpenAttr      createConversationsMessagingIntegrationsOpenFunc
-	getAllConversationsMessagingIntegrationsOpenAttr      getAllConversationsMessagingIntegrationsOpenFunc
+	GetAllConversationsMessagingIntegrationsOpenAttr      getAllConversationsMessagingIntegrationsOpenFunc
 	getConversationsMessagingIntegrationsOpenIdByNameAttr getConversationsMessagingIntegrationsOpenIdByNameFunc
 	GetConversationsMessagingIntegrationsOpenByIdAttr     GetConversationsMessagingIntegrationsOpenByIdFunc
 	updateConversationsMessagingIntegrationsOpenAttr      updateConversationsMessagingIntegrationsOpenFunc
@@ -46,7 +46,7 @@ func newConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclient
 		clientConfig:     clientConfig,
 		conversationsApi: api,
 		createConversationsMessagingIntegrationsOpenAttr:      createConversationsMessagingIntegrationsOpenFn,
-		getAllConversationsMessagingIntegrationsOpenAttr:      getAllConversationsMessagingIntegrationsOpenFn,
+		GetAllConversationsMessagingIntegrationsOpenAttr:      getAllConversationsMessagingIntegrationsOpenFn,
 		getConversationsMessagingIntegrationsOpenIdByNameAttr: getConversationsMessagingIntegrationsOpenIdByNameFn,
 		GetConversationsMessagingIntegrationsOpenByIdAttr:     GetConversationsMessagingIntegrationsOpenByIdFn,
 		updateConversationsMessagingIntegrationsOpenAttr:      updateConversationsMessagingIntegrationsOpenFn,
@@ -71,7 +71,7 @@ func (p *ConversationsMessagingIntegrationsOpenProxy) createConversationsMessagi
 
 // getConversationsMessagingIntegrationsOpen retrieves all Genesys Cloud conversations messaging integrations open
 func (p *ConversationsMessagingIntegrationsOpenProxy) GetAllConversationsMessagingIntegrationsOpen(ctx context.Context) (*[]platformclientv2.Openintegration, *platformclientv2.APIResponse, error) {
-	return p.getAllConversationsMessagingIntegrationsOpenAttr(ctx, p)
+	return p.GetAllConversationsMessagingIntegrationsOpenAttr(ctx, p)
 }
 
 // getConversationsMessagingIntegrationsOpenIdByName returns a single Genesys Cloud conversations messaging integrations open by a name

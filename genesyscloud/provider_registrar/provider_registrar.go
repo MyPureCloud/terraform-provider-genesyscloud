@@ -38,6 +38,7 @@ import (
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
 	integrationInstagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
+	cMessagingOpenIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -399,6 +400,7 @@ func registerResources() {
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
 	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
+	cMessagingOpenIdentityResolution.SetRegistrar(regInstance)             //Registering conversations messaging open identity resolution
 	cMessagingWhatsapp.SetRegistrar(regInstance)                           //Registering conversations messaging whatsapp
 	integrationWhatsappIdentityResolution.SetRegistrar(regInstance)        //Registering conversations messaging integrations whatsapp identity resolution
 	location.SetRegistrar(regInstance)                                     //Registering location

@@ -69,7 +69,7 @@ func ConversationsMessagingIntegrationsOpenIdentityResolutionExporter() *resourc
 				AltValues: []string{"*"},
 			},
 			"external_source_id": {
-				RefType: "genesyscloud_identity_resolution_external_source",
+				RefType: "genesyscloud_externalcontacts_external_source",
 			},
 		},
 	}
