@@ -127,6 +127,11 @@ func comparePhoneNumbers(_, old, new string, _ *schema.ResourceData) bool {
 	return phonenumbers.IsNumberMatchWithNumbers(oldNum, newNum) == phonenumbers.EXACT_MATCH
 }
 
+// suppressBlankNotes treats whitespace-only and empty note values as equivalent to avoid a perpetual notes diff (DEVTOOLING-1805).
+func suppressBlankNotes(_, old, new string, _ *schema.ResourceData) bool {
+	return strings.TrimSpace(old) == "" && strings.TrimSpace(new) == ""
+}
+
 func GenerateLocationResourceBasic(
 	resourceLabel,
 	name string,

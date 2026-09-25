@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -100,7 +101,12 @@ func readLocation(ctx context.Context, d *schema.ResourceData, meta interface{})
 		}
 
 		d.Set("name", *location.Name)
-		resourcedata.SetNillableValue(d, "notes", location.Notes)
+		// Normalise a whitespace-only notes value to "" on read so it matches an unset config and avoids a perpetual diff (DEVTOOLING-1805).
+		if location.Notes != nil && strings.TrimSpace(*location.Notes) == "" {
+			d.Set("notes", "")
+		} else {
+			resourcedata.SetNillableValue(d, "notes", location.Notes)
+		}
 		resourcedata.SetNillableValue(d, "path", location.Path)
 		d.Set("emergency_number", flattenLocationEmergencyNumber(location.EmergencyNumber))
 		d.Set("address", flattenLocationAddress(location.Address))
@@ -140,13 +146,9 @@ func updateLocation(ctx context.Context, d *schema.ResourceData, meta interface{
 		if notes != "" {
 			update.Notes = &notes
 		} else {
-			// nil will result in no change occurring, and an empty string is invalid for this field
+			// API rejects an empty string and treats nil as "no change", so send a single space; readLocation normalises it so state stays clean (DEVTOOLING-1805).
 			filler := " "
 			update.Notes = &filler
-			err := d.Set("notes", filler)
-			if err != nil {
-				return nil, util.BuildDiagnosticError(ResourceType, "error setting the value of 'notes' attribute", err)
-			}
 		}
 
 		log.Printf("Updating location %s", name)
