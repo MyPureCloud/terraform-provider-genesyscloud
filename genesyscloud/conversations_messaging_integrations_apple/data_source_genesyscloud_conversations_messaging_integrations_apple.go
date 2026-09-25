@@ -3,9 +3,10 @@ package conversations_messaging_integrations_apple
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
@@ -21,7 +22,7 @@ import (
 // dataSourceAppleIntegrationRead retrieves by name the id in question
 func dataSourceConversationsMessagingIntegrationsAppleRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

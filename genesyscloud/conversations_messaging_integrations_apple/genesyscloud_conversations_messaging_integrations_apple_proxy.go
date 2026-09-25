@@ -17,38 +17,38 @@ out during testing.
 */
 
 // internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *conversationsMessagingIntegrationsAppleProxy
+var internalProxy *ConversationsMessagingIntegrationsAppleProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, request *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
-type getAllConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
-type getConversationsMessagingIntegrationsAppleIdByNameFunc func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
-type getConversationsMessagingIntegrationsAppleByIdFunc func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
-type updateConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string, request *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
-type deleteConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.APIResponse, error)
+type createConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, request *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
+type getAllConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
+type getConversationsMessagingIntegrationsAppleIdByNameFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
+type GetConversationsMessagingIntegrationsAppleByIdFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
+type updateConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, id string, request *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error)
+type deleteConversationsMessagingIntegrationsAppleFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.APIResponse, error)
 
 // appleIntegrationProxy contains all of the methods that call genesys cloud APIs.
-type conversationsMessagingIntegrationsAppleProxy struct {
+type ConversationsMessagingIntegrationsAppleProxy struct {
 	clientConfig                                           *platformclientv2.Configuration
 	conversationsApi                                       *platformclientv2.ConversationsApi
 	createConversationsMessagingIntegrationsAppleAttr      createConversationsMessagingIntegrationsAppleFunc
 	getAllConversationsMessagingIntegrationsAppleAttr      getAllConversationsMessagingIntegrationsAppleFunc
 	getConversationsMessagingIntegrationsAppleIdByNameAttr getConversationsMessagingIntegrationsAppleIdByNameFunc
-	getConversationsMessagingIntegrationsAppleByIdAttr     getConversationsMessagingIntegrationsAppleByIdFunc
+	GetConversationsMessagingIntegrationsAppleByIdAttr     GetConversationsMessagingIntegrationsAppleByIdFunc
 	updateConversationsMessagingIntegrationsAppleAttr      updateConversationsMessagingIntegrationsAppleFunc
 	deleteConversationsMessagingIntegrationsAppleAttr      deleteConversationsMessagingIntegrationsAppleFunc
 }
 
 // newAppleIntegrationProxy initializes the apple integration proxy with all of the data needed to communicate with Genesys Cloud
-func newConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsAppleProxy {
+func newConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsAppleProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	return &conversationsMessagingIntegrationsAppleProxy{
+	return &ConversationsMessagingIntegrationsAppleProxy{
 		clientConfig:     clientConfig,
 		conversationsApi: api,
 		createConversationsMessagingIntegrationsAppleAttr:      createConversationsMessagingIntegrationsAppleFn,
 		getAllConversationsMessagingIntegrationsAppleAttr:      getAllConversationsMessagingIntegrationsAppleFn,
 		getConversationsMessagingIntegrationsAppleIdByNameAttr: getConversationsMessagingIntegrationsAppleIdByNameFn,
-		getConversationsMessagingIntegrationsAppleByIdAttr:     getConversationsMessagingIntegrationsAppleByIdFn,
+		GetConversationsMessagingIntegrationsAppleByIdAttr:     GetConversationsMessagingIntegrationsAppleByIdFn,
 		updateConversationsMessagingIntegrationsAppleAttr:      updateConversationsMessagingIntegrationsAppleFn,
 		deleteConversationsMessagingIntegrationsAppleAttr:      deleteConversationsMessagingIntegrationsAppleFn,
 	}
@@ -56,7 +56,7 @@ func newConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclien
 
 // getAppleIntegrationProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsAppleProxy {
+func GetConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsAppleProxy {
 	if internalProxy == nil {
 		internalProxy = newConversationsMessagingIntegrationsAppleProxy(clientConfig)
 	}
@@ -65,43 +65,43 @@ func getConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclien
 }
 
 // createAppleIntegration creates a Genesys Cloud apple integration
-func (p *conversationsMessagingIntegrationsAppleProxy) createConversationsMessagingIntegrationsApple(ctx context.Context, request *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsAppleProxy) createConversationsMessagingIntegrationsApple(ctx context.Context, request *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	return p.createConversationsMessagingIntegrationsAppleAttr(ctx, p, request)
 }
 
 // getAppleIntegration retrieves all Genesys Cloud apple integration
-func (p *conversationsMessagingIntegrationsAppleProxy) getAllConversationsMessagingIntegrationsApple(ctx context.Context) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsAppleProxy) GetAllConversationsMessagingIntegrationsApple(ctx context.Context) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	return p.getAllConversationsMessagingIntegrationsAppleAttr(ctx, p)
 }
 
 // getAppleIntegrationIdByName returns a single Genesys Cloud apple integration by a name
-func (p *conversationsMessagingIntegrationsAppleProxy) getConversationsMessagingIntegrationsAppleIdByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
+func (p *ConversationsMessagingIntegrationsAppleProxy) getConversationsMessagingIntegrationsAppleIdByName(ctx context.Context, name string) (string, *platformclientv2.APIResponse, bool, error) {
 	return p.getConversationsMessagingIntegrationsAppleIdByNameAttr(ctx, p, name)
 }
 
 // getAppleIntegrationById returns a single Genesys Cloud apple integration by Id
-func (p *conversationsMessagingIntegrationsAppleProxy) getConversationsMessagingIntegrationsAppleById(ctx context.Context, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
-	return p.getConversationsMessagingIntegrationsAppleByIdAttr(ctx, p, id)
+func (p *ConversationsMessagingIntegrationsAppleProxy) GetConversationsMessagingIntegrationsAppleById(ctx context.Context, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+	return p.GetConversationsMessagingIntegrationsAppleByIdAttr(ctx, p, id)
 }
 
 // updateAppleIntegration updates a Genesys Cloud apple integration
-func (p *conversationsMessagingIntegrationsAppleProxy) updateConversationsMessagingIntegrationsApple(ctx context.Context, id string, request *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsAppleProxy) updateConversationsMessagingIntegrationsApple(ctx context.Context, id string, request *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	return p.updateConversationsMessagingIntegrationsAppleAttr(ctx, p, id, request)
 }
 
 // deleteAppleIntegration deletes a Genesys Cloud apple integration by Id
-func (p *conversationsMessagingIntegrationsAppleProxy) deleteConversationsMessagingIntegrationsApple(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsAppleProxy) deleteConversationsMessagingIntegrationsApple(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
 	return p.deleteConversationsMessagingIntegrationsAppleAttr(ctx, p, id)
 }
 
 // createConversationsMessagingIntegrationsAppleFn is an implementation function for creating a Genesys Cloud apple integration
-func createConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, request *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+func createConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, request *platformclientv2.Appleintegrationrequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.conversationsApi.PostConversationsMessagingIntegrationsApple(*request)
 }
 
 // getAllConversationsMessagingIntegrationsAppleFn is the implementation for retrieving all apple integration in Genesys Cloud
-func getAllConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+func getAllConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy) (*[]platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var allAppleIntegrations []platformclientv2.Appleintegration
 	const pageSize = 100
@@ -136,9 +136,9 @@ func getAllConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *con
 }
 
 // getConversationsMessagingIntegrationsAppleIdByNameFn is an implementation of the function to get a Genesys Cloud apple integration by name
-func getConversationsMessagingIntegrationsAppleIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+func getConversationsMessagingIntegrationsAppleIdByNameFn(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	appleIntegrations, resp, err := p.getAllConversationsMessagingIntegrationsApple(ctx)
+	appleIntegrations, resp, err := p.GetAllConversationsMessagingIntegrationsApple(ctx)
 	if err != nil {
 		return "", resp, false, err
 	}
@@ -157,20 +157,20 @@ func getConversationsMessagingIntegrationsAppleIdByNameFn(ctx context.Context, p
 	return "", resp, true, fmt.Errorf("Unable to find apple integration with name %s", name)
 }
 
-// getConversationsMessagingIntegrationsAppleByIdFn is an implementation of the function to get a Genesys Cloud apple integration by Id
-func getConversationsMessagingIntegrationsAppleByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+// GetConversationsMessagingIntegrationsAppleByIdFn is an implementation of the function to get a Genesys Cloud apple integration by Id
+func GetConversationsMessagingIntegrationsAppleByIdFn(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.conversationsApi.GetConversationsMessagingIntegrationsAppleIntegrationId(id, "")
 }
 
 // updateConversationsMessagingIntegrationsAppleFn is an implementation of the function to update a Genesys Cloud apple integration
-func updateConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string, request *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
+func updateConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, id string, request *platformclientv2.Appleintegrationupdaterequest) (*platformclientv2.Appleintegration, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.conversationsApi.PatchConversationsMessagingIntegrationsAppleIntegrationId(id, *request)
 }
 
 // deleteConversationsMessagingIntegrationsAppleFn is an implementation function for deleting a Genesys Cloud apple integration
-func deleteConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *conversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.APIResponse, error) {
+func deleteConversationsMessagingIntegrationsAppleFn(ctx context.Context, p *ConversationsMessagingIntegrationsAppleProxy, id string) (*platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	return p.conversationsApi.DeleteConversationsMessagingIntegrationsAppleIntegrationId(id)
 }
