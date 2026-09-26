@@ -58,14 +58,48 @@ func FunctionZipExportResolver(actionId, exportDirectory, subDirectory string, c
 	functionMap["file_path"] = normalizedPath
 	delete(functionMap, "file_content_hash")
 
+	// zip_id is a Genesys Cloud generated, org-specific GUID (Optional+Computed).
+	// Exporting it produces a hardcoded value that is invalid in a target org and
+	// causes perpetual plan drift, since the platform regenerates it on publish.
+	// Drop it so the platform recomputes it on apply.
+	delete(functionMap, "zip_id")
+
 	configMap["function_config"] = []interface{}{functionMap}
+
+	// For function data actions, request_url_template is set server-side to the
+	// generated function id (an org-specific GUID). Like zip_id, exporting it makes
+	// the config non-portable and causes perpetual drift. Remove it so the platform
+	// recomputes it on apply.
+	removeExportedFunctionRequestUrlTemplate(configMap)
 
 	if resource.State != nil && resource.State.Attributes != nil {
 		resource.State.Attributes["function_config.0.file_path"] = normalizedPath
 		delete(resource.State.Attributes, "function_config.0.file_content_hash")
+		delete(resource.State.Attributes, "function_config.0.zip_id")
+		delete(resource.State.Attributes, "config_request.0.request_url_template")
 	}
 
 	return nil
+}
+
+// removeExportedFunctionRequestUrlTemplate deletes request_url_template from the
+// first config_request block in the exported config map, if present.
+func removeExportedFunctionRequestUrlTemplate(configMap map[string]interface{}) {
+	configRequestRaw, ok := configMap["config_request"]
+	if !ok || configRequestRaw == nil {
+		return
+	}
+	configRequestList, ok := configRequestRaw.([]interface{})
+	if !ok || len(configRequestList) == 0 || configRequestList[0] == nil {
+		return
+	}
+	requestMap, ok := configRequestList[0].(map[string]interface{})
+	if !ok {
+		return
+	}
+	delete(requestMap, "request_url_template")
+	configRequestList[0] = requestMap
+	configMap["config_request"] = configRequestList
 }
 
 func writeFunctionZipExportReadme(directory string) error {

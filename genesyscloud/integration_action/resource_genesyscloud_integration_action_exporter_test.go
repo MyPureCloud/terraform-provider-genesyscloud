@@ -66,6 +66,13 @@ func TestUnitFunctionZipExportResolver(t *testing.T) {
 				"handler":           "dist/index.handler",
 				"file_path":         "xp2025_get_ticket_status.zip",
 				"file_content_hash": "sha256:should-be-removed",
+				"zip_id":            "11111111-1111-1111-1111-111111111111",
+			},
+		},
+		"config_request": []interface{}{
+			map[string]interface{}{
+				"request_type":         "POST",
+				"request_url_template": "22222222-2222-2222-2222-222222222222",
 			},
 		},
 	}
@@ -73,8 +80,10 @@ func TestUnitFunctionZipExportResolver(t *testing.T) {
 		State: &terraform.InstanceState{
 			ID: actionId,
 			Attributes: map[string]string{
-				"function_config.0.file_path":         "xp2025_get_ticket_status.zip",
-				"function_config.0.file_content_hash": "sha256:should-be-removed",
+				"function_config.0.file_path":           "xp2025_get_ticket_status.zip",
+				"function_config.0.file_content_hash":   "sha256:should-be-removed",
+				"function_config.0.zip_id":              "11111111-1111-1111-1111-111111111111",
+				"config_request.0.request_url_template": "22222222-2222-2222-2222-222222222222",
 			},
 		},
 	}
@@ -91,11 +100,27 @@ func TestUnitFunctionZipExportResolver(t *testing.T) {
 	if _, ok := fc["file_content_hash"]; ok {
 		t.Fatalf("file_content_hash should be cleared on export")
 	}
+	if _, ok := fc["zip_id"]; ok {
+		t.Fatalf("zip_id should be cleared on export")
+	}
+	cr := configMap["config_request"].([]interface{})[0].(map[string]interface{})
+	if _, ok := cr["request_url_template"]; ok {
+		t.Fatalf("request_url_template should be cleared on export")
+	}
+	if cr["request_type"] != "POST" {
+		t.Fatalf("request_type should be preserved, got %v", cr["request_type"])
+	}
 	if resource.State.Attributes["function_config.0.file_path"] != expectedPath {
 		t.Fatalf("state file_path not updated")
 	}
 	if _, ok := resource.State.Attributes["function_config.0.file_content_hash"]; ok {
 		t.Fatalf("state file_content_hash should be cleared")
+	}
+	if _, ok := resource.State.Attributes["function_config.0.zip_id"]; ok {
+		t.Fatalf("state zip_id should be cleared")
+	}
+	if _, ok := resource.State.Attributes["config_request.0.request_url_template"]; ok {
+		t.Fatalf("state request_url_template should be cleared")
 	}
 
 	readmePath := filepath.Join(exportDir, FunctionZipExportSubDirectory, "README.md")
