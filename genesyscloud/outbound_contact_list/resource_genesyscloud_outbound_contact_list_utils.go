@@ -89,25 +89,27 @@ func parseOutboundContactListRaw(respBody []byte) (phoneIdx map[string]string, e
 	return buildPhoneColumnTimeZoneNameIndex(raw.PhoneColumns), buildEmailColumnTimeZoneNameIndex(raw.EmailColumns)
 }
 
-func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumn *schema.Set) *[]platformclientv2.Contactphonenumbercolumn {
-	if contactPhoneNumberColumn == nil {
+func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []interface{}) *[]platformclientv2.Contactphonenumbercolumn {
+	if len(contactPhoneNumberColumns) == 0 {
 		return nil
 	}
-	sdkContactPhoneNumberColumnSlice := make([]platformclientv2.Contactphonenumbercolumn, 0)
-	contactPhoneNumberColumnList := contactPhoneNumberColumn.List()
-	for _, configPhoneColumn := range contactPhoneNumberColumnList {
+	sdkContactPhoneNumberColumnSlice := make([]platformclientv2.Contactphonenumbercolumn, 0, len(contactPhoneNumberColumns))
+	for _, configPhoneColumn := range contactPhoneNumberColumns {
 		var sdkContactPhoneNumberColumn platformclientv2.Contactphonenumbercolumn
 
-		contactPhoneNumberColumnMap := configPhoneColumn.(map[string]interface{})
-		if columnName := contactPhoneNumberColumnMap["column_name"].(string); columnName != "" {
+		contactPhoneNumberColumnMap, ok := configPhoneColumn.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if columnName, ok := contactPhoneNumberColumnMap["column_name"].(string); ok && columnName != "" {
 			sdkContactPhoneNumberColumn.ColumnName = &columnName
 		}
-		if varType := contactPhoneNumberColumnMap["type"].(string); varType != "" {
+		if varType, ok := contactPhoneNumberColumnMap["type"].(string); ok && varType != "" {
 			sdkContactPhoneNumberColumn.VarType = &varType
 		}
 		if callableTimeColumnName, ok := contactPhoneNumberColumnMap["callable_time_column_name"].(string); ok && callableTimeColumnName != "" {
 			sdkContactPhoneNumberColumn.CallableTimeColumnName = &callableTimeColumnName
-		} else if callableTimeColumn := contactPhoneNumberColumnMap["callable_time_column"].(string); callableTimeColumn != "" {
+		} else if callableTimeColumn, ok := contactPhoneNumberColumnMap["callable_time_column"].(string); ok && callableTimeColumn != "" {
 			sdkContactPhoneNumberColumn.CallableTimeColumn = &callableTimeColumn
 		}
 
@@ -116,12 +118,12 @@ func buildSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumber
 	return &sdkContactPhoneNumberColumnSlice
 }
 
-func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []platformclientv2.Contactphonenumbercolumn, callableTimeColumnNameIndex map[string]string) *schema.Set {
+func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumberColumns []platformclientv2.Contactphonenumbercolumn, callableTimeColumnNameIndex map[string]string) []interface{} {
 	if len(contactPhoneNumberColumns) == 0 {
 		return nil
 	}
 
-	contactPhoneNumberColumnSet := schema.NewSet(hashOutboundContactListPhoneColumn, []interface{}{})
+	contactPhoneNumberColumnList := make([]interface{}, 0, len(contactPhoneNumberColumns))
 	for _, contactPhoneNumberColumn := range contactPhoneNumberColumns {
 		contactPhoneNumberColumnMap := make(map[string]interface{})
 
@@ -149,20 +151,20 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 			}
 		}
 
-		contactPhoneNumberColumnSet.Add(contactPhoneNumberColumnMap)
+		contactPhoneNumberColumnList = append(contactPhoneNumberColumnList, contactPhoneNumberColumnMap)
 	}
 
-	return contactPhoneNumberColumnSet
+	return contactPhoneNumberColumnList
 }
 
-func mergePhoneColumnsCallableTimeColumnFromState(existing, updated *schema.Set) *schema.Set {
+func mergePhoneColumnsCallableTimeColumnFromState(existing, updated []interface{}) []interface{} {
 	if existing == nil || updated == nil {
 		return updated
 	}
 
-	merged := schema.NewSet(schema.HashResource(outboundContactListContactPhoneNumberColumnResource), []any{})
+	merged := make([]interface{}, 0, len(updated))
 
-	for _, u := range updated.List() {
+	for _, u := range updated {
 		updatedMap, ok := u.(map[string]any)
 		if !ok {
 			continue
@@ -172,7 +174,7 @@ func mergePhoneColumnsCallableTimeColumnFromState(existing, updated *schema.Set)
 			colName, _ := updatedMap["column_name"].(string)
 			colType, _ := updatedMap["type"].(string)
 
-			for _, e := range existing.List() {
+			for _, e := range existing {
 				existingMap, ok := e.(map[string]any)
 				if !ok {
 					continue
@@ -192,7 +194,7 @@ func mergePhoneColumnsCallableTimeColumnFromState(existing, updated *schema.Set)
 			}
 		}
 
-		merged.Add(updatedMap)
+		merged = append(merged, updatedMap)
 	}
 
 	return merged
