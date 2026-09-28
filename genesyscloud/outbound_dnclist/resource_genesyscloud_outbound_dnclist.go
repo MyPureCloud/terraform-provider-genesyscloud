@@ -236,8 +236,17 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
-		// Only get entries for rds type - entries are only supported for rds type
-		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" {
+		// Entries are only supported for rds type lists, and we only reconcile them
+		// when the user actually manages entries in their configuration.
+		//
+		// When entries is omitted from config, we must NOT fetch and set them:
+		// exporting and downloading the full list (potentially millions of phone
+		// numbers) on every read is expensive, and populating entries into state
+		// while config declares none produces a permanent, misleading diff. Worse,
+		// for very large lists it can drive Terraform's plan renderer to exhaust
+		// memory (see DEVTOOLING-1809). Leaving entries untouched keeps state
+		// consistent with config for unmanaged lists.
+		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && configHasEntries(d) {
 			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
 			if err != nil {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
@@ -251,9 +260,9 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			} else {
 				_ = d.Set("entries", normalizedApiEntries)
 			}
-		} else {
-			_ = d.Set("entries", []interface{}{})
 		}
+		// If entries are not managed in config, leave the attribute untouched so
+		// plan shows no phantom changes and no large export is performed.
 
 		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
 		resourcedata.SetNillableValue(d, "contact_method", sdkDncList.ContactMethod)
@@ -268,6 +277,22 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 
 		return cc.CheckState(d)
 	})
+}
+
+// configHasEntries reports whether the user declared a non-empty `entries` block
+// in their configuration. It is null-safe: during operations without a
+// configuration (e.g. terraform import), GetRawConfig returns a null/nil value,
+// in which case we treat entries as unmanaged and return false.
+func configHasEntries(d *schema.ResourceData) bool {
+	rawConfig := d.GetRawConfig()
+	if rawConfig.IsNull() || !rawConfig.IsKnown() {
+		return false
+	}
+	entries := rawConfig.GetAttr("entries")
+	if entries.IsNull() || !entries.IsKnown() {
+		return false
+	}
+	return entries.LengthInt() > 0
 }
 
 func deleteOutboundDncList(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
