@@ -663,6 +663,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"routing_rules":                                  flattenRoutingRules(testRoutingQueue.RoutingRules),
 		"media_settings_call":                            flattenMediaSetting(testRoutingQueue.MediaSettings.Call),
 		"media_settings_email":                           flattenMediaEmailSetting(testRoutingQueue.MediaSettings.Email),
+		"all_outbound_email_addresses":                   flattenAllOutboundEmailAddresses(testRoutingQueue.MediaSettings.Email.AllOutboundEmailAddresses),
 		"media_settings_chat":                            flattenMediaSetting(testRoutingQueue.MediaSettings.Chat),
 		"media_settings_callback":                        flattenMediaSettingCallback(testRoutingQueue.MediaSettings.Callback),
 		"media_settings_message":                         flattenMediaSettingsMessage(testRoutingQueue.MediaSettings.Message),
@@ -876,12 +877,26 @@ func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasett
 }
 
 func generateMediaEmailSettings() platformclientv2.Emailmediasettings {
+	route1 := platformclientv2.Inboundroute{Id: platformclientv2.String("6b6b1f1e-1111-4b1e-9b1e-111111111111")}
+	route2 := platformclientv2.Inboundroute{Id: platformclientv2.String("6b6b1f1e-2222-4b1e-9b1e-222222222222")}
+	route1Ptr := &route1
+	route2Ptr := &route2
 	return platformclientv2.Emailmediasettings{
 		EnableAutoAnswer:       platformclientv2.Bool(true),
 		AlertingTimeoutSeconds: platformclientv2.Int(20),
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: platformclientv2.Float64(0.7),
 			DurationMs: platformclientv2.Int(10000),
+		},
+		AllOutboundEmailAddresses: &[]platformclientv2.Queueemailaddress{
+			{
+				Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String("test.example.com")},
+				Route:  &route1Ptr,
+			},
+			{
+				Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String("test.example.com")},
+				Route:  &route2Ptr,
+			},
 		},
 	}
 }
