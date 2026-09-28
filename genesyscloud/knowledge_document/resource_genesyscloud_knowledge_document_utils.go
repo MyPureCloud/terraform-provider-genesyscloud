@@ -110,27 +110,51 @@ func buildKnowledgeDocumentCategoryId(ctx context.Context, knowledgeBaseId, cate
 	}
 	// DEVTOOLING-1821: the category name query is a partial match, so it can return several
 	// categories whose names contain the requested string. Select the entity whose name matches
-	// exactly instead of taking the first hit.
-	matchingCategory := findExactCategoryMatch(knowledgeCategories.Entities, categoryName)
+	// exactly instead of taking the first hit. This matches the exact-name convention already
+	// used by the genesyscloud_knowledge_label data source.
+	matchingCategory, ambiguous := findExactCategoryMatch(knowledgeCategories.Entities, categoryName)
 	if matchingCategory != nil && matchingCategory.Id != nil {
 		return *matchingCategory.Id, nil
+	}
+	if ambiguous {
+		// Multiple categories match case-insensitively and none matches exactly; picking one would
+		// risk attaching the wrong category. Fail loudly so the user disambiguates by exact casing.
+		return "", util.BuildDiagnosticError(ResourceType, fmt.Sprintf("multiple knowledge categories match name %q case-insensitively in knowledge base %s; specify the exact category name", categoryName, knowledgeBaseId), nil)
 	}
 
 	return "", nil
 }
 
-// findExactCategoryMatch returns the category whose Name equals categoryName exactly, or nil.
-func findExactCategoryMatch(entities *[]platformclientv2.Categoryresponse, categoryName string) *platformclientv2.Categoryresponse {
+// findExactCategoryMatch selects the category matching categoryName.
+// It prefers a case-sensitive exact match. If none exists, it falls back to a unique
+// case-insensitive match (the Knowledge API name filter is case-insensitive, so a config whose
+// casing differs from the stored name should still resolve). It returns (nil, true) only when the
+// case-insensitive fallback is ambiguous (more than one differently-cased candidate), so the caller
+// can fail loudly instead of guessing. Returns (nil, false) when nothing matches at all.
+func findExactCategoryMatch(entities *[]platformclientv2.Categoryresponse, categoryName string) (match *platformclientv2.Categoryresponse, ambiguous bool) {
 	if entities == nil {
-		return nil
+		return nil, false
 	}
+	var caseInsensitive []*platformclientv2.Categoryresponse
 	for i := range *entities {
 		category := &(*entities)[i]
-		if category.Name != nil && *category.Name == categoryName {
-			return category
+		if category.Name == nil {
+			continue
+		}
+		if *category.Name == categoryName {
+			return category, false
+		}
+		if strings.EqualFold(*category.Name, categoryName) {
+			caseInsensitive = append(caseInsensitive, category)
 		}
 	}
-	return nil
+	if len(caseInsensitive) == 1 {
+		return caseInsensitive[0], false
+	}
+	if len(caseInsensitive) > 1 {
+		return nil, true
+	}
+	return nil, false
 }
 
 func buildKnowledgeDocumentLabelIds(ctx context.Context, proxy *knowledgeDocumentProxy, knowledgeBaseId string, labelNames []any) ([]string, diag.Diagnostics) {
@@ -148,7 +172,15 @@ func buildKnowledgeDocumentLabelIds(ctx context.Context, proxy *knowledgeDocumen
 		// whose names contain the requested string (e.g. searching "Home" also returns "Auto and
 		// Home"). Select the entity whose name matches exactly instead of taking the first hit,
 		// which previously attached the wrong label and caused a label_names consistency mismatch.
-		matchingLabel := findExactLabelMatch(knowledgeLabels.Entities, labelName)
+		// This matches the exact-name convention already used by the genesyscloud_knowledge_label
+		// data source.
+		matchingLabel, ambiguous := findExactLabelMatch(knowledgeLabels.Entities, labelName)
+		if ambiguous {
+			// Multiple labels match case-insensitively and none matches exactly; picking one would
+			// risk attaching the wrong label (the original DEVTOOLING-1821 bug). Fail loudly so the
+			// user disambiguates by exact casing.
+			return nil, util.BuildDiagnosticError(ResourceType, fmt.Sprintf("multiple knowledge labels match name %q case-insensitively in knowledge base %s; specify the exact label name", labelName, knowledgeBaseId), nil)
+		}
 		if matchingLabel != nil && matchingLabel.Id != nil {
 			labelIds = append(labelIds, *matchingLabel.Id)
 		}
@@ -156,18 +188,36 @@ func buildKnowledgeDocumentLabelIds(ctx context.Context, proxy *knowledgeDocumen
 	return labelIds, nil
 }
 
-// findExactLabelMatch returns the label whose Name equals labelName exactly, or nil if none match.
-func findExactLabelMatch(entities *[]platformclientv2.Labelresponse, labelName string) *platformclientv2.Labelresponse {
+// findExactLabelMatch selects the label matching labelName.
+// It prefers a case-sensitive exact match. If none exists, it falls back to a unique
+// case-insensitive match (the Knowledge API name filter is case-insensitive, so a config whose
+// casing differs from the stored name should still resolve). It returns (nil, true) only when the
+// case-insensitive fallback is ambiguous (more than one differently-cased candidate), so the caller
+// can fail loudly instead of guessing. Returns (nil, false) when nothing matches at all.
+func findExactLabelMatch(entities *[]platformclientv2.Labelresponse, labelName string) (match *platformclientv2.Labelresponse, ambiguous bool) {
 	if entities == nil {
-		return nil
+		return nil, false
 	}
+	var caseInsensitive []*platformclientv2.Labelresponse
 	for i := range *entities {
 		label := &(*entities)[i]
-		if label.Name != nil && *label.Name == labelName {
-			return label
+		if label.Name == nil {
+			continue
+		}
+		if *label.Name == labelName {
+			return label, false
+		}
+		if strings.EqualFold(*label.Name, labelName) {
+			caseInsensitive = append(caseInsensitive, label)
 		}
 	}
-	return nil
+	if len(caseInsensitive) == 1 {
+		return caseInsensitive[0], false
+	}
+	if len(caseInsensitive) > 1 {
+		return nil, true
+	}
+	return nil, false
 }
 
 func buildKnowledgeDocumentRequest(ctx context.Context, d *schema.ResourceData, proxy *knowledgeDocumentProxy, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentreq, diag.Diagnostics) {
