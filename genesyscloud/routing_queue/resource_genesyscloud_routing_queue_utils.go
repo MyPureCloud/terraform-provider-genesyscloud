@@ -42,6 +42,13 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 		queueMediaSettings.Email = buildSdkMediaEmailSetting(mediaSettingsEmail)
 	}
 
+	if allOutboundEmailAddresses := buildSdkAllOutboundEmailAddresses(d); allOutboundEmailAddresses != nil {
+		if queueMediaSettings.Email == nil {
+			queueMediaSettings.Email = &platformclientv2.Emailmediasettings{}
+		}
+		queueMediaSettings.Email.AllOutboundEmailAddresses = allOutboundEmailAddresses
+	}
+
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
 	if len(mediaSettingsMessage) > 0 {
 		queueMediaSettings.Message = buildSdkMediaSettingsMessage(mediaSettingsMessage)
@@ -693,6 +700,32 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 	return nil
 }
 
+func buildSdkAllOutboundEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Queueemailaddress {
+	allOutboundEmailAddresses, ok := d.GetOk("all_outbound_email_addresses")
+	if !ok {
+		return nil
+	}
+
+	addressList := allOutboundEmailAddresses.([]interface{})
+	emailAddresses := make([]platformclientv2.Queueemailaddress, 0, len(addressList))
+	for _, address := range addressList {
+		settingsMap, ok := address.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: platformclientv2.String(settingsMap["route_id"].(string)),
+		}
+		emailAddresses = append(emailAddresses, platformclientv2.Queueemailaddress{
+			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
+			Route:  &inboundRoute,
+		})
+	}
+
+	return &emailAddresses
+}
+
 func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
 	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
 		if len(agentOwnedRouting) > 0 {
@@ -1173,16 +1206,29 @@ func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
 func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
 
-	if settings.Domain != nil {
+	if settings.Domain != nil && settings.Domain.Id != nil {
 		settingsMap["domain_id"] = *settings.Domain.Id
 	}
 
 	if settings.Route != nil {
-		route := *settings.Route
-		settingsMap["route_id"] = *route.Id
+		if route := *settings.Route; route != nil && route.Id != nil {
+			settingsMap["route_id"] = *route.Id
+		}
 	}
 
 	return settingsMap
+}
+
+func flattenAllOutboundEmailAddresses(addresses *[]platformclientv2.Queueemailaddress) []interface{} {
+	if addresses == nil {
+		return nil
+	}
+
+	addressList := make([]interface{}, 0, len(*addresses))
+	for _, address := range *addresses {
+		addressList = append(addressList, FlattenQueueEmailAddress(address))
+	}
+	return addressList
 }
 
 func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]interface{}, diag.Diagnostics) {
@@ -1257,6 +1303,34 @@ func organizeMembersForRead(schemaMembers, apiMembers []interface{}) []interface
 		return schemaMembers
 	}
 	return apiMembers
+}
+
+// emailAddressKeys returns a "domain_id|route_id" key per entry, used to compare the config and
+// API lists ignoring order.
+func emailAddressKeys(addresses []interface{}) []string {
+	keys := make([]string, 0, len(addresses))
+	for _, address := range addresses {
+		addrMap, ok := address.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		domainID, _ := addrMap["domain_id"].(string)
+		routeID, _ := addrMap["route_id"].(string)
+		keys = append(keys, domainID+"|"+routeID)
+	}
+	return keys
+}
+
+// organizeAllOutboundEmailAddressesForRead keeps the config's declared order when the set of
+// {domain_id, route_id} pairs matches the API result. all_outbound_email_addresses is a TypeList
+// (order-sensitive) — the API does not guarantee order, so without this the state would flip to the
+// API order and produce a perpetual plan diff. Mirrors organizeMembersForRead; we keep TypeList
+// (not TypeSet) intentionally due to the gRPC TypeSet state-corruption issue (DEVTOOLING-1533).
+func organizeAllOutboundEmailAddressesForRead(schemaAddresses, apiAddresses []interface{}) []interface{} {
+	if lists.AreEquivalent(emailAddressKeys(schemaAddresses), emailAddressKeys(apiAddresses)) {
+		return schemaAddresses
+	}
+	return apiAddresses
 }
 
 // clearBullseyeRingMemberGroups clears member groups from bullseye rings before the main update.

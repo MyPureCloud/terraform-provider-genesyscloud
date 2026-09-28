@@ -331,6 +331,16 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
+	if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Email != nil && currentQueue.MediaSettings.Email.AllOutboundEmailAddresses != nil {
+		apiAddresses := flattenAllOutboundEmailAddresses(currentQueue.MediaSettings.Email.AllOutboundEmailAddresses)
+		// Preserve the config's declared order when the set of addresses is unchanged — the API does
+		// not guarantee order and this is a TypeList, so otherwise we'd get a perpetual plan diff.
+		schemaAddresses, _ := d.Get("all_outbound_email_addresses").([]interface{})
+		_ = d.Set("all_outbound_email_addresses", organizeAllOutboundEmailAddressesForRead(schemaAddresses, apiAddresses))
+	} else {
+		_ = d.Set("all_outbound_email_addresses", nil)
+	}
+
 	return nil
 }
 
