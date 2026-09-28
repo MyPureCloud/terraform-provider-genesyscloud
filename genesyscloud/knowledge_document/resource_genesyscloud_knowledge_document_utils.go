@@ -105,12 +105,32 @@ func buildKnowledgeDocumentCategoryId(ctx context.Context, knowledgeBaseId, cate
 		return "", util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge categories error: %s", getErr), resp)
 	}
 
-	if len(*knowledgeCategories.Entities) > 0 {
-		matchingCategory := (*knowledgeCategories.Entities)[0]
+	if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
+		return "", nil
+	}
+	// DEVTOOLING-1821: the category name query is a partial match, so it can return several
+	// categories whose names contain the requested string. Select the entity whose name matches
+	// exactly instead of taking the first hit.
+	matchingCategory := findExactCategoryMatch(knowledgeCategories.Entities, categoryName)
+	if matchingCategory != nil && matchingCategory.Id != nil {
 		return *matchingCategory.Id, nil
 	}
 
 	return "", nil
+}
+
+// findExactCategoryMatch returns the category whose Name equals categoryName exactly, or nil.
+func findExactCategoryMatch(entities *[]platformclientv2.Categoryresponse, categoryName string) *platformclientv2.Categoryresponse {
+	if entities == nil {
+		return nil
+	}
+	for i := range *entities {
+		category := &(*entities)[i]
+		if category.Name != nil && *category.Name == categoryName {
+			return category
+		}
+	}
+	return nil
 }
 
 func buildKnowledgeDocumentLabelIds(ctx context.Context, proxy *knowledgeDocumentProxy, knowledgeBaseId string, labelNames []any) ([]string, diag.Diagnostics) {
@@ -121,12 +141,33 @@ func buildKnowledgeDocumentLabelIds(ctx context.Context, proxy *knowledgeDocumen
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge labels error: %s", getErr), resp)
 		}
-		if len(*knowledgeLabels.Entities) > 0 {
-			matchingLabel := (*knowledgeLabels.Entities)[0]
+		if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
+			continue
+		}
+		// DEVTOOLING-1821: the label name query is a partial match, so it can return several labels
+		// whose names contain the requested string (e.g. searching "Home" also returns "Auto and
+		// Home"). Select the entity whose name matches exactly instead of taking the first hit,
+		// which previously attached the wrong label and caused a label_names consistency mismatch.
+		matchingLabel := findExactLabelMatch(knowledgeLabels.Entities, labelName)
+		if matchingLabel != nil && matchingLabel.Id != nil {
 			labelIds = append(labelIds, *matchingLabel.Id)
 		}
 	}
 	return labelIds, nil
+}
+
+// findExactLabelMatch returns the label whose Name equals labelName exactly, or nil if none match.
+func findExactLabelMatch(entities *[]platformclientv2.Labelresponse, labelName string) *platformclientv2.Labelresponse {
+	if entities == nil {
+		return nil
+	}
+	for i := range *entities {
+		label := &(*entities)[i]
+		if label.Name != nil && *label.Name == labelName {
+			return label
+		}
+	}
+	return nil
 }
 
 func buildKnowledgeDocumentRequest(ctx context.Context, d *schema.ResourceData, proxy *knowledgeDocumentProxy, knowledgeBaseId string) (*platformclientv2.Knowledgedocumentreq, diag.Diagnostics) {

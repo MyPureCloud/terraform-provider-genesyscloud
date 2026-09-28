@@ -155,17 +155,80 @@ func getKnowledgeKnowledgebaseCategoriesFn(ctx context.Context, p *knowledgeDocu
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	pageSize := 1
-	return p.KnowledgeApi.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
+	// DEVTOOLING-1821: the category name query is a partial/prefix match, so a name that is a
+	// substring of another category's name can return multiple entities across multiple pages.
+	// Page through ALL matching entities and return them so the caller can select the exact-name
+	// match rather than relying on the first (possibly wrong) hit.
+	const pageSize = 100
+	var (
+		after       string
+		lastResp    *platformclientv2.APIResponse
+		allEntities []platformclientv2.Categoryresponse
+	)
+	for {
+		categories, resp, err := p.KnowledgeApi.GetKnowledgeKnowledgebaseCategories(knowledgeBaseId, "", after, fmt.Sprintf("%v", pageSize), "", false, categoryName, "", "", false)
+		if err != nil {
+			return categories, resp, err
+		}
+		lastResp = resp
+		if categories == nil || categories.Entities == nil || len(*categories.Entities) == 0 {
+			break
+		}
+		allEntities = append(allEntities, *categories.Entities...)
+
+		if categories.NextUri == nil || *categories.NextUri == "" {
+			break
+		}
+		nextAfter, parseErr := util.GetQueryParamValueFromUri(*categories.NextUri, "after")
+		if parseErr != nil {
+			return categories, resp, fmt.Errorf("failed to parse after cursor from knowledge category nextUri: %s", parseErr)
+		}
+		if nextAfter == "" || nextAfter == after {
+			break
+		}
+		after = nextAfter
+	}
+	return &platformclientv2.Categoryresponselisting{Entities: &allEntities}, lastResp, nil
 }
 
 func getKnowledgeKnowledgebaseLabelsFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelName string) (*platformclientv2.Labellisting, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	pageSize := 1
-	labels, resp, err := p.KnowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", "", fmt.Sprintf("%v", pageSize), labelName, false)
-	return labels, resp, err
+	// DEVTOOLING-1821: the label name query is a partial/prefix match, so a name that is a
+	// substring of another label's name (e.g. "Home" vs "Auto and Home") can return multiple
+	// entities across multiple pages. Page through ALL matching entities and return them so the
+	// caller can select the exact-name match rather than relying on the first (possibly wrong) hit.
+	const pageSize = 100
+	var (
+		after       string
+		lastResp    *platformclientv2.APIResponse
+		allEntities []platformclientv2.Labelresponse
+	)
+	for {
+		labels, resp, err := p.KnowledgeApi.GetKnowledgeKnowledgebaseLabels(knowledgeBaseId, "", after, fmt.Sprintf("%v", pageSize), labelName, false)
+		if err != nil {
+			return labels, resp, err
+		}
+		lastResp = resp
+		if labels == nil || labels.Entities == nil || len(*labels.Entities) == 0 {
+			break
+		}
+		allEntities = append(allEntities, *labels.Entities...)
+
+		if labels.NextUri == nil || *labels.NextUri == "" {
+			break
+		}
+		nextAfter, parseErr := util.GetQueryParamValueFromUri(*labels.NextUri, "after")
+		if parseErr != nil {
+			return labels, resp, fmt.Errorf("failed to parse after cursor from knowledge label nextUri: %s", parseErr)
+		}
+		if nextAfter == "" || nextAfter == after {
+			break
+		}
+		after = nextAfter
+	}
+	return &platformclientv2.Labellisting{Entities: &allEntities}, lastResp, nil
 }
 
 func getKnowledgeKnowledgebaseLabelFn(ctx context.Context, p *knowledgeDocumentProxy, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {
