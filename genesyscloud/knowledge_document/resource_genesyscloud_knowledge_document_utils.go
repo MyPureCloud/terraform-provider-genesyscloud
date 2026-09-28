@@ -105,7 +105,7 @@ func buildKnowledgeDocumentCategoryId(ctx context.Context, knowledgeBaseId, cate
 		return "", util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge categories error: %s", getErr), resp)
 	}
 
-	if knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
+	if knowledgeCategories == nil || knowledgeCategories.Entities == nil || len(*knowledgeCategories.Entities) == 0 {
 		return "", nil
 	}
 	// DEVTOOLING-1821: the category name query is a partial match, so it can return several
@@ -165,7 +165,7 @@ func buildKnowledgeDocumentLabelIds(ctx context.Context, proxy *knowledgeDocumen
 		if getErr != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get page of knowledge labels error: %s", getErr), resp)
 		}
-		if knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
+		if knowledgeLabels == nil || knowledgeLabels.Entities == nil || len(*knowledgeLabels.Entities) == 0 {
 			continue
 		}
 		// DEVTOOLING-1821: the label name query is a partial match, so it can return several labels

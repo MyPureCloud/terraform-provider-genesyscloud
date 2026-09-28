@@ -181,7 +181,7 @@ func getKnowledgeKnowledgebaseCategoriesFn(ctx context.Context, p *knowledgeDocu
 		}
 		nextAfter, parseErr := util.GetQueryParamValueFromUri(*categories.NextUri, "after")
 		if parseErr != nil {
-			return categories, resp, fmt.Errorf("failed to parse after cursor from knowledge category nextUri: %s", parseErr)
+			return categories, resp, fmt.Errorf("failed to parse after cursor from knowledge category nextUri: %w", parseErr)
 		}
 		if nextAfter == "" || nextAfter == after {
 			break
@@ -221,7 +221,7 @@ func getKnowledgeKnowledgebaseLabelsFn(ctx context.Context, p *knowledgeDocument
 		}
 		nextAfter, parseErr := util.GetQueryParamValueFromUri(*labels.NextUri, "after")
 		if parseErr != nil {
-			return labels, resp, fmt.Errorf("failed to parse after cursor from knowledge label nextUri: %s", parseErr)
+			return labels, resp, fmt.Errorf("failed to parse after cursor from knowledge label nextUri: %w", parseErr)
 		}
 		if nextAfter == "" || nextAfter == after {
 			break
