@@ -238,6 +238,99 @@ func TestUnitResourceSpeechAndTextAnalyticsProgramCreateMinimal(t *testing.T) {
 	assert.Equal(t, tName, d.Get("name"))
 }
 
+// TestUnitResourceSpeechAndTextAnalyticsProgramCreatePublished tests that create publishes
+// the program via the publish-job API when published=true and polls the job to completion.
+func TestUnitResourceSpeechAndTextAnalyticsProgramCreatePublished(t *testing.T) {
+	tId := uuid.NewString()
+	tName := "published program"
+	tJobId := uuid.NewString()
+
+	proxy := &sttProgramProxy{}
+
+	proxy.createProgramAttr = func(ctx context.Context, p *sttProgramProxy, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error) {
+		// published is read-only on write; it must never be part of the request body.
+		return buildTestProgram(tId, tName, "", []string{}, []string{}, false), &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	publishCalled := false
+	proxy.publishProgramsAttr = func(ctx context.Context, p *sttProgramProxy, programIds []string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+		publishCalled = true
+		assert.Equal(t, []string{tId}, programIds, "publish should be called with the created program ID")
+		return &platformclientv2.Programjob{Id: &tJobId}, &platformclientv2.APIResponse{StatusCode: http.StatusAccepted}, nil
+	}
+
+	jobPollCalled := false
+	proxy.getPublishJobAttr = func(ctx context.Context, p *sttProgramProxy, jobId string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+		jobPollCalled = true
+		assert.Equal(t, tJobId, jobId)
+		state := "Completed"
+		return &platformclientv2.Programjob{Id: &jobId, State: &state}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	proxy.getProgramAttr = func(ctx context.Context, p *sttProgramProxy, id string) (*platformclientv2.Program, *platformclientv2.APIResponse, error) {
+		return buildTestProgram(tId, tName, "", []string{}, []string{}, true), &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := ResourceSpeechAndTextAnalyticsProgram().Schema
+	resourceDataMap := map[string]interface{}{
+		"name":      tName,
+		"published": true,
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+
+	diag := createProgram(ctx, d, gcloud)
+	assert.False(t, diag.HasError())
+	assert.Equal(t, tId, d.Id())
+	assert.True(t, publishCalled, "publish proxy method should have been called")
+	assert.True(t, jobPollCalled, "publish job should have been polled")
+	assert.Equal(t, true, d.Get("published"))
+}
+
+// TestUnitResourceSpeechAndTextAnalyticsProgramUpdateAlreadyPublished tests that update does not
+// re-publish a program that is already published.
+func TestUnitResourceSpeechAndTextAnalyticsProgramUpdateAlreadyPublished(t *testing.T) {
+	tId := uuid.NewString()
+	tName := "already published program"
+
+	proxy := &sttProgramProxy{}
+	proxy.updateProgramAttr = func(ctx context.Context, p *sttProgramProxy, id string, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error) {
+		// Return a program that is already published.
+		return buildTestProgram(tId, tName, "", []string{}, []string{}, true), &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	proxy.getProgramAttr = func(ctx context.Context, p *sttProgramProxy, id string) (*platformclientv2.Program, *platformclientv2.APIResponse, error) {
+		return buildTestProgram(tId, tName, "", []string{}, []string{}, true), &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	publishCalled := false
+	proxy.publishProgramsAttr = func(ctx context.Context, p *sttProgramProxy, programIds []string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+		publishCalled = true
+		return nil, nil, nil
+	}
+
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := ResourceSpeechAndTextAnalyticsProgram().Schema
+	resourceDataMap := map[string]interface{}{
+		"name":      tName,
+		"published": true,
+	}
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	d.SetId(tId)
+
+	diag := updateProgram(ctx, d, gcloud)
+	assert.False(t, diag.HasError())
+	assert.False(t, publishCalled, "publish should not be called when program is already published")
+}
+
 // TestUnitGetAllPrograms tests the getAllPrograms pagination logic with multiple pages.
 func TestUnitGetAllPrograms(t *testing.T) {
 	tProgramId1 := uuid.NewString()

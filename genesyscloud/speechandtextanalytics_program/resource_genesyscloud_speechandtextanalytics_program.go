@@ -34,6 +34,12 @@ func createProgram(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 	d.SetId(*program.Id)
 
+	if d.Get("published").(bool) {
+		if diagErr := publishProgram(ctx, proxy, d.Id()); diagErr != nil {
+			return diagErr
+		}
+	}
+
 	log.Printf("Created Speech & Text Analytics Program %s", d.Id())
 	return readProgram(ctx, d, meta)
 }
@@ -74,6 +80,15 @@ func updateProgram(ctx context.Context, d *schema.ResourceData, meta interface{}
 	}
 	d.SetId(*program.Id)
 
+	// Publishing is one-way. Only publish when requested and the program is not already published.
+	if d.Get("published").(bool) {
+		if program.Published == nil || !*program.Published {
+			if diagErr := publishProgram(ctx, proxy, d.Id()); diagErr != nil {
+				return diagErr
+			}
+		}
+	}
+
 	log.Printf("Updated Speech & Text Analytics Program %s", d.Id())
 	return readProgram(ctx, d, meta)
 }
@@ -103,6 +118,22 @@ func deleteProgram(ctx context.Context, d *schema.ResourceData, meta interface{}
 		}
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("speech and text analytics program %s still exists", d.Id()), resp))
 	})
+}
+
+// publishProgram starts a publish job for the given program and waits for it to complete.
+func publishProgram(ctx context.Context, proxy *sttProgramProxy, programId string) diag.Diagnostics {
+	log.Printf("Publishing Speech & Text Analytics Program %s", programId)
+	job, resp, err := proxy.publishPrograms(ctx, []string{programId})
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish speech and text analytics program %s: %s", programId, err), resp)
+	}
+	if job != nil && job.Id != nil {
+		if diagErr := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); diagErr != nil {
+			return diagErr
+		}
+	}
+	log.Printf("Published Speech & Text Analytics Program %s", programId)
+	return nil
 }
 
 func getAllPrograms(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {

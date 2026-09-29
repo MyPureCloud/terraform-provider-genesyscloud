@@ -15,12 +15,14 @@ Data source for Genesys Cloud Speech & Text Analytics Programs. Select a program
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/speechandtextanalytics/programs](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-programs)
+* [GET /api/v2/speechandtextanalytics/programs/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-programs-publishjobs--jobId-)
 * [GET /api/v2/speechandtextanalytics/programs/{programId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-programs--programId-)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `speechAndTextAnalytics:program:publish`
 * `speechAndTextAnalytics:program:view`
 
 The following OAuth scopes are required to use this resource:

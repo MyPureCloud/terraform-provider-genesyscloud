@@ -22,7 +22,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 
 func ResourceSpeechAndTextAnalyticsProgram() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Genesys Cloud Speech & Text Analytics Program. Publishing is managed by the separate genesyscloud_speechandtextanalytics_program_publish resource.",
+		Description:   "Genesys Cloud Speech & Text Analytics Program. Set published = true to publish the program via the publish-job API. Publishing is one-way; setting published = false after a program is published has no effect.",
 		CreateContext: provider.CreateWithPooledClient(createProgram),
 		ReadContext:   provider.ReadWithPooledClient(readProgram),
 		UpdateContext: provider.UpdateWithPooledClient(updateProgram),
@@ -55,9 +55,15 @@ func ResourceSpeechAndTextAnalyticsProgram() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"published": {
-				Description: "Whether the program is published. This is a read-only, computed value; use the genesyscloud_speechandtextanalytics_program_publish resource to publish a program.",
+				Description: "Whether the program is published. Set to true to publish the program via the publish-job API. Publishing is one-way; setting this back to false after publishing has no effect.",
 				Type:        schema.TypeBool,
+				Optional:    true,
 				Computed:    true,
+				// Publishing is one-way. Once a program is published the API always returns true,
+				// so suppress plan drift when config tries to move published from true back to false.
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return old == "true" && new == "false"
+				},
 			},
 		},
 	}

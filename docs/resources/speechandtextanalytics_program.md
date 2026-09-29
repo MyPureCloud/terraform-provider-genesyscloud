@@ -2,13 +2,13 @@
 page_title: "genesyscloud_speechandtextanalytics_program Resource - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud Speech & Text Analytics Program. Publishing is managed by the separate genesyscloud_speechandtextanalytics_program_publish resource.
+  Genesys Cloud Speech & Text Analytics Program. Set published = true to publish the program via the publish-job API. Publishing is one-way; setting published = false after a program is published has no effect.
 ---
 # genesyscloud_speechandtextanalytics_program (Resource)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
-Genesys Cloud Speech & Text Analytics Program. Publishing is managed by the separate genesyscloud_speechandtextanalytics_program_publish resource.
+Genesys Cloud Speech & Text Analytics Program. Set published = true to publish the program via the publish-job API. Publishing is one-way; setting published = false after a program is published has no effect.
 
 ## API Usage
 
@@ -16,6 +16,8 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 
 * [GET /api/v2/speechandtextanalytics/programs](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-programs)
 * [POST /api/v2/speechandtextanalytics/programs](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-speechandtextanalytics-programs)
+* [POST /api/v2/speechandtextanalytics/programs/publishjobs](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-speechandtextanalytics-programs-publishjobs)
+* [GET /api/v2/speechandtextanalytics/programs/publishjobs/{jobId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-programs-publishjobs--jobId-)
 * [DELETE /api/v2/speechandtextanalytics/programs/{programId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-speechandtextanalytics-programs--programId-)
 * [GET /api/v2/speechandtextanalytics/programs/{programId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-speechandtextanalytics-programs--programId-)
 * [PUT /api/v2/speechandtextanalytics/programs/{programId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-speechandtextanalytics-programs--programId-)
@@ -27,6 +29,7 @@ The following permissions are required to use this resource:
 * `speechAndTextAnalytics:program:add`
 * `speechAndTextAnalytics:program:delete`
 * `speechAndTextAnalytics:program:edit`
+* `speechAndTextAnalytics:program:publish`
 * `speechAndTextAnalytics:program:view`
 
 The following OAuth scopes are required to use this resource:
@@ -63,11 +66,11 @@ resource "genesyscloud_speechandtextanalytics_program" "example_program" {
 ### Optional
 
 - `description` (String) The program description.
+- `published` (Boolean) Whether the program is published. Set to true to publish the program via the publish-job API. Publishing is one-way; setting this back to false after publishing has no effect.
 - `tags` (Set of String) The program tags.
 - `topic_ids` (Set of String) The IDs of topics associated to the program. Topics are managed by the genesyscloud_speechandtextanalytics_topic resource.
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `published` (Boolean) Whether the program is published. This is a read-only, computed value; use the genesyscloud_speechandtextanalytics_program_publish resource to publish a program.
 

@@ -11,33 +11,39 @@ import (
 var internalProxy *sttProgramProxy
 
 type (
-	createProgramFunc func(ctx context.Context, p *sttProgramProxy, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error)
-	getProgramFunc    func(ctx context.Context, p *sttProgramProxy, id string) (*platformclientv2.Program, *platformclientv2.APIResponse, error)
-	updateProgramFunc func(ctx context.Context, p *sttProgramProxy, id string, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error)
-	deleteProgramFunc func(ctx context.Context, p *sttProgramProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error)
-	listProgramsFunc  func(ctx context.Context, p *sttProgramProxy, nextPage string, pageSize int) (*platformclientv2.Programsentitylisting, *platformclientv2.APIResponse, error)
+	createProgramFunc   func(ctx context.Context, p *sttProgramProxy, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error)
+	getProgramFunc      func(ctx context.Context, p *sttProgramProxy, id string) (*platformclientv2.Program, *platformclientv2.APIResponse, error)
+	updateProgramFunc   func(ctx context.Context, p *sttProgramProxy, id string, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error)
+	deleteProgramFunc   func(ctx context.Context, p *sttProgramProxy, id string, forceDelete bool) (*platformclientv2.APIResponse, error)
+	listProgramsFunc    func(ctx context.Context, p *sttProgramProxy, nextPage string, pageSize int) (*platformclientv2.Programsentitylisting, *platformclientv2.APIResponse, error)
+	publishProgramsFunc func(ctx context.Context, p *sttProgramProxy, programIds []string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error)
+	getPublishJobFunc   func(ctx context.Context, p *sttProgramProxy, jobId string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error)
 )
 
 type sttProgramProxy struct {
-	clientConfig      *platformclientv2.Configuration
-	sttApi            *platformclientv2.SpeechTextAnalyticsApi
-	createProgramAttr createProgramFunc
-	getProgramAttr    getProgramFunc
-	updateProgramAttr updateProgramFunc
-	deleteProgramAttr deleteProgramFunc
-	listProgramsAttr  listProgramsFunc
+	clientConfig        *platformclientv2.Configuration
+	sttApi              *platformclientv2.SpeechTextAnalyticsApi
+	createProgramAttr   createProgramFunc
+	getProgramAttr      getProgramFunc
+	updateProgramAttr   updateProgramFunc
+	deleteProgramAttr   deleteProgramFunc
+	listProgramsAttr    listProgramsFunc
+	publishProgramsAttr publishProgramsFunc
+	getPublishJobAttr   getPublishJobFunc
 }
 
 func newSttProgramProxy(clientConfig *platformclientv2.Configuration) *sttProgramProxy {
 	api := platformclientv2.NewSpeechTextAnalyticsApiWithConfig(clientConfig)
 	return &sttProgramProxy{
-		clientConfig:      clientConfig,
-		sttApi:            api,
-		createProgramAttr: createProgramFn,
-		getProgramAttr:    getProgramFn,
-		updateProgramAttr: updateProgramFn,
-		deleteProgramAttr: deleteProgramFn,
-		listProgramsAttr:  listProgramsFn,
+		clientConfig:        clientConfig,
+		sttApi:              api,
+		createProgramAttr:   createProgramFn,
+		getProgramAttr:      getProgramFn,
+		updateProgramAttr:   updateProgramFn,
+		deleteProgramAttr:   deleteProgramFn,
+		listProgramsAttr:    listProgramsFn,
+		publishProgramsAttr: publishProgramsFn,
+		getPublishJobAttr:   getPublishJobFn,
 	}
 }
 
@@ -66,6 +72,14 @@ func (p *sttProgramProxy) deleteProgram(ctx context.Context, id string, forceDel
 
 func (p *sttProgramProxy) listPrograms(ctx context.Context, nextPage string, pageSize int) (*platformclientv2.Programsentitylisting, *platformclientv2.APIResponse, error) {
 	return p.listProgramsAttr(ctx, p, nextPage, pageSize)
+}
+
+func (p *sttProgramProxy) publishPrograms(ctx context.Context, programIds []string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+	return p.publishProgramsAttr(ctx, p, programIds)
+}
+
+func (p *sttProgramProxy) getPublishJob(ctx context.Context, jobId string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+	return p.getPublishJobAttr(ctx, p, jobId)
 }
 
 func createProgramFn(ctx context.Context, p *sttProgramProxy, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error) {
@@ -112,4 +126,24 @@ func listProgramsFn(ctx context.Context, p *sttProgramProxy, nextPage string, pa
 		return nil, resp, fmt.Errorf("failed to list speech and text analytics programs: %s", err)
 	}
 	return listing, resp, nil
+}
+
+func publishProgramsFn(ctx context.Context, p *sttProgramProxy, programIds []string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	job, resp, err := p.sttApi.PostSpeechandtextanalyticsProgramsPublishjobs(platformclientv2.Programjobrequest{ // POST /api/v2/speechandtextanalytics/programs/publishjobs
+		ProgramIds: &programIds,
+	})
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to publish programs: %s", err)
+	}
+	return job, resp, nil
+}
+
+func getPublishJobFn(ctx context.Context, p *sttProgramProxy, jobId string) (*platformclientv2.Programjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	job, resp, err := p.sttApi.GetSpeechandtextanalyticsProgramsPublishjob(jobId) // GET /api/v2/speechandtextanalytics/programs/publishjobs/{jobId}
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to get programs publish job %s: %s", jobId, err)
+	}
+	return job, resp, nil
 }

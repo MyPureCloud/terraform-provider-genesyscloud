@@ -1,8 +1,15 @@
 package speechandtextanalytics_program
 
 import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 // buildProgramRequest converts Terraform resource data into a Programrequest.
@@ -76,4 +83,27 @@ func flattenProgramToResourceData(d *schema.ResourceData, program *platformclien
 	if program.Published != nil {
 		_ = d.Set("published", *program.Published)
 	}
+}
+
+// waitForPublishJob polls the programs publish job until it completes, fails, or the timeout elapses.
+func waitForPublishJob(ctx context.Context, proxy *sttProgramProxy, jobId string, timeout time.Duration) diag.Diagnostics {
+	return util.WithRetries(ctx, timeout, func() *retry.RetryError {
+		job, resp, err := proxy.getPublishJob(ctx, jobId)
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get programs publish job %s: %s", jobId, err), resp))
+		}
+
+		if job == nil || job.State == nil {
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Programs publish job %s state not available yet", jobId), resp))
+		}
+
+		switch *job.State {
+		case "Completed":
+			return nil
+		case "Failed":
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Programs publish job %s failed", jobId), resp))
+		default:
+			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Programs publish job %s not completed yet (state: %s)", jobId, *job.State), resp))
+		}
+	})
 }
