@@ -117,6 +117,12 @@ func ResourceOrganizationAuthenticationSettings() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 			},
+			`universal_logout`: {
+				Description: `Indicates whether universal logout is enabled for the organization.`,
+				Optional:    true,
+				Default:     false,
+				Type:        schema.TypeBool,
+			},
 			`domain_allowlist_enabled`: {
 				Description: `Indicates whether the domain allowlist is enabled.`,
 				Optional:    true,

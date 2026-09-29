@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -23,7 +23,6 @@ tests for conversations_messaging_integrations_instagram.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
-	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 
 	var (

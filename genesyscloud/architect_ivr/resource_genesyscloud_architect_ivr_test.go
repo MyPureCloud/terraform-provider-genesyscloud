@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,7 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 func TestAccResourceArchitectIvrConfigBasic(t *testing.T) {
@@ -211,7 +212,7 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 
 		didRangeLength       = 100 // Should be at least 50 to avoid index out of bounds errors below
 		didPoolResourceLabel = "did_pool"
-		startNumber          = 4219550120
+		startNumber          = 4219550000 + (rand.Intn(400) * 1000)
 		endNumber            = startNumber + didRangeLength
 		startNumberStr       = fmt.Sprintf("+%v", startNumber)
 		endNumberStr         = fmt.Sprintf("+%v", endNumber)
@@ -219,7 +220,7 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 
 	/*
 		To avoid clashes, try to get final existing did number and create a pool outside that range
-		If err is not nil, use the hardcoded phone number variables
+		If err is not nil, use the randomized fallback phone number variables set above
 	*/
 	lastNumber, err := getLastDidNumberAsInteger()
 	if err == nil {
@@ -228,7 +229,7 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 		startNumberStr = fmt.Sprintf("+%v", startNumber)
 		endNumberStr = fmt.Sprintf("+%v", endNumber)
 	} else {
-		log.Printf("Failed to get last did number for ivr tests: %v", err)
+		log.Printf("Failed to get last did number for ivr tests, using randomized fallback range %s-%s: %v", startNumberStr, endNumberStr, err)
 	}
 
 	allNumbers := createStringArrayOfPhoneNumbers(startNumber, endNumber)

@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 func TestAccResourceOutboundSequence(t *testing.T) {
@@ -115,7 +115,9 @@ func TestAccResourceOutboundSequence(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "name", sequenceName2),
-					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", "on"),
+					// A non-repeating sequence turned "on" runs and can transition to "complete"
+					// before this check executes, so accept either value.
+					util.VerifyAttributeInArrayOfPotentialValues("genesyscloud_outbound_sequence."+sequenceResourceLabel, "status", []string{"on", "complete"}),
 					resource.TestCheckResourceAttr("genesyscloud_outbound_sequence."+sequenceResourceLabel, "repeat", util.FalseValue),
 					resource.TestCheckResourceAttrPair("genesyscloud_outbound_sequence."+sequenceResourceLabel, "campaign_ids.0",
 						"genesyscloud_outbound_campaign."+campaignResourceLabel, "id"),

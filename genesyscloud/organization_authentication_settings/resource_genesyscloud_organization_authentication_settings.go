@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
@@ -78,6 +78,7 @@ func readOrganizationAuthenticationSettings(ctx context.Context, d *schema.Resou
 
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "timeout_settings", tokenTimeOut, flattenTimeOutSettings)
 		resourcedata.SetNillableValue(d, "multifactor_authentication_required", orgAuthSettings.MultifactorAuthenticationRequired)
+		resourcedata.SetNillableValue(d, "universal_logout", orgAuthSettings.UniversalLogout)
 		resourcedata.SetNillableValue(d, "domain_allowlist_enabled", orgAuthSettings.DomainAllowlistEnabled)
 		resourcedata.SetNillableValue(d, "domain_allowlist", orgAuthSettings.DomainAllowlist)
 		resourcedata.SetNillableValue(d, "ip_address_allowlist", orgAuthSettings.IpAddressAllowlist)

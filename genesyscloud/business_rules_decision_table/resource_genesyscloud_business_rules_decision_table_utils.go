@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/chunks"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
@@ -59,19 +59,30 @@ func buildDefaultsToFromProvider(defaultsToList []interface{}) *platformclientv2
 	return nil
 }
 
-// flattenDefaultsTo flattens SDK defaults_to to provider format
+// flattenDefaultsTo flattens SDK defaults_to to provider format.
+// value/values/special are mutually exclusive; always emit all three keys with
+// stable empty siblings so SDKv2 does not introduce null vs "" inconsistencies
+// during Read (DEVTOOLING-1711).
 func flattenDefaultsTo(sdkDefaultsTo *platformclientv2.Decisiontablecolumndefaultrowvalue) []interface{} {
 	if sdkDefaultsTo == nil {
 		return nil
 	}
 
-	defaultsTo := make(map[string]interface{})
+	defaultsTo := map[string]interface{}{
+		"value":   "",
+		"special": "",
+		"values":  []interface{}{},
+	}
 	if sdkDefaultsTo.Special != nil {
 		defaultsTo["special"] = *sdkDefaultsTo.Special
 	} else if sdkDefaultsTo.Value != nil {
 		defaultsTo["value"] = *sdkDefaultsTo.Value
 	} else if sdkDefaultsTo.Values != nil {
-		defaultsTo["values"] = *sdkDefaultsTo.Values
+		values := make([]interface{}, len(*sdkDefaultsTo.Values))
+		for i, v := range *sdkDefaultsTo.Values {
+			values[i] = v
+		}
+		defaultsTo["values"] = values
 	}
 
 	return []interface{}{defaultsTo}

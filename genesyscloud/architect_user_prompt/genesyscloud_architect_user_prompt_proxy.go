@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -203,7 +203,7 @@ func getAllArchitectUserPromptsFilterByNameFn(ctx context.Context, p *architectU
 	var response *platformclientv2.APIResponse
 
 	for _, filter := range strings.Split(exportNameFilter, "") {
-		userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{filter + "*"}, "", "", "", "", includeMediaUris, includeResources, nil)
+		userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{filter + "*"}, "", "", "", "", includeMediaUris, includeResources, nil, nil)
 		if err != nil {
 			return nil, response, err
 		}
@@ -213,7 +213,7 @@ func getAllArchitectUserPromptsFilterByNameFn(ctx context.Context, p *architectU
 		pageCount := *userPrompts.PageCount
 		if userPrompts.Entities != nil || len(*userPrompts.Entities) != 0 {
 			for pageNum := 2; pageNum <= pageCount; pageNum++ {
-				userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, []string{filter + "*"}, "", "", "", "", includeMediaUris, includeResources, nil)
+				userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, []string{filter + "*"}, "", "", "", "", includeMediaUris, includeResources, nil, nil)
 				if getErr != nil {
 					return nil, response, getErr
 				}
@@ -239,7 +239,7 @@ func getArchitectUserPromptPageCountFn(ctx context.Context, p *architectUserProm
 	ctx = provider.EnsureResourceContext(ctx, "genesyscloud_architect_user_prompt")
 
 	const pageSize = 100
-	userPrompts, resp, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", false, false, nil)
+	userPrompts, resp, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", false, false, nil, nil)
 	if err != nil {
 		return 0, resp, err
 	}
@@ -253,7 +253,7 @@ func getAllArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptPro
 	const pageSize = 100
 	var allPrompts []platformclientv2.Prompt
 
-	userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", includeMediaUris, includeResources, nil)
+	userPrompts, response, err := p.architectApi.GetArchitectPrompts(1, pageSize, []string{name}, "", "", "", "", includeMediaUris, includeResources, nil, nil)
 	if err != nil {
 		return nil, response, err
 	}
@@ -266,7 +266,7 @@ func getAllArchitectUserPromptsFn(ctx context.Context, p *architectUserPromptPro
 
 	pageCount := *userPrompts.PageCount
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, []string{name}, "", "", "", "", includeMediaUris, includeResources, nil)
+		userPrompts, response, getErr := p.architectApi.GetArchitectPrompts(pageNum, pageSize, []string{name}, "", "", "", "", includeMediaUris, includeResources, nil, nil)
 		if getErr != nil {
 			return nil, response, getErr
 		}
