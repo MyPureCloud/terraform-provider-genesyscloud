@@ -110,6 +110,10 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 				ResourceName:      ResourceType + "." + resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// example_phrases and source are accepted on write but not returned by the API on
+				// read for the Genesys engine (English/Spanish dialects), so they cannot be
+				// reconstructed on a fresh import. Ignore them during import verification.
+				ImportStateVerifyIgnore: []string{"example_phrases", "source"},
 			},
 		},
 		CheckDestroy: testVerifyDictionaryFeedbackDestroyed,
