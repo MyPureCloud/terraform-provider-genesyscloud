@@ -2240,15 +2240,35 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 	tflog.Warn(g.ctx, fmt.Sprintf("Collected %d errors for resource type %s", len(erroredResources), resType))
 	// Store errored resources in the exporter for later reporting
 	if len(erroredResources) > 0 {
-		g.resourceErrorsMutex.Lock()
-		g.resourceErrors[resType] = erroredResources
-		g.resourceErrorsMutex.Unlock()
+		g.recordResourceErrors(resType, erroredResources)
 		tflog.Warn(g.ctx, fmt.Sprintf("Export completed for %s with %d errors out of %d resources", resType, len(erroredResources), lenResources))
 	} else {
 		tflog.Info(g.ctx, fmt.Sprintf("Export completed successfully for %s: %d resources successfully exported", resType, len(resources)))
 	}
 
 	return resources, nil
+}
+
+// recordResourceErrors stores the instances of resType that could not be read.
+// The map is initialized lazily because Export() seeds it but the MrMo entrypoints
+// never call Export(), so without this the first errored resource on those paths
+// panicked writing to a nil map.
+func (g *GenesysCloudResourceExporter) recordResourceErrors(resType string, errs []ResourceErrorInfo) {
+	g.resourceErrorsMutex.Lock()
+	defer g.resourceErrorsMutex.Unlock()
+	if g.resourceErrors == nil {
+		g.resourceErrors = make(map[string][]ResourceErrorInfo)
+	}
+	g.resourceErrors[resType] = errs
+}
+
+// resourceErrorsForType returns the read failures recorded for resType. Export()'s
+// step #9 reporting is unreachable from the MrMo entrypoints, so this is the only
+// way those failures leave the exporter.
+func (g *GenesysCloudResourceExporter) resourceErrorsForType(resType string) []ResourceErrorInfo {
+	g.resourceErrorsMutex.RLock()
+	defer g.resourceErrorsMutex.RUnlock()
+	return g.resourceErrors[resType]
 }
 
 // collectSchemaBasedExcludedAttributes handles determining if any attributes should be excluded based on schema characteristics (i.e. computed, deprecated, etc)
