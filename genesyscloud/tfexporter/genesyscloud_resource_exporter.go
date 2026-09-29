@@ -2342,6 +2342,13 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 	}
 
 	if mrmo.IsActive() {
+		// resourceStateMutex guards g.resourceExportedForMrMo / g.resourcesExportedForMrMo:
+		// getResourceState runs concurrently (one goroutine per resource ID, see
+		// getResourcesForType), and without this lock the map read-modify-write below
+		// races across goroutines, which Go's runtime detects and kills the process for
+		// ("fatal error: concurrent map writes") once enough resources of a type export
+		// at once.
+		g.resourceStateMutex.Lock()
 		g.resourceExportedForMrMo = resource.Data(state)
 		if g.resourcesExportedForMrMo == nil {
 			tmp := make(map[string][]*schema.ResourceData, 0)
@@ -2351,6 +2358,7 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 			(*g.resourcesExportedForMrMo)[resType] = make([]*schema.ResourceData, 0)
 		}
 		(*g.resourcesExportedForMrMo)[resType] = append((*g.resourcesExportedForMrMo)[resType], resource.Data(state))
+		g.resourceStateMutex.Unlock()
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))
