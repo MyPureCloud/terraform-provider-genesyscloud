@@ -152,13 +152,16 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		if automaticTimeZoneMapping != nil || tfexporter_state.IsExporterActive() {
 			update.AutomaticTimeZoneMapping = buildOutboundSettingsAutomaticTimeZoneMapping(d)
 		}
-		if contactListDefaultRetentionType != "" || tfexporter_state.IsExporterActive() {
+		// This resource uses PATCH, so omitting a field leaves it untouched on the server.
+		// Use d.HasChange so that clearing a previously-set value (e.g. removing
+		// contact_list_default_retention_days) actually pushes the zero value and clears it.
+		if contactListDefaultRetentionType != "" || d.HasChange("contact_list_default_retention_type") || tfexporter_state.IsExporterActive() {
 			update.ContactListDefaultRetentionType = &contactListDefaultRetentionType
 		}
-		if contactListDefaultRetentionDays != 0 || tfexporter_state.IsExporterActive() {
+		if contactListDefaultRetentionDays != 0 || d.HasChange("contact_list_default_retention_days") || tfexporter_state.IsExporterActive() {
 			update.ContactListDefaultRetentionDays = &contactListDefaultRetentionDays
 		}
-		if timeZone != "" || tfexporter_state.IsExporterActive() {
+		if timeZone != "" || d.HasChange("time_zone") || tfexporter_state.IsExporterActive() {
 			update.TimeZone = &timeZone
 		}
 
