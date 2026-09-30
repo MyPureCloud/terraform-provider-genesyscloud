@@ -112,6 +112,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 		if sdkResponse.MessagingTemplate != nil {
 			_ = d.Set("messaging_template", flattenMessagingTemplate(sdkResponse.MessagingTemplate))
 		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "form", sdkResponse.Form, flattenForm)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "asset_ids", sdkResponse.Assets, flattenAddressableEntityRefs)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "footer", sdkResponse.Footer, flattenFooterTemplate)
 
