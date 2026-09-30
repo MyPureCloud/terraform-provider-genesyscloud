@@ -108,7 +108,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
     description       = "Custom function for data processing"
     handler           = "index.handler"
     runtime           = "nodejs22.x"
-    timeout_seconds   = 30
+    timeout_seconds   = 15 //ranges from 1 to 15 seconds
     file_path         = "${local.working_dir.integration_action}/function.zip"
     file_content_hash = filesha256("${local.working_dir.integration_action}/function.zip")
   }
