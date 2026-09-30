@@ -145,7 +145,10 @@ func updateFlow(ctx context.Context, d *schema.ResourceData, meta any) (diags di
 		}
 	}
 
-	flowJob, response, err := p.CreateFlowsDeployJob(ctx)
+	createStubs := d.Get("create_stubs").(bool)
+	log.Printf("Registering deploy job for flow %s, %s with create_stubs: %v", flowName, d.Id(), createStubs)
+
+	flowJob, response, err := p.CreateFlowsDeployJob(ctx, createStubs)
 
 	if err != nil || response.Error != nil {
 		var errorString string
