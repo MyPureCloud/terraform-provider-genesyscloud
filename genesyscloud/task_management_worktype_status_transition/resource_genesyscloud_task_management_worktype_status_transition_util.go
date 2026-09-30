@@ -7,12 +7,16 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 )
+
+const noChangeForRecordError = "No change for the record is obtained"
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
 // The worktype_status resource saves the status id as <worktypeId>/<statusId>.
@@ -145,7 +149,7 @@ func buildWorkitemStatusTransitionPatch(d *schema.ResourceData, workitemStatus *
 	body.SetField("Description", workitemStatus.Description)
 	body.SetField("DestinationStatusIds", destinationStatusIds)
 
-	if defaultDestinationStatusId != nil {
+	if defaultDestinationStatusId != nil && *defaultDestinationStatusId != "" {
 		body.SetField("DefaultDestinationStatusId", defaultDestinationStatusId)
 	} else {
 		setOptionalStringPatchField(d, body, "default_destination_status_id", "DefaultDestinationStatusId", isCreate)
@@ -166,7 +170,9 @@ func setOptionalStringPatchField(d *schema.ResourceData, body *Workitemstatusupd
 		}
 	}
 
-	if !isCreate && d.HasChange(key) {
+	// On update, always send JSON null so optional fields can be cleared. Gating on
+	// HasChange misses unsets when StateFunc normalizes status IDs.
+	if !isCreate {
 		body.SetField(fieldName, nil)
 	}
 }
@@ -178,9 +184,133 @@ func setOptionalIntPatchField(d *schema.ResourceData, body *Workitemstatusupdate
 		return
 	}
 
-	if !isCreate && d.HasChange(key) {
+	if !isCreate {
 		body.SetField(fieldName, nil)
 	}
+}
+
+func isNoChangeForRecordError(err error, resp *platformclientv2.APIResponse) bool {
+	if resp != nil && strings.Contains(resp.ErrorMessage, noChangeForRecordError) {
+		return true
+	}
+	return err != nil && strings.Contains(err.Error(), noChangeForRecordError)
+}
+
+// destinationStatusIdsOmittedFromConfig reports whether destination_status_ids is absent or
+// empty in Terraform config. An empty list means the Workitem can transition to all other
+// statuses; the API then returns the expanded list, which must not be written back to state.
+func destinationStatusIdsOmittedFromConfig(d *schema.ResourceData) bool {
+	if d == nil {
+		return false
+	}
+	raw := d.GetRawConfig()
+	if !raw.IsKnown() || raw.IsNull() || !raw.CanIterateElements() {
+		return false
+	}
+	attr := raw.GetAttr("destination_status_ids")
+	if !attr.IsKnown() {
+		return false
+	}
+	if attr.IsNull() {
+		return true
+	}
+	if attr.Type().IsListType() || attr.Type().IsSetType() || attr.Type().IsTupleType() {
+		return attr.LengthInt() == 0
+	}
+	return false
+}
+
+func setDestinationStatusIdsState(d *schema.ResourceData, workitemStatus *platformclientv2.Workitemstatus, importing bool) {
+	// Import reads should populate destinations from the API. Afterwards, an empty
+	// destination_status_ids in config/state means "all other statuses"; do not write
+	// the API-expanded list back or terraform plan never settles.
+	if !importing {
+		if destinationStatusIdsOmittedFromConfig(d) {
+			_ = d.Set("destination_status_ids", []interface{}{})
+			return
+		}
+		if dest, ok := d.GetOk("destination_status_ids"); !ok || len(dest.([]interface{})) == 0 {
+			_ = d.Set("destination_status_ids", []interface{}{})
+			return
+		}
+	}
+	if workitemStatus == nil || workitemStatus.DestinationStatuses == nil {
+		return
+	}
+	destinationStatuses := make([]interface{}, len(*workitemStatus.DestinationStatuses))
+	for i, v := range *workitemStatus.DestinationStatuses {
+		if v.Id != nil {
+			destinationStatuses[i] = *v.Id
+		}
+	}
+	_ = d.Set("destination_status_ids", destinationStatuses)
+}
+
+func normalizeStatusIdList(ids []string) []string {
+	out := make([]string, len(ids))
+	for i, id := range ids {
+		out[i] = fetchWorktypeStatusTerraformId(id)
+	}
+	return out
+}
+
+func destinationStatusIdsFromWorkitemStatus(status *platformclientv2.Workitemstatus) []string {
+	if status == nil || status.DestinationStatuses == nil {
+		return []string{}
+	}
+	ids := make([]string, 0, len(*status.DestinationStatuses))
+	for _, s := range *status.DestinationStatuses {
+		if s.Id != nil {
+			ids = append(ids, *s.Id)
+		}
+	}
+	return ids
+}
+
+// workitemStatusTransitionMatchesConfig reports whether API state already matches the
+// Terraform config. An empty destination_status_ids list means "all other statuses", so
+// it is not compared against the expanded API list.
+func workitemStatusTransitionMatchesConfig(d *schema.ResourceData, status *platformclientv2.Workitemstatus) bool {
+	if d == nil || status == nil {
+		return false
+	}
+
+	desiredDefault := resourcedata.GetNillableValue[string](d, "default_destination_status_id")
+	if desiredDefault != nil && *desiredDefault != "" {
+		id := fetchWorktypeStatusTerraformId(*desiredDefault)
+		if status.DefaultDestinationStatus == nil || status.DefaultDestinationStatus.Id == nil || *status.DefaultDestinationStatus.Id != id {
+			return false
+		}
+	} else if status.DefaultDestinationStatus != nil && status.DefaultDestinationStatus.Id != nil && *status.DefaultDestinationStatus.Id != "" {
+		return false
+	}
+
+	if delay, ok := d.GetOk("status_transition_delay_seconds"); ok {
+		desired := delay.(int)
+		if status.StatusTransitionDelaySeconds == nil || *status.StatusTransitionDelaySeconds != desired {
+			return false
+		}
+	} else if status.StatusTransitionDelaySeconds != nil && *status.StatusTransitionDelaySeconds != 0 {
+		return false
+	}
+
+	if timeVal, ok := d.GetOk("status_transition_time"); ok {
+		desired := timeVal.(string)
+		if desired != "" && (status.StatusTransitionTime == nil || *status.StatusTransitionTime != desired) {
+			return false
+		}
+	} else if status.StatusTransitionTime != nil && *status.StatusTransitionTime != "" {
+		return false
+	}
+
+	desiredDest := lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids")
+	if desiredDest != nil && len(*desiredDest) > 0 {
+		if !lists.AreEquivalent(normalizeStatusIdList(*desiredDest), destinationStatusIdsFromWorkitemStatus(status)) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func GenerateWorktypeStatusResourceWithDependsOn(
