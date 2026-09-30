@@ -131,6 +131,7 @@ import (
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
 	dictionaryFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_dictionaryfeedback"
+	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
 	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -271,6 +272,7 @@ func registerResources() {
 	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
 	architectSchedules.SetRegistrar(regInstance)                           //Registering architect schedules
 	dictionaryFeedback.SetRegistrar(regInstance)                           //Registering dictionary feedback
+	sttSettings.SetRegistrar(regInstance)                                  //Registering speech and text analytics settings
 	sttTopic.SetRegistrar(regInstance)                                     //Registering speech and text analytics topics
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
