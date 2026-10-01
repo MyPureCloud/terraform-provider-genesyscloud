@@ -83,10 +83,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func getJourneyActionMapProxy(clientConfig *platformclientv2.Configuration) *journeyActionMapProxy {
-	if internalProxy == nil {
-		internalProxy = newJourneyActionMapProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newJourneyActionMapProxy)
 }
 
 // createJourneyActionMap creates a Genesys Cloud journey action map

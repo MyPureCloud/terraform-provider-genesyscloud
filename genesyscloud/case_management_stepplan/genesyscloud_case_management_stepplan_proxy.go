@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 const caseplanAPIVersionLatest = "latest"
@@ -36,10 +37,7 @@ func newCaseManagementStepplanProxy(clientConfig *platformclientv2.Configuration
 }
 
 func getCaseManagementStepplanProxy(clientConfig *platformclientv2.Configuration) *caseManagementStepplanProxy {
-	if internalProxy == nil {
-		internalProxy = newCaseManagementStepplanProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newCaseManagementStepplanProxy)
 }
 
 func (p *caseManagementStepplanProxy) listStepplansForStage(ctx context.Context, caseplanID, stageplanID string) ([]platformclientv2.Stepplan, *platformclientv2.APIResponse, error) {

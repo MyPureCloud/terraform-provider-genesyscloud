@@ -70,10 +70,7 @@ func newRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuratio
 // getRespManagementRespAssetProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getRespManagementRespAssetProxy(clientConfig *platformclientv2.Configuration) *responsemanagementResponseassetProxy {
-	if internalProxy == nil {
-		internalProxy = newRespManagementRespAssetProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRespManagementRespAssetProxy)
 }
 
 func (p *responsemanagementResponseassetProxy) getAllResponseAssets(ctx context.Context) (*[]platformclientv2.Responseasset, *platformclientv2.APIResponse, error) {

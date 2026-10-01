@@ -67,10 +67,7 @@ func newQualityFormsSurveyProxy(clientConfig *platformclientv2.Configuration) *q
 // getQualityFormsSurveyProxy acts as a singleton for the internalProxy and ensures
 // only one instance of the proxy exists
 func getQualityFormsSurveyProxy(clientConfig *platformclientv2.Configuration) *qualityFormsSurveyProxy {
-	if internalProxy == nil {
-		internalProxy = newQualityFormsSurveyProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newQualityFormsSurveyProxy)
 }
 
 // createQualityFormsSurvey creates a Genesys Cloud quality forms survey

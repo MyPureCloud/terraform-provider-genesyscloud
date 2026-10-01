@@ -41,10 +41,7 @@ func newRoutingQueueConditionalGroupActivationProxy(clientConfig *platformclient
 }
 
 func getRoutingQueueConditionalGroupActivationProxy(clientConfig *platformclientv2.Configuration) *routingQueueConditionalGroupActivationProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueConditionalGroupActivationProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueConditionalGroupActivationProxy)
 }
 
 func (p *routingQueueConditionalGroupActivationProxy) getRoutingQueueById(ctx context.Context, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {

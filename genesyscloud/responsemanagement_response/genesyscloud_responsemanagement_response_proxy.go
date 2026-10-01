@@ -57,10 +57,7 @@ func newResponsemanagementResponseProxy(clientConfig *platformclientv2.Configura
 // getResponsemanagementResponseProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getResponsemanagementResponseProxy(clientConfig *platformclientv2.Configuration) *responsemanagementResponseProxy {
-	if internalProxy == nil {
-		internalProxy = newResponsemanagementResponseProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newResponsemanagementResponseProxy)
 }
 
 // createResponsemanagementResponse creates a Genesys Cloud responsemanagement response

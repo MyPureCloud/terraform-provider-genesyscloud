@@ -57,10 +57,7 @@ func newOutboundCallanalysisresponsesetProxy(clientConfig *platformclientv2.Conf
 // getOutboundCallanalysisresponsesetProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundCallanalysisresponsesetProxy(clientConfig *platformclientv2.Configuration) *outboundCallanalysisresponsesetProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundCallanalysisresponsesetProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundCallanalysisresponsesetProxy)
 }
 
 // createOutboundCallanalysisresponseset creates a Genesys Cloud outbound callanalysisresponseset

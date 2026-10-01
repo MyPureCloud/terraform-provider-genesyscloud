@@ -50,10 +50,7 @@ func newphoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 // getPhoneBaseProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getPhoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseProxy {
-	if internalProxy == nil {
-		internalProxy = newphoneBaseProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newphoneBaseProxy)
 }
 
 func (p *phoneBaseProxy) getPhoneBaseSetting(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {

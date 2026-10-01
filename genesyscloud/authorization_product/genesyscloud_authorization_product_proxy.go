@@ -41,10 +41,7 @@ func newauthProductProxy(clientConfig *platformclientv2.Configuration) *authProd
 // getauthProductProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getauthProductProxy(clientConfig *platformclientv2.Configuration) *authProductProxy {
-	if internalProxy == nil {
-		internalProxy = newauthProductProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newauthProductProxy)
 }
 
 // getAuthorizationProduct returns a single Genesys Cloud authorization product by a name

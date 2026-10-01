@@ -135,10 +135,7 @@ func newSiteProxy(clientConfig *platformclientv2.Configuration) *SiteProxy {
 // GetSiteProxy acts as a singleton for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func GetSiteProxy(clientConfig *platformclientv2.Configuration) *SiteProxy {
-	if internalProxy == nil {
-		internalProxy = newSiteProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSiteProxy)
 }
 
 // GetAllSites retrieves all managed Genesys Cloud Sites

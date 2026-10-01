@@ -8,6 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -65,11 +66,7 @@ func newDictionaryFeedbackProxy(clientConfig *platformclientv2.Configuration) *d
 // getDictionaryFeedbackProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getDictionaryFeedbackProxy(clientConfig *platformclientv2.Configuration) *dictionaryFeedbackProxy {
-	if internalProxy == nil {
-		internalProxy = newDictionaryFeedbackProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newDictionaryFeedbackProxy)
 }
 
 // createDictionaryFeedback creates a Genesys Cloud dictionary feedback

@@ -57,11 +57,7 @@ func newConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclien
 // getAppleIntegrationProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getConversationsMessagingIntegrationsAppleProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsAppleProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsAppleProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsAppleProxy)
 }
 
 // createAppleIntegration creates a Genesys Cloud apple integration

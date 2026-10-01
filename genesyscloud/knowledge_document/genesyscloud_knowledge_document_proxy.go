@@ -89,11 +89,7 @@ func newKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *kn
 }
 
 func GetKnowledgeDocumentProxy(clientConfig *platformclientv2.Configuration) *knowledgeDocumentProxy {
-	if internalProxy == nil {
-		internalProxy = newKnowledgeDocumentProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newKnowledgeDocumentProxy)
 }
 
 func (p *knowledgeDocumentProxy) getKnowledgeDocumentByTitle(ctx context.Context, title string, knowledgeBaseName string, categoryName string) (string, bool, *platformclientv2.APIResponse, error) {

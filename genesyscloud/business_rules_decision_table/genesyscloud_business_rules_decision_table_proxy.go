@@ -112,10 +112,7 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 // getBusinessRulesDecisionTableProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configuration) *BusinessRulesDecisionTableProxy {
-	if internalProxy == nil {
-		internalProxy = newBusinessRulesDecisionTableProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newBusinessRulesDecisionTableProxy)
 }
 
 // Method implementations that delegate to the function attributes

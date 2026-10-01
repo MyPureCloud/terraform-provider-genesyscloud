@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
@@ -49,11 +50,7 @@ func newGreetingProxy(clientConfig *platformclientv2.Configuration) *greetingPro
 }
 
 func getGreeetingProxy(clientConfig *platformclientv2.Configuration) *greetingProxy {
-	if internalProxy == nil {
-		internalProxy = newGreetingProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newGreetingProxy)
 }
 
 func (p *greetingProxy) getAllGreetings(ctx context.Context) (*[]platformclientv2.Domainentity, *platformclientv2.APIResponse, error) {

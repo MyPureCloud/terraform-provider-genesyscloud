@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 var internalProxy *conversationsSettingsProxy
@@ -33,10 +34,7 @@ func newConversationsSettingsProxy(clientConfig *platformclientv2.Configuration)
 // getConversationsSettingsProxy acts as a singleton to for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getConversationsSettingsProxy(clientConfig *platformclientv2.Configuration) *conversationsSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsSettingsProxy)
 }
 
 // getConversationsSettings retrieves the Genesys Cloud conversations settings

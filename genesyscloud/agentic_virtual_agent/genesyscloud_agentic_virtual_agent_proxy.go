@@ -67,10 +67,7 @@ func newAgenticVirtualAgentProxy(clientConfig *platformclientv2.Configuration) *
 
 // getAgenticVirtualAgentProxy returns the singleton proxy instance.
 func getAgenticVirtualAgentProxy(clientConfig *platformclientv2.Configuration) *agenticVirtualAgentProxy {
-	if internalProxy == nil {
-		internalProxy = newAgenticVirtualAgentProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAgenticVirtualAgentProxy)
 }
 
 // Public proxy methods (delegate to function attributes for testability)

@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -25,7 +26,7 @@ func TestUnitGetCustomRetryTimeout_Default(t *testing.T) {
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
 
-	timeout := GetCustomRetryTimeout()
+	timeout := GetCustomRetryTimeout(context.Background())
 	expectedTimeout := 5 * time.Minute
 
 	if timeout != expectedTimeout {
@@ -54,7 +55,7 @@ func TestUnitGetCustomRetryTimeout_EnvVar(t *testing.T) {
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
 
-	timeout := GetCustomRetryTimeout()
+	timeout := GetCustomRetryTimeout(context.Background())
 	expectedTimeout := 30 * time.Second
 
 	if timeout != expectedTimeout {
@@ -83,7 +84,7 @@ func TestUnitGetCustomRetryTimeout_ZeroEnvVar(t *testing.T) {
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
 
-	timeout := GetCustomRetryTimeout()
+	timeout := GetCustomRetryTimeout(context.Background())
 
 	if timeout != 0 {
 		t.Errorf("Expected zero timeout for fail-fast, got %v", timeout)
@@ -111,7 +112,7 @@ func TestUnitGetCustomRetryTimeout_InvalidEnvVar(t *testing.T) {
 	providerConfig = nil
 	defer func() { providerConfig = originalConfig }()
 
-	timeout := GetCustomRetryTimeout()
+	timeout := GetCustomRetryTimeout(context.Background())
 	expectedTimeout := 5 * time.Minute
 
 	if timeout != expectedTimeout {
@@ -134,8 +135,44 @@ func TestUnitGetCustomRetryTimeout_UsesProviderMetaValue(t *testing.T) {
 	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
 	defer setProviderMeta(originalMeta)
 
-	if got := GetCustomRetryTimeout(); got != 1*time.Second {
+	if got := GetCustomRetryTimeout(context.Background()); got != 1*time.Second {
 		t.Fatalf("expected provider meta timeout 1s, got %v", got)
+	}
+}
+
+// TestUnitGetCustomRetryTimeout_ContextOverrideTakesPrecedence proves the fix: a
+// per-call ContextWithCustomRetryTimeout override wins over both the env var and
+// ProviderMeta, and — critically — two different contexts carry two different
+// values with no shared state between them, unlike the env var / ProviderMeta
+// singleton this replaces for MRMO-style concurrent callers.
+func TestUnitGetCustomRetryTimeout_ContextOverrideTakesPrecedence(t *testing.T) {
+	originalEnv := os.Getenv(customRetryTimeoutEnvVar)
+	os.Setenv(customRetryTimeoutEnvVar, "30s")
+	defer func() {
+		if originalEnv != "" {
+			os.Setenv(customRetryTimeoutEnvVar, originalEnv)
+		} else {
+			os.Unsetenv(customRetryTimeoutEnvVar)
+		}
+	}()
+
+	originalMeta := providerMeta
+	setProviderMeta(&ProviderMeta{CustomRetryTimeout: 1 * time.Second})
+	defer setProviderMeta(originalMeta)
+
+	ctxA := ContextWithCustomRetryTimeout(context.Background(), 300*time.Second)
+	ctxB := ContextWithCustomRetryTimeout(context.Background(), 0)
+
+	if got := GetCustomRetryTimeout(ctxA); got != 300*time.Second {
+		t.Fatalf("expected ctxA override 300s (over env var 30s and provider meta 1s), got %v", got)
+	}
+	if got := GetCustomRetryTimeout(ctxB); got != 0 {
+		t.Fatalf("expected ctxB override 0s, got %v", got)
+	}
+	// A context with no override still falls through to provider meta, unaffected
+	// by either override above.
+	if got := GetCustomRetryTimeout(context.Background()); got != 1*time.Second {
+		t.Fatalf("expected unrelated context to still see provider meta 1s, got %v", got)
 	}
 }
 
