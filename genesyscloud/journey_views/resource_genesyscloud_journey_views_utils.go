@@ -289,6 +289,7 @@ func buildCharts(d *schema.ResourceData) *[]platformclientv2.Journeyviewchart {
 		//element.Id = getStringPointerFromInterface(elemMap["id"])
 		chart.Name = getStringPointerFromInterface(chartMap["name"])
 		chart.Version = getIntPointerFromInterface(chartMap["version"])
+		chart.Rank = getIntPointerFromInterface(chartMap["rank"])
 		if metricsSlice, ok := chartMap["metrics"].([]interface{}); ok {
 			chart.Metrics = buildMetrics(metricsSlice)
 		}
@@ -559,6 +560,7 @@ func flattenCharts(charts *[]platformclientv2.Journeyviewchart) []interface{} {
 		resourcedata.SetMapValueIfNotNil(chartsMap, "id", chart.Id)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "name", chart.Name)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "version", chart.Version)
+		resourcedata.SetMapValueIfNotNil(chartsMap, "rank", chart.Rank)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "metrics", chart.Metrics, flattenMetrics)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_time", chart.GroupByTime)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_max", chart.GroupByMax)
