@@ -151,6 +151,19 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeBool,
 				Default:     false,
 			},
+			`service_level_target`: {
+				Description:  `The target service level for Workitems created from the Worktype. The default value is 100.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntBetween(1, 100),
+			},
+			`unassigned_division_contacts_enabled`: {
+				Description: `When set to true, will allow Workitems to be associated with External Contacts that are not assigned to any division. Default value is true.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }
