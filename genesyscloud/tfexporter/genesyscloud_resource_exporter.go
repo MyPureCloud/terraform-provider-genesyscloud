@@ -2483,13 +2483,16 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), fullAttributePath, exporters, exportingState, exportFormat, false)
+			nestedUnresolved, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), fullAttributePath, exporters, exportingState, exportFormat, false)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[attributeConfigKey] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), fullAttributePath, exporters, exportingState, exportFormat); len(arr) > 0 {
+			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.([]interface{}), fullAttributePath, exporters, exportingState, exportFormat)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
+			if len(arr) > 0 {
 				configMap[attributeConfigKey] = arr
 			} else {
 				// Remove empty arrays
@@ -2538,13 +2541,21 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			g.resolveValueToDataSource(exporter, configMap, fullAttributePath, val)
 		}
 
-		if attr, ok := attrInUnResolvableAttrs(attributeConfigKey, exporter.UnResolvableAttributes); ok {
+		attr, ok := attrInUnResolvableAttrs(fullAttributePath, exporter.UnResolvableAttributes)
+		if !ok {
+			attr, ok = attrInUnResolvableAttrs(attributeConfigKey, exporter.UnResolvableAttributes)
+		}
+		if ok {
 			if resourceBlockType != "data" {
-				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, attributeConfigKey)
+				unresolvableName := attributeConfigKey
+				if prevAttr != "" {
+					unresolvableName = strings.ReplaceAll(fullAttributePath, ".", "_")
+				}
+				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, unresolvableName)
 				unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
 					ResourceType:  resourceType,
 					ResourceLabel: resourceLabel,
-					Name:          attributeConfigKey,
+					Name:          unresolvableName,
 					Schema:        attr,
 				})
 				if properties, ok := attr.Elem.(*schema.Resource); ok {
@@ -2763,21 +2774,25 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	currAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter,
 	exportingState bool,
-	exportFormat string) []interface{} {
+	exportFormat string) ([]interface{}, []unresolvableAttributeInfo) {
 	resourceType := resource.Type
 	exporter := exporters[resourceType]
 	result := []interface{}{}
+	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
 	for _, val := range anArray {
 		switch val.(type) {
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportFormat, false)
+			nestedUnresolved, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportFormat, false)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat); len(arr) > 0 {
+			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
+			if len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:
@@ -2808,7 +2823,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 			result = append(result, val)
 		}
 	}
-	return result
+	return result, unresolvableAttrs
 }
 
 func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
