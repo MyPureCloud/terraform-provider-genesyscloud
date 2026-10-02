@@ -37,6 +37,12 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
 	}
+	if retentionType := d.Get("retention_type").(string); retentionType != "" {
+		contactRequest.RetentionType = &retentionType
+	}
+	if retentionDays := d.Get("retention_days").(int); retentionDays != 0 {
+		contactRequest.RetentionDays = &retentionDays
+	}
 	return contactRequest
 }
 
@@ -57,6 +63,12 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 	}
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
+	}
+	if retentionType := d.Get("retention_type").(string); retentionType != "" {
+		contactRequest.RetentionType = &retentionType
+	}
+	if retentionDays := d.Get("retention_days").(int); retentionDays != 0 {
+		contactRequest.RetentionDays = &retentionDays
 	}
 	return contactRequest
 }

@@ -45,6 +45,9 @@ func createOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
+	retentionType := d.Get("retention_type").(string)
+	retentionDays := d.Get("retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlisttemplateProxy(sdkConfig)
@@ -67,6 +70,15 @@ func createOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	}
 	if zipCodeColumnName != "" {
 		sdkContactListTemplate.ZipCodeColumnName = &zipCodeColumnName
+	}
+	if retentionType != "" {
+		sdkContactListTemplate.RetentionType = &retentionType
+	}
+	if retentionDays != 0 {
+		sdkContactListTemplate.RetentionDays = &retentionDays
+	}
+	if timeZone != "" {
+		sdkContactListTemplate.TimeZone = &timeZone
 	}
 
 	log.Printf("Creating Outbound Contact List Template %s", name)
@@ -88,6 +100,9 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
+	retentionType := d.Get("retention_type").(string)
+	retentionDays := d.Get("retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlisttemplateProxy(sdkConfig)
@@ -110,6 +125,15 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	}
 	if zipCodeColumnName != "" {
 		sdkContactListTemplate.ZipCodeColumnName = &zipCodeColumnName
+	}
+	if retentionType != "" {
+		sdkContactListTemplate.RetentionType = &retentionType
+	}
+	if retentionDays != 0 {
+		sdkContactListTemplate.RetentionDays = &retentionDays
+	}
+	if timeZone != "" {
+		sdkContactListTemplate.TimeZone = &timeZone
 	}
 
 	log.Printf("Updating Outbound Contact List Template %s", name)
@@ -231,6 +255,15 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 		}
 		if sdkContactListTemplate.ColumnDataTypeSpecifications != nil {
 			_ = d.Set("column_data_type_specifications", flattenSdkOutboundContactListTemplateColumnDataTypeSpecifications(*sdkContactListTemplate.ColumnDataTypeSpecifications))
+		}
+		if sdkContactListTemplate.RetentionType != nil {
+			_ = d.Set("retention_type", *sdkContactListTemplate.RetentionType)
+		}
+		if sdkContactListTemplate.RetentionDays != nil {
+			_ = d.Set("retention_days", *sdkContactListTemplate.RetentionDays)
+		}
+		if sdkContactListTemplate.TimeZone != nil {
+			_ = d.Set("time_zone", *sdkContactListTemplate.TimeZone)
 		}
 
 		log.Printf("Read Outbound Contact List Template %s %s", d.Id(), *sdkContactListTemplate.Name)
