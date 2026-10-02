@@ -213,7 +213,7 @@ var (
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						`in_set`: {
-							Description: `Days of week (1=Monday, 7=Sunday) for "equals" operator.`,
+							Description: `Days of week (1=Monday, 7=Sunday) for "equals"/"in" operators.`,
 							Optional:    true,
 							Type:        schema.TypeList,
 							Elem:        &schema.Schema{Type: schema.TypeInt},
@@ -254,7 +254,7 @@ var (
 							Type:        schema.TypeString,
 						},
 						`in_set`: {
-							Description: `Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.`,
+							Description: `Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals"/"in" operators.`,
 							Optional:    true,
 							Type:        schema.TypeList,
 							Elem:        &schema.Schema{Type: schema.TypeString},
@@ -594,7 +594,7 @@ func validateConditionBlocks(conditions []interface{}) error {
 			if paramsMap != nil {
 				operator, _ := paramsMap["operator"].(string)
 				op := strings.ToLower(operator)
-				if op == "before" || op == "after" || op == "between" {
+				if op == "before" || op == "after" || op == "between" || op == "in" {
 					return fmt.Errorf("operator %q can only be used with date/time condition types, got condition_type %q", operator, condType)
 				}
 			}
@@ -616,9 +616,9 @@ func validateConditionBlocks(conditions []interface{}) error {
 			}
 			if paramsMap != nil {
 				operator, _ := paramsMap["operator"].(string)
-				dateTimeOperators := map[string]bool{"before": true, "after": true, "between": true, "equals": true}
+				dateTimeOperators := map[string]bool{"before": true, "after": true, "between": true, "equals": true, "in": true}
 				if operator != "" && !dateTimeOperators[strings.ToLower(operator)] {
-					return fmt.Errorf("operator %q cannot be used with date/time condition_type %q; valid operators are: equals, before, after, between", operator, condType)
+					return fmt.Errorf("operator %q cannot be used with date/time condition_type %q; valid operators are: equals, before, after, between, in", operator, condType)
 				}
 			}
 		}
@@ -718,6 +718,16 @@ func validateOperatorFields(condMap map[string]interface{}, condType string, dat
 		if hasThreshold && hasInSet {
 			return fmt.Errorf("operator \"equals\" for condition_type %q should use either threshold_value or in_set, not both", condType)
 		}
+	case "in":
+		if !hasInSet {
+			return fmt.Errorf("operator \"in\" for condition_type %q requires in_set in date_time_parameters.%s", condType, subBlockName)
+		}
+		if hasInterval {
+			return fmt.Errorf("operator \"in\" for condition_type %q should use in_set, not interval", condType)
+		}
+		if hasThreshold {
+			return fmt.Errorf("operator \"in\" for condition_type %q should use in_set, not threshold_value", condType)
+		}
 	}
 
 	return nil
@@ -735,12 +745,12 @@ type paramSchemaOptions struct {
 func campaignRuleParameterSchema(opts paramSchemaOptions) map[string]*schema.Schema {
 	operators := []string{"equals", "greaterThan", "greaterThanEqualTo", "lessThan", "lessThanEqualTo"}
 	if opts.includeDateTimeOperators {
-		operators = append(operators, "before", "after", "between")
+		operators = append(operators, "before", "after", "between", "in")
 	}
 
 	params := map[string]*schema.Schema{
 		`operator`: {
-			Description:  `The operator for comparison. Required for a CampaignRuleCondition.`,
+			Description:  `The operator for comparison. Required for a CampaignRuleCondition. Valid values: ` + strings.Join(operators, ", ") + `.`,
 			Optional:     true,
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringInSlice(operators, true),

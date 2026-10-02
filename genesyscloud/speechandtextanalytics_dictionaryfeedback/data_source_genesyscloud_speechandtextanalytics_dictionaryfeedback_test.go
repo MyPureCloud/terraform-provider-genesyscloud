@@ -2,7 +2,6 @@ package speechandtextanalytics_dictionaryfeedback
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -17,10 +16,6 @@ Test Class for the dictionary feedback Data Source
 
 func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 	//t.Parallel()
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
 	var (
 		speechAndTextAnalyticsDictionaryFeedbackDataLabel     = "data-speechAndTextAnalyticsDictionaryFeedback"
 		speechAndTextAnalyticsDictionaryFeedbackResourceLabel = "resource-speechAndTextAnalyticsDictionaryFeedback"
@@ -59,7 +54,9 @@ func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 func generateSpeechAndTextAnalyticsDictionaryFeedbackDataSource(resourceType, resourceName, term, dependsOn string) string {
 	return fmt.Sprintf(`data "%s" "%s" {
 		term = "%s"
+		dialect = "en-AU"
+		transcription_engine = "%s"
 		depends_on = [%s]
 	}
-	`, resourceType, resourceName, term, dependsOn)
+	`, resourceType, resourceName, term, TranscriptionEngineGenesys, dependsOn)
 }

@@ -30,9 +30,14 @@ func KnowledgeDocumentExporter() *resourceExporter.ResourceExporter {
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllKnowledgeDocuments),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"knowledge_base_id": {RefType: "genesyscloud_knowledge_knowledgebase"},
+			"label_ids":         {RefType: "genesyscloud_knowledge_label"},
+			"category_id":       {RefType: "genesyscloud_knowledge_category"},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"knowledge_document.label_names": {ResolverFunc: resourceExporter.KnowledgeDocumentLabelNamesResolver},
+			"knowledge_document.label_names":   {ResolverFunc: resourceExporter.KnowledgeDocumentLabelNamesResolver},
+			"knowledge_document.category_name": {ResolverFunc: resourceExporter.KnowledgeDocumentCategoryNameResolver},
+			"label_ids":                        {ResolverFunc: resourceExporter.RemoveLabelIdsResolver},
+			"category_id":                      {ResolverFunc: resourceExporter.RemoveCategoryIdResolver},
 			"knowledge_base_name": {
 				ResolverWithClientConfigFunc: resourceExporter.KnowledgeBaseNameResolver,
 			},
@@ -153,6 +158,19 @@ Export block label: "{parent knowledge base name}_{title}"`,
 				Optional:    true,
 				Computed:    true,
 				Deprecated:  "By Default a document created will be in Draft. In order to Publish a document, use knowledge_document_variation instead.",
+			},
+			"label_ids": {
+				Description: "The composite IDs of labels associated with the document. Set by the provider for export dependency resolution. Do not set manually.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"category_id": {
+				Description: "The composite ID of the category associated with the document. Set by the provider for export dependency resolution. Do not set manually.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}

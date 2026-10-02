@@ -130,7 +130,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -178,7 +178,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -221,7 +221,7 @@ Optional:
 
 Optional:
 
-- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.
+- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_month--interval))
 - `threshold_value` (String) Day of month (1-31 or "LAST_DAY") for "before"/"after" operators.
 
@@ -240,7 +240,7 @@ Required:
 
 Optional:
 
-- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals" operator.
+- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week--interval))
 
 <a id="nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week--interval"></a>
@@ -383,7 +383,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -426,7 +426,7 @@ Optional:
 
 Optional:
 
-- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.
+- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_month--interval))
 - `threshold_value` (String) Day of month (1-31 or "LAST_DAY") for "before"/"after" operators.
 
@@ -445,7 +445,7 @@ Required:
 
 Optional:
 
-- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals" operator.
+- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_week--interval))
 
 <a id="nestedblock--condition_groups--conditions--date_time_parameters--day_of_week--interval"></a>

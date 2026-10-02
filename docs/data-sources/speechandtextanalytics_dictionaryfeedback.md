@@ -2,13 +2,13 @@
 page_title: "genesyscloud_speechandtextanalytics_dictionaryfeedback Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
-  Genesys Cloud dictionary feedback data source. Select an dictionary feedback by term
+  Genesys Cloud dictionary feedback data source. Select a dictionary feedback by term
 ---
 # genesyscloud_speechandtextanalytics_dictionaryfeedback (Data Source)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
 
-Genesys Cloud dictionary feedback data source. Select an dictionary feedback by term
+Genesys Cloud dictionary feedback data source. Select a dictionary feedback by term
 
 ## API Usage
 
@@ -33,7 +33,9 @@ The following OAuth scopes are required to use this resource:
 
 ```terraform
 data "genesyscloud_speechandtextanalytics_dictionaryfeedback" "myfeedback" {
-  term = "my_dictionaryfeedback"
+  term                 = "my_dictionaryfeedback"
+  dialect              = "en-US"
+  transcription_engine = "Genesys"
 }
 ```
 
@@ -43,6 +45,11 @@ data "genesyscloud_speechandtextanalytics_dictionaryfeedback" "myfeedback" {
 ### Required
 
 - `term` (String) dictionary feedback term
+
+### Optional
+
+- `dialect` (String) The dialect for the dictionary feedback term. Recommended when the same term exists for multiple dialects.
+- `transcription_engine` (String) The transcription engine for the dictionary feedback term. Valid values: Genesys, GenesysExtended.
 
 ### Read-Only
 

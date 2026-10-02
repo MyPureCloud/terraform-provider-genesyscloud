@@ -43,6 +43,7 @@ func ResourceRoutingSkill() *schema.Resource {
 		Description: "Genesys Cloud Routing Skill",
 
 		CreateContext: provider.CreateWithPooledClient(createRoutingSkill),
+		UpdateContext: provider.UpdateWithPooledClient(updateRoutingSkill),
 		ReadContext:   provider.ReadWithPooledClient(readRoutingSkill),
 		DeleteContext: provider.DeleteWithPooledClient(deleteRoutingSkill),
 		Importer: &schema.ResourceImporter{
@@ -56,6 +57,12 @@ func ResourceRoutingSkill() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"division_id": {
+				Description: "The division to which this skill belongs. If not set, the home division will be used.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -63,6 +70,8 @@ func ResourceRoutingSkill() *schema.Resource {
 func RoutingSkillExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllRoutingSkills),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 type PromptAudioData struct {
@@ -52,9 +52,10 @@ func flattenPromptResources(d *schema.ResourceData, promptResources *[]platformc
 		resourcedata.SetMapValueIfNotNil(promptResource, "tts_string", sdkPromptAsset.TtsString)
 		resourcedata.SetMapValueIfNotNil(promptResource, "text", sdkPromptAsset.Text)
 
-		if sdkPromptAsset.Tags != nil && len(*sdkPromptAsset.Tags) > 0 {
-			t := *sdkPromptAsset.Tags
-			promptResource["filename"] = t["filename"][0]
+		if sdkPromptAsset.Tags != nil {
+			if filenameTags, ok := (*sdkPromptAsset.Tags)["filename"]; ok && len(filenameTags) > 0 && filenameTags[0] != "" {
+				promptResource["filename"] = filenameTags[0]
+			}
 		}
 
 		schemaResources, ok := d.Get("resources").(*schema.Set)

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -18,7 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -214,6 +215,59 @@ func TestAccResourceIntegrationAction(t *testing.T) {
 				),
 			},
 			{
+				// Settle step: the previous step set secure=true, which forces a brand new
+				// action to be created (ForceNew). The newly created action id is not always
+				// immediately readable, which causes the following import step to fail with
+				// "Cannot import non-existent remote object". Re-apply the same config after a
+				// short wait so the recreated action is consistent before the import/read.
+				PreConfig: func() {
+					time.Sleep(10 * time.Second)
+				},
+				Config: integration.GenerateIntegrationResource(
+					integResourceLabel1,
+					util.NullValue,
+					strconv.Quote(integTypeID),
+				) + generateIntegrationActionResource(
+					actionResourceLabel1,
+					actionName2,
+					actionCateg2,
+					"genesyscloud_integration."+integResourceLabel1+".id",
+					util.TrueValue, // Secure
+					util.NullValue, // time default
+					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input
+					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output
+					generateIntegrationActionConfigRequest(
+						reqUrlTemplate2,
+						reqType2,
+						strconv.Quote(reqTemp),
+						util.GenerateMapAttrWithMapProperties(
+							"headers",
+							map[string]string{
+								headerKey: strconv.Quote(headerVal2),
+							},
+						),
+					),
+					generateIntegrationActionConfigResponse(
+						strconv.Quote(successTemplate),
+						util.GenerateMapAttrWithMapProperties(
+							"translation_map",
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapVal2),
+							},
+						),
+						util.GenerateMapAttrWithMapProperties(
+							"translation_map_defaults",
+							map[string]string{
+								transMapAttr: strconv.Quote(transMapValDefault2),
+							},
+						),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "id"),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      "genesyscloud_integration_action." + actionResourceLabel1,
 				ImportState:       true,
@@ -254,10 +308,7 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 		runtime2     = "nodejs22.x"
 		filePath1    = zipPath1
 		filePath2    = zipPath2
-		// publish field is not in the schema, so removing these
-		// publish1         = "true"
-		// publish2         = "false"
-		headerVal2 = "no-store"
+		headerVal2   = "no-store"
 
 		// Request/Response configuration values
 		reqUrlTemplate1 = "/api/v2/users"
@@ -330,9 +381,11 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.handler", handler1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.runtime", runtime1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout1),
-					// file_path and file_content_hash are input-only fields not returned by the API
-					// so we can't verify them in the state
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_path", filePath1),
+					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_content_hash"),
 				),
+				// Function actions: API rewrites request_url_template to the function id and
+				// may omit empty header/translation maps. function_config (incl. file_path) stays stable.
 				ExpectNonEmptyPlan: true,
 			},
 			{
@@ -396,14 +449,17 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.handler", handler2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.runtime", runtime2),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout2),
+					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_path", filePath2),
+					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_content_hash"),
 				),
 				ExpectNonEmptyPlan: true,
 			},
 			{
-				// Import/Read
-				ResourceName:      "genesyscloud_integration_action." + actionResourceLabel1,
-				ImportState:       true,
-				ImportStateVerify: true,
+				// Import/Read — zip path/hash are local-only and not returned by the API
+				ResourceName:            "genesyscloud_integration_action." + actionResourceLabel1,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"function_config.0.file_path", "function_config.0.file_content_hash", "config_request.0.request_url_template"},
 			},
 		},
 		CheckDestroy: testVerifyIntegrationActionDestroyed,
@@ -449,8 +505,9 @@ func generateIntegrationActionFunctionConfig(description, handler, runtime, time
         runtime = %s
         timeout_seconds = %s
         file_path = %s
+        file_content_hash = filesha256(%s)
 	}
-	`, description, handler, runtime, timeoutSeconds, filePath)
+	`, description, handler, runtime, timeoutSeconds, filePath, filePath)
 }
 
 // createTempTestZipFile creates a temporary zip file with some test content for testing purposes

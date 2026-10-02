@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	accessPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/access_policy"
 	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
 	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	agenticVirtualAgentVersionPublish "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version_publish"
@@ -64,6 +65,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration"
 	integrationAction "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action"
 	integrationActionDraft "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_action_draft"
+	integrationConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_config"
 	integrationCred "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_credential"
 	integrationCustomAuth "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_custom_auth_action"
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
@@ -107,6 +109,7 @@ import (
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
+	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
@@ -128,7 +131,9 @@ import (
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	sttCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_category"
 	dictionaryFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_dictionaryfeedback"
+	sentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
 	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -269,7 +274,9 @@ func registerResources() {
 	architectSchedulegroups.SetRegistrar(regInstance)                      //Registering architect schedule groups
 	architectSchedules.SetRegistrar(regInstance)                           //Registering architect schedules
 	dictionaryFeedback.SetRegistrar(regInstance)                           //Registering dictionary feedback
+	sentimentFeedback.SetRegistrar(regInstance)                            //Registering sentiment feedback
 	sttTopic.SetRegistrar(regInstance)                                     //Registering speech and text analytics topics
+	sttCategory.SetRegistrar(regInstance)                                  //Registering speech and text analytics categories
 	employeeperformanceExternalmetricsDefinition.SetRegistrar(regInstance) //Registering employee performance external metrics definitions
 	grammar.SetRegistrar(regInstance)                                      //Registering architect grammar
 	grammarLanguage.SetRegistrar(regInstance)                              //Registering architect grammar language
@@ -322,6 +329,7 @@ func registerResources() {
 	integrationAction.SetRegistrar(regInstance)                            //Registering integrations actions
 	integrationActionDraft.SetRegistrar(regInstance)                       //Registering integrations action draft
 	integrationCred.SetRegistrar(regInstance)                              //Registering integrations credentials
+	integrationConfig.SetRegistrar(regInstance)                            //Registering integrations config (standalone)
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
@@ -331,6 +339,7 @@ func registerResources() {
 	caseManagementStageplan.SetRegistrar(regInstance)                      //Registering case management stageplan
 	caseManagementStepplan.SetRegistrar(regInstance)                       //Registering case management stepplan
 	recMediaRetPolicy.SetRegistrar(regInstance)                            //Registering recording media retention policies
+	recordingSettings.SetRegistrar(regInstance)                            //Registering recording settings
 	responsemanagementResponse.SetRegistrar(regInstance)                   //Registering responsemanagement responses
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
@@ -355,6 +364,7 @@ func registerResources() {
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
+	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
 	phoneBaseSettings.SetRegistrar(regInstance)                            //Registering Phone Base Settings
 	lineBaseSettings.SetRegistrar(regInstance)                             //Registering Line Base Settings
