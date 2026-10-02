@@ -121,6 +121,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name          = "New Chart"
     version       = 1
+    rank          = 1
     group_by_time = "Day"
     metrics {
       id         = "36b3f717-f309-425d-9d5e-3af2071ad0a4"
@@ -136,6 +137,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name    = "New Chart B"
     version = 1
+    rank    = 2
     group_by_attributes {
       element_id = var.element_second_id
       attribute  = "vendor"
@@ -190,6 +192,7 @@ Optional:
 - `group_by_attributes` (Block List) A list of attributes to group the metrics by (see [below for nested schema](#nestedblock--charts--group_by_attributes))
 - `group_by_max` (Number) A maximum on the number of values being grouped by
 - `group_by_time` (String) A time unit to group the metrics by. Valid values: Day, Week, Month, Year.
+- `rank` (Number) The rank of the journey view chart for ordering display
 
 Read-Only:
 

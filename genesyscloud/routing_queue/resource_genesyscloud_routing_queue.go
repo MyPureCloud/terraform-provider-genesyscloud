@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -71,6 +71,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	divisionID := d.Get("division_id").(string)
 	scoringMethod := d.Get("scoring_method").(string)
 	peerId := d.Get("peer_id").(string)
+	defaultMediaLanguage := d.Get("default_media_language").(string)
 	sourceQueueId := d.Get("source_queue_id").(string)
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
 	groups := buildMemberGroupList(d, "groups", "GROUP")
@@ -137,6 +138,9 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		createQueue.PeerId = &peerId
+	}
+	if defaultMediaLanguage != "" {
+		createQueue.DefaultMediaLanguage = &defaultMediaLanguage
 	}
 	if sourceQueueId != "" {
 		createQueue.SourceQueueId = &sourceQueueId
@@ -275,6 +279,7 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 	resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
 	resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 	resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
+	resourcedata.SetNillableValue(d, "default_media_language", currentQueue.DefaultMediaLanguage)
 	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 	resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
 
@@ -331,6 +336,16 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 		log.Printf("%s is set, not reading outbound_email_address attribute in routing_queue %s resource", featureToggles.OEAToggleName(), d.Id())
 	}
 
+	if currentQueue.MediaSettings != nil && currentQueue.MediaSettings.Email != nil && currentQueue.MediaSettings.Email.AllOutboundEmailAddresses != nil {
+		apiAddresses := flattenAllOutboundEmailAddresses(currentQueue.MediaSettings.Email.AllOutboundEmailAddresses)
+		// Preserve the config's declared order when the set of addresses is unchanged — the API does
+		// not guarantee order and this is a TypeList, so otherwise we'd get a perpetual plan diff.
+		schemaAddresses, _ := d.Get("all_outbound_email_addresses").([]interface{})
+		_ = d.Set("all_outbound_email_addresses", organizeAllOutboundEmailAddressesForRead(schemaAddresses, apiAddresses))
+	} else {
+		_ = d.Set("all_outbound_email_addresses", nil)
+	}
+
 	return nil
 }
 
@@ -373,6 +388,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 	peerId := d.Get("peer_id").(string)
+	defaultMediaLanguage := d.Get("default_media_language").(string)
 	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	updateQueue := platformclientv2.Queuerequest{
@@ -413,6 +429,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		updateQueue.PeerId = &peerId
+	}
+	if defaultMediaLanguage != "" {
+		updateQueue.DefaultMediaLanguage = &defaultMediaLanguage
 	}
 	if lastAgentRoutingMode != "" {
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode
