@@ -360,7 +360,10 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
+		// DEVTOOLING-1764: do not use the export list cache here. Concurrent list pagination
+		// stores shallow Queue copies; nested bullseye member_groups can be lost or incomplete
+		// when Read reuses that cache. Always GET-by-id for authoritative state.
+		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), false)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
