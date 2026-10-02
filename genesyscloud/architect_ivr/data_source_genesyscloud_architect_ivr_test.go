@@ -57,8 +57,8 @@ This is a unit test to test whether the Architect IVR data source is properly pu
 func TestUnitDataSourceArchitectIvr(t *testing.T) {
 	targetId := uuid.NewString()
 	targetName := "MyTargetId"
-	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *architectIvrProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
+	archProxy := &ArchitectIvrProxy{}
+	archProxy.getArchitectIvrIdByNameAttr = func(ctx context.Context, a *ArchitectIvrProxy, name string) (string, bool, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, targetName, name)
 		return targetId, false, nil, nil
 	}
