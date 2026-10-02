@@ -17,22 +17,22 @@ out during testing.
 */
 
 // internalProxy holds a proxy instance that can be used throughout the package
-var internalProxy *conversationsMessagingIntegrationsInstagramProxy
+var internalProxy *ConversationsMessagingIntegrationsInstagramProxy
 
 // Type definitions for each func on our proxy so we can easily mock them out later
-type createConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, instagramIntegrationRequest *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error)
-type getAllConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error)
-type getConversationsMessagingIntegrationsInstagramIdByNameFunc func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
-type getConversationsMessagingIntegrationsInstagramByIdFunc func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error)
-type updateConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string, instagramIntegrationRequest *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error)
-type deleteConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error)
+type createConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, instagramIntegrationRequest *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error)
+type GetAllConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error)
+type getConversationsMessagingIntegrationsInstagramIdByNameFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error)
+type getConversationsMessagingIntegrationsInstagramByIdFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (instagramIntegrationRequest *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error)
+type updateConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string, instagramIntegrationRequest *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error)
+type deleteConversationsMessagingIntegrationsInstagramFunc func(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error)
 
-// conversationsMessagingIntegrationsInstagramProxy contains all of the methods that call genesys cloud APIs.
-type conversationsMessagingIntegrationsInstagramProxy struct {
+// ConversationsMessagingIntegrationsInstagramProxy contains all of the methods that call genesys cloud APIs.
+type ConversationsMessagingIntegrationsInstagramProxy struct {
 	clientConfig                                               *platformclientv2.Configuration
 	conversationsApi                                           *platformclientv2.ConversationsApi
 	createConversationsMessagingIntegrationsInstagramAttr      createConversationsMessagingIntegrationsInstagramFunc
-	getAllConversationsMessagingIntegrationsInstagramAttr      getAllConversationsMessagingIntegrationsInstagramFunc
+	GetAllConversationsMessagingIntegrationsInstagramAttr      GetAllConversationsMessagingIntegrationsInstagramFunc
 	getConversationsMessagingIntegrationsInstagramIdByNameAttr getConversationsMessagingIntegrationsInstagramIdByNameFunc
 	getConversationsMessagingIntegrationsInstagramByIdAttr     getConversationsMessagingIntegrationsInstagramByIdFunc
 	updateConversationsMessagingIntegrationsInstagramAttr      updateConversationsMessagingIntegrationsInstagramFunc
@@ -40,13 +40,13 @@ type conversationsMessagingIntegrationsInstagramProxy struct {
 }
 
 // newConversationsMessagingIntegrationsInstagramProxy initializes the conversations messaging integrations instagram proxy with all of the data needed to communicate with Genesys Cloud
-func newConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsInstagramProxy {
+func newConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsInstagramProxy {
 	api := platformclientv2.NewConversationsApiWithConfig(clientConfig)
-	return &conversationsMessagingIntegrationsInstagramProxy{
+	return &ConversationsMessagingIntegrationsInstagramProxy{
 		clientConfig:     clientConfig,
 		conversationsApi: api,
 		createConversationsMessagingIntegrationsInstagramAttr:      createConversationsMessagingIntegrationsInstagramFn,
-		getAllConversationsMessagingIntegrationsInstagramAttr:      getAllConversationsMessagingIntegrationsInstagramFn,
+		GetAllConversationsMessagingIntegrationsInstagramAttr:      GetAllConversationsMessagingIntegrationsInstagramFn,
 		getConversationsMessagingIntegrationsInstagramIdByNameAttr: getConversationsMessagingIntegrationsInstagramIdByNameFn,
 		getConversationsMessagingIntegrationsInstagramByIdAttr:     getConversationsMessagingIntegrationsInstagramByIdFn,
 		updateConversationsMessagingIntegrationsInstagramAttr:      updateConversationsMessagingIntegrationsInstagramFn,
@@ -56,7 +56,7 @@ func newConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformc
 
 // getConversationsMessagingIntegrationsInstagramProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
-func getConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsInstagramProxy {
+func GetConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsInstagramProxy {
 	if internalProxy == nil {
 		internalProxy = newConversationsMessagingIntegrationsInstagramProxy(clientConfig)
 	}
@@ -65,37 +65,37 @@ func getConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformc
 }
 
 // createConversationsMessagingIntegrationsInstagram creates a Genesys Cloud conversations messaging integrations instagram
-func (p *conversationsMessagingIntegrationsInstagramProxy) createConversationsMessagingIntegrationsInstagram(ctx context.Context, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsInstagramProxy) createConversationsMessagingIntegrationsInstagram(ctx context.Context, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 	return p.createConversationsMessagingIntegrationsInstagramAttr(ctx, p, conversationsMessagingIntegrationsInstagram)
 }
 
 // getConversationsMessagingIntegrationsInstagram retrieves all Genesys Cloud conversations messaging integrations instagram
-func (p *conversationsMessagingIntegrationsInstagramProxy) getAllConversationsMessagingIntegrationsInstagram(ctx context.Context) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
-	return p.getAllConversationsMessagingIntegrationsInstagramAttr(ctx, p)
+func (p *ConversationsMessagingIntegrationsInstagramProxy) GetAllConversationsMessagingIntegrationsInstagram(ctx context.Context) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+	return p.GetAllConversationsMessagingIntegrationsInstagramAttr(ctx, p)
 }
 
 // getConversationsMessagingIntegrationsInstagramIdByName returns a single Genesys Cloud conversations messaging integrations instagram by a name
-func (p *conversationsMessagingIntegrationsInstagramProxy) getConversationsMessagingIntegrationsInstagramIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsInstagramProxy) getConversationsMessagingIntegrationsInstagramIdByName(ctx context.Context, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsInstagramIdByNameAttr(ctx, p, name)
 }
 
 // getConversationsMessagingIntegrationsInstagramById returns a single Genesys Cloud conversations messaging integrations instagram by Id
-func (p *conversationsMessagingIntegrationsInstagramProxy) getConversationsMessagingIntegrationsInstagramById(ctx context.Context, id string) (conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsInstagramProxy) GetConversationsMessagingIntegrationsInstagramById(ctx context.Context, id string) (conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
 	return p.getConversationsMessagingIntegrationsInstagramByIdAttr(ctx, p, id)
 }
 
 // updateConversationsMessagingIntegrationsInstagram updates a Genesys Cloud conversations messaging integrations instagram
-func (p *conversationsMessagingIntegrationsInstagramProxy) updateConversationsMessagingIntegrationsInstagram(ctx context.Context, id string, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+func (p *ConversationsMessagingIntegrationsInstagramProxy) updateConversationsMessagingIntegrationsInstagram(ctx context.Context, id string, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 	return p.updateConversationsMessagingIntegrationsInstagramAttr(ctx, p, id, conversationsMessagingIntegrationsInstagram)
 }
 
 // deleteConversationsMessagingIntegrationsInstagram deletes a Genesys Cloud conversations messaging integrations instagram by Id
-func (p *conversationsMessagingIntegrationsInstagramProxy) deleteConversationsMessagingIntegrationsInstagram(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
+func (p *ConversationsMessagingIntegrationsInstagramProxy) deleteConversationsMessagingIntegrationsInstagram(ctx context.Context, id string) (response *platformclientv2.APIResponse, err error) {
 	return p.deleteConversationsMessagingIntegrationsInstagramAttr(ctx, p, id)
 }
 
 // createConversationsMessagingIntegrationsInstagramFn is an implementation function for creating a Genesys Cloud conversations messaging integrations instagram
-func createConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+func createConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationrequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -103,7 +103,7 @@ func createConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 }
 
 // getAllConversationsMessagingIntegrationsInstagramFn is the implementation for retrieving all conversations messaging integrations instagram in Genesys Cloud
-func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+func GetAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy) (*[]platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -138,11 +138,11 @@ func getAllConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 }
 
 // getConversationsMessagingIntegrationsInstagramIdByNameFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations instagram by name
-func getConversationsMessagingIntegrationsInstagramIdByNameFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
+func getConversationsMessagingIntegrationsInstagramIdByNameFn(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, name string) (id string, retryable bool, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	instagramIntegrationRequests, resp, err := p.getAllConversationsMessagingIntegrationsInstagram(ctx)
+	instagramIntegrationRequests, resp, err := p.GetAllConversationsMessagingIntegrationsInstagram(ctx)
 	if err != nil {
 		return "", false, resp, err
 	}
@@ -162,7 +162,7 @@ func getConversationsMessagingIntegrationsInstagramIdByNameFn(ctx context.Contex
 }
 
 // getConversationsMessagingIntegrationsInstagramByIdFn is an implementation of the function to get a Genesys Cloud conversations messaging integrations instagram by Id
-func getConversationsMessagingIntegrationsInstagramByIdFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
+func getConversationsMessagingIntegrationsInstagramByIdFn(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegration, response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -170,7 +170,7 @@ func getConversationsMessagingIntegrationsInstagramByIdFn(ctx context.Context, p
 }
 
 // updateConversationsMessagingIntegrationsInstagramFn is an implementation of the function to update a Genesys Cloud conversations messaging integrations instagram
-func updateConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
+func updateConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string, conversationsMessagingIntegrationsInstagram *platformclientv2.Instagramintegrationupdaterequest) (*platformclientv2.Instagramintegration, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
@@ -178,7 +178,7 @@ func updateConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p 
 }
 
 // deleteConversationsMessagingIntegrationsInstagramFn is an implementation function for deleting a Genesys Cloud conversations messaging integrations instagram
-func deleteConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *conversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error) {
+func deleteConversationsMessagingIntegrationsInstagramFn(ctx context.Context, p *ConversationsMessagingIntegrationsInstagramProxy, id string) (response *platformclientv2.APIResponse, err error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
