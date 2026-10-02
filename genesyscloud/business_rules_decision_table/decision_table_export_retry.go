@@ -21,10 +21,12 @@ import (
 // Do not shorten this string. Export job creation has three 403s and "concurrent" is the only word
 // separating them:
 //
-//   - "...concurrent export jobs [3] reached for user X" is pending jobs per user, cleared by waiting.
-//   - "...concurrent export jobs [5] reached for table X" is pending jobs per table, cleared by waiting.
-//   - "Maximum number of export jobs [100] reached for table X" is the lifetime total per table,
-//     cleared only by deleting a job. Retrying it would waste the whole budget.
+//   - "...concurrent export jobs [3] reached for user X" counts pending jobs per user. Cleared as
+//     jobs finish, and a wedged job stops counting after the backend's 3 hour status timeout.
+//   - "...concurrent export jobs [5] reached for table X" counts pending jobs per table, same.
+//   - "Maximum number of export jobs [100] reached for table X" counts stored job records per
+//     table. Those expire on a 7 day TTL, so waiting clears it eventually but never within a
+//     retry budget. Treat it as not retryable.
 const decisionTableConcurrentExportLimitMessage = "Maximum number of concurrent export jobs"
 
 const (
