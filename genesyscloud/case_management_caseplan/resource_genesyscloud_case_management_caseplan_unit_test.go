@@ -3,6 +3,8 @@ package case_management_caseplan
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +14,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 )
 
 func TestUnitFlattenCaseplanDataSchemas(t *testing.T) {
@@ -585,4 +591,715 @@ func TestUnitFlattenExpandStageplans(t *testing.T) {
 		{id: "s2", name: "B", step: stepplanConfig{id: "p2", name: "y", activityType: activityTypeNone}},
 	}
 	assert.Equal(t, in, expandStageplans(flattenStageplans(in)))
+}
+
+// ---- In-memory fake of the caseplan API (draft rule, 1..5 stageplans, Workitem invariant) ----
+
+type fakeCaseplanAPI struct {
+	t         *testing.T
+	id        string
+	latest    int
+	published int
+	record    platformclientv2.Caseplan
+	schemaID  string
+	intake    []platformclientv2.Intakesetting
+	stages    []stageplanConfig
+	others    []platformclientv2.Caseplan
+	nextID    int
+	calls     []string
+}
+
+func newFakeCaseplanAPI(t *testing.T, stageNames ...string) *fakeCaseplanAPI {
+	f := &fakeCaseplanAPI{t: t, id: "cp1", latest: 1, schemaID: "schema-1"}
+	f.record = platformclientv2.Caseplan{
+		Id:                          platformclientv2.String(f.id),
+		Name:                        platformclientv2.String("cp"),
+		ReferencePrefix:             platformclientv2.String("AB12"),
+		DefaultDueDurationInSeconds: platformclientv2.Int(100),
+		DefaultTtlSeconds:           platformclientv2.Int(200),
+	}
+	for i, name := range stageNames {
+		f.stages = append(f.stages, stageplanConfig{id: f.newID("stage"), name: name,
+			step: stepplanConfig{id: f.newID("step"), name: fmt.Sprintf("Step %d", i+1), activityType: activityTypeNone}})
+	}
+	return f
+}
+
+func (f *fakeCaseplanAPI) newID(prefix string) string {
+	f.nextID++
+	return fmt.Sprintf("%s-%d", prefix, f.nextID)
+}
+
+func (f *fakeCaseplanAPI) count(op string) int {
+	n := 0
+	for _, c := range f.calls {
+		if c == op {
+			n++
+		}
+	}
+	return n
+}
+
+func (f *fakeCaseplanAPI) draftRequired() error {
+	if f.published != 0 && f.latest == f.published {
+		return errors.New("409 pre.check.draft.caseplan.version.required")
+	}
+	return nil
+}
+
+func (f *fakeCaseplanAPI) checkCount() {
+	if len(f.stages) < 1 || len(f.stages) > maxStageplans {
+		f.t.Errorf("stageplan count %d outside 1..%d after %v", len(f.stages), maxStageplans, f.calls)
+	}
+}
+
+func (f *fakeCaseplanAPI) stageIndex(id string) int {
+	for i, s := range f.stages {
+		if s.id == id {
+			return i
+		}
+	}
+	return -1
+}
+
+func (f *fakeCaseplanAPI) snapshot() *platformclientv2.Caseplan {
+	cp := f.record
+	cp.Latest = platformclientv2.Int(f.latest)
+	if f.published != 0 {
+		cp.Published = platformclientv2.Int(f.published)
+	}
+	return &cp
+}
+
+func ok() *platformclientv2.APIResponse {
+	return &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+}
+
+func failed(err error) (*platformclientv2.APIResponse, error) {
+	return &platformclientv2.APIResponse{StatusCode: http.StatusConflict}, err
+}
+
+func (f *fakeCaseplanAPI) assertStages(want []stageplanConfig) {
+	f.t.Helper()
+	if len(f.stages) != len(want) {
+		f.t.Fatalf("want %d stageplans, got %d: %+v", len(want), len(f.stages), f.stages)
+	}
+	for i := range want {
+		got, w := f.stages[i], want[i]
+		got.id, got.step.id, w.id, w.step.id = "", "", "", ""
+		if got != w {
+			f.t.Errorf("stageplan %d: want %+v, got %+v", i, w, got)
+		}
+	}
+}
+
+func (f *fakeCaseplanAPI) proxy() *caseManagementCaseplanProxy {
+	return &caseManagementCaseplanProxy{
+		createCaseManagementCaseplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, body *platformclientv2.Caseplancreate) (*platformclientv2.Caseplancreateresponse, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "create-caseplan")
+			f.latest, f.published = 1, 0
+			f.record.Name, f.record.Description, f.record.ReferencePrefix = body.Name, body.Description, body.ReferencePrefix
+			if body.DataSchemas != nil && len(*body.DataSchemas) > 0 {
+				f.schemaID = stringValue((*body.DataSchemas)[0].Id)
+			}
+			f.stages = nil
+			for i := 1; i <= 3; i++ {
+				f.stages = append(f.stages, stageplanConfig{id: f.newID("stage"), name: fmt.Sprintf("Stage %d", i),
+					step: stepplanConfig{id: f.newID("step"), name: fmt.Sprintf("Step %d", i), activityType: activityTypeNone}})
+			}
+			return &platformclientv2.Caseplancreateresponse{Id: platformclientv2.String(f.id), Latest: platformclientv2.Int(1)}, ok(), nil
+		},
+		getAllCaseManagementCaseplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy) (*[]platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+			all := append([]platformclientv2.Caseplan{*f.snapshot()}, f.others...)
+			return &all, ok(), nil
+		},
+		postCaseManagementCaseplanDataschemaAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, schemaId string) (*platformclientv2.Caseplandataschema, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "post-dataschema")
+			f.schemaID = schemaId
+			return &platformclientv2.Caseplandataschema{Id: platformclientv2.String(schemaId)}, ok(), nil
+		},
+		putCaseManagementCaseplanDataschemaAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, key, schemaId string) (*platformclientv2.Caseplandataschema, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "put-dataschema")
+			if f.published != 0 {
+				resp, err := failed(errors.New("400 data schema cannot change after publish"))
+				return nil, resp, err
+			}
+			f.schemaID = schemaId
+			return &platformclientv2.Caseplandataschema{Id: platformclientv2.String(schemaId)}, ok(), nil
+		},
+		getCaseManagementCaseplanByIdAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, id string) (*platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+			return f.snapshot(), ok(), nil
+		},
+		getCaseManagementCaseplanVersionAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, versionId string) (*platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+			return f.snapshot(), ok(), nil
+		},
+		getCaseManagementCaseplanVersionDataschemasAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, versionId string) (*platformclientv2.Caseplandataschemalisting, *platformclientv2.APIResponse, error) {
+			return &platformclientv2.Caseplandataschemalisting{Entities: &[]platformclientv2.Caseplandataschema{{Id: platformclientv2.String(f.schemaID)}}}, ok(), nil
+		},
+		getCaseManagementCaseplanVersionIntakesettingsAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, versionId string) (*platformclientv2.Intakesettingslisting, *platformclientv2.APIResponse, error) {
+			intake := append([]platformclientv2.Intakesetting(nil), f.intake...)
+			return &platformclientv2.Intakesettingslisting{Entities: &intake}, ok(), nil
+		},
+		putCaseManagementCaseplanIntakesettingsAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string, body platformclientv2.Intakesettingsupdate) (*platformclientv2.Intakesettingslisting, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "put-intake")
+			if err := f.draftRequired(); err != nil {
+				resp, err := failed(err)
+				return nil, resp, err
+			}
+			f.intake = *body.IntakeSettings
+			return &platformclientv2.Intakesettingslisting{Entities: body.IntakeSettings}, ok(), nil
+		},
+		patchCaseManagementCaseplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string, body platformclientv2.Caseplanupdate) (*platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+			versioned := body.SetFieldNames["DefaultDueDurationInSeconds"] || body.SetFieldNames["DefaultTtlSeconds"] || body.SetFieldNames["DefaultCaseOwnerId"]
+			if versioned {
+				f.calls = append(f.calls, "patch-caseplan-versioned")
+				if err := f.draftRequired(); err != nil {
+					resp, err := failed(err)
+					return nil, resp, err
+				}
+			} else {
+				f.calls = append(f.calls, "patch-caseplan")
+			}
+			if body.SetFieldNames["Name"] {
+				f.record.Name = body.Name
+			}
+			if body.SetFieldNames["Description"] {
+				f.record.Description = body.Description
+			}
+			if body.SetFieldNames["DefaultDueDurationInSeconds"] {
+				f.record.DefaultDueDurationInSeconds = body.DefaultDueDurationInSeconds
+			}
+			if body.SetFieldNames["DefaultTtlSeconds"] {
+				f.record.DefaultTtlSeconds = body.DefaultTtlSeconds
+			}
+			return f.snapshot(), ok(), nil
+		},
+		postCaseManagementCaseplanVersionsAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string) (*platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "post-version")
+			if f.published == 0 || f.latest > f.published {
+				resp, err := failed(errors.New("409 precondition.check.failed"))
+				return nil, resp, err
+			}
+			f.latest++
+			return f.snapshot(), ok(), nil
+		},
+		publishCaseManagementCaseplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string) (*platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "publish")
+			if f.published == f.latest {
+				resp, err := failed(errors.New("409 nothing to publish"))
+				return nil, resp, err
+			}
+			f.published = f.latest
+			return f.snapshot(), ok(), nil
+		},
+		listStageplansAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, versionId string) ([]platformclientv2.Stageplan, *platformclientv2.APIResponse, error) {
+			out := make([]platformclientv2.Stageplan, 0, len(f.stages))
+			for _, s := range f.stages {
+				out = append(out, platformclientv2.Stageplan{Id: platformclientv2.String(s.id), Name: platformclientv2.String(s.name), Description: nullableString(s.description)})
+			}
+			return out, ok(), nil
+		},
+		listStepplansAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, versionId, stageplanId string) ([]platformclientv2.Stepplan, *platformclientv2.APIResponse, error) {
+			i := f.stageIndex(stageplanId)
+			if i < 0 {
+				resp, err := failed(errors.New("404 stageplan not found"))
+				return nil, resp, err
+			}
+			s := f.stages[i].step
+			step := platformclientv2.Stepplan{Id: platformclientv2.String(s.id), Name: platformclientv2.String(s.name),
+				Description: nullableString(s.description), ActivityType: platformclientv2.String(s.activityType)}
+			if s.worktypeID != "" {
+				step.WorkitemSettings = &platformclientv2.Workitemsettingsresponse{Worktype: &platformclientv2.Stepplansworktypereference{Id: platformclientv2.String(s.worktypeID)}}
+			}
+			return []platformclientv2.Stepplan{step}, ok(), nil
+		},
+		createStageplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId string, body platformclientv2.Stageplancreate) (*platformclientv2.Stageplan, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "create")
+			if err := f.draftRequired(); err != nil {
+				resp, err := failed(err)
+				return nil, resp, err
+			}
+			if len(f.stages) >= maxStageplans {
+				resp, err := failed(errors.New("409 pre.check.maximum.limit.reached"))
+				return nil, resp, err
+			}
+			pos := 0
+			if body.After != nil {
+				if pos = f.stageIndex(*body.After) + 1; pos == 0 {
+					resp, err := failed(errors.New("400 invalid.input after"))
+					return nil, resp, err
+				}
+			}
+			s := stageplanConfig{id: f.newID("stage"), name: *body.Name, description: stringValue(body.Description),
+				step: stepplanConfig{id: f.newID("step"), name: "Step 1", activityType: activityTypeNone}}
+			f.stages = append(f.stages[:pos], append([]stageplanConfig{s}, f.stages[pos:]...)...)
+			f.checkCount()
+			return &platformclientv2.Stageplan{Id: platformclientv2.String(s.id), Name: body.Name}, ok(), nil
+		},
+		deleteStageplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, stageplanId string) (*platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "delete")
+			if err := f.draftRequired(); err != nil {
+				return failed(err)
+			}
+			i := f.stageIndex(stageplanId)
+			if i < 0 {
+				return failed(errors.New("404 stageplan not found"))
+			}
+			if len(f.stages) == 1 {
+				return failed(errors.New("409 pre.check.min.stageplans.required"))
+			}
+			f.stages = append(f.stages[:i], f.stages[i+1:]...)
+			f.checkCount()
+			return ok(), nil
+		},
+		repositionStageplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, stageplanId string, body platformclientv2.Stageplanreposition) (*platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "reposition")
+			if err := f.draftRequired(); err != nil {
+				return failed(err)
+			}
+			if !body.SetFieldNames["After"] {
+				f.t.Errorf("reposition of %s did not set after explicitly", stageplanId)
+			}
+			i := f.stageIndex(stageplanId)
+			if i < 0 {
+				return failed(errors.New("404 stageplan not found"))
+			}
+			after := stringValue(body.After)
+			if after == stageplanId || (after != "" && f.stageIndex(after) < 0) {
+				return failed(errors.New("400 invalid.input after"))
+			}
+			s := f.stages[i]
+			f.stages = append(f.stages[:i], f.stages[i+1:]...)
+			pos := 0
+			if after != "" {
+				pos = f.stageIndex(after) + 1
+			}
+			f.stages = append(f.stages[:pos], append([]stageplanConfig{s}, f.stages[pos:]...)...)
+			return ok(), nil
+		},
+		patchStageplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, stageplanId string, body platformclientv2.Stageplanupdate) (*platformclientv2.Stageplan, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "patch-stage")
+			if err := f.draftRequired(); err != nil {
+				resp, err := failed(err)
+				return nil, resp, err
+			}
+			i := f.stageIndex(stageplanId)
+			if i < 0 {
+				resp, err := failed(errors.New("404 stageplan not found"))
+				return nil, resp, err
+			}
+			if body.SetFieldNames["Name"] {
+				f.stages[i].name = *body.Name
+			}
+			if body.SetFieldNames["Description"] {
+				f.stages[i].description = stringValue(body.Description)
+			}
+			return &platformclientv2.Stageplan{Id: platformclientv2.String(stageplanId)}, ok(), nil
+		},
+		patchStepplanAttr: func(ctx context.Context, p *caseManagementCaseplanProxy, caseplanId, stageplanId, stepplanId string, body platformclientv2.Stepplanupdate) (*platformclientv2.Stepplan, *platformclientv2.APIResponse, error) {
+			f.calls = append(f.calls, "patch-step")
+			if err := f.draftRequired(); err != nil {
+				resp, err := failed(err)
+				return nil, resp, err
+			}
+			i := f.stageIndex(stageplanId)
+			if i < 0 || f.stages[i].step.id != stepplanId {
+				resp, err := failed(errors.New("404 stepplan not found"))
+				return nil, resp, err
+			}
+			step := f.stages[i].step
+			if body.SetFieldNames["Name"] {
+				step.name = *body.Name
+			}
+			if body.SetFieldNames["Description"] {
+				step.description = stringValue(body.Description)
+			}
+			if body.SetFieldNames["ActivityType"] {
+				step.activityType = *body.ActivityType
+			}
+			if body.SetFieldNames["WorkitemSettings"] {
+				step.worktypeID = ""
+				if body.WorkitemSettings != nil {
+					step.worktypeID = stringValue(body.WorkitemSettings.WorktypeId)
+				}
+			}
+			if (step.activityType == activityTypeWorkitem) != (step.worktypeID != "") {
+				resp, err := failed(errors.New("400 activityType Workitem requires workitemSettings"))
+				return nil, resp, err
+			}
+			f.stages[i].step = step
+			return &platformclientv2.Stepplan{Id: platformclientv2.String(stepplanId)}, ok(), nil
+		},
+	}
+}
+
+func liveStages(f *fakeCaseplanAPI) []stageplanConfig {
+	return append([]stageplanConfig(nil), f.stages...)
+}
+
+func withFakeProxy(t *testing.T, f *fakeCaseplanAPI) *provider.ProviderMeta {
+	t.Helper()
+	internalProxy = f.proxy()
+	t.Cleanup(func() { internalProxy = nil })
+	return &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+}
+
+// caseplanStateAttrs is the flat state of a published caseplan whose single stageplan mirrors the fake's.
+func caseplanStateAttrs(f *fakeCaseplanAPI) map[string]string {
+	return map[string]string{
+		"id": f.id, "name": "cp", "reference_prefix": "AB12",
+		"default_due_duration_in_seconds": "100", "default_ttl_seconds": "200",
+		"published_version": "1", "has_draft": "false",
+		"data_schema.#": "1", "data_schema.0.id": "schema-1",
+		"stageplan.#": "1", "stageplan.0.id": f.stages[0].id, "stageplan.0.name": f.stages[0].name, "stageplan.0.description": "",
+		"stageplan.0.stepplan.#": "1", "stageplan.0.stepplan.0.id": f.stages[0].step.id,
+		"stageplan.0.stepplan.0.name": f.stages[0].step.name, "stageplan.0.stepplan.0.activity_type": activityTypeNone,
+		"stageplan.0.stepplan.0.description": "", "stageplan.0.stepplan.0.workitem_settings.#": "0",
+	}
+}
+
+func resourceDataWithDiff(t *testing.T, state map[string]string, diff map[string]*terraform.ResourceAttrDiff) *schema.ResourceData {
+	t.Helper()
+	d, err := schema.InternalMap(ResourceCaseManagementCaseplan().Schema).Data(
+		&terraform.InstanceState{ID: state["id"], Attributes: state}, &terraform.InstanceDiff{Attributes: diff})
+	require.NoError(t, err)
+	return d
+}
+
+// ---- Stageplan reconcile matrix ----
+
+func TestUnitReconcileStageplans(t *testing.T) {
+	t.Parallel()
+	defaults := []string{"Stage 1", "Stage 2", "Stage 3"}
+	run := func(f *fakeCaseplanAPI, prior, desired []stageplanConfig) []stageplanConfig {
+		t.Helper()
+		resolved, diags := reconcileStageplans(context.Background(), f.proxy(), f.id, prior, desired)
+		require.Empty(t, diags)
+		f.assertStages(desired)
+		return resolved
+	}
+
+	t.Run("3 desired map onto the defaults by position", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, defaults...)
+		resolved := run(f, nil, []stageplanConfig{stage("Intake", noneStep("Triage")), stage("Work", workitemStep("Do", "wt-1")), stage("Done", noneStep("Close"))})
+		assert.Equal(t, 3, f.count("patch-stage"))
+		assert.Zero(t, f.count("create")+f.count("delete")+f.count("reposition"))
+		for i := range resolved {
+			assert.Equal(t, f.stages[i].id, resolved[i].id)
+			assert.Equal(t, f.stages[i].step.id, resolved[i].step.id)
+		}
+	})
+	t.Run("1 desired deletes surplus defaults", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, defaults...)
+		run(f, nil, []stageplanConfig{stage("Only", noneStep("Step"))})
+		assert.Equal(t, 2, f.count("delete"))
+	})
+	t.Run("5 desired adds 2", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, defaults...)
+		run(f, nil, []stageplanConfig{stage("A1", noneStep("s")), stage("B1", noneStep("s")), stage("C1", noneStep("s")), stage("D1", workitemStep("s", "wt-1")), stage("E1", noneStep("s"))})
+		assert.Equal(t, 2, f.count("create"))
+		assert.Zero(t, f.count("reposition"))
+	})
+	t.Run("rename in place keeps the id", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B", "C")
+		prior := liveStages(f)
+		run(f, prior, []stageplanConfig{stage("A", noneStep("Step 1")), stage("B renamed", noneStep("Step 2")), stage("C", noneStep("Step 3"))})
+		assert.Equal(t, prior[1].id, f.stages[1].id)
+		assert.Equal(t, []string{"patch-stage"}, f.calls)
+	})
+	t.Run("insert in the middle is a single create", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B", "C")
+		prior := liveStages(f)
+		run(f, prior, []stageplanConfig{stage("A", noneStep("Step 1")), stage("New", noneStep("Step 1")), stage("B", noneStep("Step 2")), stage("C", noneStep("Step 3"))})
+		assert.Equal(t, []string{"create"}, f.calls)
+		assert.Equal(t, prior[1].id, f.stages[2].id)
+	})
+	t.Run("delete the middle", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B", "C")
+		run(f, liveStages(f), []stageplanConfig{stage("A", noneStep("Step 1")), stage("C", noneStep("Step 3"))})
+		assert.Equal(t, []string{"delete"}, f.calls)
+	})
+	t.Run("replace all 5", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B", "C", "D", "E")
+		run(f, liveStages(f), []stageplanConfig{stage("V", noneStep("s")), stage("W", noneStep("s")), stage("X", noneStep("s")), stage("Y", noneStep("s")), stage("Z", noneStep("s"))})
+	})
+	t.Run("shift at the max deletes before creating", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B", "C", "D", "E")
+		run(f, liveStages(f), []stageplanConfig{stage("B", noneStep("Step 2")), stage("C", noneStep("Step 3")), stage("D", noneStep("Step 4")), stage("E", noneStep("Step 5")), stage("F", noneStep("Step 1"))})
+		assert.Equal(t, 1, f.count("delete"))
+		assert.Equal(t, 1, f.count("create"))
+	})
+	t.Run("single stageplan replaced defers the delete", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A")
+		run(f, []stageplanConfig{{id: "gone", name: "Old"}}, []stageplanConfig{stage("New", noneStep("Step 1"))})
+	})
+	t.Run("rename and move becomes delete and create", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B")
+		prior := liveStages(f)
+		run(f, prior, []stageplanConfig{stage("B2", noneStep("Step 1")), stage("A", noneStep("Step 1"))})
+		assert.Equal(t, 1, f.count("delete"))
+		assert.Equal(t, 1, f.count("create"))
+		assert.Equal(t, prior[0].id, f.stages[1].id)
+	})
+	t.Run("workitem to none clears settings", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A")
+		f.stages[0].step = workitemStep("Step 1", "wt-1")
+		run(f, liveStages(f), []stageplanConfig{stage("A", noneStep("Step 1"))})
+	})
+	t.Run("no changes makes no writes", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B")
+		run(f, liveStages(f), []stageplanConfig{stage("A", noneStep("Step 1")), stage("B", noneStep("Step 2"))})
+		assert.Empty(t, f.calls)
+	})
+	t.Run("stageplan deleted outside terraform is recreated", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A", "B")
+		prior := append(liveStages(f), stageplanConfig{id: "deleted-in-ui", name: "C"})
+		run(f, prior, []stageplanConfig{stage("A", noneStep("Step 1")), stage("B", noneStep("Step 2")), stage("C", noneStep("Step 1"))})
+		assert.Equal(t, []string{"create"}, f.calls)
+	})
+	t.Run("create failure mentions the feature toggle", func(t *testing.T) {
+		f := newFakeCaseplanAPI(t, "A")
+		p := f.proxy()
+		p.createStageplanAttr = func(ctx context.Context, pr *caseManagementCaseplanProxy, caseplanId string, body platformclientv2.Stageplancreate) (*platformclientv2.Stageplan, *platformclientv2.APIResponse, error) {
+			resp, err := failed(assert.AnError)
+			return nil, resp, err
+		}
+		_, diags := reconcileStageplans(context.Background(), p, f.id, liveStages(f), []stageplanConfig{stage("A", noneStep("Step 1")), stage("B", noneStep("Step 1"))})
+		require.NotEmpty(t, diags)
+		assert.Contains(t, diags[0].Summary+diags[0].Detail, "PURE-8006")
+	})
+
+	reorders := []struct {
+		name     string
+		from, to []string
+		moves    int
+	}{
+		{"first to last", []string{"A", "B", "C"}, []string{"B", "C", "A"}, 1},
+		{"last to first", []string{"A", "B", "C"}, []string{"C", "A", "B"}, 1},
+		{"swap adjacent", []string{"A", "B", "C", "D"}, []string{"A", "C", "B", "D"}, 1},
+		{"swap first and last", []string{"A", "B", "C"}, []string{"C", "B", "A"}, 2},
+		{"two disjoint swaps", []string{"A", "B", "C", "D", "E"}, []string{"B", "A", "C", "E", "D"}, 2},
+		{"reverse 5", []string{"A", "B", "C", "D", "E"}, []string{"E", "D", "C", "B", "A"}, 4},
+	}
+	for _, tc := range reorders {
+		t.Run("reorder "+tc.name+" uses the minimum repositions", func(t *testing.T) {
+			f := newFakeCaseplanAPI(t, tc.from...)
+			steps := map[string]string{}
+			for _, s := range f.stages {
+				steps[s.name] = s.step.name
+			}
+			desired := make([]stageplanConfig, len(tc.to))
+			for i, name := range tc.to {
+				desired[i] = stage(name, noneStep(steps[name]))
+			}
+			run(f, liveStages(f), desired)
+			assert.Equal(t, tc.moves, f.count("reposition"))
+			assert.Equal(t, tc.moves, len(f.calls), "only repositions: %v", f.calls)
+		})
+	}
+}
+
+// ---- Create / update / read / import flows (the update tests share internalProxy, so no t.Parallel) ----
+
+func TestUnitCreateCaseplan_reconcilesStageplansAndPublishes(t *testing.T) {
+	f := newFakeCaseplanAPI(t)
+	meta := withFakeProxy(t, f)
+	d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{
+		"name": "cp", "reference_prefix": "AB12",
+		"data_schema": []interface{}{map[string]interface{}{"id": "schema-1"}},
+		"stageplan": []interface{}{
+			map[string]interface{}{"name": "Intake", "stepplan": []interface{}{map[string]interface{}{"name": "Step 1", "activity_type": activityTypeNone}}},
+			map[string]interface{}{"name": "Work", "stepplan": []interface{}{map[string]interface{}{
+				"name": "Do", "activity_type": activityTypeWorkitem,
+				"workitem_settings": []interface{}{map[string]interface{}{"worktype_id": "wt-1"}},
+			}}},
+		},
+	})
+	require.Empty(t, createCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, "cp1", d.Id())
+	assert.Equal(t, []string{"create-caseplan", "delete", "patch-stage", "patch-stage", "patch-step", "publish"}, f.calls)
+	assert.Zero(t, f.count("post-version"), "a new caseplan is already a draft")
+	f.assertStages([]stageplanConfig{stage("Intake", noneStep("Step 1")), stage("Work", workitemStep("Do", "wt-1"))})
+	assert.Equal(t, 1, d.Get("published_version"))
+	assert.Equal(t, false, d.Get("has_draft"))
+	assert.Equal(t, f.stages[1].step.id, d.Get("stageplan.1.stepplan.0.id"))
+}
+
+func TestUnitCreateCaseplan_withoutStageplansStillPublishes(t *testing.T) {
+	f := newFakeCaseplanAPI(t)
+	meta := withFakeProxy(t, f)
+	d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{
+		"name": "cp", "data_schema": []interface{}{map[string]interface{}{"id": "schema-1"}},
+	})
+	require.Empty(t, createCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, []string{"create-caseplan", "publish"}, f.calls)
+	assert.Len(t, f.stages, 3, "unmanaged stageplans are left alone")
+	assert.Equal(t, 0, d.Get("stageplan.#"))
+}
+
+func TestUnitUpdateCaseplan_nameOnlyDoesNotCreateDraft(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A")
+	f.published = 1
+	meta := withFakeProxy(t, f)
+	d := resourceDataWithDiff(t, caseplanStateAttrs(f), map[string]*terraform.ResourceAttrDiff{"name": {Old: "cp", New: "renamed"}})
+	require.Empty(t, updateCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, []string{"patch-caseplan"}, f.calls)
+	assert.Equal(t, 1, f.latest)
+	assert.Equal(t, "renamed", d.Get("name"))
+}
+
+func TestUnitUpdateCaseplan_versionedChangeCreatesDraftAndPublishes(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A")
+	f.published = 1
+	meta := withFakeProxy(t, f)
+	stageID := f.stages[0].id
+	d := resourceDataWithDiff(t, caseplanStateAttrs(f), map[string]*terraform.ResourceAttrDiff{
+		"stageplan.0.stepplan.0.name": {Old: f.stages[0].step.name, New: "Renamed step"},
+	})
+	require.Empty(t, updateCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, []string{"post-version", "patch-step", "publish"}, f.calls)
+	assert.Equal(t, 2, d.Get("published_version"))
+	assert.Equal(t, false, d.Get("has_draft"))
+	assert.Equal(t, stageID, d.Get("stageplan.0.id"), "ids are stable across versions")
+}
+
+func TestUnitUpdateCaseplan_reusesExistingDraftAndOverwritesIt(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A")
+	f.published, f.latest = 1, 2
+	f.record.DefaultTtlSeconds = platformclientv2.Int(999)
+	meta := withFakeProxy(t, f)
+	d := resourceDataWithDiff(t, caseplanStateAttrs(f), map[string]*terraform.ResourceAttrDiff{
+		"default_due_duration_in_seconds": {Old: "100", New: "150"},
+	})
+	require.Empty(t, updateCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, []string{"patch-caseplan-versioned", "publish"}, f.calls)
+	assert.Equal(t, 200, *f.record.DefaultTtlSeconds, "UI draft edits to managed fields are overwritten")
+	assert.Equal(t, 2, f.published)
+}
+
+func TestUnitUpdateCaseplan_neverPublishedIsPublished(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A")
+	meta := withFakeProxy(t, f)
+	state := caseplanStateAttrs(f)
+	state["published_version"] = "0"
+	d := resourceDataWithDiff(t, state, map[string]*terraform.ResourceAttrDiff{"published_version": {Old: "0", NewComputed: true}})
+	require.Empty(t, updateCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, []string{"publish"}, f.calls)
+	assert.Equal(t, 1, f.published)
+}
+
+func TestUnitUpdateCaseplan_neverPublishedSyncsDataSchema(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A")
+	meta := withFakeProxy(t, f)
+	state := caseplanStateAttrs(f)
+	state["published_version"] = "0"
+	d := resourceDataWithDiff(t, state, map[string]*terraform.ResourceAttrDiff{
+		"data_schema.0.id": {Old: "schema-1", New: "schema-2"}, "published_version": {Old: "0", NewComputed: true},
+	})
+	require.Empty(t, updateCaseManagementCaseplan(context.Background(), d, meta))
+	assert.Equal(t, []string{"put-dataschema", "publish"}, f.calls)
+	assert.Equal(t, "schema-2", f.schemaID)
+}
+
+func TestUnitReadCaseplan_readsPublishedVersionWhenDraftExists(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A")
+	f.published, f.latest = 1, 2
+	p := f.proxy()
+	var versionsRead []string
+	p.getCaseManagementCaseplanVersionAttr = func(ctx context.Context, pr *caseManagementCaseplanProxy, caseplanId, versionId string) (*platformclientv2.Caseplan, *platformclientv2.APIResponse, error) {
+		versionsRead = append(versionsRead, versionId)
+		cp := f.record
+		cp.Name = platformclientv2.String("published name")
+		return &cp, ok(), nil
+	}
+	internalProxy = p
+	t.Cleanup(func() { internalProxy = nil })
+	d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{"name": "published name"})
+	d.SetId(f.id)
+	require.Empty(t, readCaseManagementCaseplan(context.Background(), d, &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}))
+	assert.Equal(t, []string{"1"}, versionsRead)
+	assert.Equal(t, 1, d.Get("published_version"))
+	assert.Equal(t, true, d.Get("has_draft"))
+	assert.Empty(t, d.Get("stageplan"), "stageplans are not read when not configured")
+}
+
+func TestUnitImportCaseplan_seedsStageplansForRead(t *testing.T) {
+	f := newFakeCaseplanAPI(t, "Stage A", "Stage B")
+	f.published = 1
+	meta := withFakeProxy(t, f)
+	d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
+	d.SetId(f.id)
+	imported, err := importCaseManagementCaseplan(context.Background(), d, meta)
+	require.NoError(t, err)
+	require.Len(t, imported, 1)
+	require.Empty(t, readCaseManagementCaseplan(context.Background(), imported[0], meta))
+	assert.Equal(t, 2, d.Get("stageplan.#"))
+	assert.Equal(t, f.stages[1].step.id, d.Get("stageplan.1.stepplan.0.id"))
+}
+
+// ---- Exporter ----
+
+func TestUnitCaseplanExporter_skipsNeverPublished(t *testing.T) {
+	f := newFakeCaseplanAPI(t)
+	f.published = 1
+	f.others = []platformclientv2.Caseplan{
+		{Id: platformclientv2.String("draft-only"), Name: platformclientv2.String("never published"), Latest: platformclientv2.Int(1)},
+		{Name: platformclientv2.String("no id"), Latest: platformclientv2.Int(1), Published: platformclientv2.Int(1)},
+		{Id: platformclientv2.String("cp2"), Name: platformclientv2.String("live"), Latest: platformclientv2.Int(3), Published: platformclientv2.Int(2)},
+	}
+	withFakeProxy(t, f)
+	resources, diags := getAllAuthCaseManagementCaseplans(context.Background(), &platformclientv2.Configuration{})
+	require.Empty(t, diags)
+	assert.Len(t, resources, 2)
+	assert.Contains(t, resources, "cp1")
+	assert.Contains(t, resources, "cp2")
+	assert.Equal(t, "live", resources["cp2"].BlockLabel)
+}
+
+func TestUnitCaseplanRead_exportModes(t *testing.T) {
+	modes := map[string]func(t *testing.T){
+		"tfexporter": func(t *testing.T) {
+			tfexporter_state.ActivateExporterState()
+			t.Cleanup(tfexporter_state.ResetExporterStateForTests)
+		},
+		"mrmo": func(t *testing.T) { t.Setenv(mrmo.MRMO_CXASCODE_INTEGRATION_ENABLED, "true") },
+	}
+	for mode, activate := range modes {
+		t.Run(mode+" skips a never-published caseplan", func(t *testing.T) {
+			activate(t)
+			require.True(t, isExporting())
+			f := newFakeCaseplanAPI(t, "A")
+			meta := withFakeProxy(t, f)
+			d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
+			d.SetId(f.id)
+			require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
+			assert.Empty(t, d.Id())
+		})
+		t.Run(mode+" reads stageplans and stepplans from empty state in API order", func(t *testing.T) {
+			activate(t)
+			f := newFakeCaseplanAPI(t, "Zeta", "Alpha")
+			f.published = 1
+			f.stages[1].step = workitemStep("Do", "wt-1")
+			meta := withFakeProxy(t, f)
+			d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
+			d.SetId(f.id)
+			require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
+			assert.Equal(t, 2, d.Get("stageplan.#"))
+			assert.Equal(t, "Zeta", d.Get("stageplan.0.name"))
+			assert.Equal(t, "wt-1", d.Get("stageplan.1.stepplan.0.workitem_settings.0.worktype_id"))
+		})
+	}
+
+	t.Run("outside export a never-published caseplan is kept and read from latest", func(t *testing.T) {
+		tfexporter_state.ResetExporterStateForTests()
+		require.False(t, isExporting())
+		f := newFakeCaseplanAPI(t, "A")
+		meta := withFakeProxy(t, f)
+		d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{"name": "cp"})
+		d.SetId(f.id)
+		require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
+		assert.Equal(t, f.id, d.Id())
+		assert.Equal(t, 0, d.Get("published_version"))
+		assert.Equal(t, true, d.Get("has_draft"))
+	})
 }
