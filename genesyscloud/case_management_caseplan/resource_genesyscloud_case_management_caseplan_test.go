@@ -2,6 +2,7 @@ package case_management_caseplan
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -310,4 +312,132 @@ resource "genesyscloud_case_management_caseplan" "cp" {
   }
 %[5]s%[6]s}
 `, o.name, strconv.Quote(o.description), strings.ToUpper(n.refPrefix), o.dueSeconds, o.intake, strings.Join(o.stageplans, ""))
+}
+
+// TestAccResourceCaseManagementCaseplanFrozenFields checks that fields the API freezes at first publish fail at
+// plan time, and that the caseplan is untouched afterwards.
+func TestAccResourceCaseManagementCaseplanFrozenFields(t *testing.T) {
+	n := newAccCaseplanNames("cpfz")
+	opts := accCaseplanOptions{
+		name:        n.caseplan,
+		description: "acc caseplan frozen",
+		dueSeconds:  86400,
+		stageplans:  []string{accStageplan("Only stage", "Only step", false)},
+	}
+	base := testAccCaseplanConfig(n, opts)
+	other := "00000000-0000-0000-0000-000000000000"
+
+	steps := []resource.TestStep{
+		{Config: testAccCaseplanDeps(n)},
+		{
+			PreConfig: func() { time.Sleep(15 * time.Second) },
+			Config:    base,
+			Check:     resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+		},
+	}
+	for _, edit := range []struct{ field, from, to string }{
+		{"division_id", "division_id                     = data.genesyscloud_auth_division_home.home.id", `division_id = "` + other + `"`},
+		{"reference_prefix", fmt.Sprintf("reference_prefix                = %q", strings.ToUpper(n.refPrefix)), `reference_prefix = "ZZZZ9999"`},
+		{"customer_intent", "id = genesyscloud_intents_customerintents.intent.id", `id = "` + other + `"`},
+		{"data_schema", "id = genesyscloud_task_management_workitem_schema.schema.id", `id = "` + other + `"`},
+	} {
+		if !strings.Contains(base, edit.from) {
+			t.Fatalf("test config no longer contains %q for %s", edit.from, edit.field)
+		}
+		steps = append(steps, resource.TestStep{
+			Config:      strings.Replace(base, edit.from, edit.to, 1),
+			ExpectError: regexp.MustCompile(edit.field + ` cannot change after the caseplan has been published`),
+		})
+	}
+	// The caseplan is unchanged and still plans empty with the original config.
+	steps = append(steps, resource.TestStep{
+		Config: base,
+		Check:  resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps:             steps,
+		CheckDestroy:      AccVerifyCaseplanDestroyed,
+	})
+}
+
+// TestAccResourceCaseManagementCaseplanVersionedFields covers versioned changes other than stageplan order:
+// scalar fields, an unpublished UI draft being overwritten, clearing intake, and a Workitem step becoming None.
+func TestAccResourceCaseManagementCaseplanVersionedFields(t *testing.T) {
+	n := newAccCaseplanNames("cpvf")
+	ids := map[string]string{}
+	opts := accCaseplanOptions{
+		name:        n.caseplan,
+		description: "acc caseplan versioned",
+		dueSeconds:  86400,
+		stageplans:  []string{accStageplan("Work", "Do it", true)},
+		intake:      accIntake(true, 1),
+	}
+	due := opts
+	due.dueSeconds = 90000
+	noIntake := due
+	noIntake.intake = ""
+	noWorkitem := noIntake
+	noWorkitem.stageplans = []string{accStageplan("Work", "Do it", false)}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{Config: testAccCaseplanDeps(n)},
+			{
+				PreConfig: func() { time.Sleep(15 * time.Second) },
+				Config:    testAccCaseplanConfig(n, opts),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "default_due_duration_in_seconds", "86400"),
+					captureAttr(accCaseplanPath, "id", ids, "caseplan"),
+				),
+			},
+			{
+				// Someone edits the caseplan in the UI, leaving an unpublished draft. The next apply overwrites it
+				// with config and publishes exactly what is configured.
+				PreConfig: func() {
+					api := platformclientv2.NewCaseManagementApi()
+					if _, _, err := api.PostCasemanagementCaseplanVersions(ids["caseplan"]); err != nil {
+						t.Fatalf("creating UI draft: %v", err)
+					}
+					patch := platformclientv2.Caseplanupdate{DefaultTtlSeconds: platformclientv2.Int(172800)}
+					if _, _, err := api.PatchCasemanagementCaseplan(ids["caseplan"], patch); err != nil {
+						t.Fatalf("editing UI draft: %v", err)
+					}
+				},
+				Config: testAccCaseplanConfig(n, due),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "2"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "has_draft", "false"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "default_due_duration_in_seconds", "90000"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "default_ttl_seconds", "604800"),
+				),
+			},
+			{
+				Config: testAccCaseplanConfig(n, noIntake),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "3"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.#", "0"),
+				),
+			},
+			{
+				Config: testAccCaseplanConfig(n, noWorkitem),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "4"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.stepplan.0.activity_type", "None"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.stepplan.0.workitem_settings.#", "0"),
+				),
+			},
+			{
+				ResourceName:      accCaseplanPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: AccVerifyCaseplanDestroyed,
+	})
 }
