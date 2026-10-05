@@ -57,3 +57,23 @@ func TestUnitOrganizeMembersForRead(t *testing.T) {
 	}
 	assert.Equal(t, apiChanged, organizeMembersForRead(schemaMembers, apiChanged))
 }
+
+func TestUnitOrganizeAllOutboundEmailAddressesForRead(t *testing.T) {
+	schemaAddresses := []interface{}{
+		map[string]interface{}{"domain_id": "d.example.com", "route_id": "r1"},
+		map[string]interface{}{"domain_id": "d.example.com", "route_id": "r2"},
+	}
+
+	// Same set, API returns a different order -> keep config order (no perpetual diff).
+	apiReordered := []interface{}{
+		map[string]interface{}{"domain_id": "d.example.com", "route_id": "r2"},
+		map[string]interface{}{"domain_id": "d.example.com", "route_id": "r1"},
+	}
+	assert.Equal(t, schemaAddresses, organizeAllOutboundEmailAddressesForRead(schemaAddresses, apiReordered))
+
+	// Set actually changed -> use the API result.
+	apiChanged := []interface{}{
+		map[string]interface{}{"domain_id": "d.example.com", "route_id": "r1"},
+	}
+	assert.Equal(t, apiChanged, organizeAllOutboundEmailAddressesForRead(schemaAddresses, apiChanged))
+}

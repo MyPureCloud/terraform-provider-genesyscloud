@@ -25,12 +25,6 @@ import (
 func TestAccResourceBusinessRulesDecisionTableCSVHappyPath(t *testing.T) {
 	t.Parallel()
 
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
-
 	var (
 		tableResourceLabel  = "test-dt-csv-happy"
 		schemaResourceLabel = "test-schema-csv-happy"
@@ -142,12 +136,6 @@ func TestAccResourceBusinessRulesDecisionTableCSVHappyPath(t *testing.T) {
 func TestAccResourceBusinessRulesDecisionTableCSVQueueName(t *testing.T) {
 	t.Parallel()
 
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
-
 	var (
 		tableResourceLabel  = "test-dt-csv-queue"
 		schemaResourceLabel = "test-schema-csv-queue"
@@ -203,12 +191,6 @@ func TestAccResourceBusinessRulesDecisionTableCSVQueueName(t *testing.T) {
 // failures for rows_csv_filepath (rowId column, wrong headers, header-only, both rows+CSV).
 func TestAccResourceBusinessRulesDecisionTableCSVValidation(t *testing.T) {
 	t.Parallel()
-
-	enabled, businessRulesDecisionTableResp, queueResp := businessRulesDecisionTableFtIsEnabled()
-	if !enabled {
-		t.Skipf("Skipping test as required permissions are not configured, decision table: %s, queues: %s", businessRulesDecisionTableResp.Status, queueResp.Status)
-		return
-	}
 
 	var (
 		schemaResourceLabel = "test-schema-csv-val"

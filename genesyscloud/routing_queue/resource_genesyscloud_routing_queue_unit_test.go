@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,6 +49,7 @@ func TestUnitResourceRoutingQueueCreate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.CallingPartyName, routingQueue.CallingPartyName, "Calling Party Name Not Equal")
 		assert.Equal(t, testRoutingQueue.CallingPartyNumber, routingQueue.CallingPartyNumber, "Calling Party Number Not Equal")
 		assert.Equal(t, testRoutingQueue.PeerId, routingQueue.PeerId, "Peer ID Not Equal")
+		assert.Equal(t, testRoutingQueue.DefaultMediaLanguage, routingQueue.DefaultMediaLanguage, "Default Media Language Not Equal")
 		assert.Equal(t, testRoutingQueue.AcwSettings, routingQueue.AcwSettings, "ACW Settings Not Equal")
 		assert.Equal(t, testRoutingQueue.OutboundMessagingAddresses, routingQueue.OutboundMessagingAddresses, "Outbound Messaging Addresses Not Equal")
 		assert.Equal(t, testRoutingQueue.SuppressInQueueCallRecording, routingQueue.SuppressInQueueCallRecording, "Suppress In-Queue Call Recording Not Equal")
@@ -188,6 +189,7 @@ func TestUnitResourceRoutingQueueRead(t *testing.T) {
 	assert.Equal(t, testRoutingQueue.CallingPartyName, routingQueue.CallingPartyName, "Calling Party Name Not Equal")
 	assert.Equal(t, testRoutingQueue.CallingPartyNumber, routingQueue.CallingPartyNumber, "Calling Party Number Not Equal")
 	assert.Equal(t, testRoutingQueue.PeerId, routingQueue.PeerId, "Peer ID Not Equal")
+	assert.Equal(t, testRoutingQueue.DefaultMediaLanguage, routingQueue.DefaultMediaLanguage, "Default Media Language Not Equal")
 	assert.Equal(t, testRoutingQueue.AcwSettings, routingQueue.AcwSettings, "ACW Settings Not Equal")
 	assert.Equal(t, testRoutingQueue.OutboundMessagingAddresses, routingQueue.OutboundMessagingAddresses, "Outbound Messaging Addresses Not Equal")
 	assert.Equal(t, testRoutingQueue.SuppressInQueueCallRecording, routingQueue.SuppressInQueueCallRecording, "Suppress In-Queue Call Recording Not Equal")
@@ -237,6 +239,7 @@ func TestUnitResourceRoutingQueueUpdate(t *testing.T) {
 		assert.Equal(t, testRoutingQueue.CallingPartyName, routingQueue.CallingPartyName, "Calling Party Name Not Equal")
 		assert.Equal(t, testRoutingQueue.CallingPartyNumber, routingQueue.CallingPartyNumber, "Calling Party Number Not Equal")
 		assert.Equal(t, testRoutingQueue.PeerId, routingQueue.PeerId, "Peer ID Not Equal")
+		assert.Equal(t, testRoutingQueue.DefaultMediaLanguage, routingQueue.DefaultMediaLanguage, "Default Media Language Not Equal")
 		assert.Equal(t, testRoutingQueue.AcwSettings, routingQueue.AcwSettings, "ACW Settings Not Equal")
 		assert.Equal(t, testRoutingQueue.OutboundMessagingAddresses, routingQueue.OutboundMessagingAddresses, "Outbound Messaging Addresses Not Equal")
 		assert.Equal(t, testRoutingQueue.SuppressInQueueCallRecording, routingQueue.SuppressInQueueCallRecording, "Suppress In-Queue Call Recording Not Equal")
@@ -603,6 +606,57 @@ func TestUnitStoreRoutingQueueInCache(t *testing.T) {
 	assert.Equal(t, "Write Through Queue", *cached.Name)
 }
 
+// DEVTOOLING-1764: cached queues must deep-copy nested bullseye member_groups so later
+// mutation of the list/SDK response cannot shrink export state.
+func TestUnitStoreRoutingQueueInCacheDeepCopiesBullseyeMemberGroups(t *testing.T) {
+	tfexporter_state.ActivateExporterState()
+
+	queueID := "queue-bullseye-deepcopy-test"
+	ring1Groups := []platformclientv2.Membergroup{
+		{Id: platformclientv2.String("sg-1"), VarType: platformclientv2.String("SKILLGROUP")},
+		{Id: platformclientv2.String("sg-2"), VarType: platformclientv2.String("SKILLGROUP")},
+		{Id: platformclientv2.String("sg-3"), VarType: platformclientv2.String("SKILLGROUP")},
+		{Id: platformclientv2.String("sg-4"), VarType: platformclientv2.String("SKILLGROUP")},
+		{Id: platformclientv2.String("sg-5"), VarType: platformclientv2.String("SKILLGROUP")},
+	}
+	ring6Groups := []platformclientv2.Membergroup{
+		{Id: platformclientv2.String("sg-0"), VarType: platformclientv2.String("SKILLGROUP")},
+	}
+	queue := platformclientv2.Queue{
+		Id:   platformclientv2.String(queueID),
+		Name: platformclientv2.String("Bullseye Deep Copy Queue"),
+		Bullseye: &platformclientv2.Bullseye{
+			Rings: &[]platformclientv2.Ring{
+				{MemberGroups: &ring1Groups},
+				{},
+				{},
+				{},
+				{},
+				{MemberGroups: &ring6Groups},
+			},
+		},
+	}
+
+	storeRoutingQueueInCache(routingQueueCache, &queue)
+
+	// Mutate the original nested slices as if an SDK/list buffer were reused.
+	ring1Groups = ring1Groups[:3]
+	ring6Groups = ring6Groups[:0]
+	(*queue.Bullseye.Rings)[0].MemberGroups = &ring1Groups
+	(*queue.Bullseye.Rings)[5].MemberGroups = &ring6Groups
+
+	cached := rc.GetCacheItem(routingQueueCache, queueID)
+	require.NotNil(t, cached)
+	require.NotNil(t, cached.Bullseye)
+	require.NotNil(t, cached.Bullseye.Rings)
+	require.Len(t, *cached.Bullseye.Rings, 6)
+	require.NotNil(t, (*cached.Bullseye.Rings)[0].MemberGroups)
+	require.NotNil(t, (*cached.Bullseye.Rings)[5].MemberGroups)
+	assert.Len(t, *(*cached.Bullseye.Rings)[0].MemberGroups, 5)
+	assert.Len(t, *(*cached.Bullseye.Rings)[5].MemberGroups, 1)
+	assert.Equal(t, "sg-0", *(*(*cached.Bullseye.Rings)[5].MemberGroups)[0].Id)
+}
+
 // This test proves that the site_id field from the API is preserved through
 // the flatten (read) and build (write) round-trip.
 func TestUnitFlattenAndBuildCallbackSiteId(t *testing.T) {
@@ -651,6 +705,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"calling_party_name":                *testRoutingQueue.CallingPartyName,
 		"calling_party_number":              *testRoutingQueue.CallingPartyNumber,
 		"peer_id":                           *testRoutingQueue.PeerId,
+		"default_media_language":            *testRoutingQueue.DefaultMediaLanguage,
 		"source_queue_id":                   *testRoutingQueue.SourceQueueId,
 		"acw_timeout_ms":                    *testRoutingQueue.AcwSettings.TimeoutMs,
 		"acw_wrapup_prompt":                 *testRoutingQueue.AcwSettings.WrapupPrompt,
@@ -663,6 +718,7 @@ func buildRoutingQueueResourceMap(tId string, tName string, testRoutingQueue pla
 		"routing_rules":                                  flattenRoutingRules(testRoutingQueue.RoutingRules),
 		"media_settings_call":                            flattenMediaSetting(testRoutingQueue.MediaSettings.Call),
 		"media_settings_email":                           flattenMediaEmailSetting(testRoutingQueue.MediaSettings.Email),
+		"all_outbound_email_addresses":                   flattenAllOutboundEmailAddresses(testRoutingQueue.MediaSettings.Email.AllOutboundEmailAddresses),
 		"media_settings_chat":                            flattenMediaSetting(testRoutingQueue.MediaSettings.Chat),
 		"media_settings_callback":                        flattenMediaSettingCallback(testRoutingQueue.MediaSettings.Callback),
 		"media_settings_message":                         flattenMediaSettingsMessage(testRoutingQueue.MediaSettings.Message),
@@ -686,6 +742,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		callingPartyName      = "Unit Test Inc."
 		callingPartyNumber    = "123"
 		peerId                = "5696a54c-4009-4e63-826c-311679deeb97"
+		defaultMediaLanguage  = "en-US"
 		sourceQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		backupQueueId         = "5696a54c-4009-4e63-826c-311679deeb97"
 		lastAgentRoutingMode  = "QueueMembersOnly"
@@ -791,6 +848,7 @@ func generateRoutingQueueData(id, name string) platformclientv2.Createqueuereque
 		CallingPartyName:             &callingPartyName,
 		CallingPartyNumber:           &callingPartyNumber,
 		PeerId:                       &peerId,
+		DefaultMediaLanguage:         &defaultMediaLanguage,
 		SourceQueueId:                &sourceQueueId,
 		AcwSettings:                  &acwSettings,
 		SuppressInQueueCallRecording: platformclientv2.Bool(true),
@@ -826,6 +884,7 @@ func convertCreateQueuetoQueue(req platformclientv2.Createqueuerequest) *platfor
 		CallingPartyName:             req.CallingPartyName,
 		CallingPartyNumber:           req.CallingPartyNumber,
 		PeerId:                       req.PeerId,
+		DefaultMediaLanguage:         req.DefaultMediaLanguage,
 		AcwSettings:                  req.AcwSettings,
 		OutboundMessagingAddresses:   req.OutboundMessagingAddresses,
 		SuppressInQueueCallRecording: req.SuppressInQueueCallRecording,
@@ -876,12 +935,26 @@ func GenerateMediaSettingsMessageWithSubType() platformclientv2.Messagemediasett
 }
 
 func generateMediaEmailSettings() platformclientv2.Emailmediasettings {
+	route1 := platformclientv2.Inboundroute{Id: platformclientv2.String("6b6b1f1e-1111-4b1e-9b1e-111111111111")}
+	route2 := platformclientv2.Inboundroute{Id: platformclientv2.String("6b6b1f1e-2222-4b1e-9b1e-222222222222")}
+	route1Ptr := &route1
+	route2Ptr := &route2
 	return platformclientv2.Emailmediasettings{
 		EnableAutoAnswer:       platformclientv2.Bool(true),
 		AlertingTimeoutSeconds: platformclientv2.Int(20),
 		ServiceLevel: &platformclientv2.Servicelevel{
 			Percentage: platformclientv2.Float64(0.7),
 			DurationMs: platformclientv2.Int(10000),
+		},
+		AllOutboundEmailAddresses: &[]platformclientv2.Queueemailaddress{
+			{
+				Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String("test.example.com")},
+				Route:  &route1Ptr,
+			},
+			{
+				Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String("test.example.com")},
+				Route:  &route2Ptr,
+			},
 		},
 	}
 }

@@ -16,11 +16,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func TestAccResourceRoutingUtilizationBasic(t *testing.T) {
-	t.Parallel()
+
 	var (
 		maxCapacity1  = "3"
 		maxCapacity2  = "4"
@@ -278,6 +278,74 @@ func generateRoutingUtilizationResource(attributes ...string) string {
 		%s
 	}
 	`, strings.Join(attributes, "\n"))
+}
+
+func TestAccResourceRoutingUtilizationMaxInboundCalls(t *testing.T) {
+	var (
+		maxCapacity         = "1"
+		maxInboundCalls1    = "1"
+		maxInboundCalls2    = "2"
+		maxInboundCallsZero = "0"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		Steps: []resource.TestStep{
+			{
+				// Create with max_inbound_calls
+				Config: generateRoutingUtilizationResource(
+					GenerateRoutingUtilMediaType("call", maxCapacity, util.TrueValue),
+					GenerateRoutingUtilMediaType("callback", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("chat", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("email", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("message", maxCapacity, util.FalseValue),
+					fmt.Sprintf("max_inbound_calls = %s", maxInboundCalls1),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "max_inbound_calls", maxInboundCalls1),
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "call.0.maximum_capacity", maxCapacity),
+				),
+			},
+			{
+				// Update max_inbound_calls to an explicit 0 (means "no limit"). Verify the apply
+				// succeeds with 0 in state. Note: the API omits maxInboundCalls when it is 0, so a
+				// 0 value does not round-trip on import — hence no ImportState check is done here,
+				// and the final import step below runs against a non-zero value.
+				Config: generateRoutingUtilizationResource(
+					GenerateRoutingUtilMediaType("call", maxCapacity, util.TrueValue),
+					GenerateRoutingUtilMediaType("callback", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("chat", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("email", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("message", maxCapacity, util.FalseValue),
+					fmt.Sprintf("max_inbound_calls = %s", maxInboundCallsZero),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "max_inbound_calls", maxInboundCallsZero),
+				),
+			},
+			{
+				// Update max_inbound_calls to a non-zero value
+				Config: generateRoutingUtilizationResource(
+					GenerateRoutingUtilMediaType("call", maxCapacity, util.TrueValue),
+					GenerateRoutingUtilMediaType("callback", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("chat", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("email", maxCapacity, util.FalseValue),
+					GenerateRoutingUtilMediaType("message", maxCapacity, util.FalseValue),
+					fmt.Sprintf("max_inbound_calls = %s", maxInboundCalls2),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "max_inbound_calls", maxInboundCalls2),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      "genesyscloud_routing_utilization.routing-util",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
 }
 
 func CleanupRoutingUtilizationLabel() error {
