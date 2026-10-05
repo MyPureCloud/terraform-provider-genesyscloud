@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -195,7 +196,7 @@ func ArchitectPromptAudioResolver(promptId, exportDirectory, subDirectory string
 	}
 
 	log.Printf("Collecting audio data (mediaUri, language, filename) for resources in prompt '%s'", promptId)
-	audioDataList, err := getArchitectPromptAudioData(ctx, promptId, *allResources)
+	audioDataList, err := getArchitectPromptAudioData(ctx, promptId, resource.BlockLabel, *allResources)
 	if err != nil {
 		return err
 	}
@@ -278,7 +279,7 @@ func getUserPromptResources(ctx context.Context, promptId string, meta any) (*[]
 	return allResources, nil
 }
 
-func getArchitectPromptAudioData(ctx context.Context, promptId string, allPromptResources []platformclientv2.Promptasset) ([]PromptAudioData, error) {
+func getArchitectPromptAudioData(ctx context.Context, promptId string, promptName string, allPromptResources []platformclientv2.Promptasset) ([]PromptAudioData, error) {
 	var promptResourceData []PromptAudioData
 
 	for _, r := range allPromptResources {
@@ -291,11 +292,41 @@ func getArchitectPromptAudioData(ctx context.Context, promptId string, allPrompt
 		var promptAudioData PromptAudioData
 		promptAudioData.MediaUri = *r.MediaUri
 		promptAudioData.Language = *r.Language
-		promptAudioData.FileName = fmt.Sprintf("%s-%s.wav", *r.Language, promptId)
+		// Derive the exported filename from the org-stable prompt name (not the
+		// org-specific prompt GUID). Embedding the GUID made exported filenames
+		// differ across orgs for the same logical prompt, which caused Terraform
+		// to plan an in-place update for every prompt when applying config
+		// exported from one org against another (e.g. PROD -> QA in CICD).
+		promptAudioData.FileName = fmt.Sprintf("%s-%s.wav", sanitizePromptFileName(promptName), *r.Language)
 		promptResourceData = append(promptResourceData, promptAudioData)
 	}
 
 	return promptResourceData, nil
+}
+
+// promptFileNameUnsafeChars matches characters that are unsafe in a filename or path.
+// The set is aligned with the provider's filename validator so exported prompt audio
+// filenames stay filesystem-safe.
+var promptFileNameUnsafeChars = regexp.MustCompile(`[/\\{}^%\]">\[~<#|` + "\x00-\x1f" + `]`)
+
+// promptFileNameCollapse collapses runs of whitespace and/or underscores.
+var promptFileNameCollapse = regexp.MustCompile(`[\s_]+`)
+
+// sanitizePromptFileName converts an arbitrary prompt name into a filesystem-safe,
+// deterministic token. The same name always yields the same token across orgs and
+// runs, which keeps exported prompt audio filenames stable and portable. It never
+// falls back to the org-specific GUID (doing so would reintroduce the portability bug).
+func sanitizePromptFileName(name string) string {
+	s := strings.TrimSpace(name)
+	s = promptFileNameUnsafeChars.ReplaceAllString(s, "_")
+	s = promptFileNameCollapse.ReplaceAllString(s, "_")
+	s = strings.Trim(s, "_")
+	if s == "" {
+		// Deterministic, org-stable fallback for names consisting only of unsafe
+		// characters. Derived from the name, never the GUID.
+		return fmt.Sprintf("prompt_%x", []byte(name))
+	}
+	return s
 }
 
 func buildUserPromptFromResourceData(d *schema.ResourceData) platformclientv2.Prompt {
