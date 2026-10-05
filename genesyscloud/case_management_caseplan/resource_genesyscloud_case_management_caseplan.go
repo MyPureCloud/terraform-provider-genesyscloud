@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -23,9 +24,9 @@ import (
 The resource_genesyscloud_case_management_caseplan.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllAuthCaseManagementCaseplan retrieves all of the case management caseplan via Terraform in the Genesys Cloud and is used for the exporter
+// getAllAuthCaseManagementCaseplans retrieves all published caseplans for the exporter. Never-published caseplans are skipped.
 func getAllAuthCaseManagementCaseplans(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := newCaseManagementCaseplanProxy(clientConfig)
+	proxy := getCaseManagementCaseplanProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
 	caseplans, resp, err := proxy.getAllCaseManagementCaseplan(ctx)
@@ -34,7 +35,7 @@ func getAllAuthCaseManagementCaseplans(ctx context.Context, clientConfig *platfo
 	}
 
 	for _, caseplan := range *caseplans {
-		if caseplan.Id == nil || *caseplan.Id == "" {
+		if caseplan.Id == nil || *caseplan.Id == "" || caseplan.Published == nil {
 			continue
 		}
 		blockLabel := "caseplan"
@@ -47,7 +48,7 @@ func getAllAuthCaseManagementCaseplans(ctx context.Context, clientConfig *platfo
 	return resources, nil
 }
 
-// createCaseManagementCaseplan is used by the case_management_caseplan resource to create Genesys cloud case management caseplan
+// createCaseManagementCaseplan creates the caseplan (draft v1 with 3 default stageplans), reconciles stageplans and publishes.
 func createCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCaseManagementCaseplanProxy(sdkConfig)
@@ -62,13 +63,26 @@ func createCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, m
 	if created == nil || created.Id == nil {
 		return util.BuildAPIDiagnosticError(ResourceType, "Create caseplan returned no id", resp)
 	}
+	id := *created.Id
+	d.SetId(id)
 
-	d.SetId(*created.Id)
-	log.Printf("Created case management caseplan %s", *created.Id)
+	if desired := expandStageplans(d.Get("stageplan").([]interface{})); len(desired) > 0 {
+		resolved, diags := reconcileStageplans(ctx, proxy, id, nil, desired)
+		if diags != nil {
+			return diags
+		}
+		_ = d.Set("stageplan", flattenStageplans(resolved))
+	}
+
+	if diags := publishCaseplan(ctx, proxy, d, id); diags != nil {
+		return diags
+	}
+	log.Printf("Created and published case management caseplan %s", id)
 	return readCaseManagementCaseplan(ctx, d, meta)
 }
 
-// readCaseManagementCaseplan is used by the case_management_caseplan resource to read an case management caseplan from genesys cloud
+// readCaseManagementCaseplan reads the published version. A never-published caseplan falls back to latest,
+// and is treated as not found during export.
 func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCaseManagementCaseplanProxy(sdkConfig)
@@ -77,12 +91,23 @@ func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("Reading case management caseplan %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		caseplan, resp, getErr := proxy.getCaseManagementCaseplanById(ctx, d.Id())
+		latest, resp, getErr := proxy.getCaseManagementCaseplanById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read case management caseplan %s: %s", d.Id(), getErr), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read case management caseplan %s: %s", d.Id(), getErr), resp))
+		}
+
+		if latest.Published == nil && isExporting() {
+			log.Printf("Skipping never-published case management caseplan %s during export", d.Id())
+			d.SetId("")
+			return nil
+		}
+
+		caseplan, version, resp, err := resolveCaseplanContent(ctx, proxy, latest)
+		if err != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read published version of caseplan %s: %s", d.Id(), err), resp))
 		}
 
 		resourcedata.SetNillableValue(d, "name", caseplan.Name)
@@ -97,180 +122,181 @@ func readCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, met
 		resourcedata.SetNillableValue(d, "default_ttl_seconds", caseplan.DefaultTtlSeconds)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "default_case_owner", caseplan.DefaultCaseOwner, flattenUserReference)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "customer_intent", caseplan.CustomerIntent, flattenCustomerIntentReference)
+		_ = d.Set("published_version", publishedVersion(latest))
+		_ = d.Set("has_draft", hasDraft(latest))
 
-		ver := caseplanVersionForDataschemaRead(caseplan)
-		if ver != "" {
-			listing, dsResp, dsErr := proxy.getCaseManagementCaseplanVersionDataschemas(ctx, d.Id(), ver)
-			if dsErr != nil {
-				if util.IsStatus404(dsResp) {
-					_ = d.Set("data_schema", nil)
-				} else {
-					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s data schemas: %s", d.Id(), dsErr), dsResp))
-				}
-			} else {
-				var entities *[]platformclientv2.Caseplandataschema
-				if listing != nil {
-					entities = listing.Entities
-				}
-				_ = d.Set("data_schema", flattenCaseplanDataSchemas(entities))
-			}
+		schemas, dsResp, dsErr := proxy.getCaseManagementCaseplanVersionDataschemas(ctx, d.Id(), version)
+		if dsErr != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s data schemas: %s", d.Id(), dsErr), dsResp))
+		}
+		if schemas != nil {
+			_ = d.Set("data_schema", flattenCaseplanDataSchemas(schemas.Entities))
 		} else {
 			_ = d.Set("data_schema", nil)
 		}
 
-		if ver != "" {
-			intakeListing, inResp, inErr := proxy.getCaseManagementCaseplanVersionIntakesettings(ctx, d.Id(), ver)
-			if inErr != nil {
-				if util.IsStatus404(inResp) {
-					_ = d.Set("intake_settings", []interface{}{})
-				} else {
-					return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s intake settings: %s", d.Id(), inErr), inResp))
-				}
-			} else {
-				var entities *[]platformclientv2.Intakesetting
-				if intakeListing != nil {
-					entities = intakeListing.Entities
-				}
-				_ = d.Set("intake_settings", flattenCaseplanIntakeSettings(entities))
-			}
+		intake, inResp, inErr := proxy.getCaseManagementCaseplanVersionIntakesettings(ctx, d.Id(), version)
+		if inErr != nil {
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s intake settings: %s", d.Id(), inErr), inResp))
+		}
+		if intake != nil {
+			_ = d.Set("intake_settings", flattenCaseplanIntakeSettings(intake.Entities))
 		} else {
 			_ = d.Set("intake_settings", []interface{}{})
 		}
 
-		readName := ""
-		if caseplan.Name != nil {
-			readName = *caseplan.Name
+		// Stageplans are only managed when configured (or seeded by import), so caseplans without stageplan blocks show no diff.
+		if len(d.Get("stageplan").([]interface{})) > 0 || isExporting() {
+			stages, stResp, stErr := readStageplans(ctx, proxy, d.Id(), version)
+			if stErr != nil {
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s stageplans: %s", d.Id(), stErr), stResp))
+			}
+			_ = d.Set("stageplan", flattenStageplans(stages))
 		}
-		log.Printf("Read case management caseplan %s %s", d.Id(), readName)
+
+		log.Printf("Read case management caseplan %s %s (version %s)", d.Id(), stringValue(caseplan.Name), version)
 		return cc.CheckState(d)
 	})
 }
 
-func caseplanApplyPatchIfChanged(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
-	if patch, ok := buildCaseplanPatchFromResourceData(d); ok {
-		_, resp, err := proxy.patchCaseManagementCaseplan(ctx, id, *patch)
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to patch case management caseplan %s: %s", id, err), resp)
-		}
+// resolveCaseplanContent returns the caseplan content Terraform manages and its version id:
+// the published version, or latest when the caseplan has never been published.
+func resolveCaseplanContent(ctx context.Context, proxy *caseManagementCaseplanProxy, latest *platformclientv2.Caseplan) (*platformclientv2.Caseplan, string, *platformclientv2.APIResponse, error) {
+	if latest.Published == nil {
+		return latest, caseplanAPIVersionLatest, nil, nil
 	}
-	return nil
-}
-
-func caseplanDiagsIfImmutableFieldsChangeAfterPublish(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
-	cp, resp, err := proxy.getCaseManagementCaseplanById(ctx, id)
+	version := versionString(*latest.Published)
+	if latest.Latest != nil && *latest.Latest == *latest.Published {
+		return latest, version, nil, nil
+	}
+	published, resp, err := proxy.getCaseManagementCaseplanVersion(ctx, stringValue(latest.Id), version)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s before update: %s", id, err), resp)
+		return nil, version, resp, err
 	}
-	if cp.Published == nil || *cp.Published == 0 {
-		return nil
-	}
-	var diags diag.Diagnostics
-	add := func(attr, detail string) {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  fmt.Sprintf("%s cannot change after the caseplan has been published", attr),
-			Detail:   detail,
-		})
-	}
-	if d.HasChange("division_id") {
-		add("division_id", "divisionId is immutable after first publish.")
-	}
-	if d.HasChange("customer_intent") {
-		add("customer_intent", "customerIntentId is immutable after first publish.")
-	}
-	if d.HasChange("reference_prefix") {
-		add("reference_prefix", "referencePrefix is immutable after first publish.")
-	}
-	if d.HasChange("data_schema") {
-		add("data_schema", "dataSchemas are immutable after first publish.")
-	}
-	if d.HasChange("intake_settings") {
-		add("intake_settings", "intakeSettings are immutable after first publish.")
-	}
-	return diags
+	return published, version, resp, nil
 }
 
-func caseplanApplyIntakePutIfChanged(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
-	if !d.HasChange("intake_settings") {
-		return nil
-	}
-	body := platformclientv2.Intakesettingsupdate{}
-	body.IntakeSettings = expandCaseplanIntakeSettingsForPut(d)
-	_, resp, err := proxy.putCaseManagementCaseplanIntakesettings(ctx, id, body)
-	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update caseplan %s intake settings: %s", id, err), resp)
-	}
-	return nil
-}
-
-// execCaseplanDataSchemaSync uses DELETE on .../dataschemas/default when the binding id changes or is removed, then
-// POST /dataschemas {"id"} for a new workitem schema id, or PUT .../dataschemas/default when re-binding after delete (fallback path).
-func execCaseplanDataSchemaSync(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID string, oldRaw, newRaw []interface{}) diag.Diagnostics {
-	if len(newRaw) > 1 {
-		return diag.Errorf("%s: only one data_schema block is supported (API uses .../dataschemas/default); found %d blocks", ResourceType, len(newRaw))
-	}
-	deleteIDs, puts := caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw)
-	if len(deleteIDs) == 0 && len(puts) == 0 {
-		return nil
-	}
-	key := caseplanDataschemaKeyDefault
-	oldIDSet := caseplanDataSchemaIDSetFromRaw(oldRaw)
-	if len(deleteIDs) > 0 {
-		resp, err := proxy.deleteCaseManagementCaseplanDataschema(ctx, caseplanID, key)
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete caseplan %s data schema key %q: %s", caseplanID, key, err), resp)
-		}
-	}
-	toPut := puts
-	if len(deleteIDs) > 0 && len(toPut) == 0 && len(newRaw) > 0 {
-		toPut = caseplanDataSchemasFromResourceList(newRaw)
-	}
-	for _, row := range toPut {
-		if row.Id == nil || *row.Id == "" {
-			continue
-		}
-		sid := *row.Id
-		if _, existed := oldIDSet[sid]; existed {
-			_, resp, err := proxy.putCaseManagementCaseplanDataschema(ctx, caseplanID, key, row)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to put caseplan %s data schema %s (key %q): %s", caseplanID, sid, key, err), resp)
-			}
-			continue
-		}
-		_, resp, err := proxy.postCaseManagementCaseplanDataschema(ctx, caseplanID, caseplanDataschemaPostBody{Id: sid})
-		if err != nil {
-			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to post caseplan %s data schema id %s: %s", caseplanID, sid, err), resp)
-		}
-	}
-	return nil
-}
-
-// updateCaseManagementCaseplan is used by the case_management_caseplan resource to update an case management caseplan in Genesys Cloud
+// updateCaseManagementCaseplan patches unversioned fields in place. Versioned changes are written over a draft
+// (created, or reused if one exists), diffed against that draft because the API rejects no-op writes, then published.
 func updateCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getCaseManagementCaseplanProxy(sdkConfig)
 	id := d.Id()
 
-	if diags := caseplanDiagsIfImmutableFieldsChangeAfterPublish(ctx, proxy, d, id); diags != nil {
-		return diags
+	live, resp, err := proxy.getCaseManagementCaseplanById(ctx, id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read caseplan %s before update: %s", id, err), resp)
 	}
 
-	if diags := caseplanApplyPatchIfChanged(ctx, proxy, d, id); diags != nil {
-		return diags
-	}
-
-	if d.HasChange("data_schema") {
-		oldRaw, newRaw := d.GetChange("data_schema")
-		if diags := execCaseplanDataSchemaSync(ctx, proxy, id, oldRaw.([]interface{}), newRaw.([]interface{})); diags != nil {
-			return diags
+	if patch, ok := buildCaseplanUnversionedPatch(d, live); ok {
+		if _, resp, err := proxy.patchCaseManagementCaseplan(ctx, id, *patch); err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to patch case management caseplan %s: %s", id, err), resp)
 		}
 	}
 
-	if diags := caseplanApplyIntakePutIfChanged(ctx, proxy, d, id); diags != nil {
-		return diags
+	neverPublished := live.Published == nil
+	if !neverPublished && !d.HasChanges(versionedAttributes...) {
+		return readCaseManagementCaseplan(ctx, d, meta)
 	}
 
+	if needsNewDraft(live) {
+		log.Printf("Creating draft version of caseplan %s", id)
+		if _, resp, err := proxy.postCaseManagementCaseplanVersions(ctx, id); err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create draft version of caseplan %s: %s", id, err), resp)
+		}
+	}
+	draft, resp, err := proxy.getCaseManagementCaseplanVersion(ctx, id, caseplanAPIVersionLatest)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read draft of caseplan %s: %s", id, err), resp)
+	}
+
+	if patch, ok := buildCaseplanVersionedPatch(d, draft); ok {
+		if _, resp, err := proxy.patchCaseManagementCaseplan(ctx, id, *patch); err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to patch draft of caseplan %s: %s", id, err), resp)
+		}
+	}
+	if neverPublished {
+		if diags := syncCaseplanDataSchema(ctx, proxy, d, id); diags != nil {
+			return diags
+		}
+	}
+	if diags := syncCaseplanIntakeSettings(ctx, proxy, d, id); diags != nil {
+		return diags
+	}
+	// No stageplan blocks means stageplans are not managed, not "delete all" (the minimum is 1).
+	if desired := expandStageplans(d.Get("stageplan").([]interface{})); len(desired) > 0 {
+		oldRaw, _ := d.GetChange("stageplan")
+		resolved, diags := reconcileStageplans(ctx, proxy, id, expandStageplans(oldRaw.([]interface{})), desired)
+		if diags != nil {
+			return diags
+		}
+		_ = d.Set("stageplan", flattenStageplans(resolved))
+	}
+
+	if diags := publishCaseplan(ctx, proxy, d, id); diags != nil {
+		return diags
+	}
 	return readCaseManagementCaseplan(ctx, d, meta)
+}
+
+// publishCaseplan publishes the draft and records the resulting version, so the read that follows starts from the applied values.
+func publishCaseplan(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
+	log.Printf("Publishing caseplan %s", id)
+	published, resp, err := proxy.publishCaseManagementCaseplan(ctx, id)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish caseplan %s: %s", id, err), resp)
+	}
+	if published != nil && published.Published != nil {
+		_ = d.Set("published_version", *published.Published)
+	}
+	_ = d.Set("has_draft", false)
+	return nil
+}
+
+// syncCaseplanDataSchema binds the configured data schema to the draft (only possible before the first publish).
+func syncCaseplanDataSchema(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
+	want := configuredDataSchemaID(d)
+	listing, resp, err := proxy.getCaseManagementCaseplanVersionDataschemas(ctx, id, caseplanAPIVersionLatest)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read data schemas of caseplan %s: %s", id, err), resp)
+	}
+	var current string
+	if listing != nil {
+		current = firstDataSchemaID(listing.Entities)
+	}
+	if want == "" || want == current {
+		return nil
+	}
+	if current == "" {
+		if _, resp, err := proxy.postCaseManagementCaseplanDataschema(ctx, id, want); err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to add data schema %s to caseplan %s: %s", want, id, err), resp)
+		}
+		return nil
+	}
+	if _, resp, err := proxy.putCaseManagementCaseplanDataschema(ctx, id, caseplanDataschemaKeyDefault, want); err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to replace data schema of caseplan %s with %s (intake settings and workitem stepplans must not reference the old schema): %s", id, want, err), resp)
+	}
+	return nil
+}
+
+// syncCaseplanIntakeSettings replaces the draft's intake settings when they differ from config.
+func syncCaseplanIntakeSettings(ctx context.Context, proxy *caseManagementCaseplanProxy, d *schema.ResourceData, id string) diag.Diagnostics {
+	desired := expandCaseplanIntakeSettings(d.Get("intake_settings").([]interface{}))
+	listing, resp, err := proxy.getCaseManagementCaseplanVersionIntakesettings(ctx, id, caseplanAPIVersionLatest)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read intake settings of caseplan %s: %s", id, err), resp)
+	}
+	var current *[]platformclientv2.Intakesetting
+	if listing != nil {
+		current = listing.Entities
+	}
+	if intakeSettingsEqual(desired, current) {
+		return nil
+	}
+	if _, resp, err := proxy.putCaseManagementCaseplanIntakesettings(ctx, id, platformclientv2.Intakesettingsupdate{IntakeSettings: &desired}); err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update intake settings of caseplan %s: %s", id, err), resp)
+	}
+	return nil
 }
 
 // deleteCaseManagementCaseplan is used by the case_management_caseplan resource to delete an case management caseplan from Genesys cloud
@@ -296,4 +322,275 @@ func deleteCaseManagementCaseplan(ctx context.Context, d *schema.ResourceData, m
 
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("case management caseplan %s still exists", d.Id()), resp))
 	})
+}
+
+// importCaseManagementCaseplan marks stageplans as managed with a placeholder; the read that follows import
+// (and export) replaces it with every stageplan and stepplan.
+func importCaseManagementCaseplan(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+	placeholder := []interface{}{map[string]interface{}{"name": "", "stepplan": []interface{}{map[string]interface{}{}}}}
+	if err := d.Set("stageplan", placeholder); err != nil {
+		return nil, err
+	}
+	return []*schema.ResourceData{d}, nil
+}
+
+// customizeCaseManagementCaseplanDiff validates stageplans, blocks frozen-field changes after publish, and forces an
+// update (which publishes) for a caseplan that has never been published.
+func customizeCaseManagementCaseplanDiff(_ context.Context, d *schema.ResourceDiff, _ interface{}) error {
+	if err := validateStageplanConfig(d.Get("stageplan").([]interface{})); err != nil {
+		return err
+	}
+	if d.Id() == "" {
+		return nil
+	}
+	published := d.Get("published_version").(int) > 0
+	if published {
+		for _, attr := range frozenAfterPublishAttributes {
+			if d.HasChange(attr) {
+				return fmt.Errorf("%s cannot change after the caseplan has been published; create a new caseplan instead", attr)
+			}
+		}
+	}
+	if !published || d.HasChanges(versionedAttributes...) {
+		if err := d.SetNewComputed("published_version"); err != nil {
+			return err
+		}
+		return d.SetNewComputed("has_draft")
+	}
+	return nil
+}
+
+func validateStageplanConfig(raw []interface{}) error {
+	names := make(map[string]bool)
+	for i, s := range expandStageplans(raw) {
+		if s.name != "" {
+			if names[s.name] {
+				return fmt.Errorf("stageplan names must be unique within a caseplan; %q is used more than once", s.name)
+			}
+			names[s.name] = true
+		}
+		if s.step.activityType == activityTypeWorkitem && !stepHasWorkitemSettings(raw[i]) {
+			return fmt.Errorf("stageplan %d (%q): stepplan activity_type %q requires workitem_settings", i+1, s.name, activityTypeWorkitem)
+		}
+		if s.step.activityType != activityTypeWorkitem && stepHasWorkitemSettings(raw[i]) {
+			return fmt.Errorf("stageplan %d (%q): stepplan workitem_settings is only allowed when activity_type is %q", i+1, s.name, activityTypeWorkitem)
+		}
+	}
+	return nil
+}
+
+// stepHasWorkitemSettings checks block presence, so an unknown worktype_id at plan time still counts.
+func stepHasWorkitemSettings(rawStage interface{}) bool {
+	m, ok := rawStage.(map[string]interface{})
+	if !ok {
+		return false
+	}
+	steps := listFromMap(m, "stepplan")
+	if len(steps) == 0 {
+		return false
+	}
+	sm, ok := steps[0].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	return len(listFromMap(sm, "workitem_settings")) > 0
+}
+
+// readStageplans returns the stageplans of a caseplan version in process-flow order, each with its single stepplan.
+func readStageplans(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID, versionID string) ([]stageplanConfig, *platformclientv2.APIResponse, error) {
+	stages, resp, err := proxy.listStageplans(ctx, caseplanID, versionID)
+	if err != nil {
+		return nil, resp, err
+	}
+	out := make([]stageplanConfig, 0, len(stages))
+	for _, s := range stages {
+		stage := stageplanFromAPI(s)
+		step, stepResp, err := readSingleStepplan(ctx, proxy, caseplanID, versionID, stage.id)
+		if err != nil {
+			return nil, stepResp, err
+		}
+		stage.step = step
+		out = append(out, stage)
+	}
+	return out, resp, nil
+}
+
+func readSingleStepplan(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID, versionID, stageplanID string) (stepplanConfig, *platformclientv2.APIResponse, error) {
+	steps, resp, err := proxy.listStepplans(ctx, caseplanID, versionID, stageplanID)
+	if err != nil {
+		return stepplanConfig{}, resp, err
+	}
+	if len(steps) != 1 {
+		return stepplanConfig{}, resp, fmt.Errorf("expected exactly 1 stepplan for stageplan %s, found %d", stageplanID, len(steps))
+	}
+	return stepplanFromAPI(steps[0]), resp, nil
+}
+
+// reconcileStageplans makes the latest (draft) version's stageplans and stepplans match desired.
+// prior is the previous Terraform state; when empty, the live stageplans are used so they are matched by name, then position.
+// The stageplan count stays within 1..maxStageplans after every call. It returns desired with stageplan and stepplan ids resolved.
+func reconcileStageplans(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID string, prior, desired []stageplanConfig) ([]stageplanConfig, diag.Diagnostics) {
+	actual, resp, err := readStageplans(ctx, proxy, caseplanID, caseplanAPIVersionLatest)
+	if err != nil {
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to list stageplans for caseplan %s: %s", caseplanID, err), resp)
+	}
+	if len(prior) == 0 {
+		prior = actual
+	}
+	actualByID := make(map[string]stageplanConfig, len(actual))
+	for _, a := range actual {
+		actualByID[a.id] = a
+	}
+
+	desiredIDs, toDelete := matchStageplans(prior, actual, desired)
+	created := make(map[int]bool)
+	count := len(actual)
+
+	deleteStage := func(id string) diag.Diagnostics {
+		log.Printf("Deleting stageplan %s from caseplan %s", id, caseplanID)
+		if resp, err := proxy.deleteStageplan(ctx, caseplanID, id); err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete stageplan %s from caseplan %s: %s. %s", id, caseplanID, err, stageplanFeatureHint), resp)
+		}
+		count--
+		return nil
+	}
+
+	var deferred []string
+	for _, id := range toDelete {
+		if count <= 1 {
+			deferred = append(deferred, id)
+			continue
+		}
+		if diags := deleteStage(id); diags != nil {
+			return nil, diags
+		}
+	}
+
+	for i, ds := range desired {
+		if desiredIDs[i] != "" {
+			continue
+		}
+		if count >= maxStageplans && len(deferred) > 0 {
+			if diags := deleteStage(deferred[0]); diags != nil {
+				return nil, diags
+			}
+			deferred = deferred[1:]
+		}
+		body := platformclientv2.Stageplancreate{Name: platformclientv2.String(ds.name)}
+		if ds.description != "" {
+			body.Description = platformclientv2.String(ds.description)
+		}
+		if i > 0 {
+			body.After = platformclientv2.String(desiredIDs[i-1])
+		}
+		log.Printf("Creating stageplan %q in caseplan %s", ds.name, caseplanID)
+		stage, resp, err := proxy.createStageplan(ctx, caseplanID, body)
+		if err != nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create stageplan %q in caseplan %s: %s. %s", ds.name, caseplanID, err, stageplanFeatureHint), resp)
+		}
+		if stage == nil || stage.Id == nil {
+			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Create stageplan %q in caseplan %s returned no id", ds.name, caseplanID), resp)
+		}
+		desiredIDs[i] = *stage.Id
+		created[i] = true
+		count++
+	}
+
+	for _, id := range deferred {
+		if diags := deleteStage(id); diags != nil {
+			return nil, diags
+		}
+	}
+
+	for i, ds := range desired {
+		if created[i] {
+			continue
+		}
+		if update, ok := buildStageplanUpdate(actualByID[desiredIDs[i]], ds); ok {
+			if _, resp, err := proxy.patchStageplan(ctx, caseplanID, desiredIDs[i], update); err != nil {
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update stageplan %s in caseplan %s: %s", desiredIDs[i], caseplanID, err), resp)
+			}
+		}
+	}
+
+	if diags := repositionStageplans(ctx, proxy, caseplanID, desiredIDs); diags != nil {
+		return nil, diags
+	}
+
+	resolved := make([]stageplanConfig, len(desired))
+	for i, ds := range desired {
+		stageID := desiredIDs[i]
+		var current stepplanConfig
+		if created[i] {
+			step, resp, err := readSingleStepplan(ctx, proxy, caseplanID, caseplanAPIVersionLatest, stageID)
+			if err != nil {
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read stepplan of stageplan %s in caseplan %s: %s", stageID, caseplanID, err), resp)
+			}
+			current = step
+		} else {
+			current = actualByID[stageID].step
+		}
+		resolved[i] = ds
+		resolved[i].id = stageID
+		resolved[i].step.id = current.id
+		if update, ok := buildStepplanUpdate(current, ds.step); ok {
+			if _, resp, err := proxy.patchStepplan(ctx, caseplanID, stageID, current.id, update); err != nil {
+				return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update stepplan %s of stageplan %s in caseplan %s: %s", current.id, stageID, caseplanID, err), resp)
+			}
+		}
+	}
+	return resolved, nil
+}
+
+// repositionStageplans moves stageplans until the live order equals desiredIDs. Each move fixes one position, left to right.
+func repositionStageplans(ctx context.Context, proxy *caseManagementCaseplanProxy, caseplanID string, desiredIDs []string) diag.Diagnostics {
+	stages, resp, err := proxy.listStageplans(ctx, caseplanID, caseplanAPIVersionLatest)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to list stageplans for caseplan %s: %s", caseplanID, err), resp)
+	}
+	order := make([]string, 0, len(stages))
+	for _, s := range stages {
+		order = append(order, stringValue(s.Id))
+	}
+	if len(order) != len(desiredIDs) {
+		return diag.Errorf("%s: caseplan %s has %d stageplans after reconciling, expected %d", ResourceType, caseplanID, len(order), len(desiredIDs))
+	}
+
+	positions := make([]int, len(desiredIDs))
+	for i, id := range desiredIDs {
+		positions[i] = slices.Index(order, id)
+		if positions[i] < 0 {
+			return diag.Errorf("%s: stageplan %s not found in caseplan %s after reconciling", ResourceType, id, caseplanID)
+		}
+	}
+	keep := longestIncreasingSubsequence(positions)
+
+	for i, id := range desiredIDs {
+		if keep[i] {
+			continue
+		}
+		pos := slices.Index(order, id)
+		currentAfter, wantAfter := "", ""
+		if pos > 0 {
+			currentAfter = order[pos-1]
+		}
+		if i > 0 {
+			wantAfter = desiredIDs[i-1]
+		}
+		if currentAfter == wantAfter {
+			continue
+		}
+		body := platformclientv2.Stageplanreposition{}
+		if wantAfter == "" {
+			body.SetField("After", nil)
+		} else {
+			body.SetField("After", platformclientv2.String(wantAfter))
+		}
+		log.Printf("Repositioning stageplan %s in caseplan %s after %q", id, caseplanID, wantAfter)
+		if resp, err := proxy.repositionStageplan(ctx, caseplanID, id, body); err != nil {
+			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to reposition stageplan %s in caseplan %s: %s. %s", id, caseplanID, err, stageplanFeatureHint), resp)
+		}
+		order = moveAfter(order, id, wantAfter)
+	}
+	return nil
 }

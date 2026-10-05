@@ -2,12 +2,33 @@ package case_management_caseplan
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
+
+// versionedAttributes need a draft and a publish to change. name and description are not versioned;
+// division_id, customer_intent, reference_prefix and data_schema can only change before the first publish.
+var versionedAttributes = []string{
+	"default_due_duration_in_seconds",
+	"default_ttl_seconds",
+	"default_case_owner",
+	"intake_settings",
+	"stageplan",
+}
+
+var frozenAfterPublishAttributes = []string{"division_id", "customer_intent", "reference_prefix", "data_schema"}
+
+// isExporting is true for tfexporter and MRMO exports. MRMO only sets mrmo.IsActive().
+func isExporting() bool {
+	return tfexporter_state.IsExporterActive() || mrmo.IsActive()
+}
 
 // getCaseManagementCaseplanCreateFromResourceData maps ResourceData to Caseplancreate for POST /caseplans.
 func getCaseManagementCaseplanCreateFromResourceData(d *schema.ResourceData) platformclientv2.Caseplancreate {
@@ -38,65 +59,47 @@ func getCaseManagementCaseplanCreateFromResourceData(d *schema.ResourceData) pla
 			c.CustomerIntentId = platformclientv2.String(cid)
 		}
 	}
-	if schemas := expandCaseplanDataSchemas(d); schemas != nil {
-		c.DataSchemas = schemas
+	if id := configuredDataSchemaID(d); id != "" {
+		c.DataSchemas = &[]platformclientv2.Caseplandataschema{{Id: platformclientv2.String(id)}}
 	}
-	if intake := expandCaseplanIntakeSettingsForCreate(d); intake != nil {
-		c.IntakeSettings = intake
+	if intake := expandCaseplanIntakeSettings(d.Get("intake_settings").([]interface{})); len(intake) > 0 {
+		c.IntakeSettings = &intake
 	}
 	return c
 }
 
-// buildCaseplanPatchFromResourceData builds Caseplanupdate for PATCH /caseplans/{id}. Only fields with HasChange are set (SDK JSON uses SetFieldNames).
-func buildCaseplanPatchFromResourceData(d *schema.ResourceData) (*platformclientv2.Caseplanupdate, bool) {
+// buildCaseplanUnversionedPatch diffs the caseplan record fields against live. These are not versioned and need no draft;
+// the frozen ones are only sent while they differ, which plan-time validation limits to never-published caseplans.
+func buildCaseplanUnversionedPatch(d *schema.ResourceData, live *platformclientv2.Caseplan) (*platformclientv2.Caseplanupdate, bool) {
 	patch := &platformclientv2.Caseplanupdate{}
 	has := false
 
-	if d.HasChange("name") {
-		patch.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+	if name := d.Get("name").(string); name != stringValue(live.Name) {
+		patch.SetField("Name", platformclientv2.String(name))
 		has = true
 	}
-	if d.HasChange("division_id") {
-		div := d.Get("division_id").(string)
-		if div == "" {
-			patch.SetField("DivisionId", platformclientv2.String("*"))
-		} else {
-			patch.SetField("DivisionId", platformclientv2.String(div))
-		}
+	if desc := d.Get("description").(string); desc != stringValue(live.Description) {
+		patch.SetField("Description", nullableString(desc))
 		has = true
 	}
-	if d.HasChange("description") {
-		patch.SetField("Description", platformclientv2.String(d.Get("description").(string)))
+	liveDivision := ""
+	if live.Division != nil {
+		liveDivision = stringValue(live.Division.Id)
+	}
+	if div := d.Get("division_id").(string); div != "" && div != liveDivision {
+		patch.SetField("DivisionId", platformclientv2.String(div))
 		has = true
 	}
-	if d.HasChange("reference_prefix") {
-		patch.SetField("ReferencePrefix", platformclientv2.String(d.Get("reference_prefix").(string)))
+	if prefix := d.Get("reference_prefix").(string); prefix != "" && !strings.EqualFold(prefix, stringValue(live.ReferencePrefix)) {
+		patch.SetField("ReferencePrefix", platformclientv2.String(prefix))
 		has = true
 	}
-	if d.HasChange("default_due_duration_in_seconds") {
-		patch.SetField("DefaultDueDurationInSeconds", platformclientv2.Int(d.Get("default_due_duration_in_seconds").(int)))
-		has = true
+	liveIntent := ""
+	if live.CustomerIntent != nil {
+		liveIntent = stringValue(live.CustomerIntent.Id)
 	}
-	if d.HasChange("default_ttl_seconds") {
-		patch.SetField("DefaultTtlSeconds", platformclientv2.Int(d.Get("default_ttl_seconds").(int)))
-		has = true
-	}
-	if d.HasChange("default_case_owner") {
-		uid := firstMapString(d.Get("default_case_owner").([]interface{}), "id")
-		if uid != "" {
-			patch.SetField("DefaultCaseOwnerId", platformclientv2.String(uid))
-		} else {
-			patch.SetField("DefaultCaseOwnerId", nil)
-		}
-		has = true
-	}
-	if d.HasChange("customer_intent") {
-		cid := firstMapString(d.Get("customer_intent").([]interface{}), "id")
-		if cid != "" {
-			patch.SetField("CustomerIntentId", platformclientv2.String(cid))
-		} else {
-			patch.SetField("CustomerIntentId", nil)
-		}
+	if cid := firstMapString(d.Get("customer_intent").([]interface{}), "id"); cid != "" && cid != liveIntent {
+		patch.SetField("CustomerIntentId", platformclientv2.String(cid))
 		has = true
 	}
 
@@ -106,23 +109,35 @@ func buildCaseplanPatchFromResourceData(d *schema.ResourceData) (*platformclient
 	return patch, true
 }
 
-func expandCaseplanIntakeSettingsForCreate(d *schema.ResourceData) *[]platformclientv2.Intakesetting {
-	raw := d.Get("intake_settings").([]interface{})
-	if len(raw) == 0 {
-		return nil
+// buildCaseplanVersionedPatch diffs the versioned config fields against the live draft.
+func buildCaseplanVersionedPatch(d *schema.ResourceData, draft *platformclientv2.Caseplan) (*platformclientv2.Caseplanupdate, bool) {
+	patch := &platformclientv2.Caseplanupdate{}
+	has := false
+
+	if due := d.Get("default_due_duration_in_seconds").(int); due != 0 && (draft.DefaultDueDurationInSeconds == nil || due != *draft.DefaultDueDurationInSeconds) {
+		patch.SetField("DefaultDueDurationInSeconds", platformclientv2.Int(due))
+		has = true
 	}
-	out := expandCaseplanIntakeSettingsSlice(raw)
-	return &out
+	if ttl := d.Get("default_ttl_seconds").(int); ttl != 0 && (draft.DefaultTtlSeconds == nil || ttl != *draft.DefaultTtlSeconds) {
+		patch.SetField("DefaultTtlSeconds", platformclientv2.Int(ttl))
+		has = true
+	}
+	liveOwner := ""
+	if draft.DefaultCaseOwner != nil {
+		liveOwner = stringValue(draft.DefaultCaseOwner.Id)
+	}
+	if owner := firstMapString(d.Get("default_case_owner").([]interface{}), "id"); owner != liveOwner {
+		patch.SetField("DefaultCaseOwnerId", nullableString(owner))
+		has = true
+	}
+
+	if !has {
+		return nil, false
+	}
+	return patch, true
 }
 
-// expandCaseplanIntakeSettingsForPut builds the slice for PUT .../intakesettings (empty list clears settings).
-func expandCaseplanIntakeSettingsForPut(d *schema.ResourceData) *[]platformclientv2.Intakesetting {
-	raw := d.Get("intake_settings").([]interface{})
-	out := expandCaseplanIntakeSettingsSlice(raw)
-	return &out
-}
-
-func expandCaseplanIntakeSettingsSlice(raw []interface{}) []platformclientv2.Intakesetting {
+func expandCaseplanIntakeSettings(raw []interface{}) []platformclientv2.Intakesetting {
 	out := make([]platformclientv2.Intakesetting, 0, len(raw))
 	for _, item := range raw {
 		m, ok := item.(map[string]interface{})
@@ -172,67 +187,36 @@ func flattenCaseplanIntakeSettings(entities *[]platformclientv2.Intakesetting) [
 	return out
 }
 
-func expandCaseplanDataSchemas(d *schema.ResourceData) *[]platformclientv2.Caseplandataschema {
-	raw := d.Get("data_schema").([]interface{})
-	out := caseplanDataSchemasFromResourceList(raw)
-	if len(out) == 0 {
-		return nil
+// intakeSettingsEqual compares intake settings in order, treating nil required/display_order as their defaults.
+func intakeSettingsEqual(desired []platformclientv2.Intakesetting, live *[]platformclientv2.Intakesetting) bool {
+	liveFlat := flattenCaseplanIntakeSettings(live)
+	desiredFlat := flattenCaseplanIntakeSettings(&desired)
+	if len(liveFlat) != len(desiredFlat) {
+		return false
 	}
-	return &out
+	for i := range liveFlat {
+		l, dm := liveFlat[i].(map[string]interface{}), desiredFlat[i].(map[string]interface{})
+		if l["property"] != dm["property"] || l["required"] != dm["required"] || l["display_order"] != dm["display_order"] {
+			return false
+		}
+	}
+	return true
 }
 
-func caseplanDataSchemaIDSetFromRaw(raw []interface{}) map[string]struct{} {
-	out := make(map[string]struct{})
-	for _, row := range caseplanDataSchemasFromResourceList(raw) {
-		if row.Id != nil && *row.Id != "" {
-			out[*row.Id] = struct{}{}
-		}
-	}
-	return out
+func configuredDataSchemaID(d *schema.ResourceData) string {
+	return firstMapString(d.Get("data_schema").([]interface{}), "id")
 }
 
-func caseplanDataSchemasFromResourceList(raw []interface{}) []platformclientv2.Caseplandataschema {
-	out := make([]platformclientv2.Caseplandataschema, 0, len(raw))
-	for _, item := range raw {
-		m, ok := item.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		var row platformclientv2.Caseplandataschema
-		if id, ok := m["id"].(string); ok && id != "" {
-			row.Id = platformclientv2.String(id)
-		}
-		out = append(out, row)
+func firstDataSchemaID(schemas *[]platformclientv2.Caseplandataschema) string {
+	if schemas == nil {
+		return ""
 	}
-	return out
-}
-
-// caseplanDataSchemaSyncPlanFromState returns schema IDs removed from config (deleteIDs) and rows to bind (puts).
-// Only id is tracked: new ids get a POST after delete; re-binding the same id after a delete uses the fallback in execCaseplanDataSchemaSync.
-func caseplanDataSchemaSyncPlanFromState(oldRaw, newRaw []interface{}) (deleteIDs []string, puts []platformclientv2.Caseplandataschema) {
-	oldIDs := caseplanDataSchemaIDSetFromRaw(oldRaw)
-	newRows := caseplanDataSchemasFromResourceList(newRaw)
-	newIDSet := make(map[string]struct{})
-	for _, row := range newRows {
-		if row.Id != nil && *row.Id != "" {
-			newIDSet[*row.Id] = struct{}{}
+	for _, s := range *schemas {
+		if id := stringValue(s.Id); id != "" {
+			return id
 		}
 	}
-	for id := range oldIDs {
-		if _, ok := newIDSet[id]; !ok {
-			deleteIDs = append(deleteIDs, id)
-		}
-	}
-	for _, row := range newRows {
-		if row.Id == nil || *row.Id == "" {
-			continue
-		}
-		id := *row.Id
-		if _, had := oldIDs[id]; !had {
-			puts = append(puts, platformclientv2.Caseplandataschema{Id: platformclientv2.String(id)})
-		}
-	}
-	return deleteIDs, puts
+	return ""
 }
 
 func flattenCaseplanDataSchemas(schemas *[]platformclientv2.Caseplandataschema) []interface{} {
@@ -251,18 +235,28 @@ func flattenCaseplanDataSchemas(schemas *[]platformclientv2.Caseplandataschema) 
 	return out
 }
 
-// caseplanVersionForDataschemaRead returns the caseplan version id string for GET .../versions/{versionId}/dataschemas.
-func caseplanVersionForDataschemaRead(cp *platformclientv2.Caseplan) string {
-	if cp == nil {
-		return ""
+func publishedVersion(cp *platformclientv2.Caseplan) int {
+	if cp.Published == nil {
+		return 0
 	}
-	if cp.Latest != nil {
-		return fmt.Sprintf("%d", *cp.Latest)
+	return *cp.Published
+}
+
+// hasDraft is true when the latest version is unpublished, including a caseplan that was never published.
+func hasDraft(cp *platformclientv2.Caseplan) bool {
+	if cp.Published == nil || cp.Latest == nil {
+		return true
 	}
-	if cp.Published != nil {
-		return fmt.Sprintf("%d", *cp.Published)
-	}
-	return ""
+	return *cp.Latest != *cp.Published
+}
+
+// needsNewDraft is true when the latest version is published, so versioned edits need POST /versions first.
+func needsNewDraft(cp *platformclientv2.Caseplan) bool {
+	return cp.Published != nil && cp.Latest != nil && *cp.Latest == *cp.Published
+}
+
+func versionString(v int) string {
+	return fmt.Sprintf("%d", v)
 }
 
 func firstMapString(blocks []interface{}, key string) string {
@@ -294,4 +288,242 @@ func flattenCustomerIntentReference(ref *platformclientv2.Customerintentreferenc
 	m := make(map[string]interface{})
 	resourcedata.SetMapValueIfNotNil(m, "id", ref.Id)
 	return []interface{}{m}
+}
+
+// stepplanConfig is the configured (or live) content of a stepplan.
+type stepplanConfig struct {
+	id           string
+	name         string
+	description  string
+	activityType string
+	worktypeID   string
+}
+
+// stageplanConfig is the configured (or live) content of a stageplan.
+type stageplanConfig struct {
+	id          string
+	name        string
+	description string
+	step        stepplanConfig
+}
+
+const stageplanFeatureHint = "Adding, removing or reordering stageplans requires the add/delete stageplans feature (PURE-8006) in the org."
+
+func expandStageplans(raw []interface{}) []stageplanConfig {
+	out := make([]stageplanConfig, 0, len(raw))
+	for _, item := range raw {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		s := stageplanConfig{
+			id:          stringFromMap(m, "id"),
+			name:        stringFromMap(m, "name"),
+			description: stringFromMap(m, "description"),
+		}
+		if steps, ok := m["stepplan"].([]interface{}); ok && len(steps) > 0 {
+			if sm, ok := steps[0].(map[string]interface{}); ok {
+				s.step = stepplanConfig{
+					id:           stringFromMap(sm, "id"),
+					name:         stringFromMap(sm, "name"),
+					description:  stringFromMap(sm, "description"),
+					activityType: stringFromMap(sm, "activity_type"),
+					worktypeID:   firstMapString(listFromMap(sm, "workitem_settings"), "worktype_id"),
+				}
+			}
+		}
+		if s.step.activityType == "" {
+			s.step.activityType = activityTypeNone
+		}
+		out = append(out, s)
+	}
+	return out
+}
+
+func flattenStageplans(stages []stageplanConfig) []interface{} {
+	out := make([]interface{}, 0, len(stages))
+	for _, s := range stages {
+		step := map[string]interface{}{
+			"id":                s.step.id,
+			"name":              s.step.name,
+			"description":       s.step.description,
+			"activity_type":     s.step.activityType,
+			"workitem_settings": []interface{}{},
+		}
+		if s.step.worktypeID != "" {
+			step["workitem_settings"] = []interface{}{map[string]interface{}{"worktype_id": s.step.worktypeID}}
+		}
+		out = append(out, map[string]interface{}{
+			"id":          s.id,
+			"name":        s.name,
+			"description": s.description,
+			"stepplan":    []interface{}{step},
+		})
+	}
+	return out
+}
+
+func stageplanFromAPI(s platformclientv2.Stageplan) stageplanConfig {
+	return stageplanConfig{
+		id:          stringValue(s.Id),
+		name:        stringValue(s.Name),
+		description: stringValue(s.Description),
+	}
+}
+
+func stepplanFromAPI(s platformclientv2.Stepplan) stepplanConfig {
+	step := stepplanConfig{
+		id:           stringValue(s.Id),
+		name:         stringValue(s.Name),
+		description:  stringValue(s.Description),
+		activityType: stringValue(s.ActivityType),
+	}
+	if step.activityType == "" {
+		step.activityType = activityTypeNone
+	}
+	if s.WorkitemSettings != nil && s.WorkitemSettings.Worktype != nil {
+		step.worktypeID = stringValue(s.WorkitemSettings.Worktype.Id)
+	}
+	return step
+}
+
+// matchStageplans resolves each desired stageplan to an existing stageplan id, or "" when it must be created.
+// Desired entries match a prior entry by name first, then by index (a rename). Prior ids that no longer exist are ignored.
+// It also returns the existing ids that are not matched and must be deleted, in their current order.
+func matchStageplans(prior, actual, desired []stageplanConfig) (desiredIDs []string, toDelete []string) {
+	actualIDs := make(map[string]bool, len(actual))
+	for _, a := range actual {
+		actualIDs[a.id] = true
+	}
+	desiredIDs = make([]string, len(desired))
+	usedPrior := make(map[int]bool)
+	usedID := make(map[string]bool)
+	claim := func(i, j int) bool {
+		id := prior[j].id
+		if usedPrior[j] || usedID[id] || !actualIDs[id] {
+			return false
+		}
+		desiredIDs[i] = id
+		usedPrior[j] = true
+		usedID[id] = true
+		return true
+	}
+
+	for i, ds := range desired {
+		for j, ps := range prior {
+			if ps.name == ds.name && claim(i, j) {
+				break
+			}
+		}
+	}
+	for i := range desired {
+		if desiredIDs[i] == "" && i < len(prior) {
+			claim(i, i)
+		}
+	}
+
+	for _, a := range actual {
+		if !usedID[a.id] {
+			toDelete = append(toDelete, a.id)
+		}
+	}
+	return desiredIDs, toDelete
+}
+
+func buildStageplanUpdate(current, desired stageplanConfig) (platformclientv2.Stageplanupdate, bool) {
+	update := platformclientv2.Stageplanupdate{}
+	changed := false
+	if current.name != desired.name {
+		update.SetField("Name", platformclientv2.String(desired.name))
+		changed = true
+	}
+	if current.description != desired.description {
+		update.SetField("Description", nullableString(desired.description))
+		changed = true
+	}
+	return update, changed
+}
+
+// buildStepplanUpdate diffs a stepplan against desired. activityType and workitemSettings are always sent together,
+// because the API validates that Workitem has workitem settings and None has none.
+func buildStepplanUpdate(current, desired stepplanConfig) (platformclientv2.Stepplanupdate, bool) {
+	update := platformclientv2.Stepplanupdate{}
+	changed := false
+	if current.name != desired.name {
+		update.SetField("Name", platformclientv2.String(desired.name))
+		changed = true
+	}
+	if current.description != desired.description {
+		update.SetField("Description", nullableString(desired.description))
+		changed = true
+	}
+	if current.activityType != desired.activityType || current.worktypeID != desired.worktypeID {
+		update.SetField("ActivityType", platformclientv2.String(desired.activityType))
+		if desired.worktypeID == "" {
+			update.SetField("WorkitemSettings", nil)
+		} else {
+			update.SetField("WorkitemSettings", &platformclientv2.Workitemsettings{WorktypeId: platformclientv2.String(desired.worktypeID)})
+		}
+		changed = true
+	}
+	return update, changed
+}
+
+// longestIncreasingSubsequence marks the indices of one longest strictly increasing subsequence of values.
+// Stageplans on it are already in the right relative order; moving every other one after its desired
+// predecessor, in desired order, reaches the desired order with the fewest reposition calls.
+func longestIncreasingSubsequence(values []int) []bool {
+	n := len(values)
+	length := make([]int, n)
+	prev := make([]int, n)
+	best := -1
+	for i := range values {
+		length[i], prev[i] = 1, -1
+		for j := 0; j < i; j++ {
+			if values[j] < values[i] && length[j]+1 > length[i] {
+				length[i], prev[i] = length[j]+1, j
+			}
+		}
+		if best < 0 || length[i] > length[best] {
+			best = i
+		}
+	}
+	keep := make([]bool, n)
+	for i := best; i >= 0; i = prev[i] {
+		keep[i] = true
+	}
+	return keep
+}
+
+func moveAfter(order []string, id, after string) []string {
+	out := slices.DeleteFunc(slices.Clone(order), func(v string) bool { return v == id })
+	pos := 0
+	if after != "" {
+		pos = slices.Index(out, after) + 1
+	}
+	return slices.Insert(out, pos, id)
+}
+
+func nullableString(v string) *string {
+	if v == "" {
+		return nil
+	}
+	return platformclientv2.String(v)
+}
+
+func stringValue(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func stringFromMap(m map[string]interface{}, key string) string {
+	v, _ := m[key].(string)
+	return v
+}
+
+func listFromMap(m map[string]interface{}, key string) []interface{} {
+	v, _ := m[key].([]interface{})
+	return v
 }

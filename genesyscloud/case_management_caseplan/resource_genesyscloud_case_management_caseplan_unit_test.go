@@ -1,48 +1,28 @@
 package case_management_caseplan
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnit_caseplanDataSchemasFromResourceList_idOnly(t *testing.T) {
-	t.Parallel()
-	raw := []interface{}{
-		map[string]interface{}{"id": "11111111-1111-1111-1111-111111111111"},
-	}
-	out := caseplanDataSchemasFromResourceList(raw)
-	require.Len(t, out, 1)
-	assert.Equal(t, "11111111-1111-1111-1111-111111111111", *out[0].Id)
-}
-
-func TestUnitFlattenExpandCaseplanDataSchemas(t *testing.T) {
+func TestUnitFlattenCaseplanDataSchemas(t *testing.T) {
 	t.Parallel()
 	id1 := "11111111-1111-1111-1111-111111111111"
-	flat := flattenCaseplanDataSchemas(&[]platformclientv2.Caseplandataschema{
-		{Id: platformclientv2.String(id1)},
-	})
+	flat := flattenCaseplanDataSchemas(&[]platformclientv2.Caseplandataschema{{Id: platformclientv2.String(id1)}})
 	assert.Len(t, flat, 1)
-	m := flat[0].(map[string]interface{})
-	assert.Equal(t, id1, m["id"])
-	_, hasVer := m["version"]
-	assert.False(t, hasVer)
+	assert.Equal(t, id1, flat[0].(map[string]interface{})["id"])
 
 	assert.Nil(t, flattenCaseplanDataSchemas(nil))
 	assert.Nil(t, flattenCaseplanDataSchemas(&[]platformclientv2.Caseplandataschema{}))
-}
-
-func TestUnitCaseplanVersionForDataschemaRead(t *testing.T) {
-	t.Parallel()
-	latest := 5
-	pub := 3
-	assert.Equal(t, "5", caseplanVersionForDataschemaRead(&platformclientv2.Caseplan{Latest: &latest}))
-	assert.Equal(t, "3", caseplanVersionForDataschemaRead(&platformclientv2.Caseplan{Published: &pub}))
-	assert.Equal(t, "", caseplanVersionForDataschemaRead(&platformclientv2.Caseplan{}))
-	assert.Equal(t, "", caseplanVersionForDataschemaRead(nil))
 }
 
 func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
@@ -55,15 +35,9 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 		"reference_prefix":                "AB12",
 		"default_due_duration_in_seconds": 100,
 		"default_ttl_seconds":             200,
-		"customer_intent": []interface{}{
-			map[string]interface{}{"id": "intent-1"},
-		},
-		"default_case_owner": []interface{}{
-			map[string]interface{}{"id": "user-1"},
-		},
-		"data_schema": []interface{}{
-			map[string]interface{}{"id": "schema-1"},
-		},
+		"customer_intent":                 []interface{}{map[string]interface{}{"id": "intent-1"}},
+		"default_case_owner":              []interface{}{map[string]interface{}{"id": "user-1"}},
+		"data_schema":                     []interface{}{map[string]interface{}{"id": "schema-1"}},
 		"intake_settings": []interface{}{
 			map[string]interface{}{"property": "case_note_text", "required": true, "display_order": 1},
 		},
@@ -78,64 +52,537 @@ func TestUnitGetCaseManagementCaseplanCreateFromResourceData(t *testing.T) {
 	assert.Equal(t, 200, *body.DefaultTtlSeconds)
 	assert.Equal(t, "intent-1", *body.CustomerIntentId)
 	assert.Equal(t, "user-1", *body.DefaultCaseOwnerId)
-	ds := body.DataSchemas
-	assert.NotNil(t, ds)
-	assert.Len(t, *ds, 1)
-	assert.Equal(t, "schema-1", *(*ds)[0].Id)
-	isettings := body.IntakeSettings
-	assert.NotNil(t, isettings)
-	assert.Len(t, *isettings, 1)
-	assert.Equal(t, "case_note_text", *(*isettings)[0].Property)
-	assert.True(t, *(*isettings)[0].Required)
-	assert.Equal(t, 1, *(*isettings)[0].DisplayOrder)
+	require.NotNil(t, body.DataSchemas)
+	assert.Equal(t, "schema-1", *(*body.DataSchemas)[0].Id)
+	require.NotNil(t, body.IntakeSettings)
+	assert.Equal(t, "case_note_text", *(*body.IntakeSettings)[0].Property)
+	assert.True(t, *(*body.IntakeSettings)[0].Required)
+	assert.Equal(t, 1, *(*body.IntakeSettings)[0].DisplayOrder)
 }
 
 func TestUnitFlattenExpandCaseplanIntakeSettings(t *testing.T) {
 	t.Parallel()
-	prop := "p1"
-	req := true
-	ord := 2
 	flat := flattenCaseplanIntakeSettings(&[]platformclientv2.Intakesetting{
-		{Property: &prop, Required: &req, DisplayOrder: &ord},
+		{Property: platformclientv2.String("p1"), Required: platformclientv2.Bool(true), DisplayOrder: platformclientv2.Int(2)},
 	})
-	assert.Len(t, flat, 1)
-	m := flat[0].(map[string]interface{})
-	assert.Equal(t, "p1", m["property"])
-	assert.Equal(t, true, m["required"])
-	assert.Equal(t, 2, m["display_order"])
-
+	assert.Equal(t, []interface{}{map[string]interface{}{"property": "p1", "required": true, "display_order": 2}}, flat)
 	assert.Len(t, flattenCaseplanIntakeSettings(nil), 0)
-	empty := []platformclientv2.Intakesetting{}
-	assert.Len(t, flattenCaseplanIntakeSettings(&empty), 0)
 
-	sch := ResourceCaseManagementCaseplan().Schema
-	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
-		"data_schema": []interface{}{
-			map[string]interface{}{"id": "schema-1"},
-		},
-		"intake_settings": []interface{}{
-			map[string]interface{}{"property": "a", "required": false, "display_order": 0},
-		},
-	})
-	put := expandCaseplanIntakeSettingsForPut(d)
-	assert.Len(t, *put, 1)
-	assert.Equal(t, "a", *(*put)[0].Property)
-	assert.False(t, *(*put)[0].Required)
-	assert.Equal(t, 0, *(*put)[0].DisplayOrder)
+	expanded := expandCaseplanIntakeSettings(flat)
+	assert.True(t, intakeSettingsEqual(expanded, &[]platformclientv2.Intakesetting{
+		{Property: platformclientv2.String("p1"), Required: platformclientv2.Bool(true), DisplayOrder: platformclientv2.Int(2)},
+	}))
+	assert.False(t, intakeSettingsEqual(expanded, nil))
+	assert.True(t, intakeSettingsEqual(nil, &[]platformclientv2.Intakesetting{}))
+	assert.True(t, intakeSettingsEqual(
+		[]platformclientv2.Intakesetting{{Property: platformclientv2.String("p"), Required: platformclientv2.Bool(false), DisplayOrder: platformclientv2.Int(0)}},
+		&[]platformclientv2.Intakesetting{{Property: platformclientv2.String("p")}},
+	))
 }
 
 func TestUnitFlattenUserAndIntentRefs(t *testing.T) {
 	t.Parallel()
 	assert.Nil(t, flattenUserReference(nil))
 	assert.Nil(t, flattenCustomerIntentReference(nil))
+	assert.Equal(t, "u-1", flattenUserReference(&platformclientv2.Userreference{Id: platformclientv2.String("u-1")})[0].(map[string]interface{})["id"])
+	assert.Equal(t, "i-1", flattenCustomerIntentReference(&platformclientv2.Customerintentreference{Id: platformclientv2.String("i-1")})[0].(map[string]interface{})["id"])
+}
 
-	uid := "u-1"
-	inid := "i-1"
-	ur := flattenUserReference(&platformclientv2.Userreference{Id: &uid})
-	assert.Len(t, ur, 1)
-	assert.Equal(t, "u-1", ur[0].(map[string]interface{})["id"])
+func TestUnitBuildCaseplanUnversionedPatch(t *testing.T) {
+	t.Parallel()
+	sch := ResourceCaseManagementCaseplan().Schema
+	live := &platformclientv2.Caseplan{
+		Name:            platformclientv2.String("cp"),
+		Description:     platformclientv2.String("old"),
+		ReferencePrefix: platformclientv2.String("AB12"),
+		Division:        &platformclientv2.Starrabledivision{Id: platformclientv2.String("div-1")},
+		CustomerIntent:  &platformclientv2.Customerintentreference{Id: platformclientv2.String("intent-1")},
+	}
 
-	ir := flattenCustomerIntentReference(&platformclientv2.Customerintentreference{Id: &inid})
-	assert.Len(t, ir, 1)
-	assert.Equal(t, "i-1", ir[0].(map[string]interface{})["id"])
+	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
+		"name":             "cp",
+		"description":      "old",
+		"reference_prefix": "ab12",
+		"division_id":      "div-1",
+		"customer_intent":  []interface{}{map[string]interface{}{"id": "intent-1"}},
+	})
+	_, changed := buildCaseplanUnversionedPatch(d, live)
+	assert.False(t, changed, "unchanged values (prefix compared case-insensitively) must not be sent")
+
+	d = schema.TestResourceDataRaw(t, sch, map[string]interface{}{"name": "renamed"})
+	patch, changed := buildCaseplanUnversionedPatch(d, live)
+	require.True(t, changed)
+	body, err := json.Marshal(patch)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"name":"renamed","description":null}`, string(body))
+}
+
+func TestUnitBuildCaseplanVersionedPatch(t *testing.T) {
+	t.Parallel()
+	sch := ResourceCaseManagementCaseplan().Schema
+	draft := &platformclientv2.Caseplan{
+		DefaultDueDurationInSeconds: platformclientv2.Int(100),
+		DefaultTtlSeconds:           platformclientv2.Int(200),
+		DefaultCaseOwner:            &platformclientv2.Userreference{Id: platformclientv2.String("user-1")},
+	}
+
+	d := schema.TestResourceDataRaw(t, sch, map[string]interface{}{
+		"default_due_duration_in_seconds": 100,
+		"default_ttl_seconds":             200,
+		"default_case_owner":              []interface{}{map[string]interface{}{"id": "user-1"}},
+	})
+	_, changed := buildCaseplanVersionedPatch(d, draft)
+	assert.False(t, changed)
+
+	d = schema.TestResourceDataRaw(t, sch, map[string]interface{}{"default_due_duration_in_seconds": 150})
+	patch, changed := buildCaseplanVersionedPatch(d, draft)
+	require.True(t, changed)
+	body, err := json.Marshal(patch)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"defaultDueDurationInSeconds":150,"defaultCaseOwnerId":null}`, string(body))
+}
+
+func TestUnitValidateStageplanConfig(t *testing.T) {
+	t.Parallel()
+	block := func(name, activity string, withSettings bool) interface{} {
+		step := map[string]interface{}{"name": "step", "activity_type": activity, "workitem_settings": []interface{}{}}
+		if withSettings {
+			step["workitem_settings"] = []interface{}{map[string]interface{}{"worktype_id": "wt"}}
+		}
+		return map[string]interface{}{"name": name, "stepplan": []interface{}{step}}
+	}
+
+	assert.NoError(t, validateStageplanConfig([]interface{}{block("A", activityTypeWorkitem, true), block("B", activityTypeNone, false)}))
+	assert.ErrorContains(t, validateStageplanConfig([]interface{}{block("A", activityTypeNone, false), block("A", activityTypeNone, false)}), "unique")
+	assert.ErrorContains(t, validateStageplanConfig([]interface{}{block("A", activityTypeWorkitem, false)}), "requires workitem_settings")
+	assert.ErrorContains(t, validateStageplanConfig([]interface{}{block("A", activityTypeNone, true)}), "only allowed")
+}
+
+func TestUnitHasDraftAndNeedsNewDraft(t *testing.T) {
+	t.Parallel()
+	neverPublished := &platformclientv2.Caseplan{Latest: platformclientv2.Int(1)}
+	published := &platformclientv2.Caseplan{Latest: platformclientv2.Int(2), Published: platformclientv2.Int(2)}
+	withDraft := &platformclientv2.Caseplan{Latest: platformclientv2.Int(3), Published: platformclientv2.Int(2)}
+
+	assert.True(t, hasDraft(neverPublished))
+	assert.False(t, hasDraft(published))
+	assert.True(t, hasDraft(withDraft))
+	assert.False(t, needsNewDraft(neverPublished))
+	assert.True(t, needsNewDraft(published))
+	assert.False(t, needsNewDraft(withDraft))
+	assert.Equal(t, 0, publishedVersion(neverPublished))
+	assert.Equal(t, 2, publishedVersion(withDraft))
+}
+
+// The update tests share internalProxy, so they must not run in parallel.
+
+func TestUnitCaseplanSchemaShape(t *testing.T) {
+	t.Parallel()
+	r := ResourceCaseManagementCaseplan()
+	s := r.Schema
+
+	stage := s["stageplan"]
+	require.NotNil(t, stage)
+	assert.Equal(t, schema.TypeList, stage.Type, "stageplans are ordered")
+	assert.Equal(t, 1, stage.MinItems)
+	assert.Equal(t, maxStageplans, stage.MaxItems)
+	step := stage.Elem.(*schema.Resource).Schema["stepplan"]
+	require.NotNil(t, step)
+	assert.Equal(t, schema.TypeList, step.Type)
+	assert.Equal(t, 1, step.MinItems)
+	assert.Equal(t, 1, step.MaxItems)
+
+	assert.True(t, s["data_schema"].Required, "data_schema is required")
+	assert.True(t, s["published_version"].Computed)
+	assert.False(t, s["published_version"].Optional)
+	assert.True(t, s["has_draft"].Computed)
+	assert.False(t, s["has_draft"].Optional)
+	for _, flag := range []string{"publish", "auto_publish", "revision"} {
+		assert.NotContains(t, s, flag, "publishing is implicit; no %s flag", flag)
+	}
+
+	require.NotNil(t, r.Importer)
+	assert.NotNil(t, r.Importer.StateContext, "custom importer")
+	assert.NotNil(t, r.CustomizeDiff)
+}
+
+// publishedCaseplanState is the flat state of a published caseplan with one None stageplan.
+func publishedCaseplanState(publishedVersion string) map[string]string {
+	return map[string]string{
+		"id":                                         "cp1",
+		"name":                                       "cp",
+		"division_id":                                "div-1",
+		"reference_prefix":                           "AB12",
+		"default_due_duration_in_seconds":            "100",
+		"default_ttl_seconds":                        "200",
+		"customer_intent.#":                          "1",
+		"customer_intent.0.id":                       "intent-1",
+		"data_schema.#":                              "1",
+		"data_schema.0.id":                           "schema-1",
+		"intake_settings.#":                          "0",
+		"default_case_owner.#":                       "0",
+		"published_version":                          publishedVersion,
+		"has_draft":                                  "false",
+		"stageplan.#":                                "1",
+		"stageplan.0.id":                             "stage-1",
+		"stageplan.0.name":                           "A",
+		"stageplan.0.description":                    "",
+		"stageplan.0.stepplan.#":                     "1",
+		"stageplan.0.stepplan.0.id":                  "step-1",
+		"stageplan.0.stepplan.0.name":                "Step",
+		"stageplan.0.stepplan.0.description":         "",
+		"stageplan.0.stepplan.0.activity_type":       activityTypeNone,
+		"stageplan.0.stepplan.0.workitem_settings.#": "0",
+	}
+}
+
+func caseplanConfig(edit func(map[string]interface{})) *terraform.ResourceConfig {
+	raw := map[string]interface{}{
+		"name":                            "cp",
+		"division_id":                     "div-1",
+		"reference_prefix":                "AB12",
+		"default_due_duration_in_seconds": 100,
+		"default_ttl_seconds":             200,
+		"customer_intent":                 []interface{}{map[string]interface{}{"id": "intent-1"}},
+		"data_schema":                     []interface{}{map[string]interface{}{"id": "schema-1"}},
+		"stageplan": []interface{}{map[string]interface{}{
+			"name":     "A",
+			"stepplan": []interface{}{map[string]interface{}{"name": "Step", "activity_type": activityTypeNone}},
+		}},
+	}
+	if edit != nil {
+		edit(raw)
+	}
+	return terraform.NewResourceConfigRaw(raw)
+}
+
+func planCaseplan(t *testing.T, state map[string]string, cfg *terraform.ResourceConfig) (*terraform.InstanceDiff, error) {
+	t.Helper()
+	var s *terraform.InstanceState
+	if state != nil {
+		s = &terraform.InstanceState{ID: state["id"], Attributes: state}
+	}
+	return ResourceCaseManagementCaseplan().Diff(context.Background(), s, cfg, nil)
+}
+
+func forcesPublish(d *terraform.InstanceDiff) bool {
+	if d == nil {
+		return false
+	}
+	a := d.Attributes["published_version"]
+	return a != nil && a.NewComputed
+}
+
+func TestUnitCaseplanPlan_frozenAttributesBlockedAfterPublish(t *testing.T) {
+	t.Parallel()
+	edits := map[string]func(map[string]interface{}){
+		"division_id":      func(m map[string]interface{}) { m["division_id"] = "div-2" },
+		"reference_prefix": func(m map[string]interface{}) { m["reference_prefix"] = "ZZ99" },
+		"customer_intent": func(m map[string]interface{}) {
+			m["customer_intent"] = []interface{}{map[string]interface{}{"id": "intent-2"}}
+		},
+		"data_schema": func(m map[string]interface{}) {
+			m["data_schema"] = []interface{}{map[string]interface{}{"id": "schema-2"}}
+		},
+	}
+	for attr, edit := range edits {
+		t.Run(attr+" blocked when published", func(t *testing.T) {
+			_, err := planCaseplan(t, publishedCaseplanState("1"), caseplanConfig(edit))
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), attr+" cannot change after the caseplan has been published")
+		})
+		t.Run(attr+" allowed before first publish", func(t *testing.T) {
+			diff, err := planCaseplan(t, publishedCaseplanState("0"), caseplanConfig(edit))
+			require.NoError(t, err)
+			assert.True(t, forcesPublish(diff))
+		})
+	}
+}
+
+func TestUnitCaseplanPlan_publishedVersionReflectsWhatPublishes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no change is an empty plan", func(t *testing.T) {
+		diff, err := planCaseplan(t, publishedCaseplanState("1"), caseplanConfig(nil))
+		require.NoError(t, err)
+		assert.True(t, diff.Empty(), "unexpected diff: %#v", diff)
+	})
+
+	t.Run("name and description do not publish", func(t *testing.T) {
+		diff, err := planCaseplan(t, publishedCaseplanState("1"), caseplanConfig(func(m map[string]interface{}) {
+			m["name"] = "renamed"
+			m["description"] = "new"
+		}))
+		require.NoError(t, err)
+		require.NotNil(t, diff.Attributes["name"])
+		assert.False(t, forcesPublish(diff))
+	})
+
+	versioned := map[string]func(map[string]interface{}){
+		"stageplan rename": func(m map[string]interface{}) {
+			m["stageplan"].([]interface{})[0].(map[string]interface{})["name"] = "B"
+		},
+		"stageplan added": func(m map[string]interface{}) {
+			m["stageplan"] = append(m["stageplan"].([]interface{}), map[string]interface{}{
+				"name":     "C",
+				"stepplan": []interface{}{map[string]interface{}{"name": "Step 2", "activity_type": activityTypeNone}},
+			})
+		},
+		"due duration": func(m map[string]interface{}) { m["default_due_duration_in_seconds"] = 150 },
+		"intake": func(m map[string]interface{}) {
+			m["intake_settings"] = []interface{}{map[string]interface{}{"property": "p"}}
+		},
+		"default owner": func(m map[string]interface{}) {
+			m["default_case_owner"] = []interface{}{map[string]interface{}{"id": "user-1"}}
+		},
+	}
+	for name, edit := range versioned {
+		t.Run(name+" publishes", func(t *testing.T) {
+			diff, err := planCaseplan(t, publishedCaseplanState("1"), caseplanConfig(edit))
+			require.NoError(t, err)
+			assert.True(t, forcesPublish(diff))
+			assert.True(t, diff.Attributes["has_draft"] != nil && diff.Attributes["has_draft"].NewComputed)
+		})
+	}
+
+	t.Run("never published forces an update with no config change", func(t *testing.T) {
+		diff, err := planCaseplan(t, publishedCaseplanState("0"), caseplanConfig(nil))
+		require.NoError(t, err)
+		assert.True(t, forcesPublish(diff))
+	})
+}
+
+func TestUnitCaseplanPlan_stageplanValidation(t *testing.T) {
+	t.Parallel()
+	_, err := planCaseplan(t, nil, caseplanConfig(func(m map[string]interface{}) {
+		m["stageplan"].([]interface{})[0].(map[string]interface{})["stepplan"] = []interface{}{
+			map[string]interface{}{"name": "Step", "activity_type": activityTypeWorkitem},
+		}
+	}))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "requires workitem_settings")
+
+	_, err = planCaseplan(t, nil, caseplanConfig(func(m map[string]interface{}) {
+		s := m["stageplan"].([]interface{})[0]
+		m["stageplan"] = []interface{}{s, s}
+	}))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unique")
+}
+
+func TestUnitBuildCaseplanUnversionedPatch_omittedDivisionIsNotSent(t *testing.T) {
+	t.Parallel()
+	live := &platformclientv2.Caseplan{
+		Name:     platformclientv2.String("cp"),
+		Division: &platformclientv2.Starrabledivision{Id: platformclientv2.String("div-1")},
+	}
+	d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{"name": "cp"})
+	patch, changed := buildCaseplanUnversionedPatch(d, live)
+	assert.False(t, changed, "omitting division_id must not move the caseplan to division *")
+	assert.False(t, patch != nil && patch.SetFieldNames["DivisionId"])
+}
+
+func TestUnitCaseplanExporter_refsAndExclusions(t *testing.T) {
+	t.Parallel()
+	e := CaseManagementCaseplanExporter()
+
+	want := map[string]string{
+		"division_id":           "genesyscloud_auth_division",
+		"default_case_owner.id": "genesyscloud_user",
+		"customer_intent.id":    "genesyscloud_intents_customerintents",
+		"data_schema.id":        "genesyscloud_task_management_workitem_schema",
+		"stageplan.stepplan.workitem_settings.worktype_id": "genesyscloud_task_management_worktype",
+	}
+	require.Len(t, e.RefAttrs, len(want))
+	for attr, refType := range want {
+		require.Contains(t, e.RefAttrs, attr)
+		assert.Equal(t, refType, e.RefAttrs[attr].RefType, attr)
+	}
+	assert.Equal(t, []string{"*"}, e.RefAttrs["division_id"].AltValues)
+
+	for _, attr := range []string{"published_version", "has_draft", "stageplan.id", "stageplan.stepplan.id"} {
+		assert.Contains(t, e.ExcludedAttributes, attr)
+	}
+}
+
+func TestUnitNextAfterCursor(t *testing.T) {
+	t.Parallel()
+	uri := func(s string) *string { return &s }
+
+	next, done, err := nextAfterCursor(uri("/api/v2/casemanagement/caseplans/cp1/versions/1/stageplans?pageSize=25&after=abc"), "")
+	require.NoError(t, err)
+	assert.False(t, done)
+	assert.Equal(t, "abc", next)
+
+	for name, u := range map[string]*string{"nil": nil, "empty": uri(""), "no cursor": uri("/x?pageSize=25")} {
+		_, done, err = nextAfterCursor(u, "")
+		require.NoError(t, err, name)
+		assert.True(t, done, name)
+	}
+
+	_, done, err = nextAfterCursor(uri("/x?after=abc"), "abc")
+	require.NoError(t, err)
+	assert.True(t, done, "a repeated cursor ends paging instead of looping")
+}
+
+// listingServer serves cursor-paged listings and fails the test if a page is requested with anything but the
+// cursor from the previous page's nextUri (for example the last entity id).
+func listingServer(t *testing.T, pages map[string]map[string]interface{}) *platformclientv2.Configuration {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key := r.URL.Path + "?after=" + r.URL.Query().Get("after")
+		page, ok := pages[key]
+		if !ok {
+			t.Errorf("unexpected request %s", key)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(page)
+	}))
+	t.Cleanup(srv.Close)
+
+	cfg := platformclientv2.NewConfiguration()
+	cfg.BasePath = srv.URL
+	cfg.AccessToken = "token"
+	return cfg
+}
+
+func TestUnitProxyPagination_usesCursorAndKeepsAPIOrder(t *testing.T) {
+	t.Parallel()
+	stagePath := "/api/v2/casemanagement/caseplans/cp1/versions/latest/stageplans"
+	stepPath := stagePath + "/s3/stepplans"
+	caseplansPath := "/api/v2/casemanagement/caseplans"
+
+	cfg := listingServer(t, map[string]map[string]interface{}{
+		stagePath + "?after=": {
+			"entities": []map[string]string{{"id": "s3", "name": "Zeta"}, {"id": "s1", "name": "Alpha"}},
+			"nextUri":  stagePath + "?pageSize=25&after=cursor-2",
+		},
+		stagePath + "?after=cursor-2": {
+			"entities": []map[string]string{{"id": "s2", "name": "Mid"}},
+		},
+		stepPath + "?after=": {
+			"entities": []map[string]string{{"id": "p3", "name": "Step"}},
+		},
+		caseplansPath + "?after=": {
+			"entities": []map[string]string{{"id": "cp-b", "name": "B"}},
+			"nextUri":  caseplansPath + "?pageSize=100&after=cp-cursor",
+		},
+		caseplansPath + "?after=cp-cursor": {
+			"entities": []map[string]string{{"id": "cp-a", "name": "A"}},
+		},
+	})
+	p := newCaseManagementCaseplanProxy(cfg)
+
+	stages, _, err := p.listStageplans(context.Background(), "cp1", caseplanAPIVersionLatest)
+	require.NoError(t, err)
+	ids := []string{}
+	for _, s := range stages {
+		ids = append(ids, *s.Id)
+	}
+	assert.Equal(t, []string{"s3", "s1", "s2"}, ids)
+
+	steps, _, err := p.listStepplans(context.Background(), "cp1", caseplanAPIVersionLatest, "s3")
+	require.NoError(t, err)
+	require.Len(t, steps, 1)
+	assert.Equal(t, "p3", *steps[0].Id)
+
+	caseplans, _, err := p.getAllCaseManagementCaseplan(context.Background())
+	require.NoError(t, err)
+	require.Len(t, *caseplans, 2)
+	assert.Equal(t, "cp-b", *(*caseplans)[0].Id)
+	assert.Equal(t, "cp-a", *(*caseplans)[1].Id)
+}
+
+func stage(name string, step stepplanConfig) stageplanConfig {
+	if step.activityType == "" {
+		step.activityType = activityTypeNone
+	}
+	return stageplanConfig{name: name, step: step}
+}
+
+func noneStep(name string) stepplanConfig {
+	return stepplanConfig{name: name, activityType: activityTypeNone}
+}
+
+func workitemStep(name, worktypeID string) stepplanConfig {
+	return stepplanConfig{name: name, activityType: activityTypeWorkitem, worktypeID: worktypeID}
+}
+
+func TestUnitMatchStageplans(t *testing.T) {
+	t.Parallel()
+	actual := []stageplanConfig{{id: "1", name: "A"}, {id: "2", name: "B"}, {id: "3", name: "C"}}
+
+	ids, del := matchStageplans(actual, actual, []stageplanConfig{{name: "C"}, {name: "A"}})
+	assert.Equal(t, []string{"3", "1"}, ids)
+	assert.Equal(t, []string{"2"}, del)
+
+	ids, del = matchStageplans(actual, actual, []stageplanConfig{{name: "X"}, {name: "B"}, {name: "Y"}, {name: "Z"}})
+	assert.Equal(t, []string{"1", "2", "3", ""}, ids)
+	assert.Empty(t, del)
+}
+
+func TestUnitBuildStepplanUpdate(t *testing.T) {
+	t.Parallel()
+
+	update, changed := buildStepplanUpdate(noneStep("s"), workitemStep("s", "wt-1"))
+	require.True(t, changed)
+	body, err := json.Marshal(update)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"activityType":"Workitem","workitemSettings":{"worktypeId":"wt-1"}}`, string(body))
+
+	update, changed = buildStepplanUpdate(stepplanConfig{name: "s", description: "d", activityType: activityTypeWorkitem, worktypeID: "wt-1"}, noneStep("s"))
+	require.True(t, changed)
+	body, err = json.Marshal(update)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"description":null,"activityType":"None","workitemSettings":null}`, string(body))
+
+	_, changed = buildStepplanUpdate(workitemStep("s", "wt-1"), workitemStep("s", "wt-1"))
+	assert.False(t, changed)
+}
+
+func TestUnitStageplanRepositionToFrontSendsNullAfter(t *testing.T) {
+	t.Parallel()
+	body := platformclientv2.Stageplanreposition{}
+	body.SetField("After", nil)
+	out, err := json.Marshal(body)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"after":null}`, string(out))
+}
+
+func TestUnitMoveAfter(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, []string{"c", "a", "b"}, moveAfter([]string{"a", "b", "c"}, "c", ""))
+	assert.Equal(t, []string{"b", "a", "c"}, moveAfter([]string{"a", "b", "c"}, "a", "b"))
+	assert.Equal(t, []string{"a", "c", "b"}, moveAfter([]string{"a", "b", "c"}, "b", "c"))
+}
+
+func TestUnitLongestIncreasingSubsequence(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, []bool{true, true, true}, longestIncreasingSubsequence([]int{0, 1, 2}))
+	assert.Equal(t, []bool{true, true, false}, longestIncreasingSubsequence([]int{1, 2, 0}))
+	assert.Equal(t, []bool{false, true, true}, longestIncreasingSubsequence([]int{2, 0, 1}))
+	assert.Equal(t, 1, countTrue(longestIncreasingSubsequence([]int{4, 3, 2, 1, 0})))
+	assert.Equal(t, 3, countTrue(longestIncreasingSubsequence([]int{1, 0, 2, 4, 3})))
+	assert.Empty(t, longestIncreasingSubsequence(nil))
+}
+
+func countTrue(bs []bool) int {
+	n := 0
+	for _, b := range bs {
+		if b {
+			n++
+		}
+	}
+	return n
+}
+
+func TestUnitFlattenExpandStageplans(t *testing.T) {
+	t.Parallel()
+	in := []stageplanConfig{
+		{id: "s1", name: "A", description: "d", step: stepplanConfig{id: "p1", name: "x", activityType: activityTypeWorkitem, worktypeID: "wt"}},
+		{id: "s2", name: "B", step: stepplanConfig{id: "p2", name: "y", activityType: activityTypeNone}},
+	}
+	assert.Equal(t, in, expandStageplans(flattenStageplans(in)))
 }
