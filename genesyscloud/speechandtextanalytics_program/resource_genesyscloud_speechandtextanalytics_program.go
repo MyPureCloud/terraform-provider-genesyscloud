@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -127,10 +127,11 @@ func publishProgram(ctx context.Context, proxy *sttProgramProxy, programId strin
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to publish speech and text analytics program %s: %s", programId, err), resp)
 	}
-	if job != nil && job.Id != nil {
-		if diagErr := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); diagErr != nil {
-			return diagErr
-		}
+	if job == nil || job.Id == nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Publish job response missing id for program %s", programId), resp)
+	}
+	if diagErr := waitForPublishJob(ctx, proxy, *job.Id, 10*time.Minute); diagErr != nil {
+		return diagErr
 	}
 	log.Printf("Published Speech & Text Analytics Program %s", programId)
 	return nil
