@@ -195,11 +195,13 @@ func getAllUsersForGreetingExport(ctx context.Context, clientConfig *platformcli
 }
 
 func userGreetingFetchConcurrency() int {
+	// Without a token pool, workers would share one SDK config; match pagination behavior.
+	if provider.SdkClientPool == nil {
+		return 1
+	}
 	concurrency := defaultUserGreetingConcurrency
-	if provider.SdkClientPool != nil {
-		if poolSize := provider.SdkClientPool.GetMaxClients(); poolSize > 0 {
-			concurrency = poolSize
-		}
+	if poolSize := provider.SdkClientPool.GetMaxClients(); poolSize > 0 {
+		concurrency = poolSize
 	}
 	if concurrency > maxUserGreetingConcurrency {
 		return maxUserGreetingConcurrency
@@ -320,8 +322,7 @@ func getUserGreetingByIdFn(ctx context.Context, p *greetingProxy, userId string,
 }
 
 func getGreetingFromUser(ctx context.Context, p *greetingProxy, userId string, id string) (*platformclientv2.Greeting, *platformclientv2.APIResponse, error) {
-	const pageSize = 100
-	userGreetings, resp, err := p.greetingsApi.GetUserGreetings(userId, pageSize, 1)
+	userGreetings, resp, err := p.greetingsApi.GetUserGreetings(userId, userGreetingsPageSize, 1)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -334,7 +335,7 @@ func getGreetingFromUser(ctx context.Context, p *greetingProxy, userId string, i
 		pageCount = *userGreetings.PageCount
 	}
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
-		userGreetings, resp, err = p.greetingsApi.GetUserGreetings(userId, pageSize, pageNum)
+		userGreetings, resp, err = p.greetingsApi.GetUserGreetings(userId, userGreetingsPageSize, pageNum)
 		if err != nil {
 			return nil, resp, err
 		}
