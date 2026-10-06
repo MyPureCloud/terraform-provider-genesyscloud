@@ -994,6 +994,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_activation.rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
+			"default_script_ids":                                        {ResolverFunc: resourceExporter.RemoveUnresolvedScriptGuidsResolver},
 		},
 	}
 }
