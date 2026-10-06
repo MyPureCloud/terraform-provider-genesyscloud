@@ -144,9 +144,10 @@ func repetitionCheckResource() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"User", "Agent"}, false),
 			},
 			"messages": {
-				Description: "The number of prior messages of the specified type to compare for repetition.",
-				Type:        schema.TypeInt,
-				Required:    true,
+				Description:  "The number of prior messages of the specified type to compare for repetition. Must be at least 1.",
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntAtLeast(1),
 			},
 			"similarity": {
 				Description: "The similarity category compared to the Levenshtein result that triggers this check's instruction. Allowed values: Moderate, VeryStrict.",
