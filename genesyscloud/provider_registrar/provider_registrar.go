@@ -135,6 +135,7 @@ import (
 	dictionaryFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_dictionaryfeedback"
 	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
 	sentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
+	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
 	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/station"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
@@ -276,6 +277,7 @@ func registerResources() {
 	architectSchedules.SetRegistrar(regInstance)                           //Registering architect schedules
 	dictionaryFeedback.SetRegistrar(regInstance)                           //Registering dictionary feedback
 	sentimentFeedback.SetRegistrar(regInstance)                            //Registering sentiment feedback
+	sttSettings.SetRegistrar(regInstance)                                  //Registering speech and text analytics settings
 	sttTopic.SetRegistrar(regInstance)                                     //Registering speech and text analytics topics
 	sttCategory.SetRegistrar(regInstance)                                  //Registering speech and text analytics categories
 	sttProgram.SetRegistrar(regInstance)                                   //Registering speech and text analytics programs
