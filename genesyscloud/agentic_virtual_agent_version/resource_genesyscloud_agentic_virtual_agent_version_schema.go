@@ -121,6 +121,53 @@ func definitionResource() *schema.Resource {
 	}
 }
 
+func dynamicTurnInstructionsResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"repetition_check": {
+				Description: "Checks that add dynamic instructions for the agent when user or agent messages repeat.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        repetitionCheckResource(),
+			},
+		},
+	}
+}
+
+func repetitionCheckResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "Whether this check looks for repetition in user messages or agent responses.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"User", "Agent"}, false),
+			},
+			"messages": {
+				Description:  "The number of prior messages of the specified type to compare for repetition. Must be at least 1.",
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"similarity": {
+				Description: "The similarity category compared to the Levenshtein result that triggers this check's instruction. Allowed values: Moderate, VeryStrict.",
+				Type:        schema.TypeString,
+				Required:    true,
+				// NOTE: although the hidden swagger enum lists Loose/Moderate/Strict/VeryStrict, the
+				// live API only accepts Moderate and VeryStrict (verified via a 400 validation error:
+				// "repetition check similarity must be 'Moderate' or 'VeryStrict'"). Validate against
+				// what the API actually accepts so users get a plan-time error instead of a 400.
+				ValidateFunc: validation.StringInSlice([]string{"Moderate", "VeryStrict"}, false),
+			},
+			"instruction": {
+				Description: "The instruction added to the virtual agent's turn when message similarity matches the configured category.",
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+		},
+	}
+}
+
 func guardrailsResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -483,6 +530,13 @@ func versionSettingsResource() *schema.Resource {
 						},
 					},
 				},
+			},
+			"dynamic_turn_instructions": {
+				Description: "Instructions dynamically added to the virtual agent based on conversation state (e.g. repetition checks).",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        dynamicTurnInstructionsResource(),
 			},
 		},
 	}

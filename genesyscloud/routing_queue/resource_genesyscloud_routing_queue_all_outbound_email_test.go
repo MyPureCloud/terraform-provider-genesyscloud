@@ -10,14 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-// existingEmailDomain is a pre-existing verified email domain on the DCA test org. The test
-// references it via a data source (rather than creating a new domain) because the org is at its
-// email-domain cap; routes, however, can be freely created on an existing domain.
-const existingEmailDomain = "bughuntdca.inindca.com"
+// aoeaSubdomainPrefix is the fixed prefix for the throwaway subdomain this test creates. A stable
+// prefix lets CleanupRoutingEmailDomains remove leftovers from previously interrupted runs.
+const aoeaSubdomainPrefix = "tfaoeadomain"
 
 // TestAccResourceRoutingQueueAllOutboundEmailAddresses verifies the all_outbound_email_addresses
 // block on genesyscloud_routing_queue, which supports MULTIPLE outbound email domains/routes
@@ -33,7 +33,10 @@ func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
 		queueResourceLabel = "test-queue-aoea"
 		queueName          = "Terraform Test Queue AOEA-" + uuid.NewString()
 
-		domainDataLabel = "aoea-domain"
+		// Create our own subdomain rather than depending on a pre-existing domain, so the test is
+		// org-independent (a subdomain needs no MX/DNS verification and can be created in any org).
+		domainResourceLabel = "aoea-domain"
+		domainID            = aoeaSubdomainPrefix + strings.Replace(uuid.NewString(), "-", "", -1)
 
 		routeResourceLabel1 = "aoea-route1"
 		routeResourceLabel2 = "aoea-route2"
@@ -42,26 +45,38 @@ func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
 		fromName1           = "AOEA One"
 		fromName2           = "AOEA Two"
 
-		domainRef = "data.genesyscloud_routing_email_domain." + domainDataLabel + ".id"
+		domainRef = "genesyscloud_routing_email_domain." + domainResourceLabel + ".id"
 		route1Ref = "genesyscloud_routing_email_route." + routeResourceLabel1 + ".id"
 		route2Ref = "genesyscloud_routing_email_route." + routeResourceLabel2 + ".id"
 
 		queuePath = "genesyscloud_routing_queue." + queueResourceLabel
 	)
 
-	// Dependency HCL: reference the EXISTING domain via a data source (no domain creation), then
-	// create two routes on it. depends_on is not needed for a data source over a static domain.
-	emailDeps := generateExistingEmailDomainDataSource(domainDataLabel, existingEmailDomain) +
-		routingEmailRoute.GenerateRoutingEmailRouteResource(
-			routeResourceLabel1,
-			domainRef,
-			routePattern1,
-			fromName1,
-		) + routingEmailRoute.GenerateRoutingEmailRouteResource(
+	// Clean up any leftover subdomains from previously interrupted runs so the org doesn't fill up.
+	if cleanupErr := routingEmailDomain.CleanupRoutingEmailDomains(aoeaSubdomainPrefix); cleanupErr != nil {
+		t.Logf("Failed to clean up routing email domains: %v", cleanupErr)
+	}
+
+	// Dependency HCL: create a subdomain, then two routes on it. The routes must wait for the
+	// domain to exist, so they depend_on it.
+	dependsOnDomain := fmt.Sprintf("depends_on = [genesyscloud_routing_email_domain.%s]", domainResourceLabel)
+	emailDeps := routingEmailDomain.GenerateRoutingEmailDomainResource(
+		domainResourceLabel,
+		domainID,
+		util.TrueValue, // subdomain: no verification required
+		util.NullValue,
+	) + routingEmailRoute.GenerateRoutingEmailRouteResource(
+		routeResourceLabel1,
+		domainRef,
+		routePattern1,
+		fromName1,
+		dependsOnDomain,
+	) + routingEmailRoute.GenerateRoutingEmailRouteResource(
 		routeResourceLabel2,
 		domainRef,
 		routePattern2,
 		fromName2,
+		dependsOnDomain,
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -136,14 +151,6 @@ func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
 			},
 		},
 	})
-}
-
-// generateExistingEmailDomainDataSource references a pre-existing email domain by name.
-func generateExistingEmailDomainDataSource(dataLabel, domainName string) string {
-	return fmt.Sprintf(`data "genesyscloud_routing_email_domain" "%s" {
-	name = "%s"
-}
-`, dataLabel, domainName)
 }
 
 // generateAllOutboundEmailAddress builds a single all_outbound_email_addresses block.

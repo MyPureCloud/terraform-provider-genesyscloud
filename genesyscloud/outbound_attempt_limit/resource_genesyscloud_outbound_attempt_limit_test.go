@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // func init() {
@@ -42,7 +42,7 @@ func TestAccResourceOutboundAttemptLimit(t *testing.T) {
 		maxAttemptsPerContactUpdated = "4"
 		maxAttemptsPerNumberUpdated  = "3"
 		timeZoneIdUpdated            = "Etc/GMT"
-		resetPeriodUpdated           = "NEVER"
+		resetPeriodUpdated           = "DAYS_30"
 
 		updatedRecallEntryType1                = "no_answer"
 		updatedRecallEntryNbrAttempts1         = "2"

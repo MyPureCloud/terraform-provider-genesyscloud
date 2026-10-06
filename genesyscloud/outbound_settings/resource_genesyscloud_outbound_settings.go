@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -61,6 +61,9 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
 	rescheduleTimeZoneSkippedContacts := d.Get("reschedule_time_zone_skipped_contacts").(bool)
+	contactListDefaultRetentionType := d.Get("contact_list_default_retention_type").(string)
+	contactListDefaultRetentionDays := d.Get("contact_list_default_retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	log.Printf("Reading Outbound Settings %s", d.Id())
 
@@ -91,6 +94,15 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
 		}
 		resourcedata.SetNillableValue(d, "reschedule_time_zone_skipped_contacts", &rescheduleTimeZoneSkippedContacts)
+		if contactListDefaultRetentionType != "" || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "contact_list_default_retention_type", settings.ContactListDefaultRetentionType)
+		}
+		if contactListDefaultRetentionDays != 0 || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "contact_list_default_retention_days", settings.ContactListDefaultRetentionDays)
+		}
+		if timeZone != "" || tfexporter_state.IsExporterActive() {
+			resourcedata.SetNillableValue(d, "time_zone", settings.TimeZone)
+		}
 
 		log.Printf("Read Outbound Setting")
 		return cc.CheckState(d)
@@ -107,6 +119,9 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 	abandonSeconds := d.Get("abandon_seconds").(float64)
 	complianceAbandonRateDenominator := d.Get("compliance_abandon_rate_denominator").(string)
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").([]interface{})
+	contactListDefaultRetentionType := d.Get("contact_list_default_retention_type").(string)
+	contactListDefaultRetentionDays := d.Get("contact_list_default_retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	log.Printf("Updating Outbound Settings %s", d.Id())
 
@@ -136,6 +151,18 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		}
 		if automaticTimeZoneMapping != nil || tfexporter_state.IsExporterActive() {
 			update.AutomaticTimeZoneMapping = buildOutboundSettingsAutomaticTimeZoneMapping(d)
+		}
+		// This resource uses PATCH, so omitting a field leaves it untouched on the server.
+		// Use d.HasChange so that clearing a previously-set value (e.g. removing
+		// contact_list_default_retention_days) actually pushes the zero value and clears it.
+		if contactListDefaultRetentionType != "" || d.HasChange("contact_list_default_retention_type") || tfexporter_state.IsExporterActive() {
+			update.ContactListDefaultRetentionType = &contactListDefaultRetentionType
+		}
+		if contactListDefaultRetentionDays != 0 || d.HasChange("contact_list_default_retention_days") || tfexporter_state.IsExporterActive() {
+			update.ContactListDefaultRetentionDays = &contactListDefaultRetentionDays
+		}
+		if timeZone != "" || d.HasChange("time_zone") || tfexporter_state.IsExporterActive() {
+			update.TimeZone = &timeZone
 		}
 
 		_, resp, err := proxy.updateOutboundSettings(ctx, &update)
