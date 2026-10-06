@@ -3,7 +3,7 @@ package provider
 import (
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

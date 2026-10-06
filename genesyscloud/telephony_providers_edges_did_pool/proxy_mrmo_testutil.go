@@ -1,7 +1,7 @@
 package telephony_providers_edges_did_pool
 
 import (
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // ResetDidPoolProxyForTest clears the package-level proxy singleton between tests.
