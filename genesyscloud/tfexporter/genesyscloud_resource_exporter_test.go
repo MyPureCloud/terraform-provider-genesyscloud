@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	dependentconsumers "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 )
 
 type PostProcessHclBytesTestCase struct {
@@ -2396,4 +2397,49 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateEr
 	assert.NotNil(t, dataSourceMaps)
 	assert.Len(t, resourceMaps, 0)
 	assert.Len(t, dataSourceMaps, 0)
+}
+
+func TestUnitSetExportedResourceSchemaVersions(t *testing.T) {
+	providerResources := map[string]*schema.Resource{
+		user.ResourceType: user.ResourceUser(),
+	}
+
+	resources := []resourceExporter.ResourceInfo{
+		{
+			Type:       user.ResourceType,
+			BlockLabel: "example_user",
+			State:      &terraform.InstanceState{ID: "user-id"},
+		},
+		{
+			Type:       "genesyscloud_example_data",
+			BlockType:  "data",
+			BlockLabel: "example",
+			State:      &terraform.InstanceState{ID: "data-id"},
+		},
+	}
+
+	setExportedResourceSchemaVersions(resources, providerResources)
+
+	if got := resources[0].State.Meta["schema_version"]; got != int64(1) {
+		t.Fatalf("expected genesyscloud_user schema_version 1, got %v", got)
+	}
+	if got := resources[1].State.Meta["schema_version"]; got != int64(0) {
+		t.Fatalf("expected unknown resource schema_version 0, got %v", got)
+	}
+}
+
+func TestUnitSetExportedResourceSchemaVersionsNilProviderMap(t *testing.T) {
+	resources := []resourceExporter.ResourceInfo{
+		{
+			Type:       user.ResourceType,
+			BlockLabel: "example_user",
+			State:      &terraform.InstanceState{ID: "user-id"},
+		},
+	}
+
+	setExportedResourceSchemaVersions(resources, nil)
+
+	if got := resources[0].State.Meta["schema_version"]; got != int64(0) {
+		t.Fatalf("expected schema_version 0 when provider map is nil, got %v", got)
+	}
 }

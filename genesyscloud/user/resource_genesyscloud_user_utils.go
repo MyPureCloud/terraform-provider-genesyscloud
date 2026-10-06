@@ -844,6 +844,9 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				if address.VarType != nil {
 					phoneNumber["type"] = *address.VarType
 				}
+				if num, ok := phoneNumber["number"].(string); ok && num == "" {
+					delete(phoneNumber, "number")
+				}
 				phoneNumSet.Add(phoneNumber)
 			} else if *address.MediaType == "EMAIL" {
 				email := make(map[string]interface{})
