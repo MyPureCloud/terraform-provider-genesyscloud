@@ -70,6 +70,9 @@ resource "genesyscloud_outbound_contact_list_template" "contact_list_template" {
 - `phone_columns` (Block Set) Indicates which columns are phone numbers. Changing the phone_columns attribute will cause the outbound_contact_list_template object to be dropped and recreated with a new ID. Required if email_columns is empty (see [below for nested schema](#nestedblock--phone_columns))
 - `preview_mode_accepted_values` (List of String) The values in the preview_mode_column_name column that indicate a contact should always be dialed in preview mode.
 - `preview_mode_column_name` (String) A column to check if a contact should always be dialed in preview mode.
+- `retention_days` (Number) The default number of days to retain contact lists created from this template. Required when retention_type is RetentionDays.
+- `retention_type` (String) The default type of retention for contact lists created from this template. Valid values: Never, Today, RetentionDays.
+- `time_zone` (String) The time zone for retention of contact lists created from this template; for example, Africa/Abidjan. Time zones are represented as a string of the zone name as found in the IANA time zone database.
 - `zip_code_column_name` (String) The name of contact list column containing the zip code for use with automatic time zone mapping. Only allowed if 'automatic_time_zone_mapping' is set to true. Changing the zip_code_column_name attribute will cause the outbound_contact_list_template object to be dropped and recreated with a new ID
 
 ### Read-Only

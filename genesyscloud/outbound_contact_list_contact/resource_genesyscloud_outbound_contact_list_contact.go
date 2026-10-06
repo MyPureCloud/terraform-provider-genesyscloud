@@ -80,6 +80,9 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "data", contactResponseBody.Data)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
+		resourcedata.SetNillableValue(d, "retention_type", contactResponseBody.RetentionType)
+		resourcedata.SetNillableValue(d, "retention_days", contactResponseBody.RetentionDays)
+		resourcedata.SetNillableTime(d, "date_expiration", contactResponseBody.DateExpiration)
 
 		return nil
 	})

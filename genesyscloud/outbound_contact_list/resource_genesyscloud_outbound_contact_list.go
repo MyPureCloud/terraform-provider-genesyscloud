@@ -9,6 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -48,6 +49,9 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 	trimWhitespace := d.Get("trim_whitespace").(bool)
+	retentionType := d.Get("retention_type").(string)
+	retentionDays := d.Get("retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetOutboundContactlistProxy(sdkConfig)
@@ -73,6 +77,15 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	}
 	if zipCodeColumnName != "" {
 		sdkContactList.ZipCodeColumnName = &zipCodeColumnName
+	}
+	if retentionType != "" {
+		sdkContactList.RetentionType = &retentionType
+	}
+	if retentionDays != 0 {
+		sdkContactList.RetentionDays = &retentionDays
+	}
+	if timeZone != "" {
+		sdkContactList.TimeZone = &timeZone
 	}
 
 	log.Printf("Creating Outbound Contact List %s", name)
@@ -104,6 +117,9 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
 	trimWhitespace := d.Get("trim_whitespace").(bool)
+	retentionType := d.Get("retention_type").(string)
+	retentionDays := d.Get("retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetOutboundContactlistProxy(sdkConfig)
@@ -129,6 +145,15 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	}
 	if zipCodeColumnName != "" {
 		sdkContactList.ZipCodeColumnName = &zipCodeColumnName
+	}
+	if retentionType != "" {
+		sdkContactList.RetentionType = &retentionType
+	}
+	if retentionDays != 0 {
+		sdkContactList.RetentionDays = &retentionDays
+	}
+	if timeZone != "" {
+		sdkContactList.TimeZone = &timeZone
 	}
 
 	log.Printf("Updating Outbound Contact List %s", name)
@@ -228,6 +253,16 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		if sdkContactList.TrimWhitespace != nil {
 			_ = d.Set("trim_whitespace", *sdkContactList.TrimWhitespace)
 		}
+		if sdkContactList.RetentionType != nil {
+			_ = d.Set("retention_type", *sdkContactList.RetentionType)
+		}
+		if sdkContactList.RetentionDays != nil {
+			_ = d.Set("retention_days", *sdkContactList.RetentionDays)
+		}
+		if sdkContactList.TimeZone != nil {
+			_ = d.Set("time_zone", *sdkContactList.TimeZone)
+		}
+		resourcedata.SetNillableTime(d, "date_expiration", sdkContactList.DateExpiration)
 
 		if sdkContactList.Id != nil {
 			contactListRecordsCount, _, err := proxy.getOutboundContactlistContactRecordLength(ctx, *sdkContactList.Id)
