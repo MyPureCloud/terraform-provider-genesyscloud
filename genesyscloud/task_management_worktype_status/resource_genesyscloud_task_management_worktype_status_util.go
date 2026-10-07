@@ -120,7 +120,15 @@ func ValidateStatusIds(statusResource1 string, key1 string, statusResource2 stri
 // findMetaByStatusSuffix searches the SanitizedResourceMap for a composite key ending with "/<statusId>".
 // Returns the ResourceMeta if found, nil otherwise.
 func findMetaByStatusSuffix(idMetaMap resourceExporter.ResourceIDMetaMap, statusId string) *resourceExporter.ResourceMeta {
-	suffix := "/" + statusId
+	if meta, ok := idMetaMap[statusId]; ok && meta != nil && meta.BlockLabel != "" {
+		return meta
+	}
+
+	bareStatusId := statusId
+	if i := strings.LastIndex(statusId, "/"); i >= 0 && i+1 < len(statusId) {
+		bareStatusId = statusId[i+1:]
+	}
+	suffix := "/" + bareStatusId
 	for compositeId, meta := range idMetaMap {
 		if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
 			return meta
