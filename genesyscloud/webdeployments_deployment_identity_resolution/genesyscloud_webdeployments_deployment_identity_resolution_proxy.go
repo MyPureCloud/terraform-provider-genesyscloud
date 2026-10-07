@@ -42,6 +42,8 @@ func newWebDeploymentIdentityResolutionProxy(clientConfig *platformclientv2.Conf
 	}
 }
 
+// getWebDeploymentIdentityResolutionProxy returns a cached singleton that keeps the first clientConfig it receives.
+// This deliberately mirrors webdeployments_deployment.GetWebDeploymentsProxy, which this proxy also composes.
 func getWebDeploymentIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *webDeploymentIdentityResolutionProxy {
 	if internalProxy == nil {
 		internalProxy = newWebDeploymentIdentityResolutionProxy(clientConfig)
