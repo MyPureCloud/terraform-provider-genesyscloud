@@ -138,18 +138,15 @@ func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attribute
 // RemoveUnresolvedScriptGuidsResolver removes default_script_ids entries that could not be resolved
 // to an exported genesyscloud_script resource (e.g. built-in or unpublished scripts that 404).
 func RemoveUnresolvedScriptGuidsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
-	if innerMap, ok := configMap["default_script_ids"].(map[string]interface{}); ok {
-		for key := range innerMap {
-			OmitUnresolvedGuidFromConfigMap(innerMap, key)
-		}
-		if len(innerMap) == 0 {
-			delete(configMap, "default_script_ids")
-		}
+	innerMap, ok := configMap["default_script_ids"].(map[string]interface{})
+	if !ok {
 		return nil
 	}
-
-	for key := range configMap {
-		OmitUnresolvedGuidFromConfigMap(configMap, key)
+	for key := range innerMap {
+		OmitUnresolvedGuidFromConfigMap(innerMap, key)
+	}
+	if len(innerMap) == 0 {
+		delete(configMap, "default_script_ids")
 	}
 	return nil
 }
