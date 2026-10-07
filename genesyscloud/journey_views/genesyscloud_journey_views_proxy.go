@@ -52,10 +52,7 @@ func newJourneyViewsProxy(clientConfig *platformclientv2.Configuration) *journey
 }
 
 func getJourneyViewProxy(clientConfig *platformclientv2.Configuration) *journeyViewsProxy {
-	if internalProxy == nil {
-		internalProxy = newJourneyViewsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newJourneyViewsProxy)
 }
 
 func (p *journeyViewsProxy) getAllJourneyViews(ctx context.Context, name string) (*[]platformclientv2.Journeyview, *platformclientv2.APIResponse, error) {

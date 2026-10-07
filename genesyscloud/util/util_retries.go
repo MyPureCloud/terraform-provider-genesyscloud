@@ -48,7 +48,7 @@ func withRetriesInternal(ctx context.Context, timeout time.Duration, method func
 // GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT environment variable. Default is 5 minutes.
 // Setting timeout to 0 means no retries (immediate fail-fast behavior).
 func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
-	timeout := provider.GetCustomRetryTimeout()
+	timeout := provider.GetCustomRetryTimeout(ctx)
 	return WithRetriesForReadCustomTimeout(ctx, timeout, d, method)
 }
 

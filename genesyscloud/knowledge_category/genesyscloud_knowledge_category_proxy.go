@@ -53,10 +53,7 @@ func newKnowledgeCategoryProxy(clientConfig *platformclientv2.Configuration) *kn
 }
 
 func GetKnowledgeCategoryProxy(clientConfig *platformclientv2.Configuration) *knowledgeCategoryProxy {
-	if internalProxy == nil {
-		internalProxy = newKnowledgeCategoryProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newKnowledgeCategoryProxy)
 }
 
 func (p *knowledgeCategoryProxy) getAllKnowledgebaseEntities(ctx context.Context, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {

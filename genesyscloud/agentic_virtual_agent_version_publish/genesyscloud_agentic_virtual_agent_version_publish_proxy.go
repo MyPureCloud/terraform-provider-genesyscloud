@@ -50,10 +50,7 @@ func newPublishProxy(clientConfig *platformclientv2.Configuration) *publishProxy
 
 // getPublishProxy returns the singleton proxy instance.
 func getPublishProxy(clientConfig *platformclientv2.Configuration) *publishProxy {
-	if internalProxy == nil {
-		internalProxy = newPublishProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newPublishProxy)
 }
 
 // Public proxy methods

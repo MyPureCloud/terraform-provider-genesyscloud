@@ -3,6 +3,7 @@ package exporter
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -46,6 +47,11 @@ type BaseExportInput struct {
 
 type ExportByTypeInput = BaseExportInput
 
+// ResourceErrorInfo describes a single instance that could not be read during an
+// export. Aliased here so MRMO can inspect ExportByTypeOutput.ResourceErrors without
+// importing the tfexporter package.
+type ResourceErrorInfo = tfexporter.ResourceErrorInfo
+
 type ExportOutput struct {
 	// ExportData is the exported data that would be written to the .tf.json file during export
 	ExportData util.JsonMap
@@ -74,4 +80,9 @@ type ExportByTypeOutput struct {
 
 	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
 	ResourceExporter *resource_exporter.ResourceExporter
+
+	// ResourceErrors holds the instances of the requested type that could not be
+	// read. Those instances are absent from ExportedResourceDataList, so a caller
+	// that ignores this field cannot distinguish a partial export from a complete one.
+	ResourceErrors []ResourceErrorInfo
 }

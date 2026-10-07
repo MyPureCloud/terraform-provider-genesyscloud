@@ -53,10 +53,7 @@ func newOrgAuthSettingsProxy(clientConfig *platformclientv2.Configuration) *orgA
 // getOrgAuthSettingsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOrgAuthSettingsProxy(clientConfig *platformclientv2.Configuration) *orgAuthSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newOrgAuthSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOrgAuthSettingsProxy)
 }
 
 func (p *orgAuthSettingsProxy) getTokensTimeOutSettings(ctx context.Context) (*platformclientv2.Idletokentimeout, *platformclientv2.APIResponse, error) {

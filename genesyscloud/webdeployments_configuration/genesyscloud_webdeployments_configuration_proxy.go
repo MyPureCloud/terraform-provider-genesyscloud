@@ -44,10 +44,7 @@ func newWebDeploymentsConfigurationProxy(clientConfig *platformclientv2.Configur
 }
 
 func getWebDeploymentConfigurationsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsConfigurationProxy {
-	if internalProxy == nil {
-		internalProxy = newWebDeploymentsConfigurationProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newWebDeploymentsConfigurationProxy)
 }
 
 type webDeploymentsConfigurationProxy struct {

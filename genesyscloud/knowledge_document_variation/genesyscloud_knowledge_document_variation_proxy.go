@@ -65,10 +65,7 @@ func newVariationRequestProxy(clientConfig *platformclientv2.Configuration) *var
 }
 
 func getVariationRequestProxy(clientConfig *platformclientv2.Configuration) *variationRequestProxy {
-	if internalProxy == nil {
-		internalProxy = newVariationRequestProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newVariationRequestProxy)
 }
 
 // CreateVariation creates a Genesys Cloud variation request

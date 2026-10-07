@@ -74,10 +74,7 @@ func newCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *cu
 // getCustomAuthActionsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getCustomAuthActionsProxy(clientConfig *platformclientv2.Configuration) *customAuthActionsProxy {
-	if internalProxy == nil {
-		internalProxy = newCustomAuthActionsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newCustomAuthActionsProxy)
 }
 
 // getAllIntegrationCustomAuthActions retrieves all Genesys Cloud Integration Custom Auth Actions

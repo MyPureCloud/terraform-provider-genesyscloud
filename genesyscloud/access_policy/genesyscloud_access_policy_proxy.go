@@ -57,10 +57,7 @@ func newAccessPolicyProxy(clientConfig *platformclientv2.Configuration) *accessP
 // getAccessPolicyProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getAccessPolicyProxy(clientConfig *platformclientv2.Configuration) *accessPolicyProxy {
-	if internalProxy == nil {
-		internalProxy = newAccessPolicyProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAccessPolicyProxy)
 }
 
 // createAccessPolicy creates a Genesys Cloud access policy
