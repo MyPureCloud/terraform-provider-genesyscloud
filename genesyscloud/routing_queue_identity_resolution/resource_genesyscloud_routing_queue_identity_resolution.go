@@ -24,7 +24,7 @@ func getAllRoutingQueueIdentityResolution(ctx context.Context, clientConfig *pla
 	resources := make(resourceExporter.ResourceIDMetaMap)
 	proxy := getRoutingQueueIdentityResolutionProxy(clientConfig)
 
-	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, "failed to list routing queues for identity resolution export", resp)
 	}
