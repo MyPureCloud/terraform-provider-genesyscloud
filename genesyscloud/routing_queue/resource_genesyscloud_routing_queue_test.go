@@ -802,7 +802,7 @@ func TestAccResourceRoutingQueueFlows(t *testing.T) {
 					queueFlowFilePath3,
 					inQueueShortMessageFlowConfig,
 					false,
-				) + architect_user_prompt.GenerateUserPromptResource(&architect_user_prompt.UserPromptStruct{
+				) + userPrompt.GenerateUserPromptResource(&userPrompt.UserPromptStruct{
 					ResourceLabel: userPromptResourceLabel1,
 					Name:          userPromptName1,
 					Description:   strconv.Quote(userPromptDescription1),
