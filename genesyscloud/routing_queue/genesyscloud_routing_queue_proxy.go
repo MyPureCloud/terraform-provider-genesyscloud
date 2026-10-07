@@ -36,10 +36,6 @@ func routingQueueListCacheKey(name string, hasPeer bool) string {
 	return name + ":" + strconv.FormatBool(hasPeer)
 }
 
-func invalidateRoutingQueueListCache() {
-	routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
-}
-
 // cloneRoutingQueue returns a deep copy of queue so nested pointers (bullseye rings,
 // member groups, etc.) are not shared with list/SDK response buffers.
 // DEVTOOLING-1764: shallow *queue copies caused non-deterministic loss of bullseye
