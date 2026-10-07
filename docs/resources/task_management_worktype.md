@@ -19,11 +19,13 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-taskmanagement-worktypes--worktypeId-)
 * [GET /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId-)
 * [PATCH /api/v2/taskmanagement/worktypes/{worktypeId}](https://developer.genesys.cloud/devapps/api-explorer#patch-api-v2-taskmanagement-worktypes--worktypeId-)
+* [GET /api/v2/taskmanagement/worktypes/{worktypeId}/statuses](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-taskmanagement-worktypes--worktypeId--statuses)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `workitems:status:view`
 * `workitems:worktype:add`
 * `workitems:worktype:delete`
 * `workitems:worktype:edit`
@@ -58,6 +60,14 @@ resource "genesyscloud_task_management_worktype" "example_worktype" {
   default_script_id   = genesyscloud_script.example_script.id
 
   assignment_enabled = true
+
+  # Configures the "Open" and "Closed" statuses that Genesys Cloud automatically creates for this
+  # Worktype. open_status_default = false is not supported: a Worktype must always have exactly
+  # one default status, so once set this cannot be used to unset the default. To change the
+  # default status, set 'default = true' on a different genesyscloud_task_management_worktype_status
+  # resource instead.
+  open_status_default          = true
+  closed_status_auto_terminate = true
 }
 
 resource "genesyscloud_task_management_worktype" "example_worktype_without_assignment" {
@@ -94,6 +104,7 @@ resource "genesyscloud_task_management_worktype" "example_worktype_without_assig
 ### Optional
 
 - `assignment_enabled` (Boolean) When set to true, Workitems will be sent to the queue of the Worktype as they are created. Default value is false.
+- `closed_status_auto_terminate` (Boolean) When set, controls whether the auto-created "Closed" status (created automatically when the Worktype is created, unless disable_default_status_creation is set) automatically terminates Workitems that enter it. Omitting this field leaves the current value unchanged.
 - `default_due_duration_seconds` (Number) The default due duration in seconds for Workitems created from the Worktype.
 - `default_duration_seconds` (Number) The default duration in seconds for Workitems created from the Worktype.
 - `default_expiration_seconds` (Number) The default expiration time in seconds for Workitems created from the Worktype.
@@ -107,6 +118,7 @@ resource "genesyscloud_task_management_worktype" "example_worktype_without_assig
 - `disable_default_status_creation` (Boolean) Optionally set this flag to disable Default Status creation
 - `division_id` (String) The division to which this entity belongs.
 - `flow_rules_enabled` (Boolean) When set to true, the worktype's flow rules will be processed. Default value is false. Defaults to `false`.
+- `open_status_default` (Boolean) When true, marks the auto-created "Open" status (created automatically when the Worktype is created, unless disable_default_status_creation is set) as the Worktype's default status. A Worktype must always have exactly one default status, so this cannot be set to false to "unset" it; to change the default status, set 'default = true' on a different genesyscloud_task_management_worktype_status resource instead. Omitting this field leaves the current default status unchanged.
 - `schema_id` (String) Id of the workitem schema.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.
 
