@@ -968,7 +968,11 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnos
 	}
 
 	if g.includeStateFile {
-		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
+		var providerResources map[string]*schema.Resource
+		if g.provider != nil {
+			providerResources = g.provider.ResourcesMap
+		}
+		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry, providerResources)
 		if err != nil {
 			return diag.FromErr(err)
 		}

@@ -33,7 +33,7 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 		return nil, nil
 	}
 
-	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get conditional group routing rules: %s", err), resp)
 	}
