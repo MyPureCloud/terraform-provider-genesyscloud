@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // Build Functions
@@ -40,6 +40,13 @@ func buildSdkMediaSettings(d *schema.ResourceData) *platformclientv2.Queuemedias
 	mediaSettingsEmail := d.Get("media_settings_email").([]interface{})
 	if len(mediaSettingsEmail) > 0 {
 		queueMediaSettings.Email = buildSdkMediaEmailSetting(mediaSettingsEmail)
+	}
+
+	if allOutboundEmailAddresses := buildSdkAllOutboundEmailAddresses(d); allOutboundEmailAddresses != nil {
+		if queueMediaSettings.Email == nil {
+			queueMediaSettings.Email = &platformclientv2.Emailmediasettings{}
+		}
+		queueMediaSettings.Email.AllOutboundEmailAddresses = allOutboundEmailAddresses
 	}
 
 	mediaSettingsMessage := d.Get("media_settings_message").([]interface{})
@@ -295,6 +302,7 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 	callbackSettings.AnsweringMachineFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "answering_machine_flow_id")
 	callbackSettings.MaxRetryCount = resourcedata.GetNillableValueFromMap[int](settingsMap, "max_retry_count", false)
 	callbackSettings.RetryDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "retry_delay_seconds", false)
+	callbackSettings.EdgeGroup = util.GetNillableDomainEntityRefFromMap(settingsMap, "edge_group_id")
 	callbackSettings.Site = util.GetNillableDomainEntityRefFromMap(settingsMap, "site_id")
 
 	return &callbackSettings
@@ -692,6 +700,32 @@ func buildSdkQueueEmailAddress(d *schema.ResourceData) *platformclientv2.Queueem
 	return nil
 }
 
+func buildSdkAllOutboundEmailAddresses(d *schema.ResourceData) *[]platformclientv2.Queueemailaddress {
+	allOutboundEmailAddresses, ok := d.GetOk("all_outbound_email_addresses")
+	if !ok {
+		return nil
+	}
+
+	addressList := allOutboundEmailAddresses.([]interface{})
+	emailAddresses := make([]platformclientv2.Queueemailaddress, 0, len(addressList))
+	for _, address := range addressList {
+		settingsMap, ok := address.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		inboundRoute := &platformclientv2.Inboundroute{
+			Id: platformclientv2.String(settingsMap["route_id"].(string)),
+		}
+		emailAddresses = append(emailAddresses, platformclientv2.Queueemailaddress{
+			Domain: &platformclientv2.Domainentityref{Id: platformclientv2.String(settingsMap["domain_id"].(string))},
+			Route:  &inboundRoute,
+		})
+	}
+
+	return &emailAddresses
+}
+
 func constructAgentOwnedRouting(d *schema.ResourceData) *platformclientv2.Agentownedrouting {
 	if agentOwnedRouting, ok := d.Get("agent_owned_routing").([]interface{}); ok {
 		if len(agentOwnedRouting) > 0 {
@@ -725,6 +759,31 @@ func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
 	return []interface{}{settingsMap}
+}
+
+func flattenMediaSettingsMessagePreserveOrder(settings *platformclientv2.Messagemediasettings, configOrder []interface{}) []any {
+	if settings == nil {
+		return nil
+	}
+	settingsMap := make(map[string]any)
+
+	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
+	if settings.ServiceLevel != nil {
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
+	}
+	if settings.SubTypeSettings != nil {
+		settingsMap["sub_type_settings"] = flattenSubTypeSettingsWithOrder(*settings.SubTypeSettings, configOrder)
+	}
+
+	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_inactivity_timeout", settings.EnableInactivityTimeout)
+
+	if settings.InactivityTimeoutSettings != nil {
+		settingsMap["inactivity_timeout_settings"] = flattenInactivityTimeoutSettings(settings.InactivityTimeoutSettings)
+	}
+
+	return []any{settingsMap}
 }
 
 func flattenMediaSettingsMessage(settings *platformclientv2.Messagemediasettings) []any {
@@ -768,7 +827,54 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 		return nil
 	}
 
-	// Sort keys to ensure deterministic ordering and avoid phantom diffs
+	subTypeList := make([]interface{}, 0, len(subType))
+	for key, value := range subType {
+		subTypeMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
+		subTypeList = append(subTypeList, subTypeMap)
+	}
+	return subTypeList
+}
+
+func flattenSubTypeSettingsWithOrder(subType map[string]platformclientv2.Messagesubtypesettings, configOrder []interface{}) []interface{} {
+	if subType == nil {
+		return nil
+	}
+
+	// Build a map of media_type -> flattened settings from the API response
+	apiMap := make(map[string]map[string]interface{})
+	for key, value := range subType {
+		subTypeMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
+		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
+		apiMap[key] = subTypeMap
+	}
+
+	// If we have config order, preserve it — only return items that are in the config
+	if len(configOrder) > 0 {
+		result := make([]interface{}, 0, len(configOrder))
+
+		// Return items in the config's order, using API values
+		for _, item := range configOrder {
+			if m, ok := item.(map[string]interface{}); ok {
+				if mediaType, ok := m["media_type"].(string); ok {
+					if apiItem, exists := apiMap[mediaType]; exists {
+						result = append(result, apiItem)
+					} else {
+						// Item is in config but not in API response — keep config values
+						result = append(result, m)
+					}
+				}
+			}
+		}
+
+		return result
+	}
+
+	// No config order available, return all API items in sorted order
 	keys := make([]string, 0, len(subType))
 	for key := range subType {
 		keys = append(keys, key)
@@ -777,12 +883,7 @@ func flattenSubTypeSettings(subType map[string]platformclientv2.Messagesubtypese
 
 	subTypeList := make([]interface{}, 0, len(subType))
 	for _, key := range keys {
-		value := subType[key]
-		subTypeMap := make(map[string]interface{})
-		resourcedata.SetMapValueIfNotNil(subTypeMap, "media_type", &key)
-		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_auto_answer", value.EnableAutoAnswer)
-		resourcedata.SetMapValueIfNotNil(subTypeMap, "enable_inactivity_timeout", value.EnableInactivityTimeout)
-		subTypeList = append(subTypeList, subTypeMap)
+		subTypeList = append(subTypeList, apiMap[key])
 	}
 	return subTypeList
 }
@@ -873,6 +974,7 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "answering_machine_flow_id", settings.AnsweringMachineFlow)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "max_retry_count", settings.MaxRetryCount)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "retry_delay_seconds", settings.RetryDelaySeconds)
+	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "edge_group_id", settings.EdgeGroup)
 	resourcedata.SetMapReferenceValueIfNotNil(settingsMap, "site_id", settings.Site)
 
 	return []interface{}{settingsMap}
@@ -1104,36 +1206,49 @@ func flattenBullseyeRings(sdkRings *[]platformclientv2.Ring) []interface{} {
 func FlattenQueueEmailAddress(settings platformclientv2.Queueemailaddress) map[string]interface{} {
 	settingsMap := make(map[string]interface{})
 
-	if settings.Domain != nil {
+	if settings.Domain != nil && settings.Domain.Id != nil {
 		settingsMap["domain_id"] = *settings.Domain.Id
 	}
 
 	if settings.Route != nil {
-		route := *settings.Route
-		settingsMap["route_id"] = *route.Id
+		if route := *settings.Route; route != nil && route.Id != nil {
+			settingsMap["route_id"] = *route.Id
+		}
 	}
 
 	return settingsMap
 }
 
-func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) (*schema.Set, diag.Diagnostics) {
+func flattenAllOutboundEmailAddresses(addresses *[]platformclientv2.Queueemailaddress) []interface{} {
+	if addresses == nil {
+		return nil
+	}
+
+	addressList := make([]interface{}, 0, len(*addresses))
+	for _, address := range *addresses {
+		addressList = append(addressList, FlattenQueueEmailAddress(address))
+	}
+	return addressList
+}
+
+func flattenQueueMembers(queueID string, memberBy string, sdkConfig *platformclientv2.Configuration) ([]interface{}, diag.Diagnostics) {
 	members, err := getRoutingQueueMembers(queueID, memberBy, sdkConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	memberSet := schema.NewSet(schema.HashResource(queueMemberResource), []interface{}{})
+	memberList := make([]interface{}, 0, len(members))
 	for _, member := range members {
 		memberMap := make(map[string]interface{})
 		memberMap["user_id"] = *member.Id
 		memberMap["ring_num"] = *member.RingNumber
-		memberSet.Add(memberMap)
+		memberList = append(memberList, memberMap)
 	}
 
-	return memberSet, nil
+	return memberList, nil
 }
 
-func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) (*schema.Set, diag.Diagnostics) {
+func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *RoutingQueueProxy) ([]string, diag.Diagnostics) {
 	codes, resp, err := proxy.getAllRoutingQueueWrapupCodes(ctx, queueID)
 	codeIds := getWrapupCodeIds(codes)
 
@@ -1141,13 +1256,88 @@ func flattenQueueWrapupCodes(ctx context.Context, queueID string, proxy *Routing
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to query wrapup codes for queue %s", queueID), resp)
 	}
 
-	if codeIds != nil {
-		return lists.StringListToSet(codeIds), nil
-	}
-
-	return nil, nil
+	return codeIds, nil
 }
 
+func wrapupCodesFromConfig(codesConfig interface{}) []string {
+	switch v := codesConfig.(type) {
+	case []interface{}:
+		return lists.InterfaceListToStrings(v)
+	case *schema.Set:
+		if ids := lists.SetToStringList(v); ids != nil {
+			return *ids
+		}
+		return nil
+	case []string:
+		return v
+	default:
+		return nil
+	}
+}
+
+// organizeStringIdsForRead keeps config order when config and API have the same IDs (order-insensitive).
+func organizeStringIdsForRead(schemaList, apiList []string) []string {
+	if lists.AreEquivalent(schemaList, apiList) {
+		return schemaList
+	}
+	return apiList
+}
+
+func memberUserIds(members []interface{}) []string {
+	ids := make([]string, 0, len(members))
+	for _, member := range members {
+		memberMap, ok := member.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if userID, ok := memberMap["user_id"].(string); ok && userID != "" {
+			ids = append(ids, userID)
+		}
+	}
+	return ids
+}
+
+// organizeMembersForRead keeps config order when membership (user_id set) matches the API.
+func organizeMembersForRead(schemaMembers, apiMembers []interface{}) []interface{} {
+	if lists.AreEquivalent(memberUserIds(schemaMembers), memberUserIds(apiMembers)) {
+		return schemaMembers
+	}
+	return apiMembers
+}
+
+// emailAddressKeys returns a "domain_id|route_id" key per entry, used to compare the config and
+// API lists ignoring order.
+func emailAddressKeys(addresses []interface{}) []string {
+	keys := make([]string, 0, len(addresses))
+	for _, address := range addresses {
+		addrMap, ok := address.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		domainID, _ := addrMap["domain_id"].(string)
+		routeID, _ := addrMap["route_id"].(string)
+		keys = append(keys, domainID+"|"+routeID)
+	}
+	return keys
+}
+
+// organizeAllOutboundEmailAddressesForRead keeps the config's declared order when the set of
+// {domain_id, route_id} pairs matches the API result. all_outbound_email_addresses is a TypeList
+// (order-sensitive) — the API does not guarantee order, so without this the state would flip to the
+// API order and produce a perpetual plan diff. Mirrors organizeMembersForRead; we keep TypeList
+// (not TypeSet) intentionally due to the gRPC TypeSet state-corruption issue (DEVTOOLING-1533).
+func organizeAllOutboundEmailAddressesForRead(schemaAddresses, apiAddresses []interface{}) []interface{} {
+	if lists.AreEquivalent(emailAddressKeys(schemaAddresses), emailAddressKeys(apiAddresses)) {
+		return schemaAddresses
+	}
+	return apiAddresses
+}
+
+// clearBullseyeRingMemberGroups clears member groups from bullseye rings before the main update.
+// The Genesys Cloud API rejects removing rings that have members attached. This function issues
+// a preliminary PUT that keeps the current ring count but sets MemberGroups to nil on all rings,
+// satisfying the API prerequisite. The caller's updateQueue.Bullseye (which holds the desired
+// final state — nil for all-rings-removed, or non-nil for partial removal) is left untouched.
 func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, updateQueue *platformclientv2.Queuerequest, proxy *RoutingQueueProxy) diag.Diagnostics {
 	currentQueue, resp, err := proxy.getRoutingQueueById(ctx, d.Id(), true)
 	if err != nil {
@@ -1177,16 +1367,16 @@ func clearBullseyeRingMemberGroups(ctx context.Context, d *schema.ResourceData, 
 		clearedRings[i].MemberGroups = nil
 	}
 
-	updateQueue.Bullseye = &platformclientv2.Bullseye{
+	clearQueue := *updateQueue
+	clearQueue.Bullseye = &platformclientv2.Bullseye{
 		Rings: &clearedRings,
 	}
 
-	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), updateQueue)
+	_, resp, err = proxy.updateRoutingQueue(ctx, d.Id(), &clearQueue)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to clear member_groups from bullseye rings in queue %s error: %s", d.Id(), err), resp)
 	}
 
-	updateQueue.Bullseye = nil
 	log.Printf("Cleared member_groups from bullseye rings in queue %s", d.Id())
 	return nil
 }
@@ -1469,6 +1659,7 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
+		DefaultMediaLanguage:         platformclientv2.String(d.Get("default_media_language").(string)),
 		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
 		LastAgentRoutingMode:         platformclientv2.String(d.Get("last_agent_routing_mode").(string)),
 	}

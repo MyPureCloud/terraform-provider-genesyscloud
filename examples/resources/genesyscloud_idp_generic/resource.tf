@@ -8,4 +8,5 @@ resource "genesyscloud_idp_generic" "generic" {
   endpoint_compression     = false
   name_identifier_format   = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
   sign_authn_requests      = false
+  force_authn              = true
 }

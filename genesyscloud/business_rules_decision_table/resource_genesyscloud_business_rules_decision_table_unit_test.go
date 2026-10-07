@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -31,7 +31,7 @@ func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 	}
 
 	// Test required fields
-	requiredFields := []string{"name", "division_id", "schema_id", "columns", "rows"}
+	requiredFields := []string{"name", "division_id", "schema_id", "columns"}
 	for _, fieldName := range requiredFields {
 		field := resource.Schema[fieldName]
 		if field == nil {
@@ -44,20 +44,35 @@ func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 	}
 
 	// Test optional fields
-	optionalFields := []string{"description"}
+	optionalFields := []string{"description", "rows", "rows_csv_filepath"}
 	for _, fieldName := range optionalFields {
 		field := resource.Schema[fieldName]
 		if field == nil {
 			t.Errorf("Optional field '%s' is missing from schema", fieldName)
 			continue
 		}
-		if !field.Optional {
+		if field.Required {
 			t.Errorf("Field '%s' should be optional", fieldName)
 		}
 	}
 
+	rowsField := resource.Schema["rows"]
+	if rowsField.Deprecated == "" {
+		t.Error("rows should be Deprecated")
+	}
+	csvField := resource.Schema["rows_csv_filepath"]
+	if csvField == nil {
+		t.Fatal("rows_csv_filepath missing")
+	}
+	if resource.Schema["rows_csv_content_hash"] == nil || !resource.Schema["rows_csv_content_hash"].Computed {
+		t.Error("rows_csv_content_hash should be computed")
+	}
+	if resource.Schema["rows_record_count"] == nil || !resource.Schema["rows_record_count"].Computed {
+		t.Error("rows_record_count should be computed")
+	}
+
 	// Test computed fields
-	computedFields := []string{"version"}
+	computedFields := []string{"version", "rows_csv_content_hash", "rows_record_count"}
 	for _, fieldName := range computedFields {
 		field := resource.Schema[fieldName]
 		if field == nil {
@@ -84,13 +99,16 @@ func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 
 	// Test field types
 	expectedTypes := map[string]schema.ValueType{
-		"name":        schema.TypeString,
-		"description": schema.TypeString,
-		"division_id": schema.TypeString,
-		"schema_id":   schema.TypeString,
-		"columns":     schema.TypeList,
-		"rows":        schema.TypeList,
-		"version":     schema.TypeInt,
+		"name":                  schema.TypeString,
+		"description":           schema.TypeString,
+		"division_id":           schema.TypeString,
+		"schema_id":             schema.TypeString,
+		"columns":               schema.TypeList,
+		"rows":                  schema.TypeList,
+		"rows_csv_filepath":     schema.TypeString,
+		"rows_csv_content_hash": schema.TypeString,
+		"rows_record_count":     schema.TypeInt,
+		"version":               schema.TypeInt,
 	}
 
 	for fieldName, expectedType := range expectedTypes {
@@ -123,12 +141,12 @@ func TestResourceBusinessRulesDecisionTable(t *testing.T) {
 	}
 
 	// Test rows field structure
-	rowsField := resource.Schema["rows"]
+	rowsField = resource.Schema["rows"]
 	if rowsField.Type != schema.TypeList {
 		t.Error("Rows field should be TypeList")
 	}
-	if rowsField.MinItems != 1 {
-		t.Error("Rows field should have MinItems = 1")
+	if rowsField.MinItems != 0 {
+		t.Errorf("Rows field should have MinItems = 0 (CSV mode); got %d", rowsField.MinItems)
 	}
 	if rowsField.Elem == nil {
 		t.Error("Rows field should have Elem defined")
@@ -303,7 +321,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreate(t *testing.T) {
 	}
 
 	// Mock for adding rows
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 1, version)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -1042,11 +1060,17 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRows(t *testing.T) {
 	}
 
 	// Mock for creating rows (needed for row updates)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 2, version)
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return apiResponse, nil
+	}
+	decisionTableProxy.bulkRemoveDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowIds []string) (*platformclientv2.APIResponse, error) {
+		return &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}, nil
+	}
+	decisionTableProxy.bulkUpdateDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Row) (*platformclientv2.APIResponse, error) {
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 
 	// Mock for deleting version (needed for cleanup)
@@ -1660,7 +1684,7 @@ func TestUnitResourceBusinessRulesDecisionTableUpdateRowFailureRollback(t *testi
 	}
 
 	// Mock row creation (should fail to trigger rollback)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 2, version)
 		// Simulate row creation failure
@@ -1884,7 +1908,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreateFailureRollback(t *testing.
 	}
 
 	// Mock the create row function (should fail to trigger rollback)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 1, version)
 		// Simulate row creation failure
@@ -2040,7 +2064,7 @@ func TestUnitResourceBusinessRulesDecisionTableCreatePublishFailureRollback(t *t
 	}
 
 	// Mock the create row function (should succeed)
-	decisionTableProxy.createDecisionTableRowAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	decisionTableProxy.bulkAddDecisionTableRowsAttr = func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, tableId)
 		assert.Equal(t, 1, version)
 		rowsAdded = true
@@ -2191,8 +2215,6 @@ func TestUnitBusinessRulesDecisionTableExporter(t *testing.T) {
 	expectedResolverPaths := []string{
 		"columns.outputs.defaults_to.value",
 		"columns.inputs.defaults_to.value",
-		"rows.inputs.literal.value",
-		"rows.outputs.literal.value",
 	}
 	for _, path := range expectedResolverPaths {
 		assert.Contains(t, exporter.CustomAttributeResolver, path, "%q should have a custom resolver registered", path)
@@ -2200,6 +2222,12 @@ func TestUnitBusinessRulesDecisionTableExporter(t *testing.T) {
 			assert.NotNil(t, resolver.ResolverFunc, "resolver function should be set for %q", path)
 		}
 	}
+	assert.NotContains(t, exporter.CustomAttributeResolver, "rows.inputs.literal.value")
+	assert.NotContains(t, exporter.CustomAttributeResolver, "rows.outputs.literal.value")
+	assert.NotNil(t, exporter.CustomFileWriter.RetrieveAndWriteFilesFunc)
+	assert.Equal(t, "rows", exporter.CustomFileWriter.SubDirectory)
+	assert.Contains(t, exporter.ThirdPartyRefAttrs, "rows_csv_filepath")
+	assert.Contains(t, exporter.ThirdPartyRefAttrs, "rows_csv_content_hash")
 
 	// Guard: no key may contain "*" or numeric path segments — those would never
 	// match the framework's runtime lookup. See sanitizeConfigMap in
@@ -2473,17 +2501,18 @@ func TestUnitResourceBusinessRulesDecisionTableEmptyRows(t *testing.T) {
 
 	_ = schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 
-	// This should fail validation due to MinItems constraint
-	// We can't directly test Terraform's validation in unit tests,
-	// but we can verify the schema constraint is set correctly
+	// MinItems is 0 so rows_csv_filepath-only configs validate; empty nested rows fails at apply.
 	rowsField := resourceSchema["rows"]
-	if rowsField.MinItems != 1 {
-		t.Error("Rows field should have MinItems = 1")
+	if rowsField.MinItems != 0 {
+		t.Errorf("Rows field should have MinItems = 0; got %d", rowsField.MinItems)
 	}
 
-	// Verify the field is marked as required
-	if !rowsField.Required {
-		t.Error("Rows field should be required")
+	// Verify the field is optional (ExactlyOneOf with rows_csv_filepath) and deprecated
+	if rowsField.Required {
+		t.Error("Rows field should be optional (ExactlyOneOf with rows_csv_filepath)")
+	}
+	if rowsField.Deprecated == "" {
+		t.Error("Rows field should be Deprecated")
 	}
 }
 
@@ -2504,10 +2533,10 @@ func TestUnitResourceBusinessRulesDecisionTableMissingRows(t *testing.T) {
 
 	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
 
-	// Verify that rows field is required
+	// Verify that rows field is optional (ExactlyOneOf)
 	rowsField := resourceSchema["rows"]
-	if !rowsField.Required {
-		t.Error("Rows field should be required")
+	if rowsField.Required {
+		t.Error("Rows field should be optional (ExactlyOneOf with rows_csv_filepath)")
 	}
 
 	// Verify that the field is not set (should be empty list)
@@ -2522,14 +2551,17 @@ func TestUnitResourceBusinessRulesDecisionTableRowsValidation(t *testing.T) {
 	resourceSchema := ResourceBusinessRulesDecisionTable().Schema
 	rowsField := resourceSchema["rows"]
 
-	// Test MinItems constraint
-	if rowsField.MinItems != 1 {
-		t.Errorf("Expected MinItems to be 1, got %d", rowsField.MinItems)
+	// MinItems must be 0: MinItems=1 breaks ExactlyOneOf with rows_csv_filepath.
+	if rowsField.MinItems != 0 {
+		t.Errorf("Expected MinItems to be 0, got %d", rowsField.MinItems)
 	}
 
-	// Test Required constraint
-	if !rowsField.Required {
-		t.Error("Expected rows field to be required")
+	// Test Optional + ExactlyOneOf (deprecated nested path)
+	if rowsField.Required {
+		t.Error("Expected rows field to be optional (ExactlyOneOf with rows_csv_filepath)")
+	}
+	if rowsField.Deprecated == "" {
+		t.Error("Expected rows field to be Deprecated")
 	}
 
 	// Test Type constraint

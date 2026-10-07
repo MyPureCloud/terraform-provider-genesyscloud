@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
@@ -37,6 +37,12 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
 	}
+	if retentionType := d.Get("retention_type").(string); retentionType != "" {
+		contactRequest.RetentionType = &retentionType
+	}
+	if retentionDays := d.Get("retention_days").(int); retentionDays != 0 {
+		contactRequest.RetentionDays = &retentionDays
+	}
 	return contactRequest
 }
 
@@ -57,6 +63,12 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 	}
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
+	}
+	if retentionType := d.Get("retention_type").(string); retentionType != "" {
+		contactRequest.RetentionType = &retentionType
+	}
+	if retentionDays := d.Get("retention_days").(int); retentionDays != 0 {
+		contactRequest.RetentionDays = &retentionDays
 	}
 	return contactRequest
 }

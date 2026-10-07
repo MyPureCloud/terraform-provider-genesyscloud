@@ -100,6 +100,12 @@ func ResourceIdpAdfs() *schema.Resource {
 				Type:        schema.TypeBool,
 				Default:     false,
 			},
+			`force_authn`: {
+				Description: `True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag.`,
+				Optional:    true,
+				Default:     true,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }

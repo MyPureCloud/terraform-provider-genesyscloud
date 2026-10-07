@@ -31,6 +31,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [GET /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-flows--flowId--instances-settings-loglevels)
 * [POST /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#post-api-v2-flows--flowId--instances-settings-loglevels)
 * [PUT /api/v2/flows/{flowId}/instances/settings/loglevels](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-flows--flowId--instances-settings-loglevels)
+* [GET /api/v2/scripts/{scriptId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-scripts--scriptId-)
 
 ## Permissions and Scopes
 
@@ -49,11 +50,14 @@ The following permissions are required to use this resource:
 * `architect:job:view`
 * `architect:jobExport:create`
 * `architect:jobExport:view`
+* `scripter:script:view`
 
 The following OAuth scopes are required to use this resource:
 
 * `architect`
 * `architect:readonly`
+* `scripts`
+* `scripts:readonly`
 
 
 ## Example Usage
@@ -109,6 +113,7 @@ resource "genesyscloud_flow" "outbound_call_flow" {
 
 ### Optional
 
+- `create_stubs` (Boolean) If true, flow stubs will be created for any dependencies that do not yet exist in the org when the flow is published. Defaults to `false`.
 - `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
 - `name` (String) Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file

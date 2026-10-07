@@ -2,6 +2,7 @@ package tfexporter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -20,6 +21,7 @@ import (
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
+	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -35,7 +37,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
@@ -979,7 +981,6 @@ func TestAccResourceTfExportExcludeFilterResourcesByRegEx(t *testing.T) {
 			strconv.Quote("genesyscloud_user"),
 			strconv.Quote("genesyscloud_user_roles"),
 			strconv.Quote("genesyscloud_flow"),
-			strconv.Quote("genesyscloud_journey_outcome"),
 		},
 		strconv.Quote("json"),
 		util.FalseValue,
@@ -2331,9 +2332,8 @@ resource "%s" "%s" {
 				),
 			},
 			{
-				// Step 2: Export the flow after it has been fully published
 				PreConfig: func() {
-					time.Sleep(10 * time.Second)
+					time.Sleep(60 * time.Second)
 				},
 				Config: generateExportWithDependsOn(util.FalseValue),
 				Check: resource.ComposeTestCheckFunc(
@@ -2347,6 +2347,126 @@ resource "%s" "%s" {
 		},
 		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
 	})
+}
+
+// TestAccResourceTfExportRoutingUtilizationMaxInboundCalls (AS-5418, PR #2544) verifies
+// max_inbound_calls survives an export, which the resource-level import test does not cover.
+func TestAccResourceTfExportRoutingUtilizationMaxInboundCalls(t *testing.T) {
+	testSetup(t)
+
+	var (
+		exportResourceLabel = "export"
+		exportTestDir       = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportFullPath      = "genesyscloud_tf_export." + exportResourceLabel
+		pathToExportedJSON  = filepath.Join(exportTestDir, defaultTfJSONFile)
+
+		maxCapacity     = "1"
+		maxInboundCalls = "2"
+
+		// Fixed block label the exporter writes for this resource.
+		exportedResourceLabel = "routing_utilization"
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			log.Printf("An error occurred while removing directory '%s': %s", path, err)
+		}
+	}(exportTestDir)
+
+	utilizationConfig := fmt.Sprintf(`
+resource "genesyscloud_routing_utilization" "routing-util" {
+	%s
+	%s
+	%s
+	%s
+	%s
+	max_inbound_calls = %s
+}
+`,
+		routingUtilization.GenerateRoutingUtilMediaType("call", maxCapacity, util.TrueValue),
+		routingUtilization.GenerateRoutingUtilMediaType("callback", maxCapacity, util.FalseValue),
+		routingUtilization.GenerateRoutingUtilMediaType("chat", maxCapacity, util.FalseValue),
+		routingUtilization.GenerateRoutingUtilMediaType("email", maxCapacity, util.FalseValue),
+		routingUtilization.GenerateRoutingUtilMediaType("message", maxCapacity, util.FalseValue),
+		maxInboundCalls,
+	)
+
+	exportConfig := utilizationConfig + fmt.Sprintf(`
+resource "genesyscloud_tf_export" "%s" {
+	directory                = "%s"
+	include_state_file       = %s
+	export_format            = %s
+	include_filter_resources = [%s]
+	depends_on               = [genesyscloud_routing_utilization.routing-util]
+}
+`, exportResourceLabel, exportTestDir, util.TrueValue, strconv.Quote("json"),
+		strconv.Quote("genesyscloud_routing_utilization"))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Set max_inbound_calls.
+				Config: utilizationConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_routing_utilization.routing-util", "max_inbound_calls", maxInboundCalls),
+				),
+			},
+			{
+				// Export and verify the field is present in the exported JSON.
+				Config: exportConfig,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(exportFullPath, "id"),
+					validateRoutingUtilizationExportMaxInboundCalls(pathToExportedJSON, exportedResourceLabel, maxInboundCalls),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// validateRoutingUtilizationExportMaxInboundCalls asserts the exported JSON block has max_inbound_calls == expected.
+func validateRoutingUtilizationExportMaxInboundCalls(filePath, resourceLabel, expected string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		raw, err := getResourceDefinition(filePath, "genesyscloud_routing_utilization")
+		if err != nil {
+			return err
+		}
+		if raw == nil {
+			return fmt.Errorf("no genesyscloud_routing_utilization resources found in export %s", filePath)
+		}
+		blockRaw, ok := raw[resourceLabel]
+		if !ok || blockRaw == nil {
+			return fmt.Errorf("routing utilization block %q not found in export %s", resourceLabel, filePath)
+		}
+
+		var attrs map[string]interface{}
+		if err := json.Unmarshal(*blockRaw, &attrs); err != nil {
+			return fmt.Errorf("failed to unmarshal routing utilization block: %w", err)
+		}
+
+		val, exists := attrs["max_inbound_calls"]
+		if !exists {
+			return fmt.Errorf("max_inbound_calls not found in exported routing utilization block; got attributes: %v", attrs)
+		}
+
+		// JSON numbers unmarshal to float64; compare as integer string.
+		var got string
+		switch v := val.(type) {
+		case float64: // JSON numbers decode to float64
+			got = strconv.Itoa(int(v))
+		case string:
+			got = v
+		default:
+			got = fmt.Sprintf("%v", v)
+		}
+
+		if got != expected {
+			return fmt.Errorf("exported max_inbound_calls = %s, expected %s", got, expected)
+		}
+		return nil
+	}
 }
 
 // TestUnitTestForExportCycles creates a directed graph of exported resources to their references. Report any potential graph cycles in this test.
@@ -2626,21 +2746,15 @@ resource "genesyscloud_integration_credential" "%s" {
 
 // TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences exercises the
 // end-to-end exporter pipeline for a decision table that references routing
-// queues in both columns (column defaults) AND rows (row literal values).
+// queues in column defaults and in row data.
 //
-// It is the regression test for the queue-in-rows resolution bug: the exporter
-// registered a QueueIdResolver for row literal paths under the keys
-// "rows.*.inputs.*.literal.value" and "rows.*.outputs.*.literal.value", but the
-// export framework matches resolver keys by exact string against a dot-only
-// path it constructs while walking the config. Wildcard segments never appear in
-// that runtime path, so the resolver silently never fired and exported decision
-// tables wrote raw queue UUIDs into row cells instead of
-// ${genesyscloud_routing_queue.<label>.id} references — meaning the exported
-// HCL could not be applied to another org without manual fix-up.
+// Column defaults still resolve via QueueIdResolver to
+// ${genesyscloud_routing_queue.<label>.id} references.
 //
-// The four assertions below cover the four queue-bearing locations on the
-// resource. The column assertions guard the previously-working paths; the row
-// assertions are the ones that fail against the pre-fix code.
+// Nested rows are no longer exported: CustomFileWriter writes a Populated CSV
+// under rows/<blockLabel>.csv, sets rows_csv_filepath, and deletes nested rows
+// from the config map. Platform Populated CSV cells use queue friendly names
+// (not UUIDs); the provider strips the rowId column on export.
 func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing.T) {
 	testSetup(t)
 
@@ -2708,9 +2822,7 @@ func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing
 					},
 				),
 				Check: resource.ComposeTestCheckFunc(
-					// Column defaults — these worked before the fix because their
-					// resolver paths had no wildcards. Asserting them ensures the
-					// fix didn't regress the existing behavior.
+					// Column defaults — QueueIdResolver still rewrites UUIDs to refs.
 					assertDecisionTableQueueReference(
 						configPath, tableName,
 						[]string{"columns", "0", "inputs", "0", "defaults_to", "0", "value"},
@@ -2721,18 +2833,8 @@ func TestAccResourceTfExportBusinessRulesDecisionTableQueueReferences(t *testing
 						[]string{"columns", "0", "outputs", "0", "defaults_to", "0", "value"},
 						expectedQueueBRef,
 					),
-					// Row literals — these are the regression assertions. Against
-					// the pre-fix exporter they hold raw UUIDs.
-					assertDecisionTableQueueReference(
-						configPath, tableName,
-						[]string{"rows", "0", "inputs", "0", "literal", "0", "value"},
-						expectedQueueARef,
-					),
-					assertDecisionTableQueueReference(
-						configPath, tableName,
-						[]string{"rows", "0", "outputs", "0", "literal", "0", "value"},
-						expectedQueueBRef,
-					),
+					// Row data is CSV-backed after export (not nested rows).
+					assertDecisionTableCSVExport(configPath, exportTestDir, tableName, queueAName, queueBName),
 				),
 			},
 		},
@@ -2871,6 +2973,67 @@ resource "genesyscloud_business_rules_decision_table" "test_table" {
 `, schemaName, queueAName, queueBName, tableName)
 }
 
+// assertDecisionTableCSVExport asserts the exported decision table uses
+// rows_csv_filepath (under rows/), has no nested rows, and the CSV on disk has
+// no rowId header and contains queue friendly names (not raw UUIDs).
+func assertDecisionTableCSVExport(configPath, exportTestDir, tableName, queueAName, queueBName string) resource.TestCheckFunc {
+	uuidPattern := regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`)
+	return func(_ *terraform.State) error {
+		exportData, err := util.LoadJsonFileToMap(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to load export file %s: %v", configPath, err)
+		}
+		resources, ok := exportData["resource"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf(`exported config missing top-level "resource" map`)
+		}
+		tables, ok := resources["genesyscloud_business_rules_decision_table"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("no genesyscloud_business_rules_decision_table resources exported")
+		}
+		table, ok := tables[tableName].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("decision table %q was not exported (found tables: %v)", tableName, keysOf(tables))
+		}
+
+		csvRel, ok := table["rows_csv_filepath"].(string)
+		if !ok || csvRel == "" {
+			return fmt.Errorf("exported table %q missing rows_csv_filepath", tableName)
+		}
+		if !strings.HasPrefix(filepath.ToSlash(csvRel), "rows/") {
+			return fmt.Errorf("rows_csv_filepath %q is not under rows/", csvRel)
+		}
+		if rowsRaw, exists := table["rows"]; exists {
+			if rows, isSlice := rowsRaw.([]interface{}); isSlice && len(rows) > 0 {
+				return fmt.Errorf("exported table %q still has nested rows (%d); expected CSV-only export", tableName, len(rows))
+			}
+		}
+
+		csvFullPath := filepath.Join(exportTestDir, csvRel)
+		raw, err := os.ReadFile(csvFullPath)
+		if err != nil {
+			return fmt.Errorf("exported CSV not found at %s: %v", csvFullPath, err)
+		}
+		content := string(raw)
+		headerLine := strings.SplitN(content, "\n", 2)[0]
+		for _, col := range strings.Split(headerLine, ",") {
+			if strings.TrimSpace(col) == "rowId" {
+				return fmt.Errorf("exported CSV header must not include rowId; got %q", headerLine)
+			}
+		}
+		if !strings.Contains(content, queueAName) {
+			return fmt.Errorf("exported CSV does not contain queue A name %q", queueAName)
+		}
+		if !strings.Contains(content, queueBName) {
+			return fmt.Errorf("exported CSV does not contain queue B name %q", queueBName)
+		}
+		if uuidPattern.MatchString(content) {
+			return fmt.Errorf("exported CSV still contains a raw UUID; expected queue friendly names only")
+		}
+		return nil
+	}
+}
+
 // assertDecisionTableQueueReference walks the exported JSON config and asserts
 // that the value at the given nested path on the named decision table equals
 // expectedRef AND is not a raw UUID. The path is the sequence of JSON keys
@@ -2950,4 +3113,102 @@ func keysOf(m map[string]interface{}) []string {
 		out = append(out, k)
 	}
 	return out
+}
+
+// TestAccResourceTfExportAgenticVirtualAgent exercises the exporter pipeline for the
+// Agentic Virtual Agent resources. It creates an agent and a version, runs an export with
+// dependency resolution enabled, and verifies that:
+//   - both the agent and version resource blocks are exported, and
+//   - the version's agent_id is rewritten to a ${genesyscloud_agentic_virtual_agent...id}
+//     reference rather than a raw UUID (exporter RefAttrs resolution).
+func TestAccResourceTfExportAgenticVirtualAgent(t *testing.T) {
+	testSetup(t)
+
+	var (
+		uniqueSuffix  = uuid.NewString()[:8]
+		agentName     = "tf_test_ava_export_agent_" + uniqueSuffix
+		exportTestDir = testrunner.GetTestTempPath(".terraform_ava_export_" + uuid.NewString())
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	baseConfig := fmt.Sprintf(`
+resource "genesyscloud_agentic_virtual_agent" "ava_agent" {
+  name = "%[1]s"
+}
+
+resource "genesyscloud_agentic_virtual_agent_version" "ava_version" {
+  agent_id = genesyscloud_agentic_virtual_agent.ava_agent.id
+
+  definition {
+    role         = "You are a helpful export test agent."
+    instructions = ["Be concise and helpful."]
+  }
+}
+`, agentName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: create the agent and version.
+				Config: baseConfig,
+			},
+			{
+				// Step 2: export both resources with dependency resolution so the
+				// version's agent_id resolves to a resource reference.
+				Config: baseConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					"ava_export",
+					exportTestDir,
+					util.TrueValue,        // include_state_file
+					strconv.Quote("json"), // export_format
+					util.TrueValue,        // enable_dependency_resolution
+					[]string{
+						strconv.Quote("genesyscloud_agentic_virtual_agent::" + agentName),
+						strconv.Quote("genesyscloud_agentic_virtual_agent_version"),
+					},
+					[]string{
+						"genesyscloud_agentic_virtual_agent.ava_agent",
+						"genesyscloud_agentic_virtual_agent_version.ava_version",
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					assertAgenticVirtualAgentExport(configPath, agentName),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// assertAgenticVirtualAgentExport verifies the exported tf.json contains the agent and
+// version resources, and that the version's agent_id is a resource reference (not a raw UUID).
+func assertAgenticVirtualAgentExport(configPath, agentName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		data, err := os.ReadFile(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read exported config %s: %w", configPath, err)
+		}
+		content := string(data)
+
+		// The agent block must be present.
+		if !strings.Contains(content, `"genesyscloud_agentic_virtual_agent"`) {
+			return fmt.Errorf("exported config does not contain a genesyscloud_agentic_virtual_agent resource")
+		}
+		// The version block must be present.
+		if !strings.Contains(content, `"genesyscloud_agentic_virtual_agent_version"`) {
+			return fmt.Errorf("exported config does not contain a genesyscloud_agentic_virtual_agent_version resource")
+		}
+		// The version's agent_id must be resolved to a resource reference, not a raw UUID.
+		if !strings.Contains(content, "${genesyscloud_agentic_virtual_agent.") {
+			return fmt.Errorf("exported version agent_id was not resolved to a ${genesyscloud_agentic_virtual_agent...} reference")
+		}
+		return nil
+	}
 }

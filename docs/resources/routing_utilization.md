@@ -81,6 +81,7 @@ resource "genesyscloud_routing_utilization" "org-utilization" {
 - `chat` (Block List, Max: 1) Chat media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--chat))
 - `email` (Block List, Max: 1) Email media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--email))
 - `label_utilizations` (Block List) Label utilization settings. If not set, default label settings will be applied. (see [below for nested schema](#nestedblock--label_utilizations))
+- `max_inbound_calls` (Number) Max number of inbound voice calls. This limits the total inbound calls (ACD + non-ACD) an agent can receive.
 - `message` (Block List, Max: 1) Message media settings. If not set, this reverts to the default media type settings. (see [below for nested schema](#nestedblock--message))
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 

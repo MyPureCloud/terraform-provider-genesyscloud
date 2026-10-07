@@ -44,9 +44,10 @@ func ResourceLocation() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"notes": {
-				Description: "Notes for this location.",
-				Type:        schema.TypeString,
-				Optional:    true,
+				Description:      "Notes for this location.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressBlankNotes,
 			},
 			"emergency_number": {
 				Description: "Emergency phone number for this location.",

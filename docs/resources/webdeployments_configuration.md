@@ -133,7 +133,8 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
     }
   }
   video {
-    enabled = true
+    enabled  = true
+    channels = ["Webmessaging", "Voice"]
     agent {
       allow_camera       = true
       allow_screen_share = true
@@ -666,6 +667,7 @@ Required:
 Optional:
 
 - `agent` (Block List, Max: 1) Video Settings for agent (see [below for nested schema](#nestedblock--video--agent))
+- `channels` (List of String) List of channels through which video chat is available
 - `enabled` (Boolean) Whether or not video is enabled
 - `user` (Block List, Max: 1) Video Settings for user (see [below for nested schema](#nestedblock--video--user))
 

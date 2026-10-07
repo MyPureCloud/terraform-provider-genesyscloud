@@ -15,13 +15,14 @@ Genesys Cloud external contacts organization data source. Select an external con
 The following Genesys Cloud APIs are used by this data source. Ensure your OAuth Client has been granted the necessary scopes and permissions to perform these operations:
 
 * [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
-* [GET /api/v2/externalcontacts/scan/organizations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-organizations)
+* [GET /api/v2/externalcontacts/scan/organizations/divisionviews/all](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-organizations-divisionviews-all)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `externalContacts:externalOrganization:view`
+* `externalContacts:externalOrganization:viewAll`
 * `relate:externalOrganization:view`
 
 The following OAuth scopes are required to use this resource:

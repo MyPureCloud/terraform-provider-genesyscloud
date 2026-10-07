@@ -11,6 +11,7 @@ import (
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const ResourceType = "genesyscloud_outbound_contact_list_contact"
@@ -143,6 +144,23 @@ Only applicable on the creation of a contact, so updating this field will force 
 				Optional:    true,
 				Computed:    true,
 				Elem:        contactableStatusResource,
+			},
+			"retention_type": {
+				Description:  `The type of retention for this contact, overriding the contact list's retention setting. Valid values: Never, Today, RetentionDays.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
+			},
+			"retention_days": {
+				Description: `The number of days to retain this contact. Required when retention_type is RetentionDays.`,
+				Optional:    true,
+				Type:        schema.TypeInt,
+			},
+			"date_expiration": {
+				Description: `The expiration date of the contact, computed from retention_type and retention_days. Date time is represented as an ISO-8601 string.`,
+				Computed:    true,
+				Type:        schema.TypeString,
 			},
 		},
 	}

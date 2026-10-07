@@ -5,7 +5,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -18,6 +18,7 @@ func getOrganizationAuthenticationSettingsFromResourceData(d *schema.ResourceDat
 	return platformclientv2.Orgauthsettings{
 		PasswordRequirements:              buildPasswordRequirements(d, "password_requirements"),
 		MultifactorAuthenticationRequired: platformclientv2.Bool(d.Get("multifactor_authentication_required").(bool)),
+		UniversalLogout:                   platformclientv2.Bool(d.Get("universal_logout").(bool)),
 		DomainAllowlistEnabled:            platformclientv2.Bool(d.Get("domain_allowlist_enabled").(bool)),
 		DomainAllowlist:                   lists.BuildSdkStringListFromInterfaceArray(d, "domain_allowlist"),
 		IpAddressAllowlist:                lists.BuildSdkStringListFromInterfaceArray(d, "ip_address_allowlist"),

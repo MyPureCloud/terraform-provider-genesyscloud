@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func createOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -80,6 +80,9 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "data", contactResponseBody.Data)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
+		resourcedata.SetNillableValue(d, "retention_type", contactResponseBody.RetentionType)
+		resourcedata.SetNillableValue(d, "retention_days", contactResponseBody.RetentionDays)
+		resourcedata.SetNillableTime(d, "date_expiration", contactResponseBody.DateExpiration)
 
 		return nil
 	})

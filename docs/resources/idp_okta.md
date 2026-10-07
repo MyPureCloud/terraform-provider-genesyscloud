@@ -42,6 +42,7 @@ resource "genesyscloud_idp_okta" "okta" {
   issuer_uri          = "https://example.com"
   target_uri          = "https://example.com/login"
   sign_authn_requests = false
+  force_authn         = true
 }
 ```
 
@@ -56,6 +57,7 @@ resource "genesyscloud_idp_okta" "okta" {
 ### Optional
 
 - `disabled` (Boolean) True if Okta is disabled.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `name` (String) IDP Okta name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to Okta.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
