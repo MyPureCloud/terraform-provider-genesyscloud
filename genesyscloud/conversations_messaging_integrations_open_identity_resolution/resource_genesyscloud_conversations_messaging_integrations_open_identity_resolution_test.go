@@ -43,6 +43,13 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 		inboundType                                     = "*/*"
 		nameMessagingSetting                            = "testSettings"
 		resourceLabelMessagingSetting                   = "testConversationsMessagingSettings"
+
+		externalSourceResourceLabel = "test-external-source"
+		externalSourceName          = "external-source-" + uuid.NewString()
+		externalSourceURI           = "https://some.host/{{externalId.value}}"
+		externalSourceResourcePath  = "genesyscloud_externalcontacts_external_source." + externalSourceResourceLabel
+		externalSourceIdConfigRef   = externalSourceResourcePath + ".id"
+		externalSourceStateRef      = externalSourceResourcePath
 	)
 
 	supportedContentResource1 := cmSupportedContent.GenerateSupportedContentResource(
@@ -70,19 +77,30 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 		open.GenerateWebhookHeadersProperties("key", "value"),
 	)
 
+	externalSourceResource := generateBasicExternalSourceResource(
+		externalSourceResourceLabel,
+		externalSourceName,
+		true,
+		externalSourceURI,
+	)
+
 	openIntegrationDependenciesConfig := supportedContentResource1 + "\n" +
 		messagingSettingResource1 +
 		openIntegrationResource
 
-	openIntegrationWithIRConfig := func(resolveIdentities, divisionId string) string {
-		return homeDivisionConfig +
-			openIntegrationDependenciesConfig + "\n" +
-			generateConversationsMessagingIntegrationsOpenIdentityResolutionResource(
-				identityResolutionResourceLabel,
-				openIntegrationResourcePath+".id",
-				resolveIdentities,
-				divisionId,
-			)
+	openIntegrationWithIRConfig := func(resolveIdentities, divisionId, externalSourceId string) string {
+		config := homeDivisionConfig + openIntegrationDependenciesConfig
+		if externalSourceId != "" {
+			config += "\n" + externalSourceResource
+		}
+		config += "\n" + generateConversationsMessagingIntegrationsOpenIdentityResolutionResource(
+			identityResolutionResourceLabel,
+			openIntegrationResourcePath+".id",
+			resolveIdentities,
+			divisionId,
+			externalSourceId,
+		)
+		return config
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -99,7 +117,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 				),
 			},
 			{
-				Config: openIntegrationWithIRConfig("true", homeDivisionIdConfigRef),
+				Config: openIntegrationWithIRConfig("true", homeDivisionIdConfigRef, externalSourceIdConfigRef),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_conversations_messaging_integrations_open_identity_resolution."+identityResolutionResourceLabel, "open_integration_id",
@@ -108,7 +126,10 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 					resource.TestCheckResourceAttrPair(
 						"genesyscloud_conversations_messaging_integrations_open_identity_resolution."+identityResolutionResourceLabel, "division_id",
 						"data.genesyscloud_auth_division_home."+homeDivisionDataSourceLabel, "id"),
-					verifyIdentityResolutionConfig(openIntegrationResourcePath, true, homeDivisionStateRef),
+					resource.TestCheckResourceAttrPair(
+						"genesyscloud_conversations_messaging_integrations_open_identity_resolution."+identityResolutionResourceLabel, "external_source_id",
+						externalSourceResourcePath, "id"),
+					verifyIdentityResolutionConfig(openIntegrationResourcePath, true, homeDivisionStateRef, externalSourceStateRef),
 				),
 			},
 			{
@@ -118,6 +139,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 						openIntegrationResourcePath+".id",
 						"false",
 						"",
+						"",
 					),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -126,7 +148,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 						"false",
 					),
 					verifyIdentityResolutionStateDivisionCleared("genesyscloud_conversations_messaging_integrations_open_identity_resolution."+identityResolutionResourceLabel),
-					verifyIdentityResolutionConfig(openIntegrationResourcePath, false, ""),
+					verifyIdentityResolutionConfig(openIntegrationResourcePath, false, "", ""),
 				),
 			},
 			{
@@ -136,6 +158,7 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 						openIntegrationResourcePath+".id",
 						"false",
 						`"*"`,
+						"",
 					),
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
@@ -189,16 +212,31 @@ func waitForOpenIntegrationActive(openResourcePath string) resource.TestCheckFun
 	}
 }
 
-func generateConversationsMessagingIntegrationsOpenIdentityResolutionResource(resourceLabel, openIntegrationId, resolveIdentities, divisionId string) string {
+func generateBasicExternalSourceResource(resourceLabel, name string, active bool, uriTemplate string) string {
+	return fmt.Sprintf(`resource "genesyscloud_externalcontacts_external_source" "%s" {
+        name = "%s"
+        active = %v
+        link_configuration {
+          uri_template = "%s"
+        }
+    }`, resourceLabel, name, active, uriTemplate)
+}
+
+func generateConversationsMessagingIntegrationsOpenIdentityResolutionResource(resourceLabel, openIntegrationId, resolveIdentities, divisionId string, externalSourceId string) string {
 	divisionBlock := ""
 	if divisionId != "" {
 		divisionBlock = fmt.Sprintf("\n    division_id = %s", divisionId)
 	}
 
+	externalSourceBlock := ""
+	if externalSourceId != "" {
+		externalSourceBlock = fmt.Sprintf("\n    external_source_id = %s", externalSourceId)
+	}
+
 	return fmt.Sprintf(`resource "genesyscloud_conversations_messaging_integrations_open_identity_resolution" "%s" {
       	open_integration_id = %s
-  		resolve_identities = %s%s
-	}`, resourceLabel, openIntegrationId, resolveIdentities, divisionBlock)
+  		resolve_identities = %s%s%s
+	}`, resourceLabel, openIntegrationId, resolveIdentities, divisionBlock, externalSourceBlock)
 }
 
 func verifyIdentityResolutionStateDivisionCleared(resourcePath string) resource.TestCheckFunc {
@@ -216,7 +254,7 @@ func verifyIdentityResolutionStateDivisionCleared(resourcePath string) resource.
 	}
 }
 
-func verifyIdentityResolutionConfig(resourcePath string, resolveIdentities bool, divisionStateRef string) resource.TestCheckFunc {
+func verifyIdentityResolutionConfig(resourcePath string, resolveIdentities bool, divisionStateRef, externalSourceStateRef string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		openResource, ok := state.RootModule().Resources[resourcePath]
 		if !ok {
@@ -230,6 +268,15 @@ func verifyIdentityResolutionConfig(resourcePath string, resolveIdentities bool,
 				return fmt.Errorf("failed to find division %s in state", divisionStateRef)
 			}
 			expectedDivisionId = divisionResource.Primary.ID
+		}
+
+		expectedExternalSourceId := ""
+		if externalSourceStateRef != "" {
+			externalSourceResource, ok := state.RootModule().Resources[externalSourceStateRef]
+			if !ok {
+				return fmt.Errorf("failed to find external source %s in state", externalSourceStateRef)
+			}
+			expectedExternalSourceId = externalSourceResource.Primary.ID
 		}
 
 		ConversationsApi := platformclientv2.NewConversationsApiWithConfig(sdkConfig)
@@ -258,6 +305,17 @@ func verifyIdentityResolutionConfig(resourcePath string, resolveIdentities bool,
 			if !isUnassignedDivisionId(divisionId) {
 				return fmt.Errorf("expected the unassigned division (* or empty) for open integration %s, got division_id=%s", openResource.Primary.ID, divisionId)
 			}
+		}
+
+		if expectedExternalSourceId != "" {
+			if config.ExternalSource == nil || config.ExternalSource.Id == nil {
+				return fmt.Errorf("expected external_source_id=%s for open integration %s, got none", expectedExternalSourceId, openResource.Primary.ID)
+			}
+			if *config.ExternalSource.Id != expectedExternalSourceId {
+				return fmt.Errorf("expected external_source_id=%s for open integration %s, got %s", expectedExternalSourceId, openResource.Primary.ID, *config.ExternalSource.Id)
+			}
+		} else if config.ExternalSource != nil && config.ExternalSource.Id != nil && *config.ExternalSource.Id != "" {
+			return fmt.Errorf("expected no external source for open integration %s, got external_source_id=%s", openResource.Primary.ID, *config.ExternalSource.Id)
 		}
 
 		return nil

@@ -11,6 +11,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	open "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
+	externalSource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/external_contacts_external_source"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -33,6 +34,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[open.ResourceType] = open.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[cmSupportedContent.ResourceType] = cmSupportedContent.ResourceSupportedContent()
 	providerResources[cmMessagingSetting.ResourceType] = cmMessagingSetting.ResourceConversationsMessagingSettings()
+	providerResources[externalSource.ResourceType] = externalSource.ResourceExternalContactsExternalSource()
 }
 
 func (r *registerTestInstance) registerTestDataSources() {

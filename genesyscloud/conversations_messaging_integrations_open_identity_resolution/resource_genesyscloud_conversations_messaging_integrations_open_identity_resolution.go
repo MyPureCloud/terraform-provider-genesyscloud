@@ -91,8 +91,10 @@ func readConversationsMessagingIntegrationsOpenIdentityResolution(ctx context.Co
 		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
 			_ = d.Set("division_id", *config.Division.Id)
 		}
-		if config.ExternalSource != nil && config.ExternalSource.Id != nil {
+		if config.ExternalSource != nil && config.ExternalSource.Id != nil && *config.ExternalSource.Id != "" {
 			_ = d.Set("external_source_id", *config.ExternalSource.Id)
+		} else {
+			_ = d.Set("external_source_id", "")
 		}
 
 		log.Printf("read identity resolution for open integration %s", openIntegrationId)
