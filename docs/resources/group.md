@@ -50,6 +50,7 @@ The following OAuth scopes are required to use this resource:
 resource "genesyscloud_group" "example_group" {
   name          = "Example Group"
   description   = "Group for Testers"
+  email         = "group@example.com"
   type          = "official"
   visibility    = "public"
   rules_visible = true
@@ -92,6 +93,7 @@ resource "genesyscloud_group" "example_group2" {
 - `addresses` (Block List) Contact numbers for this group. (see [below for nested schema](#nestedblock--addresses))
 - `calls_enabled` (Boolean) Allow calls to be placed to this group Defaults to `true`.
 - `description` (String) Group description.
+- `email`   (String) Email address for the group.
 - `include_owners` (Boolean) Allow owners to be included as members of the group. Defaults to `true`.
 - `member_ids` (Set of String) IDs of members assigned to the group. If not set, this resource will not manage group members.
 - `owner_ids` (List of String) IDs of owners of the group.
