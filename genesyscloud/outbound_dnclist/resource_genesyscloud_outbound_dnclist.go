@@ -151,28 +151,23 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
-		if d.HasChange("entries") {
-			// Only modify entries when the user explicitly included them in config.
-			// When entries is omitted (Computed), GetRawConfig returns a null value and
-			// we must not touch the API — otherwise we would wipe all phone numbers.
-			entriesConfigVal := d.GetRawConfig().GetAttr("entries")
-			if entriesConfigVal.IsNull() || !entriesConfigVal.IsKnown() {
-				// entries omitted from config — do not touch existing API entries
-			} else {
-				if outboundDncList.DncSourceType == nil || *outboundDncList.DncSourceType != "rds" {
-					return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
-				}
+		// Only reconcile entries when the config provides them (len > 0).
+		// Omitted and empty blocks are indistinguishable to the provider, so we
+		// never delete based on their absence (DEVTOOLING-1816).
+		if len(entries) > 0 {
+			if outboundDncList.DncSourceType == nil || *outboundDncList.DncSourceType != "rds" {
+				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
+			}
 
-				resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+			resp, err := proxy.deleteOutboundDnclistPhoneEntries(ctx, d.Id(), false)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
+			}
+
+			for _, entry := range entries {
+				resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
 				if err != nil {
-					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete phone entries from Outbound DNC list %s error: %v", name, err), resp)
-				}
-
-				for _, entry := range entries {
-					resp, err := proxy.uploadPhoneEntriesToDncList(outboundDncList, entry)
-					if err != nil {
-						return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
-					}
+					return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %v", name, err), resp)
 				}
 			}
 		}
@@ -236,16 +231,8 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
-		// Entries are only supported for rds type lists, and we only reconcile them
-		// when the user actually manages entries in their configuration.
-		//
-		// When entries is omitted from config, we must NOT fetch and set them:
-		// exporting and downloading the full list (potentially millions of phone
-		// numbers) on every read is expensive, and populating entries into state
-		// while config declares none produces a permanent, misleading diff. Worse,
-		// for very large lists it can drive Terraform's plan renderer to exhaust
-		// memory (see DEVTOOLING-1809). Leaving entries untouched keeps state
-		// consistent with config for unmanaged lists.
+		// Only fetch entries when the config manages them. When omitted, clear
+		// entries from state to avoid an expensive export and a phantom diff.
 		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && configHasEntries(d) {
 			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
 			if err != nil {
@@ -260,9 +247,9 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			} else {
 				_ = d.Set("entries", normalizedApiEntries)
 			}
+		} else {
+			_ = d.Set("entries", []interface{}{})
 		}
-		// If entries are not managed in config, leave the attribute untouched so
-		// plan shows no phantom changes and no large export is performed.
 
 		resourcedata.SetNillableValue(d, "name", sdkDncList.Name)
 		resourcedata.SetNillableValue(d, "contact_method", sdkDncList.ContactMethod)
@@ -279,10 +266,8 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 	})
 }
 
-// configHasEntries reports whether the user declared a non-empty `entries` block
-// in their configuration. It is null-safe: during operations without a
-// configuration (e.g. terraform import), GetRawConfig returns a null/nil value,
-// in which case we treat entries as unmanaged and return false.
+// configHasEntries reports whether the config declares a non-empty entries
+// block. Null-safe for operations without config (e.g. import).
 func configHasEntries(d *schema.ResourceData) bool {
 	rawConfig := d.GetRawConfig()
 	if rawConfig.IsNull() || !rawConfig.IsKnown() {
