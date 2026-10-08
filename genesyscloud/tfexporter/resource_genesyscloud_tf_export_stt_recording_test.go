@@ -24,13 +24,6 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
 )
 
-// Export coverage for the resources added after v1.86.2: speechandtextanalytics_{program,category,
-// sentimentfeedback,settings} and recording_settings. See RELEASE_TEST_TRACKER.md at the repo root for status.
-
-// ---------------------------------------------------------------------------------------------
-// Offline tests: no org required. They guard the exporter definitions and test-registry wiring.
-// ---------------------------------------------------------------------------------------------
-
 func TestUnitSttRecordingExportersAreRegistered(t *testing.T) {
 	for _, resourceType := range []string{
 		sttTopic.ResourceType,
@@ -92,11 +85,6 @@ func TestUnitSttRecordingSingletonExporters(t *testing.T) {
 		}
 	}
 }
-
-// ---------------------------------------------------------------------------------------------
-// Acceptance tests: need a live org (TF_ACC=1). Singletons are exported read-only; nothing in the
-// org's settings is modified.
-// ---------------------------------------------------------------------------------------------
 
 func TestAccResourceTfExportSttProgramTopicReference(t *testing.T) {
 	testSetup(t)
@@ -205,7 +193,6 @@ resource "genesyscloud_speechandtextanalytics_category" "category" {
 					if !ok {
 						return fmt.Errorf("criteria missing from exported category")
 					}
-					// JsonEncodeAttributes may surface as a JSON string or a decoded object depending on export format.
 					raw, err := json.Marshal(criteria)
 					if err != nil {
 						return err
@@ -259,8 +246,7 @@ resource "genesyscloud_speechandtextanalytics_sentimentfeedback" "feedback" {
 	})
 }
 
-// TestAccResourceTfExportSttRecordingSingletons exports the org's existing settings without creating or
-// changing them, so it is safe to run in a shared org.
+// Read-only: exports the org's existing settings and changes nothing.
 func TestAccResourceTfExportSttRecordingSingletons(t *testing.T) {
 	testSetup(t)
 
@@ -295,7 +281,6 @@ func TestAccResourceTfExportSttRecordingSingletons(t *testing.T) {
 	}
 }
 
-// generateSttExport builds a genesyscloud_tf_export resource that writes JSON to dir for the given resource types.
 func generateSttExport(dir string, resourceTypes []string, dependsOn ...string) string {
 	quoted := make([]string, len(resourceTypes))
 	for i, rt := range resourceTypes {
@@ -315,8 +300,6 @@ resource "genesyscloud_tf_export" "export" {
 `, dir, strings.Join(quoted, ", "), dep)
 }
 
-// assertSttExportedBlock finds the exported block of resourceType whose attribute matchAttr equals matchValue
-// and runs check against its attributes.
 func assertSttExportedBlock(exportDir, resourceType, matchAttr, matchValue string, check func(map[string]interface{}) error) resource.TestCheckFunc {
 	return func(_ *terraform.State) error {
 		blocks, err := getResourceDefinition(filepath.Join(exportDir, defaultTfJSONFile), resourceType)

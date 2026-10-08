@@ -88,8 +88,6 @@ func TestAccResourceSentimentFeedback(t *testing.T) {
 	})
 }
 
-// TestAccResourceSentimentFeedbackForceNew covers "modify": every attribute is ForceNew, so changing
-// feedback_value replaces the resource. It also exercises the Negative and Neutral values.
 func TestAccResourceSentimentFeedbackForceNew(t *testing.T) {
 	var (
 		resourceLabel = "test-sentiment-feedback-forcenew"
@@ -114,7 +112,6 @@ func TestAccResourceSentimentFeedbackForceNew(t *testing.T) {
 				),
 			},
 			{
-				// Changing feedback_value must replace the resource (new id).
 				Config: generateSentimentFeedbackResource(resourceLabel, phrase, dialect, FeedbackValueNeutral),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourcePath, "feedback_value", FeedbackValueNeutral),

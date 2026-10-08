@@ -343,7 +343,7 @@ func TestAccResourceOutboundContactListTemplateRetention(t *testing.T) {
 	var (
 		resourceLabel = "contact-list-template-retention"
 		fullPath      = ResourceType + "." + resourceLabel
-		name          = "Test CL Template Retention " + uuid.NewString() // 63 chars; the API rejects longer names (NAME_LENGTH_EXCEEDED)
+		name          = "Test CL Template Retention " + uuid.NewString()
 		columnNames   = []string{strconv.Quote("Cell")}
 		retentionDays = "45"
 		timeZone      = "Europe/Dublin"
