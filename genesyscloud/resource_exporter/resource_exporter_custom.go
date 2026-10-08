@@ -11,7 +11,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
@@ -133,6 +133,22 @@ func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attribute
 	if isValidGuid(strVal) {
 		delete(configMap, attributeKey)
 	}
+}
+
+// RemoveUnresolvedScriptGuidsResolver removes default_script_ids entries that could not be resolved
+// to an exported genesyscloud_script resource (e.g. built-in or unpublished scripts that 404).
+func RemoveUnresolvedScriptGuidsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
+	innerMap, ok := configMap["default_script_ids"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	for key := range innerMap {
+		OmitUnresolvedGuidFromConfigMap(innerMap, key)
+	}
+	if len(innerMap) == 0 {
+		delete(configMap, "default_script_ids")
+	}
+	return nil
 }
 
 // MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.

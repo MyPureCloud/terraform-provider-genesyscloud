@@ -625,3 +625,90 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 	}
 	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel)
 }
+
+// TestAccResourceAgenticVirtualAgentVersionWithDynamicTurnInstructions tests create with
+// dynamic_turn_instructions repetition checks (one Agent, one User), verifying the four fields
+// (type/messages/similarity/instruction) survive the create->read round-trip, that the plan is a
+// no-op afterwards, and that import/read works.
+func TestAccResourceAgenticVirtualAgentVersionWithDynamicTurnInstructions(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		agentName            = "TF DTI Test Agent " + uuid.NewString()
+		role                 = "You are a helpful customer support agent."
+		instruction1         = "Be polite and concise."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDynamicTurnInstructions(versionResourceLabel, agentResourceLabel, role, instruction1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					// Agent repetition check
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.type", "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.messages", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.similarity", "Moderate"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.instruction", "Vary your language, tone, and structure substantially."),
+					// User repetition check
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.type", "User"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.messages", "3"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.similarity", "VeryStrict"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.instruction", "Acknowledge the repetition and try a different approach."),
+				),
+			},
+			{
+				// Round-trip check: plan should be a no-op after apply
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDynamicTurnInstructions(versionResourceLabel, agentResourceLabel, role, instruction1),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// generateVersionResourceWithDynamicTurnInstructions creates a version with two repetition checks
+// nested under settings.dynamic_turn_instructions (one Agent/Moderate, one User/VeryStrict).
+func generateVersionResourceWithDynamicTurnInstructions(resourceLabel, agentResourceLabel, role, instruction1 string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role         = "%s"
+			instructions = ["%s"]
+
+			settings {
+				comfort_statement {
+					enabled = true
+				}
+
+				dynamic_turn_instructions {
+					repetition_check {
+						type        = "Agent"
+						messages    = 2
+						similarity  = "Moderate"
+						instruction = "Vary your language, tone, and structure substantially."
+					}
+
+					repetition_check {
+						type        = "User"
+						messages    = 3
+						similarity  = "VeryStrict"
+						instruction = "Acknowledge the repetition and try a different approach."
+					}
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1)
+}

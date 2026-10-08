@@ -133,7 +133,6 @@ func TestAccResourceOAuthClient(t *testing.T) {
 }
 
 func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
-	t.Skipf("Skipping test as GET/PUT oauth client is not supported anymore")
 	var (
 		clientResourceLabel1 = "test-client-expose-secret"
 		clientName1          = "terraform-expose-secret-" + uuid.NewString()
@@ -151,7 +150,9 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Test with expose_client_secret = false (default)
+				// Create with expose_client_secret = true. The client secret is only returned by
+				// the create (POST) response; the read (GET) does not return it. So the secret can
+				// only be populated in state when expose_client_secret is set at creation time.
 				Config: generateAuthRoleDataSource(
 					roleResourceLabel1,
 					strconv.Quote(roleName1),
@@ -165,38 +166,12 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 					stateActive,
 					util.NullValue,
 					util.NullValue,
-					"false", // expose_client_secret
+					"true", // expose_client_secret
 					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "name", clientName1),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "description", clientDesc1),
-					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret", ""),
-					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
-				),
-			},
-			{
-				// Test with expose_client_secret = true
-				Config: generateAuthRoleDataSource(
-					roleResourceLabel1,
-					strconv.Quote(roleName1),
-					"",
-				) + generateOauthClientExposeSecret(
-					clientResourceLabel1,
-					clientName1+" updated",
-					clientDesc1+" updated",
-					grantTypeClientCreds,
-					tokenSec1,
-					stateActive,
-					util.NullValue,
-					util.NullValue,
-					"true", // expose_client_secret
-					generateOauthClientRoles("data.genesyscloud_auth_role."+roleResourceLabel1+".id", util.NullValue),
-				),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "name", clientName1+" updated"),
-					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "description", clientDesc1+" updated"),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "true"),
 					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret"),
 					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
@@ -220,7 +195,10 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 				),
 			},
 			{
-				// Test switching back to expose_client_secret = false
+				// Update to expose_client_secret = false (also changes name/description).
+				// Note: the provider only populates client_secret from the create (POST)
+				// response; neither update nor read re-fetches or clears it. So we do not
+				// assert on client_secret here - only that the flag and other fields update.
 				Config: generateAuthRoleDataSource(
 					roleResourceLabel1,
 					strconv.Quote(roleName1),
@@ -239,8 +217,8 @@ func TestAccResourceOAuthClientExposeSecret(t *testing.T) {
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "name", clientName1+" back to hidden"),
+					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "description", clientDesc1+" back to hidden"),
 					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "expose_client_secret", "false"),
-					resource.TestCheckResourceAttr("genesyscloud_oauth_client."+clientResourceLabel1, "client_secret", ""),
 					resource.TestCheckResourceAttrSet("genesyscloud_oauth_client."+clientResourceLabel1, "client_id"),
 				),
 			},
