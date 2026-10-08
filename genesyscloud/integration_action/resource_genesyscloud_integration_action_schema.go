@@ -265,6 +265,20 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 			"function_config.file_content_hash": {
 				ResolverFunc: stripFunctionConfigFileContentHash,
 			},
+			// zip_id is a Genesys Cloud generated, org-specific GUID (Optional+Computed).
+			// Exporting it produces a hardcoded value that is invalid in a target org and
+			// causes perpetual plan drift, since the platform regenerates it on publish.
+			// Drop it so the platform recomputes it on apply.
+			"function_config.zip_id": {
+				ResolverFunc: stripFunctionConfigZipID,
+			},
+			// For function data actions, request_url_template is set server-side to the
+			// generated function id (an org-specific GUID). Like zip_id, exporting it makes
+			// the config non-portable and causes perpetual drift. Remove it so the platform
+			// recomputes it on apply.
+			"config_request.request_url_template": {
+				ResolverFunc: stripConfigRequestURLTemplate,
+			},
 		},
 		ThirdPartyRefAttrs: []string{
 			"function_config.file_path",
@@ -281,6 +295,23 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 // hash is meaningless; the provider recomputes it from file_path on apply.
 func stripFunctionConfigFileContentHash(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
 	delete(configMap, "file_content_hash")
+	return nil
+}
+
+// stripFunctionConfigZipID drops zip_id on export. zip_id is a Genesys Cloud generated,
+// org-specific GUID; exporting it produces a value that is invalid in a target org and
+// causes perpetual plan drift. The platform recomputes it on publish.
+func stripFunctionConfigZipID(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
+	delete(configMap, "zip_id")
+	return nil
+}
+
+// stripConfigRequestURLTemplate drops request_url_template on export for function data
+// actions. The platform sets it server-side to the generated function id (an org-specific
+// GUID), so exporting it makes the config non-portable and causes perpetual drift. The
+// platform recomputes it on apply.
+func stripConfigRequestURLTemplate(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
+	delete(configMap, "request_url_template")
 	return nil
 }
 
