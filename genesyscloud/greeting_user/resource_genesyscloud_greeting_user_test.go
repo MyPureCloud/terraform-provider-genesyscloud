@@ -2,6 +2,7 @@ package greeting_user
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
@@ -88,6 +89,30 @@ func TestAccResourceUserGreeting(t *testing.T) {
 		},
 		CheckDestroy: testVerifyGreetingDestroyed,
 	})
+}
+
+func TestUnitUserGreetingFetchConcurrency(t *testing.T) {
+	prevPool := provider.SdkClientPool
+	t.Cleanup(func() {
+		provider.SdkClientPool = prevPool
+	})
+
+	provider.SdkClientPool = nil
+	if got := userGreetingFetchConcurrency(); got != 1 {
+		t.Fatalf("userGreetingFetchConcurrency() = %d, want 1 when pool is nil", got)
+	}
+}
+
+func TestUnitIsGreetingsPermissionDenied(t *testing.T) {
+	if isGreetingsPermissionDenied(nil) {
+		t.Fatal("expected false for nil response")
+	}
+	if isGreetingsPermissionDenied(&platformclientv2.APIResponse{StatusCode: http.StatusNotFound}) {
+		t.Fatal("expected false for non-403 response")
+	}
+	if !isGreetingsPermissionDenied(&platformclientv2.APIResponse{StatusCode: http.StatusForbidden}) {
+		t.Fatal("expected true for 403 response")
+	}
 }
 
 func testVerifyGreetingDestroyed(state *terraform.State) error {
