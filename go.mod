@@ -1,6 +1,6 @@
 module github.com/mypurecloud/terraform-provider-genesyscloud
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.4
@@ -15,6 +15,8 @@ require (
 	github.com/leekchan/timeutil v0.0.0-20150802142658-28917288c48d
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mozillazg/go-unidecode v0.2.0
+	github.com/mypurecloud/platform-client-sdk-go/v195 v195.0.0
+	github.com/mypurecloud/platform-client-sdk-go/v199 v199.0.0
 	github.com/mypurecloud/platform-client-sdk-go/v200 v200.0.0
 	github.com/nyaruka/phonenumbers v1.6.11
 	github.com/rjNemo/underscore v0.10.0
@@ -67,8 +69,8 @@ require (
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/tools v0.47.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -122,11 +124,11 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
-	golang.org/x/crypto v0.53.0 // indirect
-	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/net v0.56.0
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0
+	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.59.0
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/grpc v1.79.2 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
