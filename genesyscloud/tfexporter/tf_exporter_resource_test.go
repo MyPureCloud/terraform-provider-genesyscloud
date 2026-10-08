@@ -118,6 +118,13 @@ import (
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
+	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
+	sttCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_category"
+	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
+	sttSentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
+	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -253,6 +260,13 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[agenticVirtualAgent.ResourceType] = agenticVirtualAgent.ResourceAgenticVirtualAgent()
 	providerResources[agenticVirtualAgentVersion.ResourceType] = agenticVirtualAgentVersion.ResourceAgenticVirtualAgentVersion()
 
+	providerResources[sttTopic.ResourceType] = sttTopic.ResourceSpeechAndTextAnalyticsTopic()
+	providerResources[sttProgram.ResourceType] = sttProgram.ResourceSpeechAndTextAnalyticsProgram()
+	providerResources[sttCategory.ResourceType] = sttCategory.ResourceCategory()
+	providerResources[sttSentimentFeedback.ResourceType] = sttSentimentFeedback.ResourceSentimentFeedback()
+	providerResources[sttSettings.ResourceType] = sttSettings.ResourceSpeechAndTextAnalyticsSettings()
+	providerResources[recordingSettings.ResourceType] = recordingSettings.ResourceRecordingSettings()
+
 	providerResources[ResourceType] = ResourceTfExport()
 }
 
@@ -370,6 +384,13 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(businessRulesDecisionTable.ResourceType, businessRulesDecisionTable.BusinessRulesDecisionTableExporter())
 	RegisterExporter(agenticVirtualAgent.ResourceType, agenticVirtualAgent.AgenticVirtualAgentExporter())
 	RegisterExporter(agenticVirtualAgentVersion.ResourceType, agenticVirtualAgentVersion.AgenticVirtualAgentVersionExporter())
+
+	RegisterExporter(sttTopic.ResourceType, sttTopic.SpeechAndTextAnalyticsTopicExporter())
+	RegisterExporter(sttProgram.ResourceType, sttProgram.SpeechAndTextAnalyticsProgramExporter())
+	RegisterExporter(sttCategory.ResourceType, sttCategory.CategoryExporter())
+	RegisterExporter(sttSentimentFeedback.ResourceType, sttSentimentFeedback.SentimentFeedbackExporter())
+	RegisterExporter(sttSettings.ResourceType, sttSettings.SpeechAndTextAnalyticsSettingsExporter())
+	RegisterExporter(recordingSettings.ResourceType, recordingSettings.RecordingSettingsExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
