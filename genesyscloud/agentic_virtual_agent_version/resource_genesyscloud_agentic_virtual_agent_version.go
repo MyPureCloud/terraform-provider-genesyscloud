@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -217,6 +217,23 @@ func buildDefinitionFromResourceData(d *schema.ResourceData) *AgenticVirtualAgen
 	}
 
 	return def
+}
+
+func expandDynamicTurnInstructions(m map[string]interface{}) *AgenticVirtualAgentDynamicTurnInstructions {
+	dti := &AgenticVirtualAgentDynamicTurnInstructions{}
+	if checks, ok := m["repetition_check"].([]interface{}); ok {
+		for _, item := range checks {
+			checkMap := item.(map[string]interface{})
+			check := AgenticVirtualAgentRepetitionCheck{
+				Type:        checkMap["type"].(string),
+				Messages:    checkMap["messages"].(int),
+				Similarity:  checkMap["similarity"].(string),
+				Instruction: checkMap["instruction"].(string),
+			}
+			dti.RepetitionChecks = append(dti.RepetitionChecks, check)
+		}
+	}
+	return dti
 }
 
 func expandGuardrails(m map[string]interface{}) *AgenticVirtualAgentGuardrails {
@@ -474,6 +491,9 @@ func expandSettings(m map[string]interface{}) *AgenticVirtualAgentVersionSetting
 		}
 		settings.ComfortStatement = cs
 	}
+	if dtiList, ok := m["dynamic_turn_instructions"].([]interface{}); ok && len(dtiList) > 0 {
+		settings.DynamicTurnInstructions = expandDynamicTurnInstructions(dtiList[0].(map[string]interface{}))
+	}
 	return settings
 }
 
@@ -508,6 +528,23 @@ func flattenDefinitionToResourceData(def *AgenticVirtualAgentVersionDefinition) 
 	}
 
 	return []interface{}{defMap}
+}
+
+func flattenDynamicTurnInstructions(dti *AgenticVirtualAgentDynamicTurnInstructions) []interface{} {
+	dtiMap := map[string]interface{}{}
+	if len(dti.RepetitionChecks) > 0 {
+		checks := make([]interface{}, 0, len(dti.RepetitionChecks))
+		for _, c := range dti.RepetitionChecks {
+			checks = append(checks, map[string]interface{}{
+				"type":        c.Type,
+				"messages":    c.Messages,
+				"similarity":  c.Similarity,
+				"instruction": c.Instruction,
+			})
+		}
+		dtiMap["repetition_check"] = checks
+	}
+	return []interface{}{dtiMap}
 }
 
 func flattenGuardrails(g *AgenticVirtualAgentGuardrails) []interface{} {
@@ -751,6 +788,9 @@ func flattenSettings(s *AgenticVirtualAgentVersionSettings) []interface{} {
 			csMap["enabled"] = *s.ComfortStatement.Enabled
 		}
 		settingsMap["comfort_statement"] = []interface{}{csMap}
+	}
+	if s.DynamicTurnInstructions != nil {
+		settingsMap["dynamic_turn_instructions"] = flattenDynamicTurnInstructions(s.DynamicTurnInstructions)
 	}
 	return []interface{}{settingsMap}
 }

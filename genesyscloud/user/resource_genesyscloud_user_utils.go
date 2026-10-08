@@ -20,7 +20,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -843,6 +843,9 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 
 				if address.VarType != nil {
 					phoneNumber["type"] = *address.VarType
+				}
+				if num, ok := phoneNumber["number"].(string); ok && num == "" {
+					delete(phoneNumber, "number")
 				}
 				phoneNumSet.Add(phoneNumber)
 			} else if *address.MediaType == "EMAIL" {
