@@ -3,7 +3,7 @@ package knowledge_document
 import (
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func strPtr(s string) *string { return &s }
