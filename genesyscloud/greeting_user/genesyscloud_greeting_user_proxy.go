@@ -132,18 +132,18 @@ func getAllGreetingsFn(ctx context.Context, p *greetingProxy) (*[]platformclient
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			greetingsApi, releaseGreetingsApi, apiErr := greetingsApiForWorker(ctx, p.clientConfig)
-			if apiErr != nil {
-				results <- userGreetingCollectResult{err: fmt.Errorf("failed to acquire greetings API client: %w", apiErr)}
-				return
-			}
-			defer releaseGreetingsApi()
 
 			for userID := range jobs {
 				if ctx.Err() != nil {
 					return
 				}
+				greetingsApi, releaseGreetingsApi, apiErr := greetingsApiForWorker(ctx, p.clientConfig)
+				if apiErr != nil {
+					results <- userGreetingCollectResult{err: fmt.Errorf("failed to acquire greetings API client: %w", apiErr)}
+					return
+				}
 				entities, pageResp, pageErr := collectUserGreetingsForUser(ctx, p, greetingsApi, userID)
+				releaseGreetingsApi()
 				results <- userGreetingCollectResult{entities: entities, resp: pageResp, err: pageErr}
 				if pageErr != nil {
 					return
@@ -200,7 +200,10 @@ func userGreetingFetchConcurrency() int {
 		return 1
 	}
 	concurrency := defaultUserGreetingConcurrency
-	if poolSize := provider.SdkClientPool.GetMaxClients(); poolSize > 0 {
+	if maxPages := provider.SdkClientPool.GetMaxConcurrentPages(); maxPages > 1 {
+		concurrency = maxPages
+	}
+	if poolSize := provider.SdkClientPool.GetMaxClients(); poolSize > 0 && concurrency > poolSize {
 		concurrency = poolSize
 	}
 	if concurrency > maxUserGreetingConcurrency {
@@ -235,11 +238,14 @@ func collectUserGreetingsForUser(ctx context.Context, p *greetingProxy, greeting
 		}
 		return nil, resp, fmt.Errorf("failed to get greetings for user %s: %w", userID, err)
 	}
+	if userGreetings == nil {
+		return collected, resp, nil
+	}
 
 	collected = appendGreetingPage(p, greetingsApi, collected, userGreetings.Entities)
 
 	pageCount := 1
-	if userGreetings != nil && userGreetings.PageCount != nil {
+	if userGreetings.PageCount != nil {
 		pageCount = *userGreetings.PageCount
 	}
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
@@ -254,6 +260,9 @@ func collectUserGreetingsForUser(ctx context.Context, p *greetingProxy, greeting
 				return collected, resp, nil
 			}
 			return nil, resp, fmt.Errorf("failed to get greetings for user %s: %w", userID, err)
+		}
+		if userGreetings == nil {
+			break
 		}
 		collected = appendGreetingPage(p, greetingsApi, collected, userGreetings.Entities)
 	}
@@ -326,18 +335,24 @@ func getGreetingFromUser(ctx context.Context, p *greetingProxy, userId string, i
 	if err != nil {
 		return nil, resp, err
 	}
+	if userGreetings == nil {
+		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}, fmt.Errorf("greeting %s not found for user %s", id, userId)
+	}
 	if greeting := findGreetingInEntities(userGreetings.Entities, userId, id); greeting != nil {
 		return greeting, resp, nil
 	}
 
 	pageCount := 1
-	if userGreetings != nil && userGreetings.PageCount != nil {
+	if userGreetings.PageCount != nil {
 		pageCount = *userGreetings.PageCount
 	}
 	for pageNum := 2; pageNum <= pageCount; pageNum++ {
 		userGreetings, resp, err = p.greetingsApi.GetUserGreetings(userId, userGreetingsPageSize, pageNum)
 		if err != nil {
 			return nil, resp, err
+		}
+		if userGreetings == nil {
+			break
 		}
 		if greeting := findGreetingInEntities(userGreetings.Entities, userId, id); greeting != nil {
 			return greeting, resp, nil
