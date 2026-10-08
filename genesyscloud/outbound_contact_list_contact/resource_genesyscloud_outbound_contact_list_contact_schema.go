@@ -153,8 +153,9 @@ Only applicable on the creation of a contact, so updating this field will force 
 				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
 			},
 			"retention_days": {
-				Description: `The number of days to retain this contact. Required when retention_type is RetentionDays.`,
+				Description: `The number of days to retain this contact. Required when retention_type is RetentionDays. If omitted in configuration, the API value is stored in state.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			"date_expiration": {
