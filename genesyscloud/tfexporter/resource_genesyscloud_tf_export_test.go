@@ -1255,8 +1255,10 @@ func TestAccResourceTfExportQueueAsHCL(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueLabel, "name", queueName),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueLabel, "description", description),
 					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueLabel, "auto_answer_only", "true"),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueLabel, "default_script_ids.CHAT", chatScriptID),
-					resource.TestCheckResourceAttr("genesyscloud_routing_queue."+queueLabel, "default_script_ids.EMAIL", emailScriptID),
+					// chatScriptID/emailScriptID are random GUIDs, not exported scripts, so the exporter omits them
+					// (RemoveUnresolvedScriptGuidsResolver); the re-applied config must not carry them.
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueLabel, "default_script_ids.CHAT"),
+					resource.TestCheckNoResourceAttr("genesyscloud_routing_queue."+queueLabel, "default_script_ids.EMAIL"),
 					validateMediaSettings(queueLabel, "media_settings_call", alertTimeoutSec, slPercentage, slDurationMs),
 					validateRoutingRules(queueLabel, 0, rrOperator, rrThreshold, rrWaitSeconds),
 				),
