@@ -280,7 +280,7 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Description: "Skills and proficiencies for this user. If not set, this resource will not manage user skills.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(), // false if BCP mode running, otherwise true
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userSkillResource,
 			},
@@ -288,7 +288,7 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Description: "Languages and proficiencies for this user. If not set, this resource will not manage user languages.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userLanguageResource,
 			},
@@ -296,7 +296,7 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Description: "The user placement at each site location. If not set, this resource will not manage user locations.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem:        userLocationResource,
 			},
@@ -330,14 +330,14 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Description: "Profile skills for this user. If not set, this resource will not manage profile skills.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"certifications": {
 				Description: "Certifications for this user. If not set, this resource will not manage certifications.",
 				Type:        schema.TypeSet,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"employer_info": {
@@ -345,7 +345,7 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -379,7 +379,7 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				ConfigMode:  schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -444,7 +444,7 @@ By default, org exports include both active and inactive users. Set the %s envir
 				Type:        schema.TypeList,
 				MaxItems:    1,
 				Optional:    true,
-				Computed:    true,
+				Computed:    !featureToggles.BcpModeEnabledExists(),
 				Elem:        voicemailUserpoliciesResource,
 			},
 		},

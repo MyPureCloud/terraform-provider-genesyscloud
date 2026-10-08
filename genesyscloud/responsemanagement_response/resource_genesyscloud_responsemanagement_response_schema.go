@@ -124,6 +124,304 @@ var (
 			},
 		},
 	}
+
+	formMessageResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`title`: {
+				Description: `Title of the message.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`subtitle`: {
+				Description: `Subtitle of the message.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`image_url`: {
+				Description: `URL of the image to display.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	formIntroductionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`title`: {
+				Description: `Title of the introduction.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`subtitle`: {
+				Description: `Subtitle of the introduction.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`button_text`: {
+				Description: `Text for the start button.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`image_url`: {
+				Description: `URL of the image to display.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	formListPickerItemResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`title`: {
+				Description: `Title of the item.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`image_url`: {
+				Description: `URL of the image to display.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	formListPickerSectionResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`multiple_selection`: {
+				Description: `Whether multiple items can be selected.`,
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			`items`: {
+				Description: `Items in this section. Must contain between 2 and 100 items.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MinItems:    2,
+				MaxItems:    100,
+				Elem:        formListPickerItemResource,
+			},
+			`title`: {
+				Description: `Title of the section.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	formListPickerResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`sections`: {
+				Description: `Sections in the list picker. At least one section is required.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MinItems:    1,
+				Elem:        formListPickerSectionResource,
+			},
+		},
+	}
+
+	formDatePickerResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`date_display_format`: {
+				Description: `Date display format. For example: 'dayMonthYear', 'monthDayYear' or 'yearMonthDay'.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`title`: {
+				Description: `Title of the date picker.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`subtitle`: {
+				Description: `Subtitle of the date picker.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	formInputResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`is_multiple_line`: {
+				Description: `Whether the input supports multiple lines.`,
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			`is_required`: {
+				Description: `Whether the input is required.`,
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			`title`: {
+				Description: `Title of the input field.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`subtitle`: {
+				Description: `Subtitle of the input field.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`placeholder_text`: {
+				Description: `Placeholder text for the input.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`keyboard_type`: {
+				Description:  `Type of keyboard to be shown.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`Default`, `NumberPunctuation`, `Number`, `Phone`, `Email`, `Decimal`, `Websearch`, `URL`}, false),
+			},
+			`auto_complete_type`: {
+				Description: `A string value representing the keyboard and system information about the expected semantic meaning for the content that users enter.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{
+					`Prefix`, `Name`, `GivenName`, `MiddleName`, `FamilyName`, `Suffix`, `Nickname`, `Title`,
+					`Organization`, `Location`, `StreetAddress`, `Addressline1`, `Addressline2`, `City`, `State`,
+					`Country`, `PostalCode`, `Username`, `OneTimeCode`, `Email`, `Phone`, `PaymentCardNumber`,
+					`PaymentCardExpiration`, `PaymentCardExpirationMonth`, `PaymentCardExpirationYear`,
+					`PaymentCardSecurityCode`, `PaymentCardType`, `PaymentCardName`, `PaymentCardGivenName`,
+					`PaymentCardMiddleName`, `PaymentCardFamilyName`, `Birthdate`, `BirthdateDay`, `BirthdateMonth`,
+					`BirthdateYear`, `DateTime`, `FlightNumber`, `Url`,
+				}, false),
+			},
+		},
+	}
+
+	formWheelPickerItemResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`title`: {
+				Description: `Title of the item.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`value`: {
+				Description: `Value of the item.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+
+	formWheelPickerResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`items`: {
+				Description: `Items in the wheel picker. Must contain between 2 and 100 items.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MinItems:    2,
+				MaxItems:    100,
+				Elem:        formWheelPickerItemResource,
+			},
+		},
+	}
+
+	formPageComponentResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`form_component_type`: {
+				Description:  `Type of the component. The matching component block must be set.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`ListPicker`, `DatePicker`, `Input`, `WheelPicker`}, false),
+			},
+			`list_picker`: {
+				Description: `List picker configuration. Required when form_component_type is 'ListPicker'.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formListPickerResource,
+			},
+			`date_picker`: {
+				Description: `Date picker configuration. Required when form_component_type is 'DatePicker'.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formDatePickerResource,
+			},
+			`input`: {
+				Description: `Input field configuration. Required when form_component_type is 'Input'.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formInputResource,
+			},
+			`wheel_picker`: {
+				Description: `Wheel picker configuration. Required when form_component_type is 'WheelPicker'.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formWheelPickerResource,
+			},
+		},
+	}
+
+	formPageResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`title`: {
+				Description: `Title of the page.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`subtitle`: {
+				Description: `Subtitle of the page.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`page_components`: {
+				Description: `Components on this page.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MinItems:    1,
+				Elem:        formPageComponentResource,
+			},
+		},
+	}
+
+	formResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`form_description`: {
+				Description: `Description of the form.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`received_message`: {
+				Description: `Message displayed when the response is received.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formMessageResource,
+			},
+			`reply_message`: {
+				Description: `Message displayed as reply.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formMessageResource,
+			},
+			`form_pages`: {
+				Description: `Pages of the form. Must contain between 1 and 20 pages.`,
+				Required:    true,
+				Type:        schema.TypeList,
+				MinItems:    1,
+				MaxItems:    20,
+				Elem:        formPageResource,
+			},
+			`show_summary`: {
+				Description: `Whether to show a summary after form completion.`,
+				Required:    true,
+				Type:        schema.TypeBool,
+			},
+			`introduction`: {
+				Description: `Introduction section of the form.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formIntroductionResource,
+			},
+		},
+	}
 )
 
 // ResourceResponsemanagementResponse registers the genesyscloud_responsemanagement_response resource with Terraform
@@ -153,8 +451,8 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			`texts`: {
-				Description: `One or more texts associated with the response.`,
-				Required:    true,
+				Description: `One or more texts associated with the response. Required for the Standard, Footer, MessagingTemplate and CampaignEmailTemplate response types. Not used by the Form response type, which ignores texts and always returns an empty list, so setting this alongside 'form' results in a permanent diff.`,
+				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem:        responsetextResource,
 			},
@@ -179,7 +477,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Description:  `The response type represented by the response.`,
 				Optional:     true,
 				Type:         schema.TypeString,
-				ValidateFunc: validation.StringInSlice([]string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`}, false),
+				ValidateFunc: validation.StringInSlice([]string{`MessagingTemplate`, `CampaignSmsTemplate`, `CampaignEmailTemplate`, `Footer`, `Form`}, false),
 			},
 			`messaging_template`: {
 				Description: `An optional messaging template definition for responseType.MessagingTemplate.`,
@@ -204,6 +502,13 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				MaxItems:    1,
 				Elem:        footerResource,
 			},
+			`form`: {
+				Description: `Form template definition for responseType.Form. Requires response_type to be set to 'Form'.`,
+				Optional:    true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Elem:        formResource,
+			},
 		},
 	}
 }
@@ -224,6 +529,23 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 			},
 		},
 		JsonEncodeAttributes: []string{"substitutions_schema_id"},
+		// The form block has attributes that are required by the schema but may legitimately come back
+		// from the API as an empty string. Without these entries the exporter would strip them and
+		// produce a config that no longer validates.
+		AllowZeroValues: []string{
+			"form.form_description",
+			"form.received_message.title",
+			"form.reply_message.title",
+			"form.introduction.title",
+			"form.introduction.subtitle",
+			"form.introduction.button_text",
+			"form.form_pages.title",
+			"form.form_pages.subtitle",
+			"form.form_pages.page_components.form_component_type",
+			"form.form_pages.page_components.date_picker.date_display_format",
+			"form.form_pages.page_components.list_picker.sections.items.title",
+			"form.form_pages.page_components.wheel_picker.items.title",
+		},
 		DataSourceResolver: map[*resourceExporter.DataAttr]*resourceExporter.ResourceAttr{
 			{Attr: "library_id"}: {Attr: "library_ids\\.\\d+"},
 		},

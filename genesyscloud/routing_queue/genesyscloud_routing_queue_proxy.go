@@ -2,6 +2,7 @@ package routing_queue
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 )
@@ -39,10 +40,36 @@ func invalidateRoutingQueueListCache() {
 	routingQueueListCache = rc.NewResourceCache[[]platformclientv2.Queue]()
 }
 
-func storeRoutingQueueInCache(cache rc.CacheInterface[platformclientv2.Queue], queue *platformclientv2.Queue) {
-	if queue != nil && queue.Id != nil {
-		rc.SetCache(cache, *queue.Id, *queue)
+// cloneRoutingQueue returns a deep copy of queue so nested pointers (bullseye rings,
+// member groups, etc.) are not shared with list/SDK response buffers.
+// DEVTOOLING-1764: shallow *queue copies caused non-deterministic loss of bullseye
+// member_groups during export when the list cache was reused on Read.
+func cloneRoutingQueue(queue *platformclientv2.Queue) (platformclientv2.Queue, error) {
+	var clone platformclientv2.Queue
+	if queue == nil {
+		return clone, fmt.Errorf("queue is nil")
 	}
+	bytes, err := json.Marshal(queue)
+	if err != nil {
+		return clone, err
+	}
+	if err := json.Unmarshal(bytes, &clone); err != nil {
+		return clone, err
+	}
+	return clone, nil
+}
+
+func storeRoutingQueueInCache(cache rc.CacheInterface[platformclientv2.Queue], queue *platformclientv2.Queue) {
+	if queue == nil || queue.Id == nil {
+		return
+	}
+	clone, err := cloneRoutingQueue(queue)
+	if err != nil {
+		log.Printf("[WARN] Failed to deep-copy routing queue %s for cache; storing shallow copy: %v", *queue.Id, err)
+		rc.SetCache(cache, *queue.Id, *queue)
+		return
+	}
+	rc.SetCache(cache, *queue.Id, clone)
 }
 
 // queueWrapupCodesCache stores paginated wrapup code assignments per queue during export.
@@ -65,7 +92,7 @@ func invalidateQueueMembersCache(queueID string) {
 
 var internalProxy *RoutingQueueProxy
 
-type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
+type GetAllRoutingQueuesFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer, checkCache bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type createRoutingQueueFunc func(ctx context.Context, p *RoutingQueueProxy, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueByIdFunc func(ctx context.Context, p *RoutingQueueProxy, queueId string, checkCache bool) (*platformclientv2.Queue, *platformclientv2.APIResponse, error)
 type getRoutingQueueByNameFunc func(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (string, *platformclientv2.APIResponse, bool, error)
@@ -136,8 +163,8 @@ func GetRoutingQueueProxy(clientConfig *platformclientv2.Configuration) *Routing
 	return newRoutingQueuesProxy(clientConfig)
 }
 
-func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
-	return p.GetAllRoutingQueuesAttr(ctx, p, name, hasPeer)
+func (p *RoutingQueueProxy) GetAllRoutingQueues(ctx context.Context, name string, hasPeer, checkCache bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	return p.GetAllRoutingQueuesAttr(ctx, p, name, hasPeer, checkCache)
 }
 
 func (p *RoutingQueueProxy) createRoutingQueue(ctx context.Context, createReq *platformclientv2.Createqueuerequest) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
@@ -181,18 +208,25 @@ func (p *RoutingQueueProxy) updateRoutingQueueMember(ctx context.Context, queueI
 }
 
 // GetAllRoutingQueuesFn is the implementation for retrieving all routing queues in Genesys Cloud
-func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+func GetAllRoutingQueuesFn(ctx context.Context, p *RoutingQueueProxy, name string, hasPeer, checkCache bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	listKey := routingQueueListCacheKey(name, hasPeer)
-	if cached := rc.GetCacheItem(routingQueueListCache, listKey); cached != nil {
-		log.Printf("[QUEUE-CACHE] list name=%q hasPeer=%t: cache hit (%d queues)", name, hasPeer, len(*cached))
-		return cached, nil, nil
+	if checkCache {
+		if cached := rc.GetCacheItem(routingQueueListCache, listKey); cached != nil && len(*cached) > 0 {
+			log.Printf("[QUEUE-CACHE] list name=%q hasPeer=%t: cache hit (%d queues)", name, hasPeer, len(*cached))
+			return cached, nil, nil
+		}
 	}
 
+	// Drop only this list key so a forced refresh (checkCache=false) does not reuse a stale page.
+	// Do not wipe routingQueueCache: getAll fetches non-peer then peer lists, and export reads
+	// rely on both sets remaining in the per-queue cache.
+	routingQueueListCache.DeleteCacheItem(listKey)
+
 	var allQueues []platformclientv2.Queue
-	pageSize := page_size.ForResource(ResourceType, 500)
+	pageSize := page_size.ForResource(ResourceType, 100)
 
 	queues, resp, getErr := p.routingApi.GetRoutingQueues(1, pageSize, "", name, nil, nil, nil, "", hasPeer, nil)
 	if getErr != nil {
@@ -274,7 +308,7 @@ func getRoutingQueueByNameFn(ctx context.Context, p *RoutingQueueProxy, name str
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	queues, resp, err := p.GetAllRoutingQueues(ctx, name, hasPeer)
+	queues, resp, err := p.GetAllRoutingQueues(ctx, name, hasPeer, true)
 	if err != nil {
 		return "", resp, false, err
 	}
@@ -310,7 +344,7 @@ func deleteRoutingQueueFn(ctx context.Context, p *RoutingQueueProxy, queueID str
 		return resp, err
 	}
 	rc.DeleteCacheItem(p.RoutingQueueCache, queueID)
-	invalidateRoutingQueueListCache()
+	routingQueueListCache.InvalidateCache()
 	return resp, nil
 }
 

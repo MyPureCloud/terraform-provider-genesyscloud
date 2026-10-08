@@ -113,6 +113,7 @@ resource "genesyscloud_flow" "outbound_call_flow" {
 
 ### Optional
 
+- `create_stubs` (Boolean) If true, flow stubs will be created for any dependencies that do not yet exist in the org when the flow is published. Defaults to `false`.
 - `force_unlock` (Boolean) Will perform a force unlock on an architect flow before beginning the publication process.  NOTE: The force unlock publishes the 'draft'
 				              architect flow and then publishes the flow named in this resource. This mirrors the behavior found in the archy CLI tool.
 - `name` (String) Flow Name used for export purposes. Note: The 'substitutions' block should be used to set/change 'name' and any other fields in the yaml file

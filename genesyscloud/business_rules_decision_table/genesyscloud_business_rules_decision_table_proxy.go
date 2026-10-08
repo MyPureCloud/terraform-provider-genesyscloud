@@ -8,10 +8,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -44,6 +45,11 @@ type createDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRules
 type getDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
 type uploadDecisionTableImportFileFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error
 type createDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
+
+// postExportJobFunc is the inner seam around the single export job POST. It exists separately from
+// createDecisionTableExportJobFunc so tests can stub the API call while still exercising the retry
+// loop that createDecisionTableExportJobFn wraps around it.
+type postExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
 type getDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
 type downloadDecisionTableExportFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, downloadUri string) ([]byte, error)
 
@@ -70,6 +76,7 @@ type BusinessRulesDecisionTableProxy struct {
 	getDecisionTableImportJobAttr            getDecisionTableImportJobFunc
 	uploadDecisionTableImportFileAttr        uploadDecisionTableImportFileFunc
 	createDecisionTableExportJobAttr         createDecisionTableExportJobFunc
+	postExportJobAttr                        postExportJobFunc
 	getDecisionTableExportJobAttr            getDecisionTableExportJobFunc
 	downloadDecisionTableExportAttr          downloadDecisionTableExportFunc
 
@@ -102,6 +109,7 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 		getDecisionTableImportJobAttr:            getDecisionTableImportJobFn,
 		uploadDecisionTableImportFileAttr:        uploadDecisionTableImportFileFn,
 		createDecisionTableExportJobAttr:         createDecisionTableExportJobFn,
+		postExportJobAttr:                        postExportJobFn,
 		getDecisionTableExportJobAttr:            getDecisionTableExportJobFn,
 		downloadDecisionTableExportAttr:          downloadDecisionTableExportFn,
 
@@ -421,8 +429,46 @@ func uploadDecisionTableImportFileFn(ctx context.Context, p *BusinessRulesDecisi
 	return nil
 }
 
+// createDecisionTableExportJobFn creates an export job, waiting out a full export job cap (403
+// with the capacity message) or a throttle (429). The bound is a wall-clock budget, not an attempt
+// count, and every wait is cancellable.
+//
+// Logging uses log.Printf rather than tflog: the exporter's rows resolver calls this with
+// context.Background(), which carries no provider logger, so tflog records would be dropped on
+// the one path this retry exists for.
 func createDecisionTableExportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	budget := resolveExportRetryBudget()
+	deadline := time.Now().Add(budget)
+	for {
+		job, resp, err := p.postExportJobAttr(ctx, p, tableId, request)
+		// A transport failure leaves resp nil, which the predicate rejects, so it returns here.
+		// The SDK already retries those.
+		if err == nil || !isExportCapacityRetryable(resp) {
+			return job, resp, err
+		}
+
+		interval := exportRetryInterval(resp)
+		// Rather than sleep past the budget, stop and return the last attempt untouched, which is
+		// what the caller would have seen without this retry.
+		if time.Now().Add(interval).After(deadline) {
+			log.Printf("[WARN] Decision table %s export job creation still rejected with %d after exhausting the %v retry budget",
+				tableId, resp.StatusCode, budget)
+			return job, resp, err
+		}
+
+		log.Printf("[WARN] Decision table %s export job creation rejected with %d (%s). Retrying in %v",
+			tableId, resp.StatusCode, capacityRejectionMessage(resp), interval)
+
+		if waitErr := waitWithContext(ctx, interval); waitErr != nil {
+			return job, resp, waitErr
+		}
+	}
+}
+
+// postExportJobFn issues a single export job POST with no retry handling of its own.
+func postExportJobFn(_ context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
 	return p.businessRulesApi.PostBusinessrulesDecisiontableExports(tableId, *request)
 }
 

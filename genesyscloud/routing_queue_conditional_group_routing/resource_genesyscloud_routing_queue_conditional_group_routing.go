@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -33,7 +33,7 @@ func getAllAuthRoutingQueueConditionalGroup(ctx context.Context, clientConfig *p
 		return nil, nil
 	}
 
-	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get conditional group routing rules: %s", err), resp)
 	}
