@@ -59,13 +59,19 @@ func lockFlow(flowName string, flowType string) {
 	})
 }
 
+func uniqueFlowYamlPath(t *testing.T, base string) string {
+	path := filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow", base+"_"+uuid.NewString()+".yaml")
+	t.Cleanup(func() { _ = os.Remove(path) })
+	return path
+}
+
 // Tests the force_unlock functionality.
 func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 	var (
 		flowResourceLabel = "test_force_unlock_flow1"
 		flowName          = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
 		flowType          = "INBOUNDCALL"
-		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		filePath          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -130,9 +136,9 @@ func TestAccResourceArchitectFlowStandard(t *testing.T) {
 		flowDescription2   = "test description 2"
 		flowType1          = "INBOUNDCALL"
 		flowType2          = "INBOUNDEMAIL"
-		filePath1          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
-		filePath2          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml")
-		filePath3          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml")
+		filePath1          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
+		filePath2          = uniqueFlowYamlPath(t, "inboundcall_flow_example2")
+		filePath3          = uniqueFlowYamlPath(t, "inboundcall_flow_example3")
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
@@ -230,7 +236,7 @@ func TestAccResourceArchitectFlowCreateStubs(t *testing.T) {
 		flowResourcePath  = "genesyscloud_flow." + flowResourceLabel
 		flowName          = "Terraform Flow Test CreateStubs-" + uuid.NewString()
 		flowType          = "INBOUNDCALL"
-		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		filePath          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
 
 		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 	)
