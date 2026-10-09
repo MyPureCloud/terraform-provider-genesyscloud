@@ -2159,6 +2159,12 @@ resource "genesyscloud_journey_segment" "%s" {
 	})
 }
 
+func uniqueFlowYamlPath(t *testing.T, base string) string {
+	path := filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow", base+"_"+uuid.NewString()+".yaml")
+	t.Cleanup(func() { _ = os.Remove(path) })
+	return path
+}
+
 // TestAccResourceTfExportArchitectFlowExporterLegacyAndNew creates an inbound call flow, then exports it using the
 // legacy exporter (creates a tfvars file but does not export flow config files) and then exports using the new archy
 // exporter by setting use_legacy_architect_flow_exporter to false.
@@ -2173,7 +2179,7 @@ func TestAccResourceTfExportArchitectFlowExporterLegacy(t *testing.T) {
 		flowName          = "tf_test_flow_legacy_" + uuid.NewString()
 		flowType          = "INBOUNDCALL"
 		flowResourceLabel = "test_flow"
-		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		filePath          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
 
 		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 
@@ -2247,7 +2253,7 @@ func TestAccResourceTfExportArchitectFlowExporterNew(t *testing.T) {
 		flowName          = "tf_test_flow_new_" + uuid.NewString()
 		flowType          = "INBOUNDCALL"
 		flowResourceLabel = "test_flow"
-		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		filePath          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
 
 		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 
