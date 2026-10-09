@@ -22,7 +22,7 @@ func TestSpeechAndTextAnalyticsTopicIds_KeepGuidWithoutReplaceWithDatasource(t *
 
 	g := setupGenesysCloudResourceExporter(t)
 	exporters := map[string]*resourceExporter.ResourceExporter{
-		sttTopic.ResourceType: sttTopic.SpeechAndTextAnalyticsTopicExporter(),
+		sttTopic.ResourceType:                   sttTopic.SpeechAndTextAnalyticsTopicExporter(),
 		"genesyscloud_quality_forms_evaluation": evalForm.EvaluationFormExporter(),
 	}
 
@@ -75,7 +75,7 @@ func TestSpeechAndTextAnalyticsTopicIds_ResolveToDataSourceWhenConfigured(t *tes
 	}
 
 	exporters := map[string]*resourceExporter.ResourceExporter{
-		sttTopic.ResourceType:                 sttTopic.SpeechAndTextAnalyticsTopicExporter(),
+		sttTopic.ResourceType:                   sttTopic.SpeechAndTextAnalyticsTopicExporter(),
 		"genesyscloud_quality_forms_evaluation": evalExporter,
 	}
 

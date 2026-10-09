@@ -20,9 +20,9 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
-	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -1159,14 +1159,14 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 func TestAccResourceTfExportFormTopicIdsAsGuidWhenTopicExcluded(t *testing.T) {
 	testSetup(t)
 	var (
-		exportTestDir     = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
-		exportedContents  string
-		pathToHclFile     = filepath.Join(exportTestDir, defaultTfHCLFile)
+		exportTestDir      = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportedContents   string
+		pathToHclFile      = filepath.Join(exportTestDir, defaultTfHCLFile)
 		topicResourceLabel = "topic_" + uuid.NewString()
-		formName          = "terraform_form_evaluations_" + uuid.NewString()
-		formResourceLabel = formName
-		topicName         = "tfacc-topic-" + uuid.NewString()
-		topicID           string
+		formName           = "terraform_form_evaluations_" + uuid.NewString()
+		formResourceLabel  = formName
+		topicName          = "tfacc-topic-" + uuid.NewString()
+		topicID            string
 	)
 
 	defer os.RemoveAll(exportTestDir)
