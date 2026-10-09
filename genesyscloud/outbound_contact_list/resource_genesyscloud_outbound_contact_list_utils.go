@@ -21,7 +21,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 type outboundContactListRawResponse struct {
@@ -512,6 +512,58 @@ func GenerateContactsFile(filepath, contactsIdName string) string {
 	contacts_filepath = "%s"
 	contacts_id_name = "%s"
 	`, filepath, contactsIdName)
+}
+
+// applyContactListRetention maps Terraform retention fields onto a Contactlist for create/update.
+// The API requires retentionDays to be null when retentionType is Never. Time zone cannot be
+// changed once set on a contact list, so an existing time zone must be sent unchanged on update.
+func applyContactListRetention(sdk *platformclientv2.Contactlist, d *schema.ResourceData, retentionType string, retentionDays int, timeZone string) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			sdk.RetentionDays = &retentionDays
+		}
+		if timeZone != "" {
+			sdk.TimeZone = &timeZone
+		}
+		return
+	}
+
+	sdk.RetentionType = &retentionType
+	switch retentionType {
+	case "Never":
+		sdk.RetentionDays = nil
+		if timeZone != "" {
+			sdk.TimeZone = &timeZone
+		}
+	case "Today":
+		sdk.RetentionDays = nil
+		if timeZone != "" || (d != nil && d.HasChange("time_zone")) {
+			sdk.TimeZone = &timeZone
+		}
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("retention_days")) {
+			sdk.RetentionDays = &retentionDays
+		}
+		if timeZone != "" || (d != nil && d.HasChange("time_zone")) {
+			sdk.TimeZone = &timeZone
+		}
+	}
+}
+
+func setContactListRetentionState(d *schema.ResourceData, retentionType *string, retentionDays *int, timeZone *string) {
+	if retentionType != nil {
+		_ = d.Set("retention_type", *retentionType)
+		if *retentionType != "RetentionDays" {
+			_ = d.Set("retention_days", 0)
+		} else if retentionDays != nil {
+			_ = d.Set("retention_days", *retentionDays)
+		}
+	} else if retentionDays != nil {
+		_ = d.Set("retention_days", *retentionDays)
+	}
+	if timeZone != nil {
+		_ = d.Set("time_zone", *timeZone)
+	}
 }
 
 func GenerateOutboundContactList(

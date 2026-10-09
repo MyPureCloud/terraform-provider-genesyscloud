@@ -791,6 +791,11 @@ func ResourceRoutingQueue() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeString,
 			},
+			"default_media_language": {
+				Description: "The canonical language code (e.g. en-US) used for the default media language on the queue.",
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
 			"source_queue_id": {
 				Description: "The id of an existing queue to copy the settings (does not include GPR settings) from when creating a new queue.",
 				Optional:    true,
@@ -989,6 +994,7 @@ func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 			"bullseye_rings.member_groups.member_group_id":              {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_routing_rules.groups.member_group_id":    {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
 			"conditional_group_activation.rules.groups.member_group_id": {ResolveRefTypeFunc: resourceExporter.MemberGroupsResolver},
+			"default_script_ids": {ResolverFunc: resourceExporter.RemoveUnresolvedScriptGuidsResolver},
 		},
 	}
 }

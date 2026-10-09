@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func TestAccResourceOutboundContactListTemplateBasic(t *testing.T) {
@@ -327,6 +327,84 @@ func TestAccResourceOutboundContactListTemplateBasic(t *testing.T) {
 			},
 			{
 				ResourceName:      ResourceType + "." + resourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyContactListTemplateDestroyed,
+	})
+}
+
+// TestAccResourceOutboundContactListTemplateRetention validates the retention attributes
+// (retention_type, retention_days, time_zone) on the contact list template, including the
+// set -> clear transition to confirm removing retention_days gives a clean plan.
+func TestAccResourceOutboundContactListTemplateRetention(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel = "contact-list-template-retention"
+		fullPath      = ResourceType + "." + resourceLabel
+		name          = "Test CL Template Retention " + uuid.NewString()
+		columnNames   = []string{strconv.Quote("Cell")}
+		retentionDays = "45"
+		timeZone      = "Europe/Dublin"
+	)
+
+	retentionBlock := func(retentionType, days, tz string) string {
+		block := fmt.Sprintf("retention_type = %s\n", strconv.Quote(retentionType))
+		if days != util.NullValue {
+			block += fmt.Sprintf("retention_days = %s\n", days)
+		}
+		if tz != util.NullValue {
+			block += fmt.Sprintf("time_zone = %s\n", strconv.Quote(tz))
+		}
+		return block
+	}
+
+	baseConfig := func(retention string) string {
+		return GenerateOutboundContactListTemplate(
+			resourceLabel,
+			name,
+			util.NullValue, // preview_mode_column_name
+			[]string{},     // preview_mode_accepted_values
+			columnNames,
+			util.FalseValue, // automatic_time_zone_mapping
+			util.NullValue,  // zip_code_column_name
+			util.NullValue,  // attempt_limit_id
+			GeneratePhoneColumnsBlock("Cell", "cell", util.NullValue),
+			retention,
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Set retention_type = RetentionDays with retention_days and time_zone.
+				Config: baseConfig(retentionBlock("RetentionDays", retentionDays, timeZone)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullPath, "name", name),
+					resource.TestCheckResourceAttr(fullPath, "retention_type", "RetentionDays"),
+					resource.TestCheckResourceAttr(fullPath, "retention_days", retentionDays),
+					resource.TestCheckResourceAttr(fullPath, "time_zone", timeZone),
+				),
+			},
+			{
+				// Clear retention_days by switching retention_type; expect a clean reset.
+				Config: baseConfig(retentionBlock("Never", util.NullValue, util.NullValue)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullPath, "retention_type", "Never"),
+					resource.TestCheckResourceAttr(fullPath, "retention_days", "0"),
+				),
+			},
+			{
+				// No perpetual diff after clearing.
+				Config:             baseConfig(retentionBlock("Never", util.NullValue, util.NullValue)),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				ResourceName:      fullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

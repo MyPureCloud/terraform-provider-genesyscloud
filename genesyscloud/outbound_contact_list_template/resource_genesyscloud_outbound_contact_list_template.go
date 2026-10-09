@@ -19,7 +19,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func getAllOutboundContactListTemplates(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -45,6 +45,9 @@ func createOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
+	retentionType := d.Get("retention_type").(string)
+	retentionDays := d.Get("retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlisttemplateProxy(sdkConfig)
@@ -68,6 +71,7 @@ func createOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	if zipCodeColumnName != "" {
 		sdkContactListTemplate.ZipCodeColumnName = &zipCodeColumnName
 	}
+	applyContactListTemplateRetention(&sdkContactListTemplate, d, retentionType, retentionDays, timeZone)
 
 	log.Printf("Creating Outbound Contact List Template %s", name)
 	outboundContactListTemplate, resp, err := proxy.createOutboundContactlisttemplate(ctx, &sdkContactListTemplate)
@@ -88,6 +92,9 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	previewModeAcceptedValues := lists.InterfaceListToStrings(d.Get("preview_mode_accepted_values").([]interface{}))
 	automaticTimeZoneMapping := d.Get("automatic_time_zone_mapping").(bool)
 	zipCodeColumnName := d.Get("zip_code_column_name").(string)
+	retentionType := d.Get("retention_type").(string)
+	retentionDays := d.Get("retention_days").(int)
+	timeZone := d.Get("time_zone").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getOutboundContactlisttemplateProxy(sdkConfig)
@@ -111,6 +118,7 @@ func updateOutboundContactListTemplate(ctx context.Context, d *schema.ResourceDa
 	if zipCodeColumnName != "" {
 		sdkContactListTemplate.ZipCodeColumnName = &zipCodeColumnName
 	}
+	applyContactListTemplateRetention(&sdkContactListTemplate, d, retentionType, retentionDays, timeZone)
 
 	log.Printf("Updating Outbound Contact List Template %s", name)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -232,6 +240,7 @@ func readOutboundContactListTemplate(ctx context.Context, d *schema.ResourceData
 		if sdkContactListTemplate.ColumnDataTypeSpecifications != nil {
 			_ = d.Set("column_data_type_specifications", flattenSdkOutboundContactListTemplateColumnDataTypeSpecifications(*sdkContactListTemplate.ColumnDataTypeSpecifications))
 		}
+		setContactListTemplateRetentionState(d, sdkContactListTemplate.RetentionType, sdkContactListTemplate.RetentionDays, sdkContactListTemplate.TimeZone)
 
 		log.Printf("Read Outbound Contact List Template %s %s", d.Id(), *sdkContactListTemplate.Name)
 		return cc.CheckState(d)

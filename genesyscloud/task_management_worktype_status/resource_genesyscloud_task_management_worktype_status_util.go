@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
@@ -120,7 +120,15 @@ func ValidateStatusIds(statusResource1 string, key1 string, statusResource2 stri
 // findMetaByStatusSuffix searches the SanitizedResourceMap for a composite key ending with "/<statusId>".
 // Returns the ResourceMeta if found, nil otherwise.
 func findMetaByStatusSuffix(idMetaMap resourceExporter.ResourceIDMetaMap, statusId string) *resourceExporter.ResourceMeta {
-	suffix := "/" + statusId
+	if meta, ok := idMetaMap[statusId]; ok && meta != nil && meta.BlockLabel != "" {
+		return meta
+	}
+
+	bareStatusId := statusId
+	if i := strings.LastIndex(statusId, "/"); i >= 0 && i+1 < len(statusId) {
+		bareStatusId = statusId[i+1:]
+	}
+	suffix := "/" + bareStatusId
 	for compositeId, meta := range idMetaMap {
 		if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
 			return meta

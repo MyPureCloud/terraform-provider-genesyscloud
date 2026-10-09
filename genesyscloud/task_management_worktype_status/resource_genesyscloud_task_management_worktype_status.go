@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -258,8 +258,10 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		if err == nil {
 			return nil
 		}
-		// When only auto_terminate_workitem changed, the SDK update omits false and the API may return no change.
-		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "No change for the record is obtained") && d.HasChange("auto_terminate_workitem") {
+		// The API rejects the PATCH with this error when none of the fields in the request body actually
+		// differ from current state (e.g. only "default" or "auto_terminate_workitem" changed). Treat it as a
+		// no-op success and fall through to the default-status/auto_terminate handling below instead of failing.
+		if util.IsStatus400(resp) && strings.Contains(resp.ErrorMessage, "No change for the record is obtained") {
 			currentStatus, _, getErr := proxy.getTaskManagementWorktypeStatusById(ctx, worktypeId, statusId)
 			if getErr == nil && currentStatus != nil {
 				workitemStatus = currentStatus
