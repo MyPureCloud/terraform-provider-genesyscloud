@@ -19,6 +19,9 @@ resource "genesyscloud_task_management_worktype" "example_worktype" {
 
   assignment_enabled = true
 
+  service_level_target                 = 90
+  unassigned_division_contacts_enabled = true
+
   # Configures the "Open" and "Closed" statuses that Genesys Cloud automatically creates for this
   # Worktype. open_status_default = false is not supported: a Worktype must always have exactly
   # one default status, so once set this cannot be used to unset the default. To change the

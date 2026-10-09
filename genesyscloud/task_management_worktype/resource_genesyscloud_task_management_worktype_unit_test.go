@@ -72,6 +72,9 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 
 				schemaId:      uuid.NewString(),
 				schemaVersion: 1,
+
+				serviceLevelTarget:                80,
+				unassignedDivisionContactsEnabled: true,
 			}
 
 			taskProxy := &TaskManagementWorktypeProxy{}
@@ -93,6 +96,8 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 				assert.Equal(t, wt.schemaId, *create.SchemaId, "wt.schemaId check failed in create createTaskManagementWorktypeAttr")
 				assert.Equal(t, wt.schemaVersion, *create.SchemaVersion, "wt.schemaVersion check failed in create createTaskManagementWorktypeAttr")
 				assert.Equal(t, wt.defaultScriptId, *create.DefaultScriptId, "wt.defaultScriptId check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.serviceLevelTarget, *create.ServiceLevelTarget, "wt.serviceLevelTarget check failed in create createTaskManagementWorktypeAttr")
+				assert.Equal(t, wt.unassignedDivisionContactsEnabled, *create.UnassignedDivisionContactsEnabled, "wt.unassignedDivisionContactsEnabled check failed in create createTaskManagementWorktypeAttr")
 				tc.assertCreateDisableDefaultSet(t, create)
 
 				return &platformclientv2.Worktype{
@@ -123,6 +128,8 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 					DefaultScript: &platformclientv2.Workitemscriptreference{
 						Id: &wt.defaultScriptId,
 					},
+					ServiceLevelTarget:                &wt.serviceLevelTarget,
+					UnassignedDivisionContactsEnabled: &wt.unassignedDivisionContactsEnabled,
 				}, nil, nil
 			}
 
@@ -166,6 +173,8 @@ func TestUnitResourceWorktypeCreate(t *testing.T) {
 					DefaultScript: &platformclientv2.Workitemscriptreference{
 						Id: &wt.defaultScriptId,
 					},
+					ServiceLevelTarget:                &wt.serviceLevelTarget,
+					UnassignedDivisionContactsEnabled: &wt.unassignedDivisionContactsEnabled,
 				}
 
 				apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -230,6 +239,9 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 
 		schemaId:      uuid.NewString(),
 		schemaVersion: 1,
+
+		serviceLevelTarget:                80,
+		unassignedDivisionContactsEnabled: false,
 	}
 
 	taskProxy := &TaskManagementWorktypeProxy{}
@@ -274,6 +286,8 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 			DefaultScript: &platformclientv2.Workitemscriptreference{
 				Id: &wt.defaultScriptId,
 			},
+			ServiceLevelTarget:                &wt.serviceLevelTarget,
+			UnassignedDivisionContactsEnabled: &wt.unassignedDivisionContactsEnabled,
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -318,6 +332,8 @@ func TestUnitResourceWorktypeRead(t *testing.T) {
 	assert.Equal(t, wt.schemaVersion, d.Get("schema_version").(int))
 	assert.Equal(t, wt.defaultScriptId, d.Get("default_script_id").(string))
 	assert.Equal(t, wt.disableDefaultStatusCreation, d.Get("disable_default_status_creation").(bool))
+	assert.Equal(t, wt.serviceLevelTarget, d.Get("service_level_target").(int))
+	assert.Equal(t, wt.unassignedDivisionContactsEnabled, d.Get("unassigned_division_contacts_enabled").(bool))
 }
 
 func TestUnitResourceWorktypeUpdate(t *testing.T) {
@@ -345,6 +361,9 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 
 		schemaId:      uuid.NewString(),
 		schemaVersion: 1,
+
+		serviceLevelTarget:                80,
+		unassignedDivisionContactsEnabled: false,
 	}
 
 	taskProxy := &TaskManagementWorktypeProxy{}
@@ -385,6 +404,8 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultScript: &platformclientv2.Workitemscriptreference{
 				Id: &wt.defaultScriptId,
 			},
+			ServiceLevelTarget:                &wt.serviceLevelTarget,
+			UnassignedDivisionContactsEnabled: &wt.unassignedDivisionContactsEnabled,
 		}, nil, nil
 	}
 
@@ -429,6 +450,8 @@ func TestUnitResourceWorktypeUpdate(t *testing.T) {
 			DefaultScript: &platformclientv2.Workitemscriptreference{
 				Id: &wt.defaultScriptId,
 			},
+			ServiceLevelTarget:                &wt.serviceLevelTarget,
+			UnassignedDivisionContactsEnabled: &wt.unassignedDivisionContactsEnabled,
 		}
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
@@ -511,23 +534,25 @@ func TestUnitResourceWorktypeDelete(t *testing.T) {
 
 func buildWorktypeResourceMap(tId string, wt *worktypeConfig) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
-		"id":                           tId,
-		"name":                         wt.name,
-		"description":                  wt.description,
-		"division_id":                  wt.divisionId,
-		"default_workbin_id":           wt.defaultWorkbinId,
-		"default_duration_seconds":     wt.defaultDurationS,
-		"default_expiration_seconds":   wt.defaultExpirationS,
-		"default_due_duration_seconds": wt.defaultDueDurationS,
-		"default_priority":             wt.defaultPriority,
-		"default_ttl_seconds":          wt.defaultTtlS,
-		"default_language_id":          wt.defaultLanguageId,
-		"default_queue_id":             wt.defaultQueueId,
-		"default_skills_ids":           lists.StringListToInterfaceList(wt.defaultSkillIds),
-		"assignment_enabled":           wt.assignmentEnabled,
-		"schema_id":                    wt.schemaId,
-		"schema_version":               wt.schemaVersion,
-		"default_script_id":            wt.defaultScriptId,
+		"id":                                   tId,
+		"name":                                 wt.name,
+		"description":                          wt.description,
+		"division_id":                          wt.divisionId,
+		"default_workbin_id":                   wt.defaultWorkbinId,
+		"default_duration_seconds":             wt.defaultDurationS,
+		"default_expiration_seconds":           wt.defaultExpirationS,
+		"default_due_duration_seconds":         wt.defaultDueDurationS,
+		"default_priority":                     wt.defaultPriority,
+		"default_ttl_seconds":                  wt.defaultTtlS,
+		"default_language_id":                  wt.defaultLanguageId,
+		"default_queue_id":                     wt.defaultQueueId,
+		"default_skills_ids":                   lists.StringListToInterfaceList(wt.defaultSkillIds),
+		"assignment_enabled":                   wt.assignmentEnabled,
+		"schema_id":                            wt.schemaId,
+		"schema_version":                       wt.schemaVersion,
+		"default_script_id":                    wt.defaultScriptId,
+		"service_level_target":                 wt.serviceLevelTarget,
+		"unassigned_division_contacts_enabled": wt.unassignedDivisionContactsEnabled,
 	}
 
 	resourceDataMap["disable_default_status_creation"] = wt.disableDefaultStatusCreation
