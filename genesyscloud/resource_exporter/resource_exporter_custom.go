@@ -14,12 +14,14 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
-// SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
+// SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference
+// when genesyscloud_speechandtextanalytics_topic is listed in replace_with_datasource.
 // It queries GET /api/v2/speechandtextanalytics/topics/{topicId} to retrieve name + dialect and emits:
 //
 //	data "genesyscloud_speechandtextanalytics_topic" "<name>_<dialect>" { name = "...", dialect = "..." }
 //
-// and updates the referencing field to use data source ID.
+// and updates the referencing field to use data source ID. When replace_with_datasource is not set,
+// unresolved topic references remain as raw GUIDs.
 func SpeechAndTextAnalyticsTopicIdResolver(configMap map[string]interface{}, value any, sdkConfig *platformclientv2.Configuration) (dsType string, dsID string, dsConfig map[string]interface{}, resolve bool) {
 	topicId, _ := value.(string)
 	if !isValidGuid(topicId) {
