@@ -768,6 +768,9 @@ func buildSdkCertifications(d *schema.ResourceData) *[]string {
 }
 
 func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) string {
+	if proxy == nil {
+		return ""
+	}
 	ext, getErr, err := proxy.getTelephonyExtensionPoolByExtension(ctx, extNum)
 	if err != nil {
 		if getErr != nil {
@@ -778,6 +781,26 @@ func fetchExtensionPoolId(ctx context.Context, extNum string, proxy *userProxy) 
 		return ""
 	}
 	return *ext.Id
+}
+
+// isLikelyDirectDialNumber reports whether s looks like an external E.164-style phone number
+// rather than an internal extension label.
+func isLikelyDirectDialNumber(s string) bool {
+	s = strings.Trim(s, "() ")
+	if s == "" {
+		return false
+	}
+	var num *phonenumbers.PhoneNumber
+	var err error
+	if strings.HasPrefix(s, "+") {
+		num, err = phonenumbers.Parse(s, "ZZ")
+	} else {
+		num, err = phonenumbers.Parse(s, "US")
+	}
+	if err != nil {
+		return false
+	}
+	return phonenumbers.IsValidNumber(num)
 }
 
 func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Contact, proxy *userProxy) []interface{} {
@@ -800,11 +823,15 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 				// We need to be able to handle them all, and strip off any parentheses that can surround
 				// values
 
-				//     	1.) Addresses that return an "address" field are phone numbers without extensions
-				// Skip setting a number for internal extensions mapped to a pool (Extension==Display),
-				// since some orgs also populate Address for these and that breaks state expectations.
-				if address.Address != nil && (address.Extension == nil || address.Display == nil || *address.Extension != *address.Display) {
-					phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(strings.Trim(*address.Address, "()"))
+				//     	1.) Addresses that return an "address" field are phone numbers without extensions.
+				// Skip setting a number only for internal extensions mapped to a pool (Extension==Display)
+				// when Address is not a direct-dial E.164 value; some orgs populate Address for pool extensions.
+				if address.Address != nil {
+					addr := strings.Trim(*address.Address, "()")
+					extensionMatchesDisplay := address.Extension != nil && address.Display != nil && *address.Extension == *address.Display
+					if !extensionMatchesDisplay || isLikelyDirectDialNumber(addr) {
+						phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(addr)
+					}
 				}
 
 				// 		2.) Addresses that return an "extension" field that matches the "display" field are
@@ -835,10 +862,14 @@ func flattenUserAddresses(ctx context.Context, addresses *[]platformclientv2.Con
 					}
 				}
 
-				// 		4.) Addresses that only include a "display" field (but not "address" or "extension") are
-				//          considered an extension that has not been mapped to an internal extension pool yet.
+				// 		4.) Display-only contacts: E.164 in display is the number; otherwise treat as extension.
 				if address.Address == nil && address.Extension == nil && address.Display != nil {
-					phoneNumber["extension"] = strings.Trim(*address.Display, "()")
+					display := strings.Trim(*address.Display, "()")
+					if isLikelyDirectDialNumber(display) {
+						phoneNumber["number"] = utilE164.FormatAsCalculatedE164Number(display)
+					} else {
+						phoneNumber["extension"] = display
+					}
 				}
 
 				if address.VarType != nil {

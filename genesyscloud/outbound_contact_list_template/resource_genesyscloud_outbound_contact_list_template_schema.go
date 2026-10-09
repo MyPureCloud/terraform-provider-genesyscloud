@@ -281,8 +281,9 @@ func ResourceOutboundContactListTemplate() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
 			},
 			`retention_days`: {
-				Description: `The default number of days to retain contact lists created from this template. Required when retention_type is RetentionDays.`,
+				Description: `The default number of days to retain contact lists created from this template. Required when retention_type is RetentionDays. If omitted in configuration, the API value (including organization defaults) is stored in state.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			`time_zone`: {
