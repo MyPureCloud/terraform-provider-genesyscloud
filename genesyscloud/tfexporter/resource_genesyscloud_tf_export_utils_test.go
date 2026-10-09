@@ -617,6 +617,44 @@ func getExportedFileContents(filename string, result *string) resource.TestCheck
 	}
 }
 
+func generateTfExportFormWithTopicExcluded(
+	resourceLabel string,
+	directory string,
+	includeState string,
+	formName string,
+	exportFormat string,
+	dependencies []string,
+) string {
+	return fmt.Sprintf(`resource "genesyscloud_tf_export" "%s" {
+		directory = "%s"
+		include_state_file = %s
+		export_format = %s
+		log_permission_errors = true
+		include_filter_resources = [%s]
+		depends_on = [%s]
+	}
+	`, resourceLabel, directory, includeState, exportFormat, strconv.Quote("genesyscloud_quality_forms_evaluation::"+formName), strings.Join(dependencies, ","))
+}
+
+func verifyExportedFormTopicIdsAreGuids(exportedContents *string, topicID *string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		content := *exportedContents
+		if strings.Contains(content, `data "genesyscloud_speechandtextanalytics_topic"`) {
+			return fmt.Errorf("exported config contains topic data source blocks")
+		}
+		if strings.Contains(content, "data.genesyscloud_speechandtextanalytics_topic") {
+			return fmt.Errorf("exported config contains topic data source references")
+		}
+		if topicID == nil || *topicID == "" {
+			return fmt.Errorf("topic ID was not captured from state")
+		}
+		if !strings.Contains(content, *topicID) {
+			return fmt.Errorf("exported config missing raw topic GUID %q", *topicID)
+		}
+		return nil
+	}
+}
+
 func validateFileCreated(filename string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		_, err := os.Stat(filename)

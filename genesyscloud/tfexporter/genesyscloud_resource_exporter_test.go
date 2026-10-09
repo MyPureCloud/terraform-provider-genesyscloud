@@ -513,7 +513,10 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 		return scriptResourceType, defaultOutboundScriptResourceLabel, dataSourceConfig, true
 	}
 	attrCustomResolver := make(map[string]*resourceExporter.RefAttrCustomResolver)
-	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{
+		ResolveToDataSourceFunc:   resolverFunc,
+		AlwaysResolveToDataSource: true,
+	}
 	exporter := &resourceExporter.ResourceExporter{
 		CustomAttributeResolver: attrCustomResolver,
 	}

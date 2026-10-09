@@ -2631,6 +2631,15 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	return unresolvableAttrs, true
 }
 
+// shouldResolveToDataSource returns true when a ResolveToDataSourceFunc result should be applied.
+// By default, data source resolution only runs when the target type is listed in replace_with_datasource.
+func (g *GenesysCloudResourceExporter) shouldResolveToDataSource(resolver *resourceExporter.RefAttrCustomResolver, dsType, dsLabel string) bool {
+	if resolver.AlwaysResolveToDataSource {
+		return true
+	}
+	return g.isDataSource(dsType, dsLabel, "")
+}
+
 // resolveValueToDataSource invokes a custom resolver method to add a data source to the export and
 // update an attribute to reference the data source
 func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resourceExporter.ResourceExporter, configMap map[string]any, attribute string, originalValue any) {
@@ -2646,7 +2655,7 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 
 	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 	dataSourceType, dataSourceLabel, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, originalValue, sdkConfig)
-	if !resolve {
+	if !resolve || !g.shouldResolveToDataSource(refAttrCustomResolver, dataSourceType, dataSourceLabel) {
 		return
 	}
 
@@ -2806,7 +2815,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 					if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok && refAttrCustomResolver.ResolveToDataSourceFunc != nil {
 						sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 						dsType, dsLabel, dsConfig, resolve := refAttrCustomResolver.ResolveToDataSourceFunc(nil, strVal, sdkConfig)
-						if resolve {
+						if resolve && g.shouldResolveToDataSource(refAttrCustomResolver, dsType, dsLabel) {
 							g.addToDataSourceMaps(dsType, dsLabel, dsConfig)
 							referenceVal = fmt.Sprintf("${data.%s.%s.id}", dsType, dsLabel)
 						}

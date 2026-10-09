@@ -20,6 +20,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
@@ -1148,6 +1149,120 @@ func TestAccResourceTfExportFormAsHCL(t *testing.T) {
 				Config: exportedContents,
 				Check: resource.ComposeTestCheckFunc(
 					validateEvaluationFormAttributes(formResourceLabel, evaluationForm1),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+func TestAccResourceTfExportFormTopicIdsAsGuidWhenTopicExcluded(t *testing.T) {
+	testSetup(t)
+	var (
+		exportTestDir     = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		exportedContents  string
+		pathToHclFile     = filepath.Join(exportTestDir, defaultTfHCLFile)
+		topicResourceLabel = "topic_" + uuid.NewString()
+		formName          = "terraform_form_evaluations_" + uuid.NewString()
+		formResourceLabel = formName
+		topicName         = "tfacc-topic-" + uuid.NewString()
+		topicID           string
+	)
+
+	defer os.RemoveAll(exportTestDir)
+
+	topicConfig := fmt.Sprintf(`
+resource "%s" "%s" {
+  name         = %q
+  dialect      = "en-US"
+  description  = "Terraform acceptance test topic for export"
+  strictness   = "72"
+  participants = "All"
+  phrases {
+    text      = "budget discussion"
+    sentiment = "Neutral"
+  }
+  published = true
+}
+`, sttTopic.ResourceType, topicResourceLabel, topicName)
+
+	evaluationForm := qualityFormsEvaluation.EvaluationFormStruct{
+		Name:      formName,
+		Published: false,
+		Dialect:   "en-US",
+		QuestionGroups: []qualityFormsEvaluation.EvaluationFormQuestionGroupStruct{
+			{
+				Name:   "Topic Reference Group",
+				Weight: 1,
+				Questions: []qualityFormsEvaluation.EvaluationFormQuestionStruct{
+					{
+						Text:                  "Was the topic detected?",
+						AutomatedScoringFocus: "FullInteraction",
+						AnswerOptions: []qualityFormsEvaluation.AnswerOptionStruct{
+							{
+								Text:  "Yes",
+								Value: 1,
+								AssistanceConditions: []qualityFormsEvaluation.AssistanceConditionStruct{
+									{
+										Operator: "EXISTS",
+										TopicIds: []string{
+											fmt.Sprintf("${genesyscloud_speechandtextanalytics_topic.%s.id}", topicResourceLabel),
+										},
+									},
+								},
+							},
+							{
+								Text:  "No",
+								Value: 0,
+							},
+						},
+					},
+				},
+			},
+		},
+		DependsOn: []string{
+			fmt.Sprintf("genesyscloud_speechandtextanalytics_topic.%s", topicResourceLabel),
+		},
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: topicConfig + qualityFormsEvaluation.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(sttTopic.ResourceType+"."+topicResourceLabel, "name", topicName),
+					resource.TestCheckResourceAttr("genesyscloud_quality_forms_evaluation."+formResourceLabel, "name", formName),
+					resource.TestCheckResourceAttrSet(sttTopic.ResourceType+"."+topicResourceLabel, "id"),
+				),
+			},
+			{
+				Config: topicConfig +
+					qualityFormsEvaluation.GenerateEvaluationFormResource(formResourceLabel, &evaluationForm) +
+					generateTfExportFormWithTopicExcluded(
+						"export",
+						exportTestDir,
+						util.FalseValue,
+						formName,
+						strconv.Quote("hcl"),
+						[]string{
+							fmt.Sprintf("genesyscloud_quality_forms_evaluation.%s", formResourceLabel),
+							fmt.Sprintf("genesyscloud_speechandtextanalytics_topic.%s", topicResourceLabel),
+						},
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(sttTopic.ResourceType+"."+topicResourceLabel, "id"),
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources[sttTopic.ResourceType+"."+topicResourceLabel]
+						if !ok {
+							return fmt.Errorf("topic resource not found in state")
+						}
+						topicID = rs.Primary.ID
+						return nil
+					},
+					getExportedFileContents(pathToHclFile, &exportedContents),
+					verifyExportedFormTopicIdsAreGuids(&exportedContents, &topicID),
 				),
 			},
 		},

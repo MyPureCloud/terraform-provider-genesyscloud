@@ -81,6 +81,7 @@ import (
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	respmanagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
@@ -246,6 +247,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
+	providerResources[sttTopic.ResourceType] = sttTopic.ResourceSpeechAndTextAnalyticsTopic()
 	providerResources[guide.ResourceType] = guide.ResourceGuide()
 	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[businessRulesSchema.ResourceType] = businessRulesSchema.ResourceBusinessRulesSchema()
@@ -364,6 +366,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(externalOrganization.ResourceType, externalOrganization.ExternalContactsOrganizationExporter())
 	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())
 	RegisterExporter(qualityFormsSurvey.ResourceType, qualityFormsSurvey.QualityFormsSurveyExporter())
+	RegisterExporter(sttTopic.ResourceType, sttTopic.SpeechAndTextAnalyticsTopicExporter())
 	RegisterExporter(guide.ResourceType, guide.GuideExporter())
 	RegisterExporter(guideVersion.ResourceType, guideVersion.GuideVersionExporter())
 	RegisterExporter(businessRulesSchema.ResourceType, businessRulesSchema.BusinessRulesSchemaExporter())
@@ -385,6 +388,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
 	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 	providerDataSources[guide.ResourceType] = guide.DataSourceGuide()
+	providerDataSources[sttTopic.ResourceType] = sttTopic.DataSourceSpeechAndTextAnalyticsTopic()
 }
 
 func RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {
