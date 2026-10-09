@@ -1,0 +1,11 @@
+locals {
+  dependencies = {
+    resource = [
+      "../genesyscloud_conversations_messaging_integrations_open/resource.tf",
+      "../../data-sources/genesyscloud_auth_division_home/data-source.tf",
+      "../genesyscloud_conversations_messaging_settings/resource.tf",
+      "../genesyscloud_conversations_messaging_supportedcontent/resource.tf",
+      "../genesyscloud_externalcontacts_external_source/resource.tf"
+    ]
+  }
+}
