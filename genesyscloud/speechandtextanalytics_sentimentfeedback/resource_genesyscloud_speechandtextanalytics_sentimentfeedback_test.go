@@ -3,9 +3,11 @@ package speechandtextanalytics_sentimentfeedback
 import (
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -91,7 +93,7 @@ func TestAccResourceSentimentFeedback(t *testing.T) {
 func TestAccResourceSentimentFeedbackForceNew(t *testing.T) {
 	var (
 		resourceLabel = "test-sentiment-feedback-forcenew"
-		phrase        = "the wait time was unacceptable"
+		phrase        = "tfacc wait time " + strings.ReplaceAll(uuid.NewString(), "-", "")[:12]
 		dialect       = "en-US"
 		resourcePath  = ResourceType + "." + resourceLabel
 		firstID       string
