@@ -61,6 +61,9 @@ resource "genesyscloud_task_management_worktype" "example_worktype" {
 
   assignment_enabled = true
 
+  service_level_target                 = 90
+  unassigned_division_contacts_enabled = true
+
   # Configures the "Open" and "Closed" statuses that Genesys Cloud automatically creates for this
   # Worktype. open_status_default = false is not supported: a Worktype must always have exactly
   # one default status, so once set this cannot be used to unset the default. To change the
@@ -121,6 +124,8 @@ resource "genesyscloud_task_management_worktype" "example_worktype_without_assig
 - `open_status_default` (Boolean) When true, marks the auto-created "Open" status (created automatically when the Worktype is created, unless disable_default_status_creation is set) as the Worktype's default status. A Worktype must always have exactly one default status, so this cannot be set to false to "unset" it; to change the default status, set 'default = true' on a different genesyscloud_task_management_worktype_status resource instead. Omitting this field leaves the current default status unchanged.
 - `schema_id` (String) Id of the workitem schema.
 - `schema_version` (Number) Version of the workitem schema to use. If not provided, the worktype will use the latest version.
+- `service_level_target` (Number) The target service level for Workitems created from the Worktype. The default value is 100.
+- `unassigned_division_contacts_enabled` (Boolean) When set to true, will allow Workitems to be associated with External Contacts that are not assigned to any division. Default value is true.
 
 ### Read-Only
 

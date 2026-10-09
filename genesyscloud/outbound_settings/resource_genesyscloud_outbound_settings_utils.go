@@ -213,3 +213,51 @@ func flattenOutboundSettingsUnmapped(unmapped *platformclientv2.Atzmtimeslotwith
 	requestSet.Add(requestMap)
 	return requestSet
 }
+
+// applyOutboundSettingsDefaultRetention sets default retention fields on a PATCH body.
+// Never requires null retention days; do not PATCH an empty time_zone (API returns 400).
+// When time zone was previously set, preserve the value from state if config omits it.
+func applyOutboundSettingsDefaultRetention(update *platformclientv2.Outboundsettings, d *schema.ResourceData, retentionType string, retentionDays int, timeZone string) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			update.ContactListDefaultRetentionDays = &retentionDays
+		}
+		if timeZone != "" {
+			update.TimeZone = &timeZone
+		}
+		return
+	}
+
+	switch retentionType {
+	case "Never":
+		update.ContactListDefaultRetentionDays = nil
+		if timeZone != "" {
+			update.TimeZone = &timeZone
+		}
+	case "Today":
+		update.ContactListDefaultRetentionDays = nil
+		if timeZone != "" {
+			update.TimeZone = &timeZone
+		}
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("contact_list_default_retention_days")) {
+			update.ContactListDefaultRetentionDays = &retentionDays
+		}
+		if timeZone != "" {
+			update.TimeZone = &timeZone
+		}
+	}
+}
+
+func setOutboundSettingsRetentionState(d *schema.ResourceData, retentionType *string, retentionDays *int) {
+	if retentionType != nil {
+		resourcedata.SetNillableValue(d, "contact_list_default_retention_type", retentionType)
+		if *retentionType != "RetentionDays" {
+			_ = d.Set("contact_list_default_retention_days", 0)
+		} else {
+			resourcedata.SetNillableValue(d, "contact_list_default_retention_days", retentionDays)
+		}
+	} else if retentionDays != nil {
+		resourcedata.SetNillableValue(d, "contact_list_default_retention_days", retentionDays)
+	}
+}
