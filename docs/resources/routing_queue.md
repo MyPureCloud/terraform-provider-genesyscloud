@@ -174,6 +174,7 @@ resource "genesyscloud_routing_queue" "example_queue" {
   enable_audio_monitoring  = true
   enable_manual_assignment = true
   calling_party_name       = "Example Inc."
+  default_media_language   = "en-US"            # Canonical language code used as the queue's default media language
   last_agent_routing_mode  = "QueueMembersOnly" # Valid values: Disabled, QueueMembersOnly, AnyAgent
   groups                   = [genesyscloud_group.example_group.id, genesyscloud_group.example_group2.id]
 
@@ -382,6 +383,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `acw_timeout_ms` (Number) The amount of time the agent can stay in ACW (Min: 1 sec, Max: 60 min). Can only be used when ACW is AGENT_REQUESTED, MANDATORY_TIMEOUT or MANDATORY_FORCED_TIMEOUT.
 - `acw_wrapup_prompt` (String) This field controls how the UI prompts the agent for a wrapup (MANDATORY | OPTIONAL | MANDATORY_TIMEOUT | MANDATORY_FORCED_TIMEOUT | AGENT_REQUESTED). Defaults to `MANDATORY_TIMEOUT`.
 - `agent_owned_routing` (Block List, Max: 1) The Agent Owned Routing settings for the queue. (see [below for nested schema](#nestedblock--agent_owned_routing))
+- `all_outbound_email_addresses` (Block List) The list of all outbound email addresses (domain + route) assigned to the queue. Supports multiple email domains/routes, unlike the deprecated single outbound_email_address block. Requires the multiple outbound email addresses feature to be enabled on the org. When set, outbound_email_address (the default outbound email address) must also be set and must be one of the entries in this list. (see [below for nested schema](#nestedblock--all_outbound_email_addresses))
 - `auto_answer_only` (Boolean) Specifies whether the configured whisper should play for all ACD calls, or only for those which are auto-answered. Defaults to `true`.
 - `bullseye_rings` (Block List, Max: 6) The bullseye ring settings for the queue. (see [below for nested schema](#nestedblock--bullseye_rings))
 - `calling_party_name` (String) The name to use for caller identification for outbound calls from this queue.
@@ -389,6 +391,7 @@ resource "genesyscloud_routing_queue" "example_queue_with_conditional_group_acti
 - `canned_response_libraries` (Block List, Max: 1) Canned response library IDs and mode with which they are associated with the queue. (see [below for nested schema](#nestedblock--canned_response_libraries))
 - `conditional_group_activation` (Block List, Max: 1) The Conditional Group Activation settings for the queue. (see [below for nested schema](#nestedblock--conditional_group_activation))
 - `conditional_group_routing_rules` (Block List, Max: 5) The Conditional Group Routing settings for the queue. **Important:** conditional_group_routing_rules is deprecated in genesyscloud_routing_queue. CGR is now a standalone resource, please set ENABLE_STANDALONE_CGR in your environment variables to enable and use genesyscloud_routing_queue_conditional_group_routing. When ENABLE_STANDALONE_CGR is set, this attribute will not be read or exported. The two approaches are mutually exclusive to prevent duplicate data during org exports. (see [below for nested schema](#nestedblock--conditional_group_routing_rules))
+- `default_media_language` (String) The canonical language code (e.g. en-US) used for the default media language on the queue.
 - `default_script_ids` (Map of String) The default script IDs for each communication type. Communication types: (CALL | CALLBACK | CHAT | COBROWSE | EMAIL | MESSAGE | SOCIAL_EXPRESSION | VIDEO | SCREENSHARE)
 - `description` (String) Queue description.
 - `direct_routing` (Block List, Max: 1) The Direct Routing settings for the queue. (see [below for nested schema](#nestedblock--direct_routing))
@@ -436,6 +439,15 @@ Optional:
 - `enable_agent_owned_callbacks` (Boolean) Indicates if Agent Owned Callbacks are enabled for the queue.
 - `max_owned_callback_delay_hours` (Number) The max amount of time a callback can be scheduled out into the future (in hours). Allowable range 1 - 720 hour(s) (inclusive).
 - `max_owned_callback_hours` (Number) The max amount of time a callback can be owned (in hours). Allowable range 1 - 168 hour(s) (inclusive).
+
+
+<a id="nestedblock--all_outbound_email_addresses"></a>
+### Nested Schema for `all_outbound_email_addresses`
+
+Required:
+
+- `domain_id` (String) Unique ID of the email domain. e.g. "test.example.com"
+- `route_id` (String) Unique ID of the email route.
 
 
 <a id="nestedblock--bullseye_rings"></a>

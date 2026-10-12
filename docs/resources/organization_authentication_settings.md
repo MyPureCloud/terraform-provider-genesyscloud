@@ -38,6 +38,7 @@ The following OAuth scopes are required to use this resource:
 ```terraform
 resource "genesyscloud_organization_authentication_settings" "example_authentication_settings" {
   multifactor_authentication_required = false
+  universal_logout                    = false
   domain_allowlist_enabled            = true
   domain_allowlist                    = ["example.com", "genesys.com"]
   ip_address_allowlist                = []
@@ -65,6 +66,7 @@ resource "genesyscloud_organization_authentication_settings" "example_authentica
 - `multifactor_authentication_required` (Boolean) Indicates whether multi-factor authentication is required.
 - `password_requirements` (Block List, Max: 1) The password requirements for the organization. (see [below for nested schema](#nestedblock--password_requirements))
 - `timeout_settings` (Block List, Max: 1) the time out settings for the tokens (see [below for nested schema](#nestedblock--timeout_settings))
+- `universal_logout` (Boolean) Indicates whether universal logout is enabled for the organization. Defaults to `false`.
 
 ### Read-Only
 

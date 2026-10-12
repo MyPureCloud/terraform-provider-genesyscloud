@@ -132,6 +132,74 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 	})
 }
 
+// TestAccResourceOutboundSettingsRetention validates the default contact list retention
+// attributes (contact_list_default_retention_type, contact_list_default_retention_days,
+// time_zone). It specifically covers the set -> clear transition, which is what catches the
+// PATCH issue where a removed retention_days value is not cleared server-side.
+func TestAccResourceOutboundSettingsRetention(t *testing.T) {
+	t.Parallel()
+	var (
+		resourceLabel = "outbound_settings_retention"
+		fullPath      = "genesyscloud_outbound_settings." + resourceLabel
+		retentionDays = "30"
+		timeZone      = "Europe/Dublin"
+	)
+
+	retentionBlock := func(retentionType, days, tz string) string {
+		block := fmt.Sprintf("contact_list_default_retention_type = %s\n", strconv.Quote(retentionType))
+		if days != util.NullValue {
+			block += fmt.Sprintf("contact_list_default_retention_days = %s\n", days)
+		}
+		if tz != util.NullValue {
+			block += fmt.Sprintf("time_zone = %s\n", strconv.Quote(tz))
+		}
+		return block
+	}
+
+	baseConfig := func(retention string) string {
+		return generateOutboundSettingsResource(
+			resourceLabel,
+			"5",   // max_calls_per_agent
+			"0.2", // max_line_utilization
+			"12.6",
+			"CALLS_THAT_REACHED_QUEUE",
+			util.FalseValue,
+			retention,
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		Steps: []resource.TestStep{
+			{
+				// Set RetentionDays with a day count and time zone.
+				Config: baseConfig(retentionBlock("RetentionDays", retentionDays, timeZone)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullPath, "contact_list_default_retention_type", "RetentionDays"),
+					resource.TestCheckResourceAttr(fullPath, "contact_list_default_retention_days", retentionDays),
+					resource.TestCheckResourceAttr(fullPath, "time_zone", timeZone),
+				),
+			},
+			{
+				// Clear retention_days by switching to Never. This is the step that catches the
+				// PATCH issue: the removed retention_days must be cleared, not retained.
+				Config: baseConfig(retentionBlock("Never", util.NullValue, util.NullValue)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullPath, "contact_list_default_retention_type", "Never"),
+					resource.TestCheckResourceAttr(fullPath, "contact_list_default_retention_days", "0"),
+				),
+			},
+			{
+				// No perpetual diff after clearing.
+				Config:             baseConfig(retentionBlock("Never", util.NullValue, util.NullValue)),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
 func generateOutboundSettingsResource(
 	resourceLabel string,
 	maxCallsPerAgent string,

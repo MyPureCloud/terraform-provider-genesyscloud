@@ -270,11 +270,42 @@ type AgenticVirtualAgentEventSettings struct {
 // AgenticVirtualAgentVersionSettings holds runtime behavior settings.
 type AgenticVirtualAgentVersionSettings struct {
 	ComfortStatement *AgenticVirtualAgentComfortStatementSettings `json:"comfortStatement,omitempty"`
+	// DynamicTurnInstructions holds instructions injected into the agent's turn based on
+	// conversation state (e.g. repetition checks). Per the live API contract (verified via a GET on
+	// a saved version), this field is nested under settings: definition.settings.dynamicTurnInstructions.
+	// Ref: SAGE-1169 / public-api-v2 PR #18032.
+	DynamicTurnInstructions *AgenticVirtualAgentDynamicTurnInstructions `json:"dynamicTurnInstructions,omitempty"`
 }
 
 // AgenticVirtualAgentComfortStatementSettings controls comfort statements during tool calls.
 type AgenticVirtualAgentComfortStatementSettings struct {
 	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// =============================================================================
+// Dynamic Turn Instructions (repetition checks)
+//
+// Contract models: AgenticVirtualAgentDynamicTurnInstructions and
+// AgenticVirtualAgentRepetitionCheck. These are live on the /versions/ endpoint but currently
+// HIDDEN from the public Swagger spec / Go SDK (see note on
+// AgenticVirtualAgentVersionSettings.DynamicTurnInstructions). The field is nested under settings:
+// definition.settings.dynamicTurnInstructions.
+// =============================================================================
+
+// AgenticVirtualAgentDynamicTurnInstructions holds instructions dynamically added to the
+// virtual agent based on conversation state.
+type AgenticVirtualAgentDynamicTurnInstructions struct {
+	RepetitionChecks []AgenticVirtualAgentRepetitionCheck `json:"repetitionChecks,omitempty"`
+}
+
+// AgenticVirtualAgentRepetitionCheck is a rule that detects repeated user or agent messages and
+// adds a corrective instruction to the agent's turn.
+// Required: type, messages, similarity, instruction
+type AgenticVirtualAgentRepetitionCheck struct {
+	Type        string `json:"type"`
+	Messages    int    `json:"messages"`
+	Similarity  string `json:"similarity"`
+	Instruction string `json:"instruction"`
 }
 
 // =============================================================================

@@ -101,6 +101,22 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       comfort_statement {
         enabled = true
       }
+
+      dynamic_turn_instructions {
+        repetition_check {
+          type        = "Agent"
+          messages    = 2
+          similarity  = "Moderate"
+          instruction = "Your last two responses were very similar. Vary your language, tone, and structure substantially."
+        }
+
+        repetition_check {
+          type        = "User"
+          messages    = 3
+          similarity  = "VeryStrict"
+          instruction = "The user keeps asking the same thing. Acknowledge the repetition and try a different approach or offer to escalate."
+        }
+      }
     }
   }
 }
@@ -177,6 +193,7 @@ Optional:
 Optional:
 
 - `comfort_statement` (Block List, Max: 1) Comfort statement settings for tool calls. (see [below for nested schema](#nestedblock--definition--settings--comfort_statement))
+- `dynamic_turn_instructions` (Block List, Max: 1) Instructions dynamically added to the virtual agent based on conversation state (e.g. repetition checks). (see [below for nested schema](#nestedblock--definition--settings--dynamic_turn_instructions))
 
 <a id="nestedblock--definition--settings--comfort_statement"></a>
 ### Nested Schema for `definition.settings.comfort_statement`
@@ -184,6 +201,25 @@ Optional:
 Optional:
 
 - `enabled` (Boolean) Whether comfort statements are enabled during eligible tool calls.
+
+
+<a id="nestedblock--definition--settings--dynamic_turn_instructions"></a>
+### Nested Schema for `definition.settings.dynamic_turn_instructions`
+
+Optional:
+
+- `repetition_check` (Block List) Checks that add dynamic instructions for the agent when user or agent messages repeat. (see [below for nested schema](#nestedblock--definition--settings--dynamic_turn_instructions--repetition_check))
+
+<a id="nestedblock--definition--settings--dynamic_turn_instructions--repetition_check"></a>
+### Nested Schema for `definition.settings.dynamic_turn_instructions.repetition_check`
+
+Required:
+
+- `instruction` (String) The instruction added to the virtual agent's turn when message similarity matches the configured category.
+- `messages` (Number) The number of prior messages of the specified type to compare for repetition. Must be at least 1.
+- `similarity` (String) The similarity category compared to the Levenshtein result that triggers this check's instruction. Allowed values: Moderate, VeryStrict.
+- `type` (String) Whether this check looks for repetition in user messages or agent responses.
+
 
 
 

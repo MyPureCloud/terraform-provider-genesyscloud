@@ -64,6 +64,22 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       comfort_statement {
         enabled = true
       }
+
+      dynamic_turn_instructions {
+        repetition_check {
+          type        = "Agent"
+          messages    = 2
+          similarity  = "Moderate"
+          instruction = "Your last two responses were very similar. Vary your language, tone, and structure substantially."
+        }
+
+        repetition_check {
+          type        = "User"
+          messages    = 3
+          similarity  = "VeryStrict"
+          instruction = "The user keeps asking the same thing. Acknowledge the repetition and try a different approach or offer to escalate."
+        }
+      }
     }
   }
 }

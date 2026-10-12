@@ -3,7 +3,6 @@ package speechandtextanalytics_dictionaryfeedback
 import (
 	"fmt"
 	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -58,10 +57,6 @@ func cleanupDictionaryFeedbackByTerm(term, dialect string) {
 
 func TestAccResourceDictionaryFeedback(t *testing.T) {
 	//t.Parallel()
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
 	var (
 		resourceName   = "test-dictionary-feedback"
 		term           = "genesys"
@@ -115,6 +110,10 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 				ResourceName:      ResourceType + "." + resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// example_phrases and source are accepted on write but not returned by the API on
+				// read for the Genesys engine (English/Spanish dialects), so they cannot be
+				// reconstructed on a fresh import. Ignore them during import verification.
+				ImportStateVerifyIgnore: []string{"example_phrases", "source"},
 			},
 		},
 		CheckDestroy: testVerifyDictionaryFeedbackDestroyed,
@@ -122,10 +121,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 }
 
 func TestAccResourceDictionaryFeedbackGenesysExtended(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
+
 	var (
 		resourceName = "test-dictionary-feedback-extended"
 		term         = "covid"

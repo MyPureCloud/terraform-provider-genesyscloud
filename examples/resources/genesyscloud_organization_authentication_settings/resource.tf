@@ -1,5 +1,6 @@
 resource "genesyscloud_organization_authentication_settings" "example_authentication_settings" {
   multifactor_authentication_required = false
+  universal_logout                    = false
   domain_allowlist_enabled            = true
   domain_allowlist                    = ["example.com", "genesys.com"]
   ip_address_allowlist                = []
