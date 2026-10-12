@@ -155,11 +155,14 @@ func TestAccResourceAgenticVirtualAgentVersionWithModel(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: generateAgentResource(agentResourceLabel, agentName) +
-					generateVersionResourceWithModelAndSettings(versionResourceLabel, agentResourceLabel, role, instruction1, "Preview"),
+					generateVersionResourceWithModelAndSettings(versionResourceLabel, agentResourceLabel, role, instruction1, ""),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.role", role),
-					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.model", "Preview"),
+					// model is server-controlled (Optional + Computed). After the APT-1 -> APT-2
+					// migration the API always returns "Stable", so assert the field is set rather
+					// than pinning a specific value.
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "definition.0.model"),
 					// settings.comfort_statement coverage
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.comfort_statement.0.enabled", "true"),
 				),
@@ -167,7 +170,7 @@ func TestAccResourceAgenticVirtualAgentVersionWithModel(t *testing.T) {
 			{
 				// Plan should be a no-op after apply (round-trip check for model + settings)
 				Config: generateAgentResource(agentResourceLabel, agentName) +
-					generateVersionResourceWithModelAndSettings(versionResourceLabel, agentResourceLabel, role, instruction1, "Preview"),
+					generateVersionResourceWithModelAndSettings(versionResourceLabel, agentResourceLabel, role, instruction1, ""),
 				PlanOnly:           true,
 				ExpectNonEmptyPlan: false,
 			},
@@ -426,13 +429,21 @@ func generateVersionResourceWithEvents(resourceLabel, agentResourceLabel, role, 
 }
 
 func generateVersionResourceWithModelAndSettings(resourceLabel, agentResourceLabel, role, instruction1, model string) string {
+	// model is Optional + Computed and server-controlled. When an explicit value is passed it is
+	// emitted; when empty the line is omitted so the API decides the value. Note: after the
+	// APT-1 -> APT-2 migration the API always returns "Stable" (no preview model is currently
+	// available), so tests should not assert or pin a specific model value.
+	modelLine := ""
+	if model != "" {
+		modelLine = fmt.Sprintf("model = \"%s\"", model)
+	}
 	return fmt.Sprintf(`resource "%s" "%s" {
 		agent_id = genesyscloud_agentic_virtual_agent.%s.id
 
 		definition {
 			role         = "%s"
 			instructions = ["%s"]
-			model        = "%s"
+			%s
 
 			settings {
 				comfort_statement {
@@ -441,7 +452,7 @@ func generateVersionResourceWithModelAndSettings(resourceLabel, agentResourceLab
 			}
 		}
 	}
-	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, model)
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, modelLine)
 }
 
 func generateVersionResourceWithTypes(resourceLabel, agentResourceLabel, role, instruction1 string) string {

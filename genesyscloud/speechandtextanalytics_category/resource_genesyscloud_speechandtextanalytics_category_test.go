@@ -2,6 +2,7 @@ package speechandtextanalytics_category
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/google/uuid"
@@ -95,6 +96,7 @@ func TestAccResourceSpeechAndTextAnalyticsCategory(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description1),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "interaction_type", interactionType),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "criteria"),
+					resource.TestMatchResourceAttr(ResourceType+"."+resourceLabel, "criteria", regexp.MustCompile(`"word":\s*"refund"`)),
 				),
 			},
 			{
@@ -111,6 +113,7 @@ func TestAccResourceSpeechAndTextAnalyticsCategory(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description2),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "interaction_type", interactionType),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "criteria"),
+					resource.TestMatchResourceAttr(ResourceType+"."+resourceLabel, "criteria", regexp.MustCompile(`"word":\s*"cancel"`)),
 				),
 			},
 			{

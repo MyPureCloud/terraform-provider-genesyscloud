@@ -355,8 +355,9 @@ func ResourceOutboundContactList() *schema.Resource {
 				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
 			},
 			`retention_days`: {
-				Description: `The number of days to retain this contact list. Required when retention_type is RetentionDays.`,
+				Description: `The number of days to retain this contact list. Required when retention_type is RetentionDays. If omitted in configuration, the API value (including organization defaults) is stored in state.`,
 				Optional:    true,
+				Computed:    true,
 				Type:        schema.TypeInt,
 			},
 			`time_zone`: {
