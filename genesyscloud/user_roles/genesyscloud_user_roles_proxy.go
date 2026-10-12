@@ -52,7 +52,7 @@ func (p *userRolesProxy) updateUserRoles(ctx context.Context, roleID string, rol
 func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false)
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
@@ -75,26 +75,20 @@ func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (
 func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Get existing roles/divisions
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false)
 
-	if err != nil || (resp != nil && resp.StatusCode == http.StatusNotFound) || subject == nil {
-		return resp, fmt.Errorf("failed to get current grants for subject %s: %s while updating user role", roleId, err)
+	if err != nil || (resp != nil && resp.StatusCode == http.StatusNotFound) || subject == nil || subject.Id == nil {
+		return resp, fmt.Errorf("failed to get current grants for subject %s: %v while updating user role", roleId, err)
 	}
 
 	grants, _, err := getAssignedGrants(*subject.Id, p)
-
-	existingGrants, configGrants, _ := getExistingAndConfigGrants(grants, rolesConfig)
-
 	if err != nil {
-		return resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
+		return resp, fmt.Errorf("failed to get current grants for subject %s: %v", roleId, err)
 	}
 
-	if subject != nil && subject.Grants != nil {
-		for _, grant := range *subject.Grants {
-			if grant.SubjectId != nil && *grant.SubjectId == roleId {
-				grants = append(grants, grant)
-			}
-		}
+	existingGrants, configGrants, err := getExistingAndConfigGrants(grants, rolesConfig)
+	if err != nil {
+		return resp, fmt.Errorf("failed to build grant lists for subject %s: %v", roleId, err)
 	}
 
 	grantsToRemove, grantsToAdd := getGrantsToAddAndRemove(existingGrants, configGrants)
@@ -131,7 +125,7 @@ func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, ro
 
 func getAssignedGrants(subjectID string, p *userRolesProxy) ([]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, true)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, false)
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", subjectID, err)

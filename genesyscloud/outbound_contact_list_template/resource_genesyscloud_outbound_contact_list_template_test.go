@@ -343,7 +343,7 @@ func TestAccResourceOutboundContactListTemplateRetention(t *testing.T) {
 	var (
 		resourceLabel = "contact-list-template-retention"
 		fullPath      = ResourceType + "." + resourceLabel
-		name          = "Test Contact List Template Retention " + uuid.NewString()
+		name          = "Test CL Template Retention " + uuid.NewString()
 		columnNames   = []string{strconv.Quote("Cell")}
 		retentionDays = "45"
 		timeZone      = "Europe/Dublin"

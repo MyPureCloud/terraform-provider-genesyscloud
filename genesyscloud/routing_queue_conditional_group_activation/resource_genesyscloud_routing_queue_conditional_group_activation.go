@@ -29,7 +29,7 @@ func getAllRoutingQueueConditionalGroupActivation(ctx context.Context, clientCon
 		return nil, nil
 	}
 
-	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.routingQueueProxy.GetAllRoutingQueues(ctx, "", false, true)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get conditional group activation rules: %s", err), resp)
 	}

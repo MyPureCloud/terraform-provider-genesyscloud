@@ -216,7 +216,7 @@ Optional:
 Required:
 
 - `instruction` (String) The instruction added to the virtual agent's turn when message similarity matches the configured category.
-- `messages` (Number) The number of prior messages of the specified type to compare for repetition.
+- `messages` (Number) The number of prior messages of the specified type to compare for repetition. Must be at least 1.
 - `similarity` (String) The similarity category compared to the Levenshtein result that triggers this check's instruction. Allowed values: Moderate, VeryStrict.
 - `type` (String) Whether this check looks for repetition in user messages or agent responses.
 

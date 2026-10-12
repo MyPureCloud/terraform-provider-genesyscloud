@@ -37,12 +37,7 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
 	}
-	if retentionType := d.Get("retention_type").(string); retentionType != "" {
-		contactRequest.RetentionType = &retentionType
-	}
-	if retentionDays := d.Get("retention_days").(int); retentionDays != 0 {
-		contactRequest.RetentionDays = &retentionDays
-	}
+	applyDialerContactRetentionWritable(&contactRequest, d, d.Get("retention_type").(string), d.Get("retention_days").(int))
 	return contactRequest
 }
 
@@ -64,13 +59,57 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
 	}
-	if retentionType := d.Get("retention_type").(string); retentionType != "" {
-		contactRequest.RetentionType = &retentionType
-	}
-	if retentionDays := d.Get("retention_days").(int); retentionDays != 0 {
-		contactRequest.RetentionDays = &retentionDays
-	}
+	applyDialerContactRetention(&contactRequest, d, d.Get("retention_type").(string), d.Get("retention_days").(int))
 	return contactRequest
+}
+
+func applyDialerContactRetention(contact *platformclientv2.Dialercontact, d *schema.ResourceData, retentionType string, retentionDays int) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			contact.RetentionDays = &retentionDays
+		}
+		return
+	}
+	contact.RetentionType = &retentionType
+	switch retentionType {
+	case "Never", "Today":
+		contact.RetentionDays = nil
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("retention_days")) {
+			contact.RetentionDays = &retentionDays
+		}
+	}
+}
+
+func applyDialerContactRetentionWritable(contact *platformclientv2.Writabledialercontact, d *schema.ResourceData, retentionType string, retentionDays int) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			contact.RetentionDays = &retentionDays
+		}
+		return
+	}
+	contact.RetentionType = &retentionType
+	switch retentionType {
+	case "Never", "Today":
+		contact.RetentionDays = nil
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("retention_days")) {
+			contact.RetentionDays = &retentionDays
+		}
+	}
+}
+
+func setDialerContactRetentionState(d *schema.ResourceData, retentionType *string, retentionDays *int) {
+	if retentionType != nil {
+		resourcedata.SetNillableValue(d, "retention_type", retentionType)
+		if *retentionType != "RetentionDays" {
+			_ = d.Set("retention_days", 0)
+		} else {
+			resourcedata.SetNillableValue(d, "retention_days", retentionDays)
+		}
+	} else {
+		resourcedata.SetNillableValue(d, "retention_days", retentionDays)
+	}
 }
 
 func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2.Contactablestatus {
