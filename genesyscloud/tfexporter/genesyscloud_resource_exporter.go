@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,7 +42,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mohae/deepcopy"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -126,21 +127,22 @@ type GenesysCloudResourceExporter struct {
 
 	// 4-byte alignment
 	// .. Mutex
-	buildSecondDepsMutex       sync.RWMutex
-	cyclicDependsListMutex     sync.Mutex
-	dataSourceTypesMapsMutex   sync.RWMutex
-	dependsListMutex           sync.RWMutex
-	exMutex                    sync.RWMutex
-	exportersMutex             sync.RWMutex
-	filterListMutex            sync.RWMutex
-	flowResourcesListMutex     sync.RWMutex
-	replaceWithDatasourceMutex sync.Mutex
-	resourceErrorsMutex        sync.RWMutex
-	resourcesMutex             sync.Mutex
-	resourceStateMutex         sync.Mutex
-	resourceTypesMapsMutex     sync.RWMutex
-	unresolvedAttrsMutex       sync.Mutex
-	attributesDecodedMutex     sync.Mutex
+	buildSecondDepsMutex          sync.RWMutex
+	cyclicDependsListMutex        sync.Mutex
+	dataSourceTypesMapsMutex      sync.RWMutex
+	dependsListMutex              sync.RWMutex
+	exMutex                       sync.RWMutex
+	exportersMutex                sync.RWMutex
+	filterListMutex               sync.RWMutex
+	flowResourcesListMutex        sync.RWMutex
+	replaceWithDatasourceMutex    sync.Mutex
+	resourceErrorsMutex           sync.RWMutex
+	resourcesExportedForMrMoMutex sync.Mutex
+	resourcesMutex                sync.Mutex
+	resourceStateMutex            sync.Mutex
+	resourceTypesMapsMutex        sync.RWMutex
+	unresolvedAttrsMutex          sync.Mutex
+	attributesDecodedMutex        sync.Mutex
 
 	// .. Int
 	maxConcurrentOps int // New field to control concurrency
@@ -224,6 +226,7 @@ func NewGenesysCloudResourceExporter(ctx context.Context, d *schema.ResourceData
 		ctx:                      ctx,
 		meta:                     meta,
 		maxConcurrentOps:         d.Get("max_concurrent_threads").(int), // Default to 10 concurrent operations
+		resourceErrors:           make(map[string][]ResourceErrorInfo),
 	}
 
 	// Only fall back to provider's MaxClients if max_concurrent_threads was not explicitly set
@@ -280,6 +283,7 @@ func NewThreadSafeGenesysCloudResourceExporter(d *schema.ResourceData, ctx conte
 		exportComputed:           d.Get("export_computed").(bool),
 		exportOmitUnresolvedRefs: d.Get("export_omit_unresolved_refs").(bool),
 		maxConcurrentOps:         10, // Default to 10 concurrent operations
+		resourceErrors:           make(map[string][]ResourceErrorInfo),
 	}
 
 	// Set max concurrent operations based on configuration if available
@@ -768,6 +772,21 @@ func (g *GenesysCloudResourceExporter) buildResourceConfigMap() (diagnostics dia
 				g.addUnresolvedAttrs(unresolvableAttrs)
 			}
 
+			// 5.5. When computed attributes are being excluded (export_computed=false), a nested
+			// block can be left with all of its fields nil: its computed fields were excluded and
+			// its remaining user fields held zero values that sanitization nil'd out. Such a block
+			// would render as an empty `foo {}` shell, which is confusing (a user may think a value
+			// is required) and carries no information. Remove blocks whose fields are ALL nil.
+			//
+			// This deliberately treats only all-nil blocks as empty. Attributes preserved by
+			// AllowEmptyArrays are set to a non-nil empty slice ([]interface{}{}) during sanitization,
+			// so a block retaining such an attribute is NOT all-nil and is correctly kept. Gated to
+			// export_computed=false so the default (export_computed=true) output is unchanged.
+			// See GitHub issue #2417.
+			if !g.exportComputed {
+				removeAllNilNestedBlocks(configMap)
+			}
+
 			// 6. Handle custom write attributes (i.e. exporting files like prompts, flows, scripts, etc)
 			if !result.isDataSource {
 				diagErr = g.customWriteAttributes(configMap, resource)
@@ -967,7 +986,11 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnos
 	}
 
 	if g.includeStateFile {
-		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry)
+		var providerResources map[string]*schema.Resource
+		if g.provider != nil {
+			providerResources = g.provider.ResourcesMap
+		}
+		t, err := NewTFStateWriter(g.ctx, g.resources, g.d, g.providerRegistry, providerResources)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1062,6 +1085,12 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 	tflog.Info(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Starting dependency resolution for flows")
 
 	if g.addDependsOn {
+		// Verify the dependency tracking index is operational before querying consumed resources.
+		// Without this check, the API may return stale or incomplete dependency data.
+		if diagErr := g.ensureDependencyTrackingOperational(); diagErr != nil {
+			return diagErr
+		}
+
 		tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution enabled, processing dependencies")
 		filterList, resources, err := g.processAndBuildDependencies()
 		if err != nil {
@@ -1086,6 +1115,69 @@ func (g *GenesysCloudResourceExporter) buildAndExportDependsOnResourcesForFlows(
 		return nil
 	}
 	tflog.Debug(g.ctx, "[buildAndExportDependsOnResourcesForFlows] Dependency resolution disabled (addDependsOn=false)")
+	return nil
+}
+
+// ensureDependencyTrackingOperational checks if the Architect dependency tracking index
+// is in an OPERATIONAL state before querying consumed resources. If the index is not ready,
+// it triggers a rebuild and polls until it becomes operational.
+func (g *GenesysCloudResourceExporter) ensureDependencyTrackingOperational() diag.Diagnostics {
+	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
+	architectApi := platformclientv2.NewArchitectApiWithConfig(sdkConfig)
+
+	status, _, err := architectApi.GetArchitectDependencytrackingBuild()
+	if err != nil {
+		tflog.Warn(g.ctx, fmt.Sprintf("Failed to check dependency tracking status: %v, proceeding anyway", err))
+		return nil
+	}
+
+	if status != nil && status.Status != nil && *status.Status == "OPERATIONAL" {
+		tflog.Info(g.ctx, "Dependency tracking index is OPERATIONAL")
+		return nil
+	}
+
+	currentStatus := "unknown"
+	if status != nil && status.Status != nil {
+		currentStatus = *status.Status
+	}
+	tflog.Info(g.ctx, fmt.Sprintf("Dependency tracking index status is %s, triggering rebuild", currentStatus))
+
+	_, err = architectApi.PostArchitectDependencytrackingBuild()
+	if err != nil {
+		tflog.Warn(g.ctx, fmt.Sprintf("Failed to trigger dependency tracking rebuild: %v, proceeding anyway", err))
+		return nil
+	}
+
+	// Poll until OPERATIONAL with a timeout
+	maxAttempts := 30
+	for i := 0; i < maxAttempts; i++ {
+		time.Sleep(10 * time.Second)
+
+		status, _, err = architectApi.GetArchitectDependencytrackingBuild()
+		if err != nil {
+			tflog.Warn(g.ctx, fmt.Sprintf("Failed to get dependency tracking build status: %v, proceeding anyway", err))
+			return nil
+		}
+
+		if status != nil && status.Status != nil {
+			switch *status.Status {
+			case "OPERATIONAL":
+				tflog.Info(g.ctx, "Dependency tracking rebuild complete")
+				return nil
+			case "BUILDINITIALIZING", "BUILDINPROGRESS":
+				tflog.Debug(g.ctx, fmt.Sprintf("Dependency tracking status: %s, waiting...", *status.Status))
+				continue
+			case "BUILDINCOMPLETE", "NOTBUILT":
+				tflog.Warn(g.ctx, fmt.Sprintf("Dependency tracking rebuild failed with status: %s, proceeding anyway", *status.Status))
+				return nil
+			default:
+				tflog.Warn(g.ctx, fmt.Sprintf("Unexpected dependency tracking status: %s, proceeding anyway", *status.Status))
+				return nil
+			}
+		}
+	}
+
+	tflog.Warn(g.ctx, "Dependency tracking rebuild timed out, proceeding anyway")
 	return nil
 }
 
@@ -1130,6 +1222,14 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 
 	// Thread-safe read of resources
 	resourcesList := g.getResources()
+
+	// Sort resources by ID to ensure deterministic processing order across runs.
+	// Without this, the order depends on goroutine scheduling during resource retrieval,
+	// which causes non-deterministic depends_on output.
+	sort.Slice(resourcesList, func(i, j int) bool {
+		return resourcesList[i].State.ID < resourcesList[j].State.ID
+	})
+
 	for _, resourceKeys := range resourcesList {
 		tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Processing resource: type=%s, id=%s, label=%s", resourceKeys.Type, resourceKeys.State.ID, resourceKeys.BlockLabel))
 
@@ -1146,10 +1246,10 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 			continue
 		}
 
-		// Check if this flow is marked as a data source - if so, skip dependency fetching entirely
-		// Data source flows are just referenced and not managed, so we don't need their dependencies
-		if resourceKeys.Type == "genesyscloud_flow" && g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
-			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source flow %s", resourceKeys.State.ID))
+		// Data source flows and scripts are just referenced and not managed, so skip their dependencies.
+		if (resourceKeys.Type == "genesyscloud_flow" || resourceKeys.Type == "genesyscloud_script") &&
+			g.isDataSource(resourceKeys.Type, resourceKeys.BlockLabel, resourceKeys.OriginalLabel) {
+			tflog.Debug(g.ctx, fmt.Sprintf("[processAndBuildDependencies] Skipping dependency resolution for data source %s %s", resourceKeys.Type, resourceKeys.State.ID))
 			skippedCount++
 			continue
 		}
@@ -1289,7 +1389,75 @@ func (g *GenesysCloudResourceExporter) processAndBuildDependencies() (filters []
 	if !g.ignoreCyclicDeps && len(cyclicDependsListCopy) > 0 {
 		return nil, nil, diag.Errorf("Cyclic Dependencies Identified:  %v ", strings.Join(cyclicDependsListCopy, "\n"))
 	}
+
+	// When ignoreCyclicDeps is true, proactively detect and remove bidirectional
+	// dependencies from dependsList to prevent Terraform "Error: Cycle"
+	if g.ignoreCyclicDeps {
+		g.dependsListMutex.Lock()
+		removed := g.removeCyclicDependencies()
+		g.dependsListMutex.Unlock()
+		if removed > 0 {
+			log.Printf("[processAndBuildDependencies] Removed %d cyclic dependency entries from dependsList", removed)
+		}
+	}
+
 	return filterList, totalResources, nil
+}
+
+// removeCyclicDependencies detects bidirectional dependencies in g.dependsList and removes
+// one side to break cycles. If resource A depends on B AND B depends on A, we remove B's
+// dependency on A (keeping A's dependency on B). This must be called while holding dependsListMutex.
+func (g *GenesysCloudResourceExporter) removeCyclicDependencies() int {
+	// dependsList format: map[resourceId][]string{"resourceType.dependencyId", ...}
+	removedCount := 0
+
+	// First pass: identify all cyclic pairs
+	type cyclicPair struct {
+		resourceA string
+		resourceB string
+	}
+	cyclicPairs := make([]cyclicPair, 0)
+
+	for resourceID, deps := range g.dependsList {
+		for _, dep := range deps {
+			parts := strings.SplitN(dep, ".", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			depID := parts[1]
+
+			// Check if the dependency also depends on us
+			if reverseDeps, exists := g.dependsList[depID]; exists {
+				for _, reverseDep := range reverseDeps {
+					reverseParts := strings.SplitN(reverseDep, ".", 2)
+					if len(reverseParts) == 2 && reverseParts[1] == resourceID {
+						cyclicPairs = append(cyclicPairs, cyclicPair{resourceA: resourceID, resourceB: depID})
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: remove all cyclic dependencies (both directions)
+	for _, pair := range cyclicPairs {
+		// Remove B from A's deps
+		if deps, exists := g.dependsList[pair.resourceA]; exists {
+			cleaned := make([]string, 0, len(deps))
+			for _, dep := range deps {
+				parts := strings.SplitN(dep, ".", 2)
+				if len(parts) == 2 && parts[1] == pair.resourceB {
+					log.Printf("[removeCyclicDependencies] Removing: %s -> %s", pair.resourceA, dep)
+					removedCount++
+					continue
+				}
+				cleaned = append(cleaned, dep)
+			}
+			g.dependsList[pair.resourceA] = cleaned
+		}
+	}
+
+	return removedCount
 }
 
 func (g *GenesysCloudResourceExporter) rebuildExports(filterList []string) (diagErr diag.Diagnostics) {
@@ -2121,8 +2289,16 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 			continue
 		}
 
-		// Remove any computed but optional attributes if export computed exporter config not set
-		if s.Computed == true && !g.exportComputed {
+		// Remove any computed but optional attributes if export computed exporter config not set.
+		//
+		// Exception: a nested block (Elem is *schema.Resource) may be flagged Computed at the
+		// container level while still holding user-settable children (e.g.
+		// genesyscloud_integration.config, whose name/notes/credentials are user input). Excluding
+		// the whole block here would drop those user-set fields and produce a non-portable export
+		// (see GitHub issue #2417). For such blocks we skip the wholesale exclusion and instead fall
+		// through to the recursion below, which excludes only the genuinely computed leaf children.
+		_, isNestedBlock := s.Elem.(*schema.Resource)
+		if s.Computed == true && !g.exportComputed && !isNestedBlock {
 			tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' attribute to be excluded from the '%s' resource type export because it is a computed, but optional attribute and exclude_computed was set", fullPath, resourceType))
 			excludedAttributes = append(excludedAttributes, fullPath)
 			continue
@@ -2135,10 +2311,50 @@ func (g *GenesysCloudResourceExporter) collectSchemaBasedExcludedAttributes(reso
 			continue
 		}
 		if elem, ok := s.Elem.(*schema.Resource); ok {
-			excludedAttributes = append(excludedAttributes, g.collectSchemaBasedExcludedAttributes(resourceType, elem.Schema, fullPath)...)
+			childExcluded := g.collectSchemaBasedExcludedAttributes(resourceType, elem.Schema, fullPath)
+
+			// If recursion excluded every child of this block, the block would export as an
+			// empty `foo {}` shell. That is confusing (a user may think they must fill it in) and
+			// adds no value, so collapse the child exclusions into a single exclusion of the whole
+			// block path. This only applies when EVERY child is excluded; blocks that retain at
+			// least one user-settable child keep the block and just drop their computed leaves.
+			//
+			// Gated to !g.exportComputed: read-only computed leaves are always excluded regardless
+			// of export_computed, so a block made up solely of such leaves (e.g. a metadata block
+			// containing only a read-only "version" field) would otherwise collapse even when
+			// export_computed=true or export_deprecated=false, changing output on paths this fix is
+			// not meant to touch. Under export_computed=true that block still exports as an empty
+			// shell, matching pre-fix behavior; this collapse is intentionally scoped to the
+			// export_computed=false case described in GitHub issue #2417.
+			if !g.exportComputed && allChildrenExcluded(elem.Schema, fullPath, childExcluded) {
+				tflog.Debug(g.ctx, fmt.Sprintf("Marking the '%s' block to be excluded from the '%s' resource type export because all of its children are excluded", fullPath, resourceType))
+				excludedAttributes = append(excludedAttributes, fullPath)
+			} else {
+				excludedAttributes = append(excludedAttributes, childExcluded...)
+			}
 		}
 	}
 	return excludedAttributes
+}
+
+// allChildrenExcluded reports whether every direct child of a nested block (identified by
+// blockPath, with the block's element schema childSchema) is present in the excluded set.
+// A child that is itself a nested block counts as excluded when the block path is excluded
+// (the recursion collapses fully-excluded sub-blocks into their block path).
+func allChildrenExcluded(childSchema map[string]*schema.Schema, blockPath string, excluded []string) bool {
+	if len(childSchema) == 0 {
+		return false
+	}
+	excludedSet := make(map[string]bool, len(excluded))
+	for _, e := range excluded {
+		excludedSet[e] = true
+	}
+	for name := range childSchema {
+		if !excludedSet[blockPath+"."+name] {
+			return false
+		}
+	}
+	return true
 }
 
 func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, resource *schema.Resource, resID string, resMeta *resourceExporter.ResourceMeta, meta interface{}, resType string) (*terraform.InstanceState, diag.Diagnostics) {
@@ -2196,15 +2412,7 @@ func (g *GenesysCloudResourceExporter) getResourceState(ctx context.Context, res
 	}
 
 	if mrmo.IsActive() {
-		g.resourceExportedForMrMo = resource.Data(state)
-		if g.resourcesExportedForMrMo == nil {
-			tmp := make(map[string][]*schema.ResourceData, 0)
-			g.resourcesExportedForMrMo = &tmp
-		}
-		if (*g.resourcesExportedForMrMo)[resType] == nil {
-			(*g.resourcesExportedForMrMo)[resType] = make([]*schema.ResourceData, 0)
-		}
-		(*g.resourcesExportedForMrMo)[resType] = append((*g.resourcesExportedForMrMo)[resType], resource.Data(state))
+		g.recordMrMoResourceExport(resType, resource.Data(state))
 	}
 
 	tflog.Debug(g.ctx, fmt.Sprintf("Successfully retrieved state for resource %s with ID: %s", resID, state.ID))
@@ -2337,13 +2545,16 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 		case map[string]interface{}:
 			// Maps are sanitized in-place
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), fullAttributePath, exporters, exportingState, exportFormat, false)
+			nestedUnresolved, res := g.sanitizeConfigMap(resource, val.(map[string]interface{}), fullAttributePath, exporters, exportingState, exportFormat, false)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
 			if !res || len(currMap) == 0 {
 				// Remove empty maps or maps indicating they should be removed
 				configMap[attributeConfigKey] = nil
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), fullAttributePath, exporters, exportingState, exportFormat); len(arr) > 0 {
+			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.([]interface{}), fullAttributePath, exporters, exportingState, exportFormat)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
+			if len(arr) > 0 {
 				configMap[attributeConfigKey] = arr
 			} else {
 				// Remove empty arrays
@@ -2392,13 +2603,21 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 			g.resolveValueToDataSource(exporter, configMap, fullAttributePath, val)
 		}
 
-		if attr, ok := attrInUnResolvableAttrs(attributeConfigKey, exporter.UnResolvableAttributes); ok {
+		attr, ok := attrInUnResolvableAttrs(fullAttributePath, exporter.UnResolvableAttributes)
+		if !ok {
+			attr, ok = attrInUnResolvableAttrs(attributeConfigKey, exporter.UnResolvableAttributes)
+		}
+		if ok {
 			if resourceBlockType != "data" {
-				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, attributeConfigKey)
+				unresolvableName := attributeConfigKey
+				if prevAttr != "" {
+					unresolvableName = strings.ReplaceAll(fullAttributePath, ".", "_")
+				}
+				varReference := fmt.Sprintf("%s_%s_%s", resourceType, resourceLabel, unresolvableName)
 				unresolvableAttrs = append(unresolvableAttrs, unresolvableAttributeInfo{
 					ResourceType:  resourceType,
 					ResourceLabel: resourceLabel,
-					Name:          attributeConfigKey,
+					Name:          unresolvableName,
 					Schema:        attr,
 				})
 				if properties, ok := attr.Elem.(*schema.Resource); ok {
@@ -2617,21 +2836,25 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 	currAttr string,
 	exporters map[string]*resourceExporter.ResourceExporter,
 	exportingState bool,
-	exportFormat string) []interface{} {
+	exportFormat string) ([]interface{}, []unresolvableAttributeInfo) {
 	resourceType := resource.Type
 	exporter := exporters[resourceType]
 	result := []interface{}{}
+	unresolvableAttrs := make([]unresolvableAttributeInfo, 0)
 	for _, val := range anArray {
 		switch val.(type) {
 		case map[string]interface{}:
 			// Only include in the result if sanitizeConfigMap returns true and the map is not empty
 			currMap := val.(map[string]interface{})
-			_, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportFormat, false)
+			nestedUnresolved, res := g.sanitizeConfigMap(resource, currMap, currAttr, exporters, exportingState, exportFormat, false)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
 			if res && len(currMap) > 0 {
 				result = append(result, val)
 			}
 		case []interface{}:
-			if arr := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat); len(arr) > 0 {
+			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
+			if len(arr) > 0 {
 				result = append(result, arr)
 			}
 		case string:
@@ -2662,7 +2885,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 			result = append(result, val)
 		}
 	}
-	return result
+	return result, unresolvableAttrs
 }
 
 func (g *GenesysCloudResourceExporter) populateConfigExcluded(exporters map[string]*resourceExporter.ResourceExporter, configExcluded []string) diag.Diagnostics {
@@ -2801,6 +3024,62 @@ func removeExcludedAttrsFromMap(configMap util.JsonMap, excludedAttrs []string, 
 			}
 		}
 	}
+}
+
+// removeAllNilNestedBlocks removes nested block values (a map, or a list/set of maps) from a
+// sanitized config map when the block carries no information at all — i.e. every field inside
+// the block is nil. It recurses depth-first so that a block emptied only by the removal of a
+// deeper empty child block is itself removed.
+//
+// It is intentionally conservative: only nil values count as "empty". Any non-nil value keeps
+// the block, including a non-nil empty slice ([]interface{}{}) produced by AllowEmptyArrays and
+// any scalar/zero value the exporter chose to keep. Non-map arrays (e.g. lists of strings) are
+// never treated as blocks and are left untouched.
+func removeAllNilNestedBlocks(configMap map[string]interface{}) {
+	for key, val := range configMap {
+		switch v := val.(type) {
+		case map[string]interface{}:
+			removeAllNilNestedBlocks(v)
+			if isAllNilMap(v) {
+				delete(configMap, key)
+			}
+		case []interface{}:
+			// Only treat this as a block list if its elements are maps. Leave lists of
+			// scalars (and AllowEmptyArrays empty slices) exactly as they are.
+			kept := make([]interface{}, 0, len(v))
+			sawMap := false
+			for _, item := range v {
+				if itemMap, ok := item.(map[string]interface{}); ok {
+					sawMap = true
+					removeAllNilNestedBlocks(itemMap)
+					if !isAllNilMap(itemMap) {
+						kept = append(kept, itemMap)
+					}
+				} else {
+					kept = append(kept, item)
+				}
+			}
+			if !sawMap {
+				// Not a block list (scalars only, or empty slice) — leave untouched.
+				continue
+			}
+			if len(kept) == 0 {
+				delete(configMap, key)
+			} else {
+				configMap[key] = kept
+			}
+		}
+	}
+}
+
+// isAllNilMap reports whether a map has no entries, or every entry has a nil value.
+func isAllNilMap(m map[string]interface{}) bool {
+	for _, v := range m {
+		if v != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func (g *GenesysCloudResourceExporter) resolveReference(refSettings *resourceExporter.RefAttrSettings, refID string, exporters map[string]*resourceExporter.ResourceExporter, exportingState bool) string {
@@ -2959,6 +3238,37 @@ func (g *GenesysCloudResourceExporter) matchesExportFormat(formats ...string) bo
 		}
 	}
 	return false
+}
+
+// recordMrMoResourceExport appends refreshed resource state for MRMO export-by-type.
+// getResourcesForType invokes getResourceState concurrently per instance, so writes
+// to the shared MRMO export maps must be serialized.
+func (g *GenesysCloudResourceExporter) recordMrMoResourceExport(resType string, resourceData *schema.ResourceData) {
+	g.resourcesExportedForMrMoMutex.Lock()
+	defer g.resourcesExportedForMrMoMutex.Unlock()
+
+	g.resourceExportedForMrMo = resourceData
+	if g.resourcesExportedForMrMo == nil {
+		tmp := make(map[string][]*schema.ResourceData)
+		g.resourcesExportedForMrMo = &tmp
+	}
+	if (*g.resourcesExportedForMrMo)[resType] == nil {
+		(*g.resourcesExportedForMrMo)[resType] = make([]*schema.ResourceData, 0)
+	}
+	(*g.resourcesExportedForMrMo)[resType] = append((*g.resourcesExportedForMrMo)[resType], resourceData)
+}
+
+func (g *GenesysCloudResourceExporter) mrMoResourceDataList(resType string) []*schema.ResourceData {
+	g.resourcesExportedForMrMoMutex.Lock()
+	defer g.resourcesExportedForMrMoMutex.Unlock()
+
+	if g.resourcesExportedForMrMo == nil {
+		return make([]*schema.ResourceData, 0)
+	}
+	if list := (*g.resourcesExportedForMrMo)[resType]; list != nil {
+		return list
+	}
+	return make([]*schema.ResourceData, 0)
 }
 
 // Helper methods for thread-safe access to shared state

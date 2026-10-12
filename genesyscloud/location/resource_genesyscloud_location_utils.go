@@ -12,7 +12,7 @@ import (
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -125,6 +125,11 @@ func comparePhoneNumbers(_, old, new string, _ *schema.ResourceData) bool {
 		return old == new
 	}
 	return phonenumbers.IsNumberMatchWithNumbers(oldNum, newNum) == phonenumbers.EXACT_MATCH
+}
+
+// suppressBlankNotes treats whitespace-only and empty note values as equivalent to avoid a perpetual notes diff (DEVTOOLING-1805).
+func suppressBlankNotes(_, old, new string, _ *schema.ResourceData) bool {
+	return strings.TrimSpace(old) == "" && strings.TrimSpace(new) == ""
 }
 
 func GenerateLocationResourceBasic(

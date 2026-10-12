@@ -353,6 +353,11 @@ func ResourceOutboundCampaign() *schema.Resource {
 					},
 				},
 			},
+			`precise_dialing_enabled`: {
+				Description: `Option to enable precise dialing.`,
+				Optional:    true,
+				Type:        schema.TypeBool,
+			},
 		},
 	}
 }

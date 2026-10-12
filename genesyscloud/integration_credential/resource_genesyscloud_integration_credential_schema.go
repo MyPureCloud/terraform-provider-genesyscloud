@@ -7,9 +7,13 @@ package integration_credential
 // @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -69,13 +73,66 @@ func ResourceIntegrationCredential() *schema.Resource {
 
 // IntegrationCredentialExporter returns the resourceExporter object used to hold the genesyscloud_integration_credential exporter's config
 func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
+	exporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllCredentials),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No Reference
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceIntegrationCredential().Schema["fields"],
 		},
 	}
+
+	// When the standalone integration config toggle is enabled, resolve the GUID in the
+	// credential name field to a Terraform reference. This is safe because with the toggle ON,
+	// the config is a separate resource and the cycle is broken.
+	// e.g., "Integration-502f8452-a4fd-43f1-9edd-2d0b947115a7" → "Integration-${genesyscloud_integration.Example.id}"
+	if featureToggles.ICToggleExists() {
+		exporter.CustomAttributeResolver = map[string]*resourceExporter.RefAttrCustomResolver{
+			"name": {
+				ResolverFunc: resolveCredentialNameGUID,
+			},
+		}
+	}
+
+	return exporter
+}
+
+// resolveCredentialNameGUID resolves the integration GUID embedded in credential names
+// (format: "Integration-<GUID>" or "*Integration-<GUID>") to a Terraform reference.
+func resolveCredentialNameGUID(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
+	name, ok := configMap["name"].(string)
+	if !ok || name == "" {
+		return nil
+	}
+
+	// Find "Integration-" pattern anywhere in the name
+	idx := strings.Index(name, "Integration-")
+	if idx == -1 {
+		return nil
+	}
+
+	// Extract the GUID after "Integration-"
+	guid := name[idx+len("Integration-"):]
+	if guid == "" {
+		return nil
+	}
+
+	// Look up the GUID in the integration exporter's resource map
+	integrationExporter, exists := exporters["genesyscloud_integration"]
+	if !exists {
+		return nil
+	}
+
+	// Find the integration resource by its ID (the GUID is the map key)
+	resourceMeta, exists := integrationExporter.SanitizedResourceMap[guid]
+	if !exists || resourceMeta == nil {
+		return nil
+	}
+
+	// Replace the GUID portion with a Terraform reference expression
+	// e.g., "Integration-<GUID>" → "Integration-${genesyscloud_integration.Example.id}"
+	prefix := name[:idx]
+	configMap["name"] = fmt.Sprintf("%sIntegration-${genesyscloud_integration.%s.id}", prefix, resourceMeta.BlockLabel)
+	return nil
 }
 
 // DataSourceIntegrationCredential registers the genesyscloud_integration_credential data source

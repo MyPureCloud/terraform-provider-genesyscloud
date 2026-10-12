@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -93,10 +94,20 @@ func ResourceTaskManagementWorktypeStatusTransition() *schema.Resource {
 func TaskManagementWorktypeStatusTransitionExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementWorkTypeStatusTransition),
+		// RefAttrs marks destination fields as status references for dependency ordering.
+		// The standard resolver fails on bare status ID vs composite worktypeId/statusId keys;
+		// CustomAttributeResolver performs suffix-based lookup afterward.
+		// Transitions reference statuses (acyclic); status resources must not reference each other.
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"worktype_id":                   {RefType: "genesyscloud_task_management_worktype"},
-			"destination_status_ids.*":      {RefType: "genesyscloud_task_management_worktype_status"},
+			"status_id":                     {RefType: "genesyscloud_task_management_worktype_status"},
+			"destination_status_ids":        {RefType: "genesyscloud_task_management_worktype_status"},
 			"default_destination_status_id": {RefType: "genesyscloud_task_management_worktype_status"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"status_id":                     {ResolverFunc: task_management_worktype_status.WorktypeStatusRefResolver("status_id")},
+			"destination_status_ids":        {ResolverFunc: task_management_worktype_status.WorktypeStatusArrayRefResolver("destination_status_ids")},
+			"default_destination_status_id": {ResolverFunc: task_management_worktype_status.WorktypeStatusRefResolver("default_destination_status_id")},
 		},
 	}
 }

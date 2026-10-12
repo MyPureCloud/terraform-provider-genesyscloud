@@ -3,16 +3,17 @@ package telephony_providers_edges_site_outbound_route
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/location"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/testrunner"
-	"log"
-	"strconv"
-	"strings"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -361,6 +362,17 @@ func TestAccResourceSiteoutboundRoutesDefaultOutboundRoute(t *testing.T) {
 				ResourceName:      "genesyscloud_telephony_providers_edges_site_outbound_route." + outboundRouteResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+			{
+				// Teardown: remove the outbound route resources (drop them from config) while
+				// keeping the site and trunk bases. This clears the route -> trunkbase references
+				// before the automatic post-test destroy, which otherwise fails with
+				// "Cannot delete TrunkBase ... because it is referenced by OutboundRoute".
+				Config: trunkBaseSettings1 + trunkBaseSettings2 + locationConfig + site,
+				Check: resource.ComposeTestCheckFunc(
+					util.TestCheckNoResourceInState("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResourceLabel1),
+					util.TestCheckNoResourceInState("genesyscloud_telephony_providers_edges_site_outbound_route."+outboundRouteResourceLabel2),
+				),
 			},
 		},
 	})

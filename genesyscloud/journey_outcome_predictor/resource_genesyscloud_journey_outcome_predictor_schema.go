@@ -58,8 +58,6 @@ func ResourceJourneyOutcomePredictor() *schema.Resource {
 func JourneyOutcomePredictorExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthJourneyOutcomePredictors),
-		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
-			"outcome_id": {RefType: "genesyscloud_journey_outcome"},
-		},
+		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
 	}
 }

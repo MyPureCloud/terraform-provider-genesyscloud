@@ -71,7 +71,21 @@ func MergeMaps[T, U comparable](m1, m2 map[T][]U) map[T][]U {
 	}
 
 	for key, value := range m2 {
-		result[key] = value
+		if existing, ok := result[key]; ok {
+			// Append unique values from m2 that aren't already present
+			seen := make(map[U]bool, len(existing))
+			for _, v := range existing {
+				seen[v] = true
+			}
+			for _, v := range value {
+				if !seen[v] {
+					result[key] = append(result[key], v)
+					seen[v] = true
+				}
+			}
+		} else {
+			result[key] = value
+		}
 	}
 
 	return result

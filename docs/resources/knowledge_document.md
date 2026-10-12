@@ -84,6 +84,8 @@ resource "genesyscloud_knowledge_document" "example_unpublished_document" {
 
 ### Optional
 
+- `category_id` (String) The composite ID of the category associated with the document. Set by the provider for export dependency resolution. Do not set manually.
+- `label_ids` (List of String) The composite IDs of labels associated with the document. Set by the provider for export dependency resolution. Do not set manually.
 - `published` (Boolean, Deprecated) *DEPRECATED: By Default a document created will be in Draft. In order to Publish a document, use knowledge_document_variation instead.* If true, the knowledge document will be published. If false, it will be a draft. The document can only be published if it has document variations.
 
 ### Read-Only

@@ -446,8 +446,9 @@ func ValidateFileContentHashChanged(filepathAttr, hashAttr string, supportS3 boo
 			return false
 		}
 
-		// Get the current hash value
-		oldHash := d.Get(hashAttr).(string)
+		// Get prior hash from state (GetChange), not Get — Get can be empty for computed attrs in CustomizeDiff and cause false-positive plans.
+		old, _ := d.GetChange(hashAttr)
+		oldHash, _ := old.(string)
 
 		// Return true if the hashes are different
 		return oldHash != newHash

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func TestAccResourceResponseManagementResponseFooterField(t *testing.T) {
@@ -596,4 +597,277 @@ func cleanupResponseAssets(folderName string) error {
 		}
 	}
 	return nil
+}
+
+func TestAccResourceResponseManagementResponseFormField(t *testing.T) {
+	t.Parallel()
+	var (
+		responseResourceLabel = "response-resource-form"
+		responsePath          = "genesyscloud_responsemanagement_response." + responseResourceLabel
+		name1                 = "Response-form-" + uuid.NewString()
+		name2                 = "Response-form-" + uuid.NewString()
+
+		// Form initial values
+		formDescription1 = "A form for customer feedback"
+		receivedTitle1   = "Thank you for your feedback"
+		replyTitle1      = "Your response has been received"
+		introTitle1      = "Customer Feedback Form"
+		introButtonText  = "Start Survey"
+		pageTitle1       = "Service Rating"
+		pageSubtitle1    = "How would you rate our service?"
+		sectionTitle1    = "Select your rating"
+
+		// Form updated values
+		formDescription2 = "An updated form for customer feedback"
+		receivedTitle2   = "Feedback received"
+		pageTitle2       = "Visit Date"
+		pageSubtitle2    = "When did you visit us?"
+
+		// Library resource variables
+		libraryResourceLabel = "library-resource-form"
+		libraryName          = "ReferencelibraryForm1"
+	)
+
+	initialForm := generateFormBlock(
+		formDescription1,
+		util.TrueValue,
+		generateFormMessageBlock("received_message", receivedTitle1, "We appreciate your input"),
+		generateFormMessageBlock("reply_message", replyTitle1, "We will review your feedback"),
+		generateFormIntroductionBlock(introTitle1, "Please help us improve our service", introButtonText),
+		generateFormPageBlock(
+			pageTitle1,
+			pageSubtitle1,
+			generateListPickerComponentBlock(sectionTitle1, util.FalseValue, []string{"Excellent", "Good", "Poor"}),
+		),
+	)
+
+	// Update: change the description and received message, and swap the single list picker page
+	// for two pages exercising the remaining component types.
+	updatedForm := generateFormBlock(
+		formDescription2,
+		util.FalseValue,
+		generateFormMessageBlock("received_message", receivedTitle2, "We appreciate your input"),
+		generateFormMessageBlock("reply_message", replyTitle1, "We will review your feedback"),
+		generateFormPageBlock(
+			pageTitle2,
+			pageSubtitle2,
+			generateDatePickerComponentBlock("Select Date", "Choose the date of your visit", "dayMonthYear"),
+		),
+		generateFormPageBlock(
+			"Additional Comments",
+			"Please share any additional feedback",
+			generateInputComponentBlock("Comments", "Enter your comments here...", util.TrueValue, util.FalseValue, "Default"),
+		),
+		generateFormPageBlock(
+			"Recommendation",
+			"Would you recommend us to others?",
+			generateWheelPickerComponentBlock(map[string]string{"Definitely": "definitely", "Maybe": "maybe"}),
+		),
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create a Form response
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
+					libraryResourceLabel,
+					libraryName,
+				) + GenerateResponseManagementResponseResource(
+					responseResourceLabel,
+					name1,
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel + ".id"},
+					util.NullValue,
+					util.NullValue,
+					strconv.Quote("Form"),
+					[]string{},
+					// No texts block: Form responses ignore texts and always return an
+					// empty list, so setting it would produce a permanent diff.
+					initialForm,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(responsePath, "name", name1),
+					resource.TestCheckResourceAttr(responsePath, "response_type", "Form"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_description", formDescription1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.show_summary", "true"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.received_message.0.title", receivedTitle1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.reply_message.0.title", replyTitle1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.introduction.0.title", introTitle1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.introduction.0.button_text", introButtonText),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.#", "1"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.title", pageTitle1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.subtitle", pageSubtitle1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.form_component_type", "ListPicker"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.list_picker.0.sections.0.title", sectionTitle1),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.list_picker.0.sections.0.multiple_selection", "false"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.list_picker.0.sections.0.items.#", "3"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.list_picker.0.sections.0.items.0.title", "Excellent"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.list_picker.0.sections.0.items.2.title", "Poor"),
+				),
+			},
+			{
+				// Update the form: new name, description, show_summary and page set
+				Config: respmanagementLibrary.GenerateResponseManagementLibraryResource(
+					libraryResourceLabel,
+					libraryName,
+				) + GenerateResponseManagementResponseResource(
+					responseResourceLabel,
+					name2,
+					[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel + ".id"},
+					util.NullValue,
+					util.NullValue,
+					strconv.Quote("Form"),
+					[]string{},
+					updatedForm,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(responsePath, "name", name2),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_description", formDescription2),
+					resource.TestCheckResourceAttr(responsePath, "form.0.show_summary", "false"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.received_message.0.title", receivedTitle2),
+					// The introduction block was removed on update
+					resource.TestCheckResourceAttr(responsePath, "form.0.introduction.#", "0"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.#", "3"),
+					// Page ordering must be preserved
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.title", pageTitle2),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.form_component_type", "DatePicker"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.0.page_components.0.date_picker.0.date_display_format", "dayMonthYear"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.1.page_components.0.form_component_type", "Input"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.1.page_components.0.input.0.is_multiple_line", "true"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.1.page_components.0.input.0.is_required", "false"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.1.page_components.0.input.0.keyboard_type", "Default"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.2.page_components.0.form_component_type", "WheelPicker"),
+					resource.TestCheckResourceAttr(responsePath, "form.0.form_pages.2.page_components.0.wheel_picker.0.items.#", "2"),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:            responsePath,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"substitutions_schema_id", "messaging_template", "response_type"},
+			},
+		},
+		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
+	})
+}
+
+func generateFormBlock(formDescription string, showSummary string, nestedBlocks ...string) string {
+	return fmt.Sprintf(`
+		form {
+			form_description = "%s"
+			show_summary     = %s
+			%s
+		}
+	`, formDescription, showSummary, strings.Join(nestedBlocks, "\n"))
+}
+
+// generateFormMessageBlock builds a received_message or reply_message block.
+func generateFormMessageBlock(blockName string, title string, subtitle string) string {
+	return fmt.Sprintf(`
+		%s {
+			title    = "%s"
+			subtitle = "%s"
+		}
+	`, blockName, title, subtitle)
+}
+
+func generateFormIntroductionBlock(title string, subtitle string, buttonText string) string {
+	return fmt.Sprintf(`
+		introduction {
+			title       = "%s"
+			subtitle    = "%s"
+			button_text = "%s"
+		}
+	`, title, subtitle, buttonText)
+}
+
+func generateFormPageBlock(title string, subtitle string, pageComponents ...string) string {
+	return fmt.Sprintf(`
+		form_pages {
+			title    = "%s"
+			subtitle = "%s"
+			%s
+		}
+	`, title, subtitle, strings.Join(pageComponents, "\n"))
+}
+
+func generateListPickerComponentBlock(sectionTitle string, multipleSelection string, itemTitles []string) string {
+	var items strings.Builder
+	for _, itemTitle := range itemTitles {
+		items.WriteString(fmt.Sprintf(`
+					items {
+						title = "%s"
+					}
+		`, itemTitle))
+	}
+	return fmt.Sprintf(`
+		page_components {
+			form_component_type = "ListPicker"
+			list_picker {
+				sections {
+					title              = "%s"
+					multiple_selection = %s
+					%s
+				}
+			}
+		}
+	`, sectionTitle, multipleSelection, items.String())
+}
+
+func generateDatePickerComponentBlock(title string, subtitle string, dateDisplayFormat string) string {
+	return fmt.Sprintf(`
+		page_components {
+			form_component_type = "DatePicker"
+			date_picker {
+				title               = "%s"
+				subtitle            = "%s"
+				date_display_format = "%s"
+			}
+		}
+	`, title, subtitle, dateDisplayFormat)
+}
+
+func generateInputComponentBlock(title string, placeholderText string, isMultipleLine string, isRequired string, keyboardType string) string {
+	return fmt.Sprintf(`
+		page_components {
+			form_component_type = "Input"
+			input {
+				title            = "%s"
+				placeholder_text = "%s"
+				is_multiple_line = %s
+				is_required      = %s
+				keyboard_type    = "%s"
+			}
+		}
+	`, title, placeholderText, isMultipleLine, isRequired, keyboardType)
+}
+
+// generateWheelPickerComponentBlock builds a wheel picker from a title -> value mapping.
+func generateWheelPickerComponentBlock(items map[string]string) string {
+	// Sort the titles so the generated config is deterministic across runs.
+	titles := make([]string, 0, len(items))
+	for title := range items {
+		titles = append(titles, title)
+	}
+	sort.Strings(titles)
+
+	var itemBlocks strings.Builder
+	for _, title := range titles {
+		itemBlocks.WriteString(fmt.Sprintf(`
+				items {
+					title = "%s"
+					value = "%s"
+				}
+		`, title, items[title]))
+	}
+	return fmt.Sprintf(`
+		page_components {
+			form_component_type = "WheelPicker"
+			wheel_picker {
+				%s
+			}
+		}
+	`, itemBlocks.String())
 }

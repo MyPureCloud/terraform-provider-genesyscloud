@@ -16,7 +16,8 @@ func TestSetDependentObjectMaps(t *testing.T) {
 	assert.Equal(t, "genesyscloud_routing_language", result["ACDLANGUAGE"])
 	assert.Equal(t, "genesyscloud_routing_skill", result["ACDSKILL"])
 	assert.Equal(t, "genesyscloud_flow", result["BOTFLOW"])
-	assert.Equal(t, "genesyscloud_routing_queue", result["QUEUE"])
+	assert.Equal(t, "genesyscloud_script", result["COMPOSERSCRIPT"])
+	assert.Equal(t, "genesyscloud_integration_action", result["DATAACTION"])
 	assert.Equal(t, "genesyscloud_user", result["USER"])
 }
 

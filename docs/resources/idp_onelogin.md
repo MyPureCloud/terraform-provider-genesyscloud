@@ -42,6 +42,7 @@ resource "genesyscloud_idp_onelogin" "onelogin" {
   issuer_uri          = "https://example.com"
   target_uri          = "https://example.com/login"
   sign_authn_requests = false
+  force_authn         = true
 }
 ```
 
@@ -56,6 +57,7 @@ resource "genesyscloud_idp_onelogin" "onelogin" {
 
 - `certificates` (List of String) PEM or DER encoded public X.509 certificates for SAML signature validation.
 - `disabled` (Boolean) True if OneLogin is disabled. Defaults to `false`.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `name` (String) IDP OneLogin resource name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to OneLogin.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.

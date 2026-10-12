@@ -84,6 +84,7 @@ var (
 				Description: "Default scoring settings for the questions within this question group.",
 				Type:        schema.TypeList,
 				Optional:    true,
+				Computed:    true,
 				MaxItems:    1,
 				Elem:        evaluationFormDefaultAnswersTo,
 			},

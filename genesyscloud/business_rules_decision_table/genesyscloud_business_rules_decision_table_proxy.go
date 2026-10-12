@@ -1,13 +1,18 @@
 package business_rules_decision_table
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -29,13 +34,24 @@ type deleteBusinessRulesDecisionTableFunc func(ctx context.Context, p *BusinessR
 type getAllBusinessRulesDecisionTablesFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (*platformclientv2.Decisiontablelisting, *platformclientv2.APIResponse, error)
 type getBusinessRulesDecisionTablesByNameFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, name string) (tables *[]platformclientv2.Decisiontable, retryable bool, resp *platformclientv2.APIResponse, err error)
 type getBusinessRulesDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, versionNumber int) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
-type createDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error)
+type bulkAddDecisionTableRowsFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error)
+type bulkRemoveDecisionTableRowsFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowIds []string) (*platformclientv2.APIResponse, error)
+type bulkUpdateDecisionTableRowsFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rows []platformclientv2.Row) (*platformclientv2.APIResponse, error)
 type publishDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error)
 type getDecisionTableRowsFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, pageNumber string, pageSize string) (*platformclientv2.Decisiontablerowlisting, *platformclientv2.APIResponse, error)
 type createDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error)
-type updateDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error)
-type deleteDecisionTableRowFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error)
 type deleteDecisionTableVersionFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error)
+type createDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
+type getDecisionTableImportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error)
+type uploadDecisionTableImportFileFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error
+type createDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
+
+// postExportJobFunc is the inner seam around the single export job POST. It exists separately from
+// createDecisionTableExportJobFunc so tests can stub the API call while still exercising the retry
+// loop that createDecisionTableExportJobFn wraps around it.
+type postExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
+type getDecisionTableExportJobFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error)
+type downloadDecisionTableExportFunc func(ctx context.Context, p *BusinessRulesDecisionTableProxy, downloadUri string) ([]byte, error)
 
 // BusinessRulesDecisionTableProxy contains all the methods that call genesys cloud APIs.
 type BusinessRulesDecisionTableProxy struct {
@@ -49,13 +65,20 @@ type BusinessRulesDecisionTableProxy struct {
 	getAllBusinessRulesDecisionTablesAttr    getAllBusinessRulesDecisionTablesFunc
 	getBusinessRulesDecisionTablesByNameAttr getBusinessRulesDecisionTablesByNameFunc
 	getBusinessRulesDecisionTableVersionAttr getBusinessRulesDecisionTableVersionFunc
-	createDecisionTableRowAttr               createDecisionTableRowFunc
+	bulkAddDecisionTableRowsAttr             bulkAddDecisionTableRowsFunc
+	bulkRemoveDecisionTableRowsAttr          bulkRemoveDecisionTableRowsFunc
+	bulkUpdateDecisionTableRowsAttr          bulkUpdateDecisionTableRowsFunc
 	publishDecisionTableVersionAttr          publishDecisionTableVersionFunc
 	getDecisionTableRowsAttr                 getDecisionTableRowsFunc
 	createDecisionTableVersionAttr           createDecisionTableVersionFunc
-	updateDecisionTableRowAttr               updateDecisionTableRowFunc
-	deleteDecisionTableRowAttr               deleteDecisionTableRowFunc
 	deleteDecisionTableVersionAttr           deleteDecisionTableVersionFunc
+	createDecisionTableImportJobAttr         createDecisionTableImportJobFunc
+	getDecisionTableImportJobAttr            getDecisionTableImportJobFunc
+	uploadDecisionTableImportFileAttr        uploadDecisionTableImportFileFunc
+	createDecisionTableExportJobAttr         createDecisionTableExportJobFunc
+	postExportJobAttr                        postExportJobFunc
+	getDecisionTableExportJobAttr            getDecisionTableExportJobFunc
+	downloadDecisionTableExportAttr          downloadDecisionTableExportFunc
 
 	BusinessRulesDecisionTableCache rc.CacheInterface[platformclientv2.Decisiontable]
 }
@@ -75,13 +98,20 @@ func newBusinessRulesDecisionTableProxy(clientConfig *platformclientv2.Configura
 		getAllBusinessRulesDecisionTablesAttr:    getAllBusinessRulesDecisionTablesFn,
 		getBusinessRulesDecisionTablesByNameAttr: getBusinessRulesDecisionTablesByNameFn,
 		getBusinessRulesDecisionTableVersionAttr: getBusinessRulesDecisionTableVersionFn,
-		createDecisionTableRowAttr:               createDecisionTableRowFn,
+		bulkAddDecisionTableRowsAttr:             bulkAddDecisionTableRowsFn,
+		bulkRemoveDecisionTableRowsAttr:          bulkRemoveDecisionTableRowsFn,
+		bulkUpdateDecisionTableRowsAttr:          bulkUpdateDecisionTableRowsFn,
 		publishDecisionTableVersionAttr:          publishDecisionTableVersionFn,
 		getDecisionTableRowsAttr:                 getDecisionTableRowsFn,
 		createDecisionTableVersionAttr:           createDecisionTableVersionFn,
-		updateDecisionTableRowAttr:               updateDecisionTableRowFn,
-		deleteDecisionTableRowAttr:               deleteDecisionTableRowFn,
 		deleteDecisionTableVersionAttr:           deleteDecisionTableVersionFn,
+		createDecisionTableImportJobAttr:         createDecisionTableImportJobFn,
+		getDecisionTableImportJobAttr:            getDecisionTableImportJobFn,
+		uploadDecisionTableImportFileAttr:        uploadDecisionTableImportFileFn,
+		createDecisionTableExportJobAttr:         createDecisionTableExportJobFn,
+		postExportJobAttr:                        postExportJobFn,
+		getDecisionTableExportJobAttr:            getDecisionTableExportJobFn,
+		downloadDecisionTableExportAttr:          downloadDecisionTableExportFn,
 
 		BusinessRulesDecisionTableCache: businessRulesDecisionTableCache,
 	}
@@ -127,9 +157,19 @@ func (p *BusinessRulesDecisionTableProxy) getBusinessRulesDecisionTableVersion(c
 	return p.getBusinessRulesDecisionTableVersionAttr(ctx, p, tableId, versionNumber)
 }
 
-// createDecisionTableRow adds a single row to a decision table version
-func (p *BusinessRulesDecisionTableProxy) createDecisionTableRow(ctx context.Context, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
-	return p.createDecisionTableRowAttr(ctx, p, tableId, version, row)
+// bulkAddDecisionTableRows adds up to maxBulkDecisionTableRowsAdd rows via the bulk API.
+func (p *BusinessRulesDecisionTableProxy) bulkAddDecisionTableRows(ctx context.Context, tableId string, version int, rows []platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+	return p.bulkAddDecisionTableRowsAttr(ctx, p, tableId, version, rows)
+}
+
+// bulkRemoveDecisionTableRows removes up to maxBulkDecisionTableRowsRemove rows via the bulk API.
+func (p *BusinessRulesDecisionTableProxy) bulkRemoveDecisionTableRows(ctx context.Context, tableId string, version int, rowIds []string) (*platformclientv2.APIResponse, error) {
+	return p.bulkRemoveDecisionTableRowsAttr(ctx, p, tableId, version, rowIds)
+}
+
+// bulkUpdateDecisionTableRows updates up to maxBulkDecisionTableRowsUpdate rows via the bulk API.
+func (p *BusinessRulesDecisionTableProxy) bulkUpdateDecisionTableRows(ctx context.Context, tableId string, version int, rows []platformclientv2.Row) (*platformclientv2.APIResponse, error) {
+	return p.bulkUpdateDecisionTableRowsAttr(ctx, p, tableId, version, rows)
 }
 
 // publishDecisionTableVersion publishes a decision table version
@@ -147,19 +187,33 @@ func (p *BusinessRulesDecisionTableProxy) createDecisionTableVersion(ctx context
 	return p.createDecisionTableVersionAttr(ctx, p, tableId)
 }
 
-// updateDecisionTableRow updates an existing row in a decision table version
-func (p *BusinessRulesDecisionTableProxy) updateDecisionTableRow(ctx context.Context, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
-	return p.updateDecisionTableRowAttr(ctx, p, tableId, version, rowId, row)
-}
-
-// deleteDecisionTableRow deletes a row from a decision table version
-func (p *BusinessRulesDecisionTableProxy) deleteDecisionTableRow(ctx context.Context, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error) {
-	return p.deleteDecisionTableRowAttr(ctx, p, tableId, version, rowId)
-}
-
 // deleteDecisionTableVersion deletes a decision table version
 func (p *BusinessRulesDecisionTableProxy) deleteDecisionTableVersion(ctx context.Context, tableId string, version int) (*platformclientv2.APIResponse, error) {
 	return p.deleteDecisionTableVersionAttr(ctx, p, tableId, version)
+}
+
+func (p *BusinessRulesDecisionTableProxy) createDecisionTableImportJob(ctx context.Context, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	return p.createDecisionTableImportJobAttr(ctx, p, tableId, request)
+}
+
+func (p *BusinessRulesDecisionTableProxy) getDecisionTableImportJob(ctx context.Context, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	return p.getDecisionTableImportJobAttr(ctx, p, tableId, importJobId)
+}
+
+func (p *BusinessRulesDecisionTableProxy) uploadImportFile(ctx context.Context, uploadUrl string, headers map[string]string, body []byte) error {
+	return p.uploadDecisionTableImportFileAttr(ctx, p, uploadUrl, headers, body)
+}
+
+func (p *BusinessRulesDecisionTableProxy) createDecisionTableExportJob(ctx context.Context, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	return p.createDecisionTableExportJobAttr(ctx, p, tableId, request)
+}
+
+func (p *BusinessRulesDecisionTableProxy) getDecisionTableExportJob(ctx context.Context, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	return p.getDecisionTableExportJobAttr(ctx, p, tableId, exportJobId)
+}
+
+func (p *BusinessRulesDecisionTableProxy) downloadExportFile(ctx context.Context, downloadUri string) ([]byte, error) {
+	return p.downloadDecisionTableExportAttr(ctx, p, downloadUri)
 }
 
 // Function implementations that make the actual API calls
@@ -205,7 +259,8 @@ func deleteBusinessRulesDecisionTableFn(ctx context.Context, p *BusinessRulesDec
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontable(tableId, false)
+	// forceDelete=true cancels active import/export jobs so create-rollback and destroy are not blocked by 409.
+	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontable(tableId, true)
 	if err == nil {
 		// Remove from cache after successful deletion
 		rc.DeleteCacheItem(p.BusinessRulesDecisionTableCache, tableId)
@@ -304,16 +359,11 @@ func getBusinessRulesDecisionTableVersionFn(ctx context.Context, p *BusinessRule
 	return p.businessRulesApi.GetBusinessrulesDecisiontableVersion(tableId, versionNumber)
 }
 
-func createDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, row *platformclientv2.Createdecisiontablerowrequest) (*platformclientv2.APIResponse, error) {
+func createDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	_, resp, err := p.businessRulesApi.PostBusinessrulesDecisiontableVersionRows(tableId, version, *row)
-	if err != nil && (resp == nil || resp.StatusCode == 0) {
-		// No HTTP response (transport/timeout/retry-exhaustion): not captured by the SDK error log or the 429/5xx file mirror.
-		log.Printf("[ERROR] decision table row POST (table %s v%d) failed with no SDK response: %v", tableId, version, err)
-	}
-	return resp, err
+	return p.businessRulesApi.PostBusinessrulesDecisiontableVersions(tableId, platformclientv2.Createdecisiontableversionrequest{})
 }
 
 func publishDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
@@ -336,32 +386,120 @@ func getDecisionTableRowsFn(ctx context.Context, p *BusinessRulesDecisionTablePr
 	return rows, resp, err
 }
 
-func createDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string) (*platformclientv2.Decisiontableversion, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	return p.businessRulesApi.PostBusinessrulesDecisiontableVersions(tableId)
-}
-
-func updateDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string, row *platformclientv2.Putdecisiontablerowrequest) (*platformclientv2.Decisiontablerow, *platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	return p.businessRulesApi.PutBusinessrulesDecisiontableVersionRow(tableId, version, rowId, *row)
-}
-
-func deleteDecisionTableRowFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int, rowId string) (*platformclientv2.APIResponse, error) {
-	// Set resource context for SDK debug logging
-	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-
-	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersionRow(tableId, version, rowId)
-	return resp, err
-}
-
 func deleteDecisionTableVersionFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, version int) (*platformclientv2.APIResponse, error) {
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	resp, err := p.businessRulesApi.DeleteBusinessrulesDecisiontableVersion(tableId, version)
 	return resp, err
+}
+
+func createDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Createdecisiontableimportjobrequest) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.PostBusinessrulesDecisiontableImports(tableId, *request)
+}
+
+func getDecisionTableImportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, importJobId string) (*platformclientv2.Decisiontableimportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.GetBusinessrulesDecisiontableImport(tableId, importJobId)
+}
+
+func uploadDecisionTableImportFileFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, uploadUrl string, headers map[string]string, body []byte) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadUrl, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to create import upload request: %w", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "text/csv")
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to upload import CSV: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("import CSV upload returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+	return nil
+}
+
+// createDecisionTableExportJobFn creates an export job, waiting out a full export job cap (403
+// with the capacity message) or a throttle (429). The bound is a wall-clock budget, not an attempt
+// count, and every wait is cancellable.
+//
+// Logging uses log.Printf rather than tflog: the exporter's rows resolver calls this with
+// context.Background(), which carries no provider logger, so tflog records would be dropped on
+// the one path this retry exists for.
+func createDecisionTableExportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	budget := resolveExportRetryBudget()
+	deadline := time.Now().Add(budget)
+	for {
+		job, resp, err := p.postExportJobAttr(ctx, p, tableId, request)
+		// A transport failure leaves resp nil, which the predicate rejects, so it returns here.
+		// The SDK already retries those.
+		if err == nil || !isExportCapacityRetryable(resp) {
+			return job, resp, err
+		}
+
+		interval := exportRetryInterval(resp)
+		// Rather than sleep past the budget, stop and return the last attempt untouched, which is
+		// what the caller would have seen without this retry.
+		if time.Now().Add(interval).After(deadline) {
+			log.Printf("[WARN] Decision table %s export job creation still rejected with %d after exhausting the %v retry budget",
+				tableId, resp.StatusCode, budget)
+			return job, resp, err
+		}
+
+		log.Printf("[WARN] Decision table %s export job creation rejected with %d (%s). Retrying in %v",
+			tableId, resp.StatusCode, capacityRejectionMessage(resp), interval)
+
+		if waitErr := waitWithContext(ctx, interval); waitErr != nil {
+			return job, resp, waitErr
+		}
+	}
+}
+
+// postExportJobFn issues a single export job POST with no retry handling of its own.
+func postExportJobFn(_ context.Context, p *BusinessRulesDecisionTableProxy, tableId string, request *platformclientv2.Decisiontableexportjobrequest) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	return p.businessRulesApi.PostBusinessrulesDecisiontableExports(tableId, *request)
+}
+
+func getDecisionTableExportJobFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, tableId string, exportJobId string) (*platformclientv2.Decisiontableexportjob, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.businessRulesApi.GetBusinessrulesDecisiontableExport(tableId, exportJobId)
+}
+
+func downloadDecisionTableExportFn(ctx context.Context, p *BusinessRulesDecisionTableProxy, downloadUri string) ([]byte, error) {
+	url := downloadUri
+	if !strings.HasPrefix(downloadUri, "http://") && !strings.HasPrefix(downloadUri, "https://") {
+		url = strings.TrimRight(p.clientConfig.BasePath, "/") + downloadUri
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create export download request: %w", err)
+	}
+	if p.clientConfig.AccessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download export CSV: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("export CSV download returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+	return io.ReadAll(resp.Body)
 }

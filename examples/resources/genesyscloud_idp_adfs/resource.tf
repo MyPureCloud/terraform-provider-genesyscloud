@@ -6,4 +6,5 @@ resource "genesyscloud_idp_adfs" "adfs" {
   relying_party_identifier = "unique-id-from-adfs"
   disabled                 = true
   sign_authn_requests      = false
+  force_authn              = true
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
@@ -120,7 +120,15 @@ func ValidateStatusIds(statusResource1 string, key1 string, statusResource2 stri
 // findMetaByStatusSuffix searches the SanitizedResourceMap for a composite key ending with "/<statusId>".
 // Returns the ResourceMeta if found, nil otherwise.
 func findMetaByStatusSuffix(idMetaMap resourceExporter.ResourceIDMetaMap, statusId string) *resourceExporter.ResourceMeta {
-	suffix := "/" + statusId
+	if meta, ok := idMetaMap[statusId]; ok && meta != nil && meta.BlockLabel != "" {
+		return meta
+	}
+
+	bareStatusId := statusId
+	if i := strings.LastIndex(statusId, "/"); i >= 0 && i+1 < len(statusId) {
+		bareStatusId = statusId[i+1:]
+	}
+	suffix := "/" + bareStatusId
 	for compositeId, meta := range idMetaMap {
 		if strings.HasSuffix(compositeId, suffix) && meta != nil && meta.BlockLabel != "" {
 			return meta
@@ -168,7 +176,7 @@ func WorktypeStatusRefResolver(attrName string) func(configMap map[string]interf
 }
 
 // WorktypeStatusArrayRefResolver resolves bare status IDs in a list attribute to proper Terraform references.
-// Used for attributes like destination_status_ids which are arrays of status IDs.
+// Used for attributes like destination_status_ids on worktype_status_transition resources.
 func WorktypeStatusArrayRefResolver(attrName string) func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
 	return func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
 		arrRaw, ok := configMap[attrName]

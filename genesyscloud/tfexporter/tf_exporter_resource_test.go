@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	agenticVirtualAgent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent"
+	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	dt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_datatable_row"
 	emergencyGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_emergencygroup"
@@ -48,7 +50,6 @@ import (
 	integrationFacebook "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/integration_facebook"
 	journeyActionMap "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_map"
 	journeyActionTemplate "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_action_template"
-	journeyOutcome "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_outcome"
 	journeySegment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_segment"
 	journeyViewSchedule "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/journey_view_schedule"
 	knowledgeCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/knowledge_category"
@@ -116,6 +117,13 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+
+	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
+	sttCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_category"
+	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
+	sttSentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
+	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -240,7 +248,6 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
-	providerResources[journeyOutcome.ResourceType] = journeyOutcome.ResourceJourneyOutcome()
 	providerResources[externalUser.ResourceType] = externalUser.ResourceExternalUserIdentity()
 	providerResources[journeySegment.ResourceType] = journeySegment.ResourceJourneySegment()
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
@@ -250,6 +257,15 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[businessRulesSchema.ResourceType] = businessRulesSchema.ResourceBusinessRulesSchema()
 	providerResources[businessRulesDecisionTable.ResourceType] = businessRulesDecisionTable.ResourceBusinessRulesDecisionTable()
+	providerResources[agenticVirtualAgent.ResourceType] = agenticVirtualAgent.ResourceAgenticVirtualAgent()
+	providerResources[agenticVirtualAgentVersion.ResourceType] = agenticVirtualAgentVersion.ResourceAgenticVirtualAgentVersion()
+
+	providerResources[sttTopic.ResourceType] = sttTopic.ResourceSpeechAndTextAnalyticsTopic()
+	providerResources[sttProgram.ResourceType] = sttProgram.ResourceSpeechAndTextAnalyticsProgram()
+	providerResources[sttCategory.ResourceType] = sttCategory.ResourceCategory()
+	providerResources[sttSentimentFeedback.ResourceType] = sttSentimentFeedback.ResourceSentimentFeedback()
+	providerResources[sttSettings.ResourceType] = sttSettings.ResourceSpeechAndTextAnalyticsSettings()
+	providerResources[recordingSettings.ResourceType] = recordingSettings.ResourceRecordingSettings()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -297,7 +313,6 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(integrationInstagram.ResourceType, integrationInstagram.ConversationsMessagingIntegrationsInstagramExporter())
 	RegisterExporter(journeyActionMap.ResourceType, journeyActionMap.JourneyActionMapExporter())
 	RegisterExporter(journeyActionTemplate.ResourceType, journeyActionTemplate.JourneyActionTemplateExporter())
-	RegisterExporter(journeyOutcome.ResourceType, journeyOutcome.JourneyOutcomeExporter())
 	RegisterExporter(journeySegment.ResourceType, journeySegment.JourneySegmentExporter())
 	RegisterExporter(knowledgeDocument.ResourceType, knowledgeDocument.KnowledgeDocumentExporter())
 	RegisterExporter(knowledgeDocumentVariation.ResourceType, knowledgeDocumentVariation.KnowledgeDocumentVariationExporter())
@@ -367,6 +382,15 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(guideVersion.ResourceType, guideVersion.GuideVersionExporter())
 	RegisterExporter(businessRulesSchema.ResourceType, businessRulesSchema.BusinessRulesSchemaExporter())
 	RegisterExporter(businessRulesDecisionTable.ResourceType, businessRulesDecisionTable.BusinessRulesDecisionTableExporter())
+	RegisterExporter(agenticVirtualAgent.ResourceType, agenticVirtualAgent.AgenticVirtualAgentExporter())
+	RegisterExporter(agenticVirtualAgentVersion.ResourceType, agenticVirtualAgentVersion.AgenticVirtualAgentVersionExporter())
+
+	RegisterExporter(sttTopic.ResourceType, sttTopic.SpeechAndTextAnalyticsTopicExporter())
+	RegisterExporter(sttProgram.ResourceType, sttProgram.SpeechAndTextAnalyticsProgramExporter())
+	RegisterExporter(sttCategory.ResourceType, sttCategory.CategoryExporter())
+	RegisterExporter(sttSentimentFeedback.ResourceType, sttSentimentFeedback.SentimentFeedbackExporter())
+	RegisterExporter(sttSettings.ResourceType, sttSettings.SpeechAndTextAnalyticsSettingsExporter())
+	RegisterExporter(recordingSettings.ResourceType, recordingSettings.RecordingSettingsExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

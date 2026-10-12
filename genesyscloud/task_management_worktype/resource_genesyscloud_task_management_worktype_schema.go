@@ -151,6 +151,37 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Type:        schema.TypeBool,
 				Default:     false,
 			},
+			`service_level_target`: {
+				Description:  `The target service level for Workitems created from the Worktype. The default value is 100.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeInt,
+				ValidateFunc: validation.IntBetween(1, 100),
+			},
+			`unassigned_division_contacts_enabled`: {
+				Description: `When set to true, will allow Workitems to be associated with External Contacts that are not assigned to any division. Default value is true.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeBool,
+			},
+			`open_status_default`: {
+				Description: `When true, marks the auto-created "Open" status (created automatically when the Worktype ` +
+					`is created, unless disable_default_status_creation is set) as the Worktype's default status. ` +
+					`A Worktype must always have exactly one default status, so this cannot be set to false to "unset" it; ` +
+					`to change the default status, set 'default = true' on a different genesyscloud_task_management_worktype_status ` +
+					`resource instead. Omitting this field leaves the current default status unchanged.`,
+				Optional: true,
+				Computed: true,
+				Type:     schema.TypeBool,
+			},
+			`closed_status_auto_terminate`: {
+				Description: `When set, controls whether the auto-created "Closed" status (created automatically when the ` +
+					`Worktype is created, unless disable_default_status_creation is set) automatically terminates Workitems ` +
+					`that enter it. Omitting this field leaves the current value unchanged.`,
+				Optional: true,
+				Computed: true,
+				Type:     schema.TypeBool,
+			},
 		},
 	}
 }

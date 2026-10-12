@@ -46,6 +46,7 @@ resource "genesyscloud_idp_generic" "generic" {
   endpoint_compression     = false
   name_identifier_format   = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
   sign_authn_requests      = false
+  force_authn              = true
 }
 ```
 
@@ -62,6 +63,7 @@ resource "genesyscloud_idp_generic" "generic" {
 
 - `disabled` (Boolean) True if Generic provider is disabled. Defaults to `false`.
 - `endpoint_compression` (Boolean) True if the Genesys Cloud authentication request should be compressed. Defaults to `false`.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `logo_image_data` (String) Base64 encoded SVG image.
 - `name_identifier_format` (String) SAML name identifier format. (urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified | urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress | urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName | urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName | urn:oasis:names:tc:SAML:2.0:nameid-format:kerberos | urn:oasis:names:tc:SAML:2.0:nameid-format:entity | urn:oasis:names:tc:SAML:2.0:nameid-format:persistent | urn:oasis:names:tc:SAML:2.0:nameid-format:transient) Defaults to `urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified`.
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to the identity provider.

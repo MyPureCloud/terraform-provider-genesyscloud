@@ -10,7 +10,6 @@ resource "genesyscloud_journey_action_map" "terraform_test_-TEST-CASE-" {
   }
   action {
     media_type        = "webMessagingOffer"
-    is_pacing_enabled = false
     web_messaging_offer_fields {
       offer_text = "Hey how're you?"
     }

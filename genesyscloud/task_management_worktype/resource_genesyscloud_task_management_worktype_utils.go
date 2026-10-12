@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -22,19 +22,21 @@ type worktypeConfig struct {
 	divisionId       string
 	defaultWorkbinId string
 
-	defaultDurationS             int
-	defaultExpirationS           int
-	defaultDueDurationS          int
-	defaultPriority              int
-	defaultTtlS                  int
-	defaultLanguageId            string
-	defaultQueueId               string
-	defaultSkillIds              []string
-	assignmentEnabled            bool
-	defaultScriptId              string
-	disableDefaultStatusCreation bool
-	schemaId                     string
-	schemaVersion                int
+	defaultDurationS                  int
+	defaultExpirationS                int
+	defaultDueDurationS               int
+	defaultPriority                   int
+	defaultTtlS                       int
+	defaultLanguageId                 string
+	defaultQueueId                    string
+	defaultSkillIds                   []string
+	assignmentEnabled                 bool
+	defaultScriptId                   string
+	disableDefaultStatusCreation      bool
+	schemaId                          string
+	schemaVersion                     int
+	serviceLevelTarget                int
+	unassignedDivisionContactsEnabled bool
 }
 
 // getWorktypeCreateFromResourceData maps data from schema ResourceData object to a platformclientv2.Worktypecreate
@@ -62,6 +64,8 @@ func getWorktypecreateFromResourceData(d *schema.ResourceData) platformclientv2.
 		RuleSettings: &platformclientv2.Workitemrulesettings{
 			FlowRulesEnabled: resourcedata.GetNillableValue[bool](d, "flow_rules_enabled"),
 		},
+		ServiceLevelTarget:                resourcedata.GetNillableValue[int](d, "service_level_target"),
+		UnassignedDivisionContactsEnabled: resourcedata.GetNillableBool(d, "unassigned_division_contacts_enabled"),
 	}
 
 	return worktype
@@ -132,11 +136,19 @@ func getWorktypeupdateFromResourceData(d *schema.ResourceData) platformclientv2.
 		})
 	}
 
+	if d.HasChange("service_level_target") {
+		worktype.SetField("ServiceLevelTarget", resourcedata.GetNillableValue[int](d, "service_level_target"))
+	}
+
+	if d.HasChange("unassigned_division_contacts_enabled") {
+		worktype.SetField("UnassignedDivisionContactsEnabled", resourcedata.GetNillableBool(d, "unassigned_division_contacts_enabled"))
+	}
+
 	return worktype
 }
 
 // flattenRoutingSkillReferences maps a Genesys Cloud *[]platformclientv2.Routingskillreference into a []interface{}
-func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Routingskillreference) []interface{} {
+func flattenRoutingSkillReferences(routingSkillReferences *[]platformclientv2.Workitemroutingskillreference) []interface{} {
 	if len(*routingSkillReferences) == 0 {
 		return nil
 	}

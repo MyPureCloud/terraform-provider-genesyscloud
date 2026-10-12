@@ -4,16 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
+
+// anchoredPrefixRegex captures the literal prefix of a "^"-anchored pattern.
+var anchoredPrefixRegex = regexp.MustCompile(`^\^([0-9A-Za-z_-]+)`)
+
+// blockLabelSanitizer is reused across tableMatchesFilter calls to avoid rebuilding it per table.
+var blockLabelSanitizer = resourceExporter.NewSanitizerProvider()
 
 // Row IDs structured as {table-id}/{key-value}
 func createDatatableRowId(tableId string, keyVal string) string {
@@ -131,4 +139,62 @@ func getArchitectDatatableCached(ctx context.Context, tableID string, config *pl
 	}
 	archDatatableCache.Store(tableID, datatable)
 	return datatable, nil
+}
+
+// extractFilterPatterns extracts the regex patterns from the export filter for this resource type.
+func extractFilterPatterns(resourceType string, filter []string) []string {
+	if len(filter) == 0 {
+		return nil
+	}
+
+	prefix := resourceType + "::"
+	patterns := make([]string, 0)
+
+	for _, f := range filter {
+		if !strings.Contains(f, prefix) {
+			continue
+		}
+
+		pattern := f[strings.Index(f, "::")+2:]
+		if pattern != "" {
+			patterns = append(patterns, pattern)
+		}
+	}
+
+	return patterns
+}
+
+// tableMatchesFilter reports whether a table could produce a row label ("<tableName>_<rowKey>") matching any filter pattern, keeping the table unless it is provably impossible.
+func tableMatchesFilter(tableName string, filterPatterns []string) bool {
+	rawPrefix := tableName + "_"
+	sanitizedPrefix := blockLabelSanitizer.S.SanitizeResourceBlockLabel(tableName) + "_"
+
+	for _, pattern := range filterPatterns {
+		if !patternCannotMatchTable(pattern, rawPrefix, sanitizedPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// patternCannotMatchTable reports whether a "^"-anchored pattern's required prefix is incompatible with every candidate label prefix; unanchored patterns can always match.
+func patternCannotMatchTable(pattern string, candidateLabelPrefixes ...string) bool {
+	// A top-level alternation ("^Foo|Bar") does not force the label to start
+	// with the leading literal, so we cannot use it to exclude a table.
+	if strings.Contains(pattern, "|") {
+		return false
+	}
+
+	match := anchoredPrefixRegex.FindStringSubmatch(pattern)
+	if match == nil {
+		return false
+	}
+
+	requiredPrefix := match[1]
+	for _, labelPrefix := range candidateLabelPrefixes {
+		if strings.HasPrefix(labelPrefix, requiredPrefix) || strings.HasPrefix(requiredPrefix, labelPrefix) {
+			return false
+		}
+	}
+	return true
 }

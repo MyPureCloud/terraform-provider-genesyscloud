@@ -172,3 +172,58 @@ func TestUnitReplyEmailAddressSelfReferenceRouteExporterResolver(t *testing.T) {
 		t.Fatalf("expected domain_id to be cleared, got %#v", configMap["domain_id"])
 	}
 }
+
+// TestUnitRemoveUnresolvedScriptGuidsResolver verifies that default_script_ids entries which resolved
+// to a genesyscloud_script reference are kept, entries left as raw GUIDs are stripped, and an inner map
+// that becomes empty is removed from the config entirely.
+func TestUnitRemoveUnresolvedScriptGuidsResolver(t *testing.T) {
+	resolvedRef := "${genesyscloud_script.example.id}"
+	ghostGuid := uuid.NewString()
+
+	// Mixed: one resolved reference is kept, one raw GUID is stripped.
+	configMap := map[string]interface{}{
+		"default_script_ids": map[string]interface{}{
+			"CHAT": resolvedRef,
+			"CALL": ghostGuid,
+		},
+	}
+	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+		t.Fatalf("unexpected error from resolver: %v", err)
+	}
+	innerMap, ok := configMap["default_script_ids"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected default_script_ids to remain a map, got %#v", configMap["default_script_ids"])
+	}
+	if innerMap["CHAT"] != resolvedRef {
+		t.Fatalf("expected resolved reference to be kept, got %#v", innerMap["CHAT"])
+	}
+	if _, exists := innerMap["CALL"]; exists {
+		t.Fatalf("expected raw GUID entry to be stripped, got %#v", innerMap["CALL"])
+	}
+
+	// All entries unresolvable: the now-empty inner map should be removed entirely.
+	configMap = map[string]interface{}{
+		"default_script_ids": map[string]interface{}{
+			"CALL": uuid.NewString(),
+		},
+	}
+	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+		t.Fatalf("unexpected error from resolver: %v", err)
+	}
+	if _, exists := configMap["default_script_ids"]; exists {
+		t.Fatalf("expected empty default_script_ids to be removed, got %#v", configMap["default_script_ids"])
+	}
+
+	// No default_script_ids map present: resolver must not touch unrelated top-level attributes.
+	queueFlowGuid := uuid.NewString()
+	configMap = map[string]interface{}{
+		"queue_flow_id":      queueFlowGuid,
+		"default_script_ids": nil,
+	}
+	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+		t.Fatalf("unexpected error from resolver: %v", err)
+	}
+	if configMap["queue_flow_id"] != queueFlowGuid {
+		t.Fatalf("expected unrelated attribute to be untouched, got %#v", configMap["queue_flow_id"])
+	}
+}

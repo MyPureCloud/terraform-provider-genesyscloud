@@ -90,7 +90,8 @@ resource "genesyscloud_webdeployments_configuration" "example_configuration" {
     }
   }
   video {
-    enabled = true
+    enabled  = true
+    channels = ["Webmessaging", "Voice"]
     agent {
       allow_camera       = true
       allow_screen_share = true

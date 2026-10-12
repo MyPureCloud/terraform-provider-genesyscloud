@@ -18,12 +18,14 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 * [GET /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-contacts--contactId-)
 * [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
 * [GET /api/v2/externalcontacts/scan/contacts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-contacts)
+* [GET /api/v2/externalcontacts/scan/contacts/divisionviews/all](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-contacts-divisionviews-all)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
 * `externalContacts:contact:view`
+* `externalContacts:contact:viewAll`
 * `externalContacts:externalOrganization:view`
 * `relate:contact:view`
 * `relate:externalOrganization:view`

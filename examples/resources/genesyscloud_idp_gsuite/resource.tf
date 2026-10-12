@@ -5,4 +5,5 @@ resource "genesyscloud_idp_gsuite" "gsuite" {
   target_uri               = "https://example.com/login"
   relying_party_identifier = "unique-id-from-gsuite"
   sign_authn_requests      = false
+  force_authn              = true
 }

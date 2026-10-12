@@ -63,9 +63,12 @@ resource "genesyscloud_outbound_settings" "example_settings" {
 - `abandon_seconds` (Number) The number of seconds used to determine if a call is abandoned.
 - `automatic_time_zone_mapping` (Block List) The settings for automatic time zone mapping. Note that changing these settings will change them for both voice and messaging campaigns. (see [below for nested schema](#nestedblock--automatic_time_zone_mapping))
 - `compliance_abandon_rate_denominator` (String) The denominator to be used in determining the compliance abandon rate.Valid values: ALL_CALLS, CALLS_THAT_REACHED_QUEUE.
+- `contact_list_default_retention_days` (Number) The default number of days to retain newly created contact lists and contact list templates. Only applicable when contact_list_default_retention_type is RetentionDays.
+- `contact_list_default_retention_type` (String) The default type of retention for newly created contact lists and contact list templates. Valid values: Never, Today, RetentionDays.
 - `max_calls_per_agent` (Number) The maximum number of calls that can be placed per agent on any campaign.
 - `max_line_utilization` (Number) The maximum percentage of lines that should be used for Outbound, expressed as a decimal in the range [0.0, 1.0].
 - `reschedule_time_zone_skipped_contacts` (Boolean) Whether or not to reschedule time-zone blocked contacts.
+- `time_zone` (String) The time zone for newly created lists' retention when contact_list_default_retention_type is Today; for example, Africa/Abidjan. Time zones are represented as a string of the zone name as found in the IANA time zone database.
 
 ### Read-Only
 

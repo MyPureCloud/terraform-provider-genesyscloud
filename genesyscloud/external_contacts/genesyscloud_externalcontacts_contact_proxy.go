@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v193/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -136,7 +136,7 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 	const pageSize = 200
 	var response *platformclientv2.APIResponse
 	for {
-		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContacts(pageSize, cursor, "")
+		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContactsDivisionviewsAll(pageSize, cursor)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get external contacts: %v", err)
 		}

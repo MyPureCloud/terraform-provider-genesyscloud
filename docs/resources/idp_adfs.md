@@ -44,6 +44,7 @@ resource "genesyscloud_idp_adfs" "adfs" {
   relying_party_identifier = "unique-id-from-adfs"
   disabled                 = true
   sign_authn_requests      = false
+  force_authn              = true
 }
 ```
 
@@ -58,6 +59,7 @@ resource "genesyscloud_idp_adfs" "adfs" {
 ### Optional
 
 - `disabled` (Boolean) True if ADFS is disabled. Defaults to `false`.
+- `force_authn` (Boolean) True if, on inactivity timeout, Genesys Cloud should redirect to the identity provider with the ForceAuthn flag. Defaults to `true`.
 - `name` (String) IDP ADFS resource name
 - `relying_party_identifier` (String) String used to identify Genesys Cloud to ADFS.
 - `sign_authn_requests` (Boolean) True if the Genesys Cloud authentication request should be signed. Defaults to `false`.
