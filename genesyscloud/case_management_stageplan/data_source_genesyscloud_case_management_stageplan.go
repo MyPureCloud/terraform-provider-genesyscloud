@@ -24,6 +24,6 @@ func dataSourceCaseManagementStageplanRead(ctx context.Context, d *schema.Resour
 		return diag.Errorf("could not resolve stageplan for caseplan %s stage_number %d", caseplanID, stageNumber)
 	}
 
-	d.SetId(formatStageplanResourceID(caseplanID, stageNumber, *stage.Id))
+	d.SetId(FormatStageplanResourceID(caseplanID, stageNumber, *stage.Id))
 	return nil
 }

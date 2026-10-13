@@ -103,7 +103,7 @@ func testVerifyTaskManagementOnCreateRuleDestroyed(state *terraform.State) error
 			continue
 		}
 
-		worktypeId, onCreateRuleId := splitWorktypeBasedTerraformId(res.Primary.ID)
+		worktypeId, onCreateRuleId := SplitWorktypeBasedTerraformId(res.Primary.ID)
 		onCreateRule, resp, err := taskManagementApi.GetTaskmanagementWorktypeFlowsOncreateRule(worktypeId, onCreateRuleId)
 		if onCreateRule != nil {
 			return fmt.Errorf("task management oncreate rule (%s) still exists", res.Primary.ID)

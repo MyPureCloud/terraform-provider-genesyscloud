@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	consistencyChecker "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -36,7 +35,7 @@ func getAllRoutingQueueConditionalGroupActivation(ctx context.Context, clientCon
 
 	for _, queue := range *queues {
 		if queue.ConditionalGroupActivation != nil && queue.ConditionalGroupActivation.Rules != nil {
-			resources[*queue.Id+"/cga"] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-cga"}
+			resources[BuildConditionalGroupActivationId(*queue.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *queue.Name + "-cga"}
 		}
 	}
 
@@ -50,7 +49,7 @@ func createRoutingQueueConditionalGroupActivation(ctx context.Context, d *schema
 
 	queueId := d.Get("queue_id").(string)
 	log.Printf("creating conditional group activation rules for queue %s", queueId)
-	d.SetId(queueId + "/cga")
+	d.SetId(BuildConditionalGroupActivationId(queueId))
 
 	return updateRoutingQueueConditionalGroupActivation(ctx, d, meta)
 }
@@ -63,7 +62,7 @@ func readRoutingQueueConditionalGroupActivation(ctx context.Context, d *schema.R
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupActivationProxy(sdkConfig)
 	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceRoutingQueueConditionalGroupActivation(), constants.ConsistencyChecks(), ResourceType)
-	queueId := strings.Split(d.Id(), "/")[0]
+	queueId := SplitConditionalGroupActivationId(d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		log.Printf("Reading routing queue %s conditional group activation rules", queueId)
@@ -100,7 +99,7 @@ func updateRoutingQueueConditionalGroupActivation(ctx context.Context, d *schema
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupActivationProxy(sdkConfig)
 
-	queueId := strings.Split(d.Id(), "/")[0]
+	queueId := SplitConditionalGroupActivationId(d.Id())
 
 	cgaConfig := make(map[string]interface{})
 	if v, ok := d.GetOk("pilot_rule"); ok {
@@ -125,7 +124,7 @@ func updateRoutingQueueConditionalGroupActivation(ctx context.Context, d *schema
 func deleteRoutingQueueConditionalGroupActivation(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingQueueConditionalGroupActivationProxy(sdkConfig)
-	queueId := strings.Split(d.Id(), "/")[0]
+	queueId := SplitConditionalGroupActivationId(d.Id())
 
 	log.Printf("Removing conditional group activation rules from queue %s", queueId)
 

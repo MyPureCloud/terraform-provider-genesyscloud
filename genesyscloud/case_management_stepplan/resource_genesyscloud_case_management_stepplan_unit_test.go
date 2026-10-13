@@ -12,16 +12,16 @@ func TestUnitFormatParseStepplanResourceID(t *testing.T) {
 	t.Parallel()
 	cp := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 	sp := "pppppppp-pppp-pppp-pppp-pppppppppppp"
-	id := formatStepplanResourceID(cp, 3, sp)
+	id := FormatStepplanResourceID(cp, 3, sp)
 	assert.Equal(t, cp+"|3|"+sp, id)
 
-	gotCP, gotN, gotSp, err := parseStepplanResourceID(id)
+	gotCP, gotN, gotSp, err := ParseStepplanResourceID(id)
 	assert.NoError(t, err)
 	assert.Equal(t, cp, gotCP)
 	assert.Equal(t, 3, gotN)
 	assert.Equal(t, sp, gotSp)
 
-	_, _, _, err = parseStepplanResourceID("x|y")
+	_, _, _, err = ParseStepplanResourceID("x|y")
 	assert.Error(t, err)
 }
 

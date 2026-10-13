@@ -48,7 +48,7 @@ func getAllSitesAndOutboundRoutes(ctx context.Context, sdkConfig *platformclient
 		}
 		if routes != nil && len(*routes) > 0 {
 			for _, route := range *routes {
-				outboundRouteId := buildSiteAndOutboundRouteId(*site.Id, *route.Id)
+				outboundRouteId := BuildSiteAndOutboundRouteId(*site.Id, *route.Id)
 				resources[outboundRouteId] = &resourceExporter.ResourceMeta{BlockLabel: *site.Name + "_" + *route.Name}
 			}
 		}
@@ -69,7 +69,7 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 			// so instead of trying to create a new outbound route, we will just update the existing one
 			siteId, outboundRouteId, _, _, err := proxy.getSiteOutboundRouteByName(ctx, siteId, "Default Outbound Route")
 			if siteId != "" && outboundRouteId != "" && err == nil {
-				d.SetId(buildSiteAndOutboundRouteId(siteId, outboundRouteId))
+				d.SetId(BuildSiteAndOutboundRouteId(siteId, outboundRouteId))
 				return updateSiteOutboundRoute(ctx, d, meta)
 			}
 
@@ -83,7 +83,7 @@ func createSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to create outbound route %s for site %s: %s", *outboundRoute.Name, siteId, err), resp)
 	}
 
-	outboundRouteId := buildSiteAndOutboundRouteId(siteId, *newOutboundRoute.Id)
+	outboundRouteId := BuildSiteAndOutboundRouteId(siteId, *newOutboundRoute.Id)
 	_ = d.Set("route_id", *newOutboundRoute.Id)
 	d.SetId(outboundRouteId)
 	log.Printf("created outbound route %s for site %s", *newOutboundRoute.Id, siteId)
@@ -95,7 +95,7 @@ func readSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta int
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceSiteOutboundRoute(), constants.ConsistencyChecks(), ResourceType)
 
-	siteId, outboundRouteId := splitSiteAndOutboundRoute(d.Id())
+	siteId, outboundRouteId := SplitSiteAndOutboundRouteId(d.Id())
 
 	log.Printf("Reading outbound route %s for site %s", outboundRouteId, siteId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -138,7 +138,7 @@ func updateSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
-	siteId, outboundRouteId := splitSiteAndOutboundRoute(d.Id())
+	siteId, outboundRouteId := SplitSiteAndOutboundRouteId(d.Id())
 	outboundRoute := buildOutboundRoutes(d)
 
 	_, resp, err := proxy.updateSiteOutboundRoute(ctx, siteId, outboundRouteId, outboundRoute)
@@ -155,7 +155,7 @@ func deleteSiteOutboundRoute(ctx context.Context, d *schema.ResourceData, meta i
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getSiteOutboundRouteProxy(sdkConfig)
 
-	siteId, outboundRouteId := splitSiteAndOutboundRoute(d.Id())
+	siteId, outboundRouteId := SplitSiteAndOutboundRouteId(d.Id())
 
 	// Verify parent site still exists before trying to delete outbound routes
 	_, resp, err := proxy.getSite(ctx, siteId)
