@@ -66,10 +66,7 @@ func newTaskManagementOnCreateRuleProxy(clientConfig *platformclientv2.Configura
 // GetTaskManagementOnCreateRuleProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementOnCreateRuleProxy(clientConfig *platformclientv2.Configuration) *taskManagementOnCreateRuleProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementOnCreateRuleProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementOnCreateRuleProxy)
 }
 
 // createTaskManagementOnCreateRule creates a Genesys Cloud task management oncreate rule

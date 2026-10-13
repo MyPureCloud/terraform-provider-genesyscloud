@@ -57,11 +57,7 @@ func newConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclient
 // getConversationsMessagingIntegrationsOpenProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getConversationsMessagingIntegrationsOpenProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsOpenProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsOpenProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsOpenProxy)
 }
 
 // createConversationsMessagingIntegrationsOpen creates a Genesys Cloud conversations messaging integrations open

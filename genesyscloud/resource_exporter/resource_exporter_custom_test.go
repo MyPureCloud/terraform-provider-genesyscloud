@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 )
 
 type customMemberGroupTest struct {
@@ -225,5 +226,32 @@ func TestUnitRemoveUnresolvedScriptGuidsResolver(t *testing.T) {
 	}
 	if configMap["queue_flow_id"] != queueFlowGuid {
 		t.Fatalf("expected unrelated attribute to be untouched, got %#v", configMap["queue_flow_id"])
+	}
+}
+
+// TestUnitRemoveUnresolvedScriptGuidsResolver_SkipsWhenMrmoActive verifies that MRMO's export path
+// is exempt: MRMO never substitutes a "${...}" reference for a resolved GUID (it resolves
+// source-to-target IDs separately on apply, via its own archetype/replica mapping), so every raw
+// script GUID would otherwise look unresolved and get stripped unconditionally.
+func TestUnitRemoveUnresolvedScriptGuidsResolver_SkipsWhenMrmoActive(t *testing.T) {
+	t.Setenv(mrmo.MRMO_CXASCODE_INTEGRATION_ENABLED, "true")
+	t.Cleanup(mrmo.Reset)
+
+	rawGuid := uuid.NewString()
+	configMap := map[string]interface{}{
+		"default_script_ids": map[string]interface{}{
+			"EMAIL": rawGuid,
+		},
+	}
+	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+		t.Fatalf("unexpected error from resolver: %v", err)
+	}
+
+	innerMap, ok := configMap["default_script_ids"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected default_script_ids to remain a map under MRMO, got %#v", configMap["default_script_ids"])
+	}
+	if innerMap["EMAIL"] != rawGuid {
+		t.Fatalf("expected raw GUID to survive under MRMO, got %#v", innerMap["EMAIL"])
 	}
 }

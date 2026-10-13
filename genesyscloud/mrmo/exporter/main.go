@@ -134,5 +134,6 @@ func ExportByType(ctx context.Context, input ExportByTypeInput, clientConfig *pl
 		ExportDataPath:           input.Directory,
 		ExportedResourceDataList: exportResponse.ResourceDataList,
 		ResourceExporter:         exporter,
+		ResourceErrors:           exportResponse.ResourceErrors,
 	}, diags
 }
