@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -151,10 +152,7 @@ func updateOutboundDncList(ctx context.Context, d *schema.ResourceData, meta int
 		if updateErr != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update Outbound DNC list %s error: %s", name, updateErr), response)
 		}
-		// Only reconcile entries when the config provides them (len > 0).
-		// Omitted and empty blocks are indistinguishable to the provider, so we
-		// never delete based on their absence (DEVTOOLING-1816).
-		if len(entries) > 0 {
+		if shouldReconcileEntries(featureToggles.OutboundDnclistUnmanagedEntriesToggleExists(), d.HasChange("entries"), len(entries)) {
 			if outboundDncList.DncSourceType == nil || *outboundDncList.DncSourceType != "rds" {
 				return nil, util.BuildDiagnosticError(ResourceType, "Phone numbers can only be uploaded to internal DNC lists.", fmt.Errorf("phone numbers can only be uploaded to internal DNC Lists"))
 			}
@@ -231,9 +229,18 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 			}
 		}
 
-		// Only fetch entries when the config manages them. When omitted, clear
-		// entries from state to avoid an expensive export and a phantom diff.
-		if sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds" && configHasEntries(d) {
+		// Entries read behavior depends on the unmanaged-entries toggle.
+		//
+		// Toggle on (DEVTOOLING-1816): only fetch entries when the config manages
+		// them; otherwise clear them from state. This avoids exporting a very
+		// large list on every read and prevents a phantom removal diff.
+		//
+		// Default (toggle off): original behavior — always fetch and reconcile
+		// entries for rds lists so state reflects the server.
+		unmanagedEntries := featureToggles.OutboundDnclistUnmanagedEntriesToggleExists()
+		isRds := sdkDncList.DncSourceType != nil && *sdkDncList.DncSourceType == "rds"
+
+		if isRds && (!unmanagedEntries || configHasEntries(d)) {
 			apiEntries, err := getOutboundDnclistEntriesWithRetries(ctx, proxy, d.Id())
 			if err != nil {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to get entries for Outbound DNC list %s: %v", d.Id(), err), resp))
@@ -264,6 +271,23 @@ func readOutboundDncList(ctx context.Context, d *schema.ResourceData, meta inter
 
 		return cc.CheckState(d)
 	})
+}
+
+// shouldReconcileEntries decides whether the update path should delete and
+// re-upload phone entries on the API.
+//
+//   - Default (unmanagedToggle=false): original behavior — reconcile whenever
+//     Terraform reports a change to `entries` (this includes removal when the
+//     block is omitted, which deletes all numbers).
+//   - Toggle on (unmanagedToggle=true, DEVTOOLING-1816): reconcile only when the
+//     config explicitly provides entries (entryCount > 0). An omitted or empty
+//     block is left untouched, because the SDK cannot distinguish "omitted" from
+//     "empty" and we must not delete based on absence.
+func shouldReconcileEntries(unmanagedToggle bool, hasChange bool, entryCount int) bool {
+	if unmanagedToggle {
+		return entryCount > 0
+	}
+	return hasChange
 }
 
 // configHasEntries reports whether the config declares a non-empty entries
