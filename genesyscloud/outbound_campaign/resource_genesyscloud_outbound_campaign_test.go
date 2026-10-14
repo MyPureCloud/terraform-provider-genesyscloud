@@ -513,6 +513,7 @@ func TestAccResourceOutboundCampaignBasic(t *testing.T) {
 }
 
 func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
+	cleanupStaleTestCampaignsOnce(t)
 
 	var (
 		resourceLabel            = "campaign2"
@@ -750,6 +751,7 @@ func TestAccResourceOutboundCampaignCampaignStatus(t *testing.T) {
 
 func TestAccResourceOutboundCampaignStatusOn(t *testing.T) {
 	t.Parallel()
+	cleanupStaleTestCampaignsOnce(t)
 	var (
 		resourceLabel            = "campaign3"
 		name                     = "Test Campaign - " + uuid.NewString()
