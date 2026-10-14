@@ -48,7 +48,7 @@ func getAllKnowledgeCategories(ctx context.Context, clientConfig *platformclient
 			return nil, util.BuildAPIDiagnosticError("genesyscloud_knowledge_categories", fmt.Sprintf("failed to get all knowledgebase categories: %s", err), resp)
 		}
 		for _, knowledgeCategory := range *partialEntities {
-			id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+			id := BuildKnowledgeCategoryId(*knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 			resources[id] = &resourceExporter.ResourceMeta{BlockLabel: *knowledgeBase.Name + "_" + *knowledgeCategory.Name}
 		}
 	}
@@ -71,7 +71,7 @@ func createKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 		return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to create knowledge category %s error: %s", d.Id(), err), resp)
 	}
 
-	id := fmt.Sprintf("%s,%s", *knowledgeCategoryResponse.Id, *knowledgeCategoryResponse.KnowledgeBase.Id)
+	id := BuildKnowledgeCategoryId(*knowledgeCategoryResponse.Id, *knowledgeCategoryResponse.KnowledgeBase.Id)
 	d.SetId(id)
 
 	log.Printf("Created knowledge category %s", *knowledgeCategoryResponse.Id)
@@ -79,9 +79,7 @@ func createKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeCategoryId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeCategoryId, knowledgeBaseId := SplitKnowledgeCategoryId(d.Id())
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeCategoryProxy(sdkConfig)
@@ -98,7 +96,7 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to read knowledge category %s | error: %s", knowledgeCategoryId, getErr), resp))
 		}
 
-		newId := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+		newId := BuildKnowledgeCategoryId(*knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 		d.SetId(newId)
 		d.Set("knowledge_base_id", *knowledgeCategory.KnowledgeBase.Id)
 		d.Set("knowledge_category", flattenKnowledgeCategory(*knowledgeCategory))
@@ -108,9 +106,7 @@ func readKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeCategoryId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeCategoryId, knowledgeBaseId := SplitKnowledgeCategoryId(d.Id())
 	knowledgeCategory := d.Get("knowledge_category").([]interface{})[0].(map[string]interface{})
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -142,14 +138,12 @@ func updateKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	id := strings.Split(d.Id(), ",")
-	knowledgeCategoryId := id[0]
-	knowledgeBaseId := id[1]
+	knowledgeCategoryId, knowledgeBaseId := SplitKnowledgeCategoryId(d.Id())
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeCategoryProxy(sdkConfig)
 
-	log.Printf("Deleting knowledge category %s", id)
+	log.Printf("Deleting knowledge category %s", d.Id())
 	_, resp, err := proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
 	if err != nil {
 		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
@@ -160,10 +154,10 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 			time.Sleep(10 * time.Second)
 			_, resp, err = proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
 			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
+				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", d.Id(), err), resp)
 			}
 		} else {
-			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", id, err), resp)
+			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", d.Id(), err), resp)
 		}
 	}
 

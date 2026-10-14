@@ -63,7 +63,7 @@ func TestAccDataSourceArchitectFlow(t *testing.T) {
 				ResourceName:            ResourceType + "." + flowResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,

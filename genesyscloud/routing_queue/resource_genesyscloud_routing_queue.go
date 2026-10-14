@@ -38,7 +38,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	time.Sleep(5 * time.Second)
 
 	// Gets all routing queues without a peer
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
@@ -48,7 +48,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	// Gets all routing queues with a peer
-	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
+	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
 	}

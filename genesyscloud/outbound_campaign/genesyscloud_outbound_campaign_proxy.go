@@ -67,10 +67,7 @@ func newOutboundCampaignProxy(clientConfig *platformclientv2.Configuration) *out
 // getOutboundCampaignProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundCampaignProxy(clientConfig *platformclientv2.Configuration) *outboundCampaignProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundCampaignProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundCampaignProxy)
 }
 
 // createOutboundCampaign creates a Genesys Cloud outbound campaign

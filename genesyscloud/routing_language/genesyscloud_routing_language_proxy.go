@@ -50,10 +50,7 @@ func newRoutingLanguageProxy(clientConfig *platformclientv2.Configuration) *rout
 }
 
 func getRoutingLanguageProxy(clientConfig *platformclientv2.Configuration) *routingLanguageProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingLanguageProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingLanguageProxy)
 }
 
 // getRoutingLanguage retrieves all Genesys Cloud routing language

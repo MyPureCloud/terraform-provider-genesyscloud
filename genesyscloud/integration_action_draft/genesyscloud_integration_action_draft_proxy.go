@@ -49,10 +49,7 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 }
 
 func getIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *integrationActionsProxy {
-	if internalProxy == nil {
-		internalProxy = newIntegrationActionsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIntegrationActionsProxy)
 }
 
 func (p *integrationActionsProxy) getAllIntegrationActionDrafts(ctx context.Context, name string) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {

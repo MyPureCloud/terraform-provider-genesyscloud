@@ -24,6 +24,12 @@ func flattenSubjectRoles(d *schema.ResourceData, p *userRolesProxy) (*schema.Set
 
 	roleDivsMap := make(map[string]*schema.Set)
 	for _, grant := range grants {
+		// Guard against malformed/partial API responses where Role, Division, or their
+		// Ids may be nil. Skipping such grants prevents a nil pointer panic (which would
+		// crash the whole provider plugin) and lets the read complete gracefully.
+		if grant.Role == nil || grant.Role.Id == nil || grant.Division == nil || grant.Division.Id == nil {
+			continue
+		}
 		if currentDivs, ok := roleDivsMap[*grant.Role.Id]; ok {
 			currentDivs.Add(*grant.Division.Id)
 		} else {
@@ -42,13 +48,20 @@ func flattenSubjectRoles(d *schema.ResourceData, p *userRolesProxy) (*schema.Set
 }
 
 func roleDivPairsToGrants(grantPairs []string) platformclientv2.Roledivisiongrants {
-	grants := make([]platformclientv2.Roledivisionpair, len(grantPairs))
-	for i, pair := range grantPairs {
-		roleDiv := strings.Split(pair, ":")
-		grants[i] = platformclientv2.Roledivisionpair{
-			RoleId:     &roleDiv[0],
-			DivisionId: &roleDiv[1],
+	grants := make([]platformclientv2.Roledivisionpair, 0, len(grantPairs))
+	for _, pair := range grantPairs {
+		roleDiv := strings.SplitN(pair, ":", 2)
+		// A valid pair is "roleID:divisionID". Skip anything malformed to avoid an
+		// index-out-of-range panic on roleDiv[1].
+		if len(roleDiv) != 2 {
+			continue
 		}
+		roleID := roleDiv[0]
+		divID := roleDiv[1]
+		grants = append(grants, platformclientv2.Roledivisionpair{
+			RoleId:     &roleID,
+			DivisionId: &divID,
+		})
 	}
 	return platformclientv2.Roledivisiongrants{
 		Grants: &grants,
@@ -64,11 +77,18 @@ func addDivisionIdsSetToRole(d *schema.ResourceData, divIdsFromApi *schema.Set, 
 
 	for _, role := range rolesMaps {
 		roleMap, ok := role.(map[string]interface{})
-		// find the role in question
-		if !ok || roleMap["role_id"].(string) != roleId {
+		if !ok {
 			continue
 		}
-		divs := roleMap["division_ids"].(*schema.Set)
+		// find the role in question (guard the type assertion to avoid a panic)
+		roleIDVal, ok := roleMap["role_id"].(string)
+		if !ok || roleIDVal != roleId {
+			continue
+		}
+		divs, ok := roleMap["division_ids"].(*schema.Set)
+		if !ok || divs == nil {
+			continue
+		}
 		for _, div := range divs.List() {
 			// home division id was included in original config -> use division_ids read from API
 			if div.(string) == homeDivId {
@@ -88,6 +108,10 @@ func getExistingAndConfigGrants(grants []platformclientv2.Authzgrant, rolesConfi
 	var existingGrants []string
 
 	for _, grant := range grants {
+		// Guard against nil Role/Division to avoid a panic on malformed API responses.
+		if grant.Role == nil || grant.Role.Id == nil || grant.Division == nil || grant.Division.Id == nil {
+			continue
+		}
 		existingGrants = append(existingGrants, createRoleDivisionPair(*grant.Role.Id, *grant.Division.Id))
 	}
 

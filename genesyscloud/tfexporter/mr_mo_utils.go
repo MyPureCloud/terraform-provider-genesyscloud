@@ -23,6 +23,11 @@ type MrMoExportResponse struct {
 type MrMoExportByTypeResponse struct {
 	Config           util.JsonMap
 	ResourceDataList []*schema.ResourceData
+
+	// ResourceErrors holds instances of the requested type that could not be read.
+	// Those instances are simply absent from ResourceDataList, so a caller that
+	// ignores this field cannot tell a partial export from a complete one.
+	ResourceErrors []ResourceErrorInfo
 }
 
 func diagNilResourceExporter(resType string) diag.Diagnostics {
@@ -277,18 +282,14 @@ func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, gener
 		}
 	}
 
-	var resourceDataList []*schema.ResourceData
-	if g.resourcesExportedForMrMo == nil {
-		resourceDataList = make([]*schema.ResourceData, 0)
-	} else {
-		resourceDataList = (*g.resourcesExportedForMrMo)[resType]
-	}
+	resourceDataList := g.mrMoResourceDataList(resType)
 
 	return &MrMoExportByTypeResponse{
 		Config: util.JsonMap{
 			"resource": g.resourceTypesMaps,
 		},
 		ResourceDataList: resourceDataList,
+		ResourceErrors:   g.resourceErrorsForType(resType),
 	}, diags
 }
 

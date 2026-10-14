@@ -1257,38 +1257,42 @@ func TestUnitCaseplanExporter_skipsNeverPublished(t *testing.T) {
 }
 
 func TestUnitCaseplanRead_exportModes(t *testing.T) {
-	modes := map[string]func(t *testing.T){
-		"tfexporter": func(t *testing.T) {
-			tfexporter_state.ActivateExporterState()
-			t.Cleanup(tfexporter_state.ResetExporterStateForTests)
-		},
-		"mrmo": func(t *testing.T) { t.Setenv(mrmo.MRMO_CXASCODE_INTEGRATION_ENABLED, "true") },
+	activateExporter := func(t *testing.T) {
+		tfexporter_state.ActivateExporterState()
+		t.Cleanup(tfexporter_state.ResetExporterStateForTests)
 	}
-	for mode, activate := range modes {
-		t.Run(mode+" skips a never-published caseplan", func(t *testing.T) {
-			activate(t)
-			require.True(t, isExporting())
-			f := newFakeCaseplanAPI(t, "A")
-			meta := withFakeProxy(t, f)
-			d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
-			d.SetId(f.id)
-			require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
-			assert.Empty(t, d.Id())
-		})
-		t.Run(mode+" reads stageplans and stepplans from empty state in API order", func(t *testing.T) {
-			activate(t)
-			f := newFakeCaseplanAPI(t, "Zeta", "Alpha")
-			f.published = 1
-			f.stages[1].step = workitemStep("Do", "wt-1")
-			meta := withFakeProxy(t, f)
-			d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
-			d.SetId(f.id)
-			require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
-			assert.Equal(t, 2, d.Get("stageplan.#"))
-			assert.Equal(t, "Zeta", d.Get("stageplan.0.name"))
-			assert.Equal(t, "wt-1", d.Get("stageplan.1.stepplan.0.workitem_settings.0.worktype_id"))
-		})
-	}
+
+	// Under MRMO, provider.SingletonOrFresh builds a fresh proxy on every call and bypasses the
+	// stubbed internalProxy, so MRMO is covered by asserting it counts as exporting. The read
+	// behavior that isExporting() gates is exercised through tfexporter mode below.
+	t.Run("mrmo counts as exporting", func(t *testing.T) {
+		t.Setenv(mrmo.MRMO_CXASCODE_INTEGRATION_ENABLED, "true")
+		assert.True(t, isExporting())
+	})
+
+	t.Run("export skips a never-published caseplan", func(t *testing.T) {
+		activateExporter(t)
+		require.True(t, isExporting())
+		f := newFakeCaseplanAPI(t, "A")
+		meta := withFakeProxy(t, f)
+		d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
+		d.SetId(f.id)
+		require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
+		assert.Empty(t, d.Id())
+	})
+	t.Run("export reads stageplans and stepplans from empty state in API order", func(t *testing.T) {
+		activateExporter(t)
+		f := newFakeCaseplanAPI(t, "Zeta", "Alpha")
+		f.published = 1
+		f.stages[1].step = workitemStep("Do", "wt-1")
+		meta := withFakeProxy(t, f)
+		d := schema.TestResourceDataRaw(t, ResourceCaseManagementCaseplan().Schema, map[string]interface{}{})
+		d.SetId(f.id)
+		require.Empty(t, readCaseManagementCaseplan(context.Background(), d, meta))
+		assert.Equal(t, 2, d.Get("stageplan.#"))
+		assert.Equal(t, "Zeta", d.Get("stageplan.0.name"))
+		assert.Equal(t, "wt-1", d.Get("stageplan.1.stepplan.0.workitem_settings.0.worktype_id"))
+	})
 
 	t.Run("outside export a never-published caseplan is kept and read from latest", func(t *testing.T) {
 		tfexporter_state.ResetExporterStateForTests()

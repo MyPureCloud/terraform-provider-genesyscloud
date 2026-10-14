@@ -57,10 +57,7 @@ func newOutboundSequenceProxy(clientConfig *platformclientv2.Configuration) *out
 // getOutboundSequenceProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundSequenceProxy(clientConfig *platformclientv2.Configuration) *outboundSequenceProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundSequenceProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundSequenceProxy)
 }
 
 // createOutboundSequence creates a Genesys Cloud outbound sequence

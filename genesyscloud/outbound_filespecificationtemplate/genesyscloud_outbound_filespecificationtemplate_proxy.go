@@ -58,11 +58,7 @@ func newOutboundFilespecificationtemplateProxy(clientConfig *platformclientv2.Co
 // getOutboundFilespecificationtemplateProxy acts as a singleton to for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundFilespecificationtemplateProxy(clientConfig *platformclientv2.Configuration) *outboundFilespecificationtemplateProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundFilespecificationtemplateProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundFilespecificationtemplateProxy)
 }
 
 // createOutboundFilespecificationtemplate creates a Genesys Cloud outbound filespecificationtemplate

@@ -62,10 +62,7 @@ func newTaskManagementWorkbinProxy(clientConfig *platformclientv2.Configuration)
 // getTaskManagementWorkbinProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementWorkbinProxy(clientConfig *platformclientv2.Configuration) *taskManagementWorkbinProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementWorkbinProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementWorkbinProxy)
 }
 
 // createTaskManagementWorkbin creates a Genesys Cloud task management workbin

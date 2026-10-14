@@ -67,10 +67,7 @@ func newOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outb
 }
 
 func getOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outboundDnclistProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundDnclistProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundDnclistProxy)
 }
 
 // createOutboundDnclist creates a Genesys Cloud Outbound Dnclist
