@@ -121,7 +121,7 @@ func createTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		return diagErr
 	}
 
-	d.SetId(worktypeId + "/" + *workitemStatus.Id)
+	d.SetId(BuildWorktypeStatusTerraformId(worktypeId, *workitemStatus.Id))
 
 	if autoTerminate := resourcedata.GetNillableBool(d, "auto_terminate_workitem"); autoTerminate != nil {
 		statusId := *workitemStatus.Id

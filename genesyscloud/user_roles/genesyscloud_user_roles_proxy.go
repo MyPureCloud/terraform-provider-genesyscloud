@@ -36,10 +36,7 @@ func newUserRolesProxy(clientConfig *platformclientv2.Configuration) *userRolesP
 }
 
 func getUserRolesProxy(clientConfig *platformclientv2.Configuration) *userRolesProxy {
-	if internalProxy == nil {
-		internalProxy = newUserRolesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newUserRolesProxy)
 }
 
 func (p *userRolesProxy) getUserRolesById(ctx context.Context, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {

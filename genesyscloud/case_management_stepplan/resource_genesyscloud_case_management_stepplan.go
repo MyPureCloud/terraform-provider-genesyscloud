@@ -49,7 +49,7 @@ func createCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, m
 		return diag.Errorf("could not resolve stepplan for caseplan %s stageplan %s", caseplanID, *stage.Id)
 	}
 
-	d.SetId(formatStepplanResourceID(caseplanID, stageNumber, *step.Id))
+	d.SetId(FormatStepplanResourceID(caseplanID, stageNumber, *step.Id))
 	_ = d.Set("stepplan_id", *step.Id)
 	_ = d.Set("stageplan_id", *stage.Id)
 
@@ -97,7 +97,7 @@ func readCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, met
 	proxy := getCaseManagementStepplanProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCaseManagementStepplan(), constants.ConsistencyChecks(), resourceName)
 
-	caseplanID, stageNumber, stepplanID, err := parseStepplanResourceID(d.Id())
+	caseplanID, stageNumber, stepplanID, err := ParseStepplanResourceID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -136,7 +136,7 @@ func readCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, met
 }
 
 func updateCaseManagementStepplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	caseplanID, stageNumber, stepplanID, err := parseStepplanResourceID(d.Id())
+	caseplanID, stageNumber, stepplanID, err := ParseStepplanResourceID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
