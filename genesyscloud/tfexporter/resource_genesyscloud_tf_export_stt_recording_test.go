@@ -145,7 +145,7 @@ func TestAccResourceTfExportSttCategoryCriteria(t *testing.T) {
 	var (
 		exportDir    = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
 		categoryName = "tfacc-export-category-" + uuid.NewString()
-		word         = "refund"
+		word         = "refund" + strings.ReplaceAll(uuid.NewString(), "-", "")[:8]
 		resources    = fmt.Sprintf(`
 resource "genesyscloud_speechandtextanalytics_category" "category" {
   name             = %q
