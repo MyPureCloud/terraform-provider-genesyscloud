@@ -1771,10 +1771,6 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 				continue
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")
-			if user != nil && user.State != nil && *user.State == "deleted" {
-				// users are soft-deleted: the API can keep returning them with state "deleted"
-				continue
-			}
 			if user != nil {
 				return fmt.Errorf("User Resource (%s) still exists", rs.Primary.ID)
 			} else if util.IsStatus404(resp) {
