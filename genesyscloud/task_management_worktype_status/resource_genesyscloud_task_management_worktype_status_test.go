@@ -12,7 +12,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -140,6 +140,92 @@ func TestAccResourceTaskManagementWorktypeStatus(t *testing.T) {
 				ResourceName:      "genesyscloud_task_management_worktype_status." + statusResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifyTaskManagementWorktypeStatusDestroyed,
+	})
+}
+
+// TestAccResourceTaskManagementWorktypeStatusDefaultOnlyChange verifies the fix for WORKITEMS-9171: flipping which
+// status is the default, with no other field on either status resource changing, must actually propagate to
+// Genesys Cloud instead of silently no-opping.
+func TestAccResourceTaskManagementWorktypeStatusDefaultOnlyChange(t *testing.T) {
+	t.Parallel()
+	var (
+		wbResourceLabel = "workbin_1"
+		wbName          = "wb_" + uuid.NewString()
+		wbDescription   = "workbin created for CX as Code test case"
+
+		wsResourceLabel = "schema_1"
+		wsName          = "ws_" + uuid.NewString()
+		wsDescription   = "workitem schema created for CX as Code test case"
+
+		wtResourceLabel = "worktype_id"
+		wtName          = "wt_" + uuid.NewString()
+		wtDescription   = "test worktype description"
+
+		statusResourceLabel1 = "status1"
+		status1Name          = "status1-" + uuid.NewString()
+		status1Category      = "Open"
+
+		statusResourceLabel2 = "status2"
+		status2Name          = "status2-" + uuid.NewString()
+		status2Category      = "Closed"
+	)
+
+	baseConfig := workbin.GenerateWorkbinResource(wbResourceLabel, wbName, wbDescription, util.NullValue) +
+		workitemSchema.GenerateWorkitemSchemaResourceBasic(wsResourceLabel, wsName, wsDescription) +
+		workType.GenerateWorktypeResourceBasic(
+			wtResourceLabel,
+			wtName,
+			wtDescription,
+			fmt.Sprintf("genesyscloud_task_management_workbin.%s.id", wbResourceLabel),
+			"",
+		)
+
+	configWithDefaults := func(status1Default, status2Default bool) string {
+		return baseConfig +
+			GenerateWorktypeStatusResource(
+				statusResourceLabel1,
+				fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+				status1Name,
+				status1Category,
+				"",
+				util.NullValue,
+				"",
+				fmt.Sprintf("default = %v", status1Default),
+			) +
+			GenerateWorktypeStatusResource(
+				statusResourceLabel2,
+				fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+				status2Name,
+				status2Category,
+				"",
+				util.NullValue,
+				"",
+				fmt.Sprintf("default = %v", status2Default),
+			)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create both statuses, status1 as the default
+				Config: configWithDefaults(true, false),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "default", util.TrueValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel2, "default", util.FalseValue),
+				),
+			},
+			{
+				// Flip which status is the default. Nothing else about either resource changes.
+				Config: configWithDefaults(false, true),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel1, "default", util.FalseValue),
+					resource.TestCheckResourceAttr(ResourceType+"."+statusResourceLabel2, "default", util.TrueValue),
+				),
 			},
 		},
 		CheckDestroy: testVerifyTaskManagementWorktypeStatusDestroyed,

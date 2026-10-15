@@ -9,9 +9,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // SpeechAndTextAnalyticsTopicIdResolver resolves an STT topic GUID into a data source reference.
@@ -133,6 +134,32 @@ func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attribute
 	if isValidGuid(strVal) {
 		delete(configMap, attributeKey)
 	}
+}
+
+// RemoveUnresolvedScriptGuidsResolver removes default_script_ids entries that could not be resolved
+// to an exported genesyscloud_script resource (e.g. built-in or unpublished scripts that 404).
+//
+// Skipped when MRMO is driving the export. "Resolved" here means converted into a "${...}"
+// Terraform reference, which only happens on the standard file-export path. MRMO never does that
+// substitution -- it exports the raw GUID and resolves source-to-target IDs separately, on apply,
+// via its own archetype/replica mapping (see genesyscloud/mrmo). Every script GUID would therefore
+// look "unresolved" to this function under MRMO, stripping default_script_ids from every
+// MRMO-replicated queue instead of only the built-in/unpublished scripts this was written to catch.
+func RemoveUnresolvedScriptGuidsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
+	if mrmo.IsActive() {
+		return nil
+	}
+	innerMap, ok := configMap["default_script_ids"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	for key := range innerMap {
+		OmitUnresolvedGuidFromConfigMap(innerMap, key)
+	}
+	if len(innerMap) == 0 {
+		delete(configMap, "default_script_ids")
+	}
+	return nil
 }
 
 // MemberGroupsResolver resolves the resource type to use for member_group_id based on member_group_type.

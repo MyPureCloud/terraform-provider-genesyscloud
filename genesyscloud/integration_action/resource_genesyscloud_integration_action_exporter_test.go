@@ -1,13 +1,10 @@
 package integration_action
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
-	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func TestUnitFlattenFunctionConfigRequestPreservesLocalFileFields(t *testing.T) {
@@ -56,63 +53,86 @@ func TestUnitFlattenFunctionConfigRequestFallsBackToZipName(t *testing.T) {
 	}
 }
 
-func TestUnitFunctionZipExportResolver(t *testing.T) {
-	exportDir := t.TempDir()
-	actionId := "action-123"
+func TestUnitIntegrationActionExporterTreatsFunctionZipAsUnresolvable(t *testing.T) {
+	exporter := IntegrationActionExporter()
+	if exporter.CustomFileWriter.RetrieveAndWriteFilesFunc != nil {
+		t.Fatal("function zip custom file writer should not be registered; zip binaries cannot be downloaded")
+	}
+
+	attr, ok := exporter.UnResolvableAttributes["function_config.file_path"]
+	if !ok {
+		t.Fatal("expected function_config.file_path in UnResolvableAttributes")
+	}
+	if attr == nil || attr.Type != schema.TypeString {
+		t.Fatalf("expected string schema for function_config.file_path, got %#v", attr)
+	}
+
+	hashResolver, ok := exporter.CustomAttributeResolver["function_config.file_content_hash"]
+	if !ok || hashResolver == nil || hashResolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver to strip function_config.file_content_hash")
+	}
+
 	configMap := map[string]interface{}{
-		"name": "Get Ticket Status",
-		"function_config": []interface{}{
-			map[string]interface{}{
-				"handler":           "dist/index.handler",
-				"file_path":         "xp2025_get_ticket_status.zip",
-				"file_content_hash": "sha256:should-be-removed",
-			},
-		},
+		"file_path":         "fda_code.zip",
+		"file_content_hash": "sha256:stale",
 	}
-	resource := resourceExporter.ResourceInfo{
-		State: &terraform.InstanceState{
-			ID: actionId,
-			Attributes: map[string]string{
-				"function_config.0.file_path":         "xp2025_get_ticket_status.zip",
-				"function_config.0.file_content_hash": "sha256:should-be-removed",
-			},
-		},
+	if err := hashResolver.ResolverFunc(configMap, nil, "label"); err != nil {
+		t.Fatalf("hash resolver returned error: %v", err)
 	}
-
-	if err := FunctionZipExportResolver(actionId, exportDir, FunctionZipExportSubDirectory, configMap, nil, resource); err != nil {
-		t.Fatalf("FunctionZipExportResolver returned error: %v", err)
-	}
-
-	fc := configMap["function_config"].([]interface{})[0].(map[string]interface{})
-	expectedPath := filepath.ToSlash(filepath.Join(FunctionZipExportSubDirectory, "xp2025_get_ticket_status.zip"))
-	if fc["file_path"] != expectedPath {
-		t.Fatalf("expected exported file_path %s, got %v", expectedPath, fc["file_path"])
-	}
-	if _, ok := fc["file_content_hash"]; ok {
-		t.Fatalf("file_content_hash should be cleared on export")
-	}
-	if resource.State.Attributes["function_config.0.file_path"] != expectedPath {
-		t.Fatalf("state file_path not updated")
-	}
-	if _, ok := resource.State.Attributes["function_config.0.file_content_hash"]; ok {
-		t.Fatalf("state file_content_hash should be cleared")
-	}
-
-	readmePath := filepath.Join(exportDir, FunctionZipExportSubDirectory, "README.md")
-	if _, err := os.Stat(readmePath); err != nil {
-		t.Fatalf("expected README.md to be written: %v", err)
+	if _, exists := configMap["file_content_hash"]; exists {
+		t.Fatal("file_content_hash should be stripped on export")
 	}
 }
 
-func TestUnitFunctionZipExportResolverNoopWithoutFunctionConfig(t *testing.T) {
+// TestUnitIntegrationActionExporterStripsFunctionZipID verifies the DEVTOOLING-1797 fix:
+// zip_id is a Genesys Cloud generated, org-specific GUID and must be dropped on export so
+// it does not cause perpetual plan drift in a target org.
+func TestUnitIntegrationActionExporterStripsFunctionZipID(t *testing.T) {
+	exporter := IntegrationActionExporter()
+
+	zipIDResolver, ok := exporter.CustomAttributeResolver["function_config.zip_id"]
+	if !ok || zipIDResolver == nil || zipIDResolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver to strip function_config.zip_id")
+	}
+
 	configMap := map[string]interface{}{
-		"name": "Regular Action",
+		"handler": "dist/index.handler",
+		"zip_id":  "11111111-1111-1111-1111-111111111111",
 	}
-	resource := resourceExporter.ResourceInfo{
-		State: &terraform.InstanceState{Attributes: map[string]string{}},
+	if err := zipIDResolver.ResolverFunc(configMap, nil, "label"); err != nil {
+		t.Fatalf("zip_id resolver returned error: %v", err)
 	}
-	if err := FunctionZipExportResolver("id", t.TempDir(), FunctionZipExportSubDirectory, configMap, nil, resource); err != nil {
-		t.Fatalf("expected nil error, got %v", err)
+	if _, exists := configMap["zip_id"]; exists {
+		t.Fatal("zip_id should be stripped on export")
+	}
+	if configMap["handler"] != "dist/index.handler" {
+		t.Fatalf("handler should be preserved, got %v", configMap["handler"])
+	}
+}
+
+// TestUnitIntegrationActionExporterStripsRequestURLTemplate verifies the DEVTOOLING-1797
+// fix: for function data actions request_url_template is set server-side to the generated
+// function id (an org-specific GUID) and must be dropped on export to avoid perpetual drift.
+func TestUnitIntegrationActionExporterStripsRequestURLTemplate(t *testing.T) {
+	exporter := IntegrationActionExporter()
+
+	urlResolver, ok := exporter.CustomAttributeResolver["config_request.request_url_template"]
+	if !ok || urlResolver == nil || urlResolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver to strip config_request.request_url_template")
+	}
+
+	configMap := map[string]interface{}{
+		"request_type":         "POST",
+		"request_url_template": "22222222-2222-2222-2222-222222222222",
+	}
+	if err := urlResolver.ResolverFunc(configMap, nil, "label"); err != nil {
+		t.Fatalf("request_url_template resolver returned error: %v", err)
+	}
+	if _, exists := configMap["request_url_template"]; exists {
+		t.Fatal("request_url_template should be stripped on export")
+	}
+	if configMap["request_type"] != "POST" {
+		t.Fatalf("request_type should be preserved, got %v", configMap["request_type"])
 	}
 }
 

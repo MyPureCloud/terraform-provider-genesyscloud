@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -47,11 +47,7 @@ func newIdpPingProxy(clientConfig *platformclientv2.Configuration) *idpPingProxy
 // getIdpPingProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIdpPingProxy(clientConfig *platformclientv2.Configuration) *idpPingProxy {
-	if internalProxy == nil {
-		internalProxy = newIdpPingProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIdpPingProxy)
 }
 
 // getIdpPing retrieves all Genesys Cloud idp ping

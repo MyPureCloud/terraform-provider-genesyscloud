@@ -1,9 +1,10 @@
 package organization_presence_definition
 
 import (
-	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"sync"
 	"testing"
+
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -16,8 +17,12 @@ import (
 // providerResources holds a map of all registered resources
 var providerResources map[string]*schema.Resource
 
+// providerDataSources holds a map of all registered data sources
+var providerDataSources map[string]*schema.Resource
+
 type registerTestInstance struct {
-	resourceMapMutex sync.RWMutex
+	resourceMapMutex   sync.RWMutex
+	datasourceMapMutex sync.RWMutex
 }
 
 // registerTestResources registers all resources used in the tests
@@ -29,13 +34,23 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[authDivision.ResourceType] = authDivision.ResourceAuthDivision()
 }
 
+// registerTestDataSources registers all data sources used in the tests
+func (r *registerTestInstance) registerTestDataSources() {
+	r.datasourceMapMutex.Lock()
+	defer r.datasourceMapMutex.Unlock()
+
+	providerDataSources[ResourceType] = DataSourceOrganizationPresenceDefinition()
+}
+
 // initTestResources initializes all test resources and data sources.
 func initTestResources() {
 	providerResources = make(map[string]*schema.Resource)
+	providerDataSources = make(map[string]*schema.Resource)
 
 	regInstance := &registerTestInstance{}
 
 	regInstance.registerTestResources()
+	regInstance.registerTestDataSources()
 }
 
 // TestMain is a "setup" function called by the testing framework when run the test

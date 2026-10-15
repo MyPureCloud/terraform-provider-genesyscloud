@@ -6,7 +6,7 @@ import (
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -50,10 +50,7 @@ func newPublishProxy(clientConfig *platformclientv2.Configuration) *publishProxy
 
 // getPublishProxy returns the singleton proxy instance.
 func getPublishProxy(clientConfig *platformclientv2.Configuration) *publishProxy {
-	if internalProxy == nil {
-		internalProxy = newPublishProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newPublishProxy)
 }
 
 // Public proxy methods

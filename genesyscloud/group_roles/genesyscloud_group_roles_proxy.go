@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *groupRolesProxy
@@ -36,10 +36,7 @@ func newGroupRolesProxy(clientConfig *platformclientv2.Configuration) *groupRole
 }
 
 func getGroupRolesProxy(clientConfig *platformclientv2.Configuration) *groupRolesProxy {
-	if internalProxy == nil {
-		internalProxy = newGroupRolesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newGroupRolesProxy)
 }
 
 func (p *groupRolesProxy) getGroupRolesById(ctx context.Context, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
@@ -54,7 +51,7 @@ func getGroupRolesByIdFn(ctx context.Context, p *groupRolesProxy, roleId string)
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false)
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
 	}
@@ -77,7 +74,7 @@ func updateGroupRolesFn(ctx context.Context, p *groupRolesProxy, roleId string, 
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Get existing roles/divisions
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, true)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false)
 
 	if err != nil || (resp != nil && resp.StatusCode == http.StatusNotFound) || subject == nil {
 		return resp, fmt.Errorf("failed to get current grants for subject %s: %s while updating group role", roleId, err)
@@ -132,7 +129,7 @@ func updateGroupRolesFn(ctx context.Context, p *groupRolesProxy, roleId string, 
 
 func getAssignedGrants(subjectID string, p *groupRolesProxy) ([]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, true)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, false)
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", subjectID, err)

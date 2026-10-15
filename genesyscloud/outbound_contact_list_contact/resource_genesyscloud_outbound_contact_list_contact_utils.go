@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // buildWritableContactFromResourceData used to build the request body for contact creation
@@ -37,6 +37,7 @@ func buildWritableContactFromResourceData(d *schema.ResourceData) platformclient
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
 	}
+	applyDialerContactRetentionWritable(&contactRequest, d, d.Get("retention_type").(string), d.Get("retention_days").(int))
 	return contactRequest
 }
 
@@ -58,7 +59,57 @@ func buildDialerContactFromResourceData(d *schema.ResourceData) platformclientv2
 	if contactableStatus := buildContactableStatus(d); contactableStatus != nil {
 		contactRequest.ContactableStatus = contactableStatus
 	}
+	applyDialerContactRetention(&contactRequest, d, d.Get("retention_type").(string), d.Get("retention_days").(int))
 	return contactRequest
+}
+
+func applyDialerContactRetention(contact *platformclientv2.Dialercontact, d *schema.ResourceData, retentionType string, retentionDays int) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			contact.RetentionDays = &retentionDays
+		}
+		return
+	}
+	contact.RetentionType = &retentionType
+	switch retentionType {
+	case "Never", "Today":
+		contact.RetentionDays = nil
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("retention_days")) {
+			contact.RetentionDays = &retentionDays
+		}
+	}
+}
+
+func applyDialerContactRetentionWritable(contact *platformclientv2.Writabledialercontact, d *schema.ResourceData, retentionType string, retentionDays int) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			contact.RetentionDays = &retentionDays
+		}
+		return
+	}
+	contact.RetentionType = &retentionType
+	switch retentionType {
+	case "Never", "Today":
+		contact.RetentionDays = nil
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("retention_days")) {
+			contact.RetentionDays = &retentionDays
+		}
+	}
+}
+
+func setDialerContactRetentionState(d *schema.ResourceData, retentionType *string, retentionDays *int) {
+	if retentionType != nil {
+		resourcedata.SetNillableValue(d, "retention_type", retentionType)
+		if *retentionType != "RetentionDays" {
+			_ = d.Set("retention_days", 0)
+		} else {
+			resourcedata.SetNillableValue(d, "retention_days", retentionDays)
+		}
+	} else {
+		resourcedata.SetNillableValue(d, "retention_days", retentionDays)
+	}
 }
 
 func buildContactableStatus(d *schema.ResourceData) *map[string]platformclientv2.Contactablestatus {
@@ -198,11 +249,15 @@ func GenerateColumnStatus(column, contactable string) string {
 		}`, column, contactable)
 }
 
-func buildComplexContactId(contactListId string, contactId string) string {
+// BuildComplexContactId builds the outbound_contact_list_contact composite resource ID, which
+// is always in the format <contact-list-id>:<contact-id>.
+func BuildComplexContactId(contactListId string, contactId string) (complexContactId string) {
 	return fmt.Sprintf("%s:%s", contactListId, contactId)
 }
 
-func splitComplexContactId(complexContactId string) (string, string) {
+// SplitComplexContactId splits the outbound_contact_list_contact composite resource ID, which
+// is always in the format <contact-list-id>:<contact-id>, back into its parts.
+func SplitComplexContactId(complexContactId string) (contactListId string, contactId string) {
 	if strings.Contains(complexContactId, ":") {
 		split := strings.SplitN(complexContactId, ":", 2)
 		return split[0], split[1]

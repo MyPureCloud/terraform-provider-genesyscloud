@@ -8,7 +8,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -55,11 +55,7 @@ func newOutboundCallableTimesetProxy(clientConfig *platformclientv2.Configuratio
 }
 
 func getOutboundCallabletimesetProxy(clientConfig *platformclientv2.Configuration) *outboundCallableTimesetProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundCallableTimesetProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundCallableTimesetProxy)
 }
 
 // createOutboundCallabletimeset creates a Genesys Cloud Outbound Callable Timeset

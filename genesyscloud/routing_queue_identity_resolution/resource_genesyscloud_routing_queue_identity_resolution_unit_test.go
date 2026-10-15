@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	"github.com/stretchr/testify/assert"
@@ -144,7 +144,7 @@ func TestUnitGetAllRoutingQueueIdentityResolution(t *testing.T) {
 	divisionId := uuid.NewString()
 
 	queueProxy := &routingQueue.RoutingQueueProxy{}
-	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		return &[]platformclientv2.Queue{
 			{Id: &defaultQueueId, Name: &defaultQueueName},
 			{Id: &customQueueId, Name: &customQueueName},
@@ -197,7 +197,7 @@ func TestUnitGetAllRoutingQueueIdentityResolution(t *testing.T) {
 
 func TestUnitGetAllRoutingQueueIdentityResolutionListError(t *testing.T) {
 	queueProxy := &routingQueue.RoutingQueueProxy{}
-	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		return nil, nil, fmt.Errorf("mock list error")
 	}
 

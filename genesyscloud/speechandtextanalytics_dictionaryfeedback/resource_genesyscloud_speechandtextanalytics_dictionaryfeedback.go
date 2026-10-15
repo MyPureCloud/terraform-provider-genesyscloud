@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
@@ -97,7 +97,13 @@ func readDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta in
 		if engine != TranscriptionEngineGenesysExtended {
 			resourcedata.SetNillableValue(d, "boost_value", dictionaryFeedback.BoostValue)
 			resourcedata.SetNillableValue(d, "source", dictionaryFeedback.Source)
-			resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "example_phrases", dictionaryFeedback.ExamplePhrases, flattenDictionaryFeedbackExamplePhrases)
+			// The API accepts example_phrases on write but does not return them on read for
+			// English/Spanish dialects, so a naive Set would wipe them from state and cause a
+			// perpetual diff. Only overwrite state when the API actually returns phrases;
+			// otherwise preserve the configured/prior value.
+			if dictionaryFeedback.ExamplePhrases != nil && len(*dictionaryFeedback.ExamplePhrases) > 0 {
+				resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "example_phrases", dictionaryFeedback.ExamplePhrases, flattenDictionaryFeedbackExamplePhrases)
+			}
 			resourcedata.SetNillableValue(d, "sounds_like", dictionaryFeedback.SoundsLike)
 		} else {
 			// Clear native-only list attributes so Extended exports do not require example_phrases
@@ -143,7 +149,10 @@ func deleteDictionaryFeedback(ctx context.Context, d *schema.ResourceData, meta 
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete dictionary feedback %s: %s", d.Id(), err), resp)
 	}
 
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
+	// The DELETE call returns 204 immediately, but deletion propagation can take longer than
+	// 3 minutes for some terms (notably GenesysExtended) before a GET returns 404. Wait up to
+	// 10 minutes so the delete is confirmed rather than reported as "still exists" prematurely.
+	return util.WithRetries(ctx, 600*time.Second, func() *retry.RetryError {
 		_, resp, err := proxy.getDictionaryFeedbackById(ctx, d.Id())
 
 		if err != nil {

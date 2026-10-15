@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -64,11 +64,7 @@ func newExternalContactsOrganizationProxy(clientConfig *platformclientv2.Configu
 // getExternalContactsOrganizationProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getExternalContactsOrganizationProxy(clientConfig *platformclientv2.Configuration) *externalContactsOrganizationProxy {
-	if internalProxy == nil {
-		internalProxy = newExternalContactsOrganizationProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExternalContactsOrganizationProxy)
 }
 
 // createExternalContactsOrganization creates a Genesys Cloud external contacts organization
@@ -121,7 +117,7 @@ func getAllExternalContactsOrganizationFn(ctx context.Context, p *externalContac
 
 	cursor := ""
 	for {
-		externalContactsOrganization, response, err := p.externalContactsApi.GetExternalcontactsScanOrganizations(cursorSize, cursor, "")
+		externalContactsOrganization, response, err := p.externalContactsApi.GetExternalcontactsScanOrganizationsDivisionviewsAll(cursorSize, cursor)
 		if err != nil {
 			return nil, response, fmt.Errorf("failed to get external organization: %v", err)
 		}

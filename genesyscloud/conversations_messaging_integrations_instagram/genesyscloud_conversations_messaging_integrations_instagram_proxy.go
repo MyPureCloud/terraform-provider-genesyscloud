@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -57,11 +57,7 @@ func newConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformc
 // getConversationsMessagingIntegrationsInstagramProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func GetConversationsMessagingIntegrationsInstagramProxy(clientConfig *platformclientv2.Configuration) *ConversationsMessagingIntegrationsInstagramProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsInstagramProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsInstagramProxy)
 }
 
 // createConversationsMessagingIntegrationsInstagram creates a Genesys Cloud conversations messaging integrations instagram

@@ -8,7 +8,7 @@ import (
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -85,10 +85,7 @@ func newPolicyProxy(clientConfig *platformclientv2.Configuration) *policyProxy {
 // getPolicyProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getPolicyProxy(clientConfig *platformclientv2.Configuration) *policyProxy {
-	if internalProxy == nil {
-		internalProxy = newPolicyProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newPolicyProxy)
 }
 
 // getAllPolicies retrieves all Genesys Cloud Recording Media Retention Policies

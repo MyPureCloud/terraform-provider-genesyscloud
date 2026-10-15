@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -110,6 +110,10 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 				ResourceName:      ResourceType + "." + resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// example_phrases and source are accepted on write but not returned by the API on
+				// read for the Genesys engine (English/Spanish dialects), so they cannot be
+				// reconstructed on a fresh import. Ignore them during import verification.
+				ImportStateVerifyIgnore: []string{"example_phrases", "source"},
 			},
 		},
 		CheckDestroy: testVerifyDictionaryFeedbackDestroyed,

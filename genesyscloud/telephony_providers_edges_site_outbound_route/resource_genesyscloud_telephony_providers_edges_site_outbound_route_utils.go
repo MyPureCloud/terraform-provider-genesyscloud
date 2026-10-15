@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func buildOutboundRoutes(d *schema.ResourceData) *platformclientv2.Outboundroutebase {
@@ -44,12 +44,17 @@ func buildOutboundRoutes(d *schema.ResourceData) *platformclientv2.Outboundroute
 	return &outboundRouteSdk
 }
 
-func buildSiteAndOutboundRouteId(siteId string, outboundRouteId string) string {
-	fullOutboundRouteId := fmt.Sprintf("%s:%s", siteId, outboundRouteId)
+// BuildSiteAndOutboundRouteId builds the telephony_providers_edges_site_outbound_route
+// composite resource ID, which is always in the format <site-id>:<outbound-route-id>.
+func BuildSiteAndOutboundRouteId(siteId string, outboundRouteId string) (fullOutboundRouteId string) {
+	fullOutboundRouteId = fmt.Sprintf("%s:%s", siteId, outboundRouteId)
 	return fullOutboundRouteId
 }
 
-func splitSiteAndOutboundRoute(dId string) (string, string) {
+// SplitSiteAndOutboundRouteId splits the telephony_providers_edges_site_outbound_route
+// composite resource ID, which is always in the format <site-id>:<outbound-route-id>, back
+// into its parts.
+func SplitSiteAndOutboundRouteId(dId string) (siteId string, outboundRouteId string) {
 	split := strings.SplitN(dId, ":", 2)
 	if len(split) == 2 {
 		return split[0], split[1]

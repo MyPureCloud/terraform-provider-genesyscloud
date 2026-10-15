@@ -11,7 +11,7 @@ import (
 	lists "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *outboundDnclistProxy
@@ -67,10 +67,7 @@ func newOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outb
 }
 
 func getOutboundDnclistProxy(clientConfig *platformclientv2.Configuration) *outboundDnclistProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundDnclistProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundDnclistProxy)
 }
 
 // createOutboundDnclist creates a Genesys Cloud Outbound Dnclist

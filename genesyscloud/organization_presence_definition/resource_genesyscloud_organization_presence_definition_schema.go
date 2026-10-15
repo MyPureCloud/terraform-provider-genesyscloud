@@ -1,8 +1,9 @@
 package organization_presence_definition
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -19,9 +20,10 @@ resource_genesycloud_organization_presence_definition_schema.go holds four funct
 */
 const ResourceType = "genesyscloud_organization_presence_definition"
 
-// SetRegistrar registers all of the resources and exporters in the package
+// SetRegistrar registers all of the resources, data sources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceOrganizationPresenceDefinition())
+	regInstance.RegisterDataSource(ResourceType, DataSourceOrganizationPresenceDefinition())
 	regInstance.RegisterExporter(ResourceType, OrganizationPresenceDefinitionExporter())
 }
 
@@ -104,6 +106,32 @@ func ResourceOrganizationPresenceDefinition() *schema.Resource {
 				Description: `If true, the presence definition is not active. If not set, the presence definition defaults to active.`,
 				Optional:    true,
 				Type:        schema.TypeBool,
+			},
+		},
+	}
+}
+
+// DataSourceOrganizationPresenceDefinition registers the genesyscloud_organization_presence_definition data source with Terraform
+func DataSourceOrganizationPresenceDefinition() *schema.Resource {
+	return &schema.Resource{
+		Description: `Data source for Genesys Cloud organization presence definitions. Select a presence definition by its localized (en_US/en) label. Presence definitions have no unique name on the API, so use system_presence and/or division_id to disambiguate when multiple definitions share a label.`,
+		ReadContext: provider.ReadWithPooledClient(dataSourceOrganizationPresenceDefinitionRead),
+		Schema: map[string]*schema.Schema{
+			`name`: {
+				Description: `The localized label of the presence definition. Matches the en_US label if present, otherwise the en label, otherwise the first available label.`,
+				Type:        schema.TypeString,
+				Required:    true,
+			},
+			`system_presence`: {
+				Description:  `Optional filter to disambiguate definitions that share a label. Valid presences include: ` + strings.Join(validSystemPresences, `, `),
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringInSlice(validSystemPresences, true),
+			},
+			`division_id`: {
+				Description: `Optional division filter to disambiguate definitions that share a label across divisions.`,
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 		},
 	}

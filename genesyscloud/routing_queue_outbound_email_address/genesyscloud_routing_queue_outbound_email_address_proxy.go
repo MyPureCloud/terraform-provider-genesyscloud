@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -41,11 +41,7 @@ func newRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Con
 }
 
 func getRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Configuration) *routingQueueOutboundEmailAddressProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueOutboundEmailAddressProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueOutboundEmailAddressProxy)
 }
 
 // getRoutingQueueOutboundEmailAddress gets the Outbound Email Address for a queue

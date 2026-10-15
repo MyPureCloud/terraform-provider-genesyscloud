@@ -24,7 +24,7 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var bullseyeExpansionTypeTimeout = "TIMEOUT_SECONDS"
@@ -38,7 +38,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	time.Sleep(5 * time.Second)
 
 	// Gets all routing queues without a peer
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
@@ -48,7 +48,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	// Gets all routing queues with a peer
-	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
+	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
 	}
@@ -71,6 +71,7 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	divisionID := d.Get("division_id").(string)
 	scoringMethod := d.Get("scoring_method").(string)
 	peerId := d.Get("peer_id").(string)
+	defaultMediaLanguage := d.Get("default_media_language").(string)
 	sourceQueueId := d.Get("source_queue_id").(string)
 	skillGroups := buildMemberGroupList(d, "skill_groups", "SKILLGROUP")
 	groups := buildMemberGroupList(d, "groups", "GROUP")
@@ -137,6 +138,9 @@ func createRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		createQueue.PeerId = &peerId
+	}
+	if defaultMediaLanguage != "" {
+		createQueue.DefaultMediaLanguage = &defaultMediaLanguage
 	}
 	if sourceQueueId != "" {
 		createQueue.SourceQueueId = &sourceQueueId
@@ -275,6 +279,7 @@ func setRoutingQueueStateFromQueue(ctx context.Context, d *schema.ResourceData, 
 	resourcedata.SetNillableValue(d, "calling_party_number", currentQueue.CallingPartyNumber)
 	resourcedata.SetNillableValue(d, "scoring_method", currentQueue.ScoringMethod)
 	resourcedata.SetNillableValue(d, "peer_id", currentQueue.PeerId)
+	resourcedata.SetNillableValue(d, "default_media_language", currentQueue.DefaultMediaLanguage)
 	resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "direct_routing", currentQueue.DirectRouting, flattenDirectRouting)
 	resourcedata.SetNillableValue(d, "last_agent_routing_mode", currentQueue.LastAgentRoutingMode)
 
@@ -355,7 +360,10 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
+		// DEVTOOLING-1764: do not use the export list cache here. Concurrent list pagination
+		// stores shallow Queue copies; nested bullseye member_groups can be lost or incomplete
+		// when Read reuses that cache. Always GET-by-id for authoritative state.
+		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), false)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))
@@ -383,6 +391,7 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	memberGroups := append(*skillGroups, *groups...)
 	memberGroups = append(memberGroups, *teams...)
 	peerId := d.Get("peer_id").(string)
+	defaultMediaLanguage := d.Get("default_media_language").(string)
 	lastAgentRoutingMode := d.Get("last_agent_routing_mode").(string)
 
 	updateQueue := platformclientv2.Queuerequest{
@@ -423,6 +432,9 @@ func updateRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 	if peerId != "" {
 		updateQueue.PeerId = &peerId
+	}
+	if defaultMediaLanguage != "" {
+		updateQueue.DefaultMediaLanguage = &defaultMediaLanguage
 	}
 	if lastAgentRoutingMode != "" {
 		updateQueue.LastAgentRoutingMode = &lastAgentRoutingMode

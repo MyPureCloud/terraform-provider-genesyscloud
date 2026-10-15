@@ -22,7 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // lockFlow will search for a specific flow and then lock it.  This is to specifically test the force_unlock flag where I want to create a flow,  simulate some one locking it and then attempt to
@@ -59,13 +59,19 @@ func lockFlow(flowName string, flowType string) {
 	})
 }
 
+func uniqueFlowYamlPath(t *testing.T, base string) string {
+	path := filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow", base+"_"+uuid.NewString()+".yaml")
+	t.Cleanup(func() { _ = os.Remove(path) })
+	return path
+}
+
 // Tests the force_unlock functionality.
 func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 	var (
 		flowResourceLabel = "test_force_unlock_flow1"
 		flowName          = "Terraform Flow Test ForceUnlock-" + uuid.NewString()
 		flowType          = "INBOUNDCALL"
-		filePath          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
+		filePath          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi again!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
@@ -114,7 +120,7 @@ func TestAccResourceArchitectFlowForceUnlock(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResourceLabel,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,
@@ -130,9 +136,9 @@ func TestAccResourceArchitectFlowStandard(t *testing.T) {
 		flowDescription2   = "test description 2"
 		flowType1          = "INBOUNDCALL"
 		flowType2          = "INBOUNDEMAIL"
-		filePath1          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example.yaml")
-		filePath2          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example2.yaml")
-		filePath3          = filepath.Join(testrunner.RootDir, "examples/resources/genesyscloud_flow/inboundcall_flow_example3.yaml")
+		filePath1          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
+		filePath2          = uniqueFlowYamlPath(t, "inboundcall_flow_example2")
+		filePath3          = uniqueFlowYamlPath(t, "inboundcall_flow_example3")
 
 		inboundcallConfig1 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription1)
 		inboundcallConfig2 = fmt.Sprintf("inboundCall:\n  name: %s\n  description: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName, flowDescription2)
@@ -197,7 +203,7 @@ func TestAccResourceArchitectFlowStandard(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResourceLabel1,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
 			},
 			{
 				// Create inboundemail flow
@@ -216,7 +222,69 @@ func TestAccResourceArchitectFlowStandard(t *testing.T) {
 				ResourceName:            "genesyscloud_flow." + flowResourceLabel2,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash"},
+				ImportStateVerifyIgnore: []string{"filepath", "force_unlock", "file_content_hash", "create_stubs"},
+			},
+		},
+		CheckDestroy: testVerifyFlowDestroyed,
+	})
+}
+
+// Tests that the create_stubs option is accepted and sent in the POST body of the architect flows jobs endpoint.
+func TestAccResourceArchitectFlowCreateStubs(t *testing.T) {
+	var (
+		flowResourceLabel = "test_create_stubs_flow"
+		flowResourcePath  = "genesyscloud_flow." + flowResourceLabel
+		flowName          = "Terraform Flow Test CreateStubs-" + uuid.NewString()
+		flowType          = "INBOUNDCALL"
+		filePath          = uniqueFlowYamlPath(t, "inboundcall_flow_example")
+
+		inboundcallConfig = fmt.Sprintf("inboundCall:\n  name: %s\n  defaultLanguage: en-us\n  startUpRef: ./menus/menu[mainMenu]\n  initialGreeting:\n    tts: Archy says hi!!!\n  menus:\n    - menu:\n        name: Main Menu\n        audio:\n          tts: You are at the Main Menu, press 9 to disconnect.\n        refId: mainMenu\n        choices:\n          - menuDisconnect:\n              name: Disconnect\n              dtmf: digit_9", flowName)
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Publish the flow with create_stubs enabled
+				Config: GenerateFlowResource(
+					flowResourceLabel,
+					filePath,
+					inboundcallConfig,
+					false,
+					"create_stubs = true",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(flowResourcePath, "create_stubs", util.TrueValue),
+					validateFlow(flowResourcePath, flowName, "", flowType),
+				),
+			},
+			{
+				// Republish the same flow with create_stubs disabled
+				Config: GenerateFlowResource(
+					flowResourceLabel,
+					filePath,
+					inboundcallConfig,
+					false,
+					"create_stubs = false",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(flowResourcePath, "create_stubs", util.FalseValue),
+					validateFlow(flowResourcePath, flowName, "", flowType),
+				),
+			},
+			{
+				// create_stubs defaults to false when not set
+				Config: GenerateFlowResource(
+					flowResourceLabel,
+					filePath,
+					inboundcallConfig,
+					false,
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(flowResourcePath, "create_stubs", util.FalseValue),
+					validateFlow(flowResourcePath, flowName, "", flowType),
+				),
 			},
 		},
 		CheckDestroy: testVerifyFlowDestroyed,

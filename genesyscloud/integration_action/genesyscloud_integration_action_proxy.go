@@ -15,7 +15,7 @@ import (
 
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -120,10 +120,7 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 // getIntegrationActionsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *integrationActionsProxy {
-	if internalProxy == nil {
-		internalProxy = newIntegrationActionsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIntegrationActionsProxy)
 }
 
 // getAllIntegrationActions retrieves all Genesys Cloud Integration Actions

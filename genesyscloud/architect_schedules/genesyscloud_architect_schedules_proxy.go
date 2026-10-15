@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -83,10 +83,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func getArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *architectSchedulesProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectSchedulesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectSchedulesProxy)
 }
 
 // createArchitectSchedules creates a Genesys Cloud architect schedules

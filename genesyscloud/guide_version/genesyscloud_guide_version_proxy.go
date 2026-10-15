@@ -9,7 +9,7 @@ import (
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *guideVersionProxy
@@ -47,10 +47,7 @@ func newGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVe
 	}
 }
 func getGuideVersionProxy(clientConfig *platformclientv2.Configuration) *guideVersionProxy {
-	if internalProxy == nil {
-		internalProxy = newGuideVersionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newGuideVersionProxy)
 }
 
 func (p *guideVersionProxy) GetAllGuides(ctx context.Context) (*[]Guide, *platformclientv2.APIResponse, error) {

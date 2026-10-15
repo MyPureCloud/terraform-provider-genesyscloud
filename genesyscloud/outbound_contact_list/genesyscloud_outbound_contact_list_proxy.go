@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -105,10 +105,7 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 //	proxy := GetOutboundContactlistProxy(sdkConfig)
 //	contactList, err := proxy.GetOutboundContactList(contactListId)
 func GetOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *OutboundContactlistProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundContactlistProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundContactlistProxy)
 }
 
 // createOutboundContactlist creates a Genesys Cloud outbound contactlist

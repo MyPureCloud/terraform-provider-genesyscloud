@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // Build Functions
@@ -1659,6 +1659,7 @@ func getRoutingQueueFromResourceData(d *schema.ResourceData) platformclientv2.Qu
 		DirectRouting:                buildSdkDirectRouting(d),
 		MemberGroups:                 &memberGroups,
 		PeerId:                       platformclientv2.String(d.Get("peer_id").(string)),
+		DefaultMediaLanguage:         platformclientv2.String(d.Get("default_media_language").(string)),
 		ScoringMethod:                platformclientv2.String(d.Get("scoring_method").(string)),
 		LastAgentRoutingMode:         platformclientv2.String(d.Get("last_agent_routing_mode").(string)),
 	}
