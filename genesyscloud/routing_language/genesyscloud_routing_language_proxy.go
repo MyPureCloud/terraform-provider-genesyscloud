@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *routingLanguageProxy
@@ -50,10 +50,7 @@ func newRoutingLanguageProxy(clientConfig *platformclientv2.Configuration) *rout
 }
 
 func getRoutingLanguageProxy(clientConfig *platformclientv2.Configuration) *routingLanguageProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingLanguageProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingLanguageProxy)
 }
 
 // getRoutingLanguage retrieves all Genesys Cloud routing language

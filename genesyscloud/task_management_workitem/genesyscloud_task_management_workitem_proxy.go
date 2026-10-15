@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -63,10 +63,7 @@ func newTaskManagementWorkitemProxy(clientConfig *platformclientv2.Configuration
 // getTaskManagementWorkitemProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementWorkitemProxy(clientConfig *platformclientv2.Configuration) *taskManagementWorkitemProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementWorkitemProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementWorkitemProxy)
 }
 
 // createTaskManagementWorkitem creates a Genesys Cloud task management workitem

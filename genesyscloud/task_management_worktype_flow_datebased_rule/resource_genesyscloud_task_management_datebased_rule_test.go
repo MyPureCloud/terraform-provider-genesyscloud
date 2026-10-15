@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -111,7 +111,7 @@ func testVerifyTaskManagementDateBasedRuleDestroyed(state *terraform.State) erro
 			continue
 		}
 
-		worktypeId, dateBasedRuleId := splitWorktypeBasedTerraformId(res.Primary.ID)
+		worktypeId, dateBasedRuleId := SplitWorktypeBasedTerraformId(res.Primary.ID)
 		dateBasedRule, resp, err := taskManagementApi.GetTaskmanagementWorktypeFlowsDatebasedRule(worktypeId, dateBasedRuleId)
 		if dateBasedRule != nil {
 			return fmt.Errorf("task management datebased rule (%s) still exists", res.Primary.ID)

@@ -11,7 +11,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *variationRequestProxy
@@ -65,10 +65,7 @@ func newVariationRequestProxy(clientConfig *platformclientv2.Configuration) *var
 }
 
 func getVariationRequestProxy(clientConfig *platformclientv2.Configuration) *variationRequestProxy {
-	if internalProxy == nil {
-		internalProxy = newVariationRequestProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newVariationRequestProxy)
 }
 
 // CreateVariation creates a Genesys Cloud variation request

@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -57,10 +57,7 @@ func newEmployeeperformanceExternalmetricsDefinitionProxy(clientConfig *platform
 // getEmployeeperformanceExternalmetricsDefinitionProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getEmployeeperformanceExternalmetricsDefinitionProxy(clientConfig *platformclientv2.Configuration) *employeeperformanceExternalmetricsDefinitionProxy {
-	if internalProxy == nil {
-		internalProxy = newEmployeeperformanceExternalmetricsDefinitionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newEmployeeperformanceExternalmetricsDefinitionProxy)
 }
 
 // createEmployeeperformanceExternalmetricsDefinition creates a Genesys Cloud employeeperformance externalmetrics definition

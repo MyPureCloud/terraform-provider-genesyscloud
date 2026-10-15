@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -112,6 +112,7 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 		if sdkResponse.MessagingTemplate != nil {
 			_ = d.Set("messaging_template", flattenMessagingTemplate(sdkResponse.MessagingTemplate))
 		}
+		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "form", sdkResponse.Form, flattenForm)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "asset_ids", sdkResponse.Assets, flattenAddressableEntityRefs)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "footer", sdkResponse.Footer, flattenFooterTemplate)
 

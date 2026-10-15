@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -46,11 +46,7 @@ func newRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.
 
 // getRoutingQueueConditionalGroupRoutingProxy retrieves all Genesys Cloud Routing queue conditional group routing
 func getRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.Configuration) *routingQueueConditionalGroupRoutingProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueConditionalGroupRoutingProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueConditionalGroupRoutingProxy)
 }
 
 // getRoutingQueueById get a queue by ID

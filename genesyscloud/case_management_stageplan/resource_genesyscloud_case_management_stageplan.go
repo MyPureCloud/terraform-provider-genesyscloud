@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
@@ -36,7 +36,7 @@ func createCaseManagementStageplan(ctx context.Context, d *schema.ResourceData, 
 		return diag.FromErr(err)
 	}
 
-	d.SetId(formatStageplanResourceID(caseplanID, stageNumber, *stage.Id))
+	d.SetId(FormatStageplanResourceID(caseplanID, stageNumber, *stage.Id))
 	if diagErr := d.Set("stageplan_id", *stage.Id); diagErr != nil {
 		return diag.FromErr(diagErr)
 	}
@@ -66,7 +66,7 @@ func readCaseManagementStageplan(ctx context.Context, d *schema.ResourceData, me
 	proxy := getCaseManagementStageplanProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceCaseManagementStageplan(), constants.ConsistencyChecks(), resourceName)
 
-	caseplanID, stageNumber, stageplanID, err := parseStageplanResourceID(d.Id())
+	caseplanID, stageNumber, stageplanID, err := ParseStageplanResourceID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -96,7 +96,7 @@ func readCaseManagementStageplan(ctx context.Context, d *schema.ResourceData, me
 }
 
 func updateCaseManagementStageplan(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	caseplanID, _, stageplanID, err := parseStageplanResourceID(d.Id())
+	caseplanID, _, stageplanID, err := ParseStageplanResourceID(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}

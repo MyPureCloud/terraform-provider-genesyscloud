@@ -5,7 +5,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *phoneBaseProxy
@@ -50,10 +50,7 @@ func newphoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseP
 // getPhoneBaseProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getPhoneBaseProxy(clientConfig *platformclientv2.Configuration) *phoneBaseProxy {
-	if internalProxy == nil {
-		internalProxy = newphoneBaseProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newphoneBaseProxy)
 }
 
 func (p *phoneBaseProxy) getPhoneBaseSetting(ctx context.Context, phoneBaseSettingsId string) (*platformclientv2.Phonebase, *platformclientv2.APIResponse, error) {

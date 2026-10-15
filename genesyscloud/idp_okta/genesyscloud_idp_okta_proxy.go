@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -47,11 +47,7 @@ func newIdpOktaProxy(clientConfig *platformclientv2.Configuration) *idpOktaProxy
 // getIdpOktaProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIdpOktaProxy(clientConfig *platformclientv2.Configuration) *idpOktaProxy {
-	if internalProxy == nil {
-		internalProxy = newIdpOktaProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIdpOktaProxy)
 }
 
 // getIdpOkta retrieves all Genesys Cloud idp okta

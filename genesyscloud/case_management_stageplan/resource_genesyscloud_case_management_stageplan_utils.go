@@ -5,19 +5,22 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 )
 
 const stageplanResourceIDSeparator = "|"
 
-// formatStageplanResourceID builds the Terraform resource id: caseplanID|stageNumber|stageplanUUID.
-func formatStageplanResourceID(caseplanID string, stageNumber int, stageplanID string) string {
+// FormatStageplanResourceID builds the case_management_stageplan composite resource ID, which
+// is always in the format <caseplan-id>|<stage-number>|<stageplan-id>.
+func FormatStageplanResourceID(caseplanID string, stageNumber int, stageplanID string) (id string) {
 	return fmt.Sprintf("%s%s%d%s%s", caseplanID, stageplanResourceIDSeparator, stageNumber, stageplanResourceIDSeparator, stageplanID)
 }
 
-func parseStageplanResourceID(id string) (caseplanID string, stageNumber int, stageplanID string, err error) {
+// ParseStageplanResourceID splits the case_management_stageplan composite resource ID, which
+// is always in the format <caseplan-id>|<stage-number>|<stageplan-id>, back into its parts.
+func ParseStageplanResourceID(id string) (caseplanID string, stageNumber int, stageplanID string, err error) {
 	parts := strings.Split(id, stageplanResourceIDSeparator)
 	if len(parts) != 3 {
 		return "", 0, "", fmt.Errorf("invalid id %q: expected caseplan_id|stage_number|stageplan_id", id)

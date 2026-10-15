@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *WebDeploymentsProxy
@@ -53,10 +53,7 @@ func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *WebDe
 }
 
 func GetWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *WebDeploymentsProxy {
-	if internalProxy == nil {
-		internalProxy = newWebDeploymentsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newWebDeploymentsProxy)
 }
 
 func (p *WebDeploymentsProxy) GetWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {

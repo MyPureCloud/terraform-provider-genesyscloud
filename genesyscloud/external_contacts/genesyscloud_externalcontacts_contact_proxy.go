@@ -9,7 +9,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -82,10 +82,7 @@ func newExternalContactsContactsProxy(clientConfig *platformclientv2.Configurati
 // getExternalContactsContactsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getExternalContactsContactsProxy(clientConfig *platformclientv2.Configuration) *externalContactsContactsProxy {
-	if internalProxy == nil {
-		internalProxy = newExternalContactsContactsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExternalContactsContactsProxy)
 }
 
 // getAllExternalContacts retrieves all Genesys Cloud External Contacts
@@ -133,14 +130,15 @@ func getAllExternalContactsFn(ctx context.Context, p *externalContactsContactsPr
 
 	var allExternalContacts []platformclientv2.Externalcontact
 	cursor := ""
+	const pageSize = 200
 	var response *platformclientv2.APIResponse
 	for {
-		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContactsDivisionviewsAll(100, cursor)
+		externalContacts, resp, err := p.externalContactsApi.GetExternalcontactsScanContactsDivisionviewsAll(pageSize, cursor)
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get external contacts: %v", err)
 		}
 		response = resp
-		if externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
+		if externalContacts == nil || externalContacts.Entities == nil || len(*externalContacts.Entities) == 0 {
 			break
 		}
 

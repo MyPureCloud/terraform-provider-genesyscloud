@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *webDeploymentsConfigurationProxy
@@ -44,10 +44,7 @@ func newWebDeploymentsConfigurationProxy(clientConfig *platformclientv2.Configur
 }
 
 func getWebDeploymentConfigurationsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsConfigurationProxy {
-	if internalProxy == nil {
-		internalProxy = newWebDeploymentsConfigurationProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newWebDeploymentsConfigurationProxy)
 }
 
 type webDeploymentsConfigurationProxy struct {

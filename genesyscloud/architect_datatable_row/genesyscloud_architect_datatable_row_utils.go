@@ -9,21 +9,29 @@ import (
 	"sync"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
-var isDynamicPattern = regexp.MustCompile(`^[(\[.*]`)
+// anchoredPrefixRegex captures the literal prefix of a "^"-anchored pattern.
+var anchoredPrefixRegex = regexp.MustCompile(`^\^([0-9A-Za-z_-]+)`)
 
-// Row IDs structured as {table-id}/{key-value}
-func createDatatableRowId(tableId string, keyVal string) string {
+// blockLabelSanitizer is reused across tableMatchesFilter calls to avoid rebuilding it per table.
+var blockLabelSanitizer = resourceExporter.NewSanitizerProvider()
+
+// CreateDatatableRowId builds the architect_datatable_row composite resource ID, which is
+// always in the format <table-id>/<key-value>.
+func CreateDatatableRowId(tableId string, keyVal string) (rowId string) {
 	return strings.Join([]string{tableId, keyVal}, "/")
 }
 
-func splitDatatableRowId(rowId string) (string, string) {
+// SplitDatatableRowId splits the architect_datatable_row composite resource ID, which is
+// always in the format <table-id>/<key-value>, back into its parts.
+func SplitDatatableRowId(rowId string) (tableId string, keyVal string) {
 	split := strings.SplitN(rowId, "/", 2)
 	if len(split) == 2 {
 		return split[0], split[1]
@@ -61,7 +69,7 @@ func customizeDatatableRowDiff(ctx context.Context, diff *schema.ResourceDiff, m
 
 	tableId := diff.Get("datatable_id").(string)
 	keyStr := diff.Get("key_value").(string)
-	id := createDatatableRowId(tableId, keyStr)
+	id := CreateDatatableRowId(tableId, keyStr)
 
 	propertiesJson := diff.Get("properties_json").(string)
 
@@ -159,18 +167,37 @@ func extractFilterPatterns(resourceType string, filter []string) []string {
 	return patterns
 }
 
-// tableMatchesFilter checks if a table name could produce a BlockLabel that matches any of the filter patterns.
+// tableMatchesFilter reports whether a table could produce a row label ("<tableName>_<rowKey>") matching any filter pattern, keeping the table unless it is provably impossible.
 func tableMatchesFilter(tableName string, filterPatterns []string) bool {
+	rawPrefix := tableName + "_"
+	sanitizedPrefix := blockLabelSanitizer.S.SanitizeResourceBlockLabel(tableName) + "_"
+
 	for _, pattern := range filterPatterns {
-		p := strings.Trim(pattern, "^$")
-
-		if isDynamicPattern.MatchString(p) {
-			return true
-		}
-
-		if strings.HasPrefix(p, tableName) {
+		if !patternCannotMatchTable(pattern, rawPrefix, sanitizedPrefix) {
 			return true
 		}
 	}
 	return false
+}
+
+// patternCannotMatchTable reports whether a "^"-anchored pattern's required prefix is incompatible with every candidate label prefix; unanchored patterns can always match.
+func patternCannotMatchTable(pattern string, candidateLabelPrefixes ...string) bool {
+	// A top-level alternation ("^Foo|Bar") does not force the label to start
+	// with the leading literal, so we cannot use it to exclude a table.
+	if strings.Contains(pattern, "|") {
+		return false
+	}
+
+	match := anchoredPrefixRegex.FindStringSubmatch(pattern)
+	if match == nil {
+		return false
+	}
+
+	requiredPrefix := match[1]
+	for _, labelPrefix := range candidateLabelPrefixes {
+		if strings.HasPrefix(labelPrefix, requiredPrefix) || strings.HasPrefix(requiredPrefix, labelPrefix) {
+			return false
+		}
+	}
+	return true
 }

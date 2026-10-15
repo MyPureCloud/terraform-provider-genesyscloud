@@ -13,7 +13,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -105,10 +105,7 @@ func newOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *
 //	proxy := GetOutboundContactlistProxy(sdkConfig)
 //	contactList, err := proxy.GetOutboundContactList(contactListId)
 func GetOutboundContactlistProxy(clientConfig *platformclientv2.Configuration) *OutboundContactlistProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundContactlistProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundContactlistProxy)
 }
 
 // createOutboundContactlist creates a Genesys Cloud outbound contactlist
@@ -187,7 +184,7 @@ func getAllOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProx
 	var allContactlists []platformclientv2.Contactlist
 	const pageSize = 100
 
-	contactLists, resp, err := p.outboundApi.GetOutboundContactlists(false, false, pageSize, 1, true, "", name, []string{}, []string{}, "", "")
+	contactLists, resp, err := p.outboundApi.GetOutboundContactlists(false, false, pageSize, 1, true, "", name, []string{}, []string{}, "", nil, "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get page of contact list: %v", err)
 	}
@@ -199,7 +196,7 @@ func getAllOutboundContactlistFn(ctx context.Context, p *OutboundContactlistProx
 	allContactlists = append(allContactlists, *contactLists.Entities...)
 
 	for pageNum := 2; pageNum <= *contactLists.PageCount; pageNum++ {
-		contactLists, resp, err := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{}, []string{}, "", "")
+		contactLists, resp, err := p.outboundApi.GetOutboundContactlists(false, false, pageSize, pageNum, true, "", name, []string{}, []string{}, "", nil, "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page of contact list : %v", err)
 		}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *orgauthorizationPairingProxy
@@ -37,10 +37,7 @@ func newOrgauthorizationPairingProxy(clientConfig *platformclientv2.Configuratio
 // getOrgauthorizationPairingProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOrgauthorizationPairingProxy(clientConfig *platformclientv2.Configuration) *orgauthorizationPairingProxy {
-	if internalProxy == nil {
-		internalProxy = newOrgauthorizationPairingProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOrgauthorizationPairingProxy)
 }
 
 // createOrgauthorizationPairing creates a Genesys Cloud orgauthorization pairing

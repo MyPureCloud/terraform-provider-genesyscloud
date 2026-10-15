@@ -5,7 +5,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -52,11 +52,7 @@ func newOrganizationPresenceDefinitionProxy(clientConfig *platformclientv2.Confi
 // getOrganizationPresenceDefinitionProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOrganizationPresenceDefinitionProxy(clientConfig *platformclientv2.Configuration) *organizationPresenceDefinitionProxy {
-	if internalProxy == nil {
-		internalProxy = newOrganizationPresenceDefinitionProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOrganizationPresenceDefinitionProxy)
 }
 
 // createOrganizationPresenceDefinition creates a Genesys Cloud organization presence definition

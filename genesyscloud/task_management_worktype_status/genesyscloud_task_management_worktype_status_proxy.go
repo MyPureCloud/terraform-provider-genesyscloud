@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -69,11 +69,7 @@ func newTaskManagementWorktypeStatusProxy(clientConfig *platformclientv2.Configu
 // getTaskManagementWorktypeStatusProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementWorktypeStatusProxy(clientConfig *platformclientv2.Configuration) *taskManagementWorktypeStatusProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementWorktypeStatusProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementWorktypeStatusProxy)
 }
 
 // createTaskManagementWorktypeStatus creates a Genesys Cloud task management worktype status

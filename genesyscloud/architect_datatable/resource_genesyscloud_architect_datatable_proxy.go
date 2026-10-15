@@ -6,7 +6,7 @@ import (
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -42,11 +42,7 @@ func newArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *a
 }
 
 func getArchitectDatatableProxy(clientConfig *platformclientv2.Configuration) *architectDatatableProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectDatatableProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectDatatableProxy)
 }
 
 func (p *architectDatatableProxy) createArchitectDatatable(ctx context.Context, datatable *Datatable) (*Datatable, *platformclientv2.APIResponse, error) {

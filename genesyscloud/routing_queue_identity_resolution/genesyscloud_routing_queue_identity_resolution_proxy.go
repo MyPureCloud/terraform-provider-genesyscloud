@@ -3,7 +3,7 @@ package routing_queue_identity_resolution
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 )
@@ -44,10 +44,7 @@ func newRoutingQueueIdentityResolutionProxy(clientConfig *platformclientv2.Confi
 }
 
 func getRoutingQueueIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *routingQueueIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueIdentityResolutionProxy)
 }
 
 func (p *routingQueueIdentityResolutionProxy) getRoutingQueueIdentityResolution(ctx context.Context, queueId string) (*platformclientv2.Identityresolutionqueueconfig, *platformclientv2.APIResponse, error) {

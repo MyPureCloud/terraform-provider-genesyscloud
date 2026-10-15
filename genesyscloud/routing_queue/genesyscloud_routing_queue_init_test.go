@@ -1,20 +1,23 @@
 package routing_queue
 
 import (
+	"sync"
+	"testing"
+
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/group"
 	responseManagementLibrary "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_library"
+	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
+	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	routingSkill "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill"
 	routingSkillGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_skill_group"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	tbs "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_trunkbasesettings"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
-	"sync"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -52,6 +55,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[responseManagementLibrary.ResourceType] = responseManagementLibrary.ResourceResponsemanagementLibrary()
 	providerResources[edgeGroup.ResourceType] = edgeGroup.ResourceEdgeGroup()
 	providerResources[tbs.ResourceType] = tbs.ResourceTrunkBaseSettings()
+	providerResources[routingEmailDomain.ResourceType] = routingEmailDomain.ResourceRoutingEmailDomain()
+	providerResources[routingEmailRoute.ResourceType] = routingEmailRoute.ResourceRoutingEmailRoute()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -61,6 +66,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 
 	providerDataSources[ResourceType] = DataSourceRoutingQueue()
 	providerDataSources["genesyscloud_auth_division_home"] = gcloud.DataSourceAuthDivisionHome()
+	providerDataSources[routingEmailDomain.ResourceType] = routingEmailDomain.DataSourceRoutingEmailDomain()
 }
 
 // initTestResources initializes all test resources and data sources.

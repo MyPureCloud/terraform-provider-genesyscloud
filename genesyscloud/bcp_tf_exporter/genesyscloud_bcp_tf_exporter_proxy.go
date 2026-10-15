@@ -8,7 +8,7 @@ import (
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 type bcpExporterProxy struct {
@@ -23,10 +23,7 @@ type getPooledClientFunc func(ctx context.Context, method provider.GetCustomConf
 var internalProxy *bcpExporterProxy
 
 func getBcpExporterProxy(ClientConfig *platformclientv2.Configuration) *bcpExporterProxy {
-	if internalProxy == nil {
-		internalProxy = newBcpExporterProxy(ClientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, ClientConfig, newBcpExporterProxy)
 }
 
 func newBcpExporterProxy(clientConfig *platformclientv2.Configuration) *bcpExporterProxy {

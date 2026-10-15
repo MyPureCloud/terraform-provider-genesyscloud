@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *edgeGroupProxy
@@ -48,10 +48,7 @@ func newEdgeGroupProxy(clientConfig *platformclientv2.Configuration) *edgeGroupP
 }
 
 func getEdgeGroupProxy(clientConfig *platformclientv2.Configuration) *edgeGroupProxy {
-	if internalProxy == nil {
-		internalProxy = newEdgeGroupProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newEdgeGroupProxy)
 }
 
 func (p *edgeGroupProxy) getEdgeGroupById(ctx context.Context, edgeGroupId string) (*platformclientv2.Edgegroup, *platformclientv2.APIResponse, error) {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -58,10 +58,7 @@ func newOutboundRulesetProxy(clientConfig *platformclientv2.Configuration) *outb
 // getOutboundRulesetProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundRulesetProxy(clientConfig *platformclientv2.Configuration) *outboundRulesetProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundRulesetProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundRulesetProxy)
 }
 
 // createOutboundRuleset creates a Genesys Cloud Outbound Ruleset

@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
@@ -48,7 +48,7 @@ func withRetriesInternal(ctx context.Context, timeout time.Duration, method func
 // GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT environment variable. Default is 5 minutes.
 // Setting timeout to 0 means no retries (immediate fail-fast behavior).
 func WithRetriesForRead(ctx context.Context, d *schema.ResourceData, method func() *retry.RetryError) diag.Diagnostics {
-	timeout := provider.GetCustomRetryTimeout()
+	timeout := provider.GetCustomRetryTimeout(ctx)
 	return WithRetriesForReadCustomTimeout(ctx, timeout, d, method)
 }
 

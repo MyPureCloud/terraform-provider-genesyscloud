@@ -8,7 +8,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -58,10 +58,7 @@ func newRoutingEmailRouteProxy(clientConfig *platformclientv2.Configuration) *ro
 // getRoutingEmailRouteProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getRoutingEmailRouteProxy(clientConfig *platformclientv2.Configuration) *routingEmailRouteProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingEmailRouteProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingEmailRouteProxy)
 }
 
 // createRoutingEmailRoute creates a Genesys Cloud routing email route
