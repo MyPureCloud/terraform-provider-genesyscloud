@@ -3,7 +3,7 @@ package webdeployments_deployment_identity_resolution
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	webDeploymentsDeployment "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 )
@@ -42,13 +42,10 @@ func newWebDeploymentIdentityResolutionProxy(clientConfig *platformclientv2.Conf
 	}
 }
 
-// getWebDeploymentIdentityResolutionProxy returns a cached singleton that keeps the first clientConfig it receives.
+// getWebDeploymentIdentityResolutionProxy returns the process singleton, or a fresh proxy when MRMO standalone mode is active.
 // This deliberately mirrors webdeployments_deployment.GetWebDeploymentsProxy, which this proxy also composes.
 func getWebDeploymentIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *webDeploymentIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newWebDeploymentIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newWebDeploymentIdentityResolutionProxy)
 }
 
 func (p *webDeploymentIdentityResolutionProxy) getWebDeploymentIdentityResolution(ctx context.Context, deploymentId string) (*platformclientv2.Deploymentidentityresolutionconfig, *platformclientv2.APIResponse, error) {
