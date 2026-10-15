@@ -68,11 +68,7 @@ func newFlowLogLevelProxy(clientConfig *platformclientv2.Configuration) *flowLog
 // getFlowLogLevelProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getFlowLogLevelProxy(clientConfig *platformclientv2.Configuration) *flowLogLevelProxy {
-	if internalProxy == nil {
-		internalProxy = newFlowLogLevelProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newFlowLogLevelProxy)
 }
 
 // getAllFlowLogLevels retrieves all Genesys Cloud Flow Log Levels

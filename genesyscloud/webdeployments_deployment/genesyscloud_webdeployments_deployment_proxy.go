@@ -53,10 +53,7 @@ func newWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDe
 }
 
 func getWebDeploymentsProxy(clientConfig *platformclientv2.Configuration) *webDeploymentsProxy {
-	if internalProxy == nil {
-		internalProxy = newWebDeploymentsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newWebDeploymentsProxy)
 }
 
 func (p *webDeploymentsProxy) getWebDeployments(ctx context.Context) (*platformclientv2.Expandablewebdeploymententitylisting, *platformclientv2.APIResponse, error) {

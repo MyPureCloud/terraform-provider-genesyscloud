@@ -77,9 +77,9 @@ func getWorkitemdatebasedruleupdateFromResourceData(d *schema.ResourceData) plat
 	return dateBasedRuleUpdate
 }
 
-// splitWorktypeBasedTerraformId will split the rule resource id which is in the form
+// SplitWorktypeBasedTerraformId will split the rule resource id which is in the form
 // <worktypeId>/<id> into just the worktypeId and id string
-func splitWorktypeBasedTerraformId(composedId string) (worktypeId string, id string) {
+func SplitWorktypeBasedTerraformId(composedId string) (worktypeId string, id string) {
 	if len(strings.Split(composedId, "/")) > 1 {
 		return strings.Split(composedId, "/")[0], strings.Split(composedId, "/")[1]
 	} else {
@@ -88,8 +88,8 @@ func splitWorktypeBasedTerraformId(composedId string) (worktypeId string, id str
 	}
 }
 
-// composeWorktypeBasedTerraformId will compose the rule resource id in the form <worktypeId>/<id>
-func composeWorktypeBasedTerraformId(worktypeId string, id string) (composedId string) {
+// ComposeWorktypeBasedTerraformId will compose the rule resource id in the form <worktypeId>/<id>
+func ComposeWorktypeBasedTerraformId(worktypeId string, id string) (composedId string) {
 	return worktypeId + "/" + id
 }
 
@@ -119,12 +119,12 @@ func validateRuleIds(ruleResource1 string, key1 string, ruleResource2 string, ke
 
 		status1Id := rule1.Primary.Attributes[key1]
 		if strings.Contains(status1Id, "/") {
-			_, status1Id = splitWorktypeBasedTerraformId(status1Id)
+			_, status1Id = SplitWorktypeBasedTerraformId(status1Id)
 		}
 
 		status2Id := rule2.Primary.Attributes[key2]
 		if strings.Contains(status2Id, "/") {
-			_, status2Id = splitWorktypeBasedTerraformId(status2Id)
+			_, status2Id = SplitWorktypeBasedTerraformId(status2Id)
 		}
 
 		if status1Id != status2Id {

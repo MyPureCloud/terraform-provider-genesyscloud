@@ -44,10 +44,7 @@ func newRoutingQueueIdentityResolutionProxy(clientConfig *platformclientv2.Confi
 }
 
 func getRoutingQueueIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *routingQueueIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueIdentityResolutionProxy)
 }
 
 func (p *routingQueueIdentityResolutionProxy) getRoutingQueueIdentityResolution(ctx context.Context, queueId string) (*platformclientv2.Identityresolutionqueueconfig, *platformclientv2.APIResponse, error) {

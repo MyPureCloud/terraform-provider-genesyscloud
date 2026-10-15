@@ -87,7 +87,7 @@ func readContactByIdFn(ctx context.Context, p *contactProxy, contactListId, cont
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	if contact := rc.GetCacheItem(p.contactCache, buildComplexContactId(contactListId, contactId)); contact != nil {
+	if contact := rc.GetCacheItem(p.contactCache, BuildComplexContactId(contactListId, contactId)); contact != nil {
 		return contact, nil, nil
 	}
 	if tfexporter_state.IsExporterActive() {
@@ -111,7 +111,7 @@ func deleteContactFn(ctx context.Context, p *contactProxy, contactListId, contac
 	if err != nil {
 		return resp, err
 	}
-	rc.DeleteCacheItem(p.contactCache, buildComplexContactId(contactListId, contactId))
+	rc.DeleteCacheItem(p.contactCache, BuildComplexContactId(contactListId, contactId))
 	return resp, nil
 }
 
@@ -140,7 +140,7 @@ func getAllContactsFn(ctx context.Context, p *contactProxy) ([]ContactEntry, *pl
 		}
 		allContacts = append(allContacts, contactEntry)
 		for _, contact := range contacts {
-			rc.SetCache(p.contactCache, buildComplexContactId(*contactList.Id, *contact.Id), contact)
+			rc.SetCache(p.contactCache, BuildComplexContactId(*contactList.Id, *contact.Id), contact)
 		}
 	}
 

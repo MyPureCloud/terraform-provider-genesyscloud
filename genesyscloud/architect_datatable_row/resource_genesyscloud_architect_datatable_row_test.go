@@ -175,7 +175,7 @@ func testVerifyDatatableRowsDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		tableID, keyStr := splitDatatableRowId(rs.Primary.ID)
+		tableID, keyStr := SplitDatatableRowId(rs.Primary.ID)
 		row, resp, err := archAPI.GetFlowsDatatableRow(tableID, keyStr, false)
 		if row != nil {
 			return fmt.Errorf("Datatable Row (%s) still exists", rs.Primary.ID)
@@ -194,7 +194,7 @@ func testVerifyDatatableRowsDestroyed(state *terraform.State) error {
 func importDatatableRowId(tableResource string, rowKey string) resource.ImportStateIdFunc {
 	return func(state *terraform.State) (string, error) {
 		if tableRes, ok := state.RootModule().Resources["genesyscloud_architect_datatable."+tableResource]; ok {
-			return createDatatableRowId(tableRes.Primary.ID, rowKey), nil
+			return CreateDatatableRowId(tableRes.Primary.ID, rowKey), nil
 		} else {
 			return "", fmt.Errorf("Failed to find table resource %s in state", tableResource)
 		}

@@ -86,11 +86,7 @@ func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *
 }
 
 func getArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *architectUserPromptProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectUserPromptProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectUserPromptProxy)
 }
 
 // createArchitectUserPrompt creates a new user prompt

@@ -50,10 +50,7 @@ func newGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
 	}
 }
 func getGuideProxy(clientConfig *platformclientv2.Configuration) *guideProxy {
-	if internalProxy == nil {
-		internalProxy = newGuideProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newGuideProxy)
 }
 
 func (p *guideProxy) getAllGuides(ctx context.Context, name string) (*[]Guide, *platformclientv2.APIResponse, error) {

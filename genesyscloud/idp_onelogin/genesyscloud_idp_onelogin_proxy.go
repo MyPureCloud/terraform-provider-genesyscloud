@@ -47,11 +47,7 @@ func newIdpOneloginProxy(clientConfig *platformclientv2.Configuration) *idpOnelo
 // getIdpOneloginProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIdpOneloginProxy(clientConfig *platformclientv2.Configuration) *idpOneloginProxy {
-	if internalProxy == nil {
-		internalProxy = newIdpOneloginProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIdpOneloginProxy)
 }
 
 // getIdpOnelogin retrieves all Genesys Cloud idp onelogin

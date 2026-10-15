@@ -49,7 +49,7 @@ func getAllAuthTaskManagementOnAttributeChangeRule(ctx context.Context, clientCo
 		}
 
 		for _, onAttributeChangeRule := range *onAttributeChangeRules {
-			resources[composeWorktypeBasedTerraformId(*worktype.Id, *onAttributeChangeRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *onAttributeChangeRule.Name}
+			resources[ComposeWorktypeBasedTerraformId(*worktype.Id, *onAttributeChangeRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *onAttributeChangeRule.Name}
 		}
 	}
 	return resources, nil
@@ -70,7 +70,7 @@ func createTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 	}
 	log.Printf("Created the base task management onattributechange rule %s for worktype %s", *onAttributeChangeRule.Id, worktypeId)
 
-	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *onAttributeChangeRule.Id))
+	d.SetId(ComposeWorktypeBasedTerraformId(worktypeId, *onAttributeChangeRule.Id))
 
 	return readTaskManagementOnAttributeChangeRule(ctx, d, meta)
 }
@@ -81,7 +81,7 @@ func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Reso
 	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnAttributeChangeRule(), constants.ConsistencyChecks(), ResourceType)
 
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management onattributechange rule %s for worktype %s", id, worktypeId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -108,7 +108,7 @@ func updateTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 
 	onAttributeChangeRuleUpdate := getWorkitemonattributechangeruleupdateFromResourceData(d)
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Updating onattributechange rule %s for worktype %s", id, worktypeId)
 	_, resp, err := proxy.updateTaskManagementOnAttributeChangeRule(ctx, worktypeId, id, &onAttributeChangeRuleUpdate)
@@ -126,7 +126,7 @@ func deleteTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Re
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementOnAttributeChangeRuleProxy(sdkConfig)
 
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	resp, err := proxy.deleteTaskManagementOnAttributeChangeRule(ctx, worktypeId, id)
 	if err != nil {

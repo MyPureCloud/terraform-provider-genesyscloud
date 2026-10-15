@@ -86,10 +86,7 @@ func newArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *archite
 // getArchitectIvrProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getArchitectIvrProxy(clientConfig *platformclientv2.Configuration) *architectIvrProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectIvrProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectIvrProxy)
 }
 
 // getAllArchitectIvrs retrieves all Genesys Cloud Architect IVRs
