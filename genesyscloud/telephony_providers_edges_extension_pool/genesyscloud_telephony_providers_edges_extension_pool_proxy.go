@@ -5,7 +5,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *extensionPoolProxy
@@ -44,10 +44,7 @@ func newExtensionPoolProxy(clientConfig *platformclientv2.Configuration) *extens
 }
 
 func getExtensionPoolProxy(clientConfig *platformclientv2.Configuration) *extensionPoolProxy {
-	if internalProxy == nil {
-		internalProxy = newExtensionPoolProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExtensionPoolProxy)
 }
 
 func (p *extensionPoolProxy) getExtensionPool(ctx context.Context, extensionPoolId string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {

@@ -15,17 +15,20 @@ import (
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 
+	"os"
 	"testing"
 	"time"
 
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ext1, ext2 string) {
@@ -1810,6 +1813,73 @@ func generateUserEmployerInfo(offName string, empID string, empType string, date
 		date_hire = %s
 	}
 	`, offName, empID, empType, dateHire)
+}
+
+func TestUnitUserSchemaBcpModeComputedFlags(t *testing.T) {
+	toggle := featureToggles.BcpModeEnabledName()
+	bcpManagedOptionalUserAttributes := []string{
+		"routing_skills",
+		"routing_languages",
+		"locations",
+		"profile_skills",
+		"certifications",
+		"employer_info",
+		"routing_utilization",
+		"voicemail_userpolicies",
+	}
+
+	t.Run("without BCP mode optional managed blocks are computed", func(t *testing.T) {
+		_ = os.Unsetenv(toggle)
+		schemaMap := ResourceUser().Schema
+
+		for _, key := range bcpManagedOptionalUserAttributes {
+			if !schemaMap[key].Computed {
+				t.Fatalf("expected %s to be Computed when BCP mode is off", key)
+			}
+		}
+	})
+
+	t.Run("with BCP mode optional managed blocks are not computed", func(t *testing.T) {
+		t.Setenv(toggle, "TRUE")
+		schemaMap := ResourceUser().Schema
+
+		for _, key := range bcpManagedOptionalUserAttributes {
+			if schemaMap[key].Computed {
+				t.Fatalf("expected %s to not be Computed when BCP mode is on", key)
+			}
+		}
+
+		utilization := schemaMap["routing_utilization"].Elem.(*schema.Resource)
+		for _, mediaKey := range []string{"call", "callback", "message", "email", "chat", "label_utilizations"} {
+			if !utilization.Schema[mediaKey].Computed {
+				t.Fatalf("expected routing_utilization.%s to remain Computed under BCP mode", mediaKey)
+			}
+		}
+	})
+}
+
+func TestUnitPhoneNumberHashExtensionOnlyOmitsEmptyNumber(t *testing.T) {
+	withEmptyNumber := map[string]interface{}{
+		"extension":         "2264091",
+		"media_type":        "PHONE",
+		"type":              "WORK",
+		"number":            "",
+		"extension_pool_id": "3e73d1d1-98c4-41a6-987e-d9623150a94e",
+	}
+	withoutNumber := map[string]interface{}{
+		"extension":  "2264091",
+		"media_type": "PHONE",
+		"type":       "WORK",
+	}
+
+	if phoneNumberHash(withEmptyNumber) != phoneNumberHash(withoutNumber) {
+		t.Fatal("extension-only phone numbers should hash the same with or without empty number field")
+	}
+
+	set := schema.NewSet(phoneNumberHash, []interface{}{withoutNumber})
+	if !set.Contains(withEmptyNumber) {
+		t.Fatal("set should treat extension-only entry with empty number as equivalent")
+	}
 }
 
 func generateUserRoutingUtil(nestedBlocks ...string) string {

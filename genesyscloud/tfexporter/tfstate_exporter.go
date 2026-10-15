@@ -21,13 +21,14 @@ This files contains all of the code used to create an export's Terraform state f
 The other functions in this file deal with how to generate the TFVars we create during the export.
 */
 type TFStateFileWriter struct {
-	ctx              context.Context
-	resources        []resourceExporter.ResourceInfo
-	d                *schema.ResourceData
-	providerRegistry string
+	ctx               context.Context
+	resources         []resourceExporter.ResourceInfo
+	d                 *schema.ResourceData
+	providerRegistry  string
+	providerResources map[string]*schema.Resource
 }
 
-func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerRegistry string) (*TFStateFileWriter, error) {
+func NewTFStateWriter(ctx context.Context, resources []resourceExporter.ResourceInfo, d *schema.ResourceData, providerRegistry string, providerResources map[string]*schema.Resource) (*TFStateFileWriter, error) {
 	if ctx == nil {
 		return nil, fmt.Errorf("context cannot be nil")
 	}
@@ -38,10 +39,11 @@ func NewTFStateWriter(ctx context.Context, resources []resourceExporter.Resource
 		return nil, fmt.Errorf("no resources found to export")
 	}
 	tfWriter := &TFStateFileWriter{
-		ctx:              ctx,
-		resources:        resources,
-		d:                d,
-		providerRegistry: providerRegistry,
+		ctx:               ctx,
+		resources:         resources,
+		d:                 d,
+		providerRegistry:  providerRegistry,
+		providerResources: providerResources,
 	}
 
 	return tfWriter, nil
@@ -74,11 +76,12 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 		rootModule.Resources = make(map[string]*terraform.ResourceState)
 	}
 
+	setExportedResourceSchemaVersions(t.resources, t.providerResources)
+
 	for _, resource := range t.resources {
 		resourceKey := ""
 		if resource.BlockType != "" {
 			resourceKey = resource.BlockType + "."
-			resource.State.Meta["schema_version"] = 0
 		}
 		resourceKey += resource.Type + "." + resource.BlockLabel
 		if resourceKey == ".." || resourceKey == "." { // This would catch the worst case of all empty strings
@@ -138,6 +141,22 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 
 	log.Print(replaceProviderOutput.Stdout)
 	return nil
+}
+
+func setExportedResourceSchemaVersions(resources []resourceExporter.ResourceInfo, providerResources map[string]*schema.Resource) {
+	for i := range resources {
+		if resources[i].State == nil {
+			continue
+		}
+		if resources[i].State.Meta == nil {
+			resources[i].State.Meta = make(map[string]interface{})
+		}
+		schemaVersion := int64(0)
+		if resSchema := providerResources[resources[i].Type]; resSchema != nil {
+			schemaVersion = int64(resSchema.SchemaVersion)
+		}
+		resources[i].State.Meta["schema_version"] = schemaVersion
+	}
 }
 
 func generateTfVarsContent(vars map[string]interface{}) string {

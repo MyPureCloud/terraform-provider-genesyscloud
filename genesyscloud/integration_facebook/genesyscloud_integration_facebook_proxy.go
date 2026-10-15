@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -63,11 +63,7 @@ func newIntegrationFacebookProxy(clientConfig *platformclientv2.Configuration) *
 // getIntegrationFacebookProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIntegrationFacebookProxy(clientConfig *platformclientv2.Configuration) *integrationFacebookProxy {
-	if internalProxy == nil {
-		internalProxy = newIntegrationFacebookProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIntegrationFacebookProxy)
 }
 
 // createIntegrationFacebook creates a Genesys Cloud integration facebook

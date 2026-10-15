@@ -121,6 +121,12 @@ Export block label: "{type}_{name}"`,
 				Type:     schema.TypeBool,
 				Optional: true,
 			},
+			"create_stubs": {
+				Description: "If true, flow stubs will be created for any dependencies that do not yet exist in the org when the flow is published.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
 		},
 	}
 }

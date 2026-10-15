@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	taskManagementWorktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -66,10 +66,7 @@ func newTaskManagementOnAttributeChangeRuleProxy(clientConfig *platformclientv2.
 // GetTaskManagementOnAttributeChangeRuleProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementOnAttributeChangeRuleProxy(clientConfig *platformclientv2.Configuration) *taskManagementOnAttributeChangeRuleProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementOnAttributeChangeRuleProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementOnAttributeChangeRuleProxy)
 }
 
 // createTaskManagementOnAttributeChangeRule creates a Genesys Cloud task management onattributechange rule

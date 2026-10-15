@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -59,10 +59,7 @@ func newLearningModulesProxy(clientConfig *platformclientv2.Configuration) *lear
 // getLearningModulesProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getLearningModulesProxy(clientConfig *platformclientv2.Configuration) *learningModulesProxy {
-	if internalProxy == nil {
-		internalProxy = newLearningModulesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newLearningModulesProxy)
 }
 
 // createLearningModule creates a Genesys Cloud learning module

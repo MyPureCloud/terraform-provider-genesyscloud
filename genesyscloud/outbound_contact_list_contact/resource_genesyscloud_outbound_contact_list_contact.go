@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func createOutboundContactListContact(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
@@ -39,7 +39,7 @@ func createOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	}
 	contactId := *contactResponseBody[0].Id
 	_ = d.Set("contact_id", contactId)
-	id := buildComplexContactId(contactListId, contactId)
+	id := BuildComplexContactId(contactListId, contactId)
 	d.SetId(id)
 	log.Printf("Finished creating contact '%s' in contact list '%s'", contactId, contactListId)
 	return readOutboundContactListContact(ctx, d, meta)
@@ -54,7 +54,7 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		cp        = getContactProxy(sdkConfig)
 	)
 
-	contactListId, contactId := splitComplexContactId(d.Id())
+	contactListId, contactId := SplitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}
@@ -80,6 +80,8 @@ func readOutboundContactListContact(ctx context.Context, d *schema.ResourceData,
 		resourcedata.SetNillableValue(d, "data", contactResponseBody.Data)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "phone_number_status", contactResponseBody.PhoneNumberStatus, flattenPhoneNumberStatus)
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "contactable_status", contactResponseBody.ContactableStatus, flattenContactableStatus)
+		setDialerContactRetentionState(d, contactResponseBody.RetentionType, contactResponseBody.RetentionDays)
+		resourcedata.SetNillableTime(d, "date_expiration", contactResponseBody.DateExpiration)
 
 		return nil
 	})
@@ -95,7 +97,7 @@ func updateOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	cp := getContactProxy(sdkConfig)
 
 	contactRequestBody := buildDialerContactFromResourceData(d)
-	contactListId, contactId := splitComplexContactId(d.Id())
+	contactListId, contactId := SplitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}
@@ -118,7 +120,7 @@ func deleteOutboundContactListContact(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	cp := getContactProxy(sdkConfig)
 
-	contactListId, contactId := splitComplexContactId(d.Id())
+	contactListId, contactId := SplitComplexContactId(d.Id())
 	if contactListId == "" {
 		contactListId = d.Get("contact_list_id").(string)
 	}

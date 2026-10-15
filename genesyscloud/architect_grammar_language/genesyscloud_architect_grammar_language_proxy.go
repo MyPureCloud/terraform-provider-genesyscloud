@@ -11,7 +11,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 type FileType int
@@ -74,11 +74,7 @@ func newArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configurati
 // getArchitectGrammarLanguageProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getArchitectGrammarLanguageProxy(clientConfig *platformclientv2.Configuration) *architectGrammarLanguageProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectGrammarLanguageProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectGrammarLanguageProxy)
 }
 
 // createArchitectGrammarLanguage creates a Genesys Cloud Architect Grammar Language
@@ -138,7 +134,7 @@ func getArchitectGrammarLanguageByIdFn(ctx context.Context, p *architectGrammarL
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	language := rc.GetCacheItem(p.grammarLanguageCache, buildGrammarLanguageId(grammarId, languageCode))
+	language := rc.GetCacheItem(p.grammarLanguageCache, BuildGrammarLanguageId(grammarId, languageCode))
 	if language != nil {
 		return language, nil, nil
 	}
@@ -186,7 +182,7 @@ func deleteArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 	if err != nil {
 		return resp, err
 	}
-	rc.DeleteCacheItem(p.grammarLanguageCache, buildGrammarLanguageId(grammarId, languageCode))
+	rc.DeleteCacheItem(p.grammarLanguageCache, BuildGrammarLanguageId(grammarId, languageCode))
 	return resp, nil
 }
 
@@ -278,7 +274,7 @@ func getAllArchitectGrammarLanguageFn(ctx context.Context, p *architectGrammarLa
 	}
 
 	for _, language := range allLanguages {
-		rc.SetCache(p.grammarLanguageCache, buildGrammarLanguageId(*language.Grammar.Id, *language.GrammarLanguage.Language), *language.GrammarLanguage)
+		rc.SetCache(p.grammarLanguageCache, BuildGrammarLanguageId(*language.Grammar.Id, *language.GrammarLanguage.Language), *language.GrammarLanguage)
 	}
 
 	return &allLanguages, resp, nil

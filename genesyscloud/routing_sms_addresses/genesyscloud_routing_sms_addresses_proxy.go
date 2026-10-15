@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // Type definitions for each func on our proxy so we can easily mock them out later
@@ -45,10 +45,7 @@ func newRoutingSmsAddressProxy(clientConfig *platformclientv2.Configuration) *ro
 // getRoutingSmsAddressProxy acts as a singleton for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getRoutingSmsAddressProxy(clientConfig *platformclientv2.Configuration) *routingSmsAddressProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingSmsAddressProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingSmsAddressProxy)
 }
 
 // createSmsAddress creates a Genesys Cloud Sms Address

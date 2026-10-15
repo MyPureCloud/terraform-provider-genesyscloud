@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -237,6 +237,23 @@ func TestAccResourceTaskManagementWorktypeStatusTransitionClearOptionalFields(t 
 					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_time", ""),
 				),
 			},
+			{
+				// Clearing destination_status_ids means "all other statuses". The API expands
+				// that to an explicit list; apply must still succeed (GitHub #2530).
+				Config: baseConfig +
+					GenerateWorkTypeStatusResourceTransitionWithoutAutoTransition(
+						transitionResourceLabel,
+						fmt.Sprintf("genesyscloud_task_management_worktype.%s.id", wtResourceLabel),
+						fmt.Sprintf("genesyscloud_task_management_worktype_status.%s.id", statusResourceLabel1),
+						"",
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "default_destination_status_id", ""),
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "destination_status_ids.#", "0"),
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_delay_seconds", "0"),
+					resource.TestCheckResourceAttr(transitionResourceType+"."+transitionResourceLabel, "status_transition_time", ""),
+				),
+			},
 		},
 		CheckDestroy: testVerifyTaskManagementWorktypeStatusDestroyed,
 	})
@@ -249,7 +266,7 @@ func testVerifyTaskManagementWorktypeStatusDestroyed(state *terraform.State) err
 			continue
 		}
 
-		worktypeId, statusId := splitWorktypeStatusTerraformTransitionId(res.Primary.ID)
+		worktypeId, statusId := SplitWorktypeStatusTerraformTransitionId(res.Primary.ID)
 		worktypeStatus, resp, err := taskManagementApi.GetTaskmanagementWorktypeStatus(worktypeId, statusId)
 		if worktypeStatus != nil {
 			return fmt.Errorf("task management worktype status (%s) still exists", res.Primary.ID)

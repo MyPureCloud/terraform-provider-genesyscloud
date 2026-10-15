@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -86,11 +86,7 @@ func newArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *
 }
 
 func getArchitectUserPromptProxy(clientConfig *platformclientv2.Configuration) *architectUserPromptProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectUserPromptProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectUserPromptProxy)
 }
 
 // createArchitectUserPrompt creates a new user prompt

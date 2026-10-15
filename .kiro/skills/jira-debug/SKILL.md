@@ -1,6 +1,6 @@
 ---
 name: jira-debug
-description: Debug a bug from a Jira ticket end-to-end — fetch the ticket and its attachments, build root-cause context, then investigate and fix the code like a senior engineer. Trigger this whenever the user gives a Jira ticket key (e.g. "ABC-123") and asks to debug, investigate, fix, or figure out why a bug is happening, or says things like "pull up this ticket and look into it."
+description: Debugs a bug from a Jira ticket end-to-end — fetches the ticket and its attachments, builds root-cause context, then investigates and fixes the code like a senior engineer. Use this when the user gives a Jira ticket key (e.g. "ABC-123") and asks to debug, investigate, fix, or figure out why a bug is happening, or says things like "pull up this ticket and look into it."
 ---
 
 # Jira Debug — Genesys Cloud Terraform Provider

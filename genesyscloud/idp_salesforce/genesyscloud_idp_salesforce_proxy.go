@@ -5,7 +5,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -46,11 +46,7 @@ func newIdpSalesforceProxy(clientConfig *platformclientv2.Configuration) *idpSal
 // getIdpSalesforceProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIdpSalesforceProxy(clientConfig *platformclientv2.Configuration) *idpSalesforceProxy {
-	if internalProxy == nil {
-		internalProxy = newIdpSalesforceProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIdpSalesforceProxy)
 }
 
 // getIdpSalesforce returns a single Genesys Cloud idp salesforce

@@ -7,7 +7,7 @@ import (
 	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -55,10 +55,7 @@ func newAgenticVirtualAgentVersionProxy(clientConfig *platformclientv2.Configura
 
 // getAgenticVirtualAgentVersionProxy returns the singleton proxy instance.
 func getAgenticVirtualAgentVersionProxy(clientConfig *platformclientv2.Configuration) *agenticVirtualAgentVersionProxy {
-	if internalProxy == nil {
-		internalProxy = newAgenticVirtualAgentVersionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAgenticVirtualAgentVersionProxy)
 }
 
 // Public proxy methods

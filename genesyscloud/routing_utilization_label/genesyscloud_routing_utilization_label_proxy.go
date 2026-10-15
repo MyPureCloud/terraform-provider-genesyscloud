@@ -8,7 +8,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *routingUtilizationLabelProxy
@@ -51,10 +51,7 @@ func newRoutingUtilizationLabelProxy(clientConfig *platformclientv2.Configuratio
 }
 
 func getRoutingUtilizationLabelProxy(clientConfig *platformclientv2.Configuration) *routingUtilizationLabelProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingUtilizationLabelProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingUtilizationLabelProxy)
 }
 
 func (p *routingUtilizationLabelProxy) getAllRoutingUtilizationLabels(ctx context.Context, name string) (*[]platformclientv2.Utilizationlabel, *platformclientv2.APIResponse, error) {

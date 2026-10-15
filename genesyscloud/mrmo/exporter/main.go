@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
@@ -134,5 +134,6 @@ func ExportByType(ctx context.Context, input ExportByTypeInput, clientConfig *pl
 		ExportDataPath:           input.Directory,
 		ExportedResourceDataList: exportResponse.ResourceDataList,
 		ResourceExporter:         exporter,
+		ResourceErrors:           exportResponse.ResourceErrors,
 	}, diags
 }

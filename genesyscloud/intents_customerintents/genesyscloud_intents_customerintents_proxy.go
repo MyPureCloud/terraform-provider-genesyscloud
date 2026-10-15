@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -65,11 +65,7 @@ func newCustomerIntentProxy(clientConfig *platformclientv2.Configuration) *custo
 // getCustomerIntentProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getCustomerIntentProxy(clientConfig *platformclientv2.Configuration) *customerIntentProxy {
-	if internalProxy == nil {
-		internalProxy = newCustomerIntentProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newCustomerIntentProxy)
 }
 
 // createCustomerIntent creates a Genesys Cloud customer intent

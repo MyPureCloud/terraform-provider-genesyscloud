@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -49,11 +49,7 @@ func newExternalUserIdentityProxy(clientConfig *platformclientv2.Configuration) 
 }
 
 func getExternalUserIdentityProxy(clientConfig *platformclientv2.Configuration) *externalUserIdentityProxy {
-	if internalProxy == nil {
-		internalProxy = newExternalUserIdentityProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExternalUserIdentityProxy)
 }
 
 func (p *externalUserIdentityProxy) createExternalUserIdentity(ctx context.Context, userId string, externalIdentity platformclientv2.Userexternalidentifier) (*platformclientv2.Userexternalidentifier, *platformclientv2.APIResponse, error) {
