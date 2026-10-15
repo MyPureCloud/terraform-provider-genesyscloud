@@ -525,7 +525,7 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
 			`asset_ids`: {
-				RefType: "responsemanagement_responseasset",
+				RefType: "genesyscloud_responsemanagement_responseasset",
 			},
 		},
 		JsonEncodeAttributes: []string{"substitutions_schema_id"},
