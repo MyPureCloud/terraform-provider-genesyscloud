@@ -2,6 +2,7 @@ package speechandtextanalytics_category
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -47,6 +48,8 @@ func TestAccDataSourceSpeechAndTextAnalyticsCategory(t *testing.T) {
     ]
   })`
 	)
+
+	criteria = strings.ReplaceAll(criteria, "refund", "refund"+strings.ReplaceAll(uuid.NewString(), "-", "")[:8])
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
