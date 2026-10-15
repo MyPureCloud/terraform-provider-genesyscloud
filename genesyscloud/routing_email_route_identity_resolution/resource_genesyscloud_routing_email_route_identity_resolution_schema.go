@@ -1,5 +1,11 @@
 package routing_email_route_identity_resolution
 
+// @team: Email
+// @chat: #Genesys Cloud Email Provider (Postino)
+// @pm: Marudhu Pandian
+// @jira: Postino
+// @description: Email provider for Genesys Cloud, serving as the comprehensive email conversation provider that bridges email with the Genesys Cloud platform
+
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"

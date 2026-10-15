@@ -2,8 +2,8 @@ package architect_ivr_identity_resolution
 
 // @team: Architect Team
 // @chat: #Genesys Cloud Architect support
-// @pm: Amelie Wisniak
-// @jira: RELATE-25226
+// @pm: Lisa Byrne
+// @jira: ADS
 // @description: manages user and system data for Genesys Cloud Architect. This includes Architect flows, user and system prompts as well as flow outcomes.
 
 import (
