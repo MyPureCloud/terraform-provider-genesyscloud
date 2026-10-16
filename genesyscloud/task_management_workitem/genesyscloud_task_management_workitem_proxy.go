@@ -140,12 +140,13 @@ func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 	queryWorkitemsOnWorkbin := func(workbinId string) (*[]platformclientv2.Workitem, error) {
 		var wbWorkitems []platformclientv2.Workitem
 		pageSize := 200
-		after := ""
+		// Leave 'after' unset on the first page; the API rejects an empty string
+		var after *string
 
 		for {
 			queryReq := &platformclientv2.Workitemquerypostrequest{
 				PageSize: &pageSize,
-				After:    &after,
+				After:    after,
 				Filters: &[]platformclientv2.Workitemfilter{
 					{
 						Name:     platformclientv2.String("workbinId"),
@@ -166,7 +167,7 @@ func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 			if workitems.After == nil || *workitems.After == "" {
 				break
 			}
-			after = *workitems.After
+			after = workitems.After
 		}
 		return &wbWorkitems, nil
 	}
