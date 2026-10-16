@@ -2580,6 +2580,14 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				// Remove empty arrays
 				configMap[attributeConfigKey] = nil
 			}
+		case *schema.Set:
+			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.(*schema.Set).List(), fullAttributePath, exporters, exportingState, exportFormat)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
+			if len(arr) > 0 {
+				configMap[attributeConfigKey] = arr
+			} else {
+				configMap[attributeConfigKey] = nil
+			}
 		case string:
 			// Check if string contains nested Ref Attributes (can occur if the string is escaped json)
 			if _, ok := exporter.ContainsNestedRefAttrs(fullAttributePath); ok {
@@ -2873,6 +2881,12 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 			}
 		case []interface{}:
 			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.([]interface{}), currAttr, exporters, exportingState, exportFormat)
+			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
+			if len(arr) > 0 {
+				result = append(result, arr)
+			}
+		case *schema.Set:
+			arr, nestedUnresolved := g.sanitizeConfigArray(resource, val.(*schema.Set).List(), currAttr, exporters, exportingState, exportFormat)
 			unresolvableAttrs = append(unresolvableAttrs, nestedUnresolved...)
 			if len(arr) > 0 {
 				result = append(result, arr)
