@@ -81,7 +81,7 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 
 // AgenticVirtualAgentTool represents any tool type.
 // Common fields: type, name, description, target, inputInstructions, outputInstructions
-// DataAction-specific: errors, inputs, output, inputValidation, schemas (computed)
+// DataAction-specific: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
 	Type               string                                     `json:"type"`
@@ -91,11 +91,12 @@ type AgenticVirtualAgentTool struct {
 	InputInstructions  []string                                   `json:"inputInstructions,omitempty"`
 	OutputInstructions []AgenticVirtualAgentToolOutputInstruction `json:"outputInstructions,omitempty"`
 	// DataAction-specific fields
-	Errors          []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
-	Inputs          []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
-	Output          string                                `json:"output,omitempty"`
-	InputValidation []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
-	Schemas         *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
+	ContextRetentionEnabled *bool                                 `json:"contextRetentionEnabled,omitempty"`
+	Errors                  []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
+	Inputs                  []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
+	Output                  string                                `json:"output,omitempty"`
+	InputValidation         []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
+	Schemas                 *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
 	// ExternalA2AServer-specific fields (computed at publish time)
 	Skills []AgenticVirtualAgentAgentCardSkill `json:"skills,omitempty"`
 }

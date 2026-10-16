@@ -17,6 +17,11 @@ import (
 
 const ResourceType = "genesyscloud_agentic_virtual_agent_version"
 
+// ResourceData represents an omitted nested boolean as false. This marker
+// records whether each tool includes context_retention_enabled, so changes
+// between an omitted value and false still trigger an update.
+const contextRetentionPresenceAttribute = "context_retention_enabled_presence"
+
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersion())
@@ -31,6 +36,7 @@ func ResourceAgenticVirtualAgentVersion() *schema.Resource {
 		ReadContext:   provider.ReadWithPooledClient(readAgenticVirtualAgentVersion),
 		UpdateContext: provider.UpdateWithPooledClient(updateAgenticVirtualAgentVersion),
 		DeleteContext: provider.DeleteWithPooledClient(deleteAgenticVirtualAgentVersion),
+		CustomizeDiff: customizeAgenticVirtualAgentVersionDiff,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -49,6 +55,11 @@ func ResourceAgenticVirtualAgentVersion() *schema.Resource {
 			},
 			"status": {
 				Description: "Current status of the version: Draft, TestReady, or ProductionReady.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			contextRetentionPresenceAttribute: {
+				Description: "Internal marker that records whether context_retention_enabled is configured for each tool.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -253,6 +264,11 @@ func toolResource() *schema.Resource {
 				Elem:        outputInstructionResource(),
 			},
 			// DataAction-specific fields
+			"context_retention_enabled": {
+				Description: "Whether this DataAction tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window. Only applicable when type is DataAction.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"inputs": {
 				Description: "Inputs passed to this data action tool. Only applicable when type is DataAction.",
 				Type:        schema.TypeList,
@@ -544,10 +560,16 @@ func versionSettingsResource() *schema.Resource {
 
 // AgenticVirtualAgentVersionExporter returns the exporter configuration for versions.
 func AgenticVirtualAgentVersionExporter() *resourceExporter.ResourceExporter {
+	exportCache := newAgenticVirtualAgentVersionExportCache()
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAgenticVirtualAgentVersions),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAgenticVirtualAgentVersionsWithCache(exportCache)),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"agent_id": {RefType: "genesyscloud_agentic_virtual_agent"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"agent_id": {
+				ResolverWithClientConfigFunc: resolveAgenticVirtualAgentVersionContextRetentionResolver(exportCache),
+			},
 		},
 	}
 }

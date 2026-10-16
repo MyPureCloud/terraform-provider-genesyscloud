@@ -3194,6 +3194,351 @@ resource "genesyscloud_agentic_virtual_agent_version" "ava_version" {
 	})
 }
 
+// Verifies that the exporter preserves the difference between an explicitly
+// configured context_retention_enabled value and an omitted value.
+//
+// The test org must have the AI-1485_ava_context_window_pruning feature toggle
+// enabled. The AVA backend treats an omitted or null value as retained and false
+// as prunable. Exporting an omitted value as false would change the version
+// behavior when the exported configuration is applied.
+func TestAccResourceTfExportAgenticVirtualAgentContextRetention(t *testing.T) {
+	testSetup(t)
+
+	var (
+		uniqueSuffix  = uuid.NewString()[:8]
+		integration   = "tf_test_ava_context_retention_integration_" + uniqueSuffix
+		action        = "tf_test_ava_context_retention_action_" + uniqueSuffix
+		exportTestDir = testrunner.GetTestTempPath(".terraform_ava_context_retention_export_" + uuid.NewString())
+		jsonConfig    = filepath.Join(exportTestDir, defaultTfJSONFile)
+		hclConfig     = filepath.Join(exportTestDir, defaultTfHCLFile)
+
+		trueAgentLabel      = "ava_context_retention_true"
+		falseAgentLabel     = "ava_context_retention_false"
+		omittedAgentLabel   = "ava_context_retention_omitted"
+		trueVersionLabel    = "ava_context_retention_true"
+		falseVersionLabel   = "ava_context_retention_false"
+		omittedVersionLabel = "ava_context_retention_omitted"
+
+		trueAgentName    = "tf_test_ava_context_retention_true_" + uniqueSuffix
+		falseAgentName   = "tf_test_ava_context_retention_false_" + uniqueSuffix
+		omittedAgentName = "tf_test_ava_context_retention_omitted_" + uniqueSuffix
+		trueRole         = "AVA exporter context retention true " + uniqueSuffix
+		falseRole        = "AVA exporter context retention false " + uniqueSuffix
+		omittedRole      = "AVA exporter context retention omitted " + uniqueSuffix
+		retained         = true
+		prunable         = false
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	baseConfig := generateTfExportAgenticVirtualAgentDataActionDeps(integration, action, action) +
+		generateTfExportAgenticVirtualAgentResource(trueAgentLabel, trueAgentName) +
+		generateTfExportAgenticVirtualAgentResource(falseAgentLabel, falseAgentName) +
+		generateTfExportAgenticVirtualAgentResource(omittedAgentLabel, omittedAgentName) +
+		generateTfExportAgenticVirtualAgentVersion(trueVersionLabel, trueAgentLabel, action, trueRole, &retained) +
+		generateTfExportAgenticVirtualAgentVersion(falseVersionLabel, falseAgentLabel, action, falseRole, &prunable) +
+		generateTfExportAgenticVirtualAgentVersion(omittedVersionLabel, omittedAgentLabel, action, omittedRole, nil)
+
+	expected := map[string]*bool{
+		trueRole:    &retained,
+		falseRole:   &prunable,
+		omittedRole: nil,
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Step 1: Create versions with context_retention_enabled set to true, false, and omitted.
+				Config: baseConfig,
+			},
+			{
+				// Step 2: Export HCL and JSON and verify both outputs.
+				Config: baseConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					"ava_context_retention_export",
+					exportTestDir,
+					util.TrueValue,            // include_state_file
+					strconv.Quote("hcl_json"), // export_format
+					util.TrueValue,            // enable_dependency_resolution
+					[]string{
+						strconv.Quote("genesyscloud_agentic_virtual_agent::" + trueAgentName),
+						strconv.Quote("genesyscloud_agentic_virtual_agent::" + falseAgentName),
+						strconv.Quote("genesyscloud_agentic_virtual_agent::" + omittedAgentName),
+						strconv.Quote("genesyscloud_agentic_virtual_agent_version::" + trueAgentName + "_version"),
+						strconv.Quote("genesyscloud_agentic_virtual_agent_version::" + falseAgentName + "_version"),
+						strconv.Quote("genesyscloud_agentic_virtual_agent_version::" + omittedAgentName + "_version"),
+					},
+					[]string{
+						"genesyscloud_agentic_virtual_agent." + trueAgentLabel,
+						"genesyscloud_agentic_virtual_agent." + falseAgentLabel,
+						"genesyscloud_agentic_virtual_agent." + omittedAgentLabel,
+						"genesyscloud_agentic_virtual_agent_version." + trueVersionLabel,
+						"genesyscloud_agentic_virtual_agent_version." + falseVersionLabel,
+						"genesyscloud_agentic_virtual_agent_version." + omittedVersionLabel,
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					assertAgenticVirtualAgentContextRetentionExport(jsonConfig, hclConfig, expected),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+// Verifies context_retention_enabled in the exported HCL and JSON.
+// A nil expected value means the field may be omitted or null, but it must not
+// be exported as a boolean value because false has different semantics from omission.
+func assertAgenticVirtualAgentContextRetentionExport(jsonConfigPath, hclConfigPath string, expected map[string]*bool) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		exportData, err := util.LoadJsonFileToMap(jsonConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to load exported JSON %s: %w", jsonConfigPath, err)
+		}
+
+		resources, ok := exportData["resource"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("exported JSON %s is missing the top-level resource map", jsonConfigPath)
+		}
+		versionResources, ok := resources["genesyscloud_agentic_virtual_agent_version"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("exported JSON %s contains no agentic virtual agent version resources", jsonConfigPath)
+		}
+
+		exportedTools := make(map[string]map[string]interface{})
+		for label, rawVersion := range versionResources {
+			version, ok := rawVersion.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("exported version %q has unexpected type %T", label, rawVersion)
+			}
+			definitions, ok := version["definition"].([]interface{})
+			if !ok || len(definitions) == 0 {
+				return fmt.Errorf("exported version %q is missing its definition", label)
+			}
+			definition, ok := definitions[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("exported version %q has an unexpected definition type %T", label, definitions[0])
+			}
+			role, ok := definition["role"].(string)
+			if !ok {
+				return fmt.Errorf("exported version %q is missing a string role", label)
+			}
+			tools, ok := definition["tools"].([]interface{})
+			if !ok || len(tools) == 0 {
+				return fmt.Errorf("exported version %q is missing its tool definition", label)
+			}
+			tool, ok := tools[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("exported version %q has an unexpected tool type %T", label, tools[0])
+			}
+			exportedTools[role] = tool
+		}
+
+		for role, expectedValue := range expected {
+			tool, ok := exportedTools[role]
+			if !ok {
+				return fmt.Errorf("exported JSON did not contain a version with role %q; found roles: %v", role, agenticVirtualAgentContextRetentionRoles(exportedTools))
+			}
+
+			actualValue, exists := tool["context_retention_enabled"]
+			if expectedValue == nil {
+				if exists && actualValue != nil {
+					return fmt.Errorf("exported JSON role %q contains context_retention_enabled=%v; omitted/null must not become a boolean", role, actualValue)
+				}
+				continue
+			}
+
+			actualBool, ok := actualValue.(bool)
+			if !exists || !ok {
+				return fmt.Errorf("exported JSON role %q has context_retention_enabled=%v; expected %t", role, actualValue, *expectedValue)
+			}
+			if actualBool != *expectedValue {
+				return fmt.Errorf("exported JSON role %q has context_retention_enabled=%t; expected %t", role, actualBool, *expectedValue)
+			}
+		}
+
+		hclContent, err := os.ReadFile(hclConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to read exported HCL %s: %w", hclConfigPath, err)
+		}
+		for role, expectedValue := range expected {
+			block, err := exportedAgenticVirtualAgentVersionHCLBlock(string(hclContent), role)
+			if err != nil {
+				return err
+			}
+			value, present := exportedAgenticVirtualAgentContextRetentionHCLValue(block)
+			if expectedValue == nil {
+				if present && value != "null" {
+					return fmt.Errorf("exported HCL role %q contains context_retention_enabled = %s; omitted/null must not become a boolean", role, value)
+				}
+				continue
+			}
+			if !present || value != strconv.FormatBool(*expectedValue) {
+				return fmt.Errorf("exported HCL role %q contains context_retention_enabled = %s; expected %t", role, value, *expectedValue)
+			}
+		}
+
+		return nil
+	}
+}
+
+func exportedAgenticVirtualAgentVersionHCLBlock(content, role string) (string, error) {
+	roleMarker := regexp.MustCompile(fmt.Sprintf(`(?m)^[ \t]*role[ \t]*=[ \t]*%s[ \t]*$`, regexp.QuoteMeta(strconv.Quote(role))))
+	roleMatch := roleMarker.FindStringIndex(content)
+	if roleMatch == nil {
+		return "", fmt.Errorf("exported HCL did not contain a version with role %q", role)
+	}
+	roleIndex := roleMatch[0]
+
+	resourceMarker := `resource "genesyscloud_agentic_virtual_agent_version"`
+	resourceStart := strings.LastIndex(content[:roleIndex], resourceMarker)
+	if resourceStart < 0 {
+		return "", fmt.Errorf("could not locate the exported version resource containing role %q", role)
+	}
+
+	resourceEnd := len(content)
+	if nextResource := strings.Index(content[roleIndex:], "\nresource "); nextResource >= 0 {
+		resourceEnd = roleIndex + nextResource
+	}
+	return content[resourceStart:resourceEnd], nil
+}
+
+func exportedAgenticVirtualAgentContextRetentionHCLValue(block string) (string, bool) {
+	match := regexp.MustCompile(`(?m)^\s*context_retention_enabled\s*=\s*(true|false|null)\s*$`).FindStringSubmatch(block)
+	if len(match) == 0 {
+		return "", false
+	}
+	return match[1], true
+}
+
+func agenticVirtualAgentContextRetentionRoles(tools map[string]map[string]interface{}) []string {
+	roles := make([]string, 0, len(tools))
+	for role := range tools {
+		roles = append(roles, role)
+	}
+	return roles
+}
+
+func generateTfExportAgenticVirtualAgentResource(resourceLabel, name string) string {
+	return fmt.Sprintf(`resource "genesyscloud_agentic_virtual_agent" "%s" {
+  name = "%s"
+}
+`, resourceLabel, name)
+}
+
+func generateTfExportAgenticVirtualAgentDataActionDeps(integrationLabel, actionLabel, actionName string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_integration" "%[1]s" {
+  integration_type = "purecloud-data-actions"
+}
+
+resource "genesyscloud_integration_action" "%[2]s" {
+  name            = "%[3]s"
+  category        = "Genesys Cloud Data Actions"
+  integration_id  = genesyscloud_integration.%[1]s.id
+  secure          = false
+  contract_input  = jsonencode({
+    type       = "object"
+    properties = { customerId = { type = "string" } }
+    required   = ["customerId"]
+  })
+  contract_output = jsonencode({
+    type       = "object"
+    properties = { result = { type = "string" } }
+    required   = ["result"]
+  })
+  config_request {
+    request_url_template = "/api/v2/users/$${input.customerId}"
+    request_type         = "GET"
+  }
+}
+`, integrationLabel, actionLabel, actionName)
+}
+
+func generateTfExportAgenticVirtualAgentVersion(resourceLabel, agentResourceLabel, actionResourceLabel, role string, contextRetentionEnabled *bool) string {
+	contextRetentionConfig := ""
+	if contextRetentionEnabled != nil {
+		contextRetentionConfig = fmt.Sprintf("context_retention_enabled = %t", *contextRetentionEnabled)
+	}
+
+	return fmt.Sprintf(`resource "genesyscloud_agentic_virtual_agent_version" "%[1]s" {
+  agent_id = genesyscloud_agentic_virtual_agent.%[2]s.id
+
+  definition {
+    role         = "%[3]s"
+    instructions = ["Use the data action tool to look up data."]
+
+    types {
+      name      = "CustomerId"
+      type      = "string"
+      direction = "Input"
+    }
+
+    types {
+      name      = "CustomerResult"
+      type      = "object"
+      direction = "Output"
+      properties {
+        name = "result"
+        type = "string"
+      }
+    }
+
+    types {
+      name                = "HttpError"
+      type                = "DataActionHttpError"
+      status_codes        = [404, 500]
+      default_instruction = "Inform the user the request failed."
+    }
+
+    tools {
+      type        = "DataAction"
+      name        = "LookupCustomer"
+      description = "Look up a customer by id via a data action."
+      %[5]s
+      target {
+        id   = genesyscloud_integration_action.%[4]s.id
+        name = genesyscloud_integration_action.%[4]s.name
+      }
+
+      input_instructions = ["Use when the user asks to look up a customer"]
+
+      inputs {
+        target_name = "customerId"
+        type        = "CustomerId"
+        source      = "User"
+        required    = true
+      }
+
+      output = "CustomerResult"
+
+      errors {
+        type        = "HttpError"
+        instruction = "Tell the user the lookup failed."
+      }
+
+      input_validation {
+        type             = "Python"
+        if_condition     = "len(customerId) > 0"
+        else_instruction = "Ask the user for a valid customer id."
+      }
+
+      output_instructions {
+        type = "Python"
+        when = "result is not None"
+        then = "Summarize the customer result."
+      }
+    }
+  }
+}
+`, resourceLabel, agentResourceLabel, role, actionResourceLabel, contextRetentionConfig)
+}
+
 // assertAgenticVirtualAgentExport verifies the exported tf.json contains the agent and
 // version resources, and that the version's agent_id is a resource reference (not a raw UUID).
 func assertAgenticVirtualAgentExport(configPath, agentName string) resource.TestCheckFunc {
