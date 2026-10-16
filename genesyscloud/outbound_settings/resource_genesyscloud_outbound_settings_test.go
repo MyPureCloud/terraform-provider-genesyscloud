@@ -2,18 +2,17 @@ package outbound_settings
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccResourceOutboundSettings(t *testing.T) {
-
-	t.Parallel()
 	var (
 		resourceLabel                    = "outbound_settings"
 		complianceAbandonRateDenominator = []string{"ALL_CALLS", "CALLS_THAT_REACHED_QUEUE"}
@@ -137,7 +136,6 @@ func TestAccResourceOutboundSettings(t *testing.T) {
 // time_zone). It specifically covers the set -> clear transition, which is what catches the
 // PATCH issue where a removed retention_days value is not cleared server-side.
 func TestAccResourceOutboundSettingsRetention(t *testing.T) {
-	t.Parallel()
 	var (
 		resourceLabel = "outbound_settings_retention"
 		fullPath      = "genesyscloud_outbound_settings." + resourceLabel

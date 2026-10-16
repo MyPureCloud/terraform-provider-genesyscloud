@@ -28,10 +28,10 @@ The resource_genesyscloud_conversations_messaging_integrations_whatsapp.go conta
 
 // getAllAuthConversationsMessagingIntegrationsWhatsapp retrieves all of the conversations messaging integrations whatsapp via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthConversationsMessagingIntegrationsWhatsapps(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(clientConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	whatsAppEmbeddedSignupIntegrationRequests, resp, err := proxy.getAllConversationsMessagingIntegrationsWhatsapp(ctx)
+	whatsAppEmbeddedSignupIntegrationRequests, resp, err := proxy.GetAllConversationsMessagingIntegrationsWhatsapp(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging integrations whatsapp: %v", err), resp)
 	}
@@ -46,7 +46,7 @@ func getAllAuthConversationsMessagingIntegrationsWhatsapps(ctx context.Context, 
 // createConversationsMessagingIntegrationsWhatsapp is used by the conversations_messaging_integrations_whatsapp resource to create Genesys cloud conversations messaging integrations whatsapp
 func createConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 
 	conversationsMessagingIntegrationsWhatsapp := getConversationsMessagingIntegrationsWhatsappFromResourceData(d)
 
@@ -71,12 +71,12 @@ func createConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 // readConversationsMessagingIntegrationsWhatsapp is used by the conversations_messaging_integrations_whatsapp resource to read an conversations messaging integrations whatsapp from genesys cloud
 func readConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsWhatsapp(), constants.ConsistencyChecks(), ResourceType)
 	log.Printf("Reading conversations messaging integrations whatsapp %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		whatsAppEmbeddedSignupIntegrationRequest, resp, err := proxy.getConversationsMessagingIntegrationsWhatsappById(ctx, d.Id())
+		whatsAppEmbeddedSignupIntegrationRequest, resp, err := proxy.GetConversationsMessagingIntegrationsWhatsappById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations whatsapp %s: %s", d.Id(), err), resp))
@@ -102,7 +102,7 @@ func readConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sche
 // updateConversationsMessagingIntegrationsWhatsapp is used by the conversations_messaging_integrations_whatsapp resource to update an conversations messaging integrations whatsapp in Genesys Cloud
 func updateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 
 	// Activate WhatsApp integration if requested, otherwise proceed with update
 	if d.HasChange("activate_whatsapp") {
@@ -149,7 +149,7 @@ func activateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *
 
 	// Get SDK configuration and proxy
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 
 	// Construct activation request
 	activationRequest := platformclientv2.Whatsappembeddedsignupintegrationactivationrequest{
@@ -172,7 +172,7 @@ func activateConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *
 // deleteConversationsMessagingIntegrationsWhatsapp is used by the conversations_messaging_integrations_whatsapp resource to delete an conversations messaging integrations whatsapp from Genesys cloud
 func deleteConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(sdkConfig)
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsWhatsapp(ctx, d.Id())
 	if err != nil {
@@ -180,7 +180,7 @@ func deleteConversationsMessagingIntegrationsWhatsapp(ctx context.Context, d *sc
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getConversationsMessagingIntegrationsWhatsappById(ctx, d.Id())
+		_, resp, err := proxy.GetConversationsMessagingIntegrationsWhatsappById(ctx, d.Id())
 
 		if err != nil {
 			if util.IsStatus404(resp) {
