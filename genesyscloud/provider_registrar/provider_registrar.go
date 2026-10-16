@@ -108,6 +108,7 @@ import (
 	pat "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/process_automation_trigger"
 	qualityFormsEvaluation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_evaluation"
 	qualityFormsSurvey "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_forms_survey"
+	qualityMiner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_miner"
 	recMediaRetPolicy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_media_retention_policy"
 	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -415,6 +416,7 @@ func registerResources() {
 	knowledgeKnowledgebase.SetRegistrar(regInstance)                       //Registering Knowledge base
 	qualityFormsEvaluation.SetRegistrar(regInstance)                       //Registering quality forms evaluation
 	qualityFormsSurvey.SetRegistrar(regInstance)                           //Registering quality forms survey
+	qualityMiner.SetRegistrar(regInstance)                                 //Registering quality miner
 	businessRulesSchema.SetRegistrar(regInstance)                          //Registering business rules schema
 	businessRulesDecisionTable.SetRegistrar(regInstance)                   //Registering business rules decision table
 	workforcemanagementBusinessunits.SetRegistrar(regInstance)             //Registering workforcemanagement businessunits

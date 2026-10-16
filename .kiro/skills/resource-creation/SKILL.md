@@ -70,6 +70,7 @@ Tickets often give a name ("Quality Recording Management") with no `/api/v2/...`
    Pointer types (`*int`, `*bool`) map to `resourcedata.SetNillableValue`/`GetNillableValue`. Note `createDefault`-style query params.
 3. Map API fields -> schema attributes in a table: `snake_case` name, type, **writable vs read-only** (read-only => `Computed` only, MUST NOT be in the PUT body), and constraints (ranges/enums -> validators).
 4. **Check scope creep.** A UI page often aggregates several endpoints. Only model fields that belong to *your* endpoint. Fields backed by other endpoints belong to other resources.
+5. **Don't expose a computed field just because it's on the SDK model.** The SDK model is the source of truth for what you *can* call, but it often carries transient/diagnostic read-only fields (e.g. `message`, `dateCreated`/`dateModified`, run counts, internal status chatter) that add no value as Terraform state and may not even appear in the public API docs. Cross-check candidate computed fields against the API Explorer docs, and when a read-only field is purely transient/diagnostic, leave it out. Expose a `Computed` field only when a user would reference it (e.g. the server-assigned `id`, a meaningful `status`). When in doubt, confirm the computed set with the user.
 
 ## Phase 2 — Decide the resource shape
 
