@@ -252,9 +252,11 @@ func toolResource() *schema.Resource {
 				Optional:    true,
 				Elem:        outputInstructionResource(),
 			},
-			// DataAction-specific fields
+			// Inputs and input_validation apply to DataAction tools and to Knowledge tools
+			// (KnowledgeSetting / KnowledgeBase). For Knowledge tools the inputs express a
+			// dependency/gating relationship only and must be marked dependency_only = true.
 			"inputs": {
-				Description: "Inputs passed to this data action tool. Only applicable when type is DataAction.",
+				Description: "Inputs for this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase). For Knowledge tools, inputs must be sourced from a prior tool output and marked dependency_only = true; they establish a dependency and are not sent to the knowledge service.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        toolInputResource(),
@@ -271,7 +273,7 @@ func toolResource() *schema.Resource {
 				Elem:        toolErrorResource(),
 			},
 			"input_validation": {
-				Description: "Conditions that must be checked before invoking this tool. Only applicable when type is DataAction.",
+				Description: "Conditions that must be checked before invoking this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase).",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        inputValidationResource(),
@@ -335,6 +337,11 @@ func toolInputResource() *schema.Resource {
 			"mapping": {
 				Description: "Path used to extract this input from a previous tool output. JSON-encoded array. Only valid when source is ToolOutput.",
 				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"dependency_only": {
+				Description: "Whether this input is used only to establish a dependency/precondition and is not sent to the underlying tool at runtime. Must be true for inputs on Knowledge tools (KnowledgeSetting / KnowledgeBase).",
+				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 		},

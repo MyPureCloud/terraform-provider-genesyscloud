@@ -353,6 +353,9 @@ func expandToolInputs(list []interface{}) []AgenticVirtualAgentToolInput {
 			_ = json.Unmarshal([]byte(v), &mapping)
 			input.Mapping = mapping
 		}
+		if v, ok := m["dependency_only"].(bool); ok {
+			input.DependencyOnly = &v
+		}
 		inputs = append(inputs, input)
 	}
 	return inputs
@@ -653,6 +656,9 @@ func flattenToolInputs(inputs []AgenticVirtualAgentToolInput) []interface{} {
 		if len(input.Mapping) > 0 {
 			mappingBytes, _ := json.Marshal(input.Mapping)
 			m["mapping"] = string(mappingBytes)
+		}
+		if input.DependencyOnly != nil {
+			m["dependency_only"] = *input.DependencyOnly
 		}
 		result = append(result, m)
 	}

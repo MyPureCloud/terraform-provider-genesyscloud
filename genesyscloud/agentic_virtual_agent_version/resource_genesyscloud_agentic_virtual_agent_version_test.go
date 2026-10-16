@@ -723,3 +723,130 @@ func generateVersionResourceWithDynamicTurnInstructions(resourceLabel, agentReso
 	}
 	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1)
 }
+
+// TestAccResourceAgenticVirtualAgentVersionKnowledgeToolDependencyOnlyInput tests a Knowledge tool
+// that carries a dependency-only input linked to a Data Action tool's output (ToolOutput source),
+// plus a structured input_validation gating the tool. This exercises the SAGE-861 feature:
+// dependency_only inputs on Knowledge tools. It verifies the create->read round-trip of the new
+// field and that a subsequent plan is a no-op.
+func TestAccResourceAgenticVirtualAgentVersionKnowledgeToolDependencyOnlyInput(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		kbResourceLabel      = "test_kb"
+		integResourceLabel   = "test_integ"
+		actionResourceLabel  = "test_action"
+		agentName            = "TF KB DepOnly Agent " + uuid.NewString()
+		kbName               = "TF KB DepOnly " + uuid.NewString()
+		actionName           = "TF DepOnly Action " + uuid.NewString()
+		role                 = "You are a gated knowledge assistant."
+		instruction1         = "Authenticate the user before answering knowledge questions."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeDependencyOnlyInput(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					// Data Action tool (index 0) produces AuthResult.
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.type", "DataAction"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output", "AuthResult"),
+					// Knowledge tool (index 1) carries a dependency-only input.
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.type", "KnowledgeBase"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.target_name", "auth_token"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.source", "ToolOutput"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.dependency_only", "true"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.fallback_to_user", "false"),
+				),
+			},
+			{
+				// Round-trip check: plan should be a no-op after apply.
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeDependencyOnlyInput(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// generateVersionResourceWithKnowledgeDependencyOnlyInput creates a version with a DataAction tool
+// that outputs AuthResult and a KnowledgeBase tool that links to that output via a dependency-only
+// input (source ToolOutput, dependency_only = true, fallback_to_user = false) plus a structured
+// input_validation gate.
+func generateVersionResourceWithKnowledgeDependencyOnlyInput(resourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1 string) string {
+	return fmt.Sprintf(`resource "%[1]s" "%[2]s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%[3]s.id
+
+		definition {
+			role         = "%[4]s"
+			instructions = ["%[5]s"]
+
+			types {
+				name      = "AuthResult"
+				type      = "object"
+				direction = "Output"
+				properties {
+					name = "token"
+					type = "string"
+				}
+			}
+
+			tools {
+				type        = "DataAction"
+				name        = "Authenticate"
+				description = "Authenticate the user and return an auth token."
+				target {
+					id   = genesyscloud_integration_action.%[6]s.id
+					name = genesyscloud_integration_action.%[6]s.name
+				}
+				input_instructions = ["Call this to authenticate the user"]
+				output             = "AuthResult"
+			}
+
+			tools {
+				type        = "KnowledgeBase"
+				name        = "GatedFAQ"
+				description = "Answer questions only for authenticated users."
+				target {
+					id   = genesyscloud_knowledge_knowledgebase.%[7]s.id
+					name = genesyscloud_knowledge_knowledgebase.%[7]s.name
+				}
+				input_instructions = ["Use when the user asks a question"]
+
+				inputs {
+					target_name      = "auth_token"
+					type             = "AuthResult"
+					source           = "ToolOutput"
+					required         = true
+					fallback_to_user = false
+					mapping          = jsonencode(["AuthResult", "token"])
+					dependency_only  = true
+				}
+
+				input_validation {
+					type             = "Structured"
+					if_condition     = jsonencode({ group = "And", rules = [{ name = "auth_token", operator = "IsNotNull" }] })
+					else_instruction = "Ask the customer to authenticate first."
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel, kbResourceLabel)
+}
