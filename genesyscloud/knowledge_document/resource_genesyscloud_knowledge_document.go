@@ -101,7 +101,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	knowledgeDocumentId, knowledgeBaseId := parseDocumentResourceDataID(d.Id())
+	knowledgeDocumentId, knowledgeBaseId := ParseDocumentResourceDataID(d.Id())
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), ResourceType)
@@ -172,7 +172,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	knowledgeDocumentId, _ := parseDocumentResourceDataID(d.Id())
+	knowledgeDocumentId, _ := ParseDocumentResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig

@@ -36,10 +36,7 @@ func newGroupRolesProxy(clientConfig *platformclientv2.Configuration) *groupRole
 }
 
 func getGroupRolesProxy(clientConfig *platformclientv2.Configuration) *groupRolesProxy {
-	if internalProxy == nil {
-		internalProxy = newGroupRolesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newGroupRolesProxy)
 }
 
 func (p *groupRolesProxy) getGroupRolesById(ctx context.Context, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {

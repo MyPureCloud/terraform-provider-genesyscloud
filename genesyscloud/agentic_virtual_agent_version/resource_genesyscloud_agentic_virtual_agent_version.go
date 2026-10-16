@@ -32,8 +32,9 @@ import (
    - ProductionReady versions are immutable — PATCH is rejected by API
 */
 
-// Composite ID format: agentId/versionId
-func buildVersionId(agentId, versionId string) string {
+// BuildVersionId builds the agentic_virtual_agent_version composite resource ID, which is
+// always in the format <agent-id>/<version-id>.
+func BuildVersionId(agentId, versionId string) (id string) {
 	return agentId + "/" + versionId
 }
 
@@ -60,7 +61,7 @@ func getAllAgenticVirtualAgentVersions(ctx context.Context, clientConfig *platfo
 			continue
 		}
 
-		resourceId := *agent.Id + "/" + *agent.LatestSavedVersion.Version
+		resourceId := BuildVersionId(*agent.Id, *agent.LatestSavedVersion.Version)
 		resources[resourceId] = &resourceExporter.ResourceMeta{
 			BlockLabel: *agent.Name + "_version",
 		}
@@ -87,7 +88,7 @@ func newAgenticVirtualAgentVersionExportCache() *agenticVirtualAgentVersionExpor
 func (c *agenticVirtualAgentVersionExportCache) replace(resources resourceExporter.ResourceIDMetaMap) error {
 	latestVersionByAgent := make(map[string]string, len(resources))
 	for resourceID := range resources {
-		agentID, versionID, err := parseVersionId(resourceID)
+		agentID, versionID, err := ParseVersionId(resourceID)
 		if err != nil {
 			return fmt.Errorf("failed to cache exported AVA version %q: %w", resourceID, err)
 		}
@@ -120,7 +121,9 @@ func getAllAgenticVirtualAgentVersionsWithCache(cache *agenticVirtualAgentVersio
 	}
 }
 
-func parseVersionId(id string) (agentId string, versionId string, err error) {
+// ParseVersionId splits the agentic_virtual_agent_version composite resource ID, which is
+// always in the format <agent-id>/<version-id>, back into its parts.
+func ParseVersionId(id string) (agentId string, versionId string, err error) {
 	parts := strings.Split(id, "/")
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("invalid version resource ID format: %s (expected agentId/versionId)", id)
@@ -363,7 +366,7 @@ func createAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceDat
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create agentic virtual agent version for agent %s: %s", agentId, err), resp)
 	}
 
-	d.SetId(buildVersionId(agentId, *versionResp.Version))
+	d.SetId(BuildVersionId(agentId, *versionResp.Version))
 	setConfiguredContextRetentionPresenceMarker(d)
 	log.Printf("Created Agentic Virtual Agent Version: %s", d.Id())
 
@@ -376,7 +379,7 @@ func readAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceData,
 	proxy := getAgenticVirtualAgentVersionProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceAgenticVirtualAgentVersion(), constants.ConsistencyChecks(), ResourceType)
 
-	agentId, versionId, err := parseVersionId(d.Id())
+	agentId, versionId, err := ParseVersionId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -417,7 +420,7 @@ func updateAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getAgenticVirtualAgentVersionProxy(sdkConfig)
 
-	agentId, versionId, err := parseVersionId(d.Id())
+	agentId, versionId, err := ParseVersionId(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}

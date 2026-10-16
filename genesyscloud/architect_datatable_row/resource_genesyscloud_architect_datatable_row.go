@@ -77,7 +77,7 @@ func getAllArchitectDatatableRows(ctx context.Context, clientConfig *platformcli
 		for _, row := range *rows {
 			if keyVal, ok := row["key"]; ok {
 				keyStr := keyVal.(string)
-				resources[createDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{BlockLabel: *tableMeta.Name + "_" + keyStr}
+				resources[CreateDatatableRowId(*tableMeta.Id, keyStr)] = &resourceExporter.ResourceMeta{BlockLabel: *tableMeta.Name + "_" + keyStr}
 			}
 		}
 	}
@@ -98,7 +98,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 		return diagErr
 	}
 
-	rowId := createDatatableRowId(tableId, keyStr)
+	rowId := CreateDatatableRowId(tableId, keyStr)
 	log.Printf("Creating Datatable Row %s", rowId)
 
 	_, resp, err := archProxy.createArchitectDatatableRow(ctx, tableId, &rowMap)
@@ -113,7 +113,7 @@ func createArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 }
 
 func readArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tableId, keyStr := splitDatatableRowId(d.Id())
+	tableId, keyStr := SplitDatatableRowId(d.Id())
 	if keyStr == "" {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}
@@ -175,7 +175,7 @@ func updateArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, me
 }
 
 func deleteArchitectDatatableRow(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	tableId, keyStr := splitDatatableRowId(d.Id())
+	tableId, keyStr := SplitDatatableRowId(d.Id())
 	if keyStr == "" {
 		return util.BuildDiagnosticError(ResourceType, fmt.Sprintf("Invalid Row ID %s", d.Id()), fmt.Errorf("keyStr is nil"))
 	}

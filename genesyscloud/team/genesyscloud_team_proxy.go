@@ -98,10 +98,7 @@ func newTeamProxy(clientConfig *platformclientv2.Configuration) *teamProxy {
 // getTeamProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTeamProxy(clientConfig *platformclientv2.Configuration) *teamProxy {
-	if internalProxy == nil {
-		internalProxy = newTeamProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTeamProxy)
 }
 
 // createTeam creates a Genesys Cloud team

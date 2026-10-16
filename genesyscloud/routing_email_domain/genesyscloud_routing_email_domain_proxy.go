@@ -56,10 +56,7 @@ func newRoutingEmailDomainProxy(clientConfig *platformclientv2.Configuration) *r
 // getRoutingEmailDomainProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getRoutingEmailDomainProxy(clientConfig *platformclientv2.Configuration) *routingEmailDomainProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingEmailDomainProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingEmailDomainProxy)
 }
 
 func (p *routingEmailDomainProxy) getAllRoutingEmailDomains(ctx context.Context) (*[]platformclientv2.Inbounddomain, *platformclientv2.APIResponse, error) {

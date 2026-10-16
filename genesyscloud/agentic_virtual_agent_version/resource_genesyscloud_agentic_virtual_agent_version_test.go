@@ -389,7 +389,7 @@ func testCheckAgenticVirtualAgentVersionContextRetention(resourcePath string, ex
 			return fmt.Errorf("resource not found: %s", resourcePath)
 		}
 
-		agentID, versionID, err := parseVersionId(resourceState.Primary.ID)
+		agentID, versionID, err := ParseVersionId(resourceState.Primary.ID)
 		if err != nil {
 			return err
 		}

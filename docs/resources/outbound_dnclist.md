@@ -76,7 +76,7 @@ resource "genesyscloud_outbound_dnclist" "dnc_list" {
 				will cause the dnc list to be destroyed and recreated with a new GUID.
 - `division_id` (String) The division this DNC List belongs to.
 - `dnc_codes` (List of String) The list of dnc.com codes to be treated as DNC. Required if the dncSourceType is dnc.com.
-- `entries` (Block List) Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past. (see [below for nested schema](#nestedblock--entries))
+- `entries` (Block List) Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past. Note: setting the GENESYSCLOUD_OUTBOUND_DNCLIST_UNMANAGED_ENTRIES environment variable makes Terraform stop managing entries entirely - they are not fetched, stored in state, or deleted - which avoids memory and timeout issues on very large lists whose entries are managed outside Terraform. (see [below for nested schema](#nestedblock--entries))
 - `license_id` (String) A gryphon license number. Required if the dncSourceType is gryphon.
 - `login_id` (String) A dnc.com loginId. Required if the dncSourceType is dnc.com.
 
