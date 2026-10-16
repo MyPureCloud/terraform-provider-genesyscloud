@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/stretchr/testify/assert"
@@ -352,4 +353,36 @@ func buildIvrResourceMap(tId string, tName string, tDescription string, tIDnis [
 		"division_id":           tDivisionId,
 	}
 	return resourceDataMap
+}
+
+// TestUnitArchitectIvrDnisValidation locks in the fix for issue #2592: the dnis field must accept
+// short technical DNIS numbers that already exist in Genesys Cloud (e.g. +32 numbers shorter than
+// a "plausible" national number) while still rejecting values that are not valid E.164 input.
+func TestUnitArchitectIvrDnisValidation(t *testing.T) {
+	dnisSchema := ResourceArchitectIvrConfig().Schema["dnis"]
+	validate := dnisSchema.Elem.(*schema.Schema).ValidateDiagFunc
+	assert.NotNil(t, validate, "dnis element should have a ValidateDiagFunc")
+
+	cases := []struct {
+		number    string
+		expectErr bool
+	}{
+		// Short technical DNIS numbers from issue #2592 - must now be accepted
+		{"+3212", false},
+		{"+32123", false},
+		{"+321234", false},
+		{"+3212345", false},
+		// Full-length numbers must still be accepted
+		{"+3221234567", false},
+		{"+19193331234", false},
+		// Still-invalid input must be rejected
+		{"3212", true},      // missing leading '+'
+		{"", true},          // empty
+		{"+1abc1234", true}, // non-numeric
+	}
+
+	for _, c := range cases {
+		diags := validate(c.number, cty.Path{})
+		assert.Equal(t, c.expectErr, diags.HasError(), "number %q expectErr=%v, got diags=%v", c.number, c.expectErr, diags)
+	}
 }
