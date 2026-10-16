@@ -3,6 +3,8 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -1862,36 +1864,30 @@ func TestUnitSanitizeConfigMapOmitUnresolvedRefs(t *testing.T) {
 }
 
 func TestUnitSanitizeConfigMapConvertsSchemaSetToSlice(t *testing.T) {
-	resourceType := "genesyscloud_routing_queue"
-	groupID := "f0cb7f59-353b-4715-89b5-dbb03f47d895"
+	resourceType := "test_resource"
+	resourceLabel := "test_label"
+	memberID := "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
-	memberGroupResource := &schema.Resource{
+	memberResource := &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"member_group_id":   {Type: schema.TypeString, Required: true},
-			"member_group_type": {Type: schema.TypeString, Required: true},
+			"member_id":   {Type: schema.TypeString, Required: true},
+			"member_type": {Type: schema.TypeString, Required: true},
 		},
 	}
-	groupsSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{
+	membersSet := schema.NewSet(schema.HashResource(memberResource), []interface{}{
 		map[string]interface{}{
-			"member_group_id":   groupID,
-			"member_group_type": "SKILLGROUP",
+			"member_id":   memberID,
+			"member_type": "example_type",
 		},
 	})
 
 	configMap := map[string]interface{}{
-		"name": "Brazil Cons Basic SITEL",
-		"conditional_group_activation": []interface{}{
+		"name": "test",
+		"nested_block": []interface{}{
 			map[string]interface{}{
-				"rules": []interface{}{
+				"entries": []interface{}{
 					map[string]interface{}{
-						"condition_expression": "C1",
-						"conditions": []interface{}{
-							map[string]interface{}{
-								"operator": "GreaterThanOrEqualTo",
-								"value":    4,
-							},
-						},
-						"groups": groupsSet,
+						"members": membersSet,
 					},
 				},
 			},
@@ -1903,37 +1899,110 @@ func TestUnitSanitizeConfigMapConvertsSchemaSetToSlice(t *testing.T) {
 	}
 	resource := resourceExporter.ResourceInfo{
 		Type:       resourceType,
-		BlockLabel: "Brazil_Cons_Basic_SITEL",
+		BlockLabel: resourceLabel,
 		BlockType:  "resource",
-		State:      &terraform.InstanceState{ID: "queue-id"},
+		State:      &terraform.InstanceState{ID: "resource-id"},
 	}
 
 	g := setupGenesysCloudResourceExporter(t)
 	_, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
 	require.True(t, ok)
 
-	cga, ok := configMap["conditional_group_activation"].([]interface{})
-	require.True(t, ok, "conditional_group_activation should remain a slice")
-	require.Len(t, cga, 1)
+	nestedBlock, ok := configMap["nested_block"].([]interface{})
+	require.True(t, ok, "nested_block should remain a slice")
+	require.Len(t, nestedBlock, 1)
 
-	rules, ok := cga[0].(map[string]interface{})["rules"].([]interface{})
-	require.True(t, ok, "rules should be a slice after sanitization")
-	require.Len(t, rules, 1)
+	entries, ok := nestedBlock[0].(map[string]interface{})["entries"].([]interface{})
+	require.True(t, ok, "entries should be a slice after sanitization")
+	require.Len(t, entries, 1)
 
-	groups, ok := rules[0].(map[string]interface{})["groups"].([]interface{})
-	require.True(t, ok, "groups *schema.Set should be converted to []interface{}")
-	require.Len(t, groups, 1)
+	members, ok := entries[0].(map[string]interface{})["members"].([]interface{})
+	require.True(t, ok, "members *schema.Set should be converted to []interface{}")
+	require.Len(t, members, 1)
 
-	groupMap, ok := groups[0].(map[string]interface{})
+	memberMap, ok := members[0].(map[string]interface{})
 	require.True(t, ok)
-	assert.Equal(t, groupID, groupMap["member_group_id"])
-	assert.Equal(t, "SKILLGROUP", groupMap["member_group_type"])
+	assert.Equal(t, memberID, memberMap["member_id"])
+	assert.Equal(t, "example_type", memberMap["member_type"])
 
-	hclBlock := instanceStateToHCLBlock(resourceType, "Brazil_Cons_Basic_SITEL", util.JsonMap(configMap), false)
+	hclBlock := instanceStateToHCLBlock(resourceType, resourceLabel, util.JsonMap(configMap), false)
 	hclStr := string(hclBlock)
-	assert.Contains(t, hclStr, "groups {")
-	assert.Contains(t, hclStr, groupID)
-	assert.Contains(t, hclStr, "SKILLGROUP")
+	assert.Contains(t, hclStr, "members {")
+	assert.Contains(t, hclStr, memberID)
+	assert.Contains(t, hclStr, "example_type")
+
+	t.Run("routing queue conditional_group_activation groups", func(t *testing.T) {
+		queueType := "genesyscloud_routing_queue"
+		queueLabel := "test_queue"
+		groupID := "bbbbbbbb-cccc-dddd-eeee-ffffffffffff"
+
+		memberGroupResource := &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"member_group_id":   {Type: schema.TypeString, Required: true},
+				"member_group_type": {Type: schema.TypeString, Required: true},
+			},
+		}
+		groupsSet := schema.NewSet(schema.HashResource(memberGroupResource), []interface{}{
+			map[string]interface{}{
+				"member_group_id":   groupID,
+				"member_group_type": "SKILLGROUP",
+			},
+		})
+
+		queueConfig := map[string]interface{}{
+			"name": "test",
+			"conditional_group_activation": []interface{}{
+				map[string]interface{}{
+					"rules": []interface{}{
+						map[string]interface{}{
+							"condition_expression": "C1",
+							"conditions": []interface{}{
+								map[string]interface{}{
+									"operator": "GreaterThanOrEqualTo",
+									"value":    4.0,
+									"simple_metric": []interface{}{
+										map[string]interface{}{
+											"metric": "IdleAgentCount",
+										},
+									},
+								},
+							},
+							"groups": groupsSet,
+						},
+					},
+				},
+			},
+		}
+
+		queueExporters := map[string]*resourceExporter.ResourceExporter{
+			queueType: {},
+		}
+		queueResource := resourceExporter.ResourceInfo{
+			Type:       queueType,
+			BlockLabel: queueLabel,
+			BlockType:  "resource",
+			State:      &terraform.InstanceState{ID: "aaaaaaaa-1111-2222-3333-444444444444"},
+		}
+
+		_, ok := g.sanitizeConfigMap(queueResource, queueConfig, "", queueExporters, false, "hcl", true)
+		require.True(t, ok)
+
+		rules, ok := queueConfig["conditional_group_activation"].([]interface{})[0].(map[string]interface{})["rules"].([]interface{})
+		require.True(t, ok)
+		groups, ok := rules[0].(map[string]interface{})["groups"].([]interface{})
+		require.True(t, ok, "groups *schema.Set should be converted to []interface{}")
+		require.Len(t, groups, 1)
+
+		queueHCL := string(instanceStateToHCLBlock(queueType, queueLabel, util.JsonMap(queueConfig), false))
+		assert.Contains(t, queueHCL, "groups {")
+		assert.Contains(t, queueHCL, groupID)
+		assert.Contains(t, queueHCL, "SKILLGROUP")
+
+		if dir := os.Getenv("TERRAFORM_VALIDATE_DIR"); dir != "" {
+			content := append([]byte("terraform {\n  required_providers {\n    genesyscloud = {\n      source = \"mypurecloud/genesyscloud\"\n    }\n  }\n}\n\nprovider \"genesyscloud\" {}\n\n"), []byte(queueHCL)...)
+			require.NoError(t, os.WriteFile(filepath.Join(dir, "main.tf"), content, 0o644))
+		}
+	})
 }
 
 func TestUnitSanitizeConfigMapNestedUnresolvableAttrs(t *testing.T) {
