@@ -10,6 +10,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -344,6 +345,68 @@ func TestAccResourceOutboundDncListCustomExclusionColumn(t *testing.T) {
 			},
 			{
 				// Import/Read
+				ResourceName:            resourcePath,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"entries"},
+			},
+		},
+		CheckDestroy: testVerifyDncListDestroyed,
+	})
+}
+
+func TestAccResourceOutboundDncListUnmanagedEntries(t *testing.T) {
+	t.Setenv(featureToggles.OutboundDnclistUnmanagedEntriesToggleName(), "true")
+	var (
+		resourceLabel = "dnc_list"
+		resourcePath  = "genesyscloud_outbound_dnclist." + resourceLabel
+		name          = "Test DNC List " + uuid.NewString()
+		updatedName   = name + " updated"
+		dncSourceType = "rds"
+		contactMethod = "Phone"
+	)
+
+	config := func(listName string, entries ...string) string {
+		return generateOutboundDncList(
+			resourceLabel,
+			listName,
+			dncSourceType,
+			strconv.Quote(contactMethod),
+			util.NullValue,
+			util.NullValue,
+			util.NullValue,
+			util.NullValue,
+			[]string{},
+			entries...,
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// entries are not kept in state in this mode, so the plan keeps showing them
+				ExpectNonEmptyPlan: true,
+				Config: config(name, generateOutboundDncListEntriesBlock(
+					[]string{strconv.Quote("+353747474747"), strconv.Quote("+353747474748")},
+					util.NullValue,
+				)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", name),
+					checkPhoneNumbersAddedToDncList(resourcePath, 2),
+				),
+			},
+			{
+				// entries omitted: existing numbers must be left untouched
+				Config: config(updatedName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "name", updatedName),
+					resource.TestCheckResourceAttr(resourcePath, "entries.#", "0"),
+					checkPhoneNumbersAddedToDncList(resourcePath, 2),
+				),
+			},
+			{
 				ResourceName:            resourcePath,
 				ImportState:             true,
 				ImportStateVerify:       true,

@@ -95,7 +95,7 @@ func ResourceOutboundDncList() *schema.Resource {
 				ForceNew: true,
 			},
 			`entries`: {
-				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past.`,
+				Description: `Rows to add to the DNC list. To emulate removing phone numbers, you can set expiration_date to a date in the past. Note: setting the GENESYSCLOUD_OUTBOUND_DNCLIST_UNMANAGED_ENTRIES environment variable makes Terraform stop managing entries entirely - they are not fetched, stored in state, or deleted - which avoids memory and timeout issues on very large lists whose entries are managed outside Terraform.`,
 				Optional:    true,
 				Type:        schema.TypeList,
 				Elem: &schema.Resource{

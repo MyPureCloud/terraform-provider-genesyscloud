@@ -35,10 +35,7 @@ func newStationProxy(clientConfig *platformclientv2.Configuration) *stationProxy
 // getStationProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getStationProxy(clientConfig *platformclientv2.Configuration) *stationProxy {
-	if internalProxy == nil {
-		internalProxy = newStationProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newStationProxy)
 }
 
 // getStationIdByName retrieves a Genesys Cloud Station ID by Name

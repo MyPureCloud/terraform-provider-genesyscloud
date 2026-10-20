@@ -2,12 +2,14 @@ package speechandtextanalytics_category
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -77,6 +79,11 @@ func TestAccResourceSpeechAndTextAnalyticsCategory(t *testing.T) {
   })`
 	)
 
+	suffix := strings.ReplaceAll(uuid.NewString(), "-", "")[:8]
+	refundWord, cancelWord := "refund"+suffix, "cancel"+suffix
+	criteria1 = strings.ReplaceAll(criteria1, "refund", refundWord)
+	criteria2 = strings.ReplaceAll(criteria2, "cancel", cancelWord)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
@@ -95,6 +102,7 @@ func TestAccResourceSpeechAndTextAnalyticsCategory(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description1),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "interaction_type", interactionType),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "criteria"),
+					resource.TestMatchResourceAttr(ResourceType+"."+resourceLabel, "criteria", regexp.MustCompile(`"word":\s*"`+refundWord+`"`)),
 				),
 			},
 			{
@@ -111,6 +119,7 @@ func TestAccResourceSpeechAndTextAnalyticsCategory(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "description", description2),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "interaction_type", interactionType),
 					resource.TestCheckResourceAttrSet(ResourceType+"."+resourceLabel, "criteria"),
+					resource.TestMatchResourceAttr(ResourceType+"."+resourceLabel, "criteria", regexp.MustCompile(`"word":\s*"`+cancelWord+`"`)),
 				),
 			},
 			{

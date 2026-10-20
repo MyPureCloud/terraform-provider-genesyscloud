@@ -38,7 +38,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	time.Sleep(5 * time.Second)
 
 	// Gets all routing queues without a peer
-	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false)
+	queues, resp, err := proxy.GetAllRoutingQueues(ctx, "", false, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues: %s", err), resp)
 	}
@@ -48,7 +48,7 @@ func getAllRoutingQueues(ctx context.Context, clientConfig *platformclientv2.Con
 	}
 
 	// Gets all routing queues with a peer
-	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true)
+	queues, resp, err = proxy.GetAllRoutingQueues(ctx, "", true, false)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to get routing queues with Peer IDs: %s", err), resp)
 	}
@@ -360,7 +360,10 @@ func readRoutingQueue(ctx context.Context, d *schema.ResourceData, meta interfac
 	ctx = util.SetResourceContext(ctx, d, ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), true)
+		// DEVTOOLING-1764: do not use the export list cache here. Concurrent list pagination
+		// stores shallow Queue copies; nested bullseye member_groups can be lost or incomplete
+		// when Read reuses that cache. Always GET-by-id for authoritative state.
+		currentQueue, resp, getErr := proxy.getRoutingQueueById(ctx, d.Id(), false)
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read queue %s | error: %s", d.Id(), getErr), resp))

@@ -266,7 +266,7 @@ func testVerifyTaskManagementWorktypeStatusDestroyed(state *terraform.State) err
 			continue
 		}
 
-		worktypeId, statusId := splitWorktypeStatusTerraformTransitionId(res.Primary.ID)
+		worktypeId, statusId := SplitWorktypeStatusTerraformTransitionId(res.Primary.ID)
 		worktypeStatus, resp, err := taskManagementApi.GetTaskmanagementWorktypeStatus(worktypeId, statusId)
 		if worktypeStatus != nil {
 			return fmt.Errorf("task management worktype status (%s) still exists", res.Primary.ID)

@@ -67,6 +67,7 @@ resource "genesyscloud_integration_action" "example_action" {
 # Example with function configuration
 # Required when the integration type is "function-data-actions" (or category contains "function data action").
 # Genesys Cloud cannot download function zips — keep the zip available locally / in your pipeline.
+# Export emits a Terraform variable for file_path; set it to your zip before apply.
 resource "genesyscloud_integration_action" "example_function_action" {
   name                   = "Example Function Action"
   category               = "Function Data Actions"

@@ -29,10 +29,10 @@ The resource_genesyscloud_conversations_messaging_integrations_open.go contains 
 
 // getAllAuthConversationsMessagingIntegrationsOpen retrieves all of the conversations messaging integrations open via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthConversationsMessagingIntegrationsOpens(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getConversationsMessagingIntegrationsOpenProxy(clientConfig)
+	proxy := GetConversationsMessagingIntegrationsOpenProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	openIntegrationRequests, resp, err := proxy.getAllConversationsMessagingIntegrationsOpen(ctx)
+	openIntegrationRequests, resp, err := proxy.GetAllConversationsMessagingIntegrationsOpen(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging integrations open: %v", err), resp)
 	}
@@ -47,7 +47,7 @@ func getAllAuthConversationsMessagingIntegrationsOpens(ctx context.Context, clie
 // createConversationsMessagingIntegrationsOpen is used by the conversations_messaging_integrations_open resource to create Genesys cloud conversations messaging integrations open
 func createConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsOpenProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsOpenProxy(sdkConfig)
 
 	conversationsMessagingIntegrationsOpen := getConversationsMessagingIntegrationsOpenFromResourceData(d)
 
@@ -65,14 +65,14 @@ func createConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 // readConversationsMessagingIntegrationsOpen is used by the conversations_messaging_integrations_open resource to read an conversations messaging integrations open from genesys cloud
 func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsOpenProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsOpenProxy(sdkConfig)
 
 	log.Printf("Reading conversations messaging integrations open %s", d.Id())
 
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsOpen(), constants.ConsistencyChecks(), ResourceType)
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		openIntegrationRequest, resp, err := proxy.getConversationsMessagingIntegrationsOpenById(ctx, d.Id())
+		openIntegrationRequest, resp, err := proxy.GetConversationsMessagingIntegrationsOpenById(ctx, d.Id())
 		if err != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations open %s: %s", d.Id(), err), resp))
@@ -110,7 +110,7 @@ func readConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.R
 // updateConversationsMessagingIntegrationsOpen is used by the conversations_messaging_integrations_open resource to update an conversations messaging integrations open in Genesys Cloud
 func updateConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsOpenProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsOpenProxy(sdkConfig)
 
 	conversationsMessagingIntegrationsOpen := getConversationsMessagingIntegrationsOpenFromResourceDataForUpdate(d)
 
@@ -127,7 +127,7 @@ func updateConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 // deleteConversationsMessagingIntegrationsOpen is used by the conversations_messaging_integrations_open resource to delete an conversations messaging integrations open from Genesys cloud
 func deleteConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsOpenProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsOpenProxy(sdkConfig)
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsOpen(ctx, d.Id())
 	if err != nil {
@@ -135,7 +135,7 @@ func deleteConversationsMessagingIntegrationsOpen(ctx context.Context, d *schema
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getConversationsMessagingIntegrationsOpenById(ctx, d.Id())
+		_, resp, err := proxy.GetConversationsMessagingIntegrationsOpenById(ctx, d.Id())
 
 		if err != nil {
 			if util.IsStatus404(resp) {
