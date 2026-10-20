@@ -72,7 +72,7 @@ func getAllKnowledgeDocumentVariations(ctx context.Context, clientConfig *platfo
 			}
 
 			for _, knowledgeDocumentVariation := range *knowledgeDocumentVariations {
-				id := buildVariationId(*knowledgeBase.Id, knowledgeDocument.BuildDocumentResourceDataID(*knowledgeDoc.Id, *knowledgeBase.Id), *knowledgeDocumentVariation.Id)
+				id := BuildVariationId(*knowledgeBase.Id, knowledgeDocument.BuildDocumentResourceDataID(*knowledgeDoc.Id, *knowledgeBase.Id), *knowledgeDocumentVariation.Id)
 
 				blockLabel := util.StringOrNil(knowledgeBase.Name) + "_" + util.StringOrNil(knowledgeDoc.Title)
 
@@ -145,7 +145,7 @@ func createKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceDat
 		}
 	}
 
-	id := buildVariationId(ids.knowledgeBaseID, ids.knowledgeDocumentResourceDataID, *knowledgeDocumentVariationResponse.Id)
+	id := BuildVariationId(ids.knowledgeBaseID, ids.knowledgeDocumentResourceDataID, *knowledgeDocumentVariationResponse.Id)
 	d.SetId(id)
 
 	log.Printf("Created knowledge document variation %s", *knowledgeDocumentVariationResponse.Id)
@@ -191,7 +191,7 @@ func readKnowledgeDocumentVariation(ctx context.Context, d *schema.ResourceData,
 			return retry.NonRetryableError(fmt.Errorf("returned knowledge document variation '%s' did not include a Document object", ids.knowledgeDocumentVariationID))
 		}
 
-		newId := buildVariationId(*knowledgeDocVariation.Document.KnowledgeBase.Id, ids.knowledgeDocumentResourceDataID, *knowledgeDocVariation.Id)
+		newId := BuildVariationId(*knowledgeDocVariation.Document.KnowledgeBase.Id, ids.knowledgeDocumentResourceDataID, *knowledgeDocVariation.Id)
 		d.SetId(newId)
 
 		_ = d.Set("knowledge_base_id", *knowledgeDocVariation.Document.KnowledgeBase.Id)

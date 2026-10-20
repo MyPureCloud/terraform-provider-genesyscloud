@@ -155,7 +155,7 @@ func testVerifyTaskManagementOnAttributeChangeRuleDestroyed(state *terraform.Sta
 			continue
 		}
 
-		worktypeId, onAttributeChangeRuleId := splitWorktypeBasedTerraformId(res.Primary.ID)
+		worktypeId, onAttributeChangeRuleId := SplitWorktypeBasedTerraformId(res.Primary.ID)
 		onAttributeChangeRule, resp, err := taskManagementApi.GetTaskmanagementWorktypeFlowsOnattributechangeRule(worktypeId, onAttributeChangeRuleId)
 		if onAttributeChangeRule != nil {
 			return fmt.Errorf("task management onattributechange rule (%s) still exists", res.Primary.ID)
