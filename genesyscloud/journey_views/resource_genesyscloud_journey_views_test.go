@@ -52,6 +52,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		metricId                      = "Metric 1"
 		metricDisplayLabel            = "Display Label"
 		metricAggregate               = "CustomerCount"
+		metricAttribute               = "durationMs"
 		chartGroupByTime              = "Day"
 		chartGroupByMax               = 1
 		displayAttributesVarType      = "Column"
@@ -89,11 +90,11 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					}),
 					generateObjectsList([]string{
 						generateCharts(chartName, chartVersion, chartRank,
-							generateMetrics(metricId, elementId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
+							generateMetrics(metricId, elementId, metricAggregate, metricAttribute, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
 							generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 							""),
 						generateCharts(chartName2, chartVersion, chartRank2,
-							generateMetrics(metricId, elementId, metricAggregate, metricDisplayLabel), "", chartGroupByMax,
+							generateMetrics(metricId, elementId, metricAggregate, metricAttribute, metricDisplayLabel), "", chartGroupByMax,
 							generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 							generateGroupeByAttributes(elementId, groupByAttributesAttribute)),
 					}),
@@ -153,6 +154,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.id", metricId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.display_label", metricDisplayLabel),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.aggregate", metricAggregate),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.attribute", metricAttribute),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.element_id", elementId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_time", chartGroupByTime),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
@@ -194,7 +196,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 							""),
 					}),
 					generateCharts(chartName, chartVersion, chartRank,
-						generateMetrics(metricId, elementId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
+						generateMetrics(metricId, elementId, metricAggregate, metricAttribute, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
 						generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 						""),
 				),
@@ -252,6 +254,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.id", metricId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.display_label", metricDisplayLabel),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.aggregate", metricAggregate),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.attribute", metricAttribute),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.element_id", elementId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_time", chartGroupByTime),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
@@ -436,15 +439,16 @@ func generateCharts(name string, version int, rank int, metricsBlock string, gro
 		displayAttributesBlock, groupByAttributesblock)
 }
 
-func generateMetrics(id string, elementId string, aggregate string, displayLabel string) string {
+func generateMetrics(id string, elementId string, aggregate string, attribute string, displayLabel string) string {
 	return fmt.Sprintf(`
         metrics {
             id = "%s"
             element_id = "%s"
             aggregate = "%s"
+            attribute = "%s"
             display_label = "%s"
         }
-        `, id, elementId, aggregate, displayLabel)
+        `, id, elementId, aggregate, attribute, displayLabel)
 }
 
 func generateDisplayAttributes(varType string, groupByTitle string, metricsTitle string, showLegend bool) string {
