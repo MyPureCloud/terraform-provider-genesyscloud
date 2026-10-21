@@ -2,7 +2,7 @@ package routing_email_route_identity_resolution
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func buildIdentityResolutionRoutingEmailRouteConfig(d *schema.ResourceData) (platformclientv2.Routeidentityresolutionconfig, error) {
@@ -19,7 +19,6 @@ func buildIdentityResolutionRoutingEmailRouteConfig(d *schema.ResourceData) (pla
 
 	return config, nil
 }
-
 
 func buildDefaultIdentityResolutionRoutingEmailRouteConfig() platformclientv2.Routeidentityresolutionconfig {
 	resolveIdentities := true

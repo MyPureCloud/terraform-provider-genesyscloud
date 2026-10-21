@@ -3,7 +3,7 @@ package conversations_messaging_integrations_open_identity_resolution
 import (
 	"context"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	open "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
