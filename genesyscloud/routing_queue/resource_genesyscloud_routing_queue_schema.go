@@ -114,9 +114,10 @@ var (
 	queueMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
-				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Description:  "Alerting timeout in seconds. Must be >= 7. Defaults to 8 when the media settings block is specified but this value is omitted.",
 				Type:         schema.TypeInt,
 				Optional:     true,
+				Default:      8,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"enable_auto_answer": {
@@ -126,15 +127,103 @@ var (
 				Default:     false,
 			},
 			"service_level_percentage": {
-				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Description:  "The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted.",
 				Type:         schema.TypeFloat,
 				Optional:     true,
+				Default:      0.8,
 				ValidateFunc: validation.FloatBetween(0, 1),
 			},
 			"service_level_duration_ms": {
-				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Description:  "Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted.",
 				Type:         schema.TypeInt,
 				Optional:     true,
+				Default:      20000,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+			"auto_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for an auto-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"manual_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for a manual-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+		},
+	}
+
+	// Chat media settings (defaults: alertingTimeout 30, serviceLevel 0.8 / 20000)
+	queueMediaSettingsChatResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7. Defaults to 30 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      30,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"enable_auto_answer": {
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				Default:      0.8,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      20000,
+				ValidateFunc: validation.IntAtLeast(1000),
+			},
+			"auto_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for an auto-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+			"manual_answer_alert_tone_seconds": {
+				Description: "How long to play the alerting tone for a manual-answer interaction.",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+			},
+		},
+	}
+
+	// Email media settings (defaults: alertingTimeout 300, serviceLevel 0.8 / 86400000)
+	queueMediaSettingsEmailResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7. Defaults to 300 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      300,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
+			"enable_auto_answer": {
+				Description: "Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+			},
+			"service_level_percentage": {
+				Description:  "The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				Default:      0.8,
+				ValidateFunc: validation.FloatBetween(0, 1),
+			},
+			"service_level_duration_ms": {
+				Description:  "Service Level target in milliseconds. Must be >= 1000. Defaults to 86400000 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      86400000,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
 			"auto_answer_alert_tone_seconds": {
@@ -152,9 +241,10 @@ var (
 	queueMediaSettingsMessageResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"alerting_timeout_sec": {
-				Description:  "Alerting timeout in seconds. Must be >= 7",
+				Description:  "Alerting timeout in seconds. Must be >= 7. Defaults to 30 when the media settings block is specified but this value is omitted.",
 				Type:         schema.TypeInt,
 				Optional:     true,
+				Default:      30,
 				ValidateFunc: validation.IntAtLeast(7),
 			},
 			"sub_type_settings": {
@@ -170,15 +260,17 @@ var (
 				Default:     false,
 			},
 			"service_level_percentage": {
-				Description:  "The desired Service Level. A float value between 0 and 1.",
+				Description:  "The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted.",
 				Type:         schema.TypeFloat,
 				Optional:     true,
+				Default:      0.8,
 				ValidateFunc: validation.FloatBetween(0, 1),
 			},
 			"service_level_duration_ms": {
-				Description:  "Service Level target in milliseconds. Must be >= 1000",
+				Description:  "Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted.",
 				Type:         schema.TypeInt,
 				Optional:     true,
+				Default:      20000,
 				ValidateFunc: validation.IntAtLeast(1000),
 			},
 			"enable_inactivity_timeout": {
@@ -198,7 +290,13 @@ var (
 
 	queueCallbackMediaSettingsResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"alerting_timeout_sec":      queueMediaSettingsResource.Schema["alerting_timeout_sec"],
+			"alerting_timeout_sec": {
+				Description:  "Alerting timeout in seconds. Must be >= 7. Defaults to 30 when the media settings block is specified but this value is omitted.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      30,
+				ValidateFunc: validation.IntAtLeast(7),
+			},
 			"enable_auto_answer":        queueMediaSettingsResource.Schema["enable_auto_answer"],
 			"service_level_percentage":  queueMediaSettingsResource.Schema["service_level_percentage"],
 			"service_level_duration_ms": queueMediaSettingsResource.Schema["service_level_duration_ms"],
@@ -588,7 +686,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsChatResource,
 			},
 			"media_settings_email": {
 				Description: "Email media settings.",
@@ -596,7 +694,7 @@ func ResourceRoutingQueue() *schema.Resource {
 				MaxItems:    1,
 				Optional:    true,
 				Computed:    true,
-				Elem:        queueMediaSettingsResource,
+				Elem:        queueMediaSettingsEmailResource,
 			},
 			"media_settings_message": {
 				Description: "Message media settings.",
