@@ -8,6 +8,7 @@ package architect_ivr
 
 import (
 	"fmt"
+
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -72,7 +73,7 @@ func ResourceArchitectIvrConfig() *schema.Resource {
 				Type:        schema.TypeSet,
 				Optional:    true,
 				Computed:    false,
-				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
+				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePoolPhoneNumber},
 			},
 			"open_hours_flow_id": {
 				Description: "ID of inbound call flow for open hours.",
