@@ -2,7 +2,9 @@ package conversations_messaging_integrations_instagram
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	cmMessagingSetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -76,6 +78,7 @@ func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
 					),
 
 				Check: resource.ComposeTestCheckFunc(
+					waitForInstagramCreateFinished("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1),
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "page_access_token", pageAccessToken1),
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "user_access_token", ""),
@@ -170,4 +173,26 @@ func testVerifyConversationsMessagingIntegrationsInstagramDestroyed(state *terra
 	}
 	// Success. Instagram config destroyed
 	return nil
+}
+
+// the API rejects deleting an integration whose asynchronous create has not finished
+func waitForInstagramCreateFinished(resourcePath string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		rs := state.RootModule().Resources[resourcePath]
+		if rs == nil {
+			return fmt.Errorf("%s not found in state", resourcePath)
+		}
+		integrationApi := platformclientv2.NewConversationsApi()
+		deadline := time.Now().Add(2 * time.Minute)
+		for time.Now().Before(deadline) {
+			instagram, _, err := integrationApi.GetConversationsMessagingIntegrationsInstagramIntegrationId(rs.Primary.ID, "")
+			if err == nil && (instagram.CreateStatus == nil ||
+				strings.EqualFold(*instagram.CreateStatus, "Completed") ||
+				strings.EqualFold(*instagram.CreateStatus, "Error")) {
+				return nil
+			}
+			time.Sleep(3 * time.Second)
+		}
+		return nil
+	}
 }

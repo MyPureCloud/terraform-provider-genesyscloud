@@ -31,6 +31,21 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
+// probes the API for a free range instead of listing pools, since the list can miss overlapping pools
+func extensionPoolRangeIsFree(start, end int) bool {
+	api := platformclientv2.NewTelephonyProvidersEdgeApi()
+	startNumber, endNumber := strconv.Itoa(start), strconv.Itoa(end)
+	pool, _, err := api.PostTelephonyProvidersEdgesExtensionpools(platformclientv2.Extensionpool{
+		StartNumber: &startNumber,
+		EndNumber:   &endNumber,
+	})
+	if err != nil || pool == nil || pool.Id == nil {
+		return false
+	}
+	api.DeleteTelephonyProvidersEdgesExtensionpool(*pool.Id)
+	return true
+}
+
 func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ext1, ext2 string) {
 	t.Helper()
 
@@ -38,8 +53,14 @@ func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ex
 	// This avoids collisions with other runs/orgs much better than fixed ranges (4100/4200),
 	// while keeping extension values human-readable and within a single pool range.
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	base := 2000 + r.Intn(7601) // 2000..9600
-	base = (base / 100) * 100
+	var base int
+	for attempt := 0; attempt < 30; attempt++ {
+		base = 2000 + r.Intn(7601) // 2000..9600
+		base = (base / 100) * 100
+		if extensionPoolRangeIsFree(base, base+199) {
+			break
+		}
+	}
 
 	start1i := base
 	end1i := base + 99

@@ -772,16 +772,20 @@ func testVerifyFlowDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		flow, resp, err := architectAPI.GetFlow(rs.Primary.ID, false)
-		if flow != nil {
-			return fmt.Errorf("Flow (%s) still exists", rs.Primary.ID)
-		} else if resp != nil && resp.StatusCode == 410 {
-			// Flow not found as expected
-			log.Printf("Flow (%s) successfully deleted", rs.Primary.ID)
-			continue
-		} else {
-			// Unexpected error
-			return fmt.Errorf("Unexpected error: %s", err)
+		deadline := time.Now().Add(2 * time.Minute)
+		for {
+			flow, resp, err := architectAPI.GetFlow(rs.Primary.ID, false)
+			if flow == nil && resp != nil && (resp.StatusCode == 410 || resp.StatusCode == 404) {
+				log.Printf("Flow (%s) successfully deleted", rs.Primary.ID)
+				break
+			}
+			if time.Now().After(deadline) {
+				if flow != nil {
+					return fmt.Errorf("Flow (%s) still exists", rs.Primary.ID)
+				}
+				return fmt.Errorf("Unexpected error: %s", err)
+			}
+			time.Sleep(5 * time.Second)
 		}
 	}
 	// Success. All Flows destroyed
