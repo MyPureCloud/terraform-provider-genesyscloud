@@ -45,13 +45,19 @@ func overlapsReservedExtensionPoolRange(start, end int) bool {
 
 // probes the API for a free range instead of listing pools, since the list can miss overlapping pools
 func extensionPoolRangeIsFree(start, end int) bool {
-	api := platformclientv2.NewTelephonyProvidersEdgeApi()
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		log.Printf("failed to authorize SDK for the extension pool probe: %v", err)
+		return false
+	}
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
 	startNumber, endNumber := strconv.Itoa(start), strconv.Itoa(end)
 	pool, _, err := api.PostTelephonyProvidersEdgesExtensionpools(platformclientv2.Extensionpool{
 		StartNumber: &startNumber,
 		EndNumber:   &endNumber,
 	})
 	if err != nil || pool == nil || pool.Id == nil {
+		log.Printf("extension pool range %d-%d is not usable: %v", start, end, err)
 		return false
 	}
 	if _, err := api.DeleteTelephonyProvidersEdgesExtensionpool(*pool.Id); err != nil {
@@ -69,12 +75,14 @@ func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ex
 	// while keeping extension values human-readable and within a single pool range.
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var base int
-	for attempt := 0; attempt < 30; attempt++ {
+	found := false
+	for attempt := 0; attempt < 30 && !found; attempt++ {
 		base = 2000 + r.Intn(7601) // 2000..9600
 		base = (base / 100) * 100
-		if !overlapsReservedExtensionPoolRange(base, base+199) && extensionPoolRangeIsFree(base, base+199) {
-			break
-		}
+		found = !overlapsReservedExtensionPoolRange(base, base+199) && extensionPoolRangeIsFree(base, base+199)
+	}
+	if !found {
+		t.Fatalf("no free extension pool range found after 30 attempts; see the probe log lines above")
 	}
 
 	start1i := base
