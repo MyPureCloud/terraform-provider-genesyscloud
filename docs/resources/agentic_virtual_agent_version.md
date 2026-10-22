@@ -291,6 +291,7 @@ Required:
 
 Optional:
 
+- `fallback_to_failure` (Boolean) Whether a missing value at runtime terminates the session with a 422 instead of prompting the user. Only valid on required External inputs of an undisclosed type, and mutually exclusive with fallback_to_user.
 - `fallback_to_user` (Boolean) Whether the virtual agent should ask the user for this input when not available from the configured source.
 - `mapping` (String) Path used to extract this input from a previous tool output. JSON-encoded array. Only valid when source is ToolOutput.
 - `required` (Boolean) Whether this input must be supplied.

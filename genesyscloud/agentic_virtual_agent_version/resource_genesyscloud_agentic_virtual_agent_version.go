@@ -348,6 +348,9 @@ func expandToolInputs(list []interface{}) []AgenticVirtualAgentToolInput {
 		if v, ok := m["fallback_to_user"].(bool); ok {
 			input.FallbackToUser = &v
 		}
+		if v, ok := m["fallback_to_failure"].(bool); ok {
+			input.FallbackToFailure = &v
+		}
 		if v, ok := m["mapping"].(string); ok && v != "" {
 			var mapping []interface{}
 			_ = json.Unmarshal([]byte(v), &mapping)
@@ -649,6 +652,9 @@ func flattenToolInputs(inputs []AgenticVirtualAgentToolInput) []interface{} {
 		}
 		if input.FallbackToUser != nil {
 			m["fallback_to_user"] = *input.FallbackToUser
+		}
+		if input.FallbackToFailure != nil {
+			m["fallback_to_failure"] = *input.FallbackToFailure
 		}
 		if len(input.Mapping) > 0 {
 			mappingBytes, _ := json.Marshal(input.Mapping)
