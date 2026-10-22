@@ -19,7 +19,7 @@ import (
 // dataSourceRoutingEmailRouteRead retrieves by pattern, domainId the id in question
 func dataSourceRoutingEmailRouteRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	proxy := getRoutingEmailRouteProxy(sdkConfig)
+	proxy := GetRoutingEmailRouteProxy(sdkConfig)
 
 	pattern := d.Get("pattern").(string)
 	domainId := d.Get("domain_id").(string)

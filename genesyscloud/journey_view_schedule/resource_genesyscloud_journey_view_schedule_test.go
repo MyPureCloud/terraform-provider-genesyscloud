@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -15,7 +16,7 @@ import (
 func TestAccResourceJourneyViewSchedule(t *testing.T) {
 	var (
 		journeyViewResourceLabel = "test_journey_view_resource"
-		journeyViewName          = "test_journey_view_name"
+		journeyViewName          = "test_journey_view_name_" + uuid.NewString()
 		journeyViewDuration      = "P1Y"
 		scheduleResourceLabel    = "test_journey_view_schedule"
 		frequencyDaily           = "Daily"
