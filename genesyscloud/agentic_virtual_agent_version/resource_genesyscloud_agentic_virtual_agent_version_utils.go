@@ -173,12 +173,13 @@ type AgenticVirtualAgentStructuredRule struct {
 // AgenticVirtualAgentToolInput represents an input for a DataAction tool.
 // Required: targetName, type, source
 type AgenticVirtualAgentToolInput struct {
-	TargetName     string        `json:"targetName"`
-	Type           string        `json:"type"`
-	Source         string        `json:"source"`
-	Required       *bool         `json:"required,omitempty"`
-	FallbackToUser *bool         `json:"fallbackToUser,omitempty"`
-	Mapping        []interface{} `json:"mapping,omitempty"`
+	TargetName        string        `json:"targetName"`
+	Type              string        `json:"type"`
+	Source            string        `json:"source"`
+	Required          *bool         `json:"required,omitempty"`
+	FallbackToUser    *bool         `json:"fallbackToUser,omitempty"`
+	FallbackToFailure *bool         `json:"fallbackToFailure,omitempty"`
+	Mapping           []interface{} `json:"mapping,omitempty"`
 }
 
 // =============================================================================
