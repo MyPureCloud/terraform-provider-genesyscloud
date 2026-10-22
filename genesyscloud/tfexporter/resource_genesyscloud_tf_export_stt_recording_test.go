@@ -139,6 +139,96 @@ resource "genesyscloud_speechandtextanalytics_program" "program" {
 	})
 }
 
+// Regression test for GitHub issue #2627: exporting the singleton
+// genesyscloud_speechandtextanalytics_settings must rewrite default_program_id into a
+// reference to the genesyscloud_speechandtextanalytics_program resource instead of
+// emitting the raw program GUID (which is not portable across orgs).
+//
+// NOTE: settings is a singleton, org-wide resource. This test mutates the org's real
+// Speech & Text Analytics settings to point default_program_id at a program it creates,
+// then exports. There is no CheckDestroy for the settings object itself (it always exists);
+// the export dir and the created topic/program are cleaned up normally.
+func TestAccResourceTfExportSttSettingsProgramReference(t *testing.T) {
+	testSetup(t)
+
+	var (
+		exportDir   = testrunner.GetTestTempPath(".terraform" + uuid.NewString())
+		topicName   = "tfacc-export-settings-topic-" + uuid.NewString()
+		programName = "tfacc-export-settings-program-" + uuid.NewString()
+		resources   = fmt.Sprintf(`
+resource "genesyscloud_speechandtextanalytics_topic" "topic" {
+  name        = %q
+  dialect     = "en-US"
+  description = "tf export acceptance test"
+}
+
+resource "genesyscloud_speechandtextanalytics_program" "program" {
+  name      = %q
+  topic_ids = [genesyscloud_speechandtextanalytics_topic.topic.id]
+}
+
+resource "genesyscloud_speechandtextanalytics_settings" "settings" {
+  default_program_id     = genesyscloud_speechandtextanalytics_program.program.id
+  text_analytics_enabled = true
+}
+`, topicName, programName)
+	)
+	defer removeExportDir(exportDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: resources,
+			},
+			{
+				Config: resources + generateSttExport(exportDir,
+					[]string{sttSettings.ResourceType, sttProgram.ResourceType, sttTopic.ResourceType},
+					"genesyscloud_speechandtextanalytics_settings.settings",
+					"genesyscloud_speechandtextanalytics_program.program",
+					"genesyscloud_speechandtextanalytics_topic.topic"),
+				Check: resource.ComposeTestCheckFunc(
+					// The referenced program must be pulled into the export.
+					assertSttExportedBlock(exportDir, sttProgram.ResourceType, "name", programName, nil),
+					// The settings block's default_program_id must be a reference to the program
+					// resource, not a hard-coded UUID (the issue #2627 regression).
+					assertSttExportedSettingsProgramRef(exportDir),
+				),
+			},
+		},
+		// No CheckDestroy: settings is a singleton that cannot be destroyed.
+	})
+}
+
+// assertSttExportedSettingsProgramRef verifies the exported settings block carries a
+// default_program_id that is a Terraform reference to a program resource rather than a GUID.
+func assertSttExportedSettingsProgramRef(exportDir string) resource.TestCheckFunc {
+	return func(_ *terraform.State) error {
+		blocks, err := getResourceDefinition(filepath.Join(exportDir, defaultTfJSONFile), sttSettings.ResourceType)
+		if err != nil {
+			return err
+		}
+		if len(blocks) != 1 {
+			return fmt.Errorf("expected exactly 1 exported %s block, got %d", sttSettings.ResourceType, len(blocks))
+		}
+		for _, raw := range blocks {
+			var attrs map[string]interface{}
+			if err := json.Unmarshal(*raw, &attrs); err != nil {
+				return fmt.Errorf("failed to unmarshal %s block: %w", sttSettings.ResourceType, err)
+			}
+			ref, ok := attrs["default_program_id"].(string)
+			if !ok || ref == "" {
+				return fmt.Errorf("exported settings block has no default_program_id: %v", attrs)
+			}
+			if !strings.HasPrefix(ref, "${"+sttProgram.ResourceType+".") {
+				return fmt.Errorf("default_program_id = %q, expected a reference to a %s resource (not a hard-coded UUID)", ref, sttProgram.ResourceType)
+			}
+		}
+		return nil
+	}
+}
+
 func TestAccResourceTfExportSttCategoryCriteria(t *testing.T) {
 	testSetup(t)
 
