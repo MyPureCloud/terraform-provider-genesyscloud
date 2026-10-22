@@ -176,6 +176,7 @@ Optional:
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
 - `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `for_duration` (Block List, Max: 1) Duration for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2". (see [below for nested schema](#nestedblock--campaign_rule_conditions--parameters--for_duration))
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
 - `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
@@ -186,6 +187,14 @@ Optional:
 - `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+<a id="nestedblock--campaign_rule_conditions--parameters--for_duration"></a>
+### Nested Schema for `campaign_rule_conditions.parameters.for_duration`
+
+Required:
+
+- `seconds` (Number) Duration in whole seconds. Sub-second precision is not supported: a duration set outside Terraform with a fractional value is read as whole seconds.
+
 
 
 <a id="nestedblock--campaign_rule_conditions--campaign_run_time_settings"></a>
@@ -381,6 +390,7 @@ Optional:
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
 - `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `for_duration` (Block List, Max: 1) Duration for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2". (see [below for nested schema](#nestedblock--condition_groups--conditions--parameters--for_duration))
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
 - `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
@@ -391,6 +401,14 @@ Optional:
 - `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+<a id="nestedblock--condition_groups--conditions--parameters--for_duration"></a>
+### Nested Schema for `condition_groups.conditions.parameters.for_duration`
+
+Required:
+
+- `seconds` (Number) Duration in whole seconds. Sub-second precision is not supported: a duration set outside Terraform with a fractional value is read as whole seconds.
+
 
 
 <a id="nestedblock--condition_groups--conditions--campaign_run_time_settings"></a>
