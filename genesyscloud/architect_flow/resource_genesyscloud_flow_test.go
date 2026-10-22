@@ -783,7 +783,11 @@ func testVerifyFlowDestroyed(state *terraform.State) error {
 				if flow != nil {
 					return fmt.Errorf("Flow (%s) still exists", rs.Primary.ID)
 				}
-				return fmt.Errorf("Unexpected error: %s", err)
+				status := 0
+				if resp != nil {
+					status = resp.StatusCode
+				}
+				return fmt.Errorf("Unexpected response for flow (%s): status %d, error: %v", rs.Primary.ID, status, err)
 			}
 			time.Sleep(5 * time.Second)
 		}

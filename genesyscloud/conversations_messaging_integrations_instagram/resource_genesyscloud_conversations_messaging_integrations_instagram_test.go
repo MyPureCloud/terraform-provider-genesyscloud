@@ -184,15 +184,22 @@ func waitForInstagramCreateFinished(resourcePath string) resource.TestCheckFunc 
 		}
 		integrationApi := platformclientv2.NewConversationsApi()
 		deadline := time.Now().Add(2 * time.Minute)
+		lastStatus := "unknown"
+		var lastErr error
 		for time.Now().Before(deadline) {
 			instagram, _, err := integrationApi.GetConversationsMessagingIntegrationsInstagramIntegrationId(rs.Primary.ID, "")
-			if err == nil && (instagram.CreateStatus == nil ||
-				strings.EqualFold(*instagram.CreateStatus, "Completed") ||
-				strings.EqualFold(*instagram.CreateStatus, "Error")) {
-				return nil
+			lastErr = err
+			if err == nil {
+				if instagram.CreateStatus == nil {
+					return nil
+				}
+				lastStatus = *instagram.CreateStatus
+				if strings.EqualFold(lastStatus, "Completed") || strings.EqualFold(lastStatus, "Error") {
+					return nil
+				}
 			}
 			time.Sleep(3 * time.Second)
 		}
-		return nil
+		return fmt.Errorf("instagram integration %s create did not finish within 2 minutes: last status %q, last error: %v", rs.Primary.ID, lastStatus, lastErr)
 	}
 }

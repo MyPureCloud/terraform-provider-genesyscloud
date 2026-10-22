@@ -31,6 +31,18 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
+// fixed ranges used by other tests that can run at the same time
+var reservedExtensionPoolRanges = [][2]int{{2500, 2599}, {3000, 4000}, {8000, 8999}}
+
+func overlapsReservedExtensionPoolRange(start, end int) bool {
+	for _, r := range reservedExtensionPoolRanges {
+		if start <= r[1] && end >= r[0] {
+			return true
+		}
+	}
+	return false
+}
+
 // probes the API for a free range instead of listing pools, since the list can miss overlapping pools
 func extensionPoolRangeIsFree(start, end int) bool {
 	api := platformclientv2.NewTelephonyProvidersEdgeApi()
@@ -42,7 +54,10 @@ func extensionPoolRangeIsFree(start, end int) bool {
 	if err != nil || pool == nil || pool.Id == nil {
 		return false
 	}
-	api.DeleteTelephonyProvidersEdgesExtensionpool(*pool.Id)
+	if _, err := api.DeleteTelephonyProvidersEdgesExtensionpool(*pool.Id); err != nil {
+		log.Printf("failed to delete probe extension pool %s (%d-%d): %v", *pool.Id, start, end, err)
+		return false
+	}
 	return true
 }
 
@@ -57,7 +72,7 @@ func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ex
 	for attempt := 0; attempt < 30; attempt++ {
 		base = 2000 + r.Intn(7601) // 2000..9600
 		base = (base / 100) * 100
-		if extensionPoolRangeIsFree(base, base+199) {
+		if !overlapsReservedExtensionPoolRange(base, base+199) && extensionPoolRangeIsFree(base, base+199) {
 			break
 		}
 	}
