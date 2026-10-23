@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	zclconfCty "github.com/zclconf/go-cty/cty"
 )
 
@@ -276,6 +277,8 @@ func addBody(body *hclwrite.Body, json util.JsonMap) {
 func addValue(body *hclwrite.Body, k string, v interface{}) {
 	if vInter, ok := v.([]interface{}); ok {
 		handleInterfaceArray(body, k, vInter)
+	} else if setVal, ok := v.(*schema.Set); ok {
+		handleInterfaceArray(body, k, setVal.List())
 	} else {
 		ctyVal := getCtyValue(v)
 		if ctyVal != zclconfCty.NilVal {
