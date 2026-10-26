@@ -3,6 +3,7 @@ package speechandtextanalytics_dictionaryfeedback
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -59,14 +60,14 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 	//t.Parallel()
 	var (
 		resourceName   = "test-dictionary-feedback"
-		term           = "genesys"
+		term           = uniqueDictionaryTerm()
 		dialect        = "en-AU"
 		boostValue     = "2"
 		source         = "Manual"
 		soundsLike     = "genesis"
-		examplePhrase1 = "welcome to genesys"
-		examplePhrase2 = "thanks for calling genesys"
-		examplePhrase3 = "Genesys is a platform"
+		examplePhrase1 = fmt.Sprintf("welcome to %s", term)
+		examplePhrase2 = fmt.Sprintf("thanks for calling %s", term)
+		examplePhrase3 = fmt.Sprintf("%s is a platform", term)
 	)
 
 	// Clean up any leftover dictionary feedback from previous test runs
@@ -200,4 +201,14 @@ func GenerateExtendedSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceTy
 
 func testVerifyDictionaryFeedbackDestroyed(state *terraform.State) error {
 	return nil
+}
+
+// the API rejects a term that already exists for the dialect, so each run uses its own
+func uniqueDictionaryTerm() string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyz")
+	suffix := make([]rune, 8)
+	for i := range suffix {
+		suffix[i] = letters[rand.Intn(len(letters))]
+	}
+	return "genesys" + string(suffix)
 }
