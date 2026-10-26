@@ -94,6 +94,10 @@ type RefAttrCustomResolver struct {
 	// the genesyscloud_tf_export export_omit_unresolved_refs attribute is true and the value could
 	// not be resolved to a Terraform reference.
 	OmitUnresolvedRef bool
+
+	// AlwaysResolveToDataSource bypasses the replace_with_datasource check for special-case resolvers
+	// that must always emit a data source reference (e.g. Default Outbound Script).
+	AlwaysResolveToDataSource bool
 }
 
 type CustomFileWriterSettings struct {
