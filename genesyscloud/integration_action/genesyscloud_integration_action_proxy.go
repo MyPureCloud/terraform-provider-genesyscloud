@@ -281,7 +281,7 @@ func uploadIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationA
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Create HTTP client and request
-	client := provider.NewHTTPClient(p.clientConfig)
+	client := &http.Client{}
 	jsonData, err := json.Marshal(uploadRequest)
 	if err != nil {
 		return nil, err
