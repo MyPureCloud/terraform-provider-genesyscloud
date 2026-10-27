@@ -108,6 +108,9 @@ type GenesysCloudResourceExporter struct {
 	// resourceExportedForMrMo stores the schema.ResourceData object of the resource that was exported to Mr Mo
 	resourceExportedForMrMo  *schema.ResourceData
 	resourcesExportedForMrMo *map[string][]*schema.ResourceData
+	// mrmoExportedAsData holds, per resource type, the ids of the instances exported to Mr Mo as
+	// data sources. Guarded by resourcesExportedForMrMoMutex.
+	mrmoExportedAsData map[string]map[string]struct{}
 
 	meta                  interface{}
 	provider              *schema.Provider
@@ -2073,8 +2076,11 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 
 				blockType := ""
 
+				// resourceState is what gets written out. instanceState is also wrapped by the
+				// schema.ResourceData that Mr Mo receives, so it must keep the instance's own
+				// attributes: the data source copy is built separately.
+				resourceState := instanceState
 				if g.isDataSource(resType, resMeta.BlockLabel, resMeta.OriginalLabel) {
-					attributes := make(map[string]string)
 					g.exMutex.Lock()
 					resData := schemaProvider.DataSourcesMap[resType]
 					g.exMutex.Unlock()
@@ -2084,19 +2090,18 @@ func (g *GenesysCloudResourceExporter) getResourcesForType(resType string, schem
 					}
 
 					ctyType = resData.CoreConfigSchema().ImpliedType()
-					for attr, _ := range resData.SchemaMap() {
-						key, val := exporter.DataResolver(instanceState, attr)
-						attributes[key] = val
-					}
-					instanceState.Attributes = attributes
+					resourceState = dataSourceInstanceState(exporter, resData, instanceState)
 					blockType = "data"
+					if mrmo.IsActive() {
+						g.recordMrMoExportedAsData(resType, instanceState.ID)
+					}
 				}
 				tflog.Debug(g.ctx, fmt.Sprintf("Finished processing schema attributes for resource ID: %s", id))
 
 				tflog.Trace(g.ctx, fmt.Sprintf("Creating ResourceInfo for resource ID: %s", id))
 				select {
 				case resourceChan <- resourceExporter.ResourceInfo{
-					State:         instanceState,
+					State:         resourceState,
 					BlockLabel:    resMeta.BlockLabel,
 					Type:          resType,
 					CtyType:       ctyType,
