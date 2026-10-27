@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	userResource "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
@@ -528,9 +529,13 @@ func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
 	roleName := "terraform-dispute-assignee-role-" + uuid.NewString()
 	userRolesResourceLabel := "test-dispute-assignee-user-roles"
 
+	divisionResourceLabel := "test-evaluation-form-division"
+	divisionName := "terraform-evaluation-division-" + uuid.NewString()
+
 	evaluationForm1 := EvaluationFormStruct{
-		Name:    formName,
-		Dialect: "en-US",
+		Name:       formName,
+		Dialect:    "en-US",
+		DivisionId: authDivision.ResourceType + "." + divisionResourceLabel + ".id",
 		EvaluationSettings: &EvaluationSettingsStruct{
 			RevisionsEnabled:             true,
 			DisputesEnabled:              true,
@@ -581,7 +586,8 @@ func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
 		},
 	}
 
-	config := userResource.GenerateBasicUserResource(userResourceLabel, userEmail, userName) +
+	config := authDivision.GenerateAuthDivisionBasic(divisionResourceLabel, divisionName) +
+		userResource.GenerateBasicUserResource(userResourceLabel, userEmail, userName) +
 		authRole.GenerateAuthRoleResource(
 			roleResourceLabel,
 			roleName,
@@ -604,6 +610,7 @@ func TestAccResourceEvaluationFormNewAttributes(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", evaluationForm1.Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "dialect", evaluationForm1.Dialect),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+formResourceLabel1, "division_id", authDivision.ResourceType+"."+divisionResourceLabel, "id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.revisions_enabled", strconv.FormatBool(evaluationForm1.EvaluationSettings.RevisionsEnabled)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_enabled", strconv.FormatBool(evaluationForm1.EvaluationSettings.DisputesEnabled)),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "evaluation_settings.0.disputes_allowed_per_evaluation", fmt.Sprint(evaluationForm1.EvaluationSettings.DisputesAllowedPerEvaluation)),

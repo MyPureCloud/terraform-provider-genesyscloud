@@ -1,10 +1,11 @@
 resource "genesyscloud_quality_forms_survey" "example_survey_form" {
-  name      = "Example survey form"
-  published = true
-  disabled  = false
-  language  = "en-US"
-  header    = "example header"
-  footer    = "example footer"
+  name        = "Example survey form"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  published   = true
+  disabled    = false
+  language    = "en-US"
+  header      = "example header"
+  footer      = "example footer"
   question_groups {
     name       = "Example Question Group 1"
     na_enabled = false

@@ -62,6 +62,7 @@ func createEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 	evaluationForm := &platformclientv2.Evaluationform{
 		Name:           &name,
 		QuestionGroups: buildSdkQuestionGroups(d),
+		Division:       buildSdkDivision(d),
 	}
 
 	evaluationForm.EvaluationSettings = buildSdkEvaluationSettings(d.Get("evaluation_settings").([]interface{}))
@@ -149,6 +150,9 @@ func readEvaluationForm(ctx context.Context, d *schema.ResourceData, meta interf
 		resourcedata.SetNillableValue(d, "name", evaluationForm.Name)
 		resourcedata.SetNillableTime(d, "modified_date", evaluationForm.ModifiedDate)
 		resourcedata.SetNillableValue(d, "dialect", evaluationForm.Dialect)
+		resourcedata.SetNillableValue(d, "weight_mode", evaluationForm.WeightMode)
+		resourcedata.SetNillableValue(d, "latest_version_form_name", evaluationForm.LatestVersionFormName)
+		flattenDivisionId(d, evaluationForm.Division)
 		if evaluationForm.QuestionGroups != nil {
 			_ = d.Set("question_groups", flattenQuestionGroups(evaluationForm.QuestionGroups))
 		}
@@ -197,6 +201,7 @@ func updateEvaluationForm(ctx context.Context, d *schema.ResourceData, meta inte
 		evaluationForm := &platformclientv2.Evaluationform{
 			Name:           &name,
 			QuestionGroups: buildSdkQuestionGroups(d),
+			Division:       buildSdkDivision(d),
 		}
 
 		evaluationForm.EvaluationSettings = buildSdkEvaluationSettings(d.Get("evaluation_settings").([]interface{}))

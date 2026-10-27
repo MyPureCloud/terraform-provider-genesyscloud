@@ -1,6 +1,7 @@
 resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
-  name      = "Example Evaluation Form"
-  published = true
+  name        = "Example Evaluation Form"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  published   = true
   question_groups {
     name                       = "Question Group 1"
     default_answers_to_highest = true
