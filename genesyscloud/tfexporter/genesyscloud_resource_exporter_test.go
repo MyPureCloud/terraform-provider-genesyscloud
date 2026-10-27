@@ -2397,3 +2397,9 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateEr
 	assert.Len(t, resourceMaps, 0)
 	assert.Len(t, dataSourceMaps, 0)
 }
+
+func TestUnitIsFilterByID(t *testing.T) {
+	assert.True(t, isFilterByID(FilterResourceById))
+	assert.False(t, isFilterByID(IncludeFilterResourceByRegex))
+	assert.False(t, isFilterByID(nil))
+}

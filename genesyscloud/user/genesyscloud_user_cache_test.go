@@ -7,8 +7,10 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter_state"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"net/http"
 )
 
 func TestUnitGetVoicemailUserpoliciesByUserIdCacheHit(t *testing.T) {
@@ -36,4 +38,38 @@ func TestUnitGetUserRoutingUtilizationRawCacheHit(t *testing.T) {
 	rawBody, _, err := getUserRoutingUtilizationRaw(context.Background(), userID, &userProxy{})
 	require.NoError(t, err)
 	assert.JSONEq(t, string(cached), string(rawBody))
+}
+
+func TestUnitGetUsersByIds(t *testing.T) {
+	str := func(s string) *string { return &s }
+	users := map[string]*platformclientv2.User{
+		"active":   {Id: str("active"), Email: str("a@x.com"), Name: str("A"), State: str("active")},
+		"inactive": {Id: str("inactive"), Email: str("i@x.com"), Name: str("I"), State: str("inactive")},
+		"deleted":  {Id: str("deleted"), Email: str("d@x.com"), Name: str("D"), State: str("deleted")},
+	}
+	proxy := &userProxy{userCache: rc.NewResourceCache[platformclientv2.User]()}
+	proxy.getUserByIdAttr = func(_ context.Context, _ *userProxy, id string, expand []string, state string) (*platformclientv2.User, *platformclientv2.APIResponse, error) {
+		assert.Equal(t, "any", state)
+		assert.Equal(t, userExportExpands, expand)
+		if u, ok := users[id]; ok {
+			return u, nil, nil
+		}
+		return nil, &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}, assert.AnError
+	}
+	internalProxy = proxy
+	t.Setenv(userTestsActiveEnvVar, "true")
+	defer func() { internalProxy = nil }()
+	ids := []string{"active", "inactive", "deleted", "missing"}
+
+	res, diags := GetUsersByIds(context.Background(), nil, ids)
+	require.False(t, diags.HasError())
+	assert.Len(t, res, 2) // deleted and missing users are left out, like the list path
+	expected, err := userResourceMeta(*users["active"])
+	require.NoError(t, err)
+	assert.Equal(t, expected, res["active"])
+	assert.NotNil(t, rc.GetCacheItem(proxy.userCache, "active"), "cached like the list path so readUser avoids another call")
+
+	t.Setenv(featureToggles.SkipInactiveUserExportToggleName(), "true")
+	res, _ = GetUsersByIds(context.Background(), nil, ids)
+	assert.Len(t, res, 1)
 }

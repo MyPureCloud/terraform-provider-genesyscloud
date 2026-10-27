@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	architectUserPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
@@ -28,6 +29,7 @@ import (
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	telephonyProvidersEdgesSite "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_site"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
@@ -950,6 +952,13 @@ func ResourceRoutingQueue() *schema.Resource {
 func RoutingQueueExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllRoutingQueues),
+		GetResourcesByIdsFunc: util.ExporterByIdsWithName(ResourceType,
+			func(c *platformclientv2.Configuration) func(context.Context, string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+				return func(ctx context.Context, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+					return GetRoutingQueueProxy(c).getRoutingQueueById(ctx, id, true)
+				}
+			},
+			func(q *platformclientv2.Queue) *string { return q.Name }),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id":                                                {RefType: authDivision.ResourceType},
 			"queue_flow_id":                                              {RefType: architectFlow.ResourceType},

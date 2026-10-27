@@ -56,6 +56,11 @@ type GetAllCustomResourcesFunc func(context.Context) (ResourceIDMetaMap, *Depend
 // GetAllResourcesFunc is a method that returns all resource IDs
 type GetAllResourcesFunc func(context.Context) (ResourceIDMetaMap, diag.Diagnostics)
 
+// GetResourcesByIdsFunc is an optional, cheaper alternative to GetAllResourcesFunc. It returns metadata only for the
+// given resource IDs instead of listing every resource of the type. IDs that no longer exist must be omitted from the
+// result (not reported as an error) so the behavior matches listing followed by filtering by ID.
+type GetResourcesByIdsFunc func(ctx context.Context, ids []string) (ResourceIDMetaMap, diag.Diagnostics)
+
 // RefAttrSettings contains behavior settings for references
 type RefAttrSettings struct {
 
@@ -136,6 +141,14 @@ type ResourceExporter struct {
 	// Returned map key should be the ID and the value should be a label to use for the resource.
 	// Label will be sanitized with part of the ID appended, so it is not required that they be unique
 	GetResourcesFunc GetAllResourcesFunc
+
+	// GetResourcesByIdsFunc is optional. When set and the export filter is an ID filter that names resources of this
+	// type, it is used instead of GetResourcesFunc so the whole org does not have to be listed for each dependency round.
+	GetResourcesByIdsFunc GetResourcesByIdsFunc
+
+	// FilterByID is set by the exporter when the active filter is an ID filter (type::id). It is what makes
+	// GetResourcesByIdsFunc safe to use: with a regex/name filter the IDs cannot be derived from the filter.
+	FilterByID bool
 
 	// IsSingleton indicates the exporter manages a single org-wide resource instance.
 	// ExportId is required when IsSingleton is true
@@ -223,7 +236,7 @@ func ExportFilterFromContext(ctx context.Context) []string {
 func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourceType string, filter []string) diag.Diagnostics {
 	ctx = context.WithValue(ctx, exportFilterKey{}, filter)
 
-	result, err := r.GetResourcesFunc(ctx)
+	result, err := r.getResources(ctx, resourceType, filter)
 	if err != nil {
 		return err
 	}
@@ -246,6 +259,71 @@ func (r *ResourceExporter) LoadSanitizedResourceMap(ctx context.Context, resourc
 	sanitizer.S.Sanitize(r.SanitizedResourceMap)
 
 	return nil
+}
+
+// getResources fetches only the filtered IDs when the exporter supports it and the filter is an ID filter that names
+// this type. In every other case it falls back to listing everything; r.FilterResource then narrows the result.
+func (r *ResourceExporter) getResources(ctx context.Context, resourceType string, filter []string) (ResourceIDMetaMap, diag.Diagnostics) {
+	if r.GetResourcesByIdsFunc != nil && r.FilterByID {
+		if ids := IdsForResourceType(resourceType, filter); len(ids) > 0 {
+			return r.GetResourcesByIdsFunc(ctx, ids)
+		}
+	}
+	return r.GetResourcesFunc(ctx)
+}
+
+// IdsForResourceType returns the unique IDs that "<resourceType>::<id>" entries in an ID filter name for the type.
+func IdsForResourceType(resourceType string, filter []string) []string {
+	prefix := resourceType + "::"
+	seen := make(map[string]struct{})
+	ids := make([]string, 0)
+	for _, f := range filter {
+		if !strings.HasPrefix(f, prefix) {
+			continue
+		}
+		id := strings.TrimPrefix(f, prefix)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// GetResourcesByIds runs fetch for each ID, at most 10 at a time, and collects the results. fetch returns a nil meta
+// (and no diagnostics) for resources that no longer exist, which are left out of the result. The first error wins.
+func GetResourcesByIds(ctx context.Context, ids []string, fetch func(ctx context.Context, id string) (*ResourceMeta, diag.Diagnostics)) (ResourceIDMetaMap, diag.Diagnostics) {
+	var (
+		result   = make(ResourceIDMetaMap, len(ids))
+		mu       sync.Mutex
+		wg       sync.WaitGroup
+		firstErr diag.Diagnostics
+		sem      = make(chan struct{}, 10)
+	)
+	for _, id := range ids {
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(id string) {
+			defer func() { <-sem; wg.Done() }()
+			meta, diags := fetch(ctx, id)
+			mu.Lock()
+			defer mu.Unlock()
+			if diags.HasError() && firstErr == nil {
+				firstErr = diags
+			} else if meta != nil {
+				result[id] = meta
+			}
+		}(id)
+	}
+	wg.Wait()
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	return result, nil
 }
 
 func (r *ResourceExporter) normalizeSingletonResourceMap(resourceType string, result ResourceIDMetaMap) (ResourceIDMetaMap, diag.Diagnostics) {
@@ -313,6 +391,7 @@ func CloneResourceExporter(template *ResourceExporter) *ResourceExporter {
 
 	clone := &ResourceExporter{
 		GetResourcesFunc:        template.GetResourcesFunc,
+		GetResourcesByIdsFunc:   template.GetResourcesByIdsFunc,
 		IsSingleton:             template.IsSingleton,
 		ExportId:                template.ExportId,
 		RefAttrs:                template.RefAttrs,
