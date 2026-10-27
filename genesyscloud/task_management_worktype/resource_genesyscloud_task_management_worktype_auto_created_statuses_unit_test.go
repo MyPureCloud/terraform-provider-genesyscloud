@@ -534,18 +534,15 @@ func TestUnitGetConfiguredBool_UsesRawConfig(t *testing.T) {
 	assert.False(t, *getConfiguredBool(d, "open_status_default"))
 }
 
-func TestUnitExporter_DropsAutoCreatedStatusSettings(t *testing.T) {
+func TestUnitExporter_ExcludesAutoCreatedStatusSettings(t *testing.T) {
 	exporter := TaskManagementWorktypeExporter()
-	configMap := map[string]interface{}{
-		"open_status_default":          false,
-		"closed_status_auto_terminate": true,
-	}
-	for _, attr := range []string{"open_status_default", "closed_status_auto_terminate", "disable_default_status_creation"} {
-		require.NoError(t, exporter.CustomAttributeResolver[attr].ResolverFunc(configMap, nil, "label"))
-	}
-	assert.NotContains(t, configMap, "open_status_default")
-	assert.NotContains(t, configMap, "closed_status_auto_terminate")
+	assert.True(t, exporter.IsAttributeExcluded("open_status_default"))
+	assert.True(t, exporter.IsAttributeExcluded("closed_status_auto_terminate"))
+
+	configMap := map[string]interface{}{}
+	require.NoError(t, exporter.CustomAttributeResolver["disable_default_status_creation"].ResolverFunc(configMap, nil, "label"))
 	assert.Equal(t, true, configMap["disable_default_status_creation"])
+	assert.False(t, exporter.IsAttributeExcluded("disable_default_status_creation"))
 }
 
 func TestUnitDisableDefaultStatusCreation_DiffSuppressOnlyForExisting(t *testing.T) {

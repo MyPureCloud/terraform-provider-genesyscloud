@@ -200,6 +200,10 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
 			"default_script_id":   {RefType: "genesyscloud_script"},
 		},
+		// These configure the auto-created Open/Closed statuses, which are not created for exported
+		// worktypes. The same settings are exported on the genesyscloud_task_management_worktype_status
+		// resources as default and auto_terminate_workitem.
+		ExcludedAttributes: []string{"open_status_default", "closed_status_auto_terminate"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"disable_default_status_creation": {ResolverFunc: func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
 				// Always export this as true to ensure the default status items are not created since they will be created with
@@ -208,20 +212,7 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 				return nil
 			},
 			},
-			// These configure the auto-created Open/Closed statuses, which are not created for exported
-			// worktypes. The same settings are exported on the genesyscloud_task_management_worktype_status
-			// resources as default and auto_terminate_workitem.
-			"open_status_default":          {ResolverFunc: removeAttributeResolver("open_status_default")},
-			"closed_status_auto_terminate": {ResolverFunc: removeAttributeResolver("closed_status_auto_terminate")},
 		},
-	}
-}
-
-// removeAttributeResolver returns a custom resolver that drops the given attribute from the exported config
-func removeAttributeResolver(attribute string) func(map[string]interface{}, map[string]*resourceExporter.ResourceExporter, string) error {
-	return func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
-		delete(configMap, attribute)
-		return nil
 	}
 }
 
