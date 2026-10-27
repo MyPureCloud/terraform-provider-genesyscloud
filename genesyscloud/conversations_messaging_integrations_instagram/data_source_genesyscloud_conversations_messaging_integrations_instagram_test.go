@@ -75,6 +75,7 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 					),
 
 				Check: resource.ComposeTestCheckFunc(
+					waitForInstagramCreateFinished("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_instagram."+testDataSourceLabel, "id", "genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "id"),
 				),
 			},
