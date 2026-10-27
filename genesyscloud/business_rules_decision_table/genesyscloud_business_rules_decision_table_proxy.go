@@ -413,7 +413,7 @@ func uploadDecisionTableImportFileFn(ctx context.Context, p *BusinessRulesDecisi
 		req.Header.Set("Content-Type", "text/csv")
 	}
 
-	client := &http.Client{}
+	client := provider.NewHTTPClient(p.clientConfig)
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to upload import CSV: %w", err)
@@ -488,7 +488,7 @@ func downloadDecisionTableExportFn(ctx context.Context, p *BusinessRulesDecision
 		req.Header.Set("Authorization", "Bearer "+p.clientConfig.AccessToken)
 	}
 
-	client := &http.Client{}
+	client := provider.NewHTTPClient(p.clientConfig)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download export CSV: %w", err)
