@@ -275,9 +275,13 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 			// For function data actions, request_url_template is set server-side to the
 			// generated function id (an org-specific GUID). Like zip_id, exporting it makes
 			// the config non-portable and causes perpetual drift. Remove it so the platform
-			// recomputes it on apply.
-			"config_request.request_url_template": {
-				ResolverFunc: stripConfigRequestURLTemplate,
+			// recomputes it on apply. This resolver is keyed on the top-level "category"
+			// attribute (not config_request.request_url_template) so it receives the full
+			// action config map, which it needs to tell a function action apart from a normal
+			// HTTP data action. Only function actions have their request_url_template stripped;
+			// HTTP data actions keep it, because it is required config for them.
+			"category": {
+				ResolverFunc: stripConfigRequestURLTemplateForFunctionActions,
 			},
 		},
 		ThirdPartyRefAttrs: []string{
@@ -306,13 +310,51 @@ func stripFunctionConfigZipID(configMap map[string]interface{}, _ map[string]*re
 	return nil
 }
 
-// stripConfigRequestURLTemplate drops request_url_template on export for function data
-// actions. The platform sets it server-side to the generated function id (an org-specific
-// GUID), so exporting it makes the config non-portable and causes perpetual drift. The
-// platform recomputes it on apply.
-func stripConfigRequestURLTemplate(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
-	delete(configMap, "request_url_template")
+// stripConfigRequestURLTemplateForFunctionActions drops config_request.request_url_template on
+// export, but ONLY for function data actions. For a function data action the platform sets
+// request_url_template server-side to the generated function id (an org-specific GUID), so
+// exporting it makes the config non-portable and causes perpetual drift; the platform
+// recomputes it on apply. For a normal HTTP data action, request_url_template is real,
+// user-supplied, required config and must be preserved — stripping it unconditionally made the
+// exported HCL fail to re-apply with "Required config.request.requestUrlTemplate has no value"
+// (GitHub issue #2626).
+//
+// This resolver is registered against the top-level "category" attribute so that configMap is
+// the full action config map. That is required because the only in-config signals that an
+// action is a function action — the category text and the presence of a non-empty
+// function_config block — live at the top level, not inside the config_request sub-map.
+func stripConfigRequestURLTemplateForFunctionActions(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
+	if !isFunctionDataActionConfigMap(configMap) {
+		return nil
+	}
+
+	configRequestList, ok := configMap["config_request"].([]interface{})
+	if !ok || len(configRequestList) == 0 {
+		return nil
+	}
+	configRequest, ok := configRequestList[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	delete(configRequest, "request_url_template")
 	return nil
+}
+
+// isFunctionDataActionConfigMap reports whether an exported integration action config map
+// represents a function data action. It mirrors the create/read detection in
+// isFunctionDataActionIntegration || containsFunctionDataAction, using the signals that are
+// available at export time: the category text and the presence of a non-empty function_config
+// block (function_config is only populated for function actions).
+func isFunctionDataActionConfigMap(configMap map[string]interface{}) bool {
+	if category, ok := configMap["category"].(string); ok && containsFunctionDataAction(category) {
+		return true
+	}
+	if functionConfigList, ok := configMap["function_config"].([]interface{}); ok && len(functionConfigList) > 0 {
+		if functionConfig, ok := functionConfigList[0].(map[string]interface{}); ok && len(functionConfig) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source
