@@ -1,6 +1,6 @@
 module github.com/mypurecloud/terraform-provider-genesyscloud
 
-go 1.25.0
+go 1.26.10
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.4

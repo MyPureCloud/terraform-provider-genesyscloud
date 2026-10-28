@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -482,4 +483,72 @@ func TestUnitApplyAutoCreatedStatusSettingsOnUpdate_OpenStatusDefaultChangedToFa
 	diags := applyAutoCreatedStatusSettingsOnUpdate(context.Background(), proxy, d)
 	require.True(t, diags.HasError(), "changing open_status_default to false should error")
 	assert.Empty(t, *worktypeUpdates)
+}
+
+// WORKITEMS-9416: with disable_default_status_creation the platform creates no Open/Closed
+// statuses, so the auto-created status settings must be skipped on create and update.
+func TestUnitApplyAutoCreatedStatusSettings_DisableDefaultStatusCreationSkipsSettings(t *testing.T) {
+	proxy, worktypeUpdates, autoTerminateValues := newMockStatusProxy(uuid.NewString(), uuid.NewString())
+
+	d := newWorktypeTestResourceData(t, uuid.NewString(), map[string]interface{}{
+		"disable_default_status_creation": true,
+		"open_status_default":             true,
+		"closed_status_auto_terminate":    true,
+	})
+
+	diags := applyAutoCreatedStatusSettings(context.Background(), proxy, d)
+	require.False(t, diags.HasError(), diags)
+	assert.Empty(t, *worktypeUpdates)
+	assert.Empty(t, *autoTerminateValues)
+
+	diags = applyAutoCreatedStatusSettingsOnUpdate(context.Background(), proxy, d)
+	require.False(t, diags.HasError(), diags)
+	assert.Empty(t, *worktypeUpdates)
+	assert.Empty(t, *autoTerminateValues)
+}
+
+func TestUnitGetConfiguredBool_UsesRawConfig(t *testing.T) {
+	newData := func(state map[string]string, raw map[string]cty.Value) *schema.ResourceData {
+		attrs := map[string]cty.Value{
+			"open_status_default":          cty.NullVal(cty.Bool),
+			"closed_status_auto_terminate": cty.NullVal(cty.Bool),
+		}
+		for k, v := range raw {
+			attrs[k] = v
+		}
+		d, err := schema.InternalMap(ResourceTaskManagementWorktype().Schema).Data(
+			&terraform.InstanceState{ID: "id", Attributes: state},
+			&terraform.InstanceDiff{RawConfig: cty.ObjectVal(attrs)},
+		)
+		require.NoError(t, err)
+		return d
+	}
+
+	// Read-back value in state, not in config: not explicit.
+	d := newData(map[string]string{"open_status_default": "false"}, nil)
+	assert.Nil(t, getConfiguredBool(d, "open_status_default"))
+
+	// Written in config: explicit, including false.
+	d = newData(map[string]string{"open_status_default": "false"}, map[string]cty.Value{"open_status_default": cty.False})
+	require.NotNil(t, getConfiguredBool(d, "open_status_default"))
+	assert.False(t, *getConfiguredBool(d, "open_status_default"))
+}
+
+func TestUnitExporter_ExcludesAutoCreatedStatusSettings(t *testing.T) {
+	exporter := TaskManagementWorktypeExporter()
+	assert.True(t, exporter.IsAttributeExcluded("open_status_default"))
+	assert.True(t, exporter.IsAttributeExcluded("closed_status_auto_terminate"))
+
+	configMap := map[string]interface{}{}
+	require.NoError(t, exporter.CustomAttributeResolver["disable_default_status_creation"].ResolverFunc(configMap, nil, "label"))
+	assert.Equal(t, true, configMap["disable_default_status_creation"])
+	assert.False(t, exporter.IsAttributeExcluded("disable_default_status_creation"))
+}
+
+func TestUnitDisableDefaultStatusCreation_DiffSuppressOnlyForExisting(t *testing.T) {
+	suppress := ResourceTaskManagementWorktype().Schema["disable_default_status_creation"].DiffSuppressFunc
+	newRes := schema.TestResourceDataRaw(t, ResourceTaskManagementWorktype().Schema, map[string]interface{}{})
+	assert.False(t, suppress("disable_default_status_creation", "", "true", newRes), "must reach create")
+	existing := newWorktypeTestResourceData(t, uuid.NewString(), nil)
+	assert.True(t, suppress("disable_default_status_creation", "", "true", existing))
 }

@@ -18,6 +18,10 @@ import (
 type MrMoExportResponse struct {
 	Config       util.JsonMap
 	ResourceData *schema.ResourceData
+	// ExportedAsData is true when the exporter exported the entity as a data source rather than a
+	// resource (a managed site, the default location and so on), so it has no resource block in
+	// Config. This is the exporter's own decision, taken from the entity's full attributes.
+	ExportedAsData bool
 }
 
 type MrMoExportByTypeResponse struct {
@@ -28,6 +32,10 @@ type MrMoExportByTypeResponse struct {
 	// Those instances are simply absent from ResourceDataList, so a caller that
 	// ignores this field cannot tell a partial export from a complete one.
 	ResourceErrors []ResourceErrorInfo
+	// ExportedAsData holds the ids (schema.ResourceData.Id()) of the instances in ResourceDataList
+	// that the exporter exported as data sources rather than resources. It is the exporter's own
+	// decision, taken from each instance's full attributes. Never nil.
+	ExportedAsData map[string]bool
 }
 
 func diagNilResourceExporter(resType string) diag.Diagnostics {
@@ -162,7 +170,8 @@ func (g *GenesysCloudResourceExporter) ExportForMrMoByID(resType, resourceId str
 		Config: util.JsonMap{
 			"resource": g.resourceTypesMaps,
 		},
-		ResourceData: g.resourceExportedForMrMo,
+		ResourceData:   g.resourceExportedForMrMo,
+		ExportedAsData: g.mrMoResourceExportedAsData(resType, g.resourceExportedForMrMo),
 	}, diags
 }
 
@@ -228,7 +237,8 @@ func (g *GenesysCloudResourceExporter) ExportForMrMo(resType, resourceId string,
 		Config: util.JsonMap{
 			"resource": g.resourceTypesMaps,
 		},
-		ResourceData: g.resourceExportedForMrMo,
+		ResourceData:   g.resourceExportedForMrMo,
+		ExportedAsData: g.mrMoResourceExportedAsData(resType, g.resourceExportedForMrMo),
 	}, diags
 }
 
@@ -290,6 +300,7 @@ func (g *GenesysCloudResourceExporter) ExportByTypeForMrMo(resType string, gener
 		},
 		ResourceDataList: resourceDataList,
 		ResourceErrors:   g.resourceErrorsForType(resType),
+		ExportedAsData:   g.mrMoExportedAsData(resType),
 	}, diags
 }
 

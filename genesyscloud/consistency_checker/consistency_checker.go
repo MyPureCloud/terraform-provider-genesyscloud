@@ -186,40 +186,59 @@ func filterMap(m map[string]interface{}) map[string]interface{} {
 	return newM
 }
 
-func compareValues(oldValue, newValue interface{}, slice1Index, slice2Index int, key string) bool {
+// ResourceData diff paths can contain nested lists and maps.
+// Walk each path segment recursively to handle paths at any depth.
+func compareValuesAtPath(oldValue, newValue interface{}, path []string) bool {
+	if len(path) == 0 {
+		if oldValueString, ok := oldValue.(string); ok && oldValueString != "" && newValue == "" {
+			return true
+		}
+		return cmp.Equal(oldValue, newValue)
+	}
+
 	switch oldValueType := oldValue.(type) {
 	case []interface{}:
 		if len(oldValueType) == 0 {
 			return true
 		}
-		if slice1Index >= len(oldValueType) {
-			for i := 0; i < len(oldValueType); i++ {
-				if compareValues(oldValue, newValue, i, slice2Index, key) {
+
+		index, err := strconv.Atoi(path[0])
+		if err != nil {
+			return false
+		}
+		if index < 0 || index >= len(oldValueType) {
+			// If the path index is out of range, try the remaining path against
+			// each list element. This allows matching elements when collection
+			// indexes differ between configuration and state.
+			for i := range oldValueType {
+				if compareValuesAtPath(oldValueType[i], newValue, path[1:]) {
 					return true
 				}
 			}
 			return false
 		}
-		ov := oldValueType[slice1Index]
-		switch t := ov.(type) {
-		case map[string]interface{}:
-			return compareValues(t[key], newValue, slice2Index, 0, "")
-		default:
-			return cmp.Equal(ov, newValue)
-		}
+
+		return compareValuesAtPath(oldValueType[index], newValue, path[1:])
 	case *schema.Set:
-		return compareValues(oldValueType.List(), newValue, slice1Index, slice2Index, key)
-	case string:
-		if oldValue != "" && newValue == "" {
-			return true
+		if oldValueType == nil {
+			return false
 		}
-		return cmp.Equal(oldValue, newValue)
+		return compareValuesAtPath(oldValueType.List(), newValue, path)
+	case map[string]interface{}:
+		value, exists := oldValueType[path[0]]
+		if !exists {
+			return false
+		}
+		return compareValuesAtPath(value, newValue, path[1:])
 	default:
-		return cmp.Equal(oldValue, newValue)
+		return false
 	}
 }
 
-func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.RetryError {
+// CheckState compares the refreshed state with the original state. ignoredPaths
+// lists paths that the caller has determined cannot be compared reliably.
+// Those paths are skipped; all other fields are still checked.
+func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData, ignoredPaths ...string) *retry.RetryError {
 	if c.isEmptyState == nil {
 		panic("consistencyCheck must be initialized with NewConsistencyCheck")
 	}
@@ -244,8 +263,16 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 
 	diff, _ := c.r.SimpleDiff(c.ctx, currentState.State(), resourceConfig, c.meta)
 	if diff != nil && len(diff.Attributes) > 0 {
+		ignoredPathSet := make(map[string]struct{}, len(ignoredPaths))
+		for _, path := range ignoredPaths {
+			ignoredPathSet[path] = struct{}{}
+		}
+
 		for k, v := range diff.Attributes {
 			if strings.HasSuffix(k, "#") {
+				continue
+			}
+			if _, ignored := ignoredPathSet[k]; ignored {
 				continue
 			}
 			vTemp := v.Old
@@ -253,19 +280,9 @@ func (c *ConsistencyCheck) CheckState(currentState *schema.ResourceData) *retry.
 			v.New = vTemp
 			parts := strings.Split(k, ".")
 			if strings.Contains(k, ".") {
-				slice1Index, _ := strconv.Atoi(parts[1])
-				slice2Index := 0
-				key := ""
-				if len(parts) >= 3 {
-					key = parts[2]
-					if len(parts) == 4 {
-						slice2Index, _ = strconv.Atoi(parts[3])
-					}
-				}
-
 				vv := v.New
 				if currentState.HasChange(k) {
-					if !compareValues(c.originalState[parts[0]], vv, slice1Index, slice2Index, key) {
+					if !compareValuesAtPath(c.originalState[parts[0]], vv, parts[1:]) {
 						err := retry.RetryableError(&consistencyError{
 							key:      k,
 							oldValue: c.originalState[k],
