@@ -177,9 +177,15 @@ type AgenticVirtualAgentStructuredRule struct {
 // Required: targetName, type, source
 //
 // DependencyOnly marks an input as used only to establish a dependency/precondition; the value is
-// not sent to the underlying tool at runtime. It is nullable: omitted when unset. Inputs on
-// Knowledge tools (KnowledgeSetting / KnowledgeBase) must set this to true. Ref: SAGE-861 /
-// public-api-v2 PR #17904 (field is HIDDEN_FROM_DOCS).
+// not sent to the underlying tool at runtime. Inputs on Knowledge tools (KnowledgeSetting /
+// KnowledgeBase) must set this to true. Ref: SAGE-861 / public-api-v2 PR #17904 (field is
+// HIDDEN_FROM_DOCS).
+//
+// Wire behavior: the schema field (dependency_only) is a plain TypeBool, which Terraform core
+// always populates, so expandToolInputs always sets this to a non-nil pointer. The omitempty tag
+// therefore never drops it in practice — every input serializes an explicit "dependencyOnly":
+// true|false. The pointer type is kept only for consistency with the other optional *bool fields
+// (required, fallbackToUser) and to allow a nil value in direct (non-Terraform) struct use.
 type AgenticVirtualAgentToolInput struct {
 	TargetName     string        `json:"targetName"`
 	Type           string        `json:"type"`

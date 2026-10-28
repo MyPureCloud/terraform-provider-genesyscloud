@@ -53,13 +53,15 @@ func TestUnitExpandToolInputsDependencyOnly(t *testing.T) {
 		t.Errorf("expected mapping of length 2, got %v", got[0].Mapping)
 	}
 
-	// Second input: dependency_only omitted → nil (so it serializes away).
+	// Second input: the raw map has no dependency_only key, so expandToolInputs leaves the pointer
+	// nil (the nil branch of the type assertion).
 	//
-	// NOTE: schema.TypeBool defaults to false, so when Terraform core builds the map the key is
-	// present as false. expandToolInputs reads it and sets DependencyOnly=&false. This test uses a
-	// raw map WITHOUT the key to assert the nil path explicitly (the "omitted" code branch).
+	// NOTE: this is a synthetic case. Through real Terraform, schema.TypeBool is always present in
+	// the block map (false when the user omits it), so expandToolInputs would set DependencyOnly to
+	// &false — never nil. We build the map WITHOUT the key here only to cover the nil branch of the
+	// expand code. On the wire via Terraform, every input carries an explicit dependencyOnly.
 	if got[1].DependencyOnly != nil {
-		t.Errorf("expected DependencyOnly to be nil when key omitted, got %v", *got[1].DependencyOnly)
+		t.Errorf("expected DependencyOnly to be nil when key absent from the raw map, got %v", *got[1].DependencyOnly)
 	}
 }
 
