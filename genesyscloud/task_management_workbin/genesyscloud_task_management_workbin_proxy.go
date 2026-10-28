@@ -114,12 +114,13 @@ func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 
 	var allWorkbins []platformclientv2.Workbin
 	pageSize := 200
-	after := ""
+	// Leave 'after' unset on the first page; the API rejects an empty string
+	var after *string
 	var response *platformclientv2.APIResponse
 	for {
 		queryReq := &platformclientv2.Workbinqueryrequest{
 			PageSize: &pageSize,
-			After:    &after,
+			After:    after,
 		}
 		workbins, resp, err := p.taskManagementApi.PostTaskmanagementWorkbinsQuery(*queryReq)
 		if err != nil {
@@ -132,7 +133,7 @@ func getAllTaskManagementWorkbinFn(ctx context.Context, p *taskManagementWorkbin
 		if workbins.After == nil || *workbins.After == "" {
 			break
 		}
-		after = *workbins.After
+		after = workbins.After
 	}
 	return &allWorkbins, response, nil
 }

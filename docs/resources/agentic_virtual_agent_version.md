@@ -284,6 +284,7 @@ Required:
 
 Optional:
 
+- `context_retention_enabled` (Boolean) Whether this DataAction tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window. Only applicable when type is DataAction.
 - `errors` (Block List) Error types this tool can raise. Only applicable when type is DataAction. (see [below for nested schema](#nestedblock--definition--tools--errors))
 - `input_instructions` (List of String) Additional instructions specific to using this tool.
 - `input_validation` (Block List) Conditions that must be checked before invoking this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase). (see [below for nested schema](#nestedblock--definition--tools--input_validation))
@@ -394,4 +395,3 @@ Optional:
 - `items` (String) Type of items in this array property. Applies when type is array.
 - `mapping` (String) Path used to extract this output property from a tool output. JSON-encoded array.
 - `required` (Boolean) Whether this property must be supplied.
-

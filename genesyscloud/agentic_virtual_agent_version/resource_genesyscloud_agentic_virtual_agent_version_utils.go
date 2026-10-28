@@ -85,6 +85,7 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 // (KnowledgeSetting / KnowledgeBase; SAGE-861 / public-api-v2 PR #17904). For Knowledge tools the
 // inputs are dependency-only and are not sent to the knowledge service.
 // DataAction-specific: errors, output, schemas (computed)
+// DataAction-specific: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
 	Type               string                                     `json:"type"`
@@ -93,12 +94,13 @@ type AgenticVirtualAgentTool struct {
 	Target             DomainEntityRef                            `json:"target"`
 	InputInstructions  []string                                   `json:"inputInstructions,omitempty"`
 	OutputInstructions []AgenticVirtualAgentToolOutputInstruction `json:"outputInstructions,omitempty"`
-	// Inputs and InputValidation: DataAction and Knowledge tools. Output/Errors/Schemas: DataAction.
-	Errors          []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
-	Inputs          []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
-	Output          string                                `json:"output,omitempty"`
-	InputValidation []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
-	Schemas         *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
+	// DataAction-specific fields
+	ContextRetentionEnabled *bool                                 `json:"contextRetentionEnabled,omitempty"`
+	Errors                  []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
+	Inputs                  []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
+	Output                  string                                `json:"output,omitempty"`
+	InputValidation         []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
+	Schemas                 *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
 	// ExternalA2AServer-specific fields (computed at publish time)
 	Skills []AgenticVirtualAgentAgentCardSkill `json:"skills,omitempty"`
 }
