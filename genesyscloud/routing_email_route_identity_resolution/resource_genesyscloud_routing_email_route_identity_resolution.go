@@ -31,7 +31,12 @@ func getAllRoutingEmailRouteIdentityResolution(ctx context.Context, clientConfig
 
 	for domainId, routes := range *domains {
 		for _, route := range routes {
-			if route.Id == nil || route.Name == nil {
+			// Email routes are identified by their pattern; route.Name is optional
+			// and frequently nil. Only route.Id is required to export the identity
+			// resolution config, so guard on Id alone and derive the block label from
+			// the pattern (matching the parent routing_email_route exporter), falling
+			// back to name and finally a constant so a route is never silently dropped.
+			if route.Id == nil {
 				continue
 			}
 
@@ -47,7 +52,7 @@ func getAllRoutingEmailRouteIdentityResolution(ctx context.Context, clientConfig
 				continue
 			}
 
-			resources[domainId+"/"+*route.Id] = &resourceExporter.ResourceMeta{BlockLabel: *route.Name + "-identity-resolution"}
+			resources[domainId+"/"+*route.Id] = &resourceExporter.ResourceMeta{BlockLabel: buildIdentityResolutionBlockLabel(route, domainId)}
 		}
 	}
 
@@ -94,8 +99,15 @@ func readRoutingEmailRouteIdentityResolution(ctx context.Context, d *schema.Reso
 		} else {
 			_ = d.Set("resolve_identities", true)
 		}
+		// Always set division_id so the attribute is represented consistently
+		// whether or not prior state exists (e.g. during import). When the API
+		// returns a concrete, non-unassigned division, use it; otherwise set the
+		// unassigned sentinel "". Leaving it unset on import while prior state
+		// holds "" causes ImportStateVerify to report the key as missing.
 		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
 			_ = d.Set("division_id", *config.Division.Id)
+		} else {
+			_ = d.Set("division_id", "")
 		}
 
 		log.Printf("read identity resolution for routing email route %s/%s", domainName, routeId)
