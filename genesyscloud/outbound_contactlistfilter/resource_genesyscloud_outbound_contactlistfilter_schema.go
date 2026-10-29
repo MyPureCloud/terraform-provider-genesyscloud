@@ -7,9 +7,13 @@ package outbound_contactlistfilter
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"context"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -173,6 +177,11 @@ func ResourceOutboundContactlistfilter() *schema.Resource {
 func OutboundContactlistfilterExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundContactlistfilters),
+		GetResourcesByIdsFunc: util.ExporterByIdsWithName(ResourceType,
+			func(c *platformclientv2.Configuration) func(context.Context, string) (*platformclientv2.Contactlistfilter, *platformclientv2.APIResponse, error) {
+				return getOutboundContactlistfilterProxy(c).getOutboundContactlistfilterById
+			},
+			func(x *platformclientv2.Contactlistfilter) *string { return x.Name }),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"contact_list_id":          {RefType: "genesyscloud_outbound_contact_list"},
 			"contact_list_template_id": {RefType: "genesyscloud_outbound_contact_list_template"},

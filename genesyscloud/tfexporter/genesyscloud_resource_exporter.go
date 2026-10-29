@@ -1822,6 +1822,7 @@ func (g *GenesysCloudResourceExporter) buildSanitizedResourceMaps(exporters map[
 
 			tflog.Info(g.ctx, fmt.Sprintf("Getting all resources for type %s", resourceType))
 			exporter.FilterResource = g.resourceFilter
+			exporter.FilterByID = isFilterByID(g.resourceFilter)
 
 			// Retry the GetAll functions at least three times (in case of transient errors)
 			maxRetries := 3

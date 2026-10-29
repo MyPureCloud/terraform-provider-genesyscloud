@@ -472,7 +472,8 @@ func DataSourceUser() *schema.Resource {
 
 func UserExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(GetAllUsers),
+		GetResourcesFunc:      provider.GetAllWithPooledClient(GetAllUsers),
+		GetResourcesByIdsFunc: provider.GetByIdsWithPooledClient(getUserMetaById),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"manager":                                   {RefType: ResourceType},
 			"division_id":                               {RefType: "genesyscloud_auth_division"},
