@@ -136,16 +136,67 @@ func OmitUnresolvedGuidFromConfigMap(configMap map[string]interface{}, attribute
 	}
 }
 
-// RemoveUnresolvedScriptGuidsResolver removes default_script_ids entries that could not be resolved
-// to an exported genesyscloud_script resource (e.g. built-in or unpublished scripts that 404).
+// isDefaultScriptId reports whether the GUID is one of the three built-in default scripts that
+// ship with every org (Inbound/Outbound/Callback). These are platform-owned and are intentionally
+// not exported as genesyscloud_script resources, so a reference to one can never be resolved.
+// Declared here (rather than reused from genesyscloud/scripts) because scripts imports this package,
+// so importing it back would create a cycle; the IDs are stable constants.
+func isDefaultScriptId(id string) bool {
+	return id == constants.DefaultCallbackScriptID ||
+		id == constants.DefaultOutboundScriptID ||
+		id == constants.DefaultInboundScriptID
+}
+
+// scriptExportabilityCache memoizes, per export run, whether a given script GUID is a genuine
+// published script (and therefore should be preserved in default_script_ids). Keyed by script id.
+// This keeps the resolver from issuing a GET per queue for the same script when many queues share
+// a default script.
+var scriptExportabilityCache sync.Map // map[string]bool
+
+// isGenuinePublishedScript returns true when GET /api/v2/scripts/published/{id} succeeds, i.e. the
+// script exists and is published (the same class of script the script exporter emits). A 404/error
+// means the script is not a published, exportable script (deleted or unpublished). Results are cached
+// for the duration of the export. On a transient/non-404 error we return true (conservative: never
+// drop a script assignment because of a flaky lookup).
+func isGenuinePublishedScript(id string, sdkConfig *platformclientv2.Configuration) bool {
+	if cached, ok := scriptExportabilityCache.Load(id); ok {
+		return cached.(bool)
+	}
+
+	api := platformclientv2.NewScriptsApiWithConfig(sdkConfig)
+	_, resp, err := api.GetScriptsPublishedScriptId(id, "")
+
+	genuine := true
+	if err != nil {
+		// Only treat a definitive 404 as "not a genuine published script". Any other error
+		// (auth, rate limit, 5xx, network) is transient -- keep the assignment rather than risk
+		// a destructive diff.
+		if resp != nil && resp.StatusCode == 404 {
+			genuine = false
+		} else {
+			log.Printf("could not determine if script %s is published (keeping it): %v", id, err)
+			genuine = true
+		}
+	}
+
+	scriptExportabilityCache.Store(id, genuine)
+	return genuine
+}
+
+// RemoveUnresolvedScriptGuidsWithClientConfigResolver cleans up default_script_ids on export so that
+// genuine, user-managed scripts are preserved while references that can never be reproduced are removed.
 //
-// Skipped when MRMO is driving the export. "Resolved" here means converted into a "${...}"
-// Terraform reference, which only happens on the standard file-export path. MRMO never does that
-// substitution -- it exports the raw GUID and resolves source-to-target IDs separately, on apply,
-// via its own archetype/replica mapping (see genesyscloud/mrmo). Every script GUID would therefore
-// look "unresolved" to this function under MRMO, stripping default_script_ids from every
-// MRMO-replicated queue instead of only the built-in/unpublished scripts this was written to catch.
-func RemoveUnresolvedScriptGuidsResolver(configMap map[string]interface{}, exporters map[string]*ResourceExporter, resourceLabel string) error {
+// For each entry whose value is still a raw GUID (i.e. was not rewritten to a ${genesyscloud_script...}
+// reference during reference resolution):
+//   - a built-in default script id (isDefaultScriptId) is removed -- it is platform-owned and not
+//     exportable as a genesyscloud_script (this is the case DEVTOOLING-1816 / #2603 targeted);
+//   - a deleted/unpublished script (GET /scripts/published/{id} returns 404) is removed;
+//   - a genuine published script is KEPT (as the raw GUID), so re-applying the exported config does
+//     not destroy the queue's script assignment (DEVTOOLING-1890 / #2639).
+//
+// Skipped when MRMO is driving the export: MRMO exports raw GUIDs and resolves source->target ids on
+// apply via its own mapping, so every script would otherwise look unresolved here and be stripped.
+func RemoveUnresolvedScriptGuidsWithClientConfigResolver(configMap map[string]interface{}, _ any, sdkConfig *platformclientv2.Configuration) error {
 	if mrmo.IsActive() {
 		return nil
 	}
@@ -153,9 +204,26 @@ func RemoveUnresolvedScriptGuidsResolver(configMap map[string]interface{}, expor
 	if !ok {
 		return nil
 	}
-	for key := range innerMap {
-		OmitUnresolvedGuidFromConfigMap(innerMap, key)
+
+	for key, raw := range innerMap {
+		strVal, ok := raw.(string)
+		if !ok || strVal == "" {
+			continue
+		}
+		// Already resolved to a Terraform reference, or not a GUID at all -- leave untouched.
+		if strings.HasPrefix(strVal, "${") || !isValidGuid(strVal) {
+			continue
+		}
+		// Still a raw GUID. Keep it only if it is a genuine published script; otherwise drop it.
+		if isDefaultScriptId(strVal) {
+			delete(innerMap, key)
+			continue
+		}
+		if !isGenuinePublishedScript(strVal, sdkConfig) {
+			delete(innerMap, key)
+		}
 	}
+
 	if len(innerMap) == 0 {
 		delete(configMap, "default_script_ids")
 	}
