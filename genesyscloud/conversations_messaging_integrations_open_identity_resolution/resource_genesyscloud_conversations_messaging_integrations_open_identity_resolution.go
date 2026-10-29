@@ -90,6 +90,11 @@ func readConversationsMessagingIntegrationsOpenIdentityResolution(ctx context.Co
 		}
 		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
 			_ = d.Set("division_id", *config.Division.Id)
+		} else {
+			// Set the unassigned sentinel "" explicitly so the attribute is represented
+			// consistently with or without prior state (e.g. during import), otherwise
+			// ImportStateVerify reports division_id as missing.
+			_ = d.Set("division_id", "")
 		}
 		if config.ExternalSource != nil && config.ExternalSource.Id != nil && *config.ExternalSource.Id != "" {
 			_ = d.Set("external_source_id", *config.ExternalSource.Id)
