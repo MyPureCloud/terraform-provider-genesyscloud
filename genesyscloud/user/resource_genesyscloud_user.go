@@ -63,34 +63,30 @@ func userResourceMeta(user platformclientv2.User) (*resourceExporter.ResourceMet
 	return &resourceExporter.ResourceMeta{BlockLabel: *user.Email, BlockHash: hashedUniqueFields}, nil
 }
 
-// GetUsersByIds is the by-ID counterpart of GetAllUsers, used by the exporter when only specific users are needed
+// getUserMetaById is the by-ID counterpart of GetAllUsers, used by the exporter when only specific users are needed
 // (e.g. queue members referenced by another resource) so that every user in the org is not listed.
 // It mirrors the list path: deleted users, and inactive users when inactive export is skipped, are left out.
-func GetUsersByIds(ctx context.Context, sdkConfig *platformclientv2.Configuration, ids []string) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getUserMetaById(ctx context.Context, sdkConfig *platformclientv2.Configuration, id string) (*resourceExporter.ResourceMeta, diag.Diagnostics) {
 	proxy := GetUserProxy(sdkConfig)
-	skipInactive := featureToggles.SkipInactiveUserExportToggleExists()
-
-	return resourceExporter.GetResourcesByIds(ctx, ids, func(ctx context.Context, id string) (*resourceExporter.ResourceMeta, diag.Diagnostics) {
-		user, resp, err := proxy.getUserById(ctx, id, userExportExpands, "any")
-		if err != nil {
-			if util.IsStatus404(resp) {
-				return nil, nil
-			}
-			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get user %s error: %s", id, err), resp)
-		}
-		if user == nil || user.Id == nil || user.Email == nil {
+	user, resp, err := proxy.getUserById(ctx, id, userExportExpands, "any")
+	if err != nil {
+		if util.IsStatus404(resp) {
 			return nil, nil
 		}
-		if user.State != nil && (*user.State == "deleted" || (skipInactive && *user.State == "inactive")) {
-			return nil, nil
-		}
-		meta, err := userResourceMeta(*user)
-		if err != nil {
-			return nil, diag.FromErr(err)
-		}
-		rc.SetCache(proxy.userCache, id, *user) // same as the list path, so readUser is served from the cache
-		return meta, nil
-	})
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get user %s error: %s", id, err), resp)
+	}
+	if user == nil || user.Id == nil || user.Email == nil {
+		return nil, nil
+	}
+	if user.State != nil && (*user.State == "deleted" || (*user.State == "inactive" && featureToggles.SkipInactiveUserExportToggleExists())) {
+		return nil, nil
+	}
+	meta, err := userResourceMeta(*user)
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+	rc.SetCache(proxy.userCache, id, *user) // same as the list path, so readUser is served from the cache
+	return meta, nil
 }
 
 func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

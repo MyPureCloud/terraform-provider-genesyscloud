@@ -783,7 +783,7 @@ func min(a, b int) int {
 
 type resContextFunc func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics
 type GetAllConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
-type GetByIdsConfigFunc func(context.Context, *platformclientv2.Configuration, []string) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics)
+type GetByIdConfigFunc func(context.Context, *platformclientv2.Configuration, string) (*resourceExporter.ResourceMeta, diag.Diagnostics)
 type GetCustomConfigFunc func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, *resourceExporter.DependencyResource, []string, diag.Diagnostics)
 
 func CreateWithPooledClient(method resContextFunc) schema.CreateContextFunc {
@@ -1057,22 +1057,18 @@ func GetAllWithPooledClient(method GetAllConfigFunc) resourceExporter.GetAllReso
 	}
 }
 
-// GetByIdsWithPooledClient Inject a pooled SDK client connection into an exporter's get-by-IDs method
-func GetByIdsWithPooledClient(method GetByIdsConfigFunc) resourceExporter.GetResourcesByIdsFunc {
+// GetByIdsWithPooledClient Inject a pooled SDK client connection into an exporter's get-by-ID method.
+// Each concurrent fetch acquires its own client so the requests spread across the pool.
+func GetByIdsWithPooledClient(method GetByIdConfigFunc) resourceExporter.GetResourcesByIdsFunc {
 	return func(ctx context.Context, ids []string) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-		clientConfig, release, diags := resolveClientConfigForContext(ctx)
-		if diags != nil {
-			return nil, diags
-		}
-		defer release()
-
-		select {
-		case <-ctx.Done():
-			return nil, diag.FromErr(ctx.Err())
-		default:
-		}
-
-		return method(ctx, clientConfig, ids)
+		return resourceExporter.GetResourcesByIds(ctx, ids, func(ctx context.Context, id string) (*resourceExporter.ResourceMeta, diag.Diagnostics) {
+			clientConfig, release, diags := resolveClientConfigForContext(ctx)
+			if diags != nil {
+				return nil, diags
+			}
+			defer release()
+			return method(ctx, clientConfig, id)
+		})
 	}
 }
 
