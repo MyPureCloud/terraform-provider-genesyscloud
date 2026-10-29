@@ -16,7 +16,7 @@ import (
 // dataSourceIvrRead retrieves the Genesys Cloud architect ivr id by name
 func dataSourceIvrRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
-	ap := getArchitectIvrProxy(sdkConfig)
+	ap := GetArchitectIvrProxy(sdkConfig)
 	name := d.Get("name").(string)
 
 	// Query ivr by name. Retry in case search has not yet indexed the ivr.

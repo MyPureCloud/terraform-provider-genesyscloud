@@ -144,7 +144,7 @@ func TestUnitGetAllRoutingQueueIdentityResolution(t *testing.T) {
 	divisionId := uuid.NewString()
 
 	queueProxy := &routingQueue.RoutingQueueProxy{}
-	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		return &[]platformclientv2.Queue{
 			{Id: &defaultQueueId, Name: &defaultQueueName},
 			{Id: &customQueueId, Name: &customQueueName},
@@ -197,7 +197,7 @@ func TestUnitGetAllRoutingQueueIdentityResolution(t *testing.T) {
 
 func TestUnitGetAllRoutingQueueIdentityResolutionListError(t *testing.T) {
 	queueProxy := &routingQueue.RoutingQueueProxy{}
-	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
+	queueProxy.GetAllRoutingQueuesAttr = func(_ context.Context, _ *routingQueue.RoutingQueueProxy, _ string, _, _ bool) (*[]platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 		return nil, nil, fmt.Errorf("mock list error")
 	}
 

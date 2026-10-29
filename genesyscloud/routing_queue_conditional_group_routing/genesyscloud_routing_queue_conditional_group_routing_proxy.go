@@ -46,11 +46,7 @@ func newRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.
 
 // getRoutingQueueConditionalGroupRoutingProxy retrieves all Genesys Cloud Routing queue conditional group routing
 func getRoutingQueueConditionalGroupRoutingProxy(clientConfig *platformclientv2.Configuration) *routingQueueConditionalGroupRoutingProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingQueueConditionalGroupRoutingProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingQueueConditionalGroupRoutingProxy)
 }
 
 // getRoutingQueueById get a queue by ID

@@ -54,6 +54,22 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       }
     }
 
+    # A Data Action tool that authenticates the user and produces an "AuthResult" output.
+    tools {
+      type        = "DataAction"
+      name        = "Authenticate"
+      description = "Authenticate the user and return an auth token"
+
+      target {
+        id   = genesyscloud_integration_action.example_auth_action.id
+        name = genesyscloud_integration_action.example_auth_action.name
+      }
+
+      input_instructions = ["Call this to authenticate the user before answering account questions"]
+
+      output = "AuthResult"
+    }
+
     tools {
       type        = "KnowledgeBase"
       name        = "FAQ Search"
@@ -65,6 +81,27 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       }
 
       input_instructions = ["Use when the user asks a question"]
+
+      # Dependency-only input: links the Knowledge tool to the Authenticate tool's output so the
+      # Knowledge tool only runs after the user is authenticated. The value is NOT sent to the
+      # knowledge service — it exists only to gate the tool. dependency_only must be true for
+      # inputs on Knowledge tools, and fallback_to_user must be false for ToolOutput sources.
+      inputs {
+        target_name      = "auth_token"
+        type             = "AuthResult"
+        source           = "ToolOutput"
+        required         = true
+        fallback_to_user = false
+        mapping          = jsonencode(["AuthResult", "token"])
+        dependency_only  = true
+      }
+
+      # Only invoke the Knowledge tool once the auth token is present.
+      input_validation {
+        type             = "Structured"
+        if_condition     = jsonencode({ group = "And", rules = [{ name = "auth_token", operator = "IsNotNull" }] })
+        else_instruction = "Ask the customer to authenticate first."
+      }
 
       output_instructions {
         type = "Python"
@@ -78,6 +115,18 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       type        = "string"
       description = "Customer order ID"
       direction   = "Input"
+    }
+
+    # AuthResult is an object with a "token" property so the Knowledge tool's dependency-only
+    # input mapping path ["AuthResult", "token"] resolves at publish time.
+    types {
+      name      = "AuthResult"
+      type      = "object"
+      direction = "Output"
+      properties {
+        name = "token"
+        type = "string"
+      }
     }
 
     events {
@@ -100,6 +149,22 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
     settings {
       comfort_statement {
         enabled = true
+      }
+
+      dynamic_turn_instructions {
+        repetition_check {
+          type        = "Agent"
+          messages    = 2
+          similarity  = "Moderate"
+          instruction = "Your last two responses were very similar. Vary your language, tone, and structure substantially."
+        }
+
+        repetition_check {
+          type        = "User"
+          messages    = 3
+          similarity  = "VeryStrict"
+          instruction = "The user keeps asking the same thing. Acknowledge the repetition and try a different approach or offer to escalate."
+        }
       }
     }
   }
@@ -177,6 +242,7 @@ Optional:
 Optional:
 
 - `comfort_statement` (Block List, Max: 1) Comfort statement settings for tool calls. (see [below for nested schema](#nestedblock--definition--settings--comfort_statement))
+- `dynamic_turn_instructions` (Block List, Max: 1) Instructions dynamically added to the virtual agent based on conversation state (e.g. repetition checks). (see [below for nested schema](#nestedblock--definition--settings--dynamic_turn_instructions))
 
 <a id="nestedblock--definition--settings--comfort_statement"></a>
 ### Nested Schema for `definition.settings.comfort_statement`
@@ -184,6 +250,25 @@ Optional:
 Optional:
 
 - `enabled` (Boolean) Whether comfort statements are enabled during eligible tool calls.
+
+
+<a id="nestedblock--definition--settings--dynamic_turn_instructions"></a>
+### Nested Schema for `definition.settings.dynamic_turn_instructions`
+
+Optional:
+
+- `repetition_check` (Block List) Checks that add dynamic instructions for the agent when user or agent messages repeat. (see [below for nested schema](#nestedblock--definition--settings--dynamic_turn_instructions--repetition_check))
+
+<a id="nestedblock--definition--settings--dynamic_turn_instructions--repetition_check"></a>
+### Nested Schema for `definition.settings.dynamic_turn_instructions.repetition_check`
+
+Required:
+
+- `instruction` (String) The instruction added to the virtual agent's turn when message similarity matches the configured category.
+- `messages` (Number) The number of prior messages of the specified type to compare for repetition. Must be at least 1.
+- `similarity` (String) The similarity category compared to the Levenshtein result that triggers this check's instruction. Allowed values: Moderate, VeryStrict.
+- `type` (String) Whether this check looks for repetition in user messages or agent responses.
+
 
 
 
@@ -199,10 +284,11 @@ Required:
 
 Optional:
 
+- `context_retention_enabled` (Boolean) Whether this DataAction tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window. Only applicable when type is DataAction.
 - `errors` (Block List) Error types this tool can raise. Only applicable when type is DataAction. (see [below for nested schema](#nestedblock--definition--tools--errors))
 - `input_instructions` (List of String) Additional instructions specific to using this tool.
-- `input_validation` (Block List) Conditions that must be checked before invoking this tool. Only applicable when type is DataAction. (see [below for nested schema](#nestedblock--definition--tools--input_validation))
-- `inputs` (Block List) Inputs passed to this data action tool. Only applicable when type is DataAction. (see [below for nested schema](#nestedblock--definition--tools--inputs))
+- `input_validation` (Block List) Conditions that must be checked before invoking this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase). (see [below for nested schema](#nestedblock--definition--tools--input_validation))
+- `inputs` (Block List) Inputs for this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase). For Knowledge tools, inputs must be sourced from a prior tool output and marked dependency_only = true; they establish a dependency and are not sent to the knowledge service. (see [below for nested schema](#nestedblock--definition--tools--inputs))
 - `output` (String) Name of the output type this tool returns. Only applicable when type is DataAction.
 - `output_instructions` (Block List) Instructions that apply after successful tool execution. (see [below for nested schema](#nestedblock--definition--tools--output_instructions))
 
@@ -255,6 +341,7 @@ Required:
 
 Optional:
 
+- `dependency_only` (Boolean) Whether this input is used only to establish a dependency/precondition and is not sent to the underlying tool at runtime. Must be true for inputs on Knowledge tools (KnowledgeSetting / KnowledgeBase).
 - `fallback_to_user` (Boolean) Whether the virtual agent should ask the user for this input when not available from the configured source.
 - `mapping` (String) Path used to extract this input from a previous tool output. JSON-encoded array. Only valid when source is ToolOutput.
 - `required` (Boolean) Whether this input must be supplied.
@@ -308,4 +395,3 @@ Optional:
 - `items` (String) Type of items in this array property. Applies when type is array.
 - `mapping` (String) Path used to extract this output property from a tool output. JSON-encoded array.
 - `required` (Boolean) Whether this property must be supplied.
-

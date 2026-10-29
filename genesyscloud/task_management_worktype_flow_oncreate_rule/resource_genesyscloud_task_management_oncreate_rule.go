@@ -49,7 +49,7 @@ func getAllAuthTaskManagementOnCreateRule(ctx context.Context, clientConfig *pla
 		}
 
 		for _, onCreateRule := range *onCreateRules {
-			resources[composeWorktypeBasedTerraformId(*worktype.Id, *onCreateRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *onCreateRule.Name}
+			resources[ComposeWorktypeBasedTerraformId(*worktype.Id, *onCreateRule.Id)] = &resourceExporter.ResourceMeta{BlockLabel: *onCreateRule.Name}
 		}
 	}
 	return resources, nil
@@ -70,7 +70,7 @@ func createTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 	}
 	log.Printf("Created the base task management oncreate rule %s for worktype %s", *onCreateRule.Id, worktypeId)
 
-	d.SetId(composeWorktypeBasedTerraformId(worktypeId, *onCreateRule.Id))
+	d.SetId(ComposeWorktypeBasedTerraformId(worktypeId, *onCreateRule.Id))
 
 	return readTaskManagementOnCreateRule(ctx, d, meta)
 }
@@ -81,7 +81,7 @@ func readTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceData,
 	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceTaskManagementOnCreateRule(), constants.ConsistencyChecks(), ResourceType)
 
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Reading task management oncreate rule %s for worktype %s", id, worktypeId)
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
@@ -107,7 +107,7 @@ func updateTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 
 	onCreateRuleUpdate := getWorkitemoncreateruleupdateFromResourceData(d)
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	log.Printf("Updating oncreate rule %s for worktype %s", id, worktypeId)
 	_, resp, err := proxy.updateTaskManagementOnCreateRule(ctx, worktypeId, id, &onCreateRuleUpdate)
@@ -125,7 +125,7 @@ func deleteTaskManagementOnCreateRule(ctx context.Context, d *schema.ResourceDat
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getTaskManagementOnCreateRuleProxy(sdkConfig)
 
-	worktypeId, id := splitWorktypeBasedTerraformId(d.Id())
+	worktypeId, id := SplitWorktypeBasedTerraformId(d.Id())
 
 	resp, err := proxy.deleteTaskManagementOnCreateRule(ctx, worktypeId, id)
 	if err != nil {

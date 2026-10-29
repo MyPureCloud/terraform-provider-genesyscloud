@@ -142,3 +142,47 @@ func TestUnitTestAPIResponseWithRetriesDiagWithBadApiResponse(t *testing.T) {
 	assert.Equal(t, sumErrMsg, lines[0])
 	assert.Equal(t, targetResponse, lines[1])
 }
+
+func TestUnitTestCodedAPIDiagnosticErrorIncludesCodeAndJobID(t *testing.T) {
+	resourceType := "genesyscloud_flow"
+	sumErrMsg := "flow publish failed. JobID: job-123, flowName: test"
+	jobId := "job-123"
+	apiResponse := &platformclientv2.APIResponse{
+		StatusCode:    http.StatusOK,
+		ErrorMessage:  "",
+		CorrelationID: "corr-1",
+	}
+
+	diags := BuildCodedAPIDiagnosticError(resourceType, DiagnosticCodeFlowPublishFailed, sumErrMsg, jobId, apiResponse)
+	assert.Len(t, diags, 1)
+	assert.Equal(t, sumErrMsg, diags[0].Summary)
+
+	actual := &detailedDiagnosticInfo{}
+	err := json.Unmarshal([]byte(diags[0].Detail), actual)
+	assert.NoError(t, err)
+	assert.Equal(t, DiagnosticCodeFlowPublishFailed, actual.Code)
+	assert.Equal(t, jobId, actual.JobID)
+	assert.Equal(t, resourceType, actual.ResourceType)
+}
+
+func TestUnitTestCodedWithRetriesApiDiagnosticErrorIncludesCodeAndJobID(t *testing.T) {
+	resourceType := "genesyscloud_flow"
+	sumErrMsg := "Job (job-456) could not finish in 16 minutes and timed out "
+	jobId := "job-456"
+	apiResponse := &platformclientv2.APIResponse{
+		StatusCode:   http.StatusOK,
+		ErrorMessage: "",
+	}
+
+	err := BuildCodedWithRetriesApiDiagnosticError(resourceType, DiagnosticCodeFlowPublishTimeout, sumErrMsg, jobId, apiResponse)
+	assert.Error(t, err)
+
+	lines := strings.Split(err.Error(), "\n")
+	assert.Equal(t, sumErrMsg, lines[0])
+
+	actual := &detailedDiagnosticInfo{}
+	assert.NoError(t, json.Unmarshal([]byte(lines[1]), actual))
+	assert.Equal(t, DiagnosticCodeFlowPublishTimeout, actual.Code)
+	assert.Equal(t, jobId, actual.JobID)
+	assert.Equal(t, resourceType, actual.ResourceType)
+}

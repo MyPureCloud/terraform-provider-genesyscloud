@@ -57,11 +57,7 @@ func newOutboundDigitalrulesetProxy(clientConfig *platformclientv2.Configuration
 // getOutboundDigitalrulesetProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundDigitalrulesetProxy(clientConfig *platformclientv2.Configuration) *outboundDigitalrulesetProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundDigitalrulesetProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundDigitalrulesetProxy)
 }
 
 // createOutboundDigitalruleset creates a Genesys Cloud outbound digitalruleset

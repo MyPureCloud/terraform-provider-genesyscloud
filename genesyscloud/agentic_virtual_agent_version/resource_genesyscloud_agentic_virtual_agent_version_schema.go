@@ -17,6 +17,11 @@ import (
 
 const ResourceType = "genesyscloud_agentic_virtual_agent_version"
 
+// ResourceData represents an omitted nested boolean as false. This marker
+// records whether each tool includes context_retention_enabled, so changes
+// between an omitted value and false still trigger an update.
+const contextRetentionPresenceAttribute = "context_retention_enabled_presence"
+
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersion())
@@ -31,6 +36,7 @@ func ResourceAgenticVirtualAgentVersion() *schema.Resource {
 		ReadContext:   provider.ReadWithPooledClient(readAgenticVirtualAgentVersion),
 		UpdateContext: provider.UpdateWithPooledClient(updateAgenticVirtualAgentVersion),
 		DeleteContext: provider.DeleteWithPooledClient(deleteAgenticVirtualAgentVersion),
+		CustomizeDiff: customizeAgenticVirtualAgentVersionDiff,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -49,6 +55,11 @@ func ResourceAgenticVirtualAgentVersion() *schema.Resource {
 			},
 			"status": {
 				Description: "Current status of the version: Draft, TestReady, or ProductionReady.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			contextRetentionPresenceAttribute: {
+				Description: "Internal marker that records whether context_retention_enabled is configured for each tool.",
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
@@ -116,6 +127,53 @@ func definitionResource() *schema.Resource {
 				Computed:    true,
 				MaxItems:    1,
 				Elem:        versionSettingsResource(),
+			},
+		},
+	}
+}
+
+func dynamicTurnInstructionsResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"repetition_check": {
+				Description: "Checks that add dynamic instructions for the agent when user or agent messages repeat.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        repetitionCheckResource(),
+			},
+		},
+	}
+}
+
+func repetitionCheckResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "Whether this check looks for repetition in user messages or agent responses.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"User", "Agent"}, false),
+			},
+			"messages": {
+				Description:  "The number of prior messages of the specified type to compare for repetition. Must be at least 1.",
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntAtLeast(1),
+			},
+			"similarity": {
+				Description: "The similarity category compared to the Levenshtein result that triggers this check's instruction. Allowed values: Moderate, VeryStrict.",
+				Type:        schema.TypeString,
+				Required:    true,
+				// NOTE: although the hidden swagger enum lists Loose/Moderate/Strict/VeryStrict, the
+				// live API only accepts Moderate and VeryStrict (verified via a 400 validation error:
+				// "repetition check similarity must be 'Moderate' or 'VeryStrict'"). Validate against
+				// what the API actually accepts so users get a plan-time error instead of a 400.
+				ValidateFunc: validation.StringInSlice([]string{"Moderate", "VeryStrict"}, false),
+			},
+			"instruction": {
+				Description: "The instruction added to the virtual agent's turn when message similarity matches the configured category.",
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 		},
 	}
@@ -205,9 +263,17 @@ func toolResource() *schema.Resource {
 				Optional:    true,
 				Elem:        outputInstructionResource(),
 			},
+			// Inputs and input_validation apply to DataAction tools and to Knowledge tools
+			// (KnowledgeSetting / KnowledgeBase). For Knowledge tools the inputs express a
+			// dependency/gating relationship only and must be marked dependency_only = true.
 			// DataAction-specific fields
+			"context_retention_enabled": {
+				Description: "Whether this DataAction tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window. Only applicable when type is DataAction.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"inputs": {
-				Description: "Inputs passed to this data action tool. Only applicable when type is DataAction.",
+				Description: "Inputs for this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase). For Knowledge tools, inputs must be sourced from a prior tool output and marked dependency_only = true; they establish a dependency and are not sent to the knowledge service.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        toolInputResource(),
@@ -224,7 +290,7 @@ func toolResource() *schema.Resource {
 				Elem:        toolErrorResource(),
 			},
 			"input_validation": {
-				Description: "Conditions that must be checked before invoking this tool. Only applicable when type is DataAction.",
+				Description: "Conditions that must be checked before invoking this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase).",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        inputValidationResource(),
@@ -288,6 +354,11 @@ func toolInputResource() *schema.Resource {
 			"mapping": {
 				Description: "Path used to extract this input from a previous tool output. JSON-encoded array. Only valid when source is ToolOutput.",
 				Type:        schema.TypeString,
+				Optional:    true,
+			},
+			"dependency_only": {
+				Description: "Whether this input is used only to establish a dependency/precondition and is not sent to the underlying tool at runtime. Must be true for inputs on Knowledge tools (KnowledgeSetting / KnowledgeBase).",
+				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 		},
@@ -484,16 +555,29 @@ func versionSettingsResource() *schema.Resource {
 					},
 				},
 			},
+			"dynamic_turn_instructions": {
+				Description: "Instructions dynamically added to the virtual agent based on conversation state (e.g. repetition checks).",
+				Type:        schema.TypeList,
+				Optional:    true,
+				MaxItems:    1,
+				Elem:        dynamicTurnInstructionsResource(),
+			},
 		},
 	}
 }
 
 // AgenticVirtualAgentVersionExporter returns the exporter configuration for versions.
 func AgenticVirtualAgentVersionExporter() *resourceExporter.ResourceExporter {
+	exportCache := newAgenticVirtualAgentVersionExportCache()
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAgenticVirtualAgentVersions),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAgenticVirtualAgentVersionsWithCache(exportCache)),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"agent_id": {RefType: "genesyscloud_agentic_virtual_agent"},
+		},
+		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
+			"agent_id": {
+				ResolverWithClientConfigFunc: resolveAgenticVirtualAgentVersionContextRetentionResolver(exportCache),
+			},
 		},
 	}
 }

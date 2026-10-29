@@ -83,10 +83,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func getRoutingWrapupcodeProxy(clientConfig *platformclientv2.Configuration) *routingWrapupcodeProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingWrapupcodeProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingWrapupcodeProxy)
 }
 
 // createRoutingWrapupcode creates a Genesys Cloud routing wrapupcodes

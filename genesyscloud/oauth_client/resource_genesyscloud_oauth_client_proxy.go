@@ -95,10 +95,7 @@ into the integration credential object.  Today the integration credential object
 without because once the oauth client is created, we dont want to expose the secret.
 */
 func GetOAuthClientProxy(clientConfig *platformclientv2.Configuration) *oauthClientProxy {
-	if internalProxy == nil {
-		internalProxy = newOAuthClientProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOAuthClientProxy)
 }
 
 func (o *oauthClientProxy) deleteOAuthClient(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
