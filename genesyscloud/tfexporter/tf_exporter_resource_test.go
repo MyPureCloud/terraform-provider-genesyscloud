@@ -118,12 +118,20 @@ import (
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
+	ivrIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr_identity_resolution"
+	appleIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple_identity_resolution"
+	instagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
+	openIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
+	whatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
 	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
+	emailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
+	queueIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_identity_resolution"
 	sttCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_category"
 	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
 	sttSentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
 	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
 	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
+	webDeploymentIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment_identity_resolution"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -266,6 +274,14 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[sttSentimentFeedback.ResourceType] = sttSentimentFeedback.ResourceSentimentFeedback()
 	providerResources[sttSettings.ResourceType] = sttSettings.ResourceSpeechAndTextAnalyticsSettings()
 	providerResources[recordingSettings.ResourceType] = recordingSettings.ResourceRecordingSettings()
+	providerResources[ivrIdentityResolution.ResourceType] = ivrIdentityResolution.ResourceArchitectIvrIdentityResolution()
+	providerResources[appleIdentityResolution.ResourceType] = appleIdentityResolution.ResourceConversationsMessagingIntegrationsAppleIdentityResolution()
+	providerResources[instagramIdentityResolution.ResourceType] = instagramIdentityResolution.ResourceConversationsMessagingIntegrationsInstagramIdentityResolution()
+	providerResources[openIdentityResolution.ResourceType] = openIdentityResolution.ResourceConversationsMessagingIntegrationsOpenIdentityResolution()
+	providerResources[whatsappIdentityResolution.ResourceType] = whatsappIdentityResolution.ResourceConversationsMessagingIntegrationsWhatsappIdentityResolution()
+	providerResources[emailRouteIdentityResolution.ResourceType] = emailRouteIdentityResolution.ResourceRoutingEmailRouteIdentityResolution()
+	providerResources[webDeploymentIdentityResolution.ResourceType] = webDeploymentIdentityResolution.ResourceWebDeploymentIdentityResolution()
+	providerResources[queueIdentityResolution.ResourceType] = queueIdentityResolution.ResourceRoutingQueueIdentityResolution()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -391,6 +407,14 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(sttSentimentFeedback.ResourceType, sttSentimentFeedback.SentimentFeedbackExporter())
 	RegisterExporter(sttSettings.ResourceType, sttSettings.SpeechAndTextAnalyticsSettingsExporter())
 	RegisterExporter(recordingSettings.ResourceType, recordingSettings.RecordingSettingsExporter())
+	RegisterExporter(ivrIdentityResolution.ResourceType, ivrIdentityResolution.ArchitectIvrIdentityResolutionExporter())
+	RegisterExporter(appleIdentityResolution.ResourceType, appleIdentityResolution.ConversationsMessagingIntegrationsAppleIdentityResolutionExporter())
+	RegisterExporter(instagramIdentityResolution.ResourceType, instagramIdentityResolution.ConversationsMessagingIntegrationsInstagramIdentityResolutionExporter())
+	RegisterExporter(openIdentityResolution.ResourceType, openIdentityResolution.ConversationsMessagingIntegrationsOpenIdentityResolutionExporter())
+	RegisterExporter(whatsappIdentityResolution.ResourceType, whatsappIdentityResolution.ConversationsMessagingIntegrationsWhatsappIdentityResolutionExporter())
+	RegisterExporter(emailRouteIdentityResolution.ResourceType, emailRouteIdentityResolution.RoutingEmailRouteIdentityResolutionExporter())
+	RegisterExporter(webDeploymentIdentityResolution.ResourceType, webDeploymentIdentityResolution.WebDeploymentIdentityResolutionExporter())
+	RegisterExporter(queueIdentityResolution.ResourceType, queueIdentityResolution.RoutingQueueIdentityResolutionExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
