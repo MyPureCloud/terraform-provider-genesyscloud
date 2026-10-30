@@ -181,6 +181,7 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
 
 ### Read-Only
 
+- `context_retention_enabled_presence` (String) Internal marker that records whether context_retention_enabled is configured for each tool.
 - `id` (String) The ID of this resource.
 - `status` (String) Current status of the version: Draft, TestReady, or ProductionReady.
 - `version` (String) Auto-assigned version number (e.g. '1.0'). Set by the API on creation.
@@ -395,3 +396,4 @@ Optional:
 - `items` (String) Type of items in this array property. Applies when type is array.
 - `mapping` (String) Path used to extract this output property from a tool output. JSON-encoded array.
 - `required` (Boolean) Whether this property must be supplied.
+

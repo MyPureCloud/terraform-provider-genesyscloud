@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/mrmo"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
 )
 
 type customMemberGroupTest struct {
@@ -174,21 +175,48 @@ func TestUnitReplyEmailAddressSelfReferenceRouteExporterResolver(t *testing.T) {
 	}
 }
 
-// TestUnitRemoveUnresolvedScriptGuidsResolver verifies that default_script_ids entries which resolved
-// to a genesyscloud_script reference are kept, entries left as raw GUIDs are stripped, and an inner map
-// that becomes empty is removed from the config entirely.
+// seedScriptExportabilityCache primes the per-export genuineness cache so the resolver's keep/drop
+// decision is deterministic in unit tests without hitting the scripts API. The cache is cleared
+// afterwards so tests don't leak state into each other.
+func seedScriptExportabilityCache(t *testing.T, entries map[string]bool) {
+	t.Helper()
+	for id, genuine := range entries {
+		scriptExportabilityCache.Store(id, genuine)
+	}
+	t.Cleanup(func() {
+		for id := range entries {
+			scriptExportabilityCache.Delete(id)
+		}
+	})
+}
+
+// TestUnitRemoveUnresolvedScriptGuidsResolver verifies default_script_ids cleanup on export:
+//   - resolved ${...} references are kept,
+//   - built-in default script ids are stripped (platform-owned, not exportable),
+//   - a genuine published script GUID is KEPT (DEVTOOLING-1890 / #2639 -- no destructive drop),
+//   - a deleted/unpublished script GUID is stripped,
+//   - an inner map that becomes empty is removed entirely,
+//   - unrelated top-level attributes are never touched.
 func TestUnitRemoveUnresolvedScriptGuidsResolver(t *testing.T) {
 	resolvedRef := "${genesyscloud_script.example.id}"
-	ghostGuid := uuid.NewString()
+	genuineGuid := uuid.NewString()
+	deletedGuid := uuid.NewString()
 
-	// Mixed: one resolved reference is kept, one raw GUID is stripped.
+	// genuineGuid -> published (keep), deletedGuid -> not published (drop).
+	seedScriptExportabilityCache(t, map[string]bool{
+		genuineGuid: true,
+		deletedGuid: false,
+	})
+
 	configMap := map[string]interface{}{
 		"default_script_ids": map[string]interface{}{
-			"CHAT": resolvedRef,
-			"CALL": ghostGuid,
+			"CHAT":    resolvedRef,
+			"CALL":    genuineGuid,
+			"EMAIL":   deletedGuid,
+			"MESSAGE": constants.DefaultInboundScriptID, // built-in default -> drop
 		},
 	}
-	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+	if err := RemoveUnresolvedScriptGuidsWithClientConfigResolver(configMap, nil, nil); err != nil {
 		t.Fatalf("unexpected error from resolver: %v", err)
 	}
 	innerMap, ok := configMap["default_script_ids"].(map[string]interface{})
@@ -198,17 +226,25 @@ func TestUnitRemoveUnresolvedScriptGuidsResolver(t *testing.T) {
 	if innerMap["CHAT"] != resolvedRef {
 		t.Fatalf("expected resolved reference to be kept, got %#v", innerMap["CHAT"])
 	}
-	if _, exists := innerMap["CALL"]; exists {
-		t.Fatalf("expected raw GUID entry to be stripped, got %#v", innerMap["CALL"])
+	if innerMap["CALL"] != genuineGuid {
+		t.Fatalf("expected genuine published script GUID to be kept, got %#v", innerMap["CALL"])
+	}
+	if _, exists := innerMap["EMAIL"]; exists {
+		t.Fatalf("expected deleted/unpublished script GUID to be stripped, got %#v", innerMap["EMAIL"])
+	}
+	if _, exists := innerMap["MESSAGE"]; exists {
+		t.Fatalf("expected built-in default script id to be stripped, got %#v", innerMap["MESSAGE"])
 	}
 
-	// All entries unresolvable: the now-empty inner map should be removed entirely.
+	// All entries non-exportable: the now-empty inner map should be removed entirely.
+	onlyDeleted := uuid.NewString()
+	seedScriptExportabilityCache(t, map[string]bool{onlyDeleted: false})
 	configMap = map[string]interface{}{
 		"default_script_ids": map[string]interface{}{
-			"CALL": uuid.NewString(),
+			"CALL": onlyDeleted,
 		},
 	}
-	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+	if err := RemoveUnresolvedScriptGuidsWithClientConfigResolver(configMap, nil, nil); err != nil {
 		t.Fatalf("unexpected error from resolver: %v", err)
 	}
 	if _, exists := configMap["default_script_ids"]; exists {
@@ -221,7 +257,7 @@ func TestUnitRemoveUnresolvedScriptGuidsResolver(t *testing.T) {
 		"queue_flow_id":      queueFlowGuid,
 		"default_script_ids": nil,
 	}
-	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+	if err := RemoveUnresolvedScriptGuidsWithClientConfigResolver(configMap, nil, nil); err != nil {
 		t.Fatalf("unexpected error from resolver: %v", err)
 	}
 	if configMap["queue_flow_id"] != queueFlowGuid {
@@ -243,7 +279,7 @@ func TestUnitRemoveUnresolvedScriptGuidsResolver_SkipsWhenMrmoActive(t *testing.
 			"EMAIL": rawGuid,
 		},
 	}
-	if err := RemoveUnresolvedScriptGuidsResolver(configMap, nil, "example_queue"); err != nil {
+	if err := RemoveUnresolvedScriptGuidsWithClientConfigResolver(configMap, nil, nil); err != nil {
 		t.Fatalf("unexpected error from resolver: %v", err)
 	}
 
