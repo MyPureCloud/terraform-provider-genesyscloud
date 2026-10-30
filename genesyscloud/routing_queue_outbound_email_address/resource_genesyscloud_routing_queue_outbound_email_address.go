@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	consistencyChecker "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -145,17 +144,19 @@ func deleteRoutingQueueOutboundEmailAddress(ctx context.Context, d *schema.Resou
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove outbound email address for queue %s", queueId), resp)
 	}
 
-	// To delete, update the queue with an empty email address
-	var emptyAddress platformclientv2.Queueemailaddress
-	_, _, err = proxy.updateRoutingQueueOutboundEmailAddress(ctx, queueId, &emptyAddress)
-	if err != nil && !strings.Contains(err.Error(), "error updating outbound email address for routing queue") {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove outbound email address from queue %s", queueId), resp)
+	// Clear the outbound email address. This nulls the deprecated top-level default AND empties the
+	// all_outbound_email_addresses list, because the API requires the default to be a member of that
+	// list and otherwise rejects the clear with 400 (AS-5904).
+	removeResp, err := proxy.removeRoutingQueueOutboundEmailAddress(ctx, queueId)
+	if err != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("failed to remove outbound email address from queue %s", queueId), removeResp)
 	}
 
-	// Verify there is no email address
-	rules, _, _ := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
-	if rules != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("outbound email address still exist for queue %s", queueId), resp)
+	// Verify the address is actually gone. Use the semantic empty check rather than a bare nil check:
+	// the API can return a non-nil but logically empty address object.
+	address, verifyResp, _ := proxy.getRoutingQueueOutboundEmailAddress(ctx, queueId)
+	if !isQueueEmailAddressEmpty(address) {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("outbound email address still exists for queue %s", queueId), verifyResp)
 	}
 
 	log.Printf("Removed outbound email address from queue %s", queueId)
