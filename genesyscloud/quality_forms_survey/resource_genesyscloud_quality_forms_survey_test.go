@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -316,11 +317,14 @@ func TestAccResourceSurveyFormPublishing(t *testing.T) {
 
 func TestAccResourceSurveyFormNewAttributes(t *testing.T) {
 	formResourceLabel1 := "test-survey-form-new-attrs"
+	divisionResourceLabel := "test-survey-form-division"
+	divisionName := "terraform-survey-division-" + uuid.NewString()
 
 	surveyForm1 := SurveyFormStruct{
-		Name:      "terraform-survey-new-attrs-" + uuid.NewString(),
-		Language:  "en-US",
-		Published: false,
+		Name:       "terraform-survey-new-attrs-" + uuid.NewString(),
+		Language:   "en-US",
+		Published:  false,
+		DivisionId: authDivision.ResourceType + "." + divisionResourceLabel + ".id",
 		QuestionGroups: []SurveyFormQuestionGroupStruct{
 			{
 				Name:      "Group with computed identifiers",
@@ -390,11 +394,13 @@ func TestAccResourceSurveyFormNewAttributes(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
+				Config: authDivision.GenerateAuthDivisionBasic(divisionResourceLabel, divisionName) +
+					GenerateSurveyFormResource(formResourceLabel1, &surveyForm1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "name", surveyForm1.Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "language", surveyForm1.Language),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "published", util.FalseValue),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+formResourceLabel1, "division_id", authDivision.ResourceType+"."+divisionResourceLabel, "id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.#", fmt.Sprint(len(surveyForm1.QuestionGroups))),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.name", surveyForm1.QuestionGroups[0].Name),
 					resource.TestCheckResourceAttr(ResourceType+"."+formResourceLabel1, "question_groups.0.na_enabled", strconv.FormatBool(surveyForm1.QuestionGroups[0].NaEnabled)),

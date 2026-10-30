@@ -7,6 +7,7 @@ package quality_forms_evaluation
 // @description: Quality Management service for agent performance evaluation and customer feedback. Manages evaluation forms for supervisor assessments and survey forms for customer satisfaction measurement.
 
 import (
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -469,6 +470,7 @@ type EvaluationFormStruct struct {
 	Name               string
 	Published          bool
 	Dialect            string
+	DivisionId         string // HCL reference expression, e.g. genesyscloud_auth_division.label.id
 	QuestionGroups     []EvaluationFormQuestionGroupStruct
 	EvaluationSettings *EvaluationSettingsStruct
 	DependsOn          []string
@@ -609,6 +611,22 @@ func ResourceEvaluationForm() *schema.Resource {
 				Type:        schema.TypeString,
 				Computed:    true,
 			},
+			"division_id": {
+				Description: "The ID of the division to which this evaluation form belongs. If not set, the form is created in the home division.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
+			"weight_mode": {
+				Description: "Mode for evaluation form weight. Valid values: SCALED, OFF.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
+			"latest_version_form_name": {
+				Description: "The name of the form's most recently published version.",
+				Type:        schema.TypeString,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -626,6 +644,9 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 			},
 			"evaluation_settings.disputes_assignees.user_id": {
 				RefType: user.ResourceType,
+			},
+			"division_id": {
+				RefType: authDivision.ResourceType,
 			},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
@@ -656,6 +677,8 @@ func EvaluationFormExporter() *resourceExporter.ResourceExporter {
 			"question_groups.questions.multiple_select_option_questions.default_answer_id",
 			"ai_scoring",
 			"modified_date",
+			"weight_mode",
+			"latest_version_form_name",
 		},
 	}
 }
