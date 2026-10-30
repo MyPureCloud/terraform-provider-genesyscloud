@@ -150,18 +150,29 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	log.Printf("Deleting knowledge label %s", d.Id())
 	_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
 	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
-			}
-			time.Sleep(10 * time.Second)
-			_, resp, err = proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", d.Id(), err), resp)
-			}
-		} else {
+		if !strings.Contains(err.Error(), "in use by Bot flow") {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", d.Id(), err), resp)
+		}
+
+		// The knowledge label is still referenced by a bot flow in the dependency-tracking graph.
+		// Rebuild the dependency tracking database once, then keep retrying the delete until the
+		// (asynchronous, eventually-consistent) dependency link clears.
+		if rebuildErr := rebuildDatabase(sdkConfig); rebuildErr != nil {
+			log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
+		}
+
+		diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+			_, resp, err := proxy.deleteKnowledgeLabel(ctx, knowledgeBaseId, knowledgeLabelId)
+			if err != nil {
+				if strings.Contains(err.Error(), "in use by Bot flow") {
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge label %s still in use by a bot flow, retrying delete", d.Id()), resp))
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge label %s error: %s", d.Id(), err), resp))
+			}
+			return nil
+		})
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -180,10 +191,10 @@ func deleteKnowledgeLabel(ctx context.Context, d *schema.ResourceData, meta inte
 	})
 }
 
-func rebuildDatabase() diag.Diagnostics {
+func rebuildDatabase(clientConfig *platformclientv2.Configuration) diag.Diagnostics {
 	log.Printf("Rebuilding knowledge base database")
 
-	architectApi := platformclientv2.NewArchitectApi()
+	architectApi := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
 	if architectError != nil {

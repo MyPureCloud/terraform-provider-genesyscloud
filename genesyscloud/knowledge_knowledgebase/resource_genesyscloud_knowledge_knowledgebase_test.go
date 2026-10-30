@@ -124,7 +124,7 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 	var after string
 	const pageSize = "100"
 
-	rebuildError := rebuildDatabase()
+	rebuildError := rebuildDatabase(platformclientv2.GetDefaultConfiguration())
 	if rebuildError != nil {
 		log.Printf("Failed to rebuild database: %v", rebuildError)
 	}
