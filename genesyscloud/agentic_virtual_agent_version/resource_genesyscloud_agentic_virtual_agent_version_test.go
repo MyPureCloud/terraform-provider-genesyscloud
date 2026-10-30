@@ -1,11 +1,13 @@
 package agentic_virtual_agent_version
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -286,9 +288,9 @@ func TestAccResourceAgenticVirtualAgentVersionWithKnowledgeBaseTool(t *testing.T
 	})
 }
 
-// TestAccResourceAgenticVirtualAgentVersionWithDataActionTool tests create with a DataAction
-// tool referencing a real integration_action. This exercises the most complex tool expand/flatten
-// paths: inputs (source/mapping), output, errors, input_validation (Python), and output_instructions.
+// Creates a version with a DataAction tool. The test org must have the
+// AI-1485_ava_context_window_pruning feature toggle enabled; otherwise the AVA
+// backend removes contextRetentionEnabled from the version definition.
 func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 	var (
 		agentResourceLabel   = "test_agent"
@@ -299,6 +301,8 @@ func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 		actionName           = "TF DA Tool Action " + uuid.NewString()
 		role                 = "You are a data action assistant."
 		instruction1         = "Use the data action tool to look up data."
+		retainedValue        = true
+		prunableValue        = false
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -308,11 +312,12 @@ func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 			{
 				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
 					generateAgentResource(agentResourceLabel, agentName) +
-					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1),
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, &retainedValue),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.type", "DataAction"),
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.name", "LookupCustomer"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.context_retention_enabled", "true"),
 					resource.TestCheckResourceAttrPair(
 						ResourceType+"."+versionResourceLabel, "definition.0.tools.0.target.0.id",
 						"genesyscloud_integration_action."+actionResourceLabel, "id",
@@ -332,6 +337,38 @@ func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 				),
 			},
 			{
+				// Set context_retention_enabled to false to verify that false is not treated as omitted.
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, &prunableValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.context_retention_enabled", "false"),
+				),
+			},
+			{
+				// Remove context_retention_enabled without changing any other attribute. The
+				// provider must send a PATCH request that omits contextRetentionEnabled.
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, nil),
+				Check: resource.ComposeTestCheckFunc(
+					// The Terraform SDK represents an omitted nested boolean as false in state.
+					// Verify that contextRetentionEnabled is omitted from the API response instead.
+					testCheckAgenticVirtualAgentVersionContextRetentionOmitted(ResourceType + "." + versionResourceLabel),
+				),
+			},
+			{
+				// Set context_retention_enabled to false after it was omitted from the API response.
+				// The provider must send a PATCH request with contextRetentionEnabled=false.
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, &prunableValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.context_retention_enabled", "false"),
+					testCheckAgenticVirtualAgentVersionContextRetention(ResourceType+"."+versionResourceLabel, &prunableValue),
+				),
+			},
+			{
 				// Import/Read
 				ResourceName:      ResourceType + "." + versionResourceLabel,
 				ImportState:       true,
@@ -339,6 +376,52 @@ func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testCheckAgenticVirtualAgentVersionContextRetentionOmitted(resourcePath string) resource.TestCheckFunc {
+	return testCheckAgenticVirtualAgentVersionContextRetention(resourcePath, nil)
+}
+
+func testCheckAgenticVirtualAgentVersionContextRetention(resourcePath string, expected *bool) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceState, ok := state.RootModule().Resources[resourcePath]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourcePath)
+		}
+
+		agentID, versionID, err := ParseVersionId(resourceState.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		config, err := provider.AuthorizeSdk()
+		if err != nil {
+			return fmt.Errorf("failed to authorize SDK while checking context retention: %w", err)
+		}
+
+		version, _, err := newAgenticVirtualAgentVersionProxy(config).getVersionById(context.Background(), agentID, versionID)
+		if err != nil {
+			return fmt.Errorf("failed to read agentic virtual agent version %s while checking context retention: %w", resourceState.Primary.ID, err)
+		}
+		if version == nil || version.Definition == nil || len(version.Definition.Tools) == 0 {
+			return fmt.Errorf("agentic virtual agent version %s has no tool definition", resourceState.Primary.ID)
+		}
+
+		contextRetentionEnabled := version.Definition.Tools[0].ContextRetentionEnabled
+		if expected == nil {
+			if contextRetentionEnabled != nil {
+				return fmt.Errorf("expected contextRetentionEnabled to be omitted from the API response, got %t", *contextRetentionEnabled)
+			}
+			return nil
+		}
+		if contextRetentionEnabled == nil {
+			return fmt.Errorf("expected contextRetentionEnabled=%t in the API response, got omitted", *expected)
+		}
+		if *contextRetentionEnabled != *expected {
+			return fmt.Errorf("expected contextRetentionEnabled=%t in the API response, got %t", *expected, *contextRetentionEnabled)
+		}
+		return nil
+	}
 }
 
 // =============================================================================
@@ -564,7 +647,12 @@ resource "genesyscloud_integration_action" "%[2]s" {
 // generateVersionResourceWithDataActionTool creates a version with a DataAction tool that
 // references the integration_action, exercising inputs, output, errors, input_validation, and
 // output_instructions.
-func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1 string) string {
+func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1 string, contextRetentionEnabled *bool) string {
+	contextRetentionConfig := ""
+	if contextRetentionEnabled != nil {
+		contextRetentionConfig = fmt.Sprintf("context_retention_enabled = %t", *contextRetentionEnabled)
+	}
+
 	return fmt.Sprintf(`resource "%[1]s" "%[2]s" {
 		agent_id = genesyscloud_agentic_virtual_agent.%[3]s.id
 
@@ -599,6 +687,7 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 				type        = "DataAction"
 				name        = "LookupCustomer"
 				description = "Look up a customer by id via a data action."
+				%[7]s
 				target {
 					id   = genesyscloud_integration_action.%[6]s.id
 					name = genesyscloud_integration_action.%[6]s.name
@@ -634,7 +723,7 @@ func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel
 			}
 		}
 	}
-	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel)
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel, contextRetentionConfig)
 }
 
 // TestAccResourceAgenticVirtualAgentVersionWithDynamicTurnInstructions tests create with
@@ -722,4 +811,131 @@ func generateVersionResourceWithDynamicTurnInstructions(resourceLabel, agentReso
 		}
 	}
 	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1)
+}
+
+// TestAccResourceAgenticVirtualAgentVersionKnowledgeToolDependencyOnlyInput tests a Knowledge tool
+// that carries a dependency-only input linked to a Data Action tool's output (ToolOutput source),
+// plus a structured input_validation gating the tool. This exercises the SAGE-861 feature:
+// dependency_only inputs on Knowledge tools. It verifies the create->read round-trip of the new
+// field and that a subsequent plan is a no-op.
+func TestAccResourceAgenticVirtualAgentVersionKnowledgeToolDependencyOnlyInput(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		kbResourceLabel      = "test_kb"
+		integResourceLabel   = "test_integ"
+		actionResourceLabel  = "test_action"
+		agentName            = "TF KB DepOnly Agent " + uuid.NewString()
+		kbName               = "TF KB DepOnly " + uuid.NewString()
+		actionName           = "TF DepOnly Action " + uuid.NewString()
+		role                 = "You are a gated knowledge assistant."
+		instruction1         = "Authenticate the user before answering knowledge questions."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeDependencyOnlyInput(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					// Data Action tool (index 0) produces AuthResult.
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.type", "DataAction"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output", "AuthResult"),
+					// Knowledge tool (index 1) carries a dependency-only input.
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.type", "KnowledgeBase"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.target_name", "auth_token"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.source", "ToolOutput"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.dependency_only", "true"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.fallback_to_user", "false"),
+				),
+			},
+			{
+				// Round-trip check: plan should be a no-op after apply.
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeDependencyOnlyInput(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// generateVersionResourceWithKnowledgeDependencyOnlyInput creates a version with a DataAction tool
+// that outputs AuthResult and a KnowledgeBase tool that links to that output via a dependency-only
+// input (source ToolOutput, dependency_only = true, fallback_to_user = false) plus a structured
+// input_validation gate.
+func generateVersionResourceWithKnowledgeDependencyOnlyInput(resourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1 string) string {
+	return fmt.Sprintf(`resource "%[1]s" "%[2]s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%[3]s.id
+
+		definition {
+			role         = "%[4]s"
+			instructions = ["%[5]s"]
+
+			types {
+				name      = "AuthResult"
+				type      = "object"
+				direction = "Output"
+				properties {
+					name = "token"
+					type = "string"
+				}
+			}
+
+			tools {
+				type        = "DataAction"
+				name        = "Authenticate"
+				description = "Authenticate the user and return an auth token."
+				target {
+					id   = genesyscloud_integration_action.%[6]s.id
+					name = genesyscloud_integration_action.%[6]s.name
+				}
+				input_instructions = ["Call this to authenticate the user"]
+				output             = "AuthResult"
+			}
+
+			tools {
+				type        = "KnowledgeBase"
+				name        = "GatedFAQ"
+				description = "Answer questions only for authenticated users."
+				target {
+					id   = genesyscloud_knowledge_knowledgebase.%[7]s.id
+					name = genesyscloud_knowledge_knowledgebase.%[7]s.name
+				}
+				input_instructions = ["Use when the user asks a question"]
+
+				inputs {
+					target_name      = "auth_token"
+					type             = "AuthResult"
+					source           = "ToolOutput"
+					required         = true
+					fallback_to_user = false
+					mapping          = jsonencode(["AuthResult", "token"])
+					dependency_only  = true
+				}
+
+				input_validation {
+					type             = "Structured"
+					if_condition     = jsonencode({ group = "And", rules = [{ name = "auth_token", operator = "IsNotNull" }] })
+					else_instruction = "Ask the customer to authenticate first."
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel, kbResourceLabel)
 }

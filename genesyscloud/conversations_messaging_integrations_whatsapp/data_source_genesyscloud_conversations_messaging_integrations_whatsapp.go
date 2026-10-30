@@ -47,11 +47,11 @@ func dataSourceConversationsMessagingIntegrationsWhatsappRead(ctx context.Contex
 
 // hydrateIntegrationsWhatsapp for hydrating the cache with Genesys Cloud whatsapp integrations using the SDK
 func hydrateIntegrationsWhatsappCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(c.ClientConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(c.ClientConfig)
 
 	log.Printf("Hydrating cache for data source %s", ResourceType)
 
-	whatsappIntegrations, resp, err := proxy.getAllConversationsMessagingIntegrationsWhatsapp(ctx)
+	whatsappIntegrations, resp, err := proxy.GetAllConversationsMessagingIntegrationsWhatsapp(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get whatsapp integrations. Error: %s | API Response: %s", err, resp)
 	}
@@ -72,7 +72,7 @@ func hydrateIntegrationsWhatsappCacheFn(c *rc.DataSourceCache, ctx context.Conte
 
 // getWhatsappByNameFn returns the whatsapp id (blank if not found) and diag
 func getWhatsappByNameFn(c *rc.DataSourceCache, name string, ctx context.Context) (string, diag.Diagnostics) {
-	proxy := getConversationsMessagingIntegrationsWhatsappProxy(c.ClientConfig)
+	proxy := GetConversationsMessagingIntegrationsWhatsappProxy(c.ClientConfig)
 
 	whatsappId := ""
 

@@ -4,7 +4,9 @@ import (
 	"sync"
 
 	integrationApple "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple"
+	integrationAppleIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple_identity_resolution"
 	cMessagingWhatsapp "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp"
+	integrationWhatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -21,6 +23,7 @@ import (
 	grammar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar"
 	grammarLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_grammar_language"
 	archIvr "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr"
+	architectIvrIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr_identity_resolution"
 	architectSchedulegroups "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedulegroups"
 	architectSchedules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_schedules"
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
@@ -34,7 +37,9 @@ import (
 	caseManagementStageplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stageplan"
 	caseManagementStepplan "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/case_management_stepplan"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
+	integrationInstagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
 	cMessagingOpen "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open"
+	cMessagingOpenIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
 	cMessageSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cMessageSettingsDefault "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings_default"
 	supportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
@@ -117,6 +122,7 @@ import (
 	responsemanagementResponseasset "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/responsemanagement_responseasset"
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
+	routingEmailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
 	routingLanguage "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_language"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 	routingQueueConditionalGroupActivation "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_conditional_group_activation"
@@ -165,6 +171,7 @@ import (
 	usersRules "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/users_rules"
 	webDeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+	webDeployIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment_identity_resolution"
 	workforcemanagementBusinessunits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
 )
 
@@ -336,7 +343,9 @@ func registerResources() {
 	integrationConfig.SetRegistrar(regInstance)                            //Registering integrations config (standalone)
 	integrationFacebook.SetRegistrar(regInstance)                          //Registering integrations Facebook
 	integrationInstagram.SetRegistrar(regInstance)                         //Registering integrations Instagram
+	integrationInstagramIdentityResolution.SetRegistrar(regInstance)       //Registering integrations Instagram identity resolution
 	integrationApple.SetRegistrar(regInstance)                             //Registering conversations messaging integrations apple
+	integrationAppleIdentityResolution.SetRegistrar(regInstance)           //Registering conversations messaging integrations apple identity resolution
 	intentsCustomerintents.SetRegistrar(regInstance)                       //Registering customer intent
 	intentsCategories.SetRegistrar(regInstance)                            //Registering intent category
 	caseManagementCaseplan.SetRegistrar(regInstance)                       //Registering case management caseplan
@@ -348,9 +357,11 @@ func registerResources() {
 	responsemanagementResponseasset.SetRegistrar(regInstance)              //Registering responsemanagement response asset
 	respmanagementLibrary.SetRegistrar(regInstance)                        //Registering responsemanagement library
 	routingEmailRoute.SetRegistrar(regInstance)                            //Registering routing email route
+	routingEmailRouteIdentityResolution.SetRegistrar(regInstance)          //Registering routing email route identity resolution
 	did.SetRegistrar(regInstance)                                          //Registering telephony did
 	didPool.SetRegistrar(regInstance)                                      //Registering telephony did pools
 	archIvr.SetRegistrar(regInstance)                                      //Registering architect ivr
+	architectIvrIdentityResolution.SetRegistrar(regInstance)               //Registering architect ivr identity resolution
 	workbin.SetRegistrar(regInstance)                                      //Registering task management workbin
 	workitemSchema.SetRegistrar(regInstance)                               //Registering task management workitem schema
 	worktype.SetRegistrar(regInstance)                                     //Registering task management worktype
@@ -367,6 +378,7 @@ func registerResources() {
 	edgeGroup.SetRegistrar(regInstance)                                    //Registering edges edge group
 	webDeployConfig.SetRegistrar(regInstance)                              //Registering webdeployments_config
 	webDeployDeploy.SetRegistrar(regInstance)                              //Registering webdeployments_deploy
+	webDeployIdentityResolution.SetRegistrar(regInstance)                  //Registering webdeployments identity resolution
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
 	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
@@ -404,7 +416,9 @@ func registerResources() {
 	cMessageSettingsDefault.SetRegistrar(regInstance)                      //Registering conversations messaging settings default
 	cmSupportedContentDefault.SetRegistrar(regInstance)                    //Registering conversations supported content default
 	cMessagingOpen.SetRegistrar(regInstance)                               //Registering conversations messaging open
+	cMessagingOpenIdentityResolution.SetRegistrar(regInstance)             //Registering conversations messaging open identity resolution
 	cMessagingWhatsapp.SetRegistrar(regInstance)                           //Registering conversations messaging whatsapp
+	integrationWhatsappIdentityResolution.SetRegistrar(regInstance)        //Registering conversations messaging integrations whatsapp identity resolution
 	location.SetRegistrar(regInstance)                                     //Registering location
 	knowledgeDocument.SetRegistrar(regInstance)                            //Registering knowledge document
 	knowledgeDocumentVariation.SetRegistrar(regInstance)                   //Registering knowledge document variation

@@ -81,7 +81,11 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 
 // AgenticVirtualAgentTool represents any tool type.
 // Common fields: type, name, description, target, inputInstructions, outputInstructions
-// DataAction-specific: errors, inputs, output, inputValidation, schemas (computed)
+// Inputs and inputValidation apply to DataAction tools and to Knowledge tools
+// (KnowledgeSetting / KnowledgeBase; SAGE-861 / public-api-v2 PR #17904). For Knowledge tools the
+// inputs are dependency-only and are not sent to the knowledge service.
+// DataAction-specific: errors, output, schemas (computed)
+// DataAction-specific: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
 	Type               string                                     `json:"type"`
@@ -91,11 +95,12 @@ type AgenticVirtualAgentTool struct {
 	InputInstructions  []string                                   `json:"inputInstructions,omitempty"`
 	OutputInstructions []AgenticVirtualAgentToolOutputInstruction `json:"outputInstructions,omitempty"`
 	// DataAction-specific fields
-	Errors          []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
-	Inputs          []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
-	Output          string                                `json:"output,omitempty"`
-	InputValidation []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
-	Schemas         *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
+	ContextRetentionEnabled *bool                                 `json:"contextRetentionEnabled,omitempty"`
+	Errors                  []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
+	Inputs                  []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
+	Output                  string                                `json:"output,omitempty"`
+	InputValidation         []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
+	Schemas                 *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
 	// ExternalA2AServer-specific fields (computed at publish time)
 	Skills []AgenticVirtualAgentAgentCardSkill `json:"skills,omitempty"`
 }
@@ -170,8 +175,19 @@ type AgenticVirtualAgentStructuredRule struct {
 // Tool Inputs (DataAction only)
 // =============================================================================
 
-// AgenticVirtualAgentToolInput represents an input for a DataAction tool.
+// AgenticVirtualAgentToolInput represents an input for a tool (DataAction or Knowledge).
 // Required: targetName, type, source
+//
+// DependencyOnly marks an input as used only to establish a dependency/precondition; the value is
+// not sent to the underlying tool at runtime. Inputs on Knowledge tools (KnowledgeSetting /
+// KnowledgeBase) must set this to true. Ref: SAGE-861 / public-api-v2 PR #17904 (field is
+// HIDDEN_FROM_DOCS).
+//
+// Wire behavior: the schema field (dependency_only) is a plain TypeBool, which Terraform core
+// always populates, so expandToolInputs always sets this to a non-nil pointer. The omitempty tag
+// therefore never drops it in practice — every input serializes an explicit "dependencyOnly":
+// true|false. The pointer type is kept only for consistency with the other optional *bool fields
+// (required, fallbackToUser) and to allow a nil value in direct (non-Terraform) struct use.
 type AgenticVirtualAgentToolInput struct {
 	TargetName     string        `json:"targetName"`
 	Type           string        `json:"type"`
@@ -179,6 +195,7 @@ type AgenticVirtualAgentToolInput struct {
 	Required       *bool         `json:"required,omitempty"`
 	FallbackToUser *bool         `json:"fallbackToUser,omitempty"`
 	Mapping        []interface{} `json:"mapping,omitempty"`
+	DependencyOnly *bool         `json:"dependencyOnly,omitempty"`
 }
 
 // =============================================================================

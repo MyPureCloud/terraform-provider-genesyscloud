@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -69,6 +71,56 @@ func getAllAgenticVirtualAgentVersions(ctx context.Context, clientConfig *platfo
 	return resources, nil
 }
 
+// Caches each agent's latest saved version from the initial resource listing.
+// The custom resolver uses this cache to avoid calling the agent list API for
+// every exported version and to use the same version selected for export.
+type agenticVirtualAgentVersionExportCache struct {
+	mu                   sync.RWMutex
+	latestVersionByAgent map[string]string
+}
+
+func newAgenticVirtualAgentVersionExportCache() *agenticVirtualAgentVersionExportCache {
+	return &agenticVirtualAgentVersionExportCache{
+		latestVersionByAgent: make(map[string]string),
+	}
+}
+
+func (c *agenticVirtualAgentVersionExportCache) replace(resources resourceExporter.ResourceIDMetaMap) error {
+	latestVersionByAgent := make(map[string]string, len(resources))
+	for resourceID := range resources {
+		agentID, versionID, err := ParseVersionId(resourceID)
+		if err != nil {
+			return fmt.Errorf("failed to cache exported AVA version %q: %w", resourceID, err)
+		}
+		latestVersionByAgent[agentID] = versionID
+	}
+
+	c.mu.Lock()
+	c.latestVersionByAgent = latestVersionByAgent
+	c.mu.Unlock()
+	return nil
+}
+
+func (c *agenticVirtualAgentVersionExportCache) versionID(agentID string) (string, bool) {
+	c.mu.RLock()
+	versionID, ok := c.latestVersionByAgent[agentID]
+	c.mu.RUnlock()
+	return versionID, ok
+}
+
+func getAllAgenticVirtualAgentVersionsWithCache(cache *agenticVirtualAgentVersionExportCache) func(context.Context, *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+	return func(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+		resources, diags := getAllAgenticVirtualAgentVersions(ctx, clientConfig)
+		if diags != nil && diags.HasError() {
+			return resources, diags
+		}
+		if err := cache.replace(resources); err != nil {
+			return nil, diag.FromErr(err)
+		}
+		return resources, diags
+	}
+}
+
 // ParseVersionId splits the agentic_virtual_agent_version composite resource ID, which is
 // always in the format <agent-id>/<version-id>, back into its parts.
 func ParseVersionId(id string) (agentId string, versionId string, err error) {
@@ -77,6 +129,222 @@ func ParseVersionId(id string) (agentId string, versionId string, err error) {
 		return "", "", fmt.Errorf("invalid version resource ID format: %s (expected agentId/versionId)", id)
 	}
 	return parts[0], parts[1], nil
+}
+
+func omittedContextRetentionPaths(definition *AgenticVirtualAgentVersionDefinition) []string {
+	// The Terraform SDK represents a missing nested boolean as false in ResourceData.
+	// The consistency checker therefore cannot tell whether the API returned false
+	// or omitted the field, so paths for omitted fields are ignored.
+	if definition == nil {
+		return nil
+	}
+
+	omittedPaths := make([]string, 0)
+	for toolIndex, tool := range definition.Tools {
+		if tool.ContextRetentionEnabled == nil {
+			omittedPaths = append(omittedPaths, fmt.Sprintf("definition.0.tools.%d.context_retention_enabled", toolIndex))
+		}
+	}
+	return omittedPaths
+}
+
+// Updates the computed marker that records whether the optional nested boolean
+// has a value in the configuration. The Terraform SDK treats an omitted
+// nested boolean and false as the same value, so the marker makes Terraform
+// detect the change.
+func customizeAgenticVirtualAgentVersionDiff(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	// When a resource is created, the marker is set after the API request succeeds.
+	// This check is only needed for existing resources.
+	if diff.Id() == "" {
+		return nil
+	}
+
+	configuredPresence, known := contextRetentionPresenceMarkerFromRawConfig(diff.GetRawConfig())
+	if !known {
+		return nil
+	}
+
+	statePresence, exists := diff.GetOkExists(contextRetentionPresenceAttribute)
+	if !exists {
+		return nil
+	}
+
+	statePresenceString, ok := statePresence.(string)
+	if !ok {
+		return fmt.Errorf("expected %s to be a string, got %T", contextRetentionPresenceAttribute, statePresence)
+	}
+
+	if statePresenceString == configuredPresence {
+		return nil
+	}
+
+	return diff.SetNew(contextRetentionPresenceAttribute, configuredPresence)
+}
+
+// Returns one marker bit for each tool. The bit is 1 when
+// context_retention_enabled is set to true or false, and 0 when it is omitted.
+// Values that Terraform cannot determine during planning do not change the
+// marker.
+func contextRetentionPresenceMarkerFromRawConfig(rawConfig cty.Value) (string, bool) {
+	if rawConfig.IsNull() || !rawConfig.IsKnown() || !rawConfig.Type().IsObjectType() || !rawConfig.Type().HasAttribute("definition") {
+		return "", false
+	}
+
+	definition := rawConfig.GetAttr("definition")
+	if definition.IsNull() {
+		return "", true
+	}
+	if !definition.IsKnown() || !definition.Type().IsListType() {
+		return "", false
+	}
+	if definition.LengthInt() == 0 {
+		return "", true
+	}
+
+	definitionBlock := definition.AsValueSlice()[0]
+	if definitionBlock.IsNull() || !definitionBlock.IsKnown() || !definitionBlock.Type().IsObjectType() || !definitionBlock.Type().HasAttribute("tools") {
+		return "", false
+	}
+
+	tools := definitionBlock.GetAttr("tools")
+	if tools.IsNull() {
+		return "", true
+	}
+	if !tools.IsKnown() || !tools.Type().IsListType() {
+		return "", false
+	}
+
+	var marker strings.Builder
+	for _, tool := range tools.AsValueSlice() {
+		if tool.IsNull() || !tool.IsKnown() || !tool.Type().IsObjectType() || !tool.Type().HasAttribute("context_retention_enabled") {
+			return "", false
+		}
+
+		contextRetention := tool.GetAttr("context_retention_enabled")
+		if !contextRetention.IsKnown() {
+			return "", false
+		}
+		if contextRetention.IsNull() {
+			marker.WriteByte('0')
+		} else {
+			marker.WriteByte('1')
+		}
+	}
+
+	return marker.String(), true
+}
+
+func contextRetentionPresenceMarkerFromDefinition(definition *AgenticVirtualAgentVersionDefinition) string {
+	if definition == nil {
+		return ""
+	}
+
+	var marker strings.Builder
+	for _, tool := range definition.Tools {
+		if tool.ContextRetentionEnabled == nil {
+			marker.WriteByte('0')
+		} else {
+			marker.WriteByte('1')
+		}
+	}
+	return marker.String()
+}
+
+func setConfiguredContextRetentionPresenceMarker(d *schema.ResourceData) {
+	marker, known := contextRetentionPresenceMarkerFromRawConfig(d.GetRawConfig())
+	if known {
+		_ = d.Set(contextRetentionPresenceAttribute, marker)
+	}
+}
+
+// Creates a resolver for the exporter. The resolver uses the cache that maps
+// agents to version IDs from the resource listing.
+func resolveAgenticVirtualAgentVersionContextRetentionResolver(cache *agenticVirtualAgentVersionExportCache) func(map[string]interface{}, any, *platformclientv2.Configuration) error {
+	return func(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration) error {
+		return resolveAgenticVirtualAgentVersionContextRetention(configMap, originalValue, sdkConfig, cache)
+	}
+}
+
+// Restores the API's nullable contextRetentionEnabled value after Terraform
+// represents an omitted nested boolean as false. The exporter calls this
+// resolver for agent_id so it can update the full resource configuration.
+func resolveAgenticVirtualAgentVersionContextRetention(configMap map[string]interface{}, originalValue any, sdkConfig *platformclientv2.Configuration, exportCache *agenticVirtualAgentVersionExportCache) error {
+	agentId, ok := originalValue.(string)
+	if !ok || agentId == "" {
+		return fmt.Errorf("expected agentic virtual agent ID, got %T", originalValue)
+	}
+
+	proxy := newAgenticVirtualAgentVersionProxy(sdkConfig)
+
+	versionId, found := exportCache.versionID(agentId)
+	if !found {
+		var err error
+		versionId, err = findLatestSavedAgenticVirtualAgentVersion(context.Background(), proxy, agentId)
+		if err != nil {
+			return err
+		}
+	}
+
+	version, resp, err := proxy.getVersionById(context.Background(), agentId, versionId)
+	if err != nil {
+		return fmt.Errorf("failed to read version %s/%s for export: %s (response: %v)", agentId, versionId, err, resp)
+	}
+	if version == nil || version.Definition == nil {
+		return nil
+	}
+
+	return projectAgenticVirtualAgentVersionContextRetention(configMap, version.Definition)
+}
+
+func findLatestSavedAgenticVirtualAgentVersion(ctx context.Context, proxy *agenticVirtualAgentVersionProxy, agentId string) (string, error) {
+	agents, resp, err := proxy.getAllAgents(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to find the latest saved version for agent %s: %s", agentId, err)
+	}
+
+	if agents != nil {
+		for _, agent := range *agents {
+			if agent.Id != nil && *agent.Id == agentId && agent.LatestSavedVersion != nil && agent.LatestSavedVersion.Version != nil {
+				return *agent.LatestSavedVersion.Version, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("could not find a latest saved version for agent %s (response: %v)", agentId, resp)
+}
+
+func projectAgenticVirtualAgentVersionContextRetention(configMap map[string]interface{}, definition *AgenticVirtualAgentVersionDefinition) error {
+	if definition == nil || len(definition.Tools) == 0 {
+		return nil
+	}
+
+	definitionList, ok := configMap["definition"].([]interface{})
+	if !ok || len(definitionList) == 0 {
+		return fmt.Errorf("exported AVA version definition is missing")
+	}
+	definitionMap, ok := definitionList[0].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("exported AVA version definition has an unexpected type %T", definitionList[0])
+	}
+
+	tools, ok := definitionMap["tools"].([]interface{})
+	if !ok || len(tools) != len(definition.Tools) {
+		return fmt.Errorf("exported AVA version has %d tools but the API returned %d", len(tools), len(definition.Tools))
+	}
+
+	for i, tool := range definition.Tools {
+		toolMap, ok := tools[i].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("exported AVA version tool %d has an unexpected type %T", i, tools[i])
+		}
+
+		if tool.ContextRetentionEnabled == nil {
+			delete(toolMap, "context_retention_enabled")
+		} else {
+			toolMap["context_retention_enabled"] = *tool.ContextRetentionEnabled
+		}
+	}
+
+	return nil
 }
 
 // createAgenticVirtualAgentVersion creates a new version with the full definition.
@@ -99,6 +367,7 @@ func createAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceDat
 	}
 
 	d.SetId(BuildVersionId(agentId, *versionResp.Version))
+	setConfiguredContextRetentionPresenceMarker(d)
 	log.Printf("Created Agentic Virtual Agent Version: %s", d.Id())
 
 	return readAgenticVirtualAgentVersion(ctx, d, meta)
@@ -135,8 +404,14 @@ func readAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceData,
 			_ = d.Set("definition", flattenedDef)
 		}
 
+		if _, exists := d.GetOkExists(contextRetentionPresenceAttribute); !exists {
+			_ = d.Set(contextRetentionPresenceAttribute, contextRetentionPresenceMarkerFromDefinition(versionResp.Definition))
+		}
+
 		log.Printf("Read Agentic Virtual Agent Version: %s", d.Id())
-		return cc.CheckState(d)
+		ignoredPaths := omittedContextRetentionPaths(versionResp.Definition)
+		ignoredPaths = append(ignoredPaths, contextRetentionPresenceAttribute)
+		return cc.CheckState(d, ignoredPaths...)
 	})
 }
 
@@ -163,6 +438,7 @@ func updateAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceDat
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update version %s: %s", d.Id(), updateErr), resp)
 	}
 
+	setConfiguredContextRetentionPresenceMarker(d)
 	log.Printf("Updated Agentic Virtual Agent Version: %s", d.Id())
 	return readAgenticVirtualAgentVersion(ctx, d, meta)
 }
@@ -201,7 +477,7 @@ func buildDefinitionFromResourceData(d *schema.ResourceData) *AgenticVirtualAgen
 
 	// Tools
 	if v, ok := defMap["tools"].([]interface{}); ok && len(v) > 0 {
-		def.Tools = expandTools(v)
+		def.Tools = expandToolsFromResourceData(d, v)
 	}
 
 	// Types
@@ -256,9 +532,9 @@ func expandGuardrails(m map[string]interface{}) *AgenticVirtualAgentGuardrails {
 	return guardrails
 }
 
-func expandTools(toolsList []interface{}) []AgenticVirtualAgentTool {
+func expandTools(toolsList []interface{}, configuredContextRetention []*bool) []AgenticVirtualAgentTool {
 	tools := make([]AgenticVirtualAgentTool, 0, len(toolsList))
-	for _, item := range toolsList {
+	for i, item := range toolsList {
 		toolMap := item.(map[string]interface{})
 		tool := AgenticVirtualAgentTool{
 			Type:        toolMap["type"].(string),
@@ -305,9 +581,70 @@ func expandTools(toolsList []interface{}) []AgenticVirtualAgentTool {
 			tool.InputValidation = expandInputValidation(v)
 		}
 
+		if i < len(configuredContextRetention) && configuredContextRetention[i] != nil {
+			tool.ContextRetentionEnabled = configuredContextRetention[i]
+		}
+
 		tools = append(tools, tool)
 	}
 	return tools
+}
+
+// Expands tools using the raw configuration to tell an omitted optional
+// boolean from false. ResourceData represents both values as false.
+func expandToolsFromResourceData(d *schema.ResourceData, toolsList []interface{}) []AgenticVirtualAgentTool {
+	return expandTools(toolsList, toolContextRetentionValues(rawConfigTools(d.GetRawConfig())))
+}
+
+// Returns the raw definition.0.tools values in their original order. The
+// length is kept so they can be matched to the tools returned by d.Get.
+// Returns nil when the tools list is missing, empty, or unknown.
+func rawConfigTools(rawConfig cty.Value) []cty.Value {
+	if rawConfig.IsNull() || !rawConfig.IsKnown() || !rawConfig.Type().IsObjectType() || !rawConfig.Type().HasAttribute("definition") {
+		return nil
+	}
+
+	definition := rawConfig.GetAttr("definition")
+	if definition.IsNull() || !definition.IsKnown() || definition.LengthInt() == 0 {
+		return nil
+	}
+
+	definitionBlock := definition.AsValueSlice()[0]
+	if definitionBlock.IsNull() || !definitionBlock.IsKnown() || !definitionBlock.Type().IsObjectType() || !definitionBlock.Type().HasAttribute("tools") {
+		return nil
+	}
+
+	tools := definitionBlock.GetAttr("tools")
+	if tools.IsNull() || !tools.IsKnown() || tools.LengthInt() == 0 {
+		return nil
+	}
+	return tools.AsValueSlice()
+}
+
+// Returns one context_retention_enabled value per tool. Missing, null, and
+// values not known during planning are returned as nil instead of false.
+func toolContextRetentionValues(tools []cty.Value) []*bool {
+	if len(tools) == 0 {
+		return nil
+	}
+
+	values := make([]*bool, 0, len(tools))
+	for _, tool := range tools {
+		if tool.IsNull() || !tool.IsKnown() || !tool.Type().IsObjectType() || !tool.Type().HasAttribute("context_retention_enabled") {
+			values = append(values, nil)
+			continue
+		}
+
+		attr := tool.GetAttr("context_retention_enabled")
+		if attr.IsNull() || !attr.IsKnown() {
+			values = append(values, nil)
+			continue
+		}
+
+		value := attr.True()
+		values = append(values, &value)
+	}
+	return values
 }
 
 func expandOutputInstructions(list []interface{}) []AgenticVirtualAgentToolOutputInstruction {
@@ -352,6 +689,9 @@ func expandToolInputs(list []interface{}) []AgenticVirtualAgentToolInput {
 			var mapping []interface{}
 			_ = json.Unmarshal([]byte(v), &mapping)
 			input.Mapping = mapping
+		}
+		if v, ok := m["dependency_only"].(bool); ok {
+			input.DependencyOnly = &v
 		}
 		inputs = append(inputs, input)
 	}
@@ -592,6 +932,9 @@ func flattenTools(tools []AgenticVirtualAgentTool) []interface{} {
 		if len(tool.OutputInstructions) > 0 {
 			m["output_instructions"] = flattenOutputInstructions(tool.OutputInstructions)
 		}
+		if tool.ContextRetentionEnabled != nil {
+			m["context_retention_enabled"] = *tool.ContextRetentionEnabled
+		}
 		if len(tool.Inputs) > 0 {
 			m["inputs"] = flattenToolInputs(tool.Inputs)
 		}
@@ -653,6 +996,9 @@ func flattenToolInputs(inputs []AgenticVirtualAgentToolInput) []interface{} {
 		if len(input.Mapping) > 0 {
 			mappingBytes, _ := json.Marshal(input.Mapping)
 			m["mapping"] = string(mappingBytes)
+		}
+		if input.DependencyOnly != nil {
+			m["dependency_only"] = *input.DependencyOnly
 		}
 		result = append(result, m)
 	}

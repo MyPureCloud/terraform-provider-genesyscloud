@@ -72,6 +72,10 @@ type userProxy struct {
 }
 
 var userCache = rc.NewResourceCache[platformclientv2.User]()
+
+// userExportExpands are the expands used when listing users for export. They match what readUser requests, so users
+// cached by the exporter satisfy the later state read without another API call.
+var userExportExpands = []string{"skills", "languages", "locations", "profileSkills", "certifications", "employerInfo"}
 var extensionPoolCache = rc.NewResourceCache[platformclientv2.Extensionpool]()
 
 // userVoicemailPolicyCache stores voicemail user policies per user during export.
@@ -280,16 +284,7 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 		pageSize := page_size.ForResource(ResourceType, 500)
 		// DEVTOOLING-862: inactive GetUsers requests return 400 beyond 10,000 users (100 pages at pageSize).
 		maxInactiveUserPages := 10_000 / pageSize
-		expandedAttributes := []string{
-			// Expands
-			"skills",
-			"languages",
-			"locations",
-			"profileSkills",
-			"certifications",
-			"employerInfo",
-		}
-		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", expandedAttributes, "", nil, userStatus)
+		usersList, apiResponse, err := p.userApi.GetUsers(pageSize, 1, nil, nil, "", userExportExpands, "", nil, userStatus)
 		if err != nil {
 			return nil, apiResponse, err
 		}
@@ -315,7 +310,7 @@ func GetAllUserFn(ctx context.Context, p *userProxy) (*[]platformclientv2.User, 
 			func(ctx context.Context, clientConfig *platformclientv2.Configuration, pageNum int) ([]platformclientv2.User, *platformclientv2.APIResponse, error) {
 				ctx = provider.EnsureResourceContext(ctx, ResourceType)
 				pageProxy := newUserProxy(clientConfig)
-				pageUsersList, pageResp, pageErr := pageProxy.userApi.GetUsers(pageSize, pageNum, nil, nil, "", expandedAttributes, "", nil, userStatus)
+				pageUsersList, pageResp, pageErr := pageProxy.userApi.GetUsers(pageSize, pageNum, nil, nil, "", userExportExpands, "", nil, userStatus)
 
 				// Safety net only: with the page cap above, inactive requests within range should not
 				// return 400. If one does, treat it as end-of-results rather than failing the export.
