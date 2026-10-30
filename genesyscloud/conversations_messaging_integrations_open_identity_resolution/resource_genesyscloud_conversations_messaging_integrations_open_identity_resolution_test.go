@@ -164,10 +164,9 @@ func TestAccResourceConversationsMessagingIntegrationsOpenIdentityResolution(t *
 				ExpectNonEmptyPlan: false,
 			},
 			{
-				ResourceName:            "genesyscloud_conversations_messaging_integrations_open_identity_resolution." + identityResolutionResourceLabel,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"division_id"},
+				ResourceName:      "genesyscloud_conversations_messaging_integrations_open_identity_resolution." + identityResolutionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 			{
 				Config: openIntegrationDependenciesConfig,
