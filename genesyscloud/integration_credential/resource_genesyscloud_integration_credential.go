@@ -84,7 +84,10 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	fields := buildCredentialFields(d, sdkConfig)
+	fields, err := buildCredentialFields(d, sdkConfig)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	ip := getIntegrationCredsProxy(sdkConfig)
 
@@ -138,11 +141,14 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	cred_type := d.Get("credential_type_name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	fields := buildCredentialFields(d, sdkConfig)
+	fields, err := buildCredentialFields(d, sdkConfig)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	ip := getIntegrationCredsProxy(sdkConfig)
 
-	if d.HasChanges("name", "credential_type_name", "fields") {
+	if d.HasChanges("name", "credential_type_name", "fields", "fields_wo_version") {
 		log.Printf("Updating credential %s", name)
 		_, resp, err := ip.updateIntegrationCred(ctx, d.Id(), &platformclientv2.Credential{
 			Name: &name,
