@@ -120,6 +120,62 @@ func TestUnitResourceRoutingQueueOutboundEmailAddressRead(t *testing.T) {
 	assert.Equal(t, tRouteId, d.Get("route_id").(string))
 }
 
+// TestUnitResourceRoutingQueueOutboundEmailAddressDelete is a regression test for AS-5904.
+// Delete must call removeRoutingQueueOutboundEmailAddress (which clears both the deprecated
+// default and the all_outbound_email_addresses list) and then verify with the semantic
+// isQueueEmailAddressEmpty check. A successful clear followed by an empty read must not error.
+func TestUnitResourceRoutingQueueOutboundEmailAddressDelete(t *testing.T) {
+	tQueueId := uuid.NewString()
+	tDomainId := uuid.NewString()
+	tRouteId := uuid.NewString()
+	tId := tQueueId
+
+	if !featureToggles.OEAToggleExists() {
+		t.Skipf("Skipping because env variable %s is not set", featureToggles.OEAToggleName())
+	}
+
+	removeCalled := false
+	getCallCount := 0
+
+	groupRoutingProxy := &routingQueueOutboundEmailAddressProxy{}
+
+	// Pre-check read returns a populated address; the post-remove verify read returns an empty one.
+	groupRoutingProxy.getRoutingQueueOutboundEmailAddressAttr = func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
+		getCallCount++
+		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
+		if getCallCount == 1 {
+			route := &platformclientv2.Inboundroute{Id: &tRouteId}
+			return &platformclientv2.Queueemailaddress{
+				Domain: &platformclientv2.Domainentityref{Id: &tDomainId},
+				Route:  &route,
+			}, apiResponse, nil
+		}
+		// After removal: an empty (but non-nil) address object, exercising isQueueEmailAddressEmpty.
+		return &platformclientv2.Queueemailaddress{}, apiResponse, nil
+	}
+
+	groupRoutingProxy.removeRoutingQueueOutboundEmailAddressAttr = func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.APIResponse, error) {
+		removeCalled = true
+		assert.Equal(t, tQueueId, queueId)
+		return &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+
+	internalProxy = groupRoutingProxy
+	defer func() { internalProxy = nil }()
+
+	ctx := context.Background()
+	gcloud := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+
+	resourceSchema := ResourceRoutingQueueOutboundEmailAddress().Schema
+	resourceDataMap := buildOutboundEmailAddressResourceMap(tQueueId, tDomainId, tRouteId)
+	d := schema.TestResourceDataRaw(t, resourceSchema, resourceDataMap)
+	d.SetId(tId)
+
+	diag := deleteRoutingQueueOutboundEmailAddress(ctx, d, gcloud)
+	assert.Equal(t, false, diag.HasError(), diag)
+	assert.True(t, removeCalled, "expected removeRoutingQueueOutboundEmailAddress to be called")
+}
+
 func buildOutboundEmailAddressResourceMap(queueId string, domainId string, routeId string) map[string]interface{} {
 	resourceDataMap := map[string]interface{}{
 		"queue_id":  queueId,
