@@ -2,6 +2,7 @@ package architect_flow
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -29,6 +30,17 @@ const (
 
 // validateJobPollInterval is a variable so unit tests can shorten it.
 var validateJobPollInterval = 2 * time.Second
+
+// validateJobTimeoutError is returned by runFlowValidation when the job does not finish in time.
+type validateJobTimeoutError struct {
+	JobId      string
+	Timeout    time.Duration
+	LastStatus string
+}
+
+func (e *validateJobTimeoutError) Error() string {
+	return fmt.Sprintf("timed out after %s waiting for validate job %s to finish (last status: %q)", e.Timeout, e.JobId, e.LastStatus)
+}
 
 // flowValidationResult is the outcome of a completed validate job.
 type flowValidationResult struct {
@@ -130,7 +142,7 @@ func dataSourceFlowValidationRead(ctx context.Context, d *schema.ResourceData, m
 
 	result, resp, err := runFlowValidation(ctx, p, flowRef, d.Timeout(schema.TimeoutRead))
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ValidationDataSourceType, fmt.Sprintf("failed to validate flow %s: %s", flowLabel, err), resp)
+		return buildFlowValidationErrorDiagnostics(err, flowLabel, resp)
 	}
 
 	d.SetId(result.JobId)
@@ -140,6 +152,30 @@ func dataSourceFlowValidationRead(ctx context.Context, d *schema.ResourceData, m
 	_ = d.Set("errors", result.Errors)
 	_ = d.Set("warnings", result.Warnings)
 
+	return buildFlowValidationResultDiagnostics(result, flowLabel, d.Get("fail_on_error").(bool), resp)
+}
+
+// buildFlowValidationErrorDiagnostics converts an error from runFlowValidation into diagnostics.
+// Timeouts carry the stable DiagnosticCodeFlowValidateTimeout code and job ID so that
+// downstream tooling (e.g. the MRMO replicator) can classify them.
+func buildFlowValidationErrorDiagnostics(err error, flowLabel string, resp *platformclientv2.APIResponse) diag.Diagnostics {
+	var timeoutErr *validateJobTimeoutError
+	if errors.As(err, &timeoutErr) {
+		return util.BuildCodedAPIDiagnosticError(
+			ValidationDataSourceType,
+			util.DiagnosticCodeFlowValidateTimeout,
+			fmt.Sprintf("flow validation timed out. JobID: %s, flow: %s, error: %s", timeoutErr.JobId, flowLabel, err),
+			timeoutErr.JobId,
+			resp,
+		)
+	}
+	return util.BuildAPIDiagnosticError(ValidationDataSourceType, fmt.Sprintf("failed to validate flow %s: %s", flowLabel, err), resp)
+}
+
+// buildFlowValidationResultDiagnostics returns a warning per validation warning and, when failOnError
+// is set and the flow is invalid, an error carrying the stable DiagnosticCodeFlowValidateFailed code
+// and job ID so that downstream tooling (e.g. the MRMO replicator) can classify it.
+func buildFlowValidationResultDiagnostics(result *flowValidationResult, flowLabel string, failOnError bool, resp *platformclientv2.APIResponse) diag.Diagnostics {
 	var diags diag.Diagnostics
 	for _, w := range result.Warnings {
 		diags = append(diags, diag.Diagnostic{
@@ -149,19 +185,21 @@ func dataSourceFlowValidationRead(ctx context.Context, d *schema.ResourceData, m
 		})
 	}
 
-	if !result.valid() && d.Get("fail_on_error").(bool) {
-		detail := strings.Join(result.Errors, "\n")
-		if detail == "" {
-			detail = fmt.Sprintf("Validate job %s finished with status %s and returned no error messages.", result.JobId, result.Status)
-		}
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  fmt.Sprintf("Flow %s failed validation (job %s)", flowLabel, result.JobId),
-			Detail:   detail,
-		})
+	if result.valid() || !failOnError {
+		return diags
 	}
 
-	return diags
+	messages := strings.Join(result.Errors, "\n\n")
+	if messages == "" {
+		messages = "no tracing messages available"
+	}
+	return append(diags, util.BuildCodedAPIDiagnosticError(
+		ValidationDataSourceType,
+		util.DiagnosticCodeFlowValidateFailed,
+		fmt.Sprintf("flow validation failed. JobID: %s, flow: %s, status: %s, tracing messages: %s", result.JobId, flowLabel, result.Status, messages),
+		result.JobId,
+		resp,
+	)...)
 }
 
 // buildValidateFlowReference builds the flow reference sent to the validate job.
@@ -228,11 +266,15 @@ func runFlowValidation(ctx context.Context, p *architectFlowProxy, flowRef platf
 		}
 
 		if time.Now().After(deadline) {
-			return nil, resp, fmt.Errorf("timed out after %s waiting for validate job %s to finish (last status: %q)", timeout, jobId, status)
+			return nil, resp, &validateJobTimeoutError{JobId: jobId, Timeout: timeout, LastStatus: status}
 		}
 
 		select {
 		case <-ctx.Done():
+			// The SDK applies the read timeout to ctx, so a context deadline is also a job timeout.
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return nil, resp, &validateJobTimeoutError{JobId: jobId, Timeout: timeout, LastStatus: status}
+			}
 			return nil, resp, fmt.Errorf("validate job %s: %w", jobId, ctx.Err())
 		case <-time.After(validateJobPollInterval):
 		}

@@ -2,13 +2,18 @@ package architect_flow
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
 func TestUnitBuildValidateFlowReference(t *testing.T) {
@@ -203,4 +208,100 @@ func TestUnitCreateFlowValidateJobForwardsReference(t *testing.T) {
 	if !reflect.DeepEqual(received, ref) {
 		t.Errorf("expected %+v, got %+v", ref, received)
 	}
+}
+
+func TestUnitRunFlowValidationContextDeadlineIsTimeout(t *testing.T) {
+	originalInterval := validateJobPollInterval
+	validateJobPollInterval = 50 * time.Millisecond
+	defer func() { validateJobPollInterval = originalInterval }()
+
+	p := &architectFlowProxy{
+		createFlowValidateJobAttr: func(ctx context.Context, a *architectFlowProxy, flow platformclientv2.Architectflowreference) (*platformclientv2.Registerarchitectvalidatejobresponse, *platformclientv2.APIResponse, error) {
+			return &platformclientv2.Registerarchitectvalidatejobresponse{Id: platformclientv2.String("job-ctx")}, nil, nil
+		},
+		getFlowValidateJobAttr: func(ctx context.Context, a *architectFlowProxy, id string) (*platformclientv2.Architectvalidatejobstateresponse, *platformclientv2.APIResponse, error) {
+			return &platformclientv2.Architectvalidatejobstateresponse{Status: platformclientv2.String("Started")}, nil, nil
+		},
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+
+	_, _, err := runFlowValidation(ctx, p, buildValidateFlowReference("flow-1", "", "", ""), time.Hour)
+	var timeoutErr *validateJobTimeoutError
+	if !errors.As(err, &timeoutErr) {
+		t.Fatalf("expected validateJobTimeoutError, got %v", err)
+	}
+	if timeoutErr.JobId != "job-ctx" {
+		t.Errorf("expected job ID job-ctx, got %s", timeoutErr.JobId)
+	}
+}
+
+// diagnosticCodeAndJobID extracts the code and jobId fields from a diagnostic's JSON detail.
+func diagnosticCodeAndJobID(t *testing.T, d diag.Diagnostic) (string, string) {
+	t.Helper()
+	var detail struct {
+		Code  string `json:"code"`
+		JobID string `json:"jobId"`
+	}
+	if err := json.Unmarshal([]byte(d.Detail), &detail); err != nil {
+		t.Fatalf("diagnostic detail is not JSON: %v (%s)", err, d.Detail)
+	}
+	return detail.Code, detail.JobID
+}
+
+func TestUnitBuildFlowValidationErrorDiagnostics(t *testing.T) {
+	t.Run("timeout is coded with job ID", func(t *testing.T) {
+		err := fmt.Errorf("wrapped: %w", &validateJobTimeoutError{JobId: "job-t", Timeout: time.Minute, LastStatus: "Started"})
+		diags := buildFlowValidationErrorDiagnostics(err, "flow-1", nil)
+		if len(diags) != 1 || diags[0].Severity != diag.Error {
+			t.Fatalf("expected one error diagnostic, got %+v", diags)
+		}
+		code, jobId := diagnosticCodeAndJobID(t, diags[0])
+		if code != util.DiagnosticCodeFlowValidateTimeout || jobId != "job-t" {
+			t.Errorf("expected code %s and job ID job-t, got %q / %q", util.DiagnosticCodeFlowValidateTimeout, code, jobId)
+		}
+	})
+
+	t.Run("other errors are not coded", func(t *testing.T) {
+		diags := buildFlowValidationErrorDiagnostics(fmt.Errorf("boom"), "flow-1", nil)
+		if len(diags) != 1 {
+			t.Fatalf("expected one diagnostic, got %+v", diags)
+		}
+		if code, _ := diagnosticCodeAndJobID(t, diags[0]); code != "" {
+			t.Errorf("expected no code, got %q", code)
+		}
+	})
+}
+
+func TestUnitBuildFlowValidationResultDiagnostics(t *testing.T) {
+	failed := &flowValidationResult{JobId: "job-f", Status: "Failure", Errors: []string{"e1", "e2"}, Warnings: []string{"w1"}}
+	passed := &flowValidationResult{JobId: "job-s", Status: "Success", Errors: []string{}, Warnings: []string{"w1"}}
+
+	t.Run("failure with fail_on_error is a coded error plus warnings", func(t *testing.T) {
+		diags := buildFlowValidationResultDiagnostics(failed, "flow-1", true, nil)
+		if len(diags) != 2 || diags[0].Severity != diag.Warning || diags[1].Severity != diag.Error {
+			t.Fatalf("expected a warning then an error, got %+v", diags)
+		}
+		code, jobId := diagnosticCodeAndJobID(t, diags[1])
+		if code != util.DiagnosticCodeFlowValidateFailed || jobId != "job-f" {
+			t.Errorf("expected code %s and job ID job-f, got %q / %q", util.DiagnosticCodeFlowValidateFailed, code, jobId)
+		}
+		if !strings.Contains(diags[1].Summary, "e1") || !strings.Contains(diags[1].Summary, "e2") {
+			t.Errorf("expected error messages in summary, got %q", diags[1].Summary)
+		}
+	})
+
+	t.Run("failure without fail_on_error only returns warnings", func(t *testing.T) {
+		diags := buildFlowValidationResultDiagnostics(failed, "flow-1", false, nil)
+		if diags.HasError() || len(diags) != 1 {
+			t.Errorf("expected only one warning, got %+v", diags)
+		}
+	})
+
+	t.Run("success with fail_on_error only returns warnings", func(t *testing.T) {
+		diags := buildFlowValidationResultDiagnostics(passed, "flow-1", true, nil)
+		if diags.HasError() || len(diags) != 1 {
+			t.Errorf("expected only one warning, got %+v", diags)
+		}
+	})
 }
