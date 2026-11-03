@@ -104,6 +104,7 @@ import (
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	worktypeStatus "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype_status"
+	buActivityCode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_business_unit_activitycode"
 	didPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_did_pool"
 	edgeGroup "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_edge_group"
 	edgeExtension "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
@@ -245,6 +246,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[cMessagingSettings.ResourceType] = cMessagingSettings.ResourceConversationsMessagingSettings()
 	providerResources[defaultSupportedContent.ResourceType] = defaultSupportedContent.ResourceConversationsMessagingSupportedcontentDefault()
 	providerResources[worktypeStatus.ResourceType] = worktypeStatus.ResourceTaskManagementWorktypeStatus()
+	providerResources[buActivityCode.ResourceType] = buActivityCode.ResourceBusinessUnitActivityCode()
 	providerResources[cMessagingOpen.ResourceType] = cMessagingOpen.ResourceConversationsMessagingIntegrationsOpen()
 	providerResources[externalOrganization.ResourceType] = externalOrganization.ResourceExternalContactsOrganization()
 	providerResources[knowledgeCategory.ResourceType] = knowledgeCategory.ResourceKnowledgeCategory()
@@ -371,6 +373,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(worktype.ResourceType, worktype.TaskManagementWorktypeExporter())
 	RegisterExporter(cMessagingSettings.ResourceType, cMessagingSettings.ConversationsMessagingSettingsExporter())
 	RegisterExporter(worktypeStatus.ResourceType, worktypeStatus.TaskManagementWorktypeStatusExporter())
+	RegisterExporter(buActivityCode.ResourceType, buActivityCode.BusinessUnitActivityCodeExporter())
 	RegisterExporter(supportedContent.ResourceType, supportedContent.SupportedContentExporter())
 	RegisterExporter(defaultSupportedContent.ResourceType, defaultSupportedContent.ConversationsMessagingSupportedcontentDefaultExporter())
 	RegisterExporter(cMessagingOpen.ResourceType, cMessagingOpen.ConversationsMessagingIntegrationsOpenExporter())

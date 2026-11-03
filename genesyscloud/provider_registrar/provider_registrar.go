@@ -173,6 +173,7 @@ import (
 	webDeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 	webDeployIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment_identity_resolution"
 	workforcemanagementBusinessunits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
+	buActivityCode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_business_unit_activitycode"
 )
 
 /*
@@ -370,6 +371,7 @@ func registerResources() {
 	workitem.SetRegistrar(regInstance)                                     //Registering task management workitem
 	workitemOnCreateRule.SetRegistrar(regInstance)                         //Registering task management oncreate rule
 	workitemOnAttributeChangeRule.SetRegistrar(regInstance)                //Registering task management onattributechange rule
+	buActivityCode.SetRegistrar(regInstance)                               //Registering workforce management business unit activity code
 	workitemDateBasedRule.SetRegistrar(regInstance)                        //Registering task management datebased rule
 	externalContacts.SetRegistrar(regInstance)                             //Registering external contacts
 	externalUser.SetRegistrar(regInstance)                                 //Registering external user identity
