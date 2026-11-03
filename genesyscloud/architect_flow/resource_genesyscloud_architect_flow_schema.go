@@ -125,7 +125,15 @@ Export block label: "{type}_{name}"`,
 				Description: "If true, flow stubs will be created for any dependencies that do not yet exist in the org when the flow is published.",
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				// Optional+Computed (not Optional+Default): resources already in state before this
+				// attribute existed (pre-1.87) have no value for it. With a Default but not Computed,
+				// the SDK returned null for the unset value while the Default made the plan value
+				// false, producing "Provider produced inconsistent final plan ... create_stubs: was
+				// cty.False, but now null" on upgrade (DEVTOOLING-1895 / GitHub #2644). Computed lets
+				// the SDK carry the prior value forward. The SDK forbids Default together with
+				// Computed; an unset TypeBool still reads as false in updateFlow, so the effective
+				// "default false" behaviour is unchanged.
+				Computed: true,
 			},
 		},
 	}
