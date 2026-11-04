@@ -18,6 +18,7 @@ func TestAccDataSourceAuthorizationRolesSettings(t *testing.T) {
 	var (
 		resourceLabel   = "roles_settings"
 		dataSourceLabel = "roles_settings_data"
+		dataSourcePath  = "data." + ResourceType + "." + dataSourceLabel
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -25,6 +26,17 @@ func TestAccDataSourceAuthorizationRolesSettings(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
+				// Data-only read of the org singleton; no resource block required.
+				Config: generateAuthorizationRolesSettingsDataSourceStandalone(dataSourceLabel),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(dataSourcePath, "id", "settings"),
+					resource.TestCheckResourceAttrSet(dataSourcePath, "backfill_enabled"),
+					resource.TestCheckResourceAttrSet(dataSourcePath, "authorization_grant_division_aware"),
+					resource.TestCheckResourceAttrSet(dataSourcePath, "genesys_org_policy_bypass"),
+				),
+			},
+			{
+				// Managed resource and data source must agree on the same API object.
 				Config: generateAuthorizationRolesSettingsResource(
 					resourceLabel,
 					util.TrueValue,
@@ -32,15 +44,15 @@ func TestAccDataSourceAuthorizationRolesSettings(t *testing.T) {
 				) + generateAuthorizationRolesSettingsDataSource(dataSourceLabel, ResourceType+"."+resourceLabel),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(
-						"data."+ResourceType+"."+dataSourceLabel, "backfill_enabled",
+						dataSourcePath, "backfill_enabled",
 						ResourceType+"."+resourceLabel, "backfill_enabled",
 					),
 					resource.TestCheckResourceAttrPair(
-						"data."+ResourceType+"."+dataSourceLabel, "authorization_grant_division_aware",
+						dataSourcePath, "authorization_grant_division_aware",
 						ResourceType+"."+resourceLabel, "authorization_grant_division_aware",
 					),
 					resource.TestCheckResourceAttrPair(
-						"data."+ResourceType+"."+dataSourceLabel, "genesys_org_policy_bypass",
+						dataSourcePath, "genesys_org_policy_bypass",
 						ResourceType+"."+resourceLabel, "genesys_org_policy_bypass",
 					),
 				),
@@ -55,4 +67,11 @@ data "%s" "%s" {
 	depends_on = [%s]
 }
 `, ResourceType, dataSourceLabel, dependsOn)
+}
+
+func generateAuthorizationRolesSettingsDataSourceStandalone(dataSourceLabel string) string {
+	return fmt.Sprintf(`
+data "%s" "%s" {
+}
+`, ResourceType, dataSourceLabel)
 }

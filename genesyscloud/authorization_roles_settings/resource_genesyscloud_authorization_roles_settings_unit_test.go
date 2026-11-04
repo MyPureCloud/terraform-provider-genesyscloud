@@ -290,6 +290,19 @@ func TestUnitRoleSettingsJsonWireFormat(t *testing.T) {
 	assert.Equal(t, true, *parsed.GenesysOrgPolicyBypass)
 }
 
+func TestUnitAuthorizationRolesSettingsExporterIsSingleton(t *testing.T) {
+	exporter := AuthorizationRolesSettingsExporter()
+	if !exporter.IsSingleton {
+		t.Fatal("authorization roles settings exporter must be a singleton")
+	}
+	if exporter.ExportId != ResourceType {
+		t.Errorf("ExportId = %q, want %q", exporter.ExportId, ResourceType)
+	}
+	if exporter.GetResourcesFunc == nil {
+		t.Fatal("GetResourcesFunc must be set")
+	}
+}
+
 func TestUnitAuthorizationRolesSettingsSchemasAreValid(t *testing.T) {
 	// Catches schema mistakes the compiler cannot, such as an attribute that is Required and
 	// Computed at once, or a data source attribute left writable.

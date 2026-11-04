@@ -73,6 +73,7 @@ func TestAccResourceAuthorizationRolesSettings(t *testing.T) {
 					util.FalseValue,
 				),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "id", "settings"),
 					resource.TestCheckResourceAttr(resourcePath, "backfill_enabled", util.TrueValue),
 					resource.TestCheckResourceAttr(resourcePath, "authorization_grant_division_aware", util.FalseValue),
 					resource.TestCheckResourceAttrSet(resourcePath, "genesys_org_policy_bypass"),
