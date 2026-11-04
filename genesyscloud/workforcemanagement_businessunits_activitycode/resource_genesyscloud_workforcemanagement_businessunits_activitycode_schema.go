@@ -1,4 +1,4 @@
-package workforcemanagement_business_unit_activitycode
+package workforcemanagement_businessunits_activitycode
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -9,14 +9,14 @@ import (
 )
 
 /*
-resource_genesyscloud_workforcemanagement_business_unit_activitycode_schema.go holds four functions within it:
+resource_genesyscloud_workforcemanagement_businessunits_activitycode_schema.go holds four functions within it:
 
 1.  The registration code that registers the Datasource, Resource and Exporter for the package.
-2.  The resource schema definitions for the workforcemanagement_business_unit_activitycode resource.
-3.  The datasource schema definitions for the workforcemanagement_business_unit_activitycode datasource.
-4.  The resource exporter configuration for the workforcemanagement_business_unit_activitycode exporter.
+2.  The resource schema definitions for the workforcemanagement_businessunits_activitycode resource.
+3.  The datasource schema definitions for the workforcemanagement_businessunits_activitycode datasource.
+4.  The resource exporter configuration for the workforcemanagement_businessunits_activitycode exporter.
 */
-const ResourceType = "genesyscloud_workforcemanagement_business_unit_activitycode"
+const ResourceType = "genesyscloud_workforcemanagement_businessunits_activitycode"
 
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
@@ -25,7 +25,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterExporter(ResourceType, BusinessUnitActivityCodeExporter())
 }
 
-// ResourceBusinessUnitActivityCode registers the genesyscloud_workforcemanagement_business_unit_activitycode resource with Terraform
+// ResourceBusinessUnitActivityCode registers the genesyscloud_workforcemanagement_businessunits_activitycode resource with Terraform
 func ResourceBusinessUnitActivityCode() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud workforce management business unit activity code`,
@@ -114,7 +114,7 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 	}
 }
 
-// BusinessUnitActivityCodeExporter returns the resourceExporter object used to hold the genesyscloud_workforcemanagement_business_unit_activitycode exporter's config
+// BusinessUnitActivityCodeExporter returns the resourceExporter object used to hold the genesyscloud_workforcemanagement_businessunits_activitycode exporter's config
 func BusinessUnitActivityCodeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllBusinessUnitActivityCodes),
@@ -124,7 +124,7 @@ func BusinessUnitActivityCodeExporter() *resourceExporter.ResourceExporter {
 	}
 }
 
-// DataSourceBusinessUnitActivityCode registers the genesyscloud_workforcemanagement_business_unit_activitycode data source
+// DataSourceBusinessUnitActivityCode registers the genesyscloud_workforcemanagement_businessunits_activitycode data source
 func DataSourceBusinessUnitActivityCode() *schema.Resource {
 	return &schema.Resource{
 		Description: `Genesys Cloud workforce management business unit activity code data source. Select a business unit activity code by name`,

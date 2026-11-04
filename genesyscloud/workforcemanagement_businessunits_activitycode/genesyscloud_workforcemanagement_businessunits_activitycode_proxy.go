@@ -1,4 +1,4 @@
-package workforcemanagement_business_unit_activitycode
+package workforcemanagement_businessunits_activitycode
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 )
 
 /*
-The genesyscloud_workforcemanagement_business_unit_activitycode_proxy.go file contains the proxy structures and methods that interact
+The genesyscloud_workforcemanagement_businessunits_activitycode_proxy.go file contains the proxy structures and methods that interact
 with the Genesys Cloud SDK. We use composition here for each function on the proxy so individual functions can be stubbed
 out during testing.
 */

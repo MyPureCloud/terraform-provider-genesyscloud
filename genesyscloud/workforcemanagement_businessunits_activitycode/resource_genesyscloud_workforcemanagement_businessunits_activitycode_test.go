@@ -1,4 +1,4 @@
-package workforcemanagement_business_unit_activitycode
+package workforcemanagement_businessunits_activitycode
 
 import (
 	"fmt"
@@ -14,8 +14,8 @@ import (
 )
 
 /*
-The resource_genesyscloud_workforcemanagement_business_unit_activitycode_test.go contains all of the test cases for running the resource
-tests for workforcemanagement_business_unit_activitycode.
+The resource_genesyscloud_workforcemanagement_businessunits_activitycode_test.go contains all of the test cases for running the resource
+tests for workforcemanagement_businessunits_activitycode.
 */
 
 func TestUnitSplitBusinessUnitActivityCodeTerraformId(t *testing.T) {

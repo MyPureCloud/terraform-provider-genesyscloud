@@ -1,4 +1,4 @@
-package workforcemanagement_business_unit_activitycode
+package workforcemanagement_businessunits_activitycode
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 */
 
 /*
-The resource_genesyscloud_workforcemanagement_business_unit_activitycode.go contains all of the methods that perform the core logic for a resource.
+The resource_genesyscloud_workforcemanagement_businessunits_activitycode.go contains all of the methods that perform the core logic for a resource.
 */
 
 // getAllBusinessUnitActivityCodes retrieves all of the business unit activity codes via Terraform in the Genesys Cloud and is used for the exporter.
@@ -61,7 +61,7 @@ func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platform
 	return resources, nil
 }
 
-// createBusinessUnitActivityCode is used by the workforcemanagement_business_unit_activitycode resource to create a Genesys Cloud business unit activity code
+// createBusinessUnitActivityCode is used by the workforcemanagement_businessunits_activitycode resource to create a Genesys Cloud business unit activity code
 func createBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessUnitActivityCodeProxy(sdkConfig)
@@ -79,7 +79,7 @@ func createBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 	return readBusinessUnitActivityCode(ctx, d, meta)
 }
 
-// readBusinessUnitActivityCode is used by the workforcemanagement_business_unit_activitycode resource to read a business unit activity code from Genesys Cloud
+// readBusinessUnitActivityCode is used by the workforcemanagement_businessunits_activitycode resource to read a business unit activity code from Genesys Cloud
 func readBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessUnitActivityCodeProxy(sdkConfig)
@@ -121,7 +121,7 @@ func readBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, m
 	})
 }
 
-// updateBusinessUnitActivityCode is used by the workforcemanagement_business_unit_activitycode resource to update a business unit activity code in Genesys Cloud
+// updateBusinessUnitActivityCode is used by the workforcemanagement_businessunits_activitycode resource to update a business unit activity code in Genesys Cloud
 func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessUnitActivityCodeProxy(sdkConfig)
@@ -154,7 +154,7 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 	return readBusinessUnitActivityCode(ctx, d, meta)
 }
 
-// deleteBusinessUnitActivityCode is used by the workforcemanagement_business_unit_activitycode resource to delete a business unit activity code from Genesys Cloud
+// deleteBusinessUnitActivityCode is used by the workforcemanagement_businessunits_activitycode resource to delete a business unit activity code from Genesys Cloud
 func deleteBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := getBusinessUnitActivityCodeProxy(sdkConfig)

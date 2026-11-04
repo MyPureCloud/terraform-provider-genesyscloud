@@ -1,4 +1,4 @@
-package workforcemanagement_business_unit_activitycode
+package workforcemanagement_businessunits_activitycode
 
 import (
 	"sync"
@@ -9,8 +9,8 @@ import (
 )
 
 /*
-   The genesyscloud_workforcemanagement_business_unit_activitycode_init_test.go file is used to initialize the data sources and resources
-   used in testing the workforcemanagement_business_unit_activitycode resource.
+   The genesyscloud_workforcemanagement_businessunits_activitycode_init_test.go file is used to initialize the data sources and resources
+   used in testing the workforcemanagement_businessunits_activitycode resource.
 */
 
 // providerDataSources holds a map of all registered datasources

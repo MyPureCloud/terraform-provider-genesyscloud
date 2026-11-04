@@ -1,10 +1,10 @@
 ---
-page_title: "genesyscloud_workforcemanagement_business_unit_activitycode Data Source - terraform-provider-genesyscloud"
+page_title: "genesyscloud_workforcemanagement_businessunits_activitycode Data Source - terraform-provider-genesyscloud"
 subcategory: ""
 description: |-
   Genesys Cloud workforce management business unit activity code data source. Select a business unit activity code by name
 ---
-# genesyscloud_workforcemanagement_business_unit_activitycode (Data Source)
+# genesyscloud_workforcemanagement_businessunits_activitycode (Data Source)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/data-sources/ and run 'make docs' to regenerate. -->
 
@@ -99,7 +99,7 @@ The following OAuth scopes are required to use this resource:
 ## Example Usage
 
 ```terraform
-data "genesyscloud_workforcemanagement_business_unit_activitycode" "team_meeting" {
+data "genesyscloud_workforcemanagement_businessunits_activitycode" "team_meeting" {
   business_unit_id = "00000000-0000-0000-0000-000000000000"
   name             = "Team Meeting"
 }

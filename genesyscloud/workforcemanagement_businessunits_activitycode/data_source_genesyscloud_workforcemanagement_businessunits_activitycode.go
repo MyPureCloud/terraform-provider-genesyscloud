@@ -1,4 +1,4 @@
-package workforcemanagement_business_unit_activitycode
+package workforcemanagement_businessunits_activitycode
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 /*
-   The data_source_genesyscloud_workforcemanagement_business_unit_activitycode.go contains the data source implementation
+   The data_source_genesyscloud_workforcemanagement_businessunits_activitycode.go contains the data source implementation
    for the resource.
 */
 
