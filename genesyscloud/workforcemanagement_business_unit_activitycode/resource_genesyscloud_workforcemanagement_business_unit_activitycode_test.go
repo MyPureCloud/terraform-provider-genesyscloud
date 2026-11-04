@@ -7,9 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v165/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	businessUnits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
 )
 
 /*
@@ -26,29 +27,29 @@ func TestUnitSplitBusinessUnitActivityCodeTerraformId(t *testing.T) {
 
 func TestAccResourceBusinessUnitActivityCode(t *testing.T) {
 	var (
-		resourceLabel = "activity_code_1"
-		name1         = "Test Activity Code " + uuid.NewString()
-		name2         = "Test Activity Code Updated " + uuid.NewString()
-		category      = "Meeting"
+		buResourceLabel = "bu_1"
+		buName          = "TestBU" + uuid.NewString()
+		resourceLabel   = "activity_code_1"
+		name1           = "Test Activity Code " + uuid.NewString()
+		name2           = "Test Activity Code Updated " + uuid.NewString()
+		category        = "Meeting"
 	)
-
-	businessUnitId := createTestBusinessUnit(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateBusinessUnitActivityCodeResource(
+				Config: generateTestBusinessUnit(buResourceLabel, buName) + GenerateBusinessUnitActivityCodeResource(
 					resourceLabel,
-					strconvQuote(businessUnitId),
+					businessUnitIdRef(buResourceLabel),
 					name1,
 					category,
 					"length_in_minutes = 30",
 					"counts_as_paid_time = true",
 				),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "business_unit_id", businessUnitId),
+					resource.TestCheckResourceAttrPair(ResourceType+"."+resourceLabel, "business_unit_id", businessUnits.ResourceType+"."+buResourceLabel, "id"),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "name", name1),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "category", category),
 					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "length_in_minutes", "30"),
@@ -57,9 +58,9 @@ func TestAccResourceBusinessUnitActivityCode(t *testing.T) {
 				),
 			},
 			{
-				Config: GenerateBusinessUnitActivityCodeResource(
+				Config: generateTestBusinessUnit(buResourceLabel, buName) + GenerateBusinessUnitActivityCodeResource(
 					resourceLabel,
-					strconvQuote(businessUnitId),
+					businessUnitIdRef(buResourceLabel),
 					name2,
 					category,
 					"length_in_minutes = 45",
@@ -86,37 +87,16 @@ func TestAccResourceBusinessUnitActivityCode(t *testing.T) {
 	})
 }
 
-func strconvQuote(s string) string {
-	return fmt.Sprintf("%q", s)
+func generateTestBusinessUnit(resourceLabel string, name string) string {
+	return businessUnits.GenerateWorkforcemanagementBusinessUnitResource(
+		resourceLabel,
+		name,
+		businessUnits.GenerateWorkforcemanagementBusinessUnitSettings("Sunday", "Etc/UTC", "", ""),
+	)
 }
 
-// createTestBusinessUnit creates a business unit for the test to attach activity codes to and removes it when the test finishes.
-// There is no business unit resource in this provider so the unit is managed directly through the api.
-func createTestBusinessUnit(t *testing.T) string {
-	sdkConfig, err := provider.AuthorizeSdk()
-	if err != nil {
-		t.Skipf("unable to authorize the sdk: %s", err)
-	}
-
-	api := platformclientv2.NewWorkforceManagementApiWithConfig(sdkConfig)
-	businessUnit, _, err := api.PostWorkforcemanagementBusinessunits(platformclientv2.Createbusinessunitrequest{
-		Name: platformclientv2.String("tf_test_bu_" + uuid.NewString()[:8]),
-		Settings: &platformclientv2.Createbusinessunitsettingsrequest{
-			StartDayOfWeek: platformclientv2.String("Sunday"),
-			TimeZone:       platformclientv2.String("Etc/UTC"),
-		},
-	}, false)
-	if err != nil {
-		t.Fatalf("failed to create test business unit: %s", err)
-	}
-
-	t.Cleanup(func() {
-		if _, err := api.DeleteWorkforcemanagementBusinessunit(*businessUnit.Id); err != nil {
-			t.Logf("failed to delete test business unit %s: %s", *businessUnit.Id, err)
-		}
-	})
-
-	return *businessUnit.Id
+func businessUnitIdRef(buResourceLabel string) string {
+	return businessUnits.ResourceType + "." + buResourceLabel + ".id"
 }
 
 func testVerifyBusinessUnitActivityCodeDestroyed(state *terraform.State) error {

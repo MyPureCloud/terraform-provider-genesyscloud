@@ -12,20 +12,21 @@ import (
 
 func TestAccDataSourceBusinessUnitActivityCode(t *testing.T) {
 	var (
+		buResourceLabel = "bu_1"
+		buName          = "TestBU" + uuid.NewString()
 		resourceLabel   = "activity_code_1"
 		dataSourceLabel = "activity_code_data"
 		name            = "Test Activity Code " + uuid.NewString()
 	)
-
-	businessUnitId := createTestBusinessUnit(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: GenerateBusinessUnitActivityCodeResource(resourceLabel, strconvQuote(businessUnitId), name, "Meeting") +
-					generateBusinessUnitActivityCodeDataSource(dataSourceLabel, strconvQuote(businessUnitId), name, ResourceType+"."+resourceLabel),
+				Config: generateTestBusinessUnit(buResourceLabel, buName) +
+					GenerateBusinessUnitActivityCodeResource(resourceLabel, businessUnitIdRef(buResourceLabel), name, "Meeting") +
+					generateBusinessUnitActivityCodeDataSource(dataSourceLabel, businessUnitIdRef(buResourceLabel), name, ResourceType+"."+resourceLabel),
 				Check: resource.TestCheckResourceAttrPair(
 					"data."+ResourceType+"."+dataSourceLabel, "id",
 					ResourceType+"."+resourceLabel, "id",
