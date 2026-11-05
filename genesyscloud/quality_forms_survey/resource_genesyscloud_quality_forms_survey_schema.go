@@ -7,6 +7,7 @@ package quality_forms_survey
 // @description: Quality Management service for agent performance evaluation and customer feedback. Manages evaluation forms for supervisor assessments and survey forms for customer satisfaction measurement.
 
 import (
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -260,6 +261,12 @@ func ResourceQualityFormsSurvey() *schema.Resource {
 				MinItems:    1,
 				Elem:        surveyQuestionGroup,
 			},
+			"division_id": {
+				Description: "The ID of the division to which this survey form belongs. If not set, the form is created in the home division.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -271,6 +278,9 @@ func QualityFormsSurveyExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"question_groups.questions.answer_options.assistance_conditions.topic_ids": {
 				RefType: sttTopic.ResourceType,
+			},
+			"division_id": {
+				RefType: authDivision.ResourceType,
 			},
 		},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
