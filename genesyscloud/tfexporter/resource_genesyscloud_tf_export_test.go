@@ -3564,3 +3564,167 @@ func assertAgenticVirtualAgentExport(configPath, agentName string) resource.Test
 		return nil
 	}
 }
+
+// TestAccResourceTfExportAgenticVirtualAgentWithKnowledgeBaseTool verifies that exporting a
+// version with a KnowledgeBase tool resolves tools.target.id to a knowledge base reference.
+func TestAccResourceTfExportAgenticVirtualAgentWithKnowledgeBaseTool(t *testing.T) {
+	testSetup(t)
+
+	var (
+		uniqueSuffix  = uuid.NewString()[:8]
+		agentName     = "tf_test_ava_kb_export_agent_" + uniqueSuffix
+		kbName        = "tf_test_ava_kb_export_" + uniqueSuffix
+		exportTestDir = testrunner.GetTestTempPath(".terraform_ava_kb_export_" + uuid.NewString())
+		configPath    = filepath.Join(exportTestDir, defaultTfJSONFile)
+	)
+
+	defer func(path string) {
+		if err := os.RemoveAll(path); err != nil {
+			t.Logf("failed to remove dir %s: %s", path, err)
+		}
+	}(exportTestDir)
+
+	baseConfig := fmt.Sprintf(`
+resource "genesyscloud_knowledge_knowledgebase" "ava_kb" {
+  name                   = "%[2]s"
+  description            = "Knowledge base for AVA export test"
+  core_language          = "en-US"
+  content_search_enabled = true
+}
+
+resource "genesyscloud_agentic_virtual_agent" "ava_agent" {
+  name = "%[1]s"
+}
+
+resource "genesyscloud_agentic_virtual_agent_version" "ava_version" {
+  agent_id = genesyscloud_agentic_virtual_agent.ava_agent.id
+
+  definition {
+    role         = "You are a helpful export test agent with a knowledge base tool."
+    instructions = ["Use the knowledge base when answering questions."]
+
+    tools {
+      type        = "KnowledgeBase"
+      name        = "FAQ Search"
+      description = "Search the FAQ knowledge base for answers"
+      target {
+        id   = genesyscloud_knowledge_knowledgebase.ava_kb.id
+        name = genesyscloud_knowledge_knowledgebase.ava_kb.name
+      }
+      input_instructions = ["Use when the user asks a question"]
+    }
+  }
+}
+`, agentName, kbName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: baseConfig,
+			},
+			{
+				Config: baseConfig + generateExportResourceIncludeFilterWithEnableDepRes(
+					"ava_kb_export",
+					exportTestDir,
+					util.TrueValue,
+					strconv.Quote("json"),
+					util.TrueValue,
+					[]string{
+						strconv.Quote("genesyscloud_agentic_virtual_agent::" + agentName),
+						strconv.Quote("genesyscloud_agentic_virtual_agent_version"),
+						strconv.Quote("genesyscloud_knowledge_knowledgebase::" + kbName),
+					},
+					[]string{
+						"genesyscloud_knowledge_knowledgebase.ava_kb",
+						"genesyscloud_agentic_virtual_agent.ava_agent",
+						"genesyscloud_agentic_virtual_agent_version.ava_version",
+					},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					assertAgenticVirtualAgentKnowledgeBaseToolTargetExport(configPath),
+				),
+			},
+		},
+		CheckDestroy: testVerifyExportsDestroyedFunc(exportTestDir),
+	})
+}
+
+func assertAgenticVirtualAgentKnowledgeBaseToolTargetExport(configPath string) resource.TestCheckFunc {
+	uuidPattern := regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
+
+	return func(s *terraform.State) error {
+		data, err := os.ReadFile(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to read exported config %s: %w", configPath, err)
+		}
+		content := string(data)
+
+		if !strings.Contains(content, `"genesyscloud_knowledge_knowledgebase"`) {
+			return fmt.Errorf("exported config does not contain a genesyscloud_knowledge_knowledgebase resource")
+		}
+		if !strings.Contains(content, "${genesyscloud_knowledge_knowledgebase.") {
+			return fmt.Errorf("exported tool target.id was not resolved to a ${genesyscloud_knowledge_knowledgebase...} reference")
+		}
+
+		versionResources, err := getResourceDefinition(configPath, "genesyscloud_agentic_virtual_agent_version")
+		if err != nil {
+			return fmt.Errorf("failed to read agentic virtual agent version from export: %w", err)
+		}
+
+		for _, versionRaw := range versionResources {
+			var versionConfig map[string]interface{}
+			if err := json.Unmarshal(*versionRaw, &versionConfig); err != nil {
+				return fmt.Errorf("failed to parse version config: %w", err)
+			}
+
+			definition, ok := versionConfig["definition"].([]interface{})
+			if !ok || len(definition) == 0 {
+				continue
+			}
+
+			defMap, ok := definition[0].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			tools, ok := defMap["tools"].([]interface{})
+			if !ok || len(tools) == 0 {
+				continue
+			}
+
+			toolMap, ok := tools[0].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			target, ok := toolMap["target"].([]interface{})
+			if !ok || len(target) == 0 {
+				return fmt.Errorf("exported version tool is missing target block")
+			}
+
+			targetMap, ok := target[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("exported version tool target has unexpected shape")
+			}
+
+			targetID, ok := targetMap["id"].(string)
+			if !ok || targetID == "" {
+				return fmt.Errorf("exported version tool target.id is missing or not a string")
+			}
+
+			if uuidPattern.MatchString(targetID) {
+				return fmt.Errorf("exported tool target.id is still a raw UUID %q; expected a Terraform reference", targetID)
+			}
+
+			if !strings.HasPrefix(targetID, "${genesyscloud_knowledge_knowledgebase.") {
+				return fmt.Errorf("exported tool target.id = %q, want ${genesyscloud_knowledge_knowledgebase...} reference", targetID)
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("no exported genesyscloud_agentic_virtual_agent_version with tools found")
+	}
+}
