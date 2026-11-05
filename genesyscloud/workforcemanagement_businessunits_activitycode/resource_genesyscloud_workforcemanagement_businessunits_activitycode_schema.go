@@ -52,9 +52,10 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"category": {
-				Description: `The category of the activity code (for example OnQueueWork, Break, Meal, Meeting, OffQueueWork, TimeOff, Training, Unavailable or Unscheduled). Attempting to change the category of a default activity code will return an error.`,
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  `The category of the activity code. Attempting to change the category of a default activity code will return an error. Valid values: OnQueueWork, Break, Meal, Meeting, OffQueueWork, TimeOff, Training, Unavailable.`,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"OnQueueWork", "Break", "Meal", "Meeting", "OffQueueWork", "TimeOff", "Training", "Unavailable"}, false),
 			},
 			"length_in_minutes": {
 				Description:  `The default length of the activity in minutes.`,

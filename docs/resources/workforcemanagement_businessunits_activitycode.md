@@ -121,7 +121,7 @@ resource "genesyscloud_workforcemanagement_businessunits_activitycode" "team_mee
 ### Required
 
 - `business_unit_id` (String) The id of the business unit this activity code belongs to. Changing this attribute will cause the activity code to be dropped and recreated.
-- `category` (String) The category of the activity code (for example OnQueueWork, Break, Meal, Meeting, OffQueueWork, TimeOff, Training, Unavailable or Unscheduled). Attempting to change the category of a default activity code will return an error.
+- `category` (String) The category of the activity code. Attempting to change the category of a default activity code will return an error. Valid values: OnQueueWork, Break, Meal, Meeting, OffQueueWork, TimeOff, Training, Unavailable.
 - `name` (String) The name of the activity code.
 
 ### Optional
