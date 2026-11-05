@@ -82,7 +82,11 @@ resource "genesyscloud_integration_credential" "example_purecloudoauth_credentia
 
 ### Optional
 
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
 - `fields` (Map of String, Sensitive) Credential fields. Different credential types require different fields. Missing any correct required fields will result API request failure. Use [GET /api/v2/integrations/credentials/types](https://developer.genesys.cloud/api/rest/v2/integrations/#get-api-v2-integrations-credentials-types) to check out the specific credential type schema to find out what fields are required.
+- `fields_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) Write-only credential fields, supplied as a JSON object of string values, for example `jsonencode({ userName = "...", password = "..." })`. Unlike `fields`, this value is sent to Genesys Cloud but is never stored in the Terraform plan or state. Conflicts with `fields`. Because the value is not stored, Terraform cannot detect when it changes: increment `fields_wo_version` whenever you change the secret so that it is sent again. Requires Terraform 1.11 or later.
+- `fields_wo_version` (Number) Version of the write-only credential fields. This value is stored in state and is how Terraform knows the write-only `fields_wo` changed: change it (for example increment it) whenever you rotate the secret and the new `fields_wo` value will be sent to Genesys Cloud. Use a non-secret value; do not derive it from the secret itself. Required when `fields_wo` is set.
 - `name` (String) Credential name.
 
 ### Read-Only
