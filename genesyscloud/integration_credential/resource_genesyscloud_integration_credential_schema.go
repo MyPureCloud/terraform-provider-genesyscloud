@@ -7,6 +7,7 @@ package integration_credential
 // @description: Manages integrations with third-party services and systems. Provides the foundation for connecting Genesys Cloud to external APIs, enabling data exchange and workflow automation across platforms.
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -47,6 +48,7 @@ func ResourceIntegrationCredential() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: validateCredentialFieldsWo,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -67,8 +69,40 @@ func ResourceIntegrationCredential() *schema.Resource {
 				Sensitive:   true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"fields_wo": {
+				Description:   "Credential fields as a JSON object of string values (use `jsonencode({...})`), provided as a write-only value: it is sent to the API on create and update but is never persisted to Terraform state. Must be used together with `fields_wo_version` and is mutually exclusive with `fields`. Requires Terraform CLI 1.11+. The Terraform Plugin SDK does not support write-only maps, hence the JSON string form (same pattern as the vault provider's `data_json_wo`). Different credential types require different fields, see `fields` for details.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				WriteOnly:     true,
+				ConflictsWith: []string{"fields"},
+				RequiredWith:  []string{"fields_wo_version"},
+			},
+			"fields_wo_version": {
+				Description: "Version trigger for `fields_wo`. Write-only values are invisible to the Terraform planner between plans, so bump this integer whenever the write-only fields change to plan an update. Required when `fields_wo` is set.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
 		},
 	}
+}
+
+// validateCredentialFieldsWo validates the write-only fields_wo attribute at plan time:
+// when set, it must be a JSON object of string values. Plan-time validation gives the
+// practitioner a friendly error before any API call is attempted.
+func validateCredentialFieldsWo(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	raw, ok := diff.GetOk("fields_wo")
+	if !ok {
+		return nil
+	}
+
+	rawStr, ok := raw.(string)
+	if !ok || strings.TrimSpace(rawStr) == "" {
+		return nil
+	}
+
+	_, err := parseWriteOnlyFields(rawStr)
+	return err
 }
 
 // IntegrationCredentialExporter returns the resourceExporter object used to hold the genesyscloud_integration_credential exporter's config
