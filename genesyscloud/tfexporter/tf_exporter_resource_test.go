@@ -18,6 +18,7 @@ import (
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	authorizationRolesSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_roles_settings"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
@@ -266,6 +267,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[sttSentimentFeedback.ResourceType] = sttSentimentFeedback.ResourceSentimentFeedback()
 	providerResources[sttSettings.ResourceType] = sttSettings.ResourceSpeechAndTextAnalyticsSettings()
 	providerResources[recordingSettings.ResourceType] = recordingSettings.ResourceRecordingSettings()
+	providerResources[authorizationRolesSettings.ResourceType] = authorizationRolesSettings.ResourceAuthorizationRolesSettings()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -391,6 +393,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(sttSentimentFeedback.ResourceType, sttSentimentFeedback.SentimentFeedbackExporter())
 	RegisterExporter(sttSettings.ResourceType, sttSettings.SpeechAndTextAnalyticsSettingsExporter())
 	RegisterExporter(recordingSettings.ResourceType, recordingSettings.RecordingSettingsExporter())
+	RegisterExporter(authorizationRolesSettings.ResourceType, authorizationRolesSettings.AuthorizationRolesSettingsExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
