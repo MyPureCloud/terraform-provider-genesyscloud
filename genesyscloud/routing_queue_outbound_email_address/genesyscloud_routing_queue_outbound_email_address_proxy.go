@@ -16,6 +16,7 @@ var internalProxy *routingQueueOutboundEmailAddressProxy
 
 type getRoutingQueueOutboundEmailAddressFunc func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error)
 type updateRoutingQueueOutboundEmailAddressFunc func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string, address *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error)
+type removeRoutingQueueOutboundEmailAddressFunc func(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.APIResponse, error)
 
 // routingQueueOutboundEmailAddressProxy contains all of the methods that call genesys cloud APIs.
 type routingQueueOutboundEmailAddressProxy struct {
@@ -23,6 +24,7 @@ type routingQueueOutboundEmailAddressProxy struct {
 	routingApi                                 *platformclientv2.RoutingApi
 	getRoutingQueueOutboundEmailAddressAttr    getRoutingQueueOutboundEmailAddressFunc
 	updateRoutingQueueOutboundEmailAddressAttr updateRoutingQueueOutboundEmailAddressFunc
+	removeRoutingQueueOutboundEmailAddressAttr removeRoutingQueueOutboundEmailAddressFunc
 	routingQueueProxy                          *routingQueue.RoutingQueueProxy
 }
 
@@ -36,6 +38,7 @@ func newRoutingQueueOutboundEmailAddressProxy(clientConfig *platformclientv2.Con
 		routingApi:                              api,
 		getRoutingQueueOutboundEmailAddressAttr: getRoutingQueueOutboundEmailAddressFn,
 		updateRoutingQueueOutboundEmailAddressAttr: updateRoutingQueueOutboundEmailAddressFn,
+		removeRoutingQueueOutboundEmailAddressAttr: removeRoutingQueueOutboundEmailAddressFn,
 		routingQueueProxy:                          routingQueueProxy,
 	}
 }
@@ -52,6 +55,11 @@ func (p *routingQueueOutboundEmailAddressProxy) getRoutingQueueOutboundEmailAddr
 // updateRoutingQueueOutboundEmailAddress updates the Outbound Email Address for a queue
 func (p *routingQueueOutboundEmailAddressProxy) updateRoutingQueueOutboundEmailAddress(ctx context.Context, queueId string, rules *platformclientv2.Queueemailaddress) (*platformclientv2.Queueemailaddress, *platformclientv2.APIResponse, error) {
 	return p.updateRoutingQueueOutboundEmailAddressAttr(ctx, p, queueId, rules)
+}
+
+// removeRoutingQueueOutboundEmailAddress clears the Outbound Email Address from a queue
+func (p *routingQueueOutboundEmailAddressProxy) removeRoutingQueueOutboundEmailAddress(ctx context.Context, queueId string) (*platformclientv2.APIResponse, error) {
+	return p.removeRoutingQueueOutboundEmailAddressAttr(ctx, p, queueId)
 }
 
 // getRoutingQueueOutboundEmailAddressFn is an implementation function for getting the outbound email address for a queue
@@ -138,4 +146,70 @@ func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQue
 	}
 
 	return nil, resp, fmt.Errorf("error updating outbound email address for routing queue %s: %s", queueId, err)
+}
+
+// removeRoutingQueueOutboundEmailAddressFn clears the outbound email address from a queue.
+//
+// The queue's outbound email address is maintained in two places: the deprecated top-level
+// outboundEmailAddress and the newer all_outbound_email_addresses list (nested under
+// MediaSettings.Email). The API enforces that the default outboundEmailAddress must be a member of
+// all_outbound_email_addresses, so clearing only the top-level field while the address is still in
+// the list is rejected with 400 "Default outbound email address missing from outbound email address
+// list." (AS-5904). To remove the address we must therefore clear BOTH: null the top-level default
+// and empty the list, leaving the queue in a consistent "no outbound email address" state.
+func removeRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueOutboundEmailAddressProxy, queueId string) (*platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)
+	if err != nil {
+		return resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
+	}
+
+	// Copy the queue's media settings and empty the all_outbound_email_addresses list so it stays
+	// consistent with the now-empty default. Other media settings are preserved.
+	mediaSettings := queue.MediaSettings
+	if mediaSettings != nil && mediaSettings.Email != nil {
+		emptyAddresses := []platformclientv2.Queueemailaddress{}
+		mediaSettings.Email.AllOutboundEmailAddresses = &emptyAddresses
+	}
+
+	updateQueue := platformclientv2.Queuerequest{
+		Name:                         queue.Name,
+		Description:                  queue.Description,
+		MemberCount:                  queue.MemberCount,
+		UserMemberCount:              queue.UserMemberCount,
+		JoinedMemberCount:            queue.JoinedMemberCount,
+		MediaSettings:                mediaSettings,
+		RoutingRules:                 queue.RoutingRules,
+		ConditionalGroupRouting:      queue.ConditionalGroupRouting,
+		Bullseye:                     queue.Bullseye,
+		ScoringMethod:                queue.ScoringMethod,
+		AcwSettings:                  queue.AcwSettings,
+		SkillEvaluationMethod:        queue.SkillEvaluationMethod,
+		MemberGroups:                 queue.MemberGroups,
+		QueueFlow:                    queue.QueueFlow,
+		EmailInQueueFlow:             queue.EmailInQueueFlow,
+		MessageInQueueFlow:           queue.MessageInQueueFlow,
+		WhisperPrompt:                queue.WhisperPrompt,
+		OnHoldPrompt:                 queue.OnHoldPrompt,
+		AutoAnswerOnly:               queue.AutoAnswerOnly,
+		EnableTranscription:          queue.EnableTranscription,
+		EnableAudioMonitoring:        queue.EnableAudioMonitoring,
+		EnableManualAssignment:       queue.EnableManualAssignment,
+		AgentOwnedRouting:            queue.AgentOwnedRouting,
+		DirectRouting:                queue.DirectRouting,
+		CallingPartyName:             queue.CallingPartyName,
+		CallingPartyNumber:           queue.CallingPartyNumber,
+		DefaultScripts:               queue.DefaultScripts,
+		OutboundMessagingAddresses:   queue.OutboundMessagingAddresses,
+		OutboundEmailAddress:         nil, // clear the deprecated top-level default
+		PeerId:                       queue.PeerId,
+		SuppressInQueueCallRecording: queue.SuppressInQueueCallRecording,
+	}
+
+	_, resp, err = p.routingApi.PutRoutingQueue(queueId, updateQueue)
+	if err != nil {
+		return resp, fmt.Errorf("failed to remove outbound email address for routing queue %s: %s", queueId, err)
+	}
+	return resp, nil
 }
