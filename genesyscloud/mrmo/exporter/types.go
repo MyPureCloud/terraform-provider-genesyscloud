@@ -65,6 +65,11 @@ type ExportOutput struct {
 
 	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
 	ResourceExporter *resource_exporter.ResourceExporter
+	// ExportedAsData is true when the exporter exported the entity as a data source rather than a
+	// resource, so ExportData has no resource block for it. Use this instead of evaluating the
+	// exporter's ExportAsDataFunc again: by the time the export returns, the entity's attributes
+	// are no longer the input that function was given.
+	ExportedAsData bool
 }
 
 type ExportByTypeOutput struct {
@@ -85,4 +90,8 @@ type ExportByTypeOutput struct {
 	// read. Those instances are absent from ExportedResourceDataList, so a caller
 	// that ignores this field cannot distinguish a partial export from a complete one.
 	ResourceErrors []ResourceErrorInfo
+	// ExportedAsData holds the ids (schema.ResourceData.Id()) of the instances in
+	// ExportedResourceDataList that the exporter exported as data sources rather than resources.
+	// It is the exporter's own decision, so a caller needs no ExportAsDataFunc of its own. Never nil.
+	ExportedAsData map[string]bool
 }

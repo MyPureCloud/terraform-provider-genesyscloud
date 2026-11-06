@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -95,6 +96,12 @@ func FilterResourceByLabel(result resourceExporter.ResourceIDMetaMap, resourceTy
 	}
 
 	return result
+}
+
+// isFilterByID reports whether the given resource filter is FilterResourceById, i.e. the filter entries are
+// "type::id" and the IDs can be fetched directly instead of listing every resource of the type.
+func isFilterByID(filter ExporterResourceFilter) bool {
+	return filter != nil && reflect.ValueOf(filter).Pointer() == reflect.ValueOf(FilterResourceById).Pointer()
 }
 
 func FilterResourceById(result resourceExporter.ResourceIDMetaMap, resourceType string, filters []string) resourceExporter.ResourceIDMetaMap {

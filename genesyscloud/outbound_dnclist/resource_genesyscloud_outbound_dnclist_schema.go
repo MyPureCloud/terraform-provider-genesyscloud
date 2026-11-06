@@ -7,9 +7,13 @@ package outbound_dnclist
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"context"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -139,6 +143,11 @@ func DataSourceOutboundDncList() *schema.Resource {
 func OutboundDncListExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundDncLists),
+		GetResourcesByIdsFunc: util.ExporterByIdsWithName(ResourceType,
+			func(c *platformclientv2.Configuration) func(context.Context, string) (*platformclientv2.Dnclist, *platformclientv2.APIResponse, error) {
+				return getOutboundDnclistProxy(c).getOutboundDnclistById
+			},
+			func(x *platformclientv2.Dnclist) *string { return x.Name }),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"division_id": {RefType: "genesyscloud_auth_division"},
 		},

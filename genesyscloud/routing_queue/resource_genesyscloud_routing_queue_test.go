@@ -1766,8 +1766,7 @@ func testVerifyQueuesAndUsersDestroyed(state *terraform.State) error {
 			}
 		}
 		if rs.Type == "genesyscloud_user" {
-			err := checkUserDeleted(rs.Primary.ID)(state)
-			if err != nil {
+			if err := checkUserDeleted(rs.Primary.ID)(state); err == nil {
 				continue
 			}
 			user, resp, err := usersAPI.GetUser(rs.Primary.ID, nil, "", nil, "")

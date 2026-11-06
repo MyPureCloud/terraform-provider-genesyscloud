@@ -2,7 +2,7 @@ package conversations_messaging_integrations_apple_identity_resolution
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func buildIdentityResolutionAppleConfig(d *schema.ResourceData) (platformclientv2.Appleidentityresolutionconfig, error) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -1861,6 +1862,85 @@ func TestUnitSanitizeConfigMapOmitUnresolvedRefs(t *testing.T) {
 	})
 }
 
+func TestUnitSanitizeConfigMapAgenticVirtualAgentVersionToolTarget(t *testing.T) {
+	resourceType := agenticVirtualAgentVersion.ResourceType
+	kbID := "a7fdcc0e-adb9-4250-8656-8194f4ed7e6b"
+	actionID := "custom_-_aaaa-1111-bbbb-2222"
+
+	exporter := agenticVirtualAgentVersion.AgenticVirtualAgentVersionExporter()
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		resourceType: exporter,
+		"genesyscloud_knowledge_knowledgebase": {
+			SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+				kbID: {BlockLabel: "example_kb"},
+			},
+		},
+		"genesyscloud_integration_action": {
+			SanitizedResourceMap: resourceExporter.ResourceIDMetaMap{
+				actionID: {BlockLabel: "lookup_customer"},
+			},
+		},
+	}
+
+	resource := resourceExporter.ResourceInfo{
+		Type:       resourceType,
+		BlockLabel: "test_agent_version",
+		BlockType:  "resource",
+		State:      &terraform.InstanceState{ID: "agent-id/version-id"},
+	}
+
+	g := setupGenesysCloudResourceExporter(t)
+	g.addDependsOn = true
+
+	configMap := map[string]interface{}{
+		"agent_id": "agent-id-guid",
+		"definition": []interface{}{
+			map[string]interface{}{
+				"role":         "Test agent",
+				"instructions": []interface{}{"Be helpful"},
+				"tools": []interface{}{
+					map[string]interface{}{
+						"type":        "KnowledgeBase",
+						"name":        "FAQ Search",
+						"description": "Search FAQ",
+						"target": []interface{}{
+							map[string]interface{}{
+								"id":       kbID,
+								"name":     "Example KB",
+								"self_uri": "/api/v2/knowledge/knowledgebases/" + kbID,
+							},
+						},
+					},
+					map[string]interface{}{
+						"type":        "DataAction",
+						"name":        "LookupCustomer",
+						"description": "Look up customer",
+						"target": []interface{}{
+							map[string]interface{}{
+								"id":       actionID,
+								"name":     "Lookup Customer",
+								"self_uri": "/api/v2/integrations/actions/" + actionID,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, ok := g.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+	require.True(t, ok)
+
+	definition := configMap["definition"].([]interface{})[0].(map[string]interface{})
+	tools := definition["tools"].([]interface{})
+
+	kbTarget := tools[0].(map[string]interface{})["target"].([]interface{})[0].(map[string]interface{})
+	assert.Equal(t, "${genesyscloud_knowledge_knowledgebase.example_kb.id}", kbTarget["id"])
+
+	actionTarget := tools[1].(map[string]interface{})["target"].([]interface{})[0].(map[string]interface{})
+	assert.Equal(t, "${genesyscloud_integration_action.lookup_customer.id}", actionTarget["id"])
+}
+
 func TestUnitSanitizeConfigMapNestedUnresolvableAttrs(t *testing.T) {
 	resourceType := "genesyscloud_integration_action"
 	resourceLabel := "Get_Ticket_Status"
@@ -2853,6 +2933,12 @@ func TestUnitGenesysCloudResourceExporter_buildResourceConfigMap_InstanceStateEr
 	assert.NotNil(t, dataSourceMaps)
 	assert.Len(t, resourceMaps, 0)
 	assert.Len(t, dataSourceMaps, 0)
+}
+
+func TestUnitIsFilterByID(t *testing.T) {
+	assert.True(t, isFilterByID(FilterResourceById))
+	assert.False(t, isFilterByID(IncludeFilterResourceByRegex))
+	assert.False(t, isFilterByID(nil))
 }
 
 func TestUnitSetExportedResourceSchemaVersions(t *testing.T) {

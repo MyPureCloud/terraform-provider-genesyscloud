@@ -135,9 +135,10 @@ func ResourceTaskManagementWorktype() *schema.Resource {
 				Optional:    true,
 				Type:        schema.TypeBool,
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// This attribute is write-only (create-time only) in the API/SDK.
-					// Suppress diffs to prevent perpetual updates/replacements from exported configs.
-					return true
+					// This attribute is write-only (create-time only) in the API/SDK, so it must reach
+					// create. Suppress diffs only for an existing resource, to prevent perpetual
+					// updates/replacements from exported configs.
+					return d.Id() != ""
 				},
 			},
 			`default_script_id`: {
@@ -199,6 +200,10 @@ func TaskManagementWorktypeExporter() *resourceExporter.ResourceExporter {
 			"schema_id":           {RefType: "genesyscloud_task_management_workitem_schema"},
 			"default_script_id":   {RefType: "genesyscloud_script"},
 		},
+		// These configure the auto-created Open/Closed statuses, which are not created for exported
+		// worktypes. The same settings are exported on the genesyscloud_task_management_worktype_status
+		// resources as default and auto_terminate_workitem.
+		ExcludedAttributes: []string{"open_status_default", "closed_status_auto_terminate"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"disable_default_status_creation": {ResolverFunc: func(configMap map[string]interface{}, exporters map[string]*resourceExporter.ResourceExporter, resourceLabel string) error {
 				// Always export this as true to ensure the default status items are not created since they will be created with

@@ -4,15 +4,22 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
 // DownloadFile downloads a file from S3 and returns a reader
 func DownloadFile(ctx context.Context, bucket, key string) (io.Reader, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	// Honour the provider proxy block, falling back to the HTTP(S)_PROXY env vars
+	httpClient := awshttp.NewBuildableClient().WithTransportOptions(func(tr *http.Transport) {
+		tr.Proxy = provider.ProxyFunc(nil)
+	})
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithHTTPClient(httpClient))
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}

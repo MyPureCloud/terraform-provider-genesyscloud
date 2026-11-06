@@ -2,7 +2,7 @@ package routing_email_route_identity_resolution
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func buildIdentityResolutionRoutingEmailRouteConfig(d *schema.ResourceData) (platformclientv2.Routeidentityresolutionconfig, error) {
@@ -19,7 +19,6 @@ func buildIdentityResolutionRoutingEmailRouteConfig(d *schema.ResourceData) (pla
 
 	return config, nil
 }
-
 
 func buildDefaultIdentityResolutionRoutingEmailRouteConfig() platformclientv2.Routeidentityresolutionconfig {
 	resolveIdentities := true
@@ -56,4 +55,22 @@ func isUnassignedDivisionId(v string) bool {
 // config "*" would otherwise show a perpetual plan diff.
 func suppressUnassignedDivisionIdDiff(_, old, new string, _ *schema.ResourceData) bool {
 	return isUnassignedDivisionId(old) && isUnassignedDivisionId(new)
+}
+
+// buildIdentityResolutionBlockLabel derives the exporter block label for a route's
+// identity resolution config. It prefers the route pattern (combined with the domain,
+// matching the parent routing_email_route exporter), falls back to the route name, and
+// finally to a constant, so a route is never dropped from the export for lacking a name.
+func buildIdentityResolutionBlockLabel(route platformclientv2.Inboundroute, domainId string) string {
+	const suffix = "-identity-resolution"
+	if route.Pattern != nil && *route.Pattern != "" {
+		return *route.Pattern + domainId + suffix
+	}
+	if route.Name != nil && *route.Name != "" {
+		return *route.Name + suffix
+	}
+	if route.Id != nil {
+		return *route.Id + suffix
+	}
+	return "routing_email_route" + suffix
 }

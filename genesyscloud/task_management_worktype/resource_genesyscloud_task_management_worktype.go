@@ -51,6 +51,25 @@ const (
 	closedStatusCategory = "Closed"
 )
 
+// getConfiguredBool returns the value of a bool attribute only when the user explicitly wrote it in
+// their configuration. Optional+Computed attributes such as open_status_default and
+// closed_status_auto_terminate are written back to state on every read, and GetNillableBool
+// (GetOkExists) cannot tell that read-back value from one the user set. The raw config can.
+// When no raw config is available (ResourceData built outside of Terraform, e.g. via
+// schema.TestResourceDataRaw) it falls back to GetNillableBool.
+func getConfiguredBool(d *schema.ResourceData, key string) *bool {
+	rawConfig := d.GetRawConfig()
+	if rawConfig.IsNull() || !rawConfig.IsKnown() {
+		return resourcedata.GetNillableBool(d, key)
+	}
+	v := rawConfig.GetAttr(key)
+	if v.IsNull() || !v.IsKnown() {
+		return nil
+	}
+	b := v.True()
+	return &b
+}
+
 // createTaskManagementWorktype is used by the task_management_worktype resource to create Genesys cloud task management worktype
 func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -83,6 +102,16 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 		diags = append(diags, diagErr...)
 	}
 
+	if diags.HasError() {
+		// The worktype was already created; remove it so a failed apply does not leave one behind.
+		if delResp, delErr := proxy.deleteTaskManagementWorktype(ctx, d.Id()); delErr != nil {
+			log.Printf("Failed to clean up worktype %s after a failed create: %s (status %v)", d.Id(), delErr, delResp)
+		} else {
+			d.SetId("")
+		}
+		return diags
+	}
+
 	return append(diags, readTaskManagementWorktype(ctx, d, meta)...)
 }
 
@@ -96,7 +125,13 @@ func createTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 func applyAutoCreatedStatusSettings(ctx context.Context, proxy *TaskManagementWorktypeProxy, d *schema.ResourceData) diag.Diagnostics {
 	worktypeId := d.Id()
 
-	if openDefault := resourcedata.GetNillableBool(d, "open_status_default"); openDefault != nil {
+	// With disable_default_status_creation the platform creates no Open/Closed statuses, so there is
+	// nothing to configure.
+	if disabled := resourcedata.GetNillableBool(d, "disable_default_status_creation"); disabled != nil && *disabled {
+		return nil
+	}
+
+	if openDefault := getConfiguredBool(d, "open_status_default"); openDefault != nil {
 		if !*openDefault {
 			return diag.Errorf("open_status_default cannot be set to false: a task management worktype must always have exactly "+
 				"one default status. To change the default status, set 'default = true' on a different "+
@@ -113,7 +148,7 @@ func applyAutoCreatedStatusSettings(ctx context.Context, proxy *TaskManagementWo
 		}
 	}
 
-	if autoTerminate := resourcedata.GetNillableBool(d, "closed_status_auto_terminate"); autoTerminate != nil {
+	if autoTerminate := getConfiguredBool(d, "closed_status_auto_terminate"); autoTerminate != nil {
 		closedStatusId, diagErr := resolveStatusId(ctx, proxy, worktypeId, closedStatusCategory, "Closed")
 		if diagErr != nil {
 			return diagErr
@@ -306,8 +341,12 @@ func updateTaskManagementWorktype(ctx context.Context, d *schema.ResourceData, m
 func applyAutoCreatedStatusSettingsOnUpdate(ctx context.Context, proxy *TaskManagementWorktypeProxy, d *schema.ResourceData) diag.Diagnostics {
 	worktypeId := d.Id()
 
+	if disabled := resourcedata.GetNillableBool(d, "disable_default_status_creation"); disabled != nil && *disabled {
+		return nil
+	}
+
 	if d.HasChange("open_status_default") {
-		if openDefault := resourcedata.GetNillableBool(d, "open_status_default"); openDefault != nil {
+		if openDefault := getConfiguredBool(d, "open_status_default"); openDefault != nil {
 			if !*openDefault {
 				return diag.Errorf("open_status_default cannot be set to false: a task management worktype must always have exactly "+
 					"one default status. To change the default status, set 'default = true' on a different "+
@@ -326,7 +365,7 @@ func applyAutoCreatedStatusSettingsOnUpdate(ctx context.Context, proxy *TaskMana
 	}
 
 	if d.HasChange("closed_status_auto_terminate") {
-		if autoTerminate := resourcedata.GetNillableBool(d, "closed_status_auto_terminate"); autoTerminate != nil {
+		if autoTerminate := getConfiguredBool(d, "closed_status_auto_terminate"); autoTerminate != nil {
 			closedStatusId, diagErr := resolveStatusId(ctx, proxy, worktypeId, closedStatusCategory, "Closed")
 			if diagErr != nil {
 				return diagErr

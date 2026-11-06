@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -378,6 +380,11 @@ func ResourceOutboundContactList() *schema.Resource {
 func OutboundContactListExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundContactLists),
+		GetResourcesByIdsFunc: util.ExporterByIdsWithName(ResourceType,
+			func(c *platformclientv2.Configuration) func(context.Context, string) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
+				return GetOutboundContactlistProxy(c).GetOutboundContactlistById
+			},
+			func(x *platformclientv2.Contactlist) *string { return x.Name }),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"attempt_limit_id": {RefType: "genesyscloud_outbound_attempt_limit"},
 			"division_id":      {RefType: "genesyscloud_auth_division"},

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v199/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	consistencyChecker "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
@@ -90,6 +90,11 @@ func readConversationsMessagingIntegrationsWhatsappIdentityResolution(ctx contex
 		}
 		if config.Division != nil && config.Division.Id != nil && !isUnassignedDivisionId(*config.Division.Id) {
 			_ = d.Set("division_id", *config.Division.Id)
+		} else {
+			// Set the unassigned sentinel "" explicitly so the attribute is represented
+			// consistently with or without prior state (e.g. during import), otherwise
+			// ImportStateVerify reports division_id as missing.
+			_ = d.Set("division_id", "")
 		}
 
 		log.Printf("read identity resolution for whatsapp integration %s", whatsappIntegrationId)

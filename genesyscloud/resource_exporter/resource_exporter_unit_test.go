@@ -1,7 +1,11 @@
 package resource_exporter
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/stretchr/testify/assert"
 	"regexp"
 	"strings"
 	"testing"
@@ -184,5 +188,78 @@ func TestUnitSanitizeResourceLabelOriginal(t *testing.T) {
 		if !assertionOutputRegex.MatchString(output) {
 			t.Errorf("%s did not sanitize correctly!\nExpected Output: %v\nActual Output: %v", assertion.name, assertion.output, output)
 		}
+	}
+}
+
+func TestUnitIdsForResourceType(t *testing.T) {
+	filter := []string{"t::u1", "t::u2", "t::u1", "t_roles::r1", "q::q1", "t::"}
+	assert.Equal(t, []string{"u1", "u2"}, IdsForResourceType("t", filter))
+	assert.Empty(t, IdsForResourceType("missing", filter))
+}
+
+func TestUnitGetResourcesByIds(t *testing.T) {
+	res, diags := GetResourcesByIds(context.Background(), []string{"a", "gone", "b"}, func(_ context.Context, id string) (*ResourceMeta, diag.Diagnostics) {
+		if id == "gone" {
+			return nil, nil
+		}
+		return &ResourceMeta{BlockLabel: id}, nil
+	})
+	assert.False(t, diags.HasError())
+	assert.Len(t, res, 2)
+
+	res, diags = GetResourcesByIds(context.Background(), []string{"a", "bad"}, func(_ context.Context, id string) (*ResourceMeta, diag.Diagnostics) {
+		if id == "bad" {
+			return nil, diag.FromErr(errors.New("boom"))
+		}
+		return &ResourceMeta{BlockLabel: id}, nil
+	})
+	assert.True(t, diags.HasError())
+	assert.Nil(t, res)
+}
+
+func TestUnitLoadSanitizedResourceMapByIds(t *testing.T) {
+	const rt = "t"
+	byId := func(result ResourceIDMetaMap, resourceType string, filters []string) ResourceIDMetaMap {
+		out := make(ResourceIDMetaMap)
+		for _, id := range IdsForResourceType(resourceType, filters) {
+			if v, ok := result[id]; ok {
+				out[id] = v
+			}
+		}
+		return out
+	}
+	newExporter := func(listCalls, idCalls *int) *ResourceExporter {
+		all := func() ResourceIDMetaMap {
+			return ResourceIDMetaMap{"1": {BlockLabel: "one"}, "2": {BlockLabel: "two"}, "3": {BlockLabel: "three"}}
+		}
+		return &ResourceExporter{
+			FilterResource: byId,
+			GetResourcesFunc: func(context.Context) (ResourceIDMetaMap, diag.Diagnostics) {
+				*listCalls++
+				return all(), nil
+			},
+			GetResourcesByIdsFunc: func(_ context.Context, ids []string) (ResourceIDMetaMap, diag.Diagnostics) {
+				*idCalls++
+				return byId(all(), rt, []string{rt + "::" + ids[0], rt + "::" + ids[len(ids)-1]}), nil
+			},
+		}
+	}
+	filter := []string{rt + "::1", rt + "::3"}
+
+	var listed, fetched int
+	byIds := newExporter(&listed, &fetched)
+	byIds.FilterByID = true
+	assert.False(t, byIds.LoadSanitizedResourceMap(context.Background(), rt, filter).HasError())
+	assert.Equal(t, []int{0, 1}, []int{listed, fetched}, "must fetch by ID without listing")
+
+	var listed2, fetched2 int
+	listing := newExporter(&listed2, &fetched2)
+	assert.False(t, listing.LoadSanitizedResourceMap(context.Background(), rt, filter).HasError())
+	assert.Equal(t, []int{1, 0}, []int{listed2, fetched2}, "regex/name filters must keep listing")
+
+	a, b := byIds.GetSanitizedResourceMap(), listing.GetSanitizedResourceMap()
+	assert.Len(t, a, 2)
+	for id, meta := range b {
+		assert.Equal(t, meta.BlockLabel, a[id].BlockLabel)
 	}
 }
