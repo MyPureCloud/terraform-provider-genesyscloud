@@ -67,6 +67,29 @@ func ResourceIntegrationCredential() *schema.Resource {
 				Sensitive:   true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"fields_wo": {
+				Description: "Write-only credential fields, supplied as a JSON object of string values, for example " +
+					"`jsonencode({ userName = \"...\", password = \"...\" })`. Unlike `fields`, this value is sent to " +
+					"Genesys Cloud but is never stored in the Terraform plan or state. Conflicts with `fields`. " +
+					"Because the value is not stored, Terraform cannot detect when it changes: increment `fields_wo_version` " +
+					"whenever you change the secret so that it is sent again. Requires Terraform 1.11 or later.",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Sensitive:        true,
+				WriteOnly:        true,
+				ConflictsWith:    []string{"fields"},
+				RequiredWith:     []string{"fields_wo_version"},
+				ValidateDiagFunc: validateFieldsWoJSON,
+			},
+			"fields_wo_version": {
+				Description: "Version of the write-only credential fields. This value is stored in state and is how Terraform " +
+					"knows the write-only `fields_wo` changed: change it (for example increment it) whenever you rotate the " +
+					"secret and the new `fields_wo` value will be sent to Genesys Cloud. Use a non-secret value; do not derive it " +
+					"from the secret itself. Required when `fields_wo` is set.",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				RequiredWith: []string{"fields_wo"},
+			},
 		},
 	}
 }
@@ -79,6 +102,11 @@ func IntegrationCredentialExporter() *resourceExporter.ResourceExporter {
 		UnResolvableAttributes: map[string]*schema.Schema{
 			"fields": ResourceIntegrationCredential().Schema["fields"],
 		},
+		// fields_wo is write-only and never stored in state, so it can never be exported. fields_wo_version
+		// is stored, but exporting it on its own would produce a config that fails validation because the
+		// schema marks fields_wo and fields_wo_version as RequiredWith each other. Exclude both so an exported
+		// credential uses the standard `fields` variable placeholder (from UnResolvableAttributes) instead.
+		ExcludedAttributes: []string{fieldsWoAttr, fieldsWoVersionAttr},
 	}
 
 	// When the standalone integration config toggle is enabled, resolve the GUID in the
