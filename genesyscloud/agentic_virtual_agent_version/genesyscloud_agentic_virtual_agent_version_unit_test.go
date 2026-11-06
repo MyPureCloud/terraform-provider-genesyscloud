@@ -178,3 +178,105 @@ func TestUnitToolInputDependencyOnlyOmittedFromJSONWhenNil(t *testing.T) {
 		t.Errorf("expected dependencyOnly to be omitted when nil, got: %s", string(b))
 	}
 }
+
+// TestUnitExpandToolInputsFallbackToFailure verifies the fallback_to_failure field is read into
+// the Go struct as a *bool and that it is omitted (nil) when the key is absent — mirroring the
+// dependency_only coverage and the API's "null when omitted" behavior for fallbackToFailure.
+func TestUnitExpandToolInputsFallbackToFailure(t *testing.T) {
+	// fallback_to_failure = true on a required External input of an undisclosed type (auth token).
+	failInput := map[string]interface{}{
+		"target_name":         "session_token",
+		"type":                "SessionToken",
+		"source":              "External",
+		"required":            true,
+		"fallback_to_user":    false,
+		"fallback_to_failure": true,
+	}
+	// A plain input that never sets fallback_to_failure → should stay nil.
+	plainInput := map[string]interface{}{
+		"target_name": "customerId",
+		"type":        "CustomerId",
+		"source":      "User",
+	}
+
+	got := expandToolInputs([]interface{}{failInput, plainInput})
+	if len(got) != 2 {
+		t.Fatalf("expected 2 inputs, got %d", len(got))
+	}
+
+	// First input: fallback_to_failure true.
+	if got[0].FallbackToFailure == nil {
+		t.Fatalf("expected FallbackToFailure to be set for the first input, got nil")
+	}
+	if *got[0].FallbackToFailure != true {
+		t.Errorf("expected FallbackToFailure=true, got %v", *got[0].FallbackToFailure)
+	}
+	if got[0].Source != "External" {
+		t.Errorf("expected source External, got %q", got[0].Source)
+	}
+
+	// Second input: the raw map has no fallback_to_failure key, so expandToolInputs leaves the
+	// pointer nil (the nil branch of the type assertion).
+	//
+	// NOTE: synthetic case, same as the dependency_only test. Through real Terraform, schema.TypeBool
+	// is always present in the block map (false when the user omits it), so expandToolInputs would
+	// set FallbackToFailure to &false — never nil. We build the map WITHOUT the key here only to
+	// cover the nil branch of the expand code.
+	if got[1].FallbackToFailure != nil {
+		t.Errorf("expected FallbackToFailure to be nil when key absent from the raw map, got %v", *got[1].FallbackToFailure)
+	}
+}
+
+// TestUnitFlattenToolInputsFallbackToFailure verifies the round-trip: expand → flatten preserves
+// fallback_to_failure, and that a nil *bool is not written back into state.
+func TestUnitFlattenToolInputsFallbackToFailure(t *testing.T) {
+	tr := true
+	inputs := []AgenticVirtualAgentToolInput{
+		{
+			TargetName:        "session_token",
+			Type:              "SessionToken",
+			Source:            "External",
+			FallbackToFailure: &tr,
+		},
+		{
+			TargetName: "customerId",
+			Type:       "CustomerId",
+			Source:     "User",
+			// FallbackToFailure nil → must be absent from the flattened map.
+		},
+	}
+
+	flat := flattenToolInputs(inputs)
+	if len(flat) != 2 {
+		t.Fatalf("expected 2 flattened inputs, got %d", len(flat))
+	}
+
+	first := flat[0].(map[string]interface{})
+	if v, ok := first["fallback_to_failure"]; !ok {
+		t.Errorf("expected fallback_to_failure key present for first input")
+	} else if v != true {
+		t.Errorf("expected fallback_to_failure=true, got %v", v)
+	}
+
+	second := flat[1].(map[string]interface{})
+	if _, ok := second["fallback_to_failure"]; ok {
+		t.Errorf("expected fallback_to_failure key absent when FallbackToFailure is nil, but it was present")
+	}
+}
+
+// TestUnitToolInputFallbackToFailureOmittedFromJSONWhenNil verifies that an input without
+// FallbackToFailure set does not emit the fallbackToFailure key at all (nullable/omitempty behavior).
+func TestUnitToolInputFallbackToFailureOmittedFromJSONWhenNil(t *testing.T) {
+	input := AgenticVirtualAgentToolInput{
+		TargetName: "customerId",
+		Type:       "CustomerId",
+		Source:     "User",
+	}
+	b, err := json.Marshal(input)
+	if err != nil {
+		t.Fatalf("marshal failed: %s", err)
+	}
+	if strings.Contains(string(b), "fallbackToFailure") {
+		t.Errorf("expected fallbackToFailure to be omitted when nil, got: %s", string(b))
+	}
+}

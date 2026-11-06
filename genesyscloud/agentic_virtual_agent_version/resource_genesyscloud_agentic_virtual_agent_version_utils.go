@@ -189,13 +189,14 @@ type AgenticVirtualAgentStructuredRule struct {
 // true|false. The pointer type is kept only for consistency with the other optional *bool fields
 // (required, fallbackToUser) and to allow a nil value in direct (non-Terraform) struct use.
 type AgenticVirtualAgentToolInput struct {
-	TargetName     string        `json:"targetName"`
-	Type           string        `json:"type"`
-	Source         string        `json:"source"`
-	Required       *bool         `json:"required,omitempty"`
-	FallbackToUser *bool         `json:"fallbackToUser,omitempty"`
-	Mapping        []interface{} `json:"mapping,omitempty"`
-	DependencyOnly *bool         `json:"dependencyOnly,omitempty"`
+	TargetName        string        `json:"targetName"`
+	Type              string        `json:"type"`
+	Source            string        `json:"source"`
+	Required          *bool         `json:"required,omitempty"`
+	FallbackToUser    *bool         `json:"fallbackToUser,omitempty"`
+	FallbackToFailure *bool         `json:"fallbackToFailure,omitempty"`
+	Mapping           []interface{} `json:"mapping,omitempty"`
+	DependencyOnly    *bool         `json:"dependencyOnly,omitempty"`
 }
 
 // =============================================================================
