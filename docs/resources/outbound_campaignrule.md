@@ -278,15 +278,15 @@ Required:
 Optional:
 
 - `interval` (Block List, Max: 1) Time interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day--interval))
-- `threshold_value` (String) Time in HH:mm:ss.SSS format.
+- `threshold_value` (String) Time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 <a id="nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day--interval"></a>
 ### Nested Schema for `campaign_rule_conditions.date_time_parameters.time_of_day.interval`
 
 Required:
 
-- `max` (String) Maximum time in HH:mm:ss.SSS format.
-- `min` (String) Minimum time in HH:mm:ss.SSS format.
+- `max` (String) Maximum time in HH:mm:ss format. Fractional seconds are not stored by the API.
+- `min` (String) Minimum time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 
 
@@ -483,15 +483,15 @@ Required:
 Optional:
 
 - `interval` (Block List, Max: 1) Time interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--time_of_day--interval))
-- `threshold_value` (String) Time in HH:mm:ss.SSS format.
+- `threshold_value` (String) Time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 <a id="nestedblock--condition_groups--conditions--date_time_parameters--time_of_day--interval"></a>
 ### Nested Schema for `condition_groups.conditions.date_time_parameters.time_of_day.interval`
 
 Required:
 
-- `max` (String) Maximum time in HH:mm:ss.SSS format.
-- `min` (String) Minimum time in HH:mm:ss.SSS format.
+- `max` (String) Maximum time in HH:mm:ss format. Fractional seconds are not stored by the API.
+- `min` (String) Minimum time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 
 
