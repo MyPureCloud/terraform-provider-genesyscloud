@@ -499,19 +499,28 @@ func updateScriptFn(ctx context.Context, filePath, scriptName, scriptId, divisio
 		return "", fmt.Errorf("script '%s' failed to upload successfully", scriptName)
 	}
 
-	scriptIdAfterUpdate, _, _, err := p.getScriptIdByName(ctx, scriptName)
+	// The upload above passes scriptId as scriptIdToReplace, so the script is
+	// updated in place and its ID does not change. We must NOT re-resolve the
+	// script by name here: name lookups fail when the org has duplicate-named
+	// scripts, even though we already hold the correct ID (see issue #2670).
+	// Reuse the known scriptId, confirming it still exists via an ID-based read.
+	script, getResp, err := p.getScriptById(ctx, scriptId)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to read script '%s' with id '%s' after update: %v %v", scriptName, scriptId, err, getResp)
 	}
+	if script == nil {
+		return "", fmt.Errorf("script '%s' with id '%s' could not be found after update", scriptName, scriptId)
+	}
+
 	setDivisionErr := setScriptDivision(scriptId, divisionId, p)
 	if setDivisionErr != nil {
 		return "", setDivisionErr
 	}
 
-	if resp, err := p.publishScript(ctx, scriptIdAfterUpdate); err != nil {
-		return "", fmt.Errorf("script '%s' with id '%s' was not successfully published: %v %v", scriptName, scriptIdAfterUpdate, err, resp)
+	if resp, err := p.publishScript(ctx, scriptId); err != nil {
+		return "", fmt.Errorf("script '%s' with id '%s' was not successfully published: %v %v", scriptName, scriptId, err, resp)
 	}
-	return scriptIdAfterUpdate, nil
+	return scriptId, nil
 }
 
 func setScriptDivision(scriptId, divisionId string, p *scriptsProxy) error {
