@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -14,6 +15,18 @@ import (
 )
 
 // Unit Tests
+
+// TestUnitSpeechAndTextAnalyticsSettingsExporterResolvesProgramReference is a regression test for
+// GitHub issue #2627: the exporter must register default_program_id as a reference to the
+// genesyscloud_speechandtextanalytics_program resource. Without this, exports emit the raw
+// program GUID (not portable across orgs) and don't pull the referenced program in as a dependency.
+func TestUnitSpeechAndTextAnalyticsSettingsExporterResolvesProgramReference(t *testing.T) {
+	ref := SpeechAndTextAnalyticsSettingsExporter().RefAttrs["default_program_id"]
+	if ref == nil {
+		t.Fatal("default_program_id is not a reference attribute; exported settings would hard-code the program GUID")
+	}
+	assert.Equal(t, sttProgram.ResourceType, ref.RefType)
+}
 
 func generateSpeechAndTextAnalyticsSettingsResponse(programId string, dialects []string, textAnalytics bool, agentEmpathy bool) platformclientv2.Speechtextanalyticssettingsresponse {
 	return platformclientv2.Speechtextanalyticssettingsresponse{
