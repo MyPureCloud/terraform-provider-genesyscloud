@@ -135,9 +135,24 @@ func flattenDatatableProperties(properties *util.OrderedMap[Datatableproperty]) 
 			propMap["title"] = *propKV.Value.Title
 		}
 		if propKV.Value.Default != nil {
-			propMap["default"] = util.InterfaceToString(*propKV.Value.Default)
+			var propType string
+			if propKV.Value.VarType != nil {
+				propType = *propKV.Value.VarType
+			}
+			propMap["default"] = formatDatatableDefault(propType, *propKV.Value.Default)
 		}
 		configProps = append(configProps, propMap)
 	}
 	return configProps
+}
+
+// formatDatatableDefault renders a Datatable property default (JSON numbers
+// decode into float64) as a plain-decimal string for integer/number types,
+// avoiding the exponent notation fmt.Sprintf("%v", ...) produces for large
+// whole numbers (e.g. 9999999 -> "9.999999e+06") that then fails to re-import.
+func formatDatatableDefault(propType string, val interface{}) string {
+	if v, ok := val.(float64); ok && (propType == "integer" || propType == "number") {
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	}
+	return util.InterfaceToString(val)
 }
