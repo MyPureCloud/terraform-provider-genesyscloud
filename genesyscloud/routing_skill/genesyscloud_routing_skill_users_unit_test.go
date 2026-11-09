@@ -46,7 +46,6 @@ func getSkillUserIdsFromState(d *schema.ResourceData) []string {
 	return ids
 }
 
-// setTestRoutingSkillProxy injects proxy and clears the name lookup cache. The returned func restores both.
 func setTestRoutingSkillProxy(proxy *routingSkillProxy) func() {
 	internalProxy = proxy
 	dataSourceRoutingSkillCache = nil

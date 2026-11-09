@@ -31,8 +31,6 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	return nil
 }
 
-// getRoutingSkillIdByNameFromCache resolves a routing skill name to its ID using the data source cache,
-// falling back to the API when the name is not cached. Shared by the routing skill data sources.
 func getRoutingSkillIdByNameFromCache(ctx context.Context, sdkConfig *platformclientv2.Configuration, name string) (string, diag.Diagnostics) {
 	if dataSourceRoutingSkillCache == nil {
 		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn)

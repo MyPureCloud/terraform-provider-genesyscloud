@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// dataSourceRoutingSkillUsersRead resolves the routing skill (by ID or name) and reads the IDs of the users assigned to it
 func dataSourceRoutingSkillUsersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	proxy := getRoutingSkillProxy(sdkConfig)

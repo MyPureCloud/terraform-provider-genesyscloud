@@ -22,8 +22,6 @@ type getRoutingSkillIdByNameFunc func(ctx context.Context, p *routingSkillProxy,
 type deleteRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error)
 type getRoutingSkillUsersFunc func(ctx context.Context, p *routingSkillProxy, skillId string) (*[]platformclientv2.Userreference, *platformclientv2.APIResponse, error)
 
-// routingSkillUserListing is the response body of GET /api/v2/routing/skills/{skillId}/users.
-// The endpoint returns the full list in a single response; it has no paging parameters.
 type routingSkillUserListing struct {
 	Entities *[]platformclientv2.Userreference `json:"entities,omitempty"`
 }

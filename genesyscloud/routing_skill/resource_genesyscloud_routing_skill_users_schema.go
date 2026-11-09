@@ -9,7 +9,6 @@ import (
 
 const UsersResourceType = "genesyscloud_routing_skill_users"
 
-// DataSourceRoutingSkillUsers returns the schema definition for the genesyscloud_routing_skill_users data source
 func DataSourceRoutingSkillUsers() *schema.Resource {
 	return &schema.Resource{
 		Description:        "Data source for listing the users assigned to a Genesys Cloud routing skill. Select the skill by ID or by name.",

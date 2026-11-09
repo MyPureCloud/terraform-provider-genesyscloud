@@ -52,14 +52,12 @@ func TestAccDataSourceRoutingSkillUsers(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create the skills and the users assigned to them, then give the skill assignments time to propagate
 				Config: resourcesConfig,
 				Check: resource.ComposeTestCheckFunc(
 					waitSeconds(5 * time.Second),
 				),
 			},
 			{
-				// Read the skill's users by skill ID and by skill name, and read a skill with no users
 				Config: resourcesConfig +
 					generateRoutingSkillUsersDataSource(byIdDataResourceLabel, "skill_id", skillIdAttrRef, dependsOnUsersAndSkills) +
 					generateRoutingSkillUsersDataSource(byNameDataResourceLabel, "skill_name", skillNameAttrRef, dependsOnUsersAndSkills) +
