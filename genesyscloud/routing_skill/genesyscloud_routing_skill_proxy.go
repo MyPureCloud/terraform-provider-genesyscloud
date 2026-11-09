@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 
+	customapi "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/custom_api_client"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
@@ -18,6 +20,15 @@ type updateRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, skil
 type getRoutingSkillByIdFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.Routingskill, *platformclientv2.APIResponse, error)
 type getRoutingSkillIdByNameFunc func(ctx context.Context, p *routingSkillProxy, name string) (string, *platformclientv2.APIResponse, bool, error)
 type deleteRoutingSkillFunc func(ctx context.Context, p *routingSkillProxy, id string) (*platformclientv2.APIResponse, error)
+type getRoutingSkillUsersFunc func(ctx context.Context, p *routingSkillProxy, skillId string) (*[]platformclientv2.Userreference, *platformclientv2.APIResponse, error)
+
+// routingSkillUserListing is the response body of GET /api/v2/routing/skills/{skillId}/users.
+// The endpoint returns the full list in a single response; it has no paging parameters.
+type routingSkillUserListing struct {
+	Entities *[]platformclientv2.Userreference `json:"entities,omitempty"`
+}
+
+var internalProxy *routingSkillProxy
 
 var routingSkillCache = rc.NewResourceCache[platformclientv2.Routingskill]()
 
@@ -25,12 +36,14 @@ var routingSkillCache = rc.NewResourceCache[platformclientv2.Routingskill]()
 type routingSkillProxy struct {
 	clientConfig                *platformclientv2.Configuration
 	routingApi                  *platformclientv2.RoutingApi
+	customApiClient             *customapi.Client
 	createRoutingSkillAttr      createRoutingSkillFunc
 	updateRoutingSkillAttr      updateRoutingSkillFunc
 	getAllRoutingSkillsAttr     getAllRoutingSkillsFunc
 	getRoutingSkillIdByNameAttr getRoutingSkillIdByNameFunc
 	getRoutingSkillByIdAttr     getRoutingSkillByIdFunc
 	deleteRoutingSkillAttr      deleteRoutingSkillFunc
+	getRoutingSkillUsersAttr    getRoutingSkillUsersFunc
 	routingSkillCache           rc.CacheInterface[platformclientv2.Routingskill]
 }
 
@@ -40,18 +53,20 @@ func newRoutingSkillProxy(clientConfig *platformclientv2.Configuration) *routing
 	return &routingSkillProxy{
 		clientConfig:                clientConfig,
 		routingApi:                  api,
+		customApiClient:             customapi.NewClient(clientConfig, ResourceType),
 		createRoutingSkillAttr:      createRoutingSkillFn,
 		updateRoutingSkillAttr:      updateRoutingSkillFn,
 		getAllRoutingSkillsAttr:     getAllRoutingSkillsFn,
 		getRoutingSkillIdByNameAttr: getRoutingSkillIdByNameFn,
 		getRoutingSkillByIdAttr:     getRoutingSkillByIdFn,
 		deleteRoutingSkillAttr:      deleteRoutingSkillFn,
+		getRoutingSkillUsersAttr:    getRoutingSkillUsersFn,
 		routingSkillCache:           routingSkillCache,
 	}
 }
 
 func getRoutingSkillProxy(clientConfig *platformclientv2.Configuration) *routingSkillProxy {
-	return newRoutingSkillProxy(clientConfig)
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingSkillProxy)
 }
 
 func (p *routingSkillProxy) getAllRoutingSkills(ctx context.Context, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
@@ -76,6 +91,10 @@ func (p *routingSkillProxy) getRoutingSkillIdByName(ctx context.Context, name st
 
 func (p *routingSkillProxy) deleteRoutingSkill(ctx context.Context, id string) (*platformclientv2.APIResponse, error) {
 	return p.deleteRoutingSkillAttr(ctx, p, id)
+}
+
+func (p *routingSkillProxy) getRoutingSkillUsers(ctx context.Context, skillId string) (*[]platformclientv2.Userreference, *platformclientv2.APIResponse, error) {
+	return p.getRoutingSkillUsersAttr(ctx, p, skillId)
 }
 
 func getAllRoutingSkillsFn(ctx context.Context, p *routingSkillProxy, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
@@ -187,4 +206,21 @@ func deleteRoutingSkillFn(ctx context.Context, p *routingSkillProxy, id string) 
 	}
 	rc.DeleteCacheItem(p.routingSkillCache, id)
 	return nil, nil
+}
+
+func getRoutingSkillUsersFn(ctx context.Context, p *routingSkillProxy, skillId string) (*[]platformclientv2.Userreference, *platformclientv2.APIResponse, error) {
+	// Set resource context for SDK debug logging
+	ctx = provider.EnsureResourceContext(ctx, UsersResourceType)
+
+	path := "/api/v2/routing/skills/" + url.PathEscape(skillId) + "/users"
+	listing, resp, err := customapi.Do[routingSkillUserListing](ctx, p.customApiClient, customapi.MethodGet, path, nil, nil)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	users := make([]platformclientv2.Userreference, 0)
+	if listing != nil && listing.Entities != nil {
+		users = append(users, *listing.Entities...)
+	}
+	return &users, resp, nil
 }
