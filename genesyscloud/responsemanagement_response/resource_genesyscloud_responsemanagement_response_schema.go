@@ -25,6 +25,9 @@ resource_genesycloud_responsemanagement_response_schema.go holds four functions 
 */
 const ResourceType = "genesyscloud_responsemanagement_response"
 
+// assetUsageFileAttachments is the API assetUsage value for assets attached as files rather than inline images.
+const assetUsageFileAttachments = "FileAttachments"
+
 // SetRegistrar registers all of the resources, datasources and exporters in the package
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceResponsemanagementResponse())
@@ -436,6 +439,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: validateResponseAssetIdsDiff,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`name`: {
@@ -490,7 +494,13 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				},
 			},
 			`asset_ids`: {
-				Description: `Assets used in the response`,
+				Description: `Assets used in the response as inline images.`,
+				Optional:    true,
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			`file_attachment_asset_ids`: {
+				Description: `Assets attached to the response as file attachments (sent to the API with assetUsage 'FileAttachments'). An asset ID must not appear in both 'asset_ids' and 'file_attachment_asset_ids'. Upgrade note: file attachments created outside Terraform were previously read into 'asset_ids'; move those IDs to this attribute, otherwise the next apply converts them to inline images.`,
 				Optional:    true,
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -525,6 +535,9 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 				RefType: "genesyscloud_responsemanagement_library",
 			},
 			`asset_ids`: {
+				RefType: "genesyscloud_responsemanagement_responseasset",
+			},
+			`file_attachment_asset_ids`: {
 				RefType: "genesyscloud_responsemanagement_responseasset",
 			},
 		},
