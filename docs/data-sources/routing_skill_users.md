@@ -47,8 +47,8 @@ data "genesyscloud_routing_skill_users" "marketing_by_name" {
 
 ### Optional
 
-- `skill_id` (String) ID of the routing skill. Exactly one of `skill_id` or `skill_name` must be set.
-- `skill_name` (String) Name of the routing skill. Exactly one of `skill_id` or `skill_name` must be set.
+- `skill_id` (String) ID of the routing skill. At least one of `skill_id` or `skill_name` must be set. If both are set, `skill_id` is used.
+- `skill_name` (String) Name of the routing skill. At least one of `skill_id` or `skill_name` must be set. Ignored if `skill_id` is set.
 
 ### Read-Only
 

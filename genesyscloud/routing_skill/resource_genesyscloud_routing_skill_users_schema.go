@@ -15,19 +15,19 @@ func DataSourceRoutingSkillUsers() *schema.Resource {
 		ReadWithoutTimeout: provider.ReadWithPooledClient(dataSourceRoutingSkillUsersRead),
 		Schema: map[string]*schema.Schema{
 			"skill_id": {
-				Description:  "ID of the routing skill. Exactly one of `skill_id` or `skill_name` must be set.",
+				Description:  "ID of the routing skill. At least one of `skill_id` or `skill_name` must be set. If both are set, `skill_id` is used.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ExactlyOneOf: []string{"skill_id", "skill_name"},
+				AtLeastOneOf: []string{"skill_id", "skill_name"},
 				ValidateFunc: validation.IsUUID,
 			},
 			"skill_name": {
-				Description:  "Name of the routing skill. Exactly one of `skill_id` or `skill_name` must be set.",
+				Description:  "Name of the routing skill. At least one of `skill_id` or `skill_name` must be set. Ignored if `skill_id` is set.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				ExactlyOneOf: []string{"skill_id", "skill_name"},
+				AtLeastOneOf: []string{"skill_id", "skill_name"},
 			},
 			"user_ids": {
 				Description: "IDs of the users assigned to the routing skill.",

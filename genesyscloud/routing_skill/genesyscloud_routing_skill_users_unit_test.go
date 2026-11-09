@@ -101,6 +101,33 @@ func TestUnitDataSourceRoutingSkillUsersReadById(t *testing.T) {
 	assert.Equal(t, userIds, getSkillUserIdsFromState(d))
 }
 
+func TestUnitDataSourceRoutingSkillUsersReadPrefersIdOverName(t *testing.T) {
+	skillId := uuid.NewString()
+	skillName := "Terraform Skill " + uuid.NewString()
+	userId := uuid.NewString()
+
+	proxy := &routingSkillProxy{}
+	proxy.getAllRoutingSkillsAttr = func(ctx context.Context, p *routingSkillProxy, name string) (*[]platformclientv2.Routingskill, *platformclientv2.APIResponse, error) {
+		t.Fatal("skills should not be listed when skill_id is set")
+		return nil, nil, nil
+	}
+	proxy.getRoutingSkillIdByNameAttr = func(ctx context.Context, p *routingSkillProxy, name string) (string, *platformclientv2.APIResponse, bool, error) {
+		t.Fatal("name lookup should not be called when skill_id is set")
+		return "", nil, false, nil
+	}
+	proxy.getRoutingSkillUsersAttr = func(ctx context.Context, p *routingSkillProxy, id string) (*[]platformclientv2.Userreference, *platformclientv2.APIResponse, error) {
+		assert.Equal(t, skillId, id)
+		return buildSkillUserReferences(userId), &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	defer setTestRoutingSkillProxy(proxy)()
+
+	d, err := readRoutingSkillUsersDataSource(t, map[string]interface{}{"skill_id": skillId, "skill_name": skillName})
+	assert.NoError(t, err)
+	assert.Equal(t, skillId, d.Id())
+	assert.Equal(t, skillId, d.Get("skill_id").(string))
+	assert.Equal(t, []string{userId}, getSkillUserIdsFromState(d))
+}
+
 func TestUnitDataSourceRoutingSkillUsersReadByName(t *testing.T) {
 	skillId := uuid.NewString()
 	skillName := "Terraform Skill " + uuid.NewString()
