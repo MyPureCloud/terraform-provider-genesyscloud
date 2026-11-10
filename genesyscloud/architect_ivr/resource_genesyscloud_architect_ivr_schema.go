@@ -54,7 +54,14 @@ func ResourceArchitectIvrConfig() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		SchemaVersion: 1,
+		SchemaVersion: 2,
+		StateUpgraders: []schema.StateUpgrader{
+			{
+				Version: 1,
+				Type:    resourceArchitectIvrV1().CoreConfigSchema().ImpliedType(),
+				Upgrade: stateUpgraderArchitectIvrV1ToV2,
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "Name of the IVR config. Note: If the name changes, the existing Genesys Cloud IVR config will be dropped and recreated with a new ID. This can cause an Architect Flow to become invalid if the old flow is reference in the flow.",
@@ -69,10 +76,13 @@ func ResourceArchitectIvrConfig() *schema.Resource {
 			},
 			"dnis": {
 				Description: fmt.Sprintf("The phone number(s) to contact the IVR by. Each phone number in the array must be in an E.164 number format. (Note: An array with a length greater than %v will be broken into chunks and uploaded in subsequent PUT requests.)", maxDnisPerRequest),
-				Type:        schema.TypeSet,
-				Optional:    true,
-				Computed:    false,
-				Elem:        &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
+				// TypeList instead of TypeSet: the SDK gRPC layer forces a fully-known planned TypeSet into state
+				// after an apply error, even when d.Partial(true) is set, which left the state listing numbers
+				// that were never added to the IVR (see DEVTOOLING-1533 / DEVTOOLING-1881).
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: false,
+				Elem:     &schema.Schema{Type: schema.TypeString, ValidateDiagFunc: validators.ValidatePhoneNumber},
 			},
 			"open_hours_flow_id": {
 				Description: "ID of inbound call flow for open hours.",
