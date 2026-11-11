@@ -119,6 +119,7 @@ import (
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
+	analyticsDataretentionSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/analytics_dataretention_settings"
 	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
 	sttCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_category"
 	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
@@ -267,6 +268,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[sttSentimentFeedback.ResourceType] = sttSentimentFeedback.ResourceSentimentFeedback()
 	providerResources[sttSettings.ResourceType] = sttSettings.ResourceSpeechAndTextAnalyticsSettings()
 	providerResources[recordingSettings.ResourceType] = recordingSettings.ResourceRecordingSettings()
+	providerResources[analyticsDataretentionSettings.ResourceType] = analyticsDataretentionSettings.ResourceAnalyticsDataretentionSettings()
 	providerResources[authorizationRolesSettings.ResourceType] = authorizationRolesSettings.ResourceAuthorizationRolesSettings()
 
 	providerResources[ResourceType] = ResourceTfExport()
@@ -393,6 +395,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(sttSentimentFeedback.ResourceType, sttSentimentFeedback.SentimentFeedbackExporter())
 	RegisterExporter(sttSettings.ResourceType, sttSettings.SpeechAndTextAnalyticsSettingsExporter())
 	RegisterExporter(recordingSettings.ResourceType, recordingSettings.RecordingSettingsExporter())
+	RegisterExporter(analyticsDataretentionSettings.ResourceType, analyticsDataretentionSettings.AnalyticsDataretentionSettingsExporter())
 	RegisterExporter(authorizationRolesSettings.ResourceType, authorizationRolesSettings.AuthorizationRolesSettingsExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
