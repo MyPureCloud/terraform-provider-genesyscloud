@@ -980,6 +980,7 @@ func flattenCallMediaPolicyConditions(conditions *platformclientv2.Callmediapoli
 	conditionsMap["team_ids"] = flattenTeamIds(conditions.Teams, schemaTeamIds)
 
 	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "time_allowed", conditions.TimeAllowed, flattenTimeAllowed)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(conditionsMap, "duration", conditions.Duration, flattenDurationCondition)
 
 	return []interface{}{conditionsMap}
 }
