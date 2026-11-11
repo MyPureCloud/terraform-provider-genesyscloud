@@ -27,6 +27,7 @@ type SurveyFormStruct struct {
 	Language       string
 	Header         string
 	Footer         string
+	DivisionId     string // HCL reference expression, e.g. genesyscloud_auth_division.label.id
 	QuestionGroups []SurveyFormQuestionGroupStruct
 }
 
@@ -105,6 +106,7 @@ func createSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 		Header:         &header,
 		Footer:         &footer,
 		QuestionGroups: questionGroups,
+		Division:       buildSdkDivision(d),
 	})
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create survey form %s error: %s", name, err), resp)
@@ -159,6 +161,7 @@ func readSurveyForm(ctx context.Context, d *schema.ResourceData, meta interface{
 			_ = d.Set("context_id", *surveyForm.ContextId)
 		}
 		resourcedata.SetNillableTime(d, "modified_date", surveyForm.ModifiedDate)
+		flattenDivisionId(d, surveyForm.Division)
 
 		if surveyForm.Language != nil {
 			_ = d.Set("language", *surveyForm.Language)
@@ -247,6 +250,7 @@ func updateSurveyForm(ctx context.Context, d *schema.ResourceData, meta interfac
 			Header:         &header,
 			Footer:         &footer,
 			QuestionGroups: questionGroups,
+			Division:       buildSdkDivision(d),
 		})
 		if err != nil {
 			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update survey form %s error: %s", name, err), resp)
