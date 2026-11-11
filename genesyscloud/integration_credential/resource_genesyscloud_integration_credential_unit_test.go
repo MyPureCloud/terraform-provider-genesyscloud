@@ -298,3 +298,95 @@ func TestUnitFieldsWoConfigValidation(t *testing.T) {
 		assert.True(t, validate(cfg))
 	})
 }
+
+// plaintextFieldsState is the state of a credential that was created with the plain `fields` map, so the
+// secret is stored in state in plaintext.
+func plaintextFieldsState() map[string]string {
+	return map[string]string{
+		"credential_type_name": "basicAuth",
+		"fields.%":             "2",
+		"fields.userName":      "someUser",
+		"fields.password":      testSecretMarker,
+	}
+}
+
+// Migrating from `fields` to `fields_wo`: `fields` is Optional+Computed, so removing it from the config keeps the
+// old plaintext in state. The scrub must clear it, otherwise the migration leaves the secret in the state file.
+func TestUnitScrubStoredFieldsWhenWriteOnly(t *testing.T) {
+	t.Run("clears the old plaintext once fields_wo is set", func(t *testing.T) {
+		raw := rawConfigWith(map[string]cty.Value{
+			"credential_type_name": cty.StringVal("basicAuth"),
+			"fields_wo":            cty.StringVal(`{"userName":"someUser","password":"` + testSecretMarker + `"}`),
+			"fields_wo_version":    cty.NumberIntVal(1),
+		})
+		d := dataWithRawConfig(raw, plaintextFieldsState())
+		require.Equal(t, testSecretMarker, d.Get("fields").(map[string]interface{})["password"], "precondition: plaintext is in state")
+
+		scrubStoredFieldsWhenWriteOnly(d)
+
+		assert.Empty(t, d.Get("fields"), "fields must be empty after the scrub")
+		for key, value := range d.State().Attributes {
+			assert.NotContains(t, value, testSecretMarker, "the secret must not remain in state attribute %s", key)
+		}
+	})
+
+	t.Run("keeps fields for a credential that does not use fields_wo", func(t *testing.T) {
+		raw := rawConfigWith(map[string]cty.Value{
+			"credential_type_name": cty.StringVal("basicAuth"),
+			"fields": cty.MapVal(map[string]cty.Value{
+				"userName": cty.StringVal("someUser"),
+				"password": cty.StringVal(testSecretMarker),
+			}),
+		})
+		d := dataWithRawConfig(raw, plaintextFieldsState())
+
+		scrubStoredFieldsWhenWriteOnly(d)
+
+		assert.Equal(t, testSecretMarker, d.Get("fields").(map[string]interface{})["password"],
+			"existing `fields` credentials must be left alone")
+	})
+
+	t.Run("does nothing when the raw config is null, as on import", func(t *testing.T) {
+		d := dataWithRawConfig(cty.NullVal(cty.DynamicPseudoType), plaintextFieldsState())
+
+		assert.NotPanics(t, func() { scrubStoredFieldsWhenWriteOnly(d) })
+		assert.Equal(t, testSecretMarker, d.Get("fields").(map[string]interface{})["password"])
+	})
+
+	t.Run("does not clear fields when fields_wo is invalid", func(t *testing.T) {
+		raw := rawConfigWith(map[string]cty.Value{
+			"fields_wo":         cty.StringVal(`{not json`),
+			"fields_wo_version": cty.NumberIntVal(1),
+		})
+		d := dataWithRawConfig(raw, plaintextFieldsState())
+
+		scrubStoredFieldsWhenWriteOnly(d)
+
+		assert.Equal(t, testSecretMarker, d.Get("fields").(map[string]interface{})["password"],
+			"nothing was sent to the API, so the stored value must not be dropped")
+	})
+}
+
+// `fields` is Optional+Computed and is never read back from the API. A write-only credential has nothing in it, and a
+// null Computed value is planned as "known after apply" on every plan, which is a permanent diff. An explicit empty
+// map avoids that.
+func TestUnitEnsureFieldsHasKnownValue(t *testing.T) {
+	t.Run("records an empty map when nothing is stored", func(t *testing.T) {
+		d := dataWithRawConfig(cty.NullVal(cty.DynamicPseudoType), map[string]string{"credential_type_name": "basicAuth"})
+		require.NotContains(t, d.State().Attributes, "fields.%", "precondition: fields has no value in state")
+
+		ensureFieldsHasKnownValue(d)
+
+		assert.Equal(t, "0", d.State().Attributes["fields.%"], "fields must be recorded as a known empty map")
+	})
+
+	t.Run("leaves stored fields untouched", func(t *testing.T) {
+		d := dataWithRawConfig(cty.NullVal(cty.DynamicPseudoType), plaintextFieldsState())
+
+		ensureFieldsHasKnownValue(d)
+
+		fields := d.Get("fields").(map[string]interface{})
+		assert.Equal(t, "someUser", fields["userName"])
+		assert.Equal(t, testSecretMarker, fields["password"])
+	})
+}
