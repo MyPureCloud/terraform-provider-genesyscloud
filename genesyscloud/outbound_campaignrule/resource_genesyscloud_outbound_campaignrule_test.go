@@ -1469,9 +1469,6 @@ func TestAccResourceOutboundCampaignRuleWeekDayOfMonth(t *testing.T) {
 	})
 }
 
-// FROZEN pending DEVTOOLING-1759 (Go SDK serializes Duration as an object, causing 400).
-// Re-enable this end-to-end for_duration test when the SDK is fixed.
-/*
 // TestAccResourceOutboundCampaignRuleForDuration covers the for_duration parameter working
 // end-to-end ("campaignAgents < 2 for 900s"). A duration-based condition is self-triggering, so it
 // may stand alone without a separate campaign trigger condition.
@@ -1550,7 +1547,6 @@ func TestAccResourceOutboundCampaignRuleForDuration(t *testing.T) {
 		CheckDestroy: testVerifyCampaignRuleDestroyed,
 	})
 }
-*/
 
 func TestAccResourceOutboundCampaignRuleLegacyRejectsDateTimeParams(t *testing.T) {
 	t.Parallel()
@@ -1594,10 +1590,6 @@ resource "genesyscloud_outbound_campaignrule" "test" {
 	})
 }
 
-// FROZEN pending DEVTOOLING-1759: for_duration is disabled in the schema, so these
-// rejection tests are moot (Terraform now errors with "Unsupported argument" on its own).
-// Re-enable together with the for_duration field.
-/*
 // for_duration is nested inside parameters TypeSet and is not reliably visible
 // to CustomizeDiff, so this is validated before the API call in Create/Update.
 // Therefore this test does NOT use PlanOnly: true.
@@ -1682,7 +1674,6 @@ resource "genesyscloud_outbound_campaignrule" "test" {
 		},
 	})
 }
-*/
 
 func TestAccResourceOutboundCampaignRuleRejectsBetweenWithInSet(t *testing.T) {
 	t.Parallel()
@@ -2405,8 +2396,6 @@ func generateDateTimeParameters(inverted bool, innerBlock string) string {
 `, inverted, innerBlock)
 }
 
-// FROZEN pending DEVTOOLING-1759: re-enable together with the for_duration test.
-/*
 // generateForDurationParameters builds a parameters block with a for_duration sub-block, used by
 // duration-based conditions (e.g. "campaignAgents < 2 for 900s"). Kept separate from
 // generateCampaignRuleParameters because that helper does not model for_duration.
@@ -2421,7 +2410,6 @@ func generateForDurationParameters(operator, value string, seconds int) string {
 		}
 `, operator, value, seconds)
 }
-*/
 
 // generateConditionGroup generates a condition_groups block (v2 processing).
 func generateConditionGroup(matchAnyConditions bool, conditionBlocks ...string) string {
