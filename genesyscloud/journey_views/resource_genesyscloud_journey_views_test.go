@@ -52,6 +52,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		metricId                      = "Metric 1"
 		metricDisplayLabel            = "Display Label"
 		metricAggregate               = "CustomerCount"
+		numericMetricAggregate        = "Average"
 		metricAttribute               = "durationMs"
 		chartGroupByTime              = "Day"
 		chartGroupByMax               = 1
@@ -94,7 +95,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 							generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 							""),
 						generateCharts(chartName2, chartVersion, chartRank2,
-							generateMetrics(metricId, elementId, metricAggregate, metricAttribute, metricDisplayLabel), "", chartGroupByMax,
+							generateMetrics(metricId, elementId, numericMetricAggregate, metricAttribute, metricDisplayLabel), "", chartGroupByMax,
 							generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 							generateGroupeByAttributes(elementId, groupByAttributesAttribute)),
 					}),
@@ -169,6 +170,8 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.0.element_id", elementId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.0.attribute", groupByAttributesAttribute),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.metrics.0.aggregate", numericMetricAggregate),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.metrics.0.attribute", metricAttribute),
 				),
 			},
 			{
