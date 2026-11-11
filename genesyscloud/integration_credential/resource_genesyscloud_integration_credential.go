@@ -84,7 +84,10 @@ func createCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	name := d.Get("name").(string)
 	cred_type := d.Get("credential_type_name").(string)
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	fields := buildCredentialFields(d, sdkConfig)
+	fields, diagErr := buildCredentialFields(d, sdkConfig)
+	if diagErr != nil {
+		return diagErr
+	}
 
 	ip := getIntegrationCredsProxy(sdkConfig)
 
@@ -125,6 +128,7 @@ func readCredential(ctx context.Context, d *schema.ResourceData, meta interface{
 
 		_ = d.Set("name", *currentCredential.Name)
 		_ = d.Set("credential_type_name", *currentCredential.VarType.Name)
+		ensureFieldsHasKnownValue(d)
 
 		log.Printf("Read credential %s %s", d.Id(), *currentCredential.Name)
 
@@ -138,11 +142,14 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 	cred_type := d.Get("credential_type_name").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	fields := buildCredentialFields(d, sdkConfig)
+	fields, diagErr := buildCredentialFields(d, sdkConfig)
+	if diagErr != nil {
+		return diagErr
+	}
 
 	ip := getIntegrationCredsProxy(sdkConfig)
 
-	if d.HasChanges("name", "credential_type_name", "fields") {
+	if credentialChanged(d) {
 		log.Printf("Updating credential %s", name)
 		_, resp, err := ip.updateIntegrationCred(ctx, d.Id(), &platformclientv2.Credential{
 			Name: &name,
@@ -154,6 +161,7 @@ func updateCredential(ctx context.Context, d *schema.ResourceData, meta interfac
 		if err != nil {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update credential %s error: %s", name, err), resp)
 		}
+		scrubStoredFieldsWhenWriteOnly(d)
 	}
 	log.Printf("Updated credential %s %s", name, d.Id())
 	return readCredential(ctx, d, meta)
