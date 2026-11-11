@@ -18,6 +18,7 @@ import (
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	authorizationRolesSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_roles_settings"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
@@ -123,6 +124,7 @@ import (
 	instagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
 	openIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
 	whatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
+	analyticsDataretentionSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/analytics_dataretention_settings"
 	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
 	emailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
 	queueIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_identity_resolution"
@@ -282,6 +284,8 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[emailRouteIdentityResolution.ResourceType] = emailRouteIdentityResolution.ResourceRoutingEmailRouteIdentityResolution()
 	providerResources[webDeploymentIdentityResolution.ResourceType] = webDeploymentIdentityResolution.ResourceWebDeploymentIdentityResolution()
 	providerResources[queueIdentityResolution.ResourceType] = queueIdentityResolution.ResourceRoutingQueueIdentityResolution()
+	providerResources[analyticsDataretentionSettings.ResourceType] = analyticsDataretentionSettings.ResourceAnalyticsDataretentionSettings()
+	providerResources[authorizationRolesSettings.ResourceType] = authorizationRolesSettings.ResourceAuthorizationRolesSettings()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -415,6 +419,8 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(emailRouteIdentityResolution.ResourceType, emailRouteIdentityResolution.RoutingEmailRouteIdentityResolutionExporter())
 	RegisterExporter(webDeploymentIdentityResolution.ResourceType, webDeploymentIdentityResolution.WebDeploymentIdentityResolutionExporter())
 	RegisterExporter(queueIdentityResolution.ResourceType, queueIdentityResolution.RoutingQueueIdentityResolutionExporter())
+	RegisterExporter(analyticsDataretentionSettings.ResourceType, analyticsDataretentionSettings.AnalyticsDataretentionSettingsExporter())
+	RegisterExporter(authorizationRolesSettings.ResourceType, authorizationRolesSettings.AuthorizationRolesSettingsExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
