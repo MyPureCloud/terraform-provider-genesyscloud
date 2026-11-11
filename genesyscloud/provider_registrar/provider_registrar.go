@@ -31,6 +31,7 @@ import (
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	authorizatioProduct "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_product"
+	authorizationRolesSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_roles_settings"
 	bcpTfExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/bcp_tf_exporter"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
@@ -383,6 +384,7 @@ func registerResources() {
 	webDeployIdentityResolution.SetRegistrar(regInstance)                  //Registering webdeployments identity resolution
 	authorizatioProduct.SetRegistrar(regInstance)                          //Registering Authorization Product
 	accessPolicy.SetRegistrar(regInstance)                                 //Registering Access Policy
+	authorizationRolesSettings.SetRegistrar(regInstance)                   //Registering Authorization Roles Settings
 	extPool.SetRegistrar(regInstance)                                      //Registering Extension Pool
 	phoneBaseSettings.SetRegistrar(regInstance)                            //Registering Phone Base Settings
 	lineBaseSettings.SetRegistrar(regInstance)                             //Registering Line Base Settings

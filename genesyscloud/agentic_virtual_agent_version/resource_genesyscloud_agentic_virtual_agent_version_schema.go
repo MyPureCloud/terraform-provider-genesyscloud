@@ -578,6 +578,12 @@ func AgenticVirtualAgentVersionExporter() *resourceExporter.ResourceExporter {
 			"agent_id": {
 				ResolverWithClientConfigFunc: resolveAgenticVirtualAgentVersionContextRetentionResolver(exportCache),
 			},
+			"definition.tools.target.id": {
+				ResolveRefTypeFunc: resolveToolTargetRefType,
+			},
+			"definition.tools": {
+				ResolverFunc: resolveAgenticToolTargets,
+			},
 		},
 	}
 }

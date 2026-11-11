@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -334,6 +335,22 @@ func buildSdkDisputesAssignees(assignees []interface{}) *[]platformclientv2.Eval
 	}
 
 	return &sdkAssignees
+}
+
+// buildSdkDivision builds the form division from division_id. Returns nil when division_id is not set.
+func buildSdkDivision(d *schema.ResourceData) *platformclientv2.Writablestarrabledivision {
+	divisionId := resourcedata.GetNillableValue[string](d, "division_id")
+	if divisionId == nil {
+		return nil
+	}
+	return &platformclientv2.Writablestarrabledivision{Id: divisionId}
+}
+
+// flattenDivisionId reads the division id from the API response and sets division_id.
+func flattenDivisionId(d *schema.ResourceData, division *platformclientv2.Writablestarrabledivision) {
+	if division != nil {
+		resourcedata.SetNillableValue(d, "division_id", division.Id)
+	}
 }
 
 func buildClearedAiScoring() *platformclientv2.Aiscoringsettings {
@@ -771,11 +788,13 @@ func GenerateEvaluationFormResource(resourceLabel string, evaluationForm *Evalua
 		%s
 		%s
 		%s
+		%s
 	}
 	`, ResourceType, resourceLabel,
 		evaluationForm.Name,
 		strconv.FormatBool(evaluationForm.Published),
 		generateFormDialect(evaluationForm.Dialect),
+		generateFormDivisionId(evaluationForm.DivisionId),
 		GenerateEvaluationFormQuestionGroups(&evaluationForm.QuestionGroups),
 		generateEvaluationSettings(evaluationForm.EvaluationSettings),
 		generateFormDependsOn(evaluationForm.DependsOn),
@@ -787,6 +806,13 @@ func generateFormDependsOn(dependsOn []string) string {
 		return ""
 	}
 	return fmt.Sprintf("depends_on = [%s]", strings.Join(dependsOn, ", "))
+}
+
+func generateFormDivisionId(divisionId string) string {
+	if divisionId == "" {
+		return ""
+	}
+	return fmt.Sprintf(`division_id = %s`, divisionId)
 }
 
 func generateFormDialect(dialect string) string {

@@ -112,5 +112,25 @@ resource "genesyscloud_journey_views" "journey_view" {
     }
     group_by_max = 10
   }
+  charts {
+    name    = "New Numeric Chart C"
+    version = 1
+    rank    = 3
+    group_by_attributes {
+      element_id = var.element_second_id
+      attribute  = "vendor"
+    }
+    metrics {
+      id         = "723981e9-2810-42d1-94ef-42bbb4bbc134"
+      element_id = var.element_second_id
+      aggregate  = "Average"
+      attribute  = "durationMs"
+    }
+    display_attributes {
+      var_type    = "Column"
+      show_legend = true
+    }
+    group_by_max = 10
+  }
 
 }
