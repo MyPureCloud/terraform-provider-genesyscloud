@@ -223,14 +223,7 @@ func updateTaskManagementWorktypeStatus(ctx context.Context, d *schema.ResourceD
 		return util.BuildDiagnosticError(ResourceType, errorMsg, errors.New(errorMsg))
 	}
 
-	taskManagementWorktypeStatus := platformclientv2.Workitemstatusupdate{
-		Name:                         platformclientv2.String(d.Get("name").(string)),
-		Description:                  resourcedata.GetNillableValue[string](d, "description"),
-		DestinationStatusIds:         lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids"),
-		DefaultDestinationStatusId:   resourcedata.GetNillableValue[string](d, "default_destination_status_id"),
-		StatusTransitionDelaySeconds: resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"),
-		StatusTransitionTime:         resourcedata.GetNillableValue[string](d, "status_transition_time"),
-	}
+	taskManagementWorktypeStatus := buildWorktypeStatusUpdate(d)
 
 	// If the user makes a reference to a status that is managed by terraform the id will look like this <worktypeId>/<statusId>
 	// so we need to extract just the status id from any status references that look like this
