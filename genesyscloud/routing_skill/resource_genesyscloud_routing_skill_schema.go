@@ -20,6 +20,7 @@ func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceRoutingSkill())
 	regInstance.RegisterExporter(ResourceType, RoutingSkillExporter())
 	regInstance.RegisterDataSource(ResourceType, DataSourceRoutingSkill())
+	regInstance.RegisterDataSource(UsersResourceType, DataSourceRoutingSkillUsers())
 }
 
 // The context is now added without Timeout ,
