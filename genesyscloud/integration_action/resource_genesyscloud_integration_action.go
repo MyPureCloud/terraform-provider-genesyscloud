@@ -212,10 +212,8 @@ func isFunctionDataActionIntegration(ctx context.Context, integrationId string, 
 func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, meta interface{}, iap *integrationActionsProxy) diag.Diagnostics {
 	id := d.Id()
 
-	integrationId := d.Get("integration_id").(string)
 	name := d.Get("name").(string)
 	category := d.Get("category").(string)
-	secure := d.Get("secure").(bool)
 
 	version := 1
 	zipid := ""
@@ -232,33 +230,53 @@ func updateFunctionDataActionDraft(ctx context.Context, d *schema.ResourceData, 
 		}
 	}
 
-	log.Printf("Updating integration action Function%s", name)
+	log.Printf("Updating integration action Function %s", name)
 
-	actionContract, diagErr := BuildSdkActionContract(d)
-	if diagErr != nil {
-		return diagErr
-	}
-
-	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
-		action, resp, err := iap.createIntegrationActionDraft(ctx, &IntegrationAction{
-			Name:          &name,
-			Category:      &category,
-			Id:            &id,
-			IntegrationId: &integrationId,
-			Secure:        &secure,
-			Contract:      actionContract,
-			Config:        BuildSdkActionConfig(d),
-		})
+	// Create a draft FROM the existing action so the update keeps the same action id.
+	// Previously this called the drafts-collection POST, which minted a brand-new action id
+	// and left the original action untouched (DEVTOOLING-1886 / GitHub #2638). We must not
+	// change d.Id() here.
+	diagErr := util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+		_, resp, err := iap.createIntegrationActionDraftFromExisting(ctx, id)
 		if err != nil {
-			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create integration action %s error: %s", name, err), resp)
+			return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create draft for integration action %s error: %s", name, err), resp)
 		}
-		d.SetId(*action.Id)
-		id = *action.Id
-		log.Printf("Created integration action %s %s", name, *action.Id)
+		log.Printf("Created draft from existing integration action %s %s", name, id)
 		return resp, nil
 	})
 	if diagErr != nil {
 		return diagErr
+	}
+
+	// Apply any name/category/config changes to the draft (same action id). The draft was
+	// created from the existing published action, so these fields already carry the current
+	// server values; we only PATCH when the user actually changed one of them. contract_input,
+	// contract_output and secure are ForceNew, so they cannot change on this update path.
+	// PATCH requires the draft's current version for optimistic concurrency.
+	if d.HasChange("name") || d.HasChange("category") || d.HasChange("config_request") ||
+		d.HasChange("config_response") || d.HasChange("config_timeout_seconds") {
+		diagErr = util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
+			draft, resp, err := iap.getIntegrationActionDraftById(ctx, id)
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read draft for integration action %s error: %s", name, err), resp)
+			}
+			if draft == nil || draft.Version == nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read draft version for integration action %s", name), resp)
+			}
+			_, resp, err = iap.patchIntegrationActionDraft(ctx, id, platformclientv2.Updatedraftinput{
+				Name:     &name,
+				Category: &category,
+				Config:   BuildSdkActionConfig(d),
+				Version:  draft.Version,
+			})
+			if err != nil {
+				return resp, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update draft for integration action %s error: %s", name, err), resp)
+			}
+			return resp, nil
+		})
+		if diagErr != nil {
+			return diagErr
+		}
 	}
 
 	diagErr = util.RetryWhen(util.IsStatus400, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
