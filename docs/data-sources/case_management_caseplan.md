@@ -16,16 +16,22 @@ The following Genesys Cloud APIs are used by this data source. Ensure your OAuth
 
 * [GET /api/v2/casemanagement/caseplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans)
 * [GET /api/v2/casemanagement/caseplans/{caseplanId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId-)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId-)
 * [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/dataschemas](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--dataschemas)
 * [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/intakesettings](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--intakesettings)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--stageplans)
+* [GET /api/v2/casemanagement/caseplans/{caseplanId}/versions/{versionId}/stageplans/{stageplanId}/stepplans](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-casemanagement-caseplans--caseplanId--versions--versionId--stageplans--stageplanId--stepplans)
 
 ## Permissions and Scopes
 
 The following permissions are required to use this resource:
 
+* `caseManagement:caseplan:version`
 * `caseManagement:caseplan:view`
 * `caseManagement:caseplanDataSchemas:view`
 * `caseManagement:caseplanIntakeSettings:view`
+* `caseManagement:stageplan:view`
+* `caseManagement:stepplan:view`
 
 The following OAuth scopes are required to use this resource:
 
