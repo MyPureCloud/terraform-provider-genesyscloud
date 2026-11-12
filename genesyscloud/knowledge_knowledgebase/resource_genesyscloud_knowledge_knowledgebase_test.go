@@ -124,7 +124,7 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 	var after string
 	const pageSize = "100"
 
-	rebuildError := rebuildDatabase()
+	rebuildError := rebuildDatabase(platformclientv2.GetDefaultConfiguration())
 	if rebuildError != nil {
 		log.Printf("Failed to rebuild database: %v", rebuildError)
 	}
@@ -140,31 +140,34 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 		}
 
 		for _, knowledgeBase := range *knowledgeBases.Entities {
-			// Check if the knowledge base name starts with the Test name
-			if knowledgeBase.Name != nil && strings.HasPrefix(*knowledgeBase.Name, knowledgeBaseName) {
-				log.Printf("Deleting knowledge base %s", *knowledgeBase.Name)
-				_, _, err := knowledgeApi.DeleteKnowledgeKnowledgebase(*knowledgeBase.Id)
-				if err != nil {
-					// Logging the error rather than returning it to ensure the deletion of other knowledge bases
-					log.Printf("Failed to delete knowledge base %s: %v", *knowledgeBase.Name, err)
-					continue
-				}
-				log.Printf("Deleted knowledge base %s", *knowledgeBase.Name)
-				time.Sleep(5 * time.Second)
+			if !isTestKnowledgeBase(knowledgeBase, knowledgeBaseName) {
+				continue
 			}
 
-			// Check if the knowledge base description starts with the Test description
-			if knowledgeBase.Description != nil && strings.HasPrefix(*knowledgeBase.Description, "test-knowledgebase-description") {
-				log.Printf("Deleting knowledge base %s, description: %s", *knowledgeBase.Name, *knowledgeBase.Description)
-				_, _, err := knowledgeApi.DeleteKnowledgeKnowledgebase(*knowledgeBase.Id)
-				if err != nil {
-					// Logging the error rather than returning it to ensure the deletion of other knowledge bases
-					log.Printf("Failed to delete knowledge base %s: %v", *knowledgeBase.Name, err)
+			// Other test packages create knowledge bases with the same name/description prefix and run at the
+			// same time. Only remove leftovers from earlier runs, never knowledge bases that are still in use.
+			if knowledgeBase.DateCreated == nil {
+				log.Printf("Skipping knowledge base %s: the API returned no creation date, so its age is unknown", util.StringOrNil(knowledgeBase.Name))
+				continue
+			}
+			if !isOlderThan(knowledgeBase, time.Now(), staleKnowledgeBaseAge) {
+				log.Printf("Skipping knowledge base %s: created %s, less than %s ago, it may belong to a running test", util.StringOrNil(knowledgeBase.Name), knowledgeBase.DateCreated.Format(time.RFC3339), staleKnowledgeBaseAge)
+				continue
+			}
+
+			log.Printf("Deleting stale knowledge base %s", util.StringOrNil(knowledgeBase.Name))
+			_, resp, err := knowledgeApi.DeleteKnowledgeKnowledgebase(*knowledgeBase.Id)
+			if err != nil {
+				if util.IsStatus404(resp) {
+					log.Printf("Knowledge base %s was already deleted", util.StringOrNil(knowledgeBase.Name))
 					continue
 				}
-				log.Printf("Deleted knowledge base %s", *knowledgeBase.Name)
-				time.Sleep(5 * time.Second)
+				// Logging the error rather than returning it to ensure the deletion of other knowledge bases
+				log.Printf("Failed to delete knowledge base %s: %v", util.StringOrNil(knowledgeBase.Name), err)
+				continue
 			}
+			log.Printf("Deleted knowledge base %s", util.StringOrNil(knowledgeBase.Name))
+			time.Sleep(5 * time.Second)
 		}
 
 		previousAfter := after
@@ -181,4 +184,32 @@ func cleanUpKnowledgeBase(knowledgeBaseName string) error {
 	}
 	log.Printf("Cleaned up Knowledge Bases with name '%s'", knowledgeBaseName)
 	return nil
+}
+
+// staleKnowledgeBaseAge is how old a test knowledge base must be before cleanUpKnowledgeBase removes it.
+// Knowledge bases younger than this may belong to tests that are running right now in other packages.
+const staleKnowledgeBaseAge = 30 * time.Minute
+
+// testKnowledgeBaseDescriptionPrefix is the description shared by the knowledge bases the acceptance tests create.
+const testKnowledgeBaseDescriptionPrefix = "test-knowledgebase-description"
+
+// isTestKnowledgeBase reports whether a knowledge base looks like one created by the acceptance tests,
+// based on its name prefix or its description prefix.
+func isTestKnowledgeBase(knowledgeBase platformclientv2.Knowledgebase, namePrefix string) bool {
+	if knowledgeBase.Id == nil {
+		return false
+	}
+	if knowledgeBase.Name != nil && strings.HasPrefix(*knowledgeBase.Name, namePrefix) {
+		return true
+	}
+	return knowledgeBase.Description != nil && strings.HasPrefix(*knowledgeBase.Description, testKnowledgeBaseDescriptionPrefix)
+}
+
+// isOlderThan reports whether the knowledge base was created at least minAge before now.
+// A knowledge base with no creation date is treated as not old enough, so it is never deleted by mistake.
+func isOlderThan(knowledgeBase platformclientv2.Knowledgebase, now time.Time, minAge time.Duration) bool {
+	if knowledgeBase.DateCreated == nil {
+		return false
+	}
+	return now.Sub(*knowledgeBase.DateCreated) >= minAge
 }
