@@ -351,6 +351,11 @@ func toolInputResource() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
+			"fallback_to_failure": {
+				Description: "Whether a missing value at runtime terminates the session with a 422 instead of prompting the user. Only valid on required External inputs of an undisclosed type, and mutually exclusive with fallback_to_user.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
 			"mapping": {
 				Description: "Path used to extract this input from a previous tool output. JSON-encoded array. Only valid when source is ToolOutput.",
 				Type:        schema.TypeString,
