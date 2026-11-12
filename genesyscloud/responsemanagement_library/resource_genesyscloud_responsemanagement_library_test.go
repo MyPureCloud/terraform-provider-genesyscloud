@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -21,9 +22,12 @@ import (
 func TestAccResourceResponseManagementLibrary(t *testing.T) {
 
 	var (
-		libraryResourceLabel = "response_management_library"
-		name1                = "Library " + uuid.NewString()
-		name2                = "Library " + uuid.NewString()
+		libraryResourceLabel  = "response_management_library"
+		libraryFullPath       = ResourceType + "." + libraryResourceLabel
+		name1                 = "Library " + uuid.NewString()
+		name2                 = "Library " + uuid.NewString()
+		divisionResourceLabel = "test_div"
+		divisionName          = "test tf division " + uuid.NewString()
 	)
 
 	resource.Test(t, resource.TestCase{
@@ -31,22 +35,27 @@ func TestAccResourceResponseManagementLibrary(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Create
+				// Create with default (home) division
 				Config: GenerateResponseManagementLibraryResource(libraryResourceLabel, name1),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResourceLabel, "name", name1),
+					resource.TestCheckResourceAttr(libraryFullPath, "name", name1),
+					resource.TestCheckResourceAttrSet(libraryFullPath, "division_id"),
 				),
 			},
 			{
-				// Update
-				Config: GenerateResponseManagementLibraryResource(libraryResourceLabel, name2),
+				// Update name and move to an explicit division
+				Config: GenerateResponseManagementLibraryResourceWithDivision(
+					libraryResourceLabel, name2, "genesyscloud_auth_division."+divisionResourceLabel+".id") +
+					authDivision.GenerateAuthDivisionBasic(divisionResourceLabel, divisionName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("genesyscloud_responsemanagement_library."+libraryResourceLabel, "name", name2),
+					resource.TestCheckResourceAttr(libraryFullPath, "name", name2),
+					resource.TestCheckResourceAttrPair(libraryFullPath, "division_id",
+						authDivision.ResourceType+"."+divisionResourceLabel, "id"),
 				),
 			},
 			{
 				// Import/Read
-				ResourceName:      "genesyscloud_responsemanagement_library." + libraryResourceLabel,
+				ResourceName:      libraryFullPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
