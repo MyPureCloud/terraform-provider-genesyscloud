@@ -114,3 +114,55 @@ func TestUnitKnowledgebaseDeleteNonBotFlowErrorFailsFast(t *testing.T) {
 	assert.Equal(t, 0, h.rebuildCalls, "rebuild is only for the bot-flow dependency error")
 	assert.Equal(t, 1, h.deleteCalls)
 }
+
+func strPtr(s string) *string { return &s }
+
+func timePtr(t time.Time) *time.Time { return &t }
+
+// The cleanup helper must recognise test knowledge bases by name or description prefix, and nothing else.
+func TestUnitIsTestKnowledgeBase(t *testing.T) {
+	const prefix = "Test-Terraform-Knowledge-Base"
+
+	tests := []struct {
+		name string
+		kb   platformclientv2.Knowledgebase
+		want bool
+	}{
+		{"name_prefix_matches", platformclientv2.Knowledgebase{Id: strPtr("1"), Name: strPtr(prefix + "abc")}, true},
+		{"description_prefix_matches", platformclientv2.Knowledgebase{Id: strPtr("1"), Name: strPtr("other"), Description: strPtr("test-knowledgebase-description1")}, true},
+		{"description_matches_without_name", platformclientv2.Knowledgebase{Id: strPtr("1"), Description: strPtr("test-knowledgebase-description2")}, true},
+		{"unrelated_knowledge_base", platformclientv2.Knowledgebase{Id: strPtr("1"), Name: strPtr("Production KB"), Description: strPtr("real content")}, false},
+		{"no_id_is_never_matched", platformclientv2.Knowledgebase{Name: strPtr(prefix + "abc")}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isTestKnowledgeBase(tt.kb, prefix))
+		})
+	}
+}
+
+// The cleanup helper must only delete leftovers. A knowledge base created moments ago can belong to a test that
+// is running in another package at the same time (this caused 404s in those tests), so it must be left alone.
+func TestUnitIsOlderThan(t *testing.T) {
+	now := time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)
+	const minAge = 30 * time.Minute
+
+	tests := []struct {
+		name string
+		kb   platformclientv2.Knowledgebase
+		want bool
+	}{
+		{"created_seconds_ago_is_kept", platformclientv2.Knowledgebase{DateCreated: timePtr(now.Add(-10 * time.Second))}, false},
+		{"created_just_under_threshold_is_kept", platformclientv2.Knowledgebase{DateCreated: timePtr(now.Add(-minAge + time.Second))}, false},
+		{"created_exactly_at_threshold_is_cleaned", platformclientv2.Knowledgebase{DateCreated: timePtr(now.Add(-minAge))}, true},
+		{"created_yesterday_is_cleaned", platformclientv2.Knowledgebase{DateCreated: timePtr(now.Add(-24 * time.Hour))}, true},
+		{"missing_creation_date_is_kept", platformclientv2.Knowledgebase{}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isOlderThan(tt.kb, now, minAge))
+		})
+	}
+}
