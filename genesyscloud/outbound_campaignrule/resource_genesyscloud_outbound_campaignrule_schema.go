@@ -138,6 +138,52 @@ var validateTimeZoneID = validation.StringMatch(
 	`must be a valid IANA time zone, e.g. "America/New_York", "UTC", or "GMT"`,
 )
 
+// canonicalTimeOfDay rewrites a time-of-day into the HH:mm:ss form the API stores, but only when
+// doing so discards nothing. The API accepts HH:mm, HH:mm:ss or HH:mm:ss.fff and always stores
+// HH:mm:ss, so both "12:00" -> "12:00:00" (seconds implied zero) and "12:00:00.000" -> "12:00:00"
+// (zero fraction) are lossless. Without this, either spelling sits in the config against the
+// stored value and every plan reports a change that never settles.
+//
+// A non-zero fraction such as "12:00:00.500" is returned unchanged. The API discards sub-second
+// precision, and normalising it here would hide that loss; leaving it makes the plan show the
+// value the operator asked for against the value the API will actually keep.
+//
+// Anything not matching a recognised shape is returned untouched. This runs during plan, so it
+// must never panic and must never invent a value.
+func canonicalTimeOfDay(v string) string {
+	base, fraction, hasFraction := strings.Cut(v, ".")
+	if hasFraction && strings.Trim(fraction, "0") != "" {
+		return v
+	}
+	switch strings.Count(base, ":") {
+	case 1: // HH:mm
+		return base + ":00"
+	case 2: // HH:mm:ss
+		return base
+	default:
+		return v
+	}
+}
+
+// normalizeTimeOfDay adapts canonicalTimeOfDay to schema.SchemaStateFunc, canonicalising a
+// configured value before it is written to state so that the plan shows what the API will hold.
+// The type assertion cannot fail for a TypeString field; the guard is there because a panic
+// during plan would be far worse than an empty string.
+func normalizeTimeOfDay(v interface{}) string {
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return canonicalTimeOfDay(s)
+}
+
+// suppressTimeOfDayDiff ignores a difference that is only a matter of spelling, whichever side
+// carries it. Being symmetric keeps the comparison correct whether the API trims the value, as
+// campaign rules do today, or pads it, as the callable timeset API does.
+func suppressTimeOfDayDiff(k, old, new string, d *schema.ResourceData) bool {
+	return canonicalTimeOfDay(old) == canonicalTimeOfDay(new)
+}
+
 var (
 	outboundCampaignRuleWeekDayOfMonth = &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -178,9 +224,11 @@ var (
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						`threshold_value`: {
-							Description: `Time in HH:mm:ss.SSS format.`,
-							Optional:    true,
-							Type:        schema.TypeString,
+							Description:      `Time in HH:mm:ss format. Fractional seconds are not stored by the API.`,
+							Optional:         true,
+							Type:             schema.TypeString,
+							StateFunc:        normalizeTimeOfDay,
+							DiffSuppressFunc: suppressTimeOfDayDiff,
 						},
 						`interval`: {
 							Description: `Time interval for "between" operator.`,
@@ -190,14 +238,18 @@ var (
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									`min`: {
-										Description: `Minimum time in HH:mm:ss.SSS format.`,
-										Required:    true,
-										Type:        schema.TypeString,
+										Description:      `Minimum time in HH:mm:ss format. Fractional seconds are not stored by the API.`,
+										Required:         true,
+										Type:             schema.TypeString,
+										StateFunc:        normalizeTimeOfDay,
+										DiffSuppressFunc: suppressTimeOfDayDiff,
 									},
 									`max`: {
-										Description: `Maximum time in HH:mm:ss.SSS format.`,
-										Required:    true,
-										Type:        schema.TypeString,
+										Description:      `Maximum time in HH:mm:ss format. Fractional seconds are not stored by the API.`,
+										Required:         true,
+										Type:             schema.TypeString,
+										StateFunc:        normalizeTimeOfDay,
+										DiffSuppressFunc: suppressTimeOfDayDiff,
 									},
 								},
 							},
@@ -431,8 +483,6 @@ func validateCampaignRuleConditions(ctx context.Context, d *schema.ResourceDiff,
 		}
 	}
 
-	// for_duration validation is FROZEN pending DEVTOOLING-1759 (field disabled in schema).
-
 	return nil
 }
 
@@ -478,28 +528,24 @@ func validateNoTimeBasedConditionsInLegacy(conditions []interface{}) error {
 			return fmt.Errorf("campaign_wait_time_settings requires campaign_rule_processing = \"v2\" with condition_groups; it cannot be used in legacy campaign_rule_conditions")
 		}
 
-		// FROZEN pending DEVTOOLING-1759: for_duration is disabled in the schema, so this
-		// legacy-reject is moot. Re-enable together with the for_duration field.
-		/*
-			// Reject for_duration in legacy condition parameters
-			paramsRaw := condMap["parameters"]
-			var paramsMap map[string]interface{}
-			switch p := paramsRaw.(type) {
-			case *schema.Set:
-				if p != nil && p.Len() > 0 {
-					paramsMap, _ = p.List()[0].(map[string]interface{})
-				}
-			case []interface{}:
-				if len(p) > 0 && p[0] != nil {
-					paramsMap, _ = p[0].(map[string]interface{})
-				}
+		// Reject for_duration in legacy condition parameters
+		paramsRaw := condMap["parameters"]
+		var paramsMap map[string]interface{}
+		switch p := paramsRaw.(type) {
+		case *schema.Set:
+			if p != nil && p.Len() > 0 {
+				paramsMap, _ = p.List()[0].(map[string]interface{})
 			}
-			if paramsMap != nil {
-				if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
-					return fmt.Errorf("for_duration requires campaign_rule_processing = \"v2\" with condition_groups; it cannot be used in legacy campaign_rule_conditions")
-				}
+		case []interface{}:
+			if len(p) > 0 && p[0] != nil {
+				paramsMap, _ = p[0].(map[string]interface{})
 			}
-		*/
+		}
+		if paramsMap != nil {
+			if v, ok := paramsMap["for_duration"].([]interface{}); ok && len(v) > 0 && v[0] != nil {
+				return fmt.Errorf("for_duration requires campaign_rule_processing = \"v2\" with condition_groups; it cannot be used in legacy campaign_rule_conditions")
+			}
+		}
 	}
 	return nil
 }
@@ -735,9 +781,7 @@ func validateOperatorFields(condMap map[string]interface{}, condType string, dat
 
 // paramSchemaOptions controls which fields are included in the campaign rule parameter schema.
 type paramSchemaOptions struct {
-	// FROZEN pending DEVTOOLING-1759: Go SDK serializes Duration as an object (causes 400).
-	// Re-enable for_duration when the SDK is fixed.
-	// includeForDuration       bool
+	includeForDuration       bool
 	includeDateTimeOperators bool
 }
 
@@ -879,28 +923,24 @@ func campaignRuleParameterSchema(opts paramSchemaOptions) map[string]*schema.Sch
 		},
 	}
 
-	// FROZEN pending DEVTOOLING-1759 (Go SDK serializes Duration as an object, causing 400).
-	// Re-enable this block when the SDK is fixed.
-	/*
-		if opts.includeForDuration {
-			params[`for_duration`] = &schema.Schema{
-				Description: `Duration (in seconds) for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2".`,
-				Optional:    true,
-				MaxItems:    1,
-				Type:        schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						`seconds`: {
-							Description:  `Duration in seconds.`,
-							Required:     true,
-							Type:         schema.TypeInt,
-							ValidateFunc: validation.IntAtLeast(1),
-						},
+	if opts.includeForDuration {
+		params[`for_duration`] = &schema.Schema{
+			Description: `Duration for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2".`,
+			Optional:    true,
+			MaxItems:    1,
+			Type:        schema.TypeList,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					`seconds`: {
+						Description:  `Duration in whole seconds. Sub-second precision is not supported: a duration set outside Terraform with a fractional value is read as whole seconds.`,
+						Required:     true,
+						Type:         schema.TypeInt,
+						ValidateFunc: validation.IntAtLeast(1),
 					},
 				},
-			}
+			},
 		}
-	*/
+	}
 
 	return params
 }
@@ -908,8 +948,7 @@ func campaignRuleParameterSchema(opts paramSchemaOptions) map[string]*schema.Sch
 // ResourceOutboundCampaignrule registers the genesyscloud_outbound_campaignrule resource with Terraform
 func ResourceOutboundCampaignrule() *schema.Resource {
 	campaignRuleParameters := &schema.Resource{
-		// FROZEN pending DEVTOOLING-1759: includeForDuration omitted (was true).
-		Schema: campaignRuleParameterSchema(paramSchemaOptions{includeDateTimeOperators: true}),
+		Schema: campaignRuleParameterSchema(paramSchemaOptions{includeForDuration: true, includeDateTimeOperators: true}),
 	}
 
 	// Action parameters: no for_duration, no date/time operators

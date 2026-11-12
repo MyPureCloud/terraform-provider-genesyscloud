@@ -365,3 +365,297 @@ func generateActionEntities(entities *platformclientv2.Campaignruleactionentitie
 
 	return []interface{}{entitiesMap}
 }
+
+// TestUnitSecondsToISO8601Duration covers the write side of for_duration. The API accepts a plain
+// seconds duration and canonicalises it itself, so the provider only ever needs the PT<n>S form.
+func TestUnitSecondsToISO8601Duration(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		seconds  int
+		expected string
+	}{
+		{"fifteen minutes as seconds", 900, "PT900S"},
+		{"one second", 1, "PT1S"},
+		{"an hour", 3600, "PT3600S"},
+		{"more than a day", 90000, "PT90000S"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, secondsToISO8601Duration(tt.seconds))
+		})
+	}
+}
+
+// TestUnitParseISO8601DurationSeconds pins the parser to the forms the API was observed to return,
+// rather than to a reading of the ISO-8601 spec. Every "ok" case below was produced by the live API
+// during the OBR-1683 probe: it canonicalises whatever it is given into Java's Duration.toString()
+// form, rolling days into hours, so PT90000S comes back as PT25H and no day component ever appears.
+func TestUnitParseISO8601DurationSeconds(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		seconds int
+		exact   bool
+		ok      bool
+	}{
+		// Forms the API returned during the probe.
+		{"minutes only", "PT15M", 900, true, true},
+		{"seconds only", "PT900S", 900, true, true},
+		{"hours and minutes", "PT2H10M", 7800, true, true},
+		{"hours beyond a day", "PT25H", 90000, true, true},
+		{"all three components", "PT1H1M1S", 3661, true, true},
+		{"zero", "PT0S", 0, true, true},
+
+		// Fractional seconds are accepted and preserved by the API but cannot be represented.
+		{"fractional seconds lose precision", "PT1.5S", 1, false, true},
+		{"fraction below a second", "PT0.5S", 0, false, true},
+		{"zero fraction loses nothing", "PT1.0S", 1, true, true},
+		{"fraction alongside other components", "PT1M0.250S", 60, false, true},
+
+		// Rejected: the API refuses these too, or would never emit them.
+		{"negative", "PT-5S", 0, false, false},
+		{"bare designator", "PT", 0, false, false},
+		{"day component", "P1D", 0, false, false},
+		{"day and time components", "P1DT2H", 0, false, false},
+		{"not a duration", "15m", 0, false, false},
+		{"unknown unit", "PT1X", 0, false, false},
+		{"empty", "", 0, false, false},
+		{"components out of order", "PT1M1H", 0, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			seconds, exact, ok := parseISO8601DurationSeconds(tt.input)
+			assert.Equal(t, tt.ok, ok, "ok")
+			if !tt.ok {
+				return
+			}
+			assert.Equal(t, tt.seconds, seconds, "seconds")
+			assert.Equal(t, tt.exact, exact, "exact")
+		})
+	}
+}
+
+// TestUnitForDurationRoundTrip is the property the seconds-block schema depends on: whatever the
+// API does to the value in between, writing seconds and reading them back returns the same number.
+// This is what makes a seconds block immune to the canonicalisation drift that a raw ISO-8601
+// string field would suffer.
+func TestUnitForDurationRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	for _, seconds := range []int{1, 30, 90, 900, 3600, 3661, 7800, 90000} {
+		t.Run(fmt.Sprintf("%d seconds", seconds), func(t *testing.T) {
+			parsed, exact, ok := parseISO8601DurationSeconds(secondsToISO8601Duration(seconds))
+			assert.True(t, ok, "the value we generate must parse back")
+			assert.True(t, exact, "whole seconds must round-trip without loss")
+			assert.Equal(t, seconds, parsed)
+		})
+	}
+}
+
+// TestUnitFlattenForDuration covers the read path, including the two cases that must not fail the
+// read: a value the parser does not recognise, and one carrying precision the schema cannot hold.
+// Failing either would break terraform import and tf export against a rule created elsewhere.
+func TestUnitFlattenForDuration(t *testing.T) {
+	t.Parallel()
+
+	t.Run("nil gives no block", func(t *testing.T) {
+		assert.Nil(t, flattenForDuration(nil))
+	})
+
+	t.Run("empty string gives no block", func(t *testing.T) {
+		assert.Nil(t, flattenForDuration(platformclientv2.String("")))
+	})
+
+	t.Run("canonicalised value parses back to the configured seconds", func(t *testing.T) {
+		assert.Equal(t,
+			[]interface{}{map[string]interface{}{"seconds": 900}},
+			flattenForDuration(platformclientv2.String("PT15M")))
+	})
+
+	t.Run("sub-second precision is truncated rather than dropped", func(t *testing.T) {
+		assert.Equal(t,
+			[]interface{}{map[string]interface{}{"seconds": 1}},
+			flattenForDuration(platformclientv2.String("PT1.5S")))
+	})
+
+	t.Run("unparseable value gives no block rather than zero seconds", func(t *testing.T) {
+		assert.Nil(t, flattenForDuration(platformclientv2.String("garbage")))
+	})
+}
+
+// TestUnitCanonicalTimeOfDay covers the normalisation behind the time-of-day drift fix. The
+// campaign rules API accepts HH:mm, HH:mm:ss and HH:mm:ss.fff but always stores HH:mm:ss, so any
+// other spelling left in a config sits against the stored value and every plan reports a change
+// that never settles. Rewrites that discard nothing are normalised; a non-zero fraction is left
+// alone so that the loss the API inflicts stays visible to the operator.
+func TestUnitCanonicalTimeOfDay(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"already canonical", "12:00:00", "12:00:00"},
+		{"zero milliseconds", "12:00:00.000", "12:00:00"},
+		{"single zero fraction digit", "12:00:00.0", "12:00:00"},
+		{"two zero fraction digits", "12:00:00.00", "12:00:00"},
+		{"trailing dot with no digits", "12:00:00.", "12:00:00"},
+		{"hours and minutes only", "12:00", "12:00:00"},
+		{"hours and minutes with zero fraction", "12:00.000", "12:00:00"},
+		{"midnight without seconds", "00:00", "00:00:00"},
+		{"non-zero fraction is preserved", "12:00:00.500", "12:00:00.500"},
+		{"small non-zero fraction is preserved", "12:00:00.010", "12:00:00.010"},
+		{"long non-zero fraction is preserved", "12:00:00.123456", "12:00:00.123456"},
+		{"empty string", "", ""},
+		{"unrecognised text", "not-a-time", "not-a-time"},
+		{"too many colons", "12:00:00:00", "12:00:00:00"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, canonicalTimeOfDay(tt.input))
+		})
+	}
+}
+
+// TestUnitNormalizeTimeOfDay covers the schema.SchemaStateFunc adapter. StateFunc runs during
+// plan, so the non-string guard matters more than the value it returns.
+func TestUnitNormalizeTimeOfDay(t *testing.T) {
+	t.Parallel()
+
+	t.Run("drops a zero fraction", func(t *testing.T) {
+		assert.Equal(t, "12:00:00", normalizeTimeOfDay("12:00:00.000"))
+	})
+
+	t.Run("pads a value with no seconds", func(t *testing.T) {
+		assert.Equal(t, "09:30:00", normalizeTimeOfDay("09:30"))
+	})
+
+	t.Run("preserves a non-zero fraction", func(t *testing.T) {
+		assert.Equal(t, "12:00:00.500", normalizeTimeOfDay("12:00:00.500"))
+	})
+
+	t.Run("returns empty for a non-string without panicking", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			assert.Equal(t, "", normalizeTimeOfDay(42))
+		})
+	})
+
+	t.Run("returns empty for nil without panicking", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			assert.Equal(t, "", normalizeTimeOfDay(nil))
+		})
+	})
+}
+
+// TestUnitSuppressTimeOfDayDiff covers the diff comparison. It is deliberately symmetric: the
+// campaign rules API trims the fraction, but the sibling callable timeset API appends one, so the
+// comparison has to hold whichever side carries the odd spelling.
+func TestUnitSuppressTimeOfDayDiff(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		old      string
+		new      string
+		suppress bool
+	}{
+		{"config adds zero milliseconds", "12:00:00", "12:00:00.000", true},
+		{"state carries zero milliseconds", "12:00:00.000", "12:00:00", true},
+		{"config omits seconds", "12:00:00", "12:00", true},
+		{"state omits seconds", "12:00", "12:00:00", true},
+		{"identical values", "12:00:00", "12:00:00", true},
+		{"both empty", "", "", true},
+		{"non-zero fraction stays visible", "12:00:00", "12:00:00.500", false},
+		{"a real change stays visible", "12:00:00", "13:00:00", false},
+		{"a real change carrying fractions stays visible", "12:00:00.000", "13:00:00.000", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.suppress, suppressTimeOfDayDiff("", tt.old, tt.new, nil))
+		})
+	}
+}
+
+// nestedSchema walks a path of attribute names down through nested block schemas, descending into
+// each Elem along the way, and returns the leaf schema.
+func nestedSchema(t *testing.T, root map[string]*schema.Schema, path ...string) *schema.Schema {
+	t.Helper()
+
+	current := root
+	for i, name := range path {
+		s, ok := current[name]
+		if !ok {
+			t.Fatalf("attribute %q not found at position %d of %v", name, i, path)
+		}
+		if i == len(path)-1 {
+			return s
+		}
+		res, ok := s.Elem.(*schema.Resource)
+		if !ok {
+			t.Fatalf("attribute %q at position %d of %v has no nested resource to descend into", name, i, path)
+		}
+		current = res.Schema
+	}
+
+	return nil
+}
+
+// TestUnitTimeOfDayFieldsAreWiredForDrift is the guard that keeps the drift fix in place. The
+// helper tests above pass whether or not the schema actually references those helpers, so without
+// this a later edit could quietly drop StateFunc or DiffSuppressFunc from a field and reintroduce
+// the drift. Asserting through the retrieved hooks catches a wrong function as well as a missing
+// one. Passing nil for *schema.ResourceData is safe because suppressTimeOfDayDiff ignores it.
+func TestUnitTimeOfDayFieldsAreWiredForDrift(t *testing.T) {
+	t.Parallel()
+
+	root := ResourceOutboundCampaignrule().Schema
+
+	fields := []struct {
+		name string
+		path []string
+	}{
+		{
+			name: "time_of_day.threshold_value",
+			path: []string{"condition_groups", "conditions", "date_time_parameters", "time_of_day", "threshold_value"},
+		},
+		{
+			name: "time_of_day.interval.min",
+			path: []string{"condition_groups", "conditions", "date_time_parameters", "time_of_day", "interval", "min"},
+		},
+		{
+			name: "time_of_day.interval.max",
+			path: []string{"condition_groups", "conditions", "date_time_parameters", "time_of_day", "interval", "max"},
+		},
+	}
+
+	for _, field := range fields {
+		t.Run(field.name, func(t *testing.T) {
+			leaf := nestedSchema(t, root, field.path...)
+
+			if !assert.NotNil(t, leaf.StateFunc, "StateFunc is not wired; time-of-day values will drift again") {
+				return
+			}
+			if !assert.NotNil(t, leaf.DiffSuppressFunc, "DiffSuppressFunc is not wired; time-of-day values will drift again") {
+				return
+			}
+
+			assert.Equal(t, "12:00:00", leaf.StateFunc("12:00:00.000"), "a zero fraction should be dropped before reaching state")
+			assert.Equal(t, "12:00:00", leaf.StateFunc("12:00"), "missing seconds should be padded before reaching state")
+			assert.Equal(t, "12:00:00.500", leaf.StateFunc("12:00:00.500"), "a real fraction should survive into state so the loss is visible")
+
+			assert.True(t, leaf.DiffSuppressFunc("", "12:00:00", "12:00:00.000", nil), "a zero fraction should be suppressed")
+			assert.True(t, leaf.DiffSuppressFunc("", "12:00:00", "12:00", nil), "a missing seconds part should be suppressed")
+			assert.False(t, leaf.DiffSuppressFunc("", "12:00:00", "12:00:00.500", nil), "a real fraction should stay visible")
+			assert.False(t, leaf.DiffSuppressFunc("", "12:00:00", "13:00:00", nil), "a real change should stay visible")
+		})
+	}
+}

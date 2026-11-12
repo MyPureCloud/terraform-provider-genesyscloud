@@ -44,12 +44,13 @@ The following OAuth scopes are required to use this resource:
 
 ```terraform
 resource "genesyscloud_quality_forms_survey" "example_survey_form" {
-  name      = "Example survey form"
-  published = true
-  disabled  = false
-  language  = "en-US"
-  header    = "example header"
-  footer    = "example footer"
+  name        = "Example survey form"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  published   = true
+  disabled    = false
+  language    = "en-US"
+  header      = "example header"
+  footer      = "example footer"
   question_groups {
     name       = "Example Question Group 1"
     na_enabled = false
@@ -128,6 +129,7 @@ resource "genesyscloud_quality_forms_survey" "example_survey_form" {
 ### Optional
 
 - `disabled` (Boolean) Is this form disabled Defaults to `false`.
+- `division_id` (String) The ID of the division to which this survey form belongs. If not set, the form is created in the home division.
 - `footer` (String) Markdown text for the bottom of the form.
 - `header` (String) Markdown text for the top of the form.
 - `published` (Boolean) Specifies if the survey form is published. Defaults to `false`.
