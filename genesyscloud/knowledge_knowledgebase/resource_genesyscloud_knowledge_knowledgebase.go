@@ -193,11 +193,11 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		// The knowledge base is still referenced by a bot flow in the dependency-tracking graph.
 		// Rebuild the dependency tracking database once, then keep retrying the delete until the
 		// (asynchronous, eventually-consistent) dependency link clears.
-		if rebuildErr := rebuildDatabase(sdkConfig); rebuildErr != nil {
+		if rebuildErr := rebuildDatabaseFn(sdkConfig); rebuildErr != nil {
 			log.Printf("Failed to rebuild knowledge base database: %v", rebuildErr)
 		}
 
-		diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+		diagErr := util.WithRetries(ctx, deleteRetryTimeout, func() *retry.RetryError {
 			_, resp, err := knowledgebaseProxy.deleteKnowledgebase(ctx, d.Id())
 			if err != nil {
 				if strings.Contains(err.Error(), "in use by Bot flow") {
@@ -226,3 +226,10 @@ func deleteKnowledgeKnowledgebase(ctx context.Context, d *schema.ResourceData, m
 		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge base %s still exists", d.Id()), resp))
 	})
 }
+
+// Seams used by the delete flow. They default to the real implementation / production timeout and
+// exist so unit tests can stub the (slow, API-backed) dependency rebuild and shorten the retry window.
+var (
+	rebuildDatabaseFn  = rebuildDatabase
+	deleteRetryTimeout = 2 * time.Minute
+)
