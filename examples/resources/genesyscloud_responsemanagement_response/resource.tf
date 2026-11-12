@@ -174,3 +174,15 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
     }
   }
 }
+
+# File attachments are not supported on MessagingTemplate responses, so they are shown on a plain response.
+resource "genesyscloud_responsemanagement_response" "example_responsemanagement_response_file_attachments" {
+  name        = "Sample response with file attachments"
+  library_ids = [genesyscloud_responsemanagement_library.example_library.id]
+  texts {
+    content      = "Please see the attached document."
+    content_type = "text/plain"
+  }
+  asset_ids                 = [genesyscloud_responsemanagement_responseasset.example_asset.id]     // Inline images
+  file_attachment_asset_ids = [genesyscloud_responsemanagement_responseasset.example_pdf_asset.id] // File attachments; must not repeat IDs from asset_ids
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -410,6 +411,146 @@ func TestAccResourceResponseManagementResponseMessaging(t *testing.T) {
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"substitutions_schema_id", "messaging_template", "response_type"},
+			},
+		},
+		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
+	})
+	cleanupResponseAssets(testFilesDir)
+}
+
+func TestAccResourceResponseManagementResponseFileAttachments(t *testing.T) {
+	t.Parallel()
+	var (
+		responseResourceLabel = "response-resource-file-attachments"
+		responseName          = "Response-" + uuid.NewString()
+		libraryResourceLabel  = "library-resource-file-attachments"
+		libraryName           = "ReferencelibraryFileAttachments"
+		textsContent          = "Please see the attached file"
+
+		// Asset names are the relative upload path and cleanup matches by name prefix, so this test keeps its
+		// files in its own directory. Other tests clean up "test_responseasset_data" and must not match these.
+		testFilesDir           = "test_fileattachment_data"
+		imageAssetLabel        = "asset-resource-file-attachments-img"
+		imageAssetPath         = filepath.Join(testFilesDir, "fileattach-img.png")
+		attachmentAssetLabel   = "asset-resource-file-attachments-pdf"
+		attachmentAssetPath    = filepath.Join(testFilesDir, "fileattach-doc.pdf")
+		attachment2AssetLabel  = "asset-resource-file-attachments-pdf2"
+		attachment2AssetPath   = filepath.Join(testFilesDir, "fileattach-doc2.pdf")
+		fullResourcePath       = "genesyscloud_responsemanagement_response." + responseResourceLabel
+		imageAssetResource     = "genesyscloud_responsemanagement_responseasset." + imageAssetLabel
+		attachmentAssetRefExpr = "genesyscloud_responsemanagement_responseasset." + attachmentAssetLabel + ".id"
+		attachment2AssetRef    = "genesyscloud_responsemanagement_responseasset." + attachment2AssetLabel + ".id"
+	)
+
+	cleanupResponseAssets(testFilesDir)
+
+	baseConfig := respmanagementLibrary.GenerateResponseManagementLibraryResource(
+		libraryResourceLabel,
+		libraryName,
+	) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
+		imageAssetLabel,
+		imageAssetPath,
+		util.NullValue,
+	) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
+		attachmentAssetLabel,
+		attachmentAssetPath,
+		util.NullValue,
+	) + respManagementRespAsset.GenerateResponseManagementResponseAssetResource(
+		attachment2AssetLabel,
+		attachment2AssetPath,
+		util.NullValue,
+	)
+
+	responseConfig := func(assetIds []string, fileAttachmentAssetIds []string) string {
+		return GenerateResponseManagementResponseResource(
+			responseResourceLabel,
+			responseName,
+			[]string{"genesyscloud_responsemanagement_library." + libraryResourceLabel + ".id"},
+			util.NullValue,
+			util.NullValue,
+			util.NullValue,
+			assetIds,
+			GenerateTextsBlock(textsContent, "text/plain", util.NullValue),
+			fmt.Sprintf("file_attachment_asset_ids = [%s]", strings.Join(fileAttachmentAssetIds, ", ")),
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				// Create with an inline image and a PDF file attachment
+				Config: baseConfig + responseConfig(
+					[]string{imageAssetResource + ".id"},
+					[]string{attachmentAssetRefExpr},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, "asset_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "asset_ids.0", imageAssetResource, "id"),
+					resource.TestCheckResourceAttr(fullResourcePath, "file_attachment_asset_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "file_attachment_asset_ids.0",
+						"genesyscloud_responsemanagement_responseasset."+attachmentAssetLabel, "id"),
+				),
+			},
+			{
+				// The same asset in both sets must fail at plan time, before anything is sent to the API
+				Config: baseConfig + responseConfig(
+					[]string{attachmentAssetRefExpr},
+					[]string{attachmentAssetRefExpr},
+				),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile("listed in both asset_ids and file_attachment_asset_ids"),
+			},
+			{
+				// Update: add a second file attachment alongside the inline image
+				Config: baseConfig + responseConfig(
+					[]string{imageAssetResource + ".id"},
+					[]string{attachmentAssetRefExpr, attachment2AssetRef},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, "asset_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "asset_ids.0", imageAssetResource, "id"),
+					resource.TestCheckResourceAttr(fullResourcePath, "file_attachment_asset_ids.#", "2"),
+					resource.TestCheckTypeSetElemAttrPair(fullResourcePath, "file_attachment_asset_ids.*",
+						"genesyscloud_responsemanagement_responseasset."+attachmentAssetLabel, "id"),
+					resource.TestCheckTypeSetElemAttrPair(fullResourcePath, "file_attachment_asset_ids.*",
+						"genesyscloud_responsemanagement_responseasset."+attachment2AssetLabel, "id"),
+				),
+			},
+			{
+				// Update: drop the inline image, keep only the file attachment
+				Config: baseConfig + responseConfig(
+					[]string{},
+					[]string{attachmentAssetRefExpr},
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, "asset_ids.#", "0"),
+					resource.TestCheckResourceAttr(fullResourcePath, "file_attachment_asset_ids.#", "1"),
+					resource.TestCheckResourceAttrPair(fullResourcePath, "file_attachment_asset_ids.0",
+						"genesyscloud_responsemanagement_responseasset."+attachmentAssetLabel, "id"),
+				),
+			},
+			{
+				// Update: remove the file attachment
+				Config: baseConfig + responseConfig([]string{}, []string{}),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, "asset_ids.#", "0"),
+					resource.TestCheckResourceAttr(fullResourcePath, "file_attachment_asset_ids.#", "0"),
+				),
+			},
+			{
+				// Re-add the image and both file attachments so import verifies they are read back from the API
+				Config: baseConfig + responseConfig(
+					[]string{imageAssetResource + ".id"},
+					[]string{attachmentAssetRefExpr, attachment2AssetRef},
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      fullResourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 		CheckDestroy: testVerifyResponseManagementResponseDestroyed,
