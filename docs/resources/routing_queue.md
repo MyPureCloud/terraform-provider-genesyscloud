@@ -608,12 +608,12 @@ Optional:
 
 Optional:
 
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7. Defaults to 8 when the media settings block is specified but this value is omitted. Defaults to `8`.
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
 - `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted. Defaults to `20000`.
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted. Defaults to `0.8`.
 
 
 <a id="nestedblock--media_settings_callback"></a>
@@ -621,7 +621,7 @@ Optional:
 
 Optional:
 
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7. Defaults to 30 when the media settings block is specified but this value is omitted. Defaults to `30`.
 - `answering_machine_flow_id` (String) The inbound flow to transfer to if an answering machine is detected during the outbound call of a customer first callback when answeringMachineReactionType is set to TransferToFlow.
 - `answering_machine_reaction_type` (String) The action to take if an answering machine is detected during the outbound call of a customer first callback. Valid values include: HangUp, TransferToQueue, TransferToFlow
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
@@ -637,8 +637,8 @@ Optional:
 - `mode` (String) The mode callbacks will use on this queue.
 - `pacing_modifier` (Number) Controls the maximum number of outbound calls at one time when mode is CustomerFirst.
 - `retry_delay_seconds` (Number) Delay in seconds between each retry of a customer first callback.
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted. Defaults to `20000`.
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted. Defaults to `0.8`.
 - `site_id` (String) The identifier of the site to be used for dialing. If omitted, the default telephony site for the organization is used.
 
 
@@ -647,12 +647,12 @@ Optional:
 
 Optional:
 
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7. Defaults to 30 when the media settings block is specified but this value is omitted. Defaults to `30`.
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
 - `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted. Defaults to `20000`.
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted. Defaults to `0.8`.
 
 
 <a id="nestedblock--media_settings_email"></a>
@@ -660,12 +660,12 @@ Optional:
 
 Optional:
 
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7. Defaults to 300 when the media settings block is specified but this value is omitted. Defaults to `300`.
 - `auto_answer_alert_tone_seconds` (Number) How long to play the alerting tone for an auto-answer interaction.
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
 - `manual_answer_alert_tone_seconds` (Number) How long to play the alerting tone for a manual-answer interaction.
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000. Defaults to 86400000 when the media settings block is specified but this value is omitted. Defaults to `86400000`.
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted. Defaults to `0.8`.
 
 
 <a id="nestedblock--media_settings_message"></a>
@@ -673,12 +673,12 @@ Optional:
 
 Optional:
 
-- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7
+- `alerting_timeout_sec` (Number) Alerting timeout in seconds. Must be >= 7. Defaults to 30 when the media settings block is specified but this value is omitted. Defaults to `30`.
 - `enable_auto_answer` (Boolean) Indicates if auto-answer is enabled for the given media type or subtype (default is false). Subtype settings take precedence over media type settings. Defaults to `false`.
 - `enable_inactivity_timeout` (Boolean) Indicates if inactivity timeout is enabled for all subtypes. The API does not enforce this, so its essentially a no-op. You should drive this configuration via the "sub_type_settings" configuration for each media type
 - `inactivity_timeout_settings` (Block List, Max: 1) Inactivity timeout settings for messages. (see [below for nested schema](#nestedblock--media_settings_message--inactivity_timeout_settings))
-- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000
-- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1.
+- `service_level_duration_ms` (Number) Service Level target in milliseconds. Must be >= 1000. Defaults to 20000 when the media settings block is specified but this value is omitted. Defaults to `20000`.
+- `service_level_percentage` (Number) The desired Service Level. A float value between 0 and 1. Defaults to 0.8 when the media settings block is specified but this value is omitted. Defaults to `0.8`.
 - `sub_type_settings` (Block List) Map of media subtype to media subtype specific settings. (see [below for nested schema](#nestedblock--media_settings_message--sub_type_settings))
 
 <a id="nestedblock--media_settings_message--inactivity_timeout_settings"></a>
