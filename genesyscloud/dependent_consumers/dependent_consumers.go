@@ -1,6 +1,9 @@
 package dependent_consumers
 
-import "sync"
+import (
+	"sort"
+	"sync"
+)
 
 var (
 	dependentConsumerMap map[string]string
@@ -79,4 +82,21 @@ func SetFlowTypeObjectMaps() map[string]string {
 		flowTypeObjectMap["WORKITEM"] = "WORKITEMFLOW"
 	})
 	return flowTypeObjectMap
+}
+
+// GetPossibleDependencyResourceTypes returns the sorted, de-duplicated set of Terraform resource
+// types that an Architect consumer (flow or script) can depend on. Actual dependencies are resolved
+// at export time through the Architect dependency tracking API; this is the static superset, used
+// for documentation such as the published dependency_tree-*.json.
+func GetPossibleDependencyResourceTypes() []string {
+	seen := make(map[string]struct{})
+	for _, resourceType := range SetDependentObjectMaps() {
+		seen[resourceType] = struct{}{}
+	}
+	types := make([]string, 0, len(seen))
+	for resourceType := range seen {
+		types = append(types, resourceType)
+	}
+	sort.Strings(types)
+	return types
 }
