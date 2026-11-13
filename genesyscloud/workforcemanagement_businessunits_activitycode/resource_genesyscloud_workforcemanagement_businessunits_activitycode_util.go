@@ -21,7 +21,7 @@ func SplitBusinessUnitActivityCodeTerraformId(id string) (businessUnitId string,
 
 // isActive reports whether the activity code is still active. Deleting an activity code marks it inactive rather than removing it.
 func isActive(activityCode *platformclientv2.Businessunitactivitycode) bool {
-	return activityCode.Active == nil || *activityCode.Active
+	return *activityCode.Active
 }
 
 // isAgentTimeOffSelectableConfigured reports whether agent_time_off_selectable is set in the configuration,
@@ -78,7 +78,7 @@ func buildUpdateActivityCodeRequest(d *schema.ResourceData, metadata *platformcl
 	if isAgentTimeOffSelectableConfigured(d) {
 		request.AgentTimeOffSelectable = platformclientv2.Bool(d.Get("agent_time_off_selectable").(bool))
 	}
-	if metadata != nil && metadata.Version != nil {
+	if metadata.Version != nil {
 		request.Metadata = &platformclientv2.Wfmversionedentitymetadata{Version: metadata.Version}
 	}
 	return request
@@ -86,12 +86,8 @@ func buildUpdateActivityCodeRequest(d *schema.ResourceData, metadata *platformcl
 
 func flattenSecondaryPresenceIds(secondaryPresences *[]platformclientv2.Secondarypresence) *schema.Set {
 	ids := make([]interface{}, 0)
-	if secondaryPresences != nil {
-		for _, presence := range *secondaryPresences {
-			if presence.Id != nil {
-				ids = append(ids, *presence.Id)
-			}
-		}
+	for _, presence := range *secondaryPresences {
+		ids = append(ids, *presence.Id)
 	}
 	return schema.NewSet(schema.HashString, ids)
 }

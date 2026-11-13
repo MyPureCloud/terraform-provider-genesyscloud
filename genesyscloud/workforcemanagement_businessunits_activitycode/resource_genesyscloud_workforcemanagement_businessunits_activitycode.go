@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -39,19 +40,13 @@ func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platform
 	}
 
 	for _, businessUnit := range *businessUnits {
-		if businessUnit.Id == nil {
-			continue
-		}
 		activityCodes, resp, err := proxy.getAllBusinessUnitActivityCodes(ctx, *businessUnit.Id)
 		if err != nil {
 			return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get activity codes of business unit %s: %v", *businessUnit.Id, err), resp)
 		}
 
 		for _, activityCode := range *activityCodes {
-			if activityCode.Id == nil || activityCode.Name == nil || !isActive(&activityCode) {
-				continue
-			}
-			if activityCode.DefaultCode != nil && *activityCode.DefaultCode {
+			if !isActive(&activityCode) || *activityCode.DefaultCode {
 				continue
 			}
 			resources[*businessUnit.Id+"/"+*activityCode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *businessUnit.Name + "_" + *activityCode.Name}
@@ -91,9 +86,7 @@ func readBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, m
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
 		activityCode, resp, getErr := proxy.getBusinessUnitActivityCodeById(ctx, businessUnitId, activityCodeId)
 		if getErr != nil {
-			if util.IsStatus404(resp) {
-				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s: %s", businessUnitId, activityCodeId, getErr), resp))
-			}
+			// A 404 is not retried: the activity code is readable as soon as it is created, so a 404 means it is gone and WithRetriesForRead removes it from state
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s: %s", businessUnitId, activityCodeId, getErr), resp))
 		}
 
@@ -104,16 +97,16 @@ func readBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, m
 		}
 
 		_ = d.Set("business_unit_id", businessUnitId)
-		resourcedata.SetNillableValue(d, "name", activityCode.Name)
-		resourcedata.SetNillableValue(d, "category", activityCode.Category)
-		resourcedata.SetNillableValue(d, "length_in_minutes", activityCode.LengthInMinutes)
-		resourcedata.SetNillableValue(d, "counts_as_paid_time", activityCode.CountsAsPaidTime)
-		resourcedata.SetNillableValue(d, "counts_as_work_time", activityCode.CountsAsWorkTime)
+		_ = d.Set("name", *activityCode.Name)
+		_ = d.Set("category", *activityCode.Category)
+		_ = d.Set("length_in_minutes", *activityCode.LengthInMinutes)
+		_ = d.Set("counts_as_paid_time", *activityCode.CountsAsPaidTime)
+		_ = d.Set("counts_as_work_time", *activityCode.CountsAsWorkTime)
 		resourcedata.SetNillableValue(d, "agent_time_off_selectable", activityCode.AgentTimeOffSelectable)
-		resourcedata.SetNillableValue(d, "counts_toward_shrinkage", activityCode.CountsTowardShrinkage)
-		resourcedata.SetNillableValue(d, "planned_shrinkage", activityCode.PlannedShrinkage)
-		resourcedata.SetNillableValue(d, "interruptible", activityCode.Interruptible)
-		resourcedata.SetNillableValue(d, "default_code", activityCode.DefaultCode)
+		_ = d.Set("counts_toward_shrinkage", *activityCode.CountsTowardShrinkage)
+		_ = d.Set("planned_shrinkage", *activityCode.PlannedShrinkage)
+		_ = d.Set("interruptible", *activityCode.Interruptible)
+		_ = d.Set("default_code", *activityCode.DefaultCode)
 		_ = d.Set("secondary_presence_ids", flattenSecondaryPresenceIds(activityCode.SecondaryPresences))
 
 		log.Printf("Read business unit %s activity code %s", businessUnitId, activityCodeId)
@@ -129,11 +122,16 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Updating business unit %s activity code %s", businessUnitId, activityCodeId)
 
-	// The update request carries the current metadata version for optimistic locking, so a version conflict re-reads the activity code and tries again
+	// The update request carries the current metadata version for optimistic locking, so a version conflict re-reads the activity code and tries again.
+	// Rate limiting and server errors are transient, and retrying is safe because every attempt rebuilds the request from the freshly read metadata.
 	diagErr := util.WithRetries(ctx, 60*time.Second, func() *retry.RetryError {
 		current, resp, err := proxy.getBusinessUnitActivityCodeById(ctx, businessUnitId, activityCodeId)
 		if err != nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s before update: %s", businessUnitId, activityCodeId, err), resp))
+			readDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s before update: %s", businessUnitId, activityCodeId, err), resp)
+			if isTransientStatus(resp) {
+				return retry.RetryableError(readDiagErr)
+			}
+			return retry.NonRetryableError(readDiagErr)
 		}
 
 		_, resp, err = proxy.updateBusinessUnitActivityCode(ctx, businessUnitId, activityCodeId, buildUpdateActivityCodeRequest(d, current.Metadata))
@@ -141,7 +139,7 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 			return nil
 		}
 		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update business unit %s activity code %s: %s", businessUnitId, activityCodeId, err), resp)
-		if util.IsStatus409(resp) {
+		if util.IsStatus409(resp) || isTransientStatus(resp) {
 			return retry.RetryableError(builtDiagErr)
 		}
 		return retry.NonRetryableError(builtDiagErr)
@@ -152,6 +150,10 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Updated business unit %s activity code %s", businessUnitId, activityCodeId)
 	return readBusinessUnitActivityCode(ctx, d, meta)
+}
+
+func isTransientStatus(resp *platformclientv2.APIResponse) bool {
+	return util.IsStatus429(resp) || (resp != nil && resp.StatusCode >= http.StatusInternalServerError)
 }
 
 // deleteBusinessUnitActivityCode is used by the workforcemanagement_businessunits_activitycode resource to delete a business unit activity code from Genesys Cloud
@@ -175,21 +177,6 @@ func deleteBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete business unit %s activity code %s: %s", businessUnitId, activityCodeId, err), resp)
 	}
 
-	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		activityCode, resp, err := proxy.getBusinessUnitActivityCodeById(ctx, businessUnitId, activityCodeId)
-		if err != nil {
-			if util.IsStatus404(resp) {
-				log.Printf("Deleted business unit %s activity code %s", businessUnitId, activityCodeId)
-				return nil
-			}
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting business unit %s activity code %s: %s", businessUnitId, activityCodeId, err), resp))
-		}
-
-		if !isActive(activityCode) {
-			log.Printf("Deleted business unit %s activity code %s", businessUnitId, activityCodeId)
-			return nil
-		}
-
-		return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("business unit %s activity code %s still exists", businessUnitId, activityCodeId), resp))
-	})
+	log.Printf("Deleted business unit %s activity code %s", businessUnitId, activityCodeId)
+	return nil
 }

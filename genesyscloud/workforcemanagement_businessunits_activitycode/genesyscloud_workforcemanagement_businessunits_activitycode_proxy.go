@@ -111,10 +111,6 @@ func getAllBusinessUnitActivityCodesFn(ctx context.Context, p *businessUnitActiv
 		return nil, resp, err
 	}
 
-	if listing == nil || listing.Entities == nil {
-		return &[]platformclientv2.Businessunitactivitycode{}, resp, nil
-	}
-
 	return listing.Entities, resp, nil
 }
 
@@ -126,7 +122,7 @@ func getBusinessUnitActivityCodeIdByNameFn(ctx context.Context, p *businessUnitA
 	}
 
 	for _, activityCode := range *activityCodes {
-		if activityCode.Name != nil && *activityCode.Name == name && activityCode.Id != nil && isActive(&activityCode) {
+		if *activityCode.Name == name && isActive(&activityCode) {
 			return *activityCode.Id, resp, false, nil
 		}
 	}
@@ -154,10 +150,6 @@ func getAllBusinessUnitsFn(ctx context.Context, p *businessUnitActivityCodeProxy
 	listing, resp, err := p.workforceManagementApi.GetWorkforcemanagementBusinessunits("", "")
 	if err != nil {
 		return nil, resp, err
-	}
-
-	if listing == nil || listing.Entities == nil {
-		return &[]platformclientv2.Businessunitlistitem{}, resp, nil
 	}
 
 	return listing.Entities, resp, nil
