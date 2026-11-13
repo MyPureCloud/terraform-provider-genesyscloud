@@ -232,7 +232,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
 - `footer` (Block Set, Max: 1) Footer template identifies the Footer type and its footerUsage (see [below for nested schema](#nestedblock--footer))
 - `form` (Block List, Max: 1) Form template definition for responseType.Form. Requires response_type to be set to 'Form'. (see [below for nested schema](#nestedblock--form))
 - `interaction_type` (String) The interaction type for this response.
-- `messaging_template` (Block Set, Max: 1) An optional messaging template definition for responseType.MessagingTemplate. (see [below for nested schema](#nestedblock--messaging_template))
+- `messaging_template` (Block List, Max: 1) An optional messaging template definition for responseType.MessagingTemplate. (see [below for nested schema](#nestedblock--messaging_template))
 - `response_type` (String) The response type represented by the response.
 - `substitutions` (Block Set) Details about any text substitutions used in the texts for this response. (see [below for nested schema](#nestedblock--substitutions))
 - `substitutions_schema_id` (String) Metadata about the text substitutions in json schema format.
@@ -420,7 +420,7 @@ Optional:
 
 Optional:
 
-- `whats_app` (Block Set, Max: 1) Defines a messaging template for a WhatsApp messaging channel (see [below for nested schema](#nestedblock--messaging_template--whats_app))
+- `whats_app` (Block List, Max: 1) Defines a messaging template for a WhatsApp messaging channel (see [below for nested schema](#nestedblock--messaging_template--whats_app))
 
 <a id="nestedblock--messaging_template--whats_app"></a>
 ### Nested Schema for `messaging_template.whats_app`
@@ -428,11 +428,84 @@ Optional:
 Required:
 
 - `language` (String) The messaging template language configured for this template. This is a WhatsApp specific value. For example, 'en_US'
-- `name` (String) The messaging template name.
+- `name` (String) The messaging template name. For carousel templates it can only contain lowercase letters, numbers and underscores.
 
 Optional:
 
+- `carousel` (Block List, Max: 1) Definition for a WhatsApp carousel template. Requires 'integration_id', 'category' and exactly one 'texts' block. Once created, changing 'name', 'language', 'integration_id', 'category', 'carousel' or 'texts' recreates the response, unless 'template_status' is 'ERROR'. (see [below for nested schema](#nestedblock--messaging_template--whats_app--carousel))
+- `category` (String) Category of the WhatsApp carousel template.
+- `integration_id` (String) WhatsApp integration ID for WhatsApp carousels.
 - `namespace` (String) The messaging template namespace.
+
+Read-Only:
+
+- `status_info` (List of Object) Status information about the WhatsApp carousel template. (see [below for nested schema](#nestedatt--messaging_template--whats_app--status_info))
+- `template_status` (String) Template status of the WhatsApp carousel template. Starts as 'ACCEPTED' and is updated asynchronously once WhatsApp has reviewed the template.
+
+<a id="nestedblock--messaging_template--whats_app--carousel"></a>
+### Nested Schema for `messaging_template.whats_app.carousel`
+
+Required:
+
+- `cards` (Block List, Min: 2, Max: 10) List of cards in the carousel template, between 2 and 10. Card order is preserved. If one card sets 'card_body_text', every card must. (see [below for nested schema](#nestedblock--messaging_template--whats_app--carousel--cards))
+
+<a id="nestedblock--messaging_template--whats_app--carousel--cards"></a>
+### Nested Schema for `messaging_template.whats_app.carousel.cards`
+
+Required:
+
+- `buttons` (Block List, Min: 1, Max: 2) Buttons included in the carousel card, 1 or 2. Every card must have the same number and types of buttons, with at most one 'PhoneNumber' button. (see [below for nested schema](#nestedblock--messaging_template--whats_app--carousel--cards--buttons))
+- `header` (Block List, Min: 1, Max: 1) Header for the carousel card. (see [below for nested schema](#nestedblock--messaging_template--whats_app--carousel--cards--header))
+
+Optional:
+
+- `card_body_text` (Block List, Max: 1) Optional body text for the carousel card. (see [below for nested schema](#nestedblock--messaging_template--whats_app--carousel--cards--card_body_text))
+
+<a id="nestedblock--messaging_template--whats_app--carousel--cards--buttons"></a>
+### Nested Schema for `messaging_template.whats_app.carousel.cards.buttons`
+
+Required:
+
+- `type` (String) Type of button.
+
+Optional:
+
+- `content` (String) Content of the button. Used for 'Url' and 'PhoneNumber' button types.
+- `content_text` (String) The text label displayed on the button.
+- `payload` (String) A payload that uniquely identifies a 'QuickReply' button in a carousel.
+
+
+<a id="nestedblock--messaging_template--whats_app--carousel--cards--header"></a>
+### Nested Schema for `messaging_template.whats_app.carousel.cards.header`
+
+Required:
+
+- `content` (String) URL of the image or video shown in the card header.
+- `type` (String) Content type of the card header. 'Video' is only accepted when video carousels are enabled for the org.
+
+
+<a id="nestedblock--messaging_template--whats_app--carousel--cards--card_body_text"></a>
+### Nested Schema for `messaging_template.whats_app.carousel.cards.card_body_text`
+
+Required:
+
+- `content` (String) Body content for the carousel card.
+
+Optional:
+
+- `content_type` (String) Body content type for the carousel card. Defaults to `text/plain`.
+
+
+
+
+<a id="nestedatt--messaging_template--whats_app--status_info"></a>
+### Nested Schema for `messaging_template.whats_app.status_info`
+
+Read-Only:
+
+- `code` (String)
+- `message` (String)
+
 
 
 
