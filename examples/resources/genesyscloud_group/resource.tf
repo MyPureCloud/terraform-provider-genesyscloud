@@ -1,7 +1,6 @@
 resource "genesyscloud_group" "example_group" {
   name          = "Example Group"
   description   = "Group for Testers"
-  email         = "group@example.com"
   type          = "official"
   visibility    = "public"
   rules_visible = true
