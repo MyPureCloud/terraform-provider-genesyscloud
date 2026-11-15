@@ -81,7 +81,11 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 
 // AgenticVirtualAgentTool represents any tool type.
 // Common fields: type, name, description, target, inputInstructions, outputInstructions
-// DataAction-specific: errors, inputs, output, inputValidation, schemas (computed)
+// Inputs and inputValidation apply to DataAction tools and to Knowledge tools
+// (KnowledgeSetting / KnowledgeBase; SAGE-861 / public-api-v2 PR #17904). For Knowledge tools the
+// inputs are dependency-only and are not sent to the knowledge service.
+// DataAction-specific: errors, output, schemas (computed)
+// DataAction-specific: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
 	Type               string                                     `json:"type"`
@@ -91,11 +95,12 @@ type AgenticVirtualAgentTool struct {
 	InputInstructions  []string                                   `json:"inputInstructions,omitempty"`
 	OutputInstructions []AgenticVirtualAgentToolOutputInstruction `json:"outputInstructions,omitempty"`
 	// DataAction-specific fields
-	Errors          []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
-	Inputs          []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
-	Output          string                                `json:"output,omitempty"`
-	InputValidation []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
-	Schemas         *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
+	ContextRetentionEnabled *bool                                 `json:"contextRetentionEnabled,omitempty"`
+	Errors                  []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
+	Inputs                  []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
+	Output                  string                                `json:"output,omitempty"`
+	InputValidation         []AgenticVirtualAgentInputValidation  `json:"inputValidation,omitempty"`
+	Schemas                 *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
 	// ExternalA2AServer-specific fields (computed at publish time)
 	Skills []AgenticVirtualAgentAgentCardSkill `json:"skills,omitempty"`
 }
@@ -170,8 +175,19 @@ type AgenticVirtualAgentStructuredRule struct {
 // Tool Inputs (DataAction only)
 // =============================================================================
 
-// AgenticVirtualAgentToolInput represents an input for a DataAction tool.
+// AgenticVirtualAgentToolInput represents an input for a tool (DataAction or Knowledge).
 // Required: targetName, type, source
+//
+// DependencyOnly marks an input as used only to establish a dependency/precondition; the value is
+// not sent to the underlying tool at runtime. Inputs on Knowledge tools (KnowledgeSetting /
+// KnowledgeBase) must set this to true. Ref: SAGE-861 / public-api-v2 PR #17904 (field is
+// HIDDEN_FROM_DOCS).
+//
+// Wire behavior: the schema field (dependency_only) is a plain TypeBool, which Terraform core
+// always populates, so expandToolInputs always sets this to a non-nil pointer. The omitempty tag
+// therefore never drops it in practice — every input serializes an explicit "dependencyOnly":
+// true|false. The pointer type is kept only for consistency with the other optional *bool fields
+// (required, fallbackToUser) and to allow a nil value in direct (non-Terraform) struct use.
 type AgenticVirtualAgentToolInput struct {
 	TargetName     string        `json:"targetName"`
 	Type           string        `json:"type"`
@@ -179,6 +195,7 @@ type AgenticVirtualAgentToolInput struct {
 	Required       *bool         `json:"required,omitempty"`
 	FallbackToUser *bool         `json:"fallbackToUser,omitempty"`
 	Mapping        []interface{} `json:"mapping,omitempty"`
+	DependencyOnly *bool         `json:"dependencyOnly,omitempty"`
 }
 
 // =============================================================================
@@ -270,11 +287,42 @@ type AgenticVirtualAgentEventSettings struct {
 // AgenticVirtualAgentVersionSettings holds runtime behavior settings.
 type AgenticVirtualAgentVersionSettings struct {
 	ComfortStatement *AgenticVirtualAgentComfortStatementSettings `json:"comfortStatement,omitempty"`
+	// DynamicTurnInstructions holds instructions injected into the agent's turn based on
+	// conversation state (e.g. repetition checks). Per the live API contract (verified via a GET on
+	// a saved version), this field is nested under settings: definition.settings.dynamicTurnInstructions.
+	// Ref: SAGE-1169 / public-api-v2 PR #18032.
+	DynamicTurnInstructions *AgenticVirtualAgentDynamicTurnInstructions `json:"dynamicTurnInstructions,omitempty"`
 }
 
 // AgenticVirtualAgentComfortStatementSettings controls comfort statements during tool calls.
 type AgenticVirtualAgentComfortStatementSettings struct {
 	Enabled *bool `json:"enabled,omitempty"`
+}
+
+// =============================================================================
+// Dynamic Turn Instructions (repetition checks)
+//
+// Contract models: AgenticVirtualAgentDynamicTurnInstructions and
+// AgenticVirtualAgentRepetitionCheck. These are live on the /versions/ endpoint but currently
+// HIDDEN from the public Swagger spec / Go SDK (see note on
+// AgenticVirtualAgentVersionSettings.DynamicTurnInstructions). The field is nested under settings:
+// definition.settings.dynamicTurnInstructions.
+// =============================================================================
+
+// AgenticVirtualAgentDynamicTurnInstructions holds instructions dynamically added to the
+// virtual agent based on conversation state.
+type AgenticVirtualAgentDynamicTurnInstructions struct {
+	RepetitionChecks []AgenticVirtualAgentRepetitionCheck `json:"repetitionChecks,omitempty"`
+}
+
+// AgenticVirtualAgentRepetitionCheck is a rule that detects repeated user or agent messages and
+// adds a corrective instruction to the agent's turn.
+// Required: type, messages, similarity, instruction
+type AgenticVirtualAgentRepetitionCheck struct {
+	Type        string `json:"type"`
+	Messages    int    `json:"messages"`
+	Similarity  string `json:"similarity"`
+	Instruction string `json:"instruction"`
 }
 
 // =============================================================================

@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -57,10 +57,7 @@ func newAccessPolicyProxy(clientConfig *platformclientv2.Configuration) *accessP
 // getAccessPolicyProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getAccessPolicyProxy(clientConfig *platformclientv2.Configuration) *accessPolicyProxy {
-	if internalProxy == nil {
-		internalProxy = newAccessPolicyProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAccessPolicyProxy)
 }
 
 // createAccessPolicy creates a Genesys Cloud access policy

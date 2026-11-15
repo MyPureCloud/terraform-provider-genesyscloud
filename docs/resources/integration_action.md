@@ -3,12 +3,14 @@ page_title: "genesyscloud_integration_action Resource - terraform-provider-genes
 subcategory: ""
 description: |-
   Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
+  Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for function_config.file_path; set it to a local or S3 zip path before plan or apply.
 ---
 # genesyscloud_integration_action (Resource)
 
 <!-- This document is automatically generated. Do not edit manually. Make changes to the schema, examples, or apis.md files in examples/resources/ and run 'make docs' to regenerate. -->
 
 Genesys Cloud Integration Actions. See this page for detailed information on configuring Actions: https://help.mypurecloud.com/articles/add-configuration-custom-actions-integrations/
+Function data action zip files cannot be exported. Genesys Cloud does not allow downloading uploaded function code. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/. Export emits a Terraform variable for function_config.file_path; set it to a local or S3 zip path before plan or apply.
 
 ## API Usage
 
@@ -50,6 +52,12 @@ The following OAuth scopes are required to use this resource:
 * `upload`
 
 ## Export Behavior
+
+### Function Data Action Zip Files Cannot Be Exported
+
+Genesys Cloud does not allow downloading uploaded function zip files (API or UI). See [Limitations of the Genesys Cloud Function data actions integration](https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/).
+
+When you export `genesyscloud_integration_action` resources that use Function Data Actions, `function_config.file_path` is emitted as a Terraform variable (the same pattern the legacy Architect flow exporter uses for flow YAML that cannot be retrieved). A `variable` block and `terraform.tfvars` placeholder are generated. Set the variable to a local or S3 zip path before plan or apply. The zip binary itself is never written to the export directory.
 
 ### Static Data Actions Are Exported as Data Sources
 
@@ -136,6 +144,7 @@ resource "genesyscloud_integration_action" "example_action" {
 # Example with function configuration
 # Required when the integration type is "function-data-actions" (or category contains "function data action").
 # Genesys Cloud cannot download function zips — keep the zip available locally / in your pipeline.
+# Export emits a Terraform variable for file_path; set it to your zip before apply.
 resource "genesyscloud_integration_action" "example_function_action" {
   name                   = "Example Function Action"
   category               = "Function Data Actions"
@@ -177,7 +186,7 @@ resource "genesyscloud_integration_action" "example_function_action" {
     description       = "Custom function for data processing"
     handler           = "index.handler"
     runtime           = "nodejs22.x"
-    timeout_seconds   = 30
+    timeout_seconds   = 15 //ranges from 1 to 15 seconds
     file_path         = "${local.working_dir.integration_action}/function.zip"
     file_content_hash = filesha256("${local.working_dir.integration_action}/function.zip")
   }
@@ -237,7 +246,7 @@ Optional:
 
 Required:
 
-- `file_path` (String) Local path to the zip file containing the function data action code. Genesys Cloud does not allow downloading function zip files, so exports cannot retrieve the binary. After export, supply the zip at the exported path (or update file_path) before apply. See https://help.genesys.cloud/articles/add-function-configuration/
+- `file_path` (String) Local path to the zip file containing the function data action code. Genesys Cloud does not allow downloading function zip files, so exports cannot retrieve the binary. Export sets this attribute to a Terraform variable; assign the variable to your zip path before apply. See https://help.genesys.cloud/articles/limitations-of-the-genesys-cloud-function-data-actions-integration/
 
 Optional:
 
@@ -245,6 +254,6 @@ Optional:
 - `file_content_hash` (String) Hash value of the function zip file content. Used to detect changes. Typically set with filesha256(file_path). Computed by the provider when omitted.
 - `handler` (String) The handler function name.
 - `runtime` (String) The runtime environment for the function.
-- `timeout_seconds` (Number) Timeout in seconds for the function execution.
+- `timeout_seconds` (Number) Timeout in seconds for the function execution. Range allowed 1 to 15. Default value 15 seconds.
 - `zip_id` (String) The ID of the uploaded zip file containing the function code.
 

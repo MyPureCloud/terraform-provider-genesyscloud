@@ -38,7 +38,7 @@ func dataSourceTaskManagementWorktypeStatusRead(ctx context.Context, d *schema.R
 			return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("No task management worktype %s status found with name %s", worktypeId, name), resp))
 		}
 
-		d.SetId(worktypeId + "/" + worktypeStatusId)
+		d.SetId(BuildWorktypeStatusTerraformId(worktypeId, worktypeStatusId))
 		return nil
 	})
 }

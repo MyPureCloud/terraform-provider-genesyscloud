@@ -2,14 +2,16 @@ package conversations_messaging_integrations_instagram
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	cmMessagingSetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
 	cmSupportedContent "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_supportedcontent"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -23,7 +25,6 @@ tests for conversations_messaging_integrations_instagram.
 */
 
 func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
-	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 
 	var (
@@ -77,6 +78,7 @@ func TestAccResourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
 					),
 
 				Check: resource.ComposeTestCheckFunc(
+					waitForInstagramCreateFinished("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1),
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "name", name1),
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "page_access_token", pageAccessToken1),
 					resource.TestCheckResourceAttr("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "user_access_token", ""),
@@ -171,4 +173,33 @@ func testVerifyConversationsMessagingIntegrationsInstagramDestroyed(state *terra
 	}
 	// Success. Instagram config destroyed
 	return nil
+}
+
+// the API rejects deleting an integration whose asynchronous create has not finished
+func waitForInstagramCreateFinished(resourcePath string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		rs := state.RootModule().Resources[resourcePath]
+		if rs == nil {
+			return fmt.Errorf("%s not found in state", resourcePath)
+		}
+		integrationApi := platformclientv2.NewConversationsApi()
+		deadline := time.Now().Add(2 * time.Minute)
+		lastStatus := "unknown"
+		var lastErr error
+		for time.Now().Before(deadline) {
+			instagram, _, err := integrationApi.GetConversationsMessagingIntegrationsInstagramIntegrationId(rs.Primary.ID, "")
+			lastErr = err
+			if err == nil {
+				if instagram.CreateStatus == nil {
+					return nil
+				}
+				lastStatus = *instagram.CreateStatus
+				if strings.EqualFold(lastStatus, "Completed") || strings.EqualFold(lastStatus, "Error") {
+					return nil
+				}
+			}
+			time.Sleep(3 * time.Second)
+		}
+		return fmt.Errorf("instagram integration %s create did not finish within 2 minutes: last status %q, last error: %v", rs.Primary.ID, lastStatus, lastErr)
+	}
 }

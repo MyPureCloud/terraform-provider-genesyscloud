@@ -18,7 +18,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func GetAllRoutingSkills(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -104,8 +104,8 @@ func readRoutingSkill(ctx context.Context, d *schema.ResourceData, meta interfac
 		}
 
 		_ = d.Set("name", *skill.Name)
-		if skill.DivisionId != nil {
-			_ = d.Set("division_id", *skill.DivisionId)
+		if skill.Division != nil && skill.Division.Id != nil {
+			_ = d.Set("division_id", *skill.Division.Id)
 		}
 		log.Printf("Read skill %s %s", d.Id(), *skill.Name)
 		return cc.CheckState(d)
@@ -155,5 +155,9 @@ func GenerateRoutingSkillResourceWithDivision(
 	resourceLabel string,
 	name string,
 	divisionId string) string {
-	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {name = "%s" division_id = "%s" }`, resourceLabel, name, divisionId)
+	return fmt.Sprintf(`resource "genesyscloud_routing_skill" "%s" {
+		name        = "%s"
+		division_id = %s
+	}
+	`, resourceLabel, name, divisionId)
 }

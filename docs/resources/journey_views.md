@@ -121,6 +121,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name          = "New Chart"
     version       = 1
+    rank          = 1
     group_by_time = "Day"
     metrics {
       id         = "36b3f717-f309-425d-9d5e-3af2071ad0a4"
@@ -136,6 +137,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name    = "New Chart B"
     version = 1
+    rank    = 2
     group_by_attributes {
       element_id = var.element_second_id
       attribute  = "vendor"
@@ -144,6 +146,26 @@ resource "genesyscloud_journey_views" "journey_view" {
       id         = "723981e9-2810-42d1-94ef-42bbb4bbc134"
       element_id = var.element_second_id
       aggregate  = "EventCount"
+    }
+    display_attributes {
+      var_type    = "Column"
+      show_legend = true
+    }
+    group_by_max = 10
+  }
+  charts {
+    name    = "New Numeric Chart C"
+    version = 1
+    rank    = 3
+    group_by_attributes {
+      element_id = var.element_second_id
+      attribute  = "vendor"
+    }
+    metrics {
+      id         = "723981e9-2810-42d1-94ef-42bbb4bbc134"
+      element_id = var.element_second_id
+      aggregate  = "Average"
+      attribute  = "durationMs"
     }
     display_attributes {
       var_type    = "Column"
@@ -190,6 +212,7 @@ Optional:
 - `group_by_attributes` (Block List) A list of attributes to group the metrics by (see [below for nested schema](#nestedblock--charts--group_by_attributes))
 - `group_by_max` (Number) A maximum on the number of values being grouped by
 - `group_by_time` (String) A time unit to group the metrics by. Valid values: Day, Week, Month, Year.
+- `rank` (Number) The rank of the journey view chart for ordering display
 
 Read-Only:
 
@@ -205,7 +228,8 @@ Required:
 
 Optional:
 
-- `aggregate` (String) How to aggregate the given element. Valid values: EventCount, CustomerCount.
+- `aggregate` (String) How to aggregate the given element, defaults to CustomerCount.
+- `attribute` (String) Attribute name.
 - `display_label` (String) Display label of metric.
 
 

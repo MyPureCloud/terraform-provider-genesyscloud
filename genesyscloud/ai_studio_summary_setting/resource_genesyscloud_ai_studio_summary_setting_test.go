@@ -2,9 +2,9 @@ package ai_studio_summary_setting
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -19,15 +19,10 @@ tests for ai_studio_summary_setting.
 */
 
 func TestAccResourceAiStudioSummarySetting(t *testing.T) {
-	//t.Parallel()
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
 
 	var (
 		resourceName             = "test-summary-setting"
-		name                     = "summary setting test"
+		name                     = "summary setting test " + uuid.NewString()
 		language                 = "en-au"
 		summaryType              = "Concise"
 		settingType              = "Basic"

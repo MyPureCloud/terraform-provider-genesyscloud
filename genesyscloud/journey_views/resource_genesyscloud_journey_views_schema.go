@@ -301,10 +301,15 @@ var (
 				Required:    true,
 			},
 			"aggregate": {
-				Description:  "How to aggregate the given element. Valid values: EventCount, CustomerCount.",
+				Description:  "How to aggregate the given element, defaults to CustomerCount.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"EventCount", "CustomerCount"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"EventCount", "CustomerCount", "Minimum", "Maximum", "Average", "Sum"}, false),
+			},
+			"attribute": {
+				Description:  "Attribute name.",
+				Type:         schema.TypeString,
+				Optional:     true,
 			},
 			"display_label": {
 				Description: "Display label of metric.",
@@ -368,6 +373,11 @@ var (
 				Description: "The version of chart",
 				Type:        schema.TypeInt,
 				Required:    true,
+			},
+			"rank": {
+				Description: "The rank of the journey view chart for ordering display",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 			"metrics": {
 				Description: "A set of metrics to be displayed on the chart.",

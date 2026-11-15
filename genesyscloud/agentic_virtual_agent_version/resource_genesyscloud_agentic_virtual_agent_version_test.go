@@ -1,11 +1,13 @@
 package agentic_virtual_agent_version
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
@@ -92,6 +94,12 @@ func TestAccResourceAgenticVirtualAgentVersionWithGuardrails(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.guardrails.0.custom.1.enabled", "true"),
 				),
 			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
@@ -123,8 +131,297 @@ func TestAccResourceAgenticVirtualAgentVersionWithEvents(t *testing.T) {
 					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.events.2.violation_threshold", "3"),
 				),
 			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
+}
+
+// TestAccResourceAgenticVirtualAgentVersionWithModel tests create with an explicit model selection.
+func TestAccResourceAgenticVirtualAgentVersionWithModel(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		agentName            = "TF Model Test Agent " + uuid.NewString()
+		role                 = "You are a helpful assistant."
+		instruction1         = "Be concise."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithModelAndSettings(versionResourceLabel, agentResourceLabel, role, instruction1, ""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.role", role),
+					// model is server-controlled (Optional + Computed). After the APT-1 -> APT-2
+					// migration the API always returns "Stable", so assert the field is set rather
+					// than pinning a specific value.
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "definition.0.model"),
+					// settings.comfort_statement coverage
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.comfort_statement.0.enabled", "true"),
+				),
+			},
+			{
+				// Plan should be a no-op after apply (round-trip check for model + settings)
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithModelAndSettings(versionResourceLabel, agentResourceLabel, role, instruction1, ""),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceAgenticVirtualAgentVersionWithTypes tests create with type definitions
+// (object with properties, an array type, an enum type, and a DataActionHttpError type).
+func TestAccResourceAgenticVirtualAgentVersionWithTypes(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		agentName            = "TF Types Test Agent " + uuid.NewString()
+		role                 = "You are a data-driven assistant."
+		instruction1         = "Use the defined types."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithTypes(versionResourceLabel, agentResourceLabel, role, instruction1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					// Object type with a property
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.0.name", "CustomerInfo"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.0.type", "object"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.0.properties.0.name", "accountId"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.0.properties.0.type", "string"),
+					// Array type
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.1.name", "TagList"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.1.type", "array"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.1.items", "string"),
+					// Enum type
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.2.name", "Priority"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.2.enum_values.0", "Low"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.2.enum_values.1", "High"),
+					// DataActionHttpError type
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.3.name", "HttpError"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.3.type", "DataActionHttpError"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.types.3.status_codes.0", "404"),
+				),
+			},
+			{
+				// Round-trip check
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithTypes(versionResourceLabel, agentResourceLabel, role, instruction1),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// TestAccResourceAgenticVirtualAgentVersionWithKnowledgeBaseTool tests create with a
+// KnowledgeBase tool that references a real knowledge knowledgebase resource. This exercises
+// the tools expand/flatten round-trip and target reference resolution.
+func TestAccResourceAgenticVirtualAgentVersionWithKnowledgeBaseTool(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		kbResourceLabel      = "test_kb"
+		agentName            = "TF KB Tool Test Agent " + uuid.NewString()
+		kbName               = "TF KB Tool " + uuid.NewString()
+		role                 = "You are a knowledge base assistant."
+		instruction1         = "Answer using the knowledge base."
+		toolName             = "LookupArticles"
+		toolDesc             = "Search the knowledge base for relevant articles."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeBaseTool(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, role, instruction1, toolName, toolDesc),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.type", "KnowledgeBase"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.name", toolName),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.description", toolDesc),
+					resource.TestCheckResourceAttrPair(
+						ResourceType+"."+versionResourceLabel, "definition.0.tools.0.target.0.id",
+						"genesyscloud_knowledge_knowledgebase."+kbResourceLabel, "id",
+					),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// Creates a version with a DataAction tool. The test org must have the
+// AI-1485_ava_context_window_pruning feature toggle enabled; otherwise the AVA
+// backend removes contextRetentionEnabled from the version definition.
+func TestAccResourceAgenticVirtualAgentVersionWithDataActionTool(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		integResourceLabel   = "test_integ"
+		actionResourceLabel  = "test_action"
+		agentName            = "TF DataAction Tool Agent " + uuid.NewString()
+		actionName           = "TF DA Tool Action " + uuid.NewString()
+		role                 = "You are a data action assistant."
+		instruction1         = "Use the data action tool to look up data."
+		retainedValue        = true
+		prunableValue        = false
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, &retainedValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.type", "DataAction"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.name", "LookupCustomer"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.context_retention_enabled", "true"),
+					resource.TestCheckResourceAttrPair(
+						ResourceType+"."+versionResourceLabel, "definition.0.tools.0.target.0.id",
+						"genesyscloud_integration_action."+actionResourceLabel, "id",
+					),
+					// Input
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.inputs.0.target_name", "customerId"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.inputs.0.source", "User"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.inputs.0.required", "true"),
+					// Output
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output", "CustomerResult"),
+					// Error handling
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.errors.0.type", "HttpError"),
+					// Input validation (Python)
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.input_validation.0.type", "Python"),
+					// Output instructions (Python)
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output_instructions.0.type", "Python"),
+				),
+			},
+			{
+				// Set context_retention_enabled to false to verify that false is not treated as omitted.
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, &prunableValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.context_retention_enabled", "false"),
+				),
+			},
+			{
+				// Remove context_retention_enabled without changing any other attribute. The
+				// provider must send a PATCH request that omits contextRetentionEnabled.
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, nil),
+				Check: resource.ComposeTestCheckFunc(
+					// The Terraform SDK represents an omitted nested boolean as false in state.
+					// Verify that contextRetentionEnabled is omitted from the API response instead.
+					testCheckAgenticVirtualAgentVersionContextRetentionOmitted(ResourceType + "." + versionResourceLabel),
+				),
+			},
+			{
+				// Set context_retention_enabled to false after it was omitted from the API response.
+				// The provider must send a PATCH request with contextRetentionEnabled=false.
+				Config: generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDataActionTool(versionResourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1, &prunableValue),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.context_retention_enabled", "false"),
+					testCheckAgenticVirtualAgentVersionContextRetention(ResourceType+"."+versionResourceLabel, &prunableValue),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func testCheckAgenticVirtualAgentVersionContextRetentionOmitted(resourcePath string) resource.TestCheckFunc {
+	return testCheckAgenticVirtualAgentVersionContextRetention(resourcePath, nil)
+}
+
+func testCheckAgenticVirtualAgentVersionContextRetention(resourcePath string, expected *bool) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		resourceState, ok := state.RootModule().Resources[resourcePath]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourcePath)
+		}
+
+		agentID, versionID, err := ParseVersionId(resourceState.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		config, err := provider.AuthorizeSdk()
+		if err != nil {
+			return fmt.Errorf("failed to authorize SDK while checking context retention: %w", err)
+		}
+
+		version, _, err := newAgenticVirtualAgentVersionProxy(config).getVersionById(context.Background(), agentID, versionID)
+		if err != nil {
+			return fmt.Errorf("failed to read agentic virtual agent version %s while checking context retention: %w", resourceState.Primary.ID, err)
+		}
+		if version == nil || version.Definition == nil || len(version.Definition.Tools) == 0 {
+			return fmt.Errorf("agentic virtual agent version %s has no tool definition", resourceState.Primary.ID)
+		}
+
+		contextRetentionEnabled := version.Definition.Tools[0].ContextRetentionEnabled
+		if expected == nil {
+			if contextRetentionEnabled != nil {
+				return fmt.Errorf("expected contextRetentionEnabled to be omitted from the API response, got %t", *contextRetentionEnabled)
+			}
+			return nil
+		}
+		if contextRetentionEnabled == nil {
+			return fmt.Errorf("expected contextRetentionEnabled=%t in the API response, got omitted", *expected)
+		}
+		if *contextRetentionEnabled != *expected {
+			return fmt.Errorf("expected contextRetentionEnabled=%t in the API response, got %t", *expected, *contextRetentionEnabled)
+		}
+		return nil
+	}
 }
 
 // =============================================================================
@@ -212,4 +509,433 @@ func generateVersionResourceWithEvents(resourceLabel, agentResourceLabel, role, 
 		}
 	}
 	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1)
+}
+
+func generateVersionResourceWithModelAndSettings(resourceLabel, agentResourceLabel, role, instruction1, model string) string {
+	// model is Optional + Computed and server-controlled. When an explicit value is passed it is
+	// emitted; when empty the line is omitted so the API decides the value. Note: after the
+	// APT-1 -> APT-2 migration the API always returns "Stable" (no preview model is currently
+	// available), so tests should not assert or pin a specific model value.
+	modelLine := ""
+	if model != "" {
+		modelLine = fmt.Sprintf("model = \"%s\"", model)
+	}
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role         = "%s"
+			instructions = ["%s"]
+			%s
+
+			settings {
+				comfort_statement {
+					enabled = true
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, modelLine)
+}
+
+func generateVersionResourceWithTypes(resourceLabel, agentResourceLabel, role, instruction1 string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role         = "%s"
+			instructions = ["%s"]
+
+			types {
+				name = "CustomerInfo"
+				type = "object"
+				properties {
+					name     = "accountId"
+					type     = "string"
+					required = true
+				}
+			}
+
+			types {
+				name  = "TagList"
+				type  = "array"
+				items = "string"
+			}
+
+			types {
+				name        = "Priority"
+				type        = "string"
+				enum_values = ["Low", "High"]
+			}
+
+			types {
+				name                = "HttpError"
+				type                = "DataActionHttpError"
+				status_codes        = [404, 500]
+				default_instruction = "Inform the user the request failed."
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1)
+}
+
+func generateKnowledgebaseResource(resourceLabel, name string) string {
+	return fmt.Sprintf(`resource "genesyscloud_knowledge_knowledgebase" "%s" {
+		name                   = "%s"
+		description            = "Knowledge base for AVA tool test"
+		core_language          = "en-US"
+		content_search_enabled = true
+	}
+	`, resourceLabel, name)
+}
+
+func generateVersionResourceWithKnowledgeBaseTool(resourceLabel, agentResourceLabel, kbResourceLabel, role, instruction1, toolName, toolDesc string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role         = "%s"
+			instructions = ["%s"]
+
+			tools {
+				type        = "KnowledgeBase"
+				name        = "%s"
+				description = "%s"
+				target {
+					id   = genesyscloud_knowledge_knowledgebase.%s.id
+					name = genesyscloud_knowledge_knowledgebase.%s.name
+				}
+				input_instructions = ["Use when the user asks a question"]
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, toolName, toolDesc, kbResourceLabel, kbResourceLabel)
+}
+
+// generateDataActionDeps creates an integration (purecloud-data-actions) and an integration_action
+// with a single-string input ("customerId") and output ("result") contract, to be used as a
+// DataAction tool target.
+func generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName string) string {
+	return fmt.Sprintf(`
+resource "genesyscloud_integration" "%[1]s" {
+	integration_type = "purecloud-data-actions"
+}
+
+resource "genesyscloud_integration_action" "%[2]s" {
+	name            = "%[3]s"
+	category        = "Genesys Cloud Data Actions"
+	integration_id  = genesyscloud_integration.%[1]s.id
+	secure          = false
+	contract_input  = jsonencode({
+		type       = "object"
+		properties = { customerId = { type = "string" } }
+		required   = ["customerId"]
+	})
+	contract_output = jsonencode({
+		type       = "object"
+		properties = { result = { type = "string" } }
+		required   = ["result"]
+	})
+	config_request {
+		request_url_template = "/api/v2/users/$${input.customerId}"
+		request_type         = "GET"
+	}
+}
+`, integResourceLabel, actionResourceLabel, actionName)
+}
+
+// generateVersionResourceWithDataActionTool creates a version with a DataAction tool that
+// references the integration_action, exercising inputs, output, errors, input_validation, and
+// output_instructions.
+func generateVersionResourceWithDataActionTool(resourceLabel, agentResourceLabel, actionResourceLabel, role, instruction1 string, contextRetentionEnabled *bool) string {
+	contextRetentionConfig := ""
+	if contextRetentionEnabled != nil {
+		contextRetentionConfig = fmt.Sprintf("context_retention_enabled = %t", *contextRetentionEnabled)
+	}
+
+	return fmt.Sprintf(`resource "%[1]s" "%[2]s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%[3]s.id
+
+		definition {
+			role         = "%[4]s"
+			instructions = ["%[5]s"]
+
+			types {
+				name      = "CustomerId"
+				type      = "string"
+				direction = "Input"
+			}
+
+			types {
+				name      = "CustomerResult"
+				type      = "object"
+				direction = "Output"
+				properties {
+					name = "result"
+					type = "string"
+				}
+			}
+
+			types {
+				name                = "HttpError"
+				type                = "DataActionHttpError"
+				status_codes        = [404, 500]
+				default_instruction = "Inform the user the request failed."
+			}
+
+			tools {
+				type        = "DataAction"
+				name        = "LookupCustomer"
+				description = "Look up a customer by id via a data action."
+				%[7]s
+				target {
+					id   = genesyscloud_integration_action.%[6]s.id
+					name = genesyscloud_integration_action.%[6]s.name
+				}
+
+				input_instructions = ["Use when the user asks to look up a customer"]
+
+				inputs {
+					target_name = "customerId"
+					type        = "CustomerId"
+					source      = "User"
+					required    = true
+				}
+
+				output = "CustomerResult"
+
+				errors {
+					type        = "HttpError"
+					instruction = "Tell the user the lookup failed."
+				}
+
+				input_validation {
+					type             = "Python"
+					if_condition     = "len(customerId) > 0"
+					else_instruction = "Ask the user for a valid customer id."
+				}
+
+				output_instructions {
+					type = "Python"
+					when = "result is not None"
+					then = "Summarize the customer result."
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel, contextRetentionConfig)
+}
+
+// TestAccResourceAgenticVirtualAgentVersionWithDynamicTurnInstructions tests create with
+// dynamic_turn_instructions repetition checks (one Agent, one User), verifying the four fields
+// (type/messages/similarity/instruction) survive the create->read round-trip, that the plan is a
+// no-op afterwards, and that import/read works.
+func TestAccResourceAgenticVirtualAgentVersionWithDynamicTurnInstructions(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		agentName            = "TF DTI Test Agent " + uuid.NewString()
+		role                 = "You are a helpful customer support agent."
+		instruction1         = "Be polite and concise."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDynamicTurnInstructions(versionResourceLabel, agentResourceLabel, role, instruction1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					// Agent repetition check
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.type", "Agent"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.messages", "2"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.similarity", "Moderate"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.0.instruction", "Vary your language, tone, and structure substantially."),
+					// User repetition check
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.type", "User"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.messages", "3"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.similarity", "VeryStrict"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.settings.0.dynamic_turn_instructions.0.repetition_check.1.instruction", "Acknowledge the repetition and try a different approach."),
+				),
+			},
+			{
+				// Round-trip check: plan should be a no-op after apply
+				Config: generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithDynamicTurnInstructions(versionResourceLabel, agentResourceLabel, role, instruction1),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// generateVersionResourceWithDynamicTurnInstructions creates a version with two repetition checks
+// nested under settings.dynamic_turn_instructions (one Agent/Moderate, one User/VeryStrict).
+func generateVersionResourceWithDynamicTurnInstructions(resourceLabel, agentResourceLabel, role, instruction1 string) string {
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role         = "%s"
+			instructions = ["%s"]
+
+			settings {
+				comfort_statement {
+					enabled = true
+				}
+
+				dynamic_turn_instructions {
+					repetition_check {
+						type        = "Agent"
+						messages    = 2
+						similarity  = "Moderate"
+						instruction = "Vary your language, tone, and structure substantially."
+					}
+
+					repetition_check {
+						type        = "User"
+						messages    = 3
+						similarity  = "VeryStrict"
+						instruction = "Acknowledge the repetition and try a different approach."
+					}
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1)
+}
+
+// TestAccResourceAgenticVirtualAgentVersionKnowledgeToolDependencyOnlyInput tests a Knowledge tool
+// that carries a dependency-only input linked to a Data Action tool's output (ToolOutput source),
+// plus a structured input_validation gating the tool. This exercises the SAGE-861 feature:
+// dependency_only inputs on Knowledge tools. It verifies the create->read round-trip of the new
+// field and that a subsequent plan is a no-op.
+func TestAccResourceAgenticVirtualAgentVersionKnowledgeToolDependencyOnlyInput(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		kbResourceLabel      = "test_kb"
+		integResourceLabel   = "test_integ"
+		actionResourceLabel  = "test_action"
+		agentName            = "TF KB DepOnly Agent " + uuid.NewString()
+		kbName               = "TF KB DepOnly " + uuid.NewString()
+		actionName           = "TF DepOnly Action " + uuid.NewString()
+		role                 = "You are a gated knowledge assistant."
+		instruction1         = "Authenticate the user before answering knowledge questions."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeDependencyOnlyInput(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(ResourceType+"."+versionResourceLabel, "version"),
+					// Data Action tool (index 0) produces AuthResult.
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.type", "DataAction"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.0.output", "AuthResult"),
+					// Knowledge tool (index 1) carries a dependency-only input.
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.type", "KnowledgeBase"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.target_name", "auth_token"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.source", "ToolOutput"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.dependency_only", "true"),
+					resource.TestCheckResourceAttr(ResourceType+"."+versionResourceLabel, "definition.0.tools.1.inputs.0.fallback_to_user", "false"),
+				),
+			},
+			{
+				// Round-trip check: plan should be a no-op after apply.
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateDataActionDeps(integResourceLabel, actionResourceLabel, actionName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithKnowledgeDependencyOnlyInput(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				// Import/Read
+				ResourceName:      ResourceType + "." + versionResourceLabel,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+// generateVersionResourceWithKnowledgeDependencyOnlyInput creates a version with a DataAction tool
+// that outputs AuthResult and a KnowledgeBase tool that links to that output via a dependency-only
+// input (source ToolOutput, dependency_only = true, fallback_to_user = false) plus a structured
+// input_validation gate.
+func generateVersionResourceWithKnowledgeDependencyOnlyInput(resourceLabel, agentResourceLabel, kbResourceLabel, actionResourceLabel, role, instruction1 string) string {
+	return fmt.Sprintf(`resource "%[1]s" "%[2]s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%[3]s.id
+
+		definition {
+			role         = "%[4]s"
+			instructions = ["%[5]s"]
+
+			types {
+				name      = "AuthResult"
+				type      = "object"
+				direction = "Output"
+				properties {
+					name = "token"
+					type = "string"
+				}
+			}
+
+			tools {
+				type        = "DataAction"
+				name        = "Authenticate"
+				description = "Authenticate the user and return an auth token."
+				target {
+					id   = genesyscloud_integration_action.%[6]s.id
+					name = genesyscloud_integration_action.%[6]s.name
+				}
+				input_instructions = ["Call this to authenticate the user"]
+				output             = "AuthResult"
+			}
+
+			tools {
+				type        = "KnowledgeBase"
+				name        = "GatedFAQ"
+				description = "Answer questions only for authenticated users."
+				target {
+					id   = genesyscloud_knowledge_knowledgebase.%[7]s.id
+					name = genesyscloud_knowledge_knowledgebase.%[7]s.name
+				}
+				input_instructions = ["Use when the user asks a question"]
+
+				inputs {
+					target_name      = "auth_token"
+					type             = "AuthResult"
+					source           = "ToolOutput"
+					required         = true
+					fallback_to_user = false
+					mapping          = jsonencode(["AuthResult", "token"])
+					dependency_only  = true
+				}
+
+				input_validation {
+					type             = "Structured"
+					if_condition     = jsonencode({ group = "And", rules = [{ name = "auth_token", operator = "IsNotNull" }] })
+					else_instruction = "Ask the customer to authenticate first."
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel, kbResourceLabel)
 }

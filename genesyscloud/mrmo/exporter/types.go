@@ -3,6 +3,7 @@ package exporter
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/tfexporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -46,6 +47,11 @@ type BaseExportInput struct {
 
 type ExportByTypeInput = BaseExportInput
 
+// ResourceErrorInfo describes a single instance that could not be read during an
+// export. Aliased here so MRMO can inspect ExportByTypeOutput.ResourceErrors without
+// importing the tfexporter package.
+type ResourceErrorInfo = tfexporter.ResourceErrorInfo
+
 type ExportOutput struct {
 	// ExportData is the exported data that would be written to the .tf.json file during export
 	ExportData util.JsonMap
@@ -59,6 +65,11 @@ type ExportOutput struct {
 
 	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
 	ResourceExporter *resource_exporter.ResourceExporter
+	// ExportedAsData is true when the exporter exported the entity as a data source rather than a
+	// resource, so ExportData has no resource block for it. Use this instead of evaluating the
+	// exporter's ExportAsDataFunc again: by the time the export returns, the entity's attributes
+	// are no longer the input that function was given.
+	ExportedAsData bool
 }
 
 type ExportByTypeOutput struct {
@@ -74,4 +85,13 @@ type ExportByTypeOutput struct {
 
 	// ResourceExporter is the resource exporter used. This is returned to MRMO so that it can access the RefAttrs during GUID resolution.
 	ResourceExporter *resource_exporter.ResourceExporter
+
+	// ResourceErrors holds the instances of the requested type that could not be
+	// read. Those instances are absent from ExportedResourceDataList, so a caller
+	// that ignores this field cannot distinguish a partial export from a complete one.
+	ResourceErrors []ResourceErrorInfo
+	// ExportedAsData holds the ids (schema.ResourceData.Id()) of the instances in
+	// ExportedResourceDataList that the exporter exported as data sources rather than resources.
+	// It is the exporter's own decision, so a caller needs no ExportAsDataFunc of its own. Never nil.
+	ExportedAsData map[string]bool
 }

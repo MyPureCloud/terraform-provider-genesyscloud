@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -47,11 +47,7 @@ func newIdpGsuiteProxy(clientConfig *platformclientv2.Configuration) *idpGsuiteP
 // getIdpGsuiteProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getIdpGsuiteProxy(clientConfig *platformclientv2.Configuration) *idpGsuiteProxy {
-	if internalProxy == nil {
-		internalProxy = newIdpGsuiteProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIdpGsuiteProxy)
 }
 
 // getIdpGsuite retrieves all Genesys Cloud idp gsuite

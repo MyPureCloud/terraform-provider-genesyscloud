@@ -3,6 +3,7 @@ package location
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func TestAccResourceLocationBasic(t *testing.T) {
@@ -26,8 +27,8 @@ func TestAccResourceLocationBasic(t *testing.T) {
 		locName3          = "Terraform location" + uuid.NewString()
 		locNotes1         = "HQ1"
 		locNotes2         = "HQ2"
-		emergencyNum1     = "+13173124756"
-		emergencyNum2     = "+17654182735"
+		emergencyNum1     = randomEmergencyNumber("317")
+		emergencyNum2     = randomEmergencyNumber("765")
 		locNumberDefault  = "default"
 		locNumberElin     = "elin"
 
@@ -201,4 +202,9 @@ func testCheckEmergencyNumber(resourceLabel string, expectedNumber string) resou
 		}
 		return nil
 	}
+}
+
+// the API rejects an emergency number that another location already uses
+func randomEmergencyNumber(areaCode string) string {
+	return fmt.Sprintf("+1%s%d%06d", areaCode, 2+rand.Intn(8), rand.Intn(1000000))
 }

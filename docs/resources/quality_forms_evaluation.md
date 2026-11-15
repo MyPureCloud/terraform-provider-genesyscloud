@@ -43,8 +43,9 @@ The following OAuth scopes are required to use this resource:
 
 ```terraform
 resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
-  name      = "Example Evaluation Form"
-  published = true
+  name        = "Example Evaluation Form"
+  division_id = data.genesyscloud_auth_division_home.home.id
+  published   = true
   question_groups {
     name                       = "Question Group 1"
     default_answers_to_highest = true
@@ -178,6 +179,7 @@ resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
 
 - `ai_scoring` (Block List, Max: 1) AI scoring settings for the evaluation form. (see [below for nested schema](#nestedblock--ai_scoring))
 - `dialect` (String) The language dialect for this evaluation form. Supported dialects: ar, cs, da, de, en-US, es, fi, fr, fr-CA, he, hi, it, ja, ko, nl, no, pl, pt-BR, pt-PT, ru, sv, th, tr, uk, zh-CN, zh-TW.
+- `division_id` (String) The ID of the division to which this evaluation form belongs. If not set, the form is created in the home division.
 - `evaluation_settings` (Block List, Max: 1) Settings for evaluations associated with this form. (see [below for nested schema](#nestedblock--evaluation_settings))
 - `published` (Boolean) Specifies if the evaluation form is published. **Note:** A form cannot be modified if published is set to true. Defaults to `false`.
 
@@ -185,8 +187,10 @@ resource "genesyscloud_quality_forms_evaluation" "example_evaluation_form" {
 
 - `context_id` (String) ID of the context of the evaluation form. This provides access to all versions of forms.
 - `id` (String) The ID of this resource.
+- `latest_version_form_name` (String) The name of the form's most recently published version.
 - `modified_date` (String) Date time is represented as an ISO-8601 string. For example: yyyy-MM-ddTHH:mm:ss[.mmm]Z
 - `published_id` (String) The ID of the published evaluation form.
+- `weight_mode` (String) Mode for evaluation form weight. Valid values: SCALED, OFF.
 
 <a id="nestedblock--question_groups"></a>
 ### Nested Schema for `question_groups`

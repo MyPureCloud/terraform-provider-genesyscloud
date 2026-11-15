@@ -3,12 +3,13 @@ package group_roles
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/consistency_checker"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,7 +43,10 @@ func readGroupRoles(ctx context.Context, d *schema.ResourceData, meta interface{
 
 		roles, resp, err := flattenSubjectRoles(d, proxy)
 		if err != nil {
-			if util.IsStatus404ByInt(resp.StatusCode) {
+			// Guard against a nil resp (the error path can return a nil APIResponse).
+			// Dereferencing resp.StatusCode without this check is what caused the
+			// DEVTOOLING-1723 plugin crash in the user_roles resource.
+			if resp != nil && util.IsStatus404ByInt(resp.StatusCode) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))
 			}
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read roles for group %s | error: %v", d.Id(), err), resp))

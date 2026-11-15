@@ -1,6 +1,7 @@
 package conversations_messaging_integrations_instagram
 
 import (
+	"fmt"
 	"testing"
 
 	cmMessagingSetting "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_settings"
@@ -17,7 +18,6 @@ Test Class for the conversations messaging integrations instagram Data Source
 */
 
 func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) {
-	t.Skip("Skipping because it requires setting up a org as test account for the mocks to respond correctly.")
 	t.Parallel()
 	var (
 		testResourceLabel1  = "test_sample"
@@ -67,12 +67,28 @@ func TestAccDataSourceConversationsMessagingIntegrationsInstagram(t *testing.T) 
 						"",
 						appId,
 						appSecret,
+					) +
+					generateInstagramIntegrationDataSource(
+						testDataSourceLabel,
+						name1,
+						"genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1,
 					),
 
 				Check: resource.ComposeTestCheckFunc(
+					waitForInstagramCreateFinished("genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1),
 					resource.TestCheckResourceAttrPair("data.genesyscloud_conversations_messaging_integrations_instagram."+testDataSourceLabel, "id", "genesyscloud_conversations_messaging_integrations_instagram."+testResourceLabel1, "id"),
 				),
 			},
 		},
 	})
+}
+
+// generateInstagramIntegrationDataSource generates a data source block that looks up the
+// instagram integration by name, with a depends_on so the resource exists before the lookup.
+func generateInstagramIntegrationDataSource(dataSourceLabel, name, dependsOnResource string) string {
+	return fmt.Sprintf(`
+		data "genesyscloud_conversations_messaging_integrations_instagram" "%s" {
+			name = "%s"
+			depends_on = [%s]
+		}`, dataSourceLabel, name, dependsOnResource)
 }

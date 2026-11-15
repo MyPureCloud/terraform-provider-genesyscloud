@@ -6,7 +6,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func buildElements(d *schema.ResourceData) (*[]platformclientv2.Journeyviewelement, error) {
@@ -289,6 +289,7 @@ func buildCharts(d *schema.ResourceData) *[]platformclientv2.Journeyviewchart {
 		//element.Id = getStringPointerFromInterface(elemMap["id"])
 		chart.Name = getStringPointerFromInterface(chartMap["name"])
 		chart.Version = getIntPointerFromInterface(chartMap["version"])
+		chart.Rank = getIntPointerFromInterface(chartMap["rank"])
 		if metricsSlice, ok := chartMap["metrics"].([]interface{}); ok {
 			chart.Metrics = buildMetrics(metricsSlice)
 		}
@@ -322,6 +323,7 @@ func buildMetrics(objsSlice []interface{}) *[]platformclientv2.Journeyviewchartm
 		var metric platformclientv2.Journeyviewchartmetric
 		metric.Id = getStringPointerFromInterface(objMap["id"])
 		metric.Aggregate = getStringPointerFromInterface(objMap["aggregate"])
+		metric.Attribute = getStringPointerFromInterface(objMap["attribute"])
 		metric.DisplayLabel = getStringPointerFromInterface(objMap["display_label"])
 		metric.ElementId = getStringPointerFromInterface(objMap["element_id"])
 		objs = append(objs, metric)
@@ -559,6 +561,7 @@ func flattenCharts(charts *[]platformclientv2.Journeyviewchart) []interface{} {
 		resourcedata.SetMapValueIfNotNil(chartsMap, "id", chart.Id)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "name", chart.Name)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "version", chart.Version)
+		resourcedata.SetMapValueIfNotNil(chartsMap, "rank", chart.Rank)
 		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(chartsMap, "metrics", chart.Metrics, flattenMetrics)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_time", chart.GroupByTime)
 		resourcedata.SetMapValueIfNotNil(chartsMap, "group_by_max", chart.GroupByMax)
@@ -579,6 +582,7 @@ func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interf
 		resourcedata.SetMapValueIfNotNil(metricsMap, "id", metric.Id)
 		resourcedata.SetMapValueIfNotNil(metricsMap, "element_id", metric.ElementId)
 		resourcedata.SetMapValueIfNotNil(metricsMap, "aggregate", metric.Aggregate)
+		resourcedata.SetMapValueIfNotNil(metricsMap, "attribute", metric.Attribute)
 		resourcedata.SetMapValueIfNotNil(metricsMap, "display_label", metric.DisplayLabel)
 		metricsList = append(metricsList, metricsMap)
 	}

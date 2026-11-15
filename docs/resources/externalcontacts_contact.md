@@ -21,6 +21,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [PUT /api/v2/externalcontacts/contacts/{contactId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-externalcontacts-contacts--contactId-)
 * [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
 * [GET /api/v2/externalcontacts/scan/contacts](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-contacts)
+* [GET /api/v2/externalcontacts/scan/contacts/divisionviews/all](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-contacts-divisionviews-all)
 
 ## Permissions and Scopes
 
@@ -30,6 +31,7 @@ The following permissions are required to use this resource:
 * `externalContacts:contact:delete`
 * `externalContacts:contact:edit`
 * `externalContacts:contact:view`
+* `externalContacts:contact:viewAll`
 * `externalContacts:externalOrganization:view`
 * `relate:contact:add`
 * `relate:contact:delete`
@@ -42,6 +44,11 @@ The following OAuth scopes are required to use this resource:
 * `external-contacts`
 * `external-contacts:readonly`
 
+## Exported block labels
+
+By default, exported external contact block labels include the external organization name, followed by the contact's last and first names. This preserves existing block labels but requires an additional organization API request for each contact associated with an external organization.
+
+Set the `GENESYSCLOUD_EXTERNAL_CONTACTS_SIMPLE_BLOCK_LABEL` environment variable to omit the organization name and avoid those additional API requests. When enabled, block labels use the contact's last and first names. The variable's value is ignored; its presence enables the simpler labels.
 
 ## Example Usage
 

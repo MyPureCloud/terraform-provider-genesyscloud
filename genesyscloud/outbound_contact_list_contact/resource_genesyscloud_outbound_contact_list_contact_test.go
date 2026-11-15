@@ -189,6 +189,90 @@ func TestAccResourceOutboundContactListContact(t *testing.T) {
 	})
 }
 
+// TestAccResourceOutboundContactListContactRetention exercises the contact-level retention
+// override attributes (retention_type, retention_days), including a set -> clear step to
+// confirm removing retention_days produces a clean plan.
+func TestAccResourceOutboundContactListContactRetention(t *testing.T) {
+	var (
+		resourceLabel     = "contact"
+		fullResourceLabel = fmt.Sprintf("%s.%s", ResourceType, resourceLabel)
+
+		cellColumnKey = "Cell"
+		dataCellValue = "+000000"
+
+		contactListResourceLabel     = "contact_list"
+		contactListFullResourceLabel = "genesyscloud_outbound_contact_list." + contactListResourceLabel
+		contactListName              = "tf test contact list " + uuid.NewString()
+		columnNames                  = []string{strconv.Quote(cellColumnKey)}
+
+		retentionDays = "15"
+	)
+
+	contactListResource := outboundContactList.GenerateOutboundContactList(
+		contactListResourceLabel,
+		contactListName,
+		util.NullValue,
+		strconv.Quote(cellColumnKey),
+		[]string{strconv.Quote(cellColumnKey)},
+		columnNames,
+		util.FalseValue,
+		util.NullValue,
+		util.NullValue,
+		outboundContactList.GeneratePhoneColumnsBlock(
+			cellColumnKey,
+			"cell",
+			strconv.Quote(cellColumnKey),
+		),
+	)
+
+	retentionBlock := func(retentionType, days string) string {
+		block := fmt.Sprintf("retention_type = %s\n", strconv.Quote(retentionType))
+		if days != util.NullValue {
+			block += fmt.Sprintf("retention_days = %s\n", days)
+		}
+		return block
+	}
+
+	contactConfig := func(retention string) string {
+		return contactListResource + GenerateOutboundContactListContact(
+			resourceLabel,
+			contactListFullResourceLabel+".id",
+			util.NullValue,
+			util.TrueValue,
+			util.GenerateMapAttrWithMapProperties(
+				"data",
+				map[string]string{cellColumnKey: strconv.Quote(dataCellValue)},
+			),
+			retention,
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, nil),
+		Steps: []resource.TestStep{
+			{
+				// Set a per-contact retention override.
+				Config: contactConfig(retentionBlock("RetentionDays", retentionDays)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair(fullResourceLabel, "contact_list_id", contactListFullResourceLabel, "id"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "retention_type", "RetentionDays"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "retention_days", retentionDays),
+					resource.TestCheckResourceAttrSet(fullResourceLabel, "date_expiration"),
+				),
+			},
+			{
+				// Clear retention_days by switching retention_type; expect a clean reset.
+				Config: contactConfig(retentionBlock("Never", util.NullValue)),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourceLabel, "retention_type", "Never"),
+					resource.TestCheckResourceAttr(fullResourceLabel, "retention_days", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceOutboundContactListContactWithId(t *testing.T) {
 	var (
 		resourceLabel     = "contact"

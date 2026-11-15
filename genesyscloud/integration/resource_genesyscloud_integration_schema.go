@@ -135,13 +135,20 @@ func IntegrationExporter() *resourceExporter.ResourceExporter {
 // DataSourceIntegration registers the genesyscloud_integration data source
 func DataSourceIntegration() *schema.Resource {
 	return &schema.Resource{
-		Description: "Data source for Genesys Cloud integration. Select an integration by name",
+		Description: "Data source for Genesys Cloud integration. Select an integration by name. " +
+			"If multiple integrations share the same name, use integration_type to disambiguate.",
 		ReadContext: provider.ReadWithPooledClient(dataSourceIntegrationRead),
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the integration",
 				Type:        schema.TypeString,
 				Required:    true,
+			},
+			"integration_type": {
+				Description: "The type of the integration. " +
+					"Optional, used to disambiguate when multiple integrations share the same name.",
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}

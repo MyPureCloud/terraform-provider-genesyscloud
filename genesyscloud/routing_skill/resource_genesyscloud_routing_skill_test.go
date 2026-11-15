@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func TestAccResourceRoutingSkillBasic(t *testing.T) {
@@ -35,7 +35,7 @@ func TestAccResourceRoutingSkillBasic(t *testing.T) {
 			},
 			{
 				// Update with division from data source
-				Config: GenerateRoutingSkillResourceWithDivision(
+				Config: "data \"genesyscloud_auth_division_home\" \"home\" {}\n" + GenerateRoutingSkillResourceWithDivision(
 					skillResourceLabel1,
 					skillName1,
 					"data.genesyscloud_auth_division_home.home.id",

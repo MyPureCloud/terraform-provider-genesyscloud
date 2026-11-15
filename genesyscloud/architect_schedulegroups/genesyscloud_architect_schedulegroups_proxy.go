@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -57,10 +57,7 @@ func newArchitectSchedulegroupsProxy(clientConfig *platformclientv2.Configuratio
 // getArchitectSchedulegroupsProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getArchitectSchedulegroupsProxy(clientConfig *platformclientv2.Configuration) *architectSchedulegroupsProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectSchedulegroupsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectSchedulegroupsProxy)
 }
 
 // createArchitectSchedulegroups creates a Genesys Cloud architect schedulegroups

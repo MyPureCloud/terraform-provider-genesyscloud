@@ -9,7 +9,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -108,10 +108,7 @@ func newPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
 // getPhoneProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getPhoneProxy(clientConfig *platformclientv2.Configuration) *phoneProxy {
-	if internalProxy == nil {
-		internalProxy = newPhoneProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newPhoneProxy)
 }
 
 // getAllPhones retrieves all Genesys Cloud Phones

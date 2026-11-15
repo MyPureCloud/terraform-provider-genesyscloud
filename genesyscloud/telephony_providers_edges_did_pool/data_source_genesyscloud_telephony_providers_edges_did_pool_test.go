@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"math/rand"
 	"strconv"
 	"testing"
 
@@ -13,8 +14,9 @@ import (
 
 func TestAccDataSourceDidPoolBasic(t *testing.T) {
 	var (
-		didPoolStartPhoneNumber  = "+14546555007"
-		didPoolEndPhoneNumber    = "+14546555008"
+		didPoolStart             = 1000 + rand.Intn(8998) // keeps start+1 within the same 4-digit block
+		didPoolStartPhoneNumber  = fmt.Sprintf("+1454655%04d", didPoolStart)
+		didPoolEndPhoneNumber    = fmt.Sprintf("+1454655%04d", didPoolStart+1)
 		didPoolResourceLabel     = "didPool"
 		didPoolDataResourceLabel = "didPoolData"
 

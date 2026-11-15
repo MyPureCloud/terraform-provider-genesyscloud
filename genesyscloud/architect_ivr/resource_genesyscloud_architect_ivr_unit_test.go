@@ -11,8 +11,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,9 +33,9 @@ func TestUnitResourceArchitectIvrRead(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
+	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Name:             &tName,
@@ -94,16 +95,16 @@ func TestUnitResourceArchitectIvrDeleteStandard(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
+	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
+	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return apiResponse, nil
 	}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}
@@ -147,16 +148,16 @@ func TestUnitResourceArchitectIvrDeleteSoftDelete(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
+	archProxy := &ArchitectIvrProxy{}
 
-	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
+	archProxy.deleteArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 
 		apiResponse := &platformclientv2.APIResponse{StatusCode: http.StatusOK}
 		return apiResponse, nil
 	}
 
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		state := "deleted"
 		ivr := &platformclientv2.Ivr{
@@ -211,8 +212,8 @@ func TestUnitResourceArchitectIvrCreate(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy := &ArchitectIvrProxy{}
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Id:               &tId,
@@ -230,7 +231,7 @@ func TestUnitResourceArchitectIvrCreate(t *testing.T) {
 		return ivr, apiResponse, nil
 	}
 
-	archProxy.createArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.createArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *ivr.Name, "ivr.Name check failed in create createArchitectIvrAttr")
 		assert.Equal(t, tDescription, *ivr.Description, "ivr.Description check failed in create createArchitectIvrAttr")
 		assert.ElementsMatch(t, tDnis, *ivr.Dnis, "ivr.Dnis check failed in create createArchitectIvrAttr")
@@ -282,8 +283,8 @@ func TestUnitResourceArchitectIvrUpdate(t *testing.T) {
 	tScheduleGroupId := uuid.NewString()
 	tDivisionId := uuid.NewString()
 
-	archProxy := &architectIvrProxy{}
-	archProxy.getArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy := &ArchitectIvrProxy{}
+	archProxy.GetArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tId, id)
 		ivr := &platformclientv2.Ivr{
 			Id:               &tId,
@@ -301,7 +302,7 @@ func TestUnitResourceArchitectIvrUpdate(t *testing.T) {
 		return ivr, apiResponse, nil
 	}
 
-	archProxy.updateArchitectIvrAttr = func(ctx context.Context, a *architectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
+	archProxy.updateArchitectIvrAttr = func(ctx context.Context, a *ArchitectIvrProxy, id string, ivr platformclientv2.Ivr) (*platformclientv2.Ivr, *platformclientv2.APIResponse, error) {
 		assert.Equal(t, tName, *ivr.Name, "ivr.Name check failed in create updateArchitectIvrAttr")
 		assert.Equal(t, tDescription, *ivr.Description, "ivr.Description check failed in updateArchitectIvrAttr")
 		assert.ElementsMatch(t, tDnis, *ivr.Dnis, "ivr.Dnis check failed in updateArchitectIvrAttr")
@@ -352,4 +353,36 @@ func buildIvrResourceMap(tId string, tName string, tDescription string, tIDnis [
 		"division_id":           tDivisionId,
 	}
 	return resourceDataMap
+}
+
+// TestUnitArchitectIvrDnisValidation locks in the fix for issue #2592: the dnis field must accept
+// short technical DNIS numbers that already exist in Genesys Cloud (e.g. +32 numbers shorter than
+// a "plausible" national number) while still rejecting values that are not valid E.164 input.
+func TestUnitArchitectIvrDnisValidation(t *testing.T) {
+	dnisSchema := ResourceArchitectIvrConfig().Schema["dnis"]
+	validate := dnisSchema.Elem.(*schema.Schema).ValidateDiagFunc
+	assert.NotNil(t, validate, "dnis element should have a ValidateDiagFunc")
+
+	cases := []struct {
+		number    string
+		expectErr bool
+	}{
+		// Short technical DNIS numbers from issue #2592 - must now be accepted
+		{"+3212", false},
+		{"+32123", false},
+		{"+321234", false},
+		{"+3212345", false},
+		// Full-length numbers must still be accepted
+		{"+3221234567", false},
+		{"+19193331234", false},
+		// Still-invalid input must be rejected
+		{"3212", true},      // missing leading '+'
+		{"", true},          // empty
+		{"+1abc1234", true}, // non-numeric
+	}
+
+	for _, c := range cases {
+		diags := validate(c.number, cty.Path{})
+		assert.Equal(t, c.expectErr, diags.HasError(), "number %q expectErr=%v, got diags=%v", c.number, c.expectErr, diags)
+	}
 }

@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -154,10 +155,21 @@ func parseCustomRetryTimeout(config *schema.ResourceData) time.Duration {
 }
 
 // GetCustomRetryTimeout returns the configured custom retry timeout.
-// It first checks the provider configuration, then falls back to the environment variable,
-// and finally uses the default value (5 minutes).
+// It first checks ctx for a per-call override (see ContextWithCustomRetryTimeout),
+// then the provider configuration, then falls back to the environment variable, and
+// finally uses the default value (5 minutes).
 // A timeout of 0 means no retries (immediate fail-fast behavior).
-func GetCustomRetryTimeout() time.Duration {
+//
+// The ctx check exists for MRMO and other standalone callers that invoke resource
+// Create/Update/Delete/Read context functions directly, many concurrently in one
+// process: GetProviderMeta()/the env var are process-wide, so concurrently toggling
+// GENESYSCLOUD_CUSTOM_RETRY_TIMEOUT around one call races every other in-flight call
+// in the same process. A ctx-scoped override has no such sharing.
+func GetCustomRetryTimeout(ctx context.Context) time.Duration {
+	if timeout, ok := CustomRetryTimeoutFromContext(ctx); ok {
+		return timeout
+	}
+
 	// Value is immutable after provider configuration; cache it on the ProviderMeta
 	// to avoid concurrent access to schema.ResourceData during parallel reads/exports.
 	if meta := GetProviderMeta(); meta != nil {

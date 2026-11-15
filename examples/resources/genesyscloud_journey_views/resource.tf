@@ -80,6 +80,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name          = "New Chart"
     version       = 1
+    rank          = 1
     group_by_time = "Day"
     metrics {
       id         = "36b3f717-f309-425d-9d5e-3af2071ad0a4"
@@ -95,6 +96,7 @@ resource "genesyscloud_journey_views" "journey_view" {
   charts {
     name    = "New Chart B"
     version = 1
+    rank    = 2
     group_by_attributes {
       element_id = var.element_second_id
       attribute  = "vendor"
@@ -103,6 +105,26 @@ resource "genesyscloud_journey_views" "journey_view" {
       id         = "723981e9-2810-42d1-94ef-42bbb4bbc134"
       element_id = var.element_second_id
       aggregate  = "EventCount"
+    }
+    display_attributes {
+      var_type    = "Column"
+      show_legend = true
+    }
+    group_by_max = 10
+  }
+  charts {
+    name    = "New Numeric Chart C"
+    version = 1
+    rank    = 3
+    group_by_attributes {
+      element_id = var.element_second_id
+      attribute  = "vendor"
+    }
+    metrics {
+      id         = "723981e9-2810-42d1-94ef-42bbb4bbc134"
+      element_id = var.element_second_id
+      aggregate  = "Average"
+      attribute  = "durationMs"
     }
     display_attributes {
       var_type    = "Column"

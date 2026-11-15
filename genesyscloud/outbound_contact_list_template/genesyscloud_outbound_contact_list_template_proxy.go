@@ -7,7 +7,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -57,10 +57,7 @@ func newOutboundContactlisttemplateProxy(clientConfig *platformclientv2.Configur
 // getOutboundContactlisttemplateProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getOutboundContactlisttemplateProxy(clientConfig *platformclientv2.Configuration) *outboundContactlisttemplateProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundContactlisttemplateProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundContactlisttemplateProxy)
 }
 
 // createOutboundContactlisttemplate creates a Genesys Cloud outbound Contactlisttemplate
@@ -109,7 +106,7 @@ func getAllOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 	var allContactlisttemplates []platformclientv2.Contactlisttemplate
 	const pageSize = 100
 
-	Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, 1, true, "", name, "", "")
+	Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, 1, true, "", name, "", "", "")
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get page of contact list template: %v", err)
 	}
@@ -123,7 +120,7 @@ func getAllOutboundContactlisttemplateFn(ctx context.Context, p *outboundContact
 	}
 
 	for pageNum := 2; pageNum <= *Contactlisttemplates.PageCount; pageNum++ {
-		Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, pageNum, true, "", name, "", "")
+		Contactlisttemplates, resp, err := p.outboundApi.GetOutboundContactlisttemplates(pageSize, pageNum, true, "", name, "", "", "")
 		if err != nil {
 			return nil, resp, fmt.Errorf("failed to get page of contact list template: %v", err)
 		}

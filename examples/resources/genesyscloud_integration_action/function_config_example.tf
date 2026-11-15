@@ -5,8 +5,8 @@
 #   - category contains "function data action" (case-insensitive)
 #
 # Genesys Cloud does not allow downloading function ZIP files. Keep zips in source
-# control / your pipeline and point file_path at them. After a CX as Code export,
-# copy the zip to the exported path (under function_zips/) or update file_path.
+# control / your pipeline and point file_path at them. CX as Code export emits a
+# Terraform variable for file_path; set it to your zip before apply.
 
 resource "genesyscloud_integration" "example_function_integration" {
   integration_type = "function-data-actions"

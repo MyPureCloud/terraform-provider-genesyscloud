@@ -130,7 +130,7 @@ Optional:
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -176,9 +176,10 @@ Optional:
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
 - `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `for_duration` (Block List, Max: 1) Duration for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2". (see [below for nested schema](#nestedblock--campaign_rule_conditions--parameters--for_duration))
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -186,6 +187,14 @@ Optional:
 - `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+<a id="nestedblock--campaign_rule_conditions--parameters--for_duration"></a>
+### Nested Schema for `campaign_rule_conditions.parameters.for_duration`
+
+Required:
+
+- `seconds` (Number) Duration in whole seconds. Sub-second precision is not supported: a duration set outside Terraform with a fractional value is read as whole seconds.
+
 
 
 <a id="nestedblock--campaign_rule_conditions--campaign_run_time_settings"></a>
@@ -221,7 +230,7 @@ Optional:
 
 Optional:
 
-- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.
+- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_month--interval))
 - `threshold_value` (String) Day of month (1-31 or "LAST_DAY") for "before"/"after" operators.
 
@@ -240,7 +249,7 @@ Required:
 
 Optional:
 
-- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals" operator.
+- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week--interval))
 
 <a id="nestedblock--campaign_rule_conditions--date_time_parameters--day_of_week--interval"></a>
@@ -278,15 +287,15 @@ Required:
 Optional:
 
 - `interval` (Block List, Max: 1) Time interval for "between" operator. (see [below for nested schema](#nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day--interval))
-- `threshold_value` (String) Time in HH:mm:ss.SSS format.
+- `threshold_value` (String) Time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 <a id="nestedblock--campaign_rule_conditions--date_time_parameters--time_of_day--interval"></a>
 ### Nested Schema for `campaign_rule_conditions.date_time_parameters.time_of_day.interval`
 
 Required:
 
-- `max` (String) Maximum time in HH:mm:ss.SSS format.
-- `min` (String) Minimum time in HH:mm:ss.SSS format.
+- `max` (String) Maximum time in HH:mm:ss format. Fractional seconds are not stored by the API.
+- `min` (String) Minimum time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 
 
@@ -381,9 +390,10 @@ Optional:
 - `dialing_mode` (String) The dialing mode to set a campaign to. Required for the 'setCampaignDialingMode' action (agentless | preview | power | predictive | progressive | external).
 - `email_content_template_id` (String) The content template to set an Email campaign to.
 - `email_messages_per_minute` (String) The number of messages per minute to set an Email messaging campaign to.
+- `for_duration` (Block List, Max: 1) Duration for which the condition must be continuously true before it is evaluated as true. Only valid in condition parameters with campaign_rule_processing = "v2". (see [below for nested schema](#nestedblock--condition_groups--conditions--parameters--for_duration))
 - `max_calls_per_agent` (String) Max calls per agent. Optional parameter for 'setCampaignMaxCallsPerAgent' action
 - `messages_per_minute` (String) The number of messages per minute to set a messaging campaign to.
-- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition.
+- `operator` (String) The operator for comparison. Required for a CampaignRuleCondition. Valid values: equals, greaterThan, greaterThanEqualTo, lessThan, lessThanEqualTo, before, after, between, in.
 - `outbound_line_count` (String) Number of Outbound lines. Required for 'setCampaignNumberOfLines' action
 - `priority` (String) The priority to set a campaign to (1 | 2 | 3 | 4 | 5). Required for the 'setCampaignPriority' action.
 - `queue_id` (String) The ID of the Queue. Required for 'changeCampaignQueue' action
@@ -391,6 +401,14 @@ Optional:
 - `sms_content_template_id` (String) The content template to set a SMS campaign to.
 - `sms_messages_per_minute` (String) The number of messages per minute to set a SMS messaging campaign to.
 - `value` (String) The value for comparison. Required for a CampaignRuleCondition.
+
+<a id="nestedblock--condition_groups--conditions--parameters--for_duration"></a>
+### Nested Schema for `condition_groups.conditions.parameters.for_duration`
+
+Required:
+
+- `seconds` (Number) Duration in whole seconds. Sub-second precision is not supported: a duration set outside Terraform with a fractional value is read as whole seconds.
+
 
 
 <a id="nestedblock--condition_groups--conditions--campaign_run_time_settings"></a>
@@ -426,7 +444,7 @@ Optional:
 
 Optional:
 
-- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals" operator.
+- `in_set` (List of String) Days of month (1-31, "LAST_DAY", "EVEN_DAY", "ODD_DAY") for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_month--interval))
 - `threshold_value` (String) Day of month (1-31 or "LAST_DAY") for "before"/"after" operators.
 
@@ -445,7 +463,7 @@ Required:
 
 Optional:
 
-- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals" operator.
+- `in_set` (List of Number) Days of week (1=Monday, 7=Sunday) for "equals"/"in" operators.
 - `interval` (Block List, Max: 1) Day interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--day_of_week--interval))
 
 <a id="nestedblock--condition_groups--conditions--date_time_parameters--day_of_week--interval"></a>
@@ -483,15 +501,15 @@ Required:
 Optional:
 
 - `interval` (Block List, Max: 1) Time interval for "between" operator. (see [below for nested schema](#nestedblock--condition_groups--conditions--date_time_parameters--time_of_day--interval))
-- `threshold_value` (String) Time in HH:mm:ss.SSS format.
+- `threshold_value` (String) Time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 <a id="nestedblock--condition_groups--conditions--date_time_parameters--time_of_day--interval"></a>
 ### Nested Schema for `condition_groups.conditions.date_time_parameters.time_of_day.interval`
 
 Required:
 
-- `max` (String) Maximum time in HH:mm:ss.SSS format.
-- `min` (String) Minimum time in HH:mm:ss.SSS format.
+- `max` (String) Maximum time in HH:mm:ss format. Fractional seconds are not stored by the API.
+- `min` (String) Minimum time in HH:mm:ss format. Fractional seconds are not stored by the API.
 
 
 

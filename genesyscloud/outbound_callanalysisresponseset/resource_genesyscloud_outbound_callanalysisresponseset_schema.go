@@ -7,9 +7,13 @@ package outbound_callanalysisresponseset
 // @description: Manages outbound campaign operations including automated voice dialing, SMS/email messaging campaigns, contact list management, and campaign rules for proactive customer outreach.
 
 import (
+	"context"
+
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -183,6 +187,11 @@ func ResourceOutboundCallanalysisresponseset() *schema.Resource {
 func OutboundCallanalysisresponsesetExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthOutboundCallanalysisresponsesets),
+		GetResourcesByIdsFunc: util.ExporterByIdsWithName(ResourceType,
+			func(c *platformclientv2.Configuration) func(context.Context, string) (*platformclientv2.Responseset, *platformclientv2.APIResponse, error) {
+				return getOutboundCallanalysisresponsesetProxy(c).getOutboundCallanalysisresponsesetById
+			},
+			func(x *platformclientv2.Responseset) *string { return x.Name }),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"responses.callable_busy.data":          {RefType: "genesyscloud_flow"},
 			"responses.callable_disconnect.data":    {RefType: "genesyscloud_flow"},

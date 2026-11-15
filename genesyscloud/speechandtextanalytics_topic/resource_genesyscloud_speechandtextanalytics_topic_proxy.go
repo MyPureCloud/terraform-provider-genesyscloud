@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -48,10 +48,7 @@ func newSttTopicProxy(clientConfig *platformclientv2.Configuration) *sttTopicPro
 }
 
 func getSttTopicProxy(clientConfig *platformclientv2.Configuration) *sttTopicProxy {
-	if internalProxy == nil {
-		internalProxy = newSttTopicProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSttTopicProxy)
 }
 
 func (p *sttTopicProxy) createTopic(ctx context.Context, body *platformclientv2.Topicrequest) (*platformclientv2.Topic, *platformclientv2.APIResponse, error) {

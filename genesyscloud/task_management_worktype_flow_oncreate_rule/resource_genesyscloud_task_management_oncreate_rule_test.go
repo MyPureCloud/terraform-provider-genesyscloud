@@ -10,7 +10,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/google/uuid"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
@@ -103,7 +103,7 @@ func testVerifyTaskManagementOnCreateRuleDestroyed(state *terraform.State) error
 			continue
 		}
 
-		worktypeId, onCreateRuleId := splitWorktypeBasedTerraformId(res.Primary.ID)
+		worktypeId, onCreateRuleId := SplitWorktypeBasedTerraformId(res.Primary.ID)
 		onCreateRule, resp, err := taskManagementApi.GetTaskmanagementWorktypeFlowsOncreateRule(worktypeId, onCreateRuleId)
 		if onCreateRule != nil {
 			return fmt.Errorf("task management oncreate rule (%s) still exists", res.Primary.ID)

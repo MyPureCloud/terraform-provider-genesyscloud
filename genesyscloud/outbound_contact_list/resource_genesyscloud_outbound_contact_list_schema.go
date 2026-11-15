@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/validators"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -347,6 +349,30 @@ func ResourceOutboundContactList() *schema.Resource {
 				Required:    false,
 				Type:        schema.TypeInt,
 			},
+			`retention_type`: {
+				Description:  `The type of retention for this contact list. Valid values: Never, Today, RetentionDays.`,
+				Optional:     true,
+				Computed:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{"Never", "Today", "RetentionDays"}, false),
+			},
+			`retention_days`: {
+				Description: `The number of days to retain this contact list. Required when retention_type is RetentionDays. If omitted in configuration, the API value (including organization defaults) is stored in state.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeInt,
+			},
+			`time_zone`: {
+				Description: `The time zone for this contact list's retention; for example, Africa/Abidjan. Time zones are represented as a string of the zone name as found in the IANA time zone database.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
+			`date_expiration`: {
+				Description: `The expiration date of the contact list, computed from retention_type, retention_days, and time_zone. Date time is represented as an ISO-8601 string.`,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
@@ -354,6 +380,11 @@ func ResourceOutboundContactList() *schema.Resource {
 func OutboundContactListExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllOutboundContactLists),
+		GetResourcesByIdsFunc: util.ExporterByIdsWithName(ResourceType,
+			func(c *platformclientv2.Configuration) func(context.Context, string) (*platformclientv2.Contactlist, *platformclientv2.APIResponse, error) {
+				return GetOutboundContactlistProxy(c).GetOutboundContactlistById
+			},
+			func(x *platformclientv2.Contactlist) *string { return x.Name }),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"attempt_limit_id": {RefType: "genesyscloud_outbound_attempt_limit"},
 			"division_id":      {RefType: "genesyscloud_auth_division"},

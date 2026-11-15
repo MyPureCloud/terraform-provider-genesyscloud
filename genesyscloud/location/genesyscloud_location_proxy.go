@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *locationProxy
@@ -53,11 +53,7 @@ func newLocationProxy(clientConfig *platformclientv2.Configuration) *locationPro
 // getLocationProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getLocationProxy(clientConfig *platformclientv2.Configuration) *locationProxy {
-	if internalProxy == nil {
-		internalProxy = newLocationProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newLocationProxy)
 }
 
 func (p *locationProxy) getAllLocation(ctx context.Context) (*[]platformclientv2.Locationdefinition, *platformclientv2.APIResponse, error) {

@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	authrole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
-// Shared acceptance-test HCL / check helpers for case_management_caseplan and dependent packages (stageplan, stepplan).
+// Shared acceptance-test HCL / check helpers for case_management_caseplan.
 
 // AccReferencePrefix derives a short uppercase reference_prefix from a UUID suffix (same logic as historical test helpers).
 func AccReferencePrefix(suffix string) string {

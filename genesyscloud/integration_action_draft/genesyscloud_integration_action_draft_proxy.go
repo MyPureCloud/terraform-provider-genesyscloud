@@ -6,7 +6,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var internalProxy *integrationActionsProxy
@@ -49,10 +49,7 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 }
 
 func getIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *integrationActionsProxy {
-	if internalProxy == nil {
-		internalProxy = newIntegrationActionsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newIntegrationActionsProxy)
 }
 
 func (p *integrationActionsProxy) getAllIntegrationActionDrafts(ctx context.Context, name string) (*[]platformclientv2.Action, *platformclientv2.APIResponse, error) {

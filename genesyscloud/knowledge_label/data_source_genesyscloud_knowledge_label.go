@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -51,7 +51,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 
 				for _, knowledgeLabel := range *knowledgeLabels.Entities {
 					if *knowledgeLabel.Name == name {
-						id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
+						id := BuildKnowledgeLabelId(*knowledgeLabel.Id, *knowledgeBase.Id)
 						d.SetId(id)
 						return nil
 					}
@@ -69,7 +69,7 @@ func dataSourceKnowledgeLabelRead(ctx context.Context, d *schema.ResourceData, m
 
 				for _, knowledgeLabel := range *knowledgeLabels.Entities {
 					if *knowledgeLabel.Name == name {
-						id := fmt.Sprintf("%s,%s", *knowledgeLabel.Id, *knowledgeBase.Id)
+						id := BuildKnowledgeLabelId(*knowledgeLabel.Id, *knowledgeBase.Id)
 						d.SetId(id)
 						return nil
 					}

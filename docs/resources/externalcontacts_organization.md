@@ -19,7 +19,7 @@ The following Genesys Cloud APIs are used by this resource. Ensure your OAuth Cl
 * [DELETE /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#delete-api-v2-externalcontacts-organizations--externalOrganizationId-)
 * [GET /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-organizations--externalOrganizationId-)
 * [PUT /api/v2/externalcontacts/organizations/{externalOrganizationId}](https://developer.genesys.cloud/devapps/api-explorer#put-api-v2-externalcontacts-organizations--externalOrganizationId-)
-* [GET /api/v2/externalcontacts/scan/organizations](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-organizations)
+* [GET /api/v2/externalcontacts/scan/organizations/divisionviews/all](https://developer.genesys.cloud/devapps/api-explorer#get-api-v2-externalcontacts-scan-organizations-divisionviews-all)
 
 ## Permissions and Scopes
 
@@ -29,6 +29,7 @@ The following permissions are required to use this resource:
 * `externalContacts:externalOrganization:delete`
 * `externalContacts:externalOrganization:edit`
 * `externalContacts:externalOrganization:view`
+* `externalContacts:externalOrganization:viewAll`
 * `relate:externalOrganization:add`
 * `relate:externalOrganization:delete`
 * `relate:externalOrganization:edit`

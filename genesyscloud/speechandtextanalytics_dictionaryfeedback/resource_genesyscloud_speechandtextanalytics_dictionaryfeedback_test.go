@@ -3,7 +3,7 @@ package speechandtextanalytics_dictionaryfeedback
 import (
 	"fmt"
 	"log"
-	"os"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v195/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 /*
@@ -58,20 +58,16 @@ func cleanupDictionaryFeedbackByTerm(term, dialect string) {
 
 func TestAccResourceDictionaryFeedback(t *testing.T) {
 	//t.Parallel()
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
 	var (
 		resourceName   = "test-dictionary-feedback"
-		term           = "genesys"
+		term           = uniqueDictionaryTerm()
 		dialect        = "en-AU"
 		boostValue     = "2"
 		source         = "Manual"
 		soundsLike     = "genesis"
-		examplePhrase1 = "welcome to genesys"
-		examplePhrase2 = "thanks for calling genesys"
-		examplePhrase3 = "Genesys is a platform"
+		examplePhrase1 = fmt.Sprintf("welcome to %s", term)
+		examplePhrase2 = fmt.Sprintf("thanks for calling %s", term)
+		examplePhrase3 = fmt.Sprintf("%s is a platform", term)
 	)
 
 	// Clean up any leftover dictionary feedback from previous test runs
@@ -115,6 +111,10 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 				ResourceName:      ResourceType + "." + resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				// example_phrases and source are accepted on write but not returned by the API on
+				// read for the Genesys engine (English/Spanish dialects), so they cannot be
+				// reconstructed on a fresh import. Ignore them during import verification.
+				ImportStateVerifyIgnore: []string{"example_phrases", "source"},
 			},
 		},
 		CheckDestroy: testVerifyDictionaryFeedbackDestroyed,
@@ -122,10 +122,7 @@ func TestAccResourceDictionaryFeedback(t *testing.T) {
 }
 
 func TestAccResourceDictionaryFeedbackGenesysExtended(t *testing.T) {
-	if v := os.Getenv("GENESYSCLOUD_REGION"); v == "us-east-1" {
-		t.Skipf("virtualAgent product not available in %s org", v)
-		return
-	}
+
 	var (
 		resourceName = "test-dictionary-feedback-extended"
 		term         = "covid"
@@ -204,4 +201,14 @@ func GenerateExtendedSpeechAndTextAnalyticsDictionaryFeedbackResource(resourceTy
 
 func testVerifyDictionaryFeedbackDestroyed(state *terraform.State) error {
 	return nil
+}
+
+// the API rejects a term that already exists for the dialect, so each run uses its own
+func uniqueDictionaryTerm() string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyz")
+	suffix := make([]rune, 8)
+	for i := range suffix {
+		suffix[i] = letters[rand.Intn(len(letters))]
+	}
+	return "genesys" + string(suffix)
 }
