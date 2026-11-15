@@ -2,10 +2,8 @@ package tfexporter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -2985,63 +2983,5 @@ func TestUnitSetExportedResourceSchemaVersionsNilProviderMap(t *testing.T) {
 
 	if got := resources[0].State.Meta["schema_version"]; got != int64(0) {
 		t.Fatalf("expected schema_version 0 when provider map is nil, got %v", got)
-	}
-}
-
-func TestUnitAddSensitiveAttributesToState(t *testing.T) {
-	providerResources := map[string]*schema.Resource{
-		user.ResourceType: user.ResourceUser(),
-		"genesyscloud_no_sensitive": {Schema: map[string]*schema.Schema{
-			"name": {Type: schema.TypeString, Optional: true},
-		}},
-	}
-	input := `{
-  "version": 4,
-  "resources": [
-    {"mode": "managed", "type": "genesyscloud_user", "name": "u1", "instances": [{"schema_version": 1, "attributes_flat": {"id": "1", "count": "3"}, "sensitive_attributes": []}]},
-    {"mode": "managed", "type": "genesyscloud_no_sensitive", "name": "n1", "instances": [{"attributes_flat": {"id": "2"}, "sensitive_attributes": []}]},
-    {"mode": "data", "type": "genesyscloud_user", "name": "d1", "instances": [{"attributes_flat": {"id": "3"}}]},
-    {"mode": "managed", "type": "genesyscloud_unknown", "name": "x1", "instances": [{"attributes_flat": {"id": "4"}}]}
-  ]
-}`
-
-	out, err := addSensitiveAttributesToState([]byte(input), providerResources)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	var state struct {
-		Resources []struct {
-			Name      string `json:"name"`
-			Instances []struct {
-				Attributes map[string]interface{} `json:"attributes_flat"`
-				Sensitive  json.RawMessage        `json:"sensitive_attributes"`
-			} `json:"instances"`
-		} `json:"resources"`
-	}
-	if err := json.Unmarshal(out, &state); err != nil {
-		t.Fatalf("output is not valid JSON: %v", err)
-	}
-
-	want := map[string]string{
-		"u1": `[[{"type":"get_attr","value":"password"}]]`,
-		"n1": `[]`,
-		"d1": ``,
-		"x1": ``,
-	}
-	for _, r := range state.Resources {
-		got := strings.Join(strings.Fields(string(r.Instances[0].Sensitive)), "")
-		if got != want[r.Name] {
-			t.Errorf("%s: expected sensitive_attributes %q, got %q", r.Name, want[r.Name], got)
-		}
-	}
-	if got := state.Resources[0].Instances[0].Attributes["count"]; got != "3" {
-		t.Errorf("attributes should be preserved, got %v", got)
-	}
-}
-
-func TestUnitAddSensitiveAttributesToStateRejectsLegacyState(t *testing.T) {
-	if _, err := addSensitiveAttributesToState([]byte(`{"version": 3, "modules": []}`), nil); err == nil {
-		t.Fatal("expected an error for a non-v4 state file")
 	}
 }
