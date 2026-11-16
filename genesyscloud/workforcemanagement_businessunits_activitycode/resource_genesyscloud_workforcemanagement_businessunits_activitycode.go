@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -122,15 +121,10 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 	log.Printf("Updating business unit %s activity code %s", businessUnitId, activityCodeId)
 
 	// The update request carries the current metadata version for optimistic locking, so a version conflict re-reads the activity code and tries again.
-	// Rate limiting and server errors are transient, and retrying is safe because every attempt rebuilds the request from the freshly read metadata.
 	diagErr := util.WithRetries(ctx, util.UpdateRetryTimeout, func() *retry.RetryError {
 		current, resp, err := proxy.getBusinessUnitActivityCodeById(ctx, businessUnitId, activityCodeId)
 		if err != nil {
-			readDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s before update: %s", businessUnitId, activityCodeId, err), resp)
-			if isTransientStatus(resp) {
-				return retry.RetryableError(readDiagErr)
-			}
-			return retry.NonRetryableError(readDiagErr)
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s before update: %s", businessUnitId, activityCodeId, err), resp))
 		}
 
 		_, resp, err = proxy.updateBusinessUnitActivityCode(ctx, businessUnitId, activityCodeId, buildUpdateActivityCodeRequest(d, current.Metadata))
@@ -138,7 +132,7 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 			return nil
 		}
 		builtDiagErr := util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to update business unit %s activity code %s: %s", businessUnitId, activityCodeId, err), resp)
-		if util.IsStatus409(resp) || isTransientStatus(resp) {
+		if util.IsStatus409(resp) {
 			return retry.RetryableError(builtDiagErr)
 		}
 		return retry.NonRetryableError(builtDiagErr)
@@ -149,10 +143,6 @@ func updateBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 
 	log.Printf("Updated business unit %s activity code %s", businessUnitId, activityCodeId)
 	return readBusinessUnitActivityCode(ctx, d, meta)
-}
-
-func isTransientStatus(resp *platformclientv2.APIResponse) bool {
-	return util.IsStatus429(resp) || (resp != nil && resp.StatusCode >= http.StatusInternalServerError)
 }
 
 // deleteBusinessUnitActivityCode is used by the workforcemanagement_businessunits_activitycode resource to delete a business unit activity code from Genesys Cloud

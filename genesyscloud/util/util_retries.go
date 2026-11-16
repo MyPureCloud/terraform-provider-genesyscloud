@@ -19,13 +19,9 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
-// LookupRetryTimeout is the time budget of a retry loop that looks something up by name.
-// UpdateRetryTimeout is the time budget of a retry loop that re-reads and sends an update again after a version conflict.
-// The loops poll with exponential backoff until the budget is used, and the budget does not limit the retries the SDK client makes inside a single request.
-const (
-	LookupRetryTimeout = 15 * time.Second
-	UpdateRetryTimeout = 60 * time.Second
-)
+// UpdateRetryTimeout is the time budget of the retry loop that re-reads an entity and sends an update again after a version conflict (409).
+// The loop polls with exponential backoff until the budget is used. The SDK client retries 429 and 5xx responses itself, so they are not retried here.
+const UpdateRetryTimeout = 60 * time.Second
 
 func WithRetries(ctx context.Context, timeout time.Duration, method func() *retry.RetryError) diag.Diagnostics {
 	return withRetriesInternal(ctx, timeout, method, 0)

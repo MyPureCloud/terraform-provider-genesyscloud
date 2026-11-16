@@ -19,7 +19,7 @@ var internalProxy *businessUnitActivityCodeProxy
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createBusinessUnitActivityCodeFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCode *platformclientv2.Createactivitycoderequest) (*platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type getAllBusinessUnitActivityCodesFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string) (*[]platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
-type getBusinessUnitActivityCodeIdByNameFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, name string) (string, *platformclientv2.APIResponse, bool, error)
+type getBusinessUnitActivityCodeIdByNameFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, name string) (string, *platformclientv2.APIResponse, error)
 type getBusinessUnitActivityCodeByIdFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCodeId string) (*platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type updateBusinessUnitActivityCodeFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCodeId string, activityCode *platformclientv2.Updateactivitycoderequest) (*platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type deleteBusinessUnitActivityCodeFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCodeId string) (*platformclientv2.APIResponse, error)
@@ -75,7 +75,7 @@ func (p *businessUnitActivityCodeProxy) getAllBusinessUnitActivityCodes(ctx cont
 }
 
 // getBusinessUnitActivityCodeIdByName returns the id of a Genesys Cloud business unit activity code by name
-func (p *businessUnitActivityCodeProxy) getBusinessUnitActivityCodeIdByName(ctx context.Context, businessUnitId string, name string) (string, *platformclientv2.APIResponse, bool, error) {
+func (p *businessUnitActivityCodeProxy) getBusinessUnitActivityCodeIdByName(ctx context.Context, businessUnitId string, name string) (string, *platformclientv2.APIResponse, error) {
 	return p.getBusinessUnitActivityCodeIdByNameAttr(ctx, p, businessUnitId, name)
 }
 
@@ -115,19 +115,19 @@ func getAllBusinessUnitActivityCodesFn(ctx context.Context, p *businessUnitActiv
 }
 
 // getBusinessUnitActivityCodeIdByNameFn is an implementation of the function to get the id of an active business unit activity code by name
-func getBusinessUnitActivityCodeIdByNameFn(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, name string) (string, *platformclientv2.APIResponse, bool, error) {
+func getBusinessUnitActivityCodeIdByNameFn(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, name string) (string, *platformclientv2.APIResponse, error) {
 	activityCodes, resp, err := getAllBusinessUnitActivityCodesFn(ctx, p, businessUnitId)
 	if err != nil {
-		return "", resp, false, err
+		return "", resp, err
 	}
 
 	for _, activityCode := range *activityCodes {
 		if *activityCode.Name == name && isActive(&activityCode) {
-			return *activityCode.Id, resp, false, nil
+			return *activityCode.Id, resp, nil
 		}
 	}
 
-	return "", resp, true, fmt.Errorf("unable to find business unit %s activity code with name %s", businessUnitId, name)
+	return "", resp, fmt.Errorf("unable to find business unit %s activity code with name %s", businessUnitId, name)
 }
 
 // getBusinessUnitActivityCodeByIdFn is an implementation of the function to get a Genesys Cloud business unit activity code by id
