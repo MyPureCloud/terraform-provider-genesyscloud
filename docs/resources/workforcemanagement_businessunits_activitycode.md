@@ -122,7 +122,7 @@ resource "genesyscloud_workforcemanagement_businessunits_activitycode" "example_
 
 - `business_unit_id` (String) The id of the business unit this activity code belongs to. Changing this attribute will cause the activity code to be dropped and recreated.
 - `category` (String) The category of the activity code. Attempting to change the category of a default activity code will return an error. Valid values: OnQueueWork, Break, Meal, Meeting, OffQueueWork, TimeOff, Training, Unavailable.
-- `name` (String) The name of the activity code.
+- `name` (String) The name of the activity code. A default activity code can have an empty name, in which case Genesys Cloud shows the name of its category.
 
 ### Optional
 
@@ -137,6 +137,7 @@ resource "genesyscloud_workforcemanagement_businessunits_activitycode" "example_
 
 ### Read-Only
 
-- `default_code` (Boolean) Whether this is a default activity code. Default activity codes are created by Genesys Cloud and cannot be deleted.
+- `active` (Boolean) Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it.
+- `default_code` (Boolean) Whether this is a default activity code. Default activity codes are created by Genesys Cloud, so they can only be managed by importing them, and they cannot be deleted. Destroying one only stops Terraform managing it.
 - `id` (String) The ID of this resource.
 

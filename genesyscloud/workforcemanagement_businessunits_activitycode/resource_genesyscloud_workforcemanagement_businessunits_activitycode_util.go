@@ -24,6 +24,14 @@ func isActive(activityCode *platformclientv2.Businessunitactivitycode) bool {
 	return *activityCode.Active
 }
 
+// activityCodeLabel names an activity code for the exporter. A default activity code that has not been renamed has an empty name, so it is named after its category.
+func activityCodeLabel(activityCode platformclientv2.Businessunitactivitycode) string {
+	if *activityCode.Name == "" {
+		return "default_" + *activityCode.Category
+	}
+	return *activityCode.Name
+}
+
 // isAgentTimeOffSelectableConfigured reports whether agent_time_off_selectable is set in the configuration,
 // so an explicit false can be told apart from an unset value
 func isAgentTimeOffSelectableConfigured(d *schema.ResourceData) bool {

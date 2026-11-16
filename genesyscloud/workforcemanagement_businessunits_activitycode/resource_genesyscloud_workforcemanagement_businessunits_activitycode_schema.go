@@ -2,7 +2,6 @@ package workforcemanagement_businessunits_activitycode
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -46,10 +45,9 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 				ForceNew:    true,
 			},
 			"name": {
-				Description:  `The name of the activity code.`,
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringIsNotEmpty,
+				Description: `The name of the activity code. A default activity code can have an empty name, in which case Genesys Cloud shows the name of its category.`,
+				Type:        schema.TypeString,
+				Required:    true,
 			},
 			"category": {
 				Description: `The category of the activity code. Attempting to change the category of a default activity code will return an error. Valid values: OnQueueWork, Break, Meal, Meeting, OffQueueWork, TimeOff, Training, Unavailable.`,
@@ -104,8 +102,13 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"active": {
+				Description: `Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it.`,
+				Type:        schema.TypeBool,
+				Computed:    true,
+			},
 			"default_code": {
-				Description: `Whether this is a default activity code. Default activity codes are created by Genesys Cloud and cannot be deleted.`,
+				Description: `Whether this is a default activity code. Default activity codes are created by Genesys Cloud, so they can only be managed by importing them, and they cannot be deleted. Destroying one only stops Terraform managing it.`,
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},

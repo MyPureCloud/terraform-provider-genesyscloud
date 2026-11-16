@@ -26,8 +26,8 @@ import (
 The resource_genesyscloud_workforcemanagement_businessunits_activitycode.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllBusinessUnitActivityCodes retrieves all of the business unit activity codes via Terraform in the Genesys Cloud and is used for the exporter.
-// Default activity codes are skipped because they are created by Genesys Cloud and cannot be created or deleted.
+// getAllBusinessUnitActivityCodes retrieves all of the active business unit activity codes via Terraform in the Genesys Cloud and is used for the exporter.
+// Default activity codes are included because they can be updated, even though they cannot be created or deleted.
 func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getBusinessUnitActivityCodeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
@@ -44,10 +44,10 @@ func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platform
 		}
 
 		for _, activityCode := range *activityCodes {
-			if !isActive(&activityCode) || *activityCode.DefaultCode {
+			if !isActive(&activityCode) {
 				continue
 			}
-			resources[*businessUnit.Id+"/"+*activityCode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *businessUnit.Name + "_" + *activityCode.Name}
+			resources[*businessUnit.Id+"/"+*activityCode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *businessUnit.Name + "_" + activityCodeLabel(activityCode)}
 		}
 	}
 
@@ -88,13 +88,8 @@ func readBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData, m
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read business unit %s activity code %s: %s", businessUnitId, activityCodeId, getErr), resp))
 		}
 
-		// Deleted activity codes are retained by the api with active=false
-		if !isActive(activityCode) {
-			d.SetId("")
-			return nil
-		}
-
 		_ = d.Set("business_unit_id", businessUnitId)
+		_ = d.Set("active", *activityCode.Active)
 		_ = d.Set("name", *activityCode.Name)
 		_ = d.Set("category", *activityCode.Category)
 		_ = d.Set("length_in_minutes", *activityCode.LengthInMinutes)
@@ -151,8 +146,9 @@ func deleteBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 	proxy := getBusinessUnitActivityCodeProxy(sdkConfig)
 	businessUnitId, activityCodeId := SplitBusinessUnitActivityCodeTerraformId(d.Id())
 
-	if d.Get("default_code").(bool) {
-		log.Printf("Unable to delete default activity code %s of business unit %s", activityCodeId, businessUnitId)
+	// Genesys Cloud does not allow a default activity code to be deleted, and a deleted one is only made inactive, so there is nothing to delete
+	if d.Get("default_code").(bool) || !d.Get("active").(bool) {
+		log.Printf("Business unit %s activity code %s is a default or already inactive activity code, so it is only removed from Terraform", businessUnitId, activityCodeId)
 		return nil
 	}
 
