@@ -3,7 +3,6 @@ package workforcemanagement_businessunits_activitycode
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -25,7 +24,7 @@ func dataSourceBusinessUnitActivityCodeRead(ctx context.Context, d *schema.Resou
 	businessUnitId := d.Get("business_unit_id").(string)
 	name := d.Get("name").(string)
 
-	return util.WithRetries(ctx, 15*time.Second, func() *retry.RetryError {
+	return util.WithRetries(ctx, util.LookupRetryTimeout, func() *retry.RetryError {
 		activityCodeId, resp, retryable, err := proxy.getBusinessUnitActivityCodeIdByName(ctx, businessUnitId, name)
 
 		if err != nil && !retryable {
