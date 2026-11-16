@@ -141,9 +141,16 @@ func DataSourceBusinessUnitActivityCode() *schema.Resource {
 				Required:    true,
 			},
 			"name": {
-				Description: `Business unit activity code name`,
-				Type:        schema.TypeString,
-				Required:    true,
+				Description:  `Business unit activity code name. Exactly one of name and category is required.`,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{"name", "category"},
+			},
+			"category": {
+				Description:  `The category of a default business unit activity code, which has one default activity code per category. Use it to select a default activity code, which has an empty name unless it was renamed. Exactly one of name and category is required.`,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{"name", "category"},
 			},
 		},
 	}

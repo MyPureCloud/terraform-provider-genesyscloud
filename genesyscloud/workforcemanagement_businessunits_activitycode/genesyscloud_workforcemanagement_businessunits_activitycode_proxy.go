@@ -2,7 +2,6 @@ package workforcemanagement_businessunits_activitycode
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
@@ -20,6 +19,7 @@ var internalProxy *businessUnitActivityCodeProxy
 type createBusinessUnitActivityCodeFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCode *platformclientv2.Createactivitycoderequest) (*platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type getAllBusinessUnitActivityCodesFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string) (*[]platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type getBusinessUnitActivityCodeIdByNameFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, name string) (string, *platformclientv2.APIResponse, error)
+type getDefaultBusinessUnitActivityCodeIdByCategoryFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, category string) (string, *platformclientv2.APIResponse, error)
 type getBusinessUnitActivityCodeByIdFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCodeId string) (*platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type updateBusinessUnitActivityCodeFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCodeId string, activityCode *platformclientv2.Updateactivitycoderequest) (*platformclientv2.Businessunitactivitycode, *platformclientv2.APIResponse, error)
 type deleteBusinessUnitActivityCodeFunc func(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, activityCodeId string) (*platformclientv2.APIResponse, error)
@@ -27,30 +27,32 @@ type getAllBusinessUnitsFunc func(ctx context.Context, p *businessUnitActivityCo
 
 // businessUnitActivityCodeProxy contains all the methods that call genesys cloud APIs.
 type businessUnitActivityCodeProxy struct {
-	clientConfig                            *platformclientv2.Configuration
-	workforceManagementApi                  *platformclientv2.WorkforceManagementApi
-	createBusinessUnitActivityCodeAttr      createBusinessUnitActivityCodeFunc
-	getAllBusinessUnitActivityCodesAttr     getAllBusinessUnitActivityCodesFunc
-	getBusinessUnitActivityCodeIdByNameAttr getBusinessUnitActivityCodeIdByNameFunc
-	getBusinessUnitActivityCodeByIdAttr     getBusinessUnitActivityCodeByIdFunc
-	updateBusinessUnitActivityCodeAttr      updateBusinessUnitActivityCodeFunc
-	deleteBusinessUnitActivityCodeAttr      deleteBusinessUnitActivityCodeFunc
-	getAllBusinessUnitsAttr                 getAllBusinessUnitsFunc
+	clientConfig                                       *platformclientv2.Configuration
+	workforceManagementApi                             *platformclientv2.WorkforceManagementApi
+	createBusinessUnitActivityCodeAttr                 createBusinessUnitActivityCodeFunc
+	getAllBusinessUnitActivityCodesAttr                getAllBusinessUnitActivityCodesFunc
+	getBusinessUnitActivityCodeIdByNameAttr            getBusinessUnitActivityCodeIdByNameFunc
+	getDefaultBusinessUnitActivityCodeIdByCategoryAttr getDefaultBusinessUnitActivityCodeIdByCategoryFunc
+	getBusinessUnitActivityCodeByIdAttr                getBusinessUnitActivityCodeByIdFunc
+	updateBusinessUnitActivityCodeAttr                 updateBusinessUnitActivityCodeFunc
+	deleteBusinessUnitActivityCodeAttr                 deleteBusinessUnitActivityCodeFunc
+	getAllBusinessUnitsAttr                            getAllBusinessUnitsFunc
 }
 
 // newBusinessUnitActivityCodeProxy initializes the business unit activity code proxy with all of the data needed to communicate with Genesys Cloud
 func newBusinessUnitActivityCodeProxy(clientConfig *platformclientv2.Configuration) *businessUnitActivityCodeProxy {
 	api := platformclientv2.NewWorkforceManagementApiWithConfig(clientConfig)
 	return &businessUnitActivityCodeProxy{
-		clientConfig:                            clientConfig,
-		workforceManagementApi:                  api,
-		createBusinessUnitActivityCodeAttr:      createBusinessUnitActivityCodeFn,
-		getAllBusinessUnitActivityCodesAttr:     getAllBusinessUnitActivityCodesFn,
-		getBusinessUnitActivityCodeIdByNameAttr: getBusinessUnitActivityCodeIdByNameFn,
-		getBusinessUnitActivityCodeByIdAttr:     getBusinessUnitActivityCodeByIdFn,
-		updateBusinessUnitActivityCodeAttr:      updateBusinessUnitActivityCodeFn,
-		deleteBusinessUnitActivityCodeAttr:      deleteBusinessUnitActivityCodeFn,
-		getAllBusinessUnitsAttr:                 getAllBusinessUnitsFn,
+		clientConfig:                                       clientConfig,
+		workforceManagementApi:                             api,
+		createBusinessUnitActivityCodeAttr:                 createBusinessUnitActivityCodeFn,
+		getAllBusinessUnitActivityCodesAttr:                getAllBusinessUnitActivityCodesFn,
+		getBusinessUnitActivityCodeIdByNameAttr:            getBusinessUnitActivityCodeIdByNameFn,
+		getDefaultBusinessUnitActivityCodeIdByCategoryAttr: getDefaultBusinessUnitActivityCodeIdByCategoryFn,
+		getBusinessUnitActivityCodeByIdAttr:                getBusinessUnitActivityCodeByIdFn,
+		updateBusinessUnitActivityCodeAttr:                 updateBusinessUnitActivityCodeFn,
+		deleteBusinessUnitActivityCodeAttr:                 deleteBusinessUnitActivityCodeFn,
+		getAllBusinessUnitsAttr:                            getAllBusinessUnitsFn,
 	}
 }
 
@@ -77,6 +79,11 @@ func (p *businessUnitActivityCodeProxy) getAllBusinessUnitActivityCodes(ctx cont
 // getBusinessUnitActivityCodeIdByName returns the id of a Genesys Cloud business unit activity code by name
 func (p *businessUnitActivityCodeProxy) getBusinessUnitActivityCodeIdByName(ctx context.Context, businessUnitId string, name string) (string, *platformclientv2.APIResponse, error) {
 	return p.getBusinessUnitActivityCodeIdByNameAttr(ctx, p, businessUnitId, name)
+}
+
+// getDefaultBusinessUnitActivityCodeIdByCategory returns the id of the default Genesys Cloud business unit activity code of a category
+func (p *businessUnitActivityCodeProxy) getDefaultBusinessUnitActivityCodeIdByCategory(ctx context.Context, businessUnitId string, category string) (string, *platformclientv2.APIResponse, error) {
+	return p.getDefaultBusinessUnitActivityCodeIdByCategoryAttr(ctx, p, businessUnitId, category)
 }
 
 // getBusinessUnitActivityCodeById returns a single Genesys Cloud business unit activity code by id
@@ -121,13 +128,19 @@ func getBusinessUnitActivityCodeIdByNameFn(ctx context.Context, p *businessUnitA
 		return "", resp, err
 	}
 
-	for _, activityCode := range *activityCodes {
-		if *activityCode.Name == name && isActive(&activityCode) {
-			return *activityCode.Id, resp, nil
-		}
+	id, err := findActivityCodeIdByName(*activityCodes, name)
+	return id, resp, err
+}
+
+// getDefaultBusinessUnitActivityCodeIdByCategoryFn is an implementation of the function to get the id of the default business unit activity code of a category
+func getDefaultBusinessUnitActivityCodeIdByCategoryFn(ctx context.Context, p *businessUnitActivityCodeProxy, businessUnitId string, category string) (string, *platformclientv2.APIResponse, error) {
+	activityCodes, resp, err := getAllBusinessUnitActivityCodesFn(ctx, p, businessUnitId)
+	if err != nil {
+		return "", resp, err
 	}
 
-	return "", resp, fmt.Errorf("unable to find business unit %s activity code with name %s", businessUnitId, name)
+	id, err := findDefaultActivityCodeIdByCategory(*activityCodes, category)
+	return id, resp, err
 }
 
 // getBusinessUnitActivityCodeByIdFn is an implementation of the function to get a Genesys Cloud business unit activity code by id

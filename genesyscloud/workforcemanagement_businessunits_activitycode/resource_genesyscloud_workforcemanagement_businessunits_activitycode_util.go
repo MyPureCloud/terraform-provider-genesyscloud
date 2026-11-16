@@ -32,6 +32,30 @@ func activityCodeLabel(activityCode platformclientv2.Businessunitactivitycode) s
 	return *activityCode.Name
 }
 
+// findActivityCodeIdByName returns the id of the active activity code with the name. Default activity codes that have not been renamed all have an empty name,
+// so they cannot be told apart by name and are found by category instead.
+func findActivityCodeIdByName(activityCodes []platformclientv2.Businessunitactivitycode, name string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("an activity code with an empty name is a default activity code, so look it up by category")
+	}
+	for _, activityCode := range activityCodes {
+		if *activityCode.Name == name && isActive(&activityCode) {
+			return *activityCode.Id, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find an activity code with name %s", name)
+}
+
+// findDefaultActivityCodeIdByCategory returns the id of the default activity code of the category, of which there is one in each business unit
+func findDefaultActivityCodeIdByCategory(activityCodes []platformclientv2.Businessunitactivitycode, category string) (string, error) {
+	for _, activityCode := range activityCodes {
+		if *activityCode.DefaultCode && *activityCode.Category == category && isActive(&activityCode) {
+			return *activityCode.Id, nil
+		}
+	}
+	return "", fmt.Errorf("unable to find a default activity code with category %s", category)
+}
+
 // isAgentTimeOffSelectableConfigured reports whether agent_time_off_selectable is set in the configuration,
 // so an explicit false can be told apart from an unset value
 func isAgentTimeOffSelectableConfigured(d *schema.ResourceData) bool {
