@@ -22,6 +22,10 @@ const ResourceType = "genesyscloud_agentic_virtual_agent_version"
 // between an omitted value and false still trigger an update.
 const contextRetentionPresenceAttribute = "context_retention_enabled_presence"
 
+const builtinInputInstructionTypeComfortStatement = "ComfortStatement"
+
+const builtinInstructionMaxLength = 4000
+
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersion())
@@ -257,6 +261,14 @@ func toolResource() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"builtin_input_instructions": {
+				Description: "Built-in input instructions for this tool. Built-ins are stored separately from `input_instructions` and merged into them at publish time, at the position given by each built-in's `index`. " +
+					"`input_instructions` and `builtin_input_instructions` together may contain at most 10 entries per tool. " +
+					"Adding a `ComfortStatement` built-in to any tool disables the version-level `settings.comfort_statement` for the whole virtual agent, so `settings.comfort_statement` cannot be configured at the same time.",
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     builtinInputInstructionResource(),
+			},
 			"output_instructions": {
 				Description: "Instructions that apply after successful tool execution.",
 				Type:        schema.TypeList,
@@ -294,6 +306,39 @@ func toolResource() *schema.Resource {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        inputValidationResource(),
+			},
+		},
+	}
+}
+
+func builtinInputInstructionResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  "Built-in instruction type. `ComfortStatement` makes the virtual agent say a short line describing the action before it calls the tool. Each type may appear at most once per tool.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{builtinInputInstructionTypeComfortStatement}, false),
+			},
+			"index": {
+				Description: "Zero-based position of this built-in in the tool's merged input instruction list (`input_instructions` + `builtin_input_instructions`). " +
+					"Must be unique across the tool's built-ins and satisfy `0 <= index < length(input_instructions) + length(builtin_input_instructions)`. " +
+					"The provider does not adjust `index` for you: if you remove entries from `input_instructions` without updating `index`, the API rejects the update with a 400 Bad Request.",
+				Type:         schema.TypeInt,
+				Required:     true,
+				ValidateFunc: validation.IntAtLeast(0),
+			},
+			"default": {
+				Description:  "Default instruction text, used when `override` is not set. Maximum 4000 characters.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringLenBetween(1, builtinInstructionMaxLength),
+			},
+			"override": {
+				Description:  "Author-written instruction text that replaces `default` when set. Maximum 4000 characters.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringLenBetween(1, builtinInstructionMaxLength),
 			},
 		},
 	}
@@ -541,7 +586,7 @@ func versionSettingsResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"comfort_statement": {
-				Description: "Comfort statement settings for tool calls.",
+				Description: "Comfort statement settings for tool calls. Cannot be set when any tool has a `ComfortStatement` entry in `builtin_input_instructions`, because a per-tool comfort statement replaces this setting for the whole virtual agent.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				MaxItems:    1,
@@ -574,6 +619,7 @@ func AgenticVirtualAgentVersionExporter() *resourceExporter.ResourceExporter {
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"agent_id": {RefType: "genesyscloud_agentic_virtual_agent"},
 		},
+		AllowZeroValues: []string{"definition.tools.builtin_input_instructions.index"},
 		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
 			"agent_id": {
 				ResolverWithClientConfigFunc: resolveAgenticVirtualAgentVersionContextRetentionResolver(exportCache),

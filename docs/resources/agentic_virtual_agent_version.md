@@ -67,6 +67,15 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
 
       input_instructions = ["Call this to authenticate the user before answering account questions"]
 
+      # index is the position in input_instructions + builtin_input_instructions. Keep it in range
+      # when editing input_instructions, or the API returns a 400.
+      builtin_input_instructions {
+        type     = "ComfortStatement"
+        index    = 1
+        default  = "Before the tool call, provide one filler line in under eight words naming only the action being performed."
+        override = "Before the tool call, let the user know you are verifying their identity."
+      }
+
       output = "AuthResult"
     }
 
@@ -147,10 +156,6 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
     }
 
     settings {
-      comfort_statement {
-        enabled = true
-      }
-
       dynamic_turn_instructions {
         repetition_check {
           type        = "Agent"
@@ -242,7 +247,7 @@ Optional:
 
 Optional:
 
-- `comfort_statement` (Block List, Max: 1) Comfort statement settings for tool calls. (see [below for nested schema](#nestedblock--definition--settings--comfort_statement))
+- `comfort_statement` (Block List, Max: 1) Comfort statement settings for tool calls. Cannot be set when any tool has a `ComfortStatement` entry in `builtin_input_instructions`, because a per-tool comfort statement replaces this setting for the whole virtual agent. (see [below for nested schema](#nestedblock--definition--settings--comfort_statement))
 - `dynamic_turn_instructions` (Block List, Max: 1) Instructions dynamically added to the virtual agent based on conversation state (e.g. repetition checks). (see [below for nested schema](#nestedblock--definition--settings--dynamic_turn_instructions))
 
 <a id="nestedblock--definition--settings--comfort_statement"></a>
@@ -285,6 +290,7 @@ Required:
 
 Optional:
 
+- `builtin_input_instructions` (Block List) Built-in input instructions for this tool. Built-ins are stored separately from `input_instructions` and merged into them at publish time, at the position given by each built-in's `index`. `input_instructions` and `builtin_input_instructions` together may contain at most 10 entries per tool. Adding a `ComfortStatement` built-in to any tool disables the version-level `settings.comfort_statement` for the whole virtual agent, so `settings.comfort_statement` cannot be configured at the same time. (see [below for nested schema](#nestedblock--definition--tools--builtin_input_instructions))
 - `context_retention_enabled` (Boolean) Whether this DataAction tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window. Only applicable when type is DataAction.
 - `errors` (Block List) Error types this tool can raise. Only applicable when type is DataAction. (see [below for nested schema](#nestedblock--definition--tools--errors))
 - `input_instructions` (List of String) Additional instructions specific to using this tool.
@@ -307,6 +313,20 @@ Optional:
 Read-Only:
 
 - `self_uri` (String) Self URI of the target resource.
+
+
+<a id="nestedblock--definition--tools--builtin_input_instructions"></a>
+### Nested Schema for `definition.tools.builtin_input_instructions`
+
+Required:
+
+- `default` (String) Default instruction text, used when `override` is not set. Maximum 4000 characters.
+- `index` (Number) Zero-based position of this built-in in the tool's merged input instruction list (`input_instructions` + `builtin_input_instructions`). Must be unique across the tool's built-ins and satisfy `0 <= index < length(input_instructions) + length(builtin_input_instructions)`. The provider does not adjust `index` for you: if you remove entries from `input_instructions` without updating `index`, the API rejects the update with a 400 Bad Request.
+- `type` (String) Built-in instruction type. `ComfortStatement` makes the virtual agent say a short line describing the action before it calls the tool. Each type may appear at most once per tool.
+
+Optional:
+
+- `override` (String) Author-written instruction text that replaces `default` when set. Maximum 4000 characters.
 
 
 <a id="nestedblock--definition--tools--errors"></a>

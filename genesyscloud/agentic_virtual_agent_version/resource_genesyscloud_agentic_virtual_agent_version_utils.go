@@ -88,12 +88,13 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 // DataAction-specific: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
-	Type               string                                     `json:"type"`
-	Name               string                                     `json:"name"`
-	Description        string                                     `json:"description"`
-	Target             DomainEntityRef                            `json:"target"`
-	InputInstructions  []string                                   `json:"inputInstructions,omitempty"`
-	OutputInstructions []AgenticVirtualAgentToolOutputInstruction `json:"outputInstructions,omitempty"`
+	Type                     string                                       `json:"type"`
+	Name                     string                                       `json:"name"`
+	Description              string                                       `json:"description"`
+	Target                   DomainEntityRef                              `json:"target"`
+	InputInstructions        []string                                     `json:"inputInstructions,omitempty"`
+	BuiltinInputInstructions []AgenticVirtualAgentBuiltinInputInstruction `json:"builtinInputInstructions,omitempty"`
+	OutputInstructions       []AgenticVirtualAgentToolOutputInstruction   `json:"outputInstructions,omitempty"`
 	// DataAction-specific fields
 	ContextRetentionEnabled *bool                                 `json:"contextRetentionEnabled,omitempty"`
 	Errors                  []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
@@ -103,6 +104,14 @@ type AgenticVirtualAgentTool struct {
 	Schemas                 *AgenticVirtualAgentDataActionSchemas `json:"schemas,omitempty"`
 	// ExternalA2AServer-specific fields (computed at publish time)
 	Skills []AgenticVirtualAgentAgentCardSkill `json:"skills,omitempty"`
+}
+
+// Index has no omitempty because 0 is a valid position.
+type AgenticVirtualAgentBuiltinInputInstruction struct {
+	Type     string  `json:"type"`
+	Index    int     `json:"index"`
+	Default  string  `json:"default"`
+	Override *string `json:"override,omitempty"`
 }
 
 // DomainEntityRef is a reference to a Genesys Cloud resource.

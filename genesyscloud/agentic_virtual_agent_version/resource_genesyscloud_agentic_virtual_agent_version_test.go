@@ -939,3 +939,94 @@ func generateVersionResourceWithKnowledgeDependencyOnlyInput(resourceLabel, agen
 	}
 	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, actionResourceLabel, kbResourceLabel)
 }
+
+// Requires the GCP-1180_ava_contextual_comfort_statements feature toggle.
+func TestAccResourceAgenticVirtualAgentVersionWithComfortStatementBuiltin(t *testing.T) {
+	var (
+		agentResourceLabel   = "test_agent"
+		versionResourceLabel = "test_version"
+		kbResourceLabel      = "test_kb"
+		agentName            = "TF Comfort Statement Test Agent " + uuid.NewString()
+		kbName               = "TF Comfort Statement KB " + uuid.NewString()
+		role                 = "You are a knowledge base assistant."
+		instruction1         = "Answer using the knowledge base."
+		defaultText          = "Before the tool call, provide one filler line in under eight words naming only the action being performed."
+		overrideText         = "Before the tool call, let the user know you are searching the help articles."
+		fullResourcePath     = ResourceType + "." + versionResourceLabel
+		builtinPath          = "definition.0.tools.0.builtin_input_instructions.0."
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithComfortStatementBuiltin(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, role, instruction1, 0, defaultText, ""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, builtinPath+"type", "ComfortStatement"),
+					resource.TestCheckResourceAttr(fullResourcePath, builtinPath+"index", "0"),
+					resource.TestCheckResourceAttr(fullResourcePath, builtinPath+"default", defaultText),
+					resource.TestCheckNoResourceAttr(fullResourcePath, builtinPath+"override"),
+					resource.TestCheckResourceAttr(fullResourcePath, "definition.0.tools.0.input_instructions.#", "2"),
+				),
+			},
+			{
+				Config: generateKnowledgebaseResource(kbResourceLabel, kbName) +
+					generateAgentResource(agentResourceLabel, agentName) +
+					generateVersionResourceWithComfortStatementBuiltin(
+						versionResourceLabel, agentResourceLabel, kbResourceLabel, role, instruction1, 2, defaultText, overrideText),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(fullResourcePath, builtinPath+"index", "2"),
+					resource.TestCheckResourceAttr(fullResourcePath, builtinPath+"default", defaultText),
+					resource.TestCheckResourceAttr(fullResourcePath, builtinPath+"override", overrideText),
+				),
+			},
+			{
+				// Import/Read
+				ResourceName:      fullResourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func generateVersionResourceWithComfortStatementBuiltin(resourceLabel, agentResourceLabel, kbResourceLabel, role, instruction1 string, index int, defaultText, overrideText string) string {
+	override := ""
+	if overrideText != "" {
+		override = fmt.Sprintf(`override = "%s"`, overrideText)
+	}
+	return fmt.Sprintf(`resource "%s" "%s" {
+		agent_id = genesyscloud_agentic_virtual_agent.%s.id
+
+		definition {
+			role         = "%s"
+			instructions = ["%s"]
+
+			tools {
+				type        = "KnowledgeBase"
+				name        = "LookupArticles"
+				description = "Search the knowledge base for relevant articles."
+				target {
+					id   = genesyscloud_knowledge_knowledgebase.%s.id
+					name = genesyscloud_knowledge_knowledgebase.%s.name
+				}
+				input_instructions = [
+					"Use when the user asks a question",
+					"Search using the user's own words",
+				]
+
+				builtin_input_instructions {
+					type    = "ComfortStatement"
+					index   = %d
+					default = "%s"
+					%s
+				}
+			}
+		}
+	}
+	`, ResourceType, resourceLabel, agentResourceLabel, role, instruction1, kbResourceLabel, kbResourceLabel, index, defaultText, override)
+}

@@ -3,6 +3,7 @@ package agentic_virtual_agent_version
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -436,4 +437,256 @@ func TestUnitAgenticVirtualAgentToolContextRetentionJSON(t *testing.T) {
 
 func boolPtr(value bool) *bool {
 	return &value
+}
+
+const testComfortStatementDefault = "Before the tool call, provide one filler line in under eight words naming only the action being performed."
+
+func TestUnitBuiltinInputInstructionJSON(t *testing.T) {
+	override := "Let the user know you're fetching their order status."
+	tool := AgenticVirtualAgentTool{
+		Type: "DataAction",
+		BuiltinInputInstructions: []AgenticVirtualAgentBuiltinInputInstruction{
+			{Type: builtinInputInstructionTypeComfortStatement, Index: 0, Default: testComfortStatementDefault},
+			{Type: "Other", Index: 2, Default: "d", Override: &override},
+		},
+	}
+
+	payload, err := json.Marshal(tool)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+
+	var decoded struct {
+		BuiltinInputInstructions []map[string]interface{} `json:"builtinInputInstructions"`
+	}
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(decoded.BuiltinInputInstructions) != 2 {
+		t.Fatalf("expected 2 builtinInputInstructions, got %s", payload)
+	}
+
+	first := decoded.BuiltinInputInstructions[0]
+	if index, ok := first["index"]; !ok || index != float64(0) {
+		t.Errorf("expected index 0 to be serialized, got %s", payload)
+	}
+	if _, ok := first["override"]; ok {
+		t.Errorf("expected override to be omitted when unset, got %s", payload)
+	}
+	if first["type"] != builtinInputInstructionTypeComfortStatement || first["default"] != testComfortStatementDefault {
+		t.Errorf("unexpected first built-in: %v", first)
+	}
+
+	if decoded.BuiltinInputInstructions[1]["override"] != override {
+		t.Errorf("expected override to be serialized, got %s", payload)
+	}
+
+	payload, _ = json.Marshal(AgenticVirtualAgentTool{Type: "DataAction"})
+	if strings.Contains(string(payload), "builtinInputInstructions") {
+		t.Errorf("expected builtinInputInstructions to be omitted when empty, got %s", payload)
+	}
+}
+
+func TestUnitExpandFlattenBuiltinInputInstructionsRoundTrip(t *testing.T) {
+	input := []interface{}{
+		map[string]interface{}{
+			"type":     builtinInputInstructionTypeComfortStatement,
+			"index":    1,
+			"default":  testComfortStatementDefault,
+			"override": "",
+		},
+	}
+
+	expanded := expandBuiltinInputInstructions(input)
+	if len(expanded) != 1 {
+		t.Fatalf("expected 1 built-in, got %d", len(expanded))
+	}
+	if expanded[0].Index != 1 || expanded[0].Type != builtinInputInstructionTypeComfortStatement || expanded[0].Default != testComfortStatementDefault {
+		t.Errorf("unexpected expanded built-in: %+v", expanded[0])
+	}
+	if expanded[0].Override != nil {
+		t.Errorf("expected empty override to expand to nil, got %q", *expanded[0].Override)
+	}
+
+	override := "Tell the user you're checking their order."
+	expanded[0].Override = &override
+	flattened := flattenBuiltinInputInstructions(expanded)
+	m := flattened[0].(map[string]interface{})
+	if m["index"] != 1 || m["type"] != builtinInputInstructionTypeComfortStatement || m["default"] != testComfortStatementDefault || m["override"] != override {
+		t.Errorf("unexpected flattened built-in: %v", m)
+	}
+
+	expanded[0].Override = nil
+	m = flattenBuiltinInputInstructions(expanded)[0].(map[string]interface{})
+	if _, ok := m["override"]; ok {
+		t.Errorf("expected nil override to be absent from state, got %v", m["override"])
+	}
+}
+
+func TestUnitExpandToolsIncludesBuiltinInputInstructions(t *testing.T) {
+	toolMap := testDataActionToolMap("GetOrder")
+	toolMap["input_instructions"] = []interface{}{"Call this when the user asks about their order."}
+	toolMap["builtin_input_instructions"] = []interface{}{
+		map[string]interface{}{"type": builtinInputInstructionTypeComfortStatement, "index": 0, "default": testComfortStatementDefault},
+	}
+
+	tools := expandTools([]interface{}{toolMap}, nil)
+	if len(tools[0].BuiltinInputInstructions) != 1 {
+		t.Fatalf("expected the built-in to be expanded onto the tool, got %+v", tools[0])
+	}
+	if len(tools[0].InputInstructions) != 1 {
+		t.Errorf("expected built-ins to stay separate from input_instructions, got %v", tools[0].InputInstructions)
+	}
+}
+
+func TestUnitBuildDefinitionDropsV1ComfortStatementWithV2(t *testing.T) {
+	tests := []struct {
+		name      string
+		withV2    bool
+		wantV1Set bool
+	}{
+		{name: "V1 kept without a V2 comfort statement", withV2: false, wantV1Set: true},
+		{name: "V1 dropped with a V2 comfort statement", withV2: true, wantV1Set: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tool := testDataActionToolMap("GetOrder")
+			if test.withV2 {
+				tool["builtin_input_instructions"] = []interface{}{
+					map[string]interface{}{"type": builtinInputInstructionTypeComfortStatement, "index": 0, "default": testComfortStatementDefault},
+				}
+			}
+			d := schema.TestResourceDataRaw(t, ResourceAgenticVirtualAgentVersion().Schema, map[string]interface{}{
+				"agent_id": "agent-id",
+				"definition": []interface{}{
+					map[string]interface{}{
+						"role":         "A helpful assistant.",
+						"instructions": []interface{}{"Be helpful."},
+						"tools":        []interface{}{tool},
+						"settings": []interface{}{
+							map[string]interface{}{
+								"comfort_statement": []interface{}{map[string]interface{}{"enabled": true}},
+							},
+						},
+					},
+				},
+			})
+
+			definition := buildDefinitionFromResourceData(d)
+			if definition.Settings == nil {
+				t.Fatalf("expected settings to be built")
+			}
+			if gotV1Set := definition.Settings.ComfortStatement != nil; gotV1Set != test.wantV1Set {
+				t.Fatalf("expected V1 comfort statement set=%t, got %t", test.wantV1Set, gotV1Set)
+			}
+		})
+	}
+}
+
+func TestUnitValidateComfortStatementConfiguration(t *testing.T) {
+	v2Tool := cty.ObjectVal(map[string]cty.Value{
+		"builtin_input_instructions": cty.ListVal([]cty.Value{
+			cty.ObjectVal(map[string]cty.Value{"type": cty.StringVal(builtinInputInstructionTypeComfortStatement)}),
+		}),
+	})
+	plainTool := cty.ObjectVal(map[string]cty.Value{
+		"builtin_input_instructions": cty.NullVal(cty.List(cty.Object(map[string]cty.Type{"type": cty.String}))),
+	})
+	unknownTypeTool := cty.ObjectVal(map[string]cty.Value{
+		"builtin_input_instructions": cty.ListVal([]cty.Value{
+			cty.ObjectVal(map[string]cty.Value{"type": cty.UnknownVal(cty.String)}),
+		}),
+	})
+	v1Settings := cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+		"comfort_statement": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{"enabled": cty.True})}),
+	})})
+	noV1Settings := cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+		"comfort_statement": cty.ListValEmpty(cty.Object(map[string]cty.Type{"enabled": cty.Bool})),
+	})})
+
+	tests := []struct {
+		name     string
+		tool     cty.Value
+		settings cty.Value
+		wantErr  bool
+	}{
+		{name: "V2 and V1 together", tool: v2Tool, settings: v1Settings, wantErr: true},
+		{name: "V2 only", tool: v2Tool, settings: noV1Settings},
+		{name: "V1 only", tool: plainTool, settings: v1Settings},
+		{name: "unknown built-in type is not checked", tool: unknownTypeTool, settings: v1Settings},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rawConfig := cty.ObjectVal(map[string]cty.Value{
+				"definition": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+					"tools":    cty.ListVal([]cty.Value{test.tool}),
+					"settings": test.settings,
+				})}),
+			})
+			err := validateComfortStatementConfiguration(rawConfig)
+			if (err != nil) != test.wantErr {
+				t.Fatalf("expected error=%t, got %v", test.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestUnitComfortStatementConflictFailsPlan(t *testing.T) {
+	tool := testDataActionToolMap("GetOrder")
+	tool["builtin_input_instructions"] = []interface{}{
+		map[string]interface{}{"type": builtinInputInstructionTypeComfortStatement, "index": 0, "default": testComfortStatementDefault},
+	}
+	config := map[string]interface{}{
+		"agent_id": "agent-id",
+		"definition": []interface{}{
+			map[string]interface{}{
+				"role":         "A helpful assistant.",
+				"instructions": []interface{}{"Be helpful."},
+				"tools":        []interface{}{tool},
+				"settings": []interface{}{
+					map[string]interface{}{
+						"comfort_statement": []interface{}{map[string]interface{}{"enabled": true}},
+					},
+				},
+			},
+		},
+	}
+
+	priorState := &terraform.InstanceState{
+		RawConfig: cty.ObjectVal(map[string]cty.Value{
+			"definition": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+				"tools": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+					"builtin_input_instructions": cty.ListVal([]cty.Value{
+						cty.ObjectVal(map[string]cty.Value{"type": cty.StringVal(builtinInputInstructionTypeComfortStatement)}),
+					}),
+				})}),
+				"settings": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+					"comfort_statement": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{"enabled": cty.True})}),
+				})}),
+			})}),
+		}),
+	}
+
+	_, err := ResourceAgenticVirtualAgentVersion().Diff(context.Background(), priorState, terraform.NewResourceConfigRaw(config), nil)
+	if err == nil || !strings.Contains(err.Error(), "settings.comfort_statement cannot be set") {
+		t.Fatalf("expected a comfort statement conflict error, got %v", err)
+	}
+}
+
+func TestUnitHasContextualComfortStatement(t *testing.T) {
+	if hasContextualComfortStatement(nil) {
+		t.Error("expected no tools to report false")
+	}
+	if hasContextualComfortStatement([]AgenticVirtualAgentTool{{Type: "DataAction"}}) {
+		t.Error("expected a tool without built-ins to report false")
+	}
+	tools := []AgenticVirtualAgentTool{
+		{Type: "DataAction"},
+		{Type: "KnowledgeBase", BuiltinInputInstructions: []AgenticVirtualAgentBuiltinInputInstruction{{Type: builtinInputInstructionTypeComfortStatement}}},
+	}
+	if !hasContextualComfortStatement(tools) {
+		t.Error("expected a ComfortStatement built-in on any tool to report true")
+	}
 }
