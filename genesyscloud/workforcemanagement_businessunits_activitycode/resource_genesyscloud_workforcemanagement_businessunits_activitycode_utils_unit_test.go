@@ -1,8 +1,10 @@
 package workforcemanagement_businessunits_activitycode
 
 import (
+	"context"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
@@ -97,5 +99,43 @@ func TestUnitActivityCodeBlockHashTellsInactiveCodesApart(t *testing.T) {
 	other, _ := activityCodeBlockHash("bu-2", first)
 	if a == other {
 		t.Error("the same code id in another business unit must get a different hash")
+	}
+}
+
+func planActivityCode(t *testing.T, active string) *terraform.InstanceDiff {
+	t.Helper()
+	state := &terraform.InstanceState{ID: "bu-1/code-1", Attributes: map[string]string{
+		"id":                       "bu-1/code-1",
+		"business_unit_id":         "bu-1",
+		"name":                     "Training",
+		"category":                 "Training",
+		"active":                   active,
+		"default_code":             "false",
+		"length_in_minutes":        "30",
+		"counts_as_paid_time":      "false",
+		"counts_as_work_time":      "false",
+		"counts_toward_shrinkage":  "false",
+		"planned_shrinkage":        "false",
+		"interruptible":            "false",
+		"secondary_presence_ids.#": "0",
+	}}
+	config := terraform.NewResourceConfigRaw(map[string]interface{}{
+		"business_unit_id": "bu-1",
+		"name":             "Training",
+		"category":         "Training",
+	})
+	diff, err := ResourceBusinessUnitActivityCode().Diff(context.Background(), state, config, nil)
+	if err != nil {
+		t.Fatalf("unexpected error planning the activity code: %v", err)
+	}
+	return diff
+}
+
+func TestUnitReplaceWhenInactive(t *testing.T) {
+	if diff := planActivityCode(t, "false"); diff == nil || !diff.RequiresNew() {
+		t.Errorf("expected an inactive activity code that is still configured to be replaced, got %+v", diff)
+	}
+	if diff := planActivityCode(t, "true"); diff != nil && diff.RequiresNew() {
+		t.Errorf("an active activity code must not be replaced, got %+v", diff)
 	}
 }

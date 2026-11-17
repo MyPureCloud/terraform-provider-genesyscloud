@@ -1,6 +1,7 @@
 package workforcemanagement_businessunits_activitycode
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -70,6 +71,22 @@ func findDefaultActivityCodeIdByCategory(activityCodes []platformclientv2.Busine
 		}
 	}
 	return "", fmt.Errorf("unable to find a default activity code with category %s", category)
+}
+
+// replaceWhenInactive makes the plan replace an activity code that was deactivated outside Terraform while it is still in the configuration.
+// Genesys Cloud keeps a deleted code with active=false and cannot reactivate it, so without this the plan would report no changes for it.
+// The code is then replaced by a new active one, and the inactive one stays in Genesys Cloud, where old schedules and work plans can still refer to it.
+func replaceWhenInactive(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	if diff.Id() == "" {
+		return nil
+	}
+	if wasActive, _ := diff.GetChange("active"); wasActive.(bool) {
+		return nil
+	}
+	if err := diff.SetNew("active", true); err != nil {
+		return err
+	}
+	return diff.ForceNew("active")
 }
 
 // isAgentTimeOffSelectableConfigured reports whether agent_time_off_selectable is set in the configuration,

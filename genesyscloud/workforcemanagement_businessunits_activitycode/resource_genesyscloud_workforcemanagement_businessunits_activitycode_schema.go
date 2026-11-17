@@ -37,6 +37,7 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
+		CustomizeDiff: replaceWhenInactive,
 		Schema: map[string]*schema.Schema{
 			"business_unit_id": {
 				Description: `The id of the business unit this activity code belongs to. Changing this attribute will cause the activity code to be dropped and recreated.`,
@@ -103,7 +104,7 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"active": {
-				Description: `Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it, and an inactive activity code can still be on old schedules and work plans. An inactive activity code is exported, but applying that configuration elsewhere creates an active one, because Genesys Cloud only creates active activity codes.`,
+				Description: `Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it, and an inactive activity code can still be on old schedules and work plans. An activity code that is inactive but is still in the configuration is replaced by a new, active one, because Genesys Cloud cannot reactivate it. An inactive activity code is exported, but applying that configuration elsewhere creates an active one, because Genesys Cloud only creates active activity codes.`,
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
