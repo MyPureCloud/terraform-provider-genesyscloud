@@ -21,9 +21,26 @@ func TestSpeechAndTextAnalyticsTopicIds_KeepGuidWithoutReplaceWithDatasource(t *
 	attrPath := "question_groups.questions.answer_options.assistance_conditions.topic_ids"
 
 	g := setupGenesysCloudResourceExporter(t)
+
+	// Mock resolver that always succeeds, so the only thing keeping the GUID raw is the
+	// replace_with_datasource gate (shouldResolveToDataSource), not a resolver lookup failure.
+	resolverCalled := false
+	mockResolver := func(_ map[string]interface{}, value any, _ *platformclientv2.Configuration) (string, string, map[string]interface{}, bool) {
+		resolverCalled = true
+		return sttTopic.ResourceType, "Budget_Discussion_en-US", map[string]interface{}{
+			"name":    "Budget Discussion",
+			"dialect": "en-US",
+		}, true
+	}
+
+	evalExporter := evalForm.EvaluationFormExporter()
+	evalExporter.CustomAttributeResolver[attrPath] = &resourceExporter.RefAttrCustomResolver{
+		ResolveToDataSourceFunc: mockResolver,
+	}
+
 	exporters := map[string]*resourceExporter.ResourceExporter{
 		sttTopic.ResourceType:                   sttTopic.SpeechAndTextAnalyticsTopicExporter(),
-		"genesyscloud_quality_forms_evaluation": evalForm.EvaluationFormExporter(),
+		"genesyscloud_quality_forms_evaluation": evalExporter,
 	}
 
 	resource := resourceExporter.ResourceInfo{
@@ -40,6 +57,9 @@ func TestSpeechAndTextAnalyticsTopicIds_KeepGuidWithoutReplaceWithDatasource(t *
 		"hcl",
 	)
 
+	if !resolverCalled {
+		t.Fatalf("expected the resolver to be invoked so the replace_with_datasource gate is exercised")
+	}
 	if len(result) != 1 {
 		t.Fatalf("expected 1 topic id, got %d", len(result))
 	}
