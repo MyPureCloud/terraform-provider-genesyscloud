@@ -119,7 +119,7 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 // BusinessUnitActivityCodeExporter returns the resourceExporter object used to hold the genesyscloud_workforcemanagement_businessunits_activitycode exporter's config
 func BusinessUnitActivityCodeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllBusinessUnitActivityCodes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllActiveBusinessUnitActivityCodes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"business_unit_id": {RefType: "genesyscloud_workforcemanagement_businessunits"},
 		},

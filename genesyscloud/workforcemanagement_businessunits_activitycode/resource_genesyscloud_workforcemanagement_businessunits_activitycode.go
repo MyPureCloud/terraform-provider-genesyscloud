@@ -26,9 +26,9 @@ import (
 The resource_genesyscloud_workforcemanagement_businessunits_activitycode.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllBusinessUnitActivityCodes retrieves all of the active business unit activity codes via Terraform in the Genesys Cloud and is used for the exporter.
+// getAllActiveBusinessUnitActivityCodes retrieves all of the active business unit activity codes via Terraform in the Genesys Cloud and is used for the exporter.
 // Default activity codes are included because they can be updated, even though they cannot be created or deleted.
-func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllActiveBusinessUnitActivityCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getBusinessUnitActivityCodeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
