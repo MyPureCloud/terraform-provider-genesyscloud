@@ -72,10 +72,7 @@ func newAuthRoleProxy(clientConfig *platformclientv2.Configuration) *authRolePro
 // getAuthRoleProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getAuthRoleProxy(clientConfig *platformclientv2.Configuration) *authRoleProxy {
-	if internalProxy == nil {
-		internalProxy = newAuthRoleProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAuthRoleProxy)
 }
 
 // createAuthRole creates a Genesys Cloud auth role

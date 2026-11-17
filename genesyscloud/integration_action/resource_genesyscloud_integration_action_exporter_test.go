@@ -84,6 +84,58 @@ func TestUnitIntegrationActionExporterTreatsFunctionZipAsUnresolvable(t *testing
 	}
 }
 
+// TestUnitIntegrationActionExporterStripsFunctionZipID verifies the DEVTOOLING-1797 fix:
+// zip_id is a Genesys Cloud generated, org-specific GUID and must be dropped on export so
+// it does not cause perpetual plan drift in a target org.
+func TestUnitIntegrationActionExporterStripsFunctionZipID(t *testing.T) {
+	exporter := IntegrationActionExporter()
+
+	zipIDResolver, ok := exporter.CustomAttributeResolver["function_config.zip_id"]
+	if !ok || zipIDResolver == nil || zipIDResolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver to strip function_config.zip_id")
+	}
+
+	configMap := map[string]interface{}{
+		"handler": "dist/index.handler",
+		"zip_id":  "11111111-1111-1111-1111-111111111111",
+	}
+	if err := zipIDResolver.ResolverFunc(configMap, nil, "label"); err != nil {
+		t.Fatalf("zip_id resolver returned error: %v", err)
+	}
+	if _, exists := configMap["zip_id"]; exists {
+		t.Fatal("zip_id should be stripped on export")
+	}
+	if configMap["handler"] != "dist/index.handler" {
+		t.Fatalf("handler should be preserved, got %v", configMap["handler"])
+	}
+}
+
+// TestUnitIntegrationActionExporterStripsRequestURLTemplate verifies the DEVTOOLING-1797
+// fix: for function data actions request_url_template is set server-side to the generated
+// function id (an org-specific GUID) and must be dropped on export to avoid perpetual drift.
+func TestUnitIntegrationActionExporterStripsRequestURLTemplate(t *testing.T) {
+	exporter := IntegrationActionExporter()
+
+	urlResolver, ok := exporter.CustomAttributeResolver["config_request.request_url_template"]
+	if !ok || urlResolver == nil || urlResolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver to strip config_request.request_url_template")
+	}
+
+	configMap := map[string]interface{}{
+		"request_type":         "POST",
+		"request_url_template": "22222222-2222-2222-2222-222222222222",
+	}
+	if err := urlResolver.ResolverFunc(configMap, nil, "label"); err != nil {
+		t.Fatalf("request_url_template resolver returned error: %v", err)
+	}
+	if _, exists := configMap["request_url_template"]; exists {
+		t.Fatal("request_url_template should be stripped on export")
+	}
+	if configMap["request_type"] != "POST" {
+		t.Fatalf("request_type should be preserved, got %v", configMap["request_type"])
+	}
+}
+
 func TestUnitContainsFunctionDataAction(t *testing.T) {
 	cases := map[string]bool{
 		"Function Data Actions":     true,

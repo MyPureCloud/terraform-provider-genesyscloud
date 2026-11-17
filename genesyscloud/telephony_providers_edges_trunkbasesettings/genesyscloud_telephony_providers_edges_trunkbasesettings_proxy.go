@@ -55,11 +55,7 @@ func newTrunkBaseSettingProxy(clientConfig *platformclientv2.Configuration) *tru
 //
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTrunkBaseSettingProxy(clientConfig *platformclientv2.Configuration) *trunkbaseSettingProxy {
-	if internalProxy == nil {
-		internalProxy = newTrunkBaseSettingProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTrunkBaseSettingProxy)
 }
 
 func (p *trunkbaseSettingProxy) GetTrunkBaseSettingById(ctx context.Context, trunkBaseSettingId string) (*platformclientv2.Trunkbase, *platformclientv2.APIResponse, error) {

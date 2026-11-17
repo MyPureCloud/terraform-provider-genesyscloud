@@ -22,7 +22,7 @@ import (
 // dataSourceConversationsMessagingIntegrationsOpenRead retrieves by name the id in question
 func dataSourceConversationsMessagingIntegrationsOpenRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsOpenProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsOpenProxy(sdkConfig)
 
 	name := d.Get("name").(string)
 

@@ -60,10 +60,7 @@ func newJourneyViewScheduleProxy(clientConfig *platformclientv2.Configuration) *
 // getJourneyViewScheduleProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getJourneyViewScheduleProxy(clientConfig *platformclientv2.Configuration) *journeyViewScheduleProxy {
-	if internalProxy == nil {
-		internalProxy = newJourneyViewScheduleProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newJourneyViewScheduleProxy)
 }
 
 func (p *journeyViewScheduleProxy) getJourneyViewScheduleByViewId(ctx context.Context, viewId string) (*platformclientv2.Journeyviewschedule, *platformclientv2.APIResponse, error) {

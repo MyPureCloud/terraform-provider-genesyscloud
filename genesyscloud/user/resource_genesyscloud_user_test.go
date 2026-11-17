@@ -15,18 +15,57 @@ import (
 	routingUtilization "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization"
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 
+	"os"
 	"testing"
 	"time"
 
 	extensionPool "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/telephony_providers_edges_extension_pool"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
+
+// fixed ranges used by other tests that can run at the same time
+var reservedExtensionPoolRanges = [][2]int{{2500, 2599}, {3000, 4000}, {8000, 8999}}
+
+func overlapsReservedExtensionPoolRange(start, end int) bool {
+	for _, r := range reservedExtensionPoolRanges {
+		if start <= r[1] && end >= r[0] {
+			return true
+		}
+	}
+	return false
+}
+
+// probes the API for a free range instead of listing pools, since the list can miss overlapping pools
+func extensionPoolRangeIsFree(start, end int) bool {
+	config, err := provider.AuthorizeSdk()
+	if err != nil {
+		log.Printf("failed to authorize SDK for the extension pool probe: %v", err)
+		return false
+	}
+	api := platformclientv2.NewTelephonyProvidersEdgeApiWithConfig(config)
+	startNumber, endNumber := strconv.Itoa(start), strconv.Itoa(end)
+	pool, _, err := api.PostTelephonyProvidersEdgesExtensionpools(platformclientv2.Extensionpool{
+		StartNumber: &startNumber,
+		EndNumber:   &endNumber,
+	})
+	if err != nil || pool == nil || pool.Id == nil {
+		log.Printf("extension pool range %d-%d is not usable: %v", start, end, err)
+		return false
+	}
+	if _, err := api.DeleteTelephonyProvidersEdgesExtensionpool(*pool.Id); err != nil {
+		log.Printf("failed to delete probe extension pool %s (%d-%d): %v", *pool.Id, start, end, err)
+		return false
+	}
+	return true
+}
 
 func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ext1, ext2 string) {
 	t.Helper()
@@ -35,8 +74,16 @@ func randomExtensionPoolBase4Digit(t *testing.T) (start1, end1, start2, end2, ex
 	// This avoids collisions with other runs/orgs much better than fixed ranges (4100/4200),
 	// while keeping extension values human-readable and within a single pool range.
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	base := 2000 + r.Intn(7601) // 2000..9600
-	base = (base / 100) * 100
+	var base int
+	found := false
+	for attempt := 0; attempt < 30 && !found; attempt++ {
+		base = 2000 + r.Intn(7601) // 2000..9600
+		base = (base / 100) * 100
+		found = !overlapsReservedExtensionPoolRange(base, base+199) && extensionPoolRangeIsFree(base, base+199)
+	}
+	if !found {
+		t.Fatalf("no free extension pool range found after 30 attempts; see the probe log lines above")
+	}
 
 	start1i := base
 	end1i := base + 99
@@ -1810,6 +1857,73 @@ func generateUserEmployerInfo(offName string, empID string, empType string, date
 		date_hire = %s
 	}
 	`, offName, empID, empType, dateHire)
+}
+
+func TestUnitUserSchemaBcpModeComputedFlags(t *testing.T) {
+	toggle := featureToggles.BcpModeEnabledName()
+	bcpManagedOptionalUserAttributes := []string{
+		"routing_skills",
+		"routing_languages",
+		"locations",
+		"profile_skills",
+		"certifications",
+		"employer_info",
+		"routing_utilization",
+		"voicemail_userpolicies",
+	}
+
+	t.Run("without BCP mode optional managed blocks are computed", func(t *testing.T) {
+		_ = os.Unsetenv(toggle)
+		schemaMap := ResourceUser().Schema
+
+		for _, key := range bcpManagedOptionalUserAttributes {
+			if !schemaMap[key].Computed {
+				t.Fatalf("expected %s to be Computed when BCP mode is off", key)
+			}
+		}
+	})
+
+	t.Run("with BCP mode optional managed blocks are not computed", func(t *testing.T) {
+		t.Setenv(toggle, "TRUE")
+		schemaMap := ResourceUser().Schema
+
+		for _, key := range bcpManagedOptionalUserAttributes {
+			if schemaMap[key].Computed {
+				t.Fatalf("expected %s to not be Computed when BCP mode is on", key)
+			}
+		}
+
+		utilization := schemaMap["routing_utilization"].Elem.(*schema.Resource)
+		for _, mediaKey := range []string{"call", "callback", "message", "email", "chat", "label_utilizations"} {
+			if !utilization.Schema[mediaKey].Computed {
+				t.Fatalf("expected routing_utilization.%s to remain Computed under BCP mode", mediaKey)
+			}
+		}
+	})
+}
+
+func TestUnitPhoneNumberHashExtensionOnlyOmitsEmptyNumber(t *testing.T) {
+	withEmptyNumber := map[string]interface{}{
+		"extension":         "2264091",
+		"media_type":        "PHONE",
+		"type":              "WORK",
+		"number":            "",
+		"extension_pool_id": "3e73d1d1-98c4-41a6-987e-d9623150a94e",
+	}
+	withoutNumber := map[string]interface{}{
+		"extension":  "2264091",
+		"media_type": "PHONE",
+		"type":       "WORK",
+	}
+
+	if phoneNumberHash(withEmptyNumber) != phoneNumberHash(withoutNumber) {
+		t.Fatal("extension-only phone numbers should hash the same with or without empty number field")
+	}
+
+	set := schema.NewSet(phoneNumberHash, []interface{}{withoutNumber})
+	if !set.Contains(withEmptyNumber) {
+		t.Fatal("set should treat extension-only entry with empty number as equivalent")
+	}
 }
 
 func generateUserRoutingUtil(nestedBlocks ...string) string {

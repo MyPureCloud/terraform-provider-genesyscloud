@@ -101,7 +101,7 @@ func createKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	knowledgeDocumentId, knowledgeBaseId := parseDocumentResourceDataID(d.Id())
+	knowledgeDocumentId, knowledgeBaseId := ParseDocumentResourceDataID(d.Id())
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	proxy := GetKnowledgeDocumentProxy(sdkConfig)
 	cc := consistencyChecker.NewConsistencyCheck(ctx, d, meta, ResourceKnowledgeDocument(), constants.ConsistencyChecks(), ResourceType)
@@ -172,7 +172,7 @@ func readKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta int
 }
 
 func updateKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta interface{}) (diags diag.Diagnostics) {
-	knowledgeDocumentId, _ := parseDocumentResourceDataID(d.Id())
+	knowledgeDocumentId, _ := ParseDocumentResourceDataID(d.Id())
 	knowledgeBaseId := d.Get("knowledge_base_id").(string)
 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
@@ -218,18 +218,29 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting Knowledge document '%s'. Knowledge base ID: '%s'", knowledgeDocumentId, knowledgeBaseId)
 	resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
 	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
-			}
-			time.Sleep(10 * time.Second)
-			resp, err = proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
-			}
-		} else {
+		if !strings.Contains(err.Error(), "in use by Bot flow") {
 			return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp)
+		}
+
+		// The knowledge document is still referenced by a bot flow in the dependency-tracking graph.
+		// Rebuild the dependency tracking database once, then keep retrying the delete until the
+		// (asynchronous, eventually-consistent) dependency link clears.
+		if rebuildErr := rebuildDatabase(sdkConfig); rebuildErr != nil {
+			log.Printf("Failed to rebuild knowledge document database: %v", rebuildErr)
+		}
+
+		diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+			resp, err := proxy.deleteKnowledgeKnowledgebaseDocument(ctx, knowledgeBaseId, knowledgeDocumentId)
+			if err != nil {
+				if strings.Contains(err.Error(), "in use by Bot flow") {
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Knowledge document %s still in use by a bot flow, retrying delete", knowledgeDocumentId), resp))
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete knowledge document %s error: %s", knowledgeDocumentId, err), resp))
+			}
+			return nil
+		})
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -248,10 +259,10 @@ func deleteKnowledgeDocument(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func rebuildDatabase() diag.Diagnostics {
+func rebuildDatabase(clientConfig *platformclientv2.Configuration) diag.Diagnostics {
 	log.Printf("Rebuilding knowledge base database")
 
-	architectApi := platformclientv2.NewArchitectApi()
+	architectApi := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
 	if architectError != nil {

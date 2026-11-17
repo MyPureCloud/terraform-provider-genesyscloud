@@ -66,10 +66,7 @@ func newTaskManagementDateBasedRuleProxy(clientConfig *platformclientv2.Configur
 // getTaskManagementDateBasedRuleProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementDateBasedRuleProxy(clientConfig *platformclientv2.Configuration) *taskManagementDateBasedRuleProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementDateBasedRuleProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementDateBasedRuleProxy)
 }
 
 // createTaskManagementDateBasedRule creates a Genesys Cloud task management datebased rule

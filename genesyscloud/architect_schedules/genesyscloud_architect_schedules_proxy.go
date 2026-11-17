@@ -83,10 +83,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func getArchitectSchedulesProxy(clientConfig *platformclientv2.Configuration) *architectSchedulesProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectSchedulesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectSchedulesProxy)
 }
 
 // createArchitectSchedules creates a Genesys Cloud architect schedules

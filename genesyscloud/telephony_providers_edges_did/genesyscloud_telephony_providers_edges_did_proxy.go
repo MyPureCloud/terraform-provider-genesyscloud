@@ -57,10 +57,7 @@ func newTelephonyProvidersEdgesDidProxy(clientConfig *platformclientv2.Configura
 // getTelephonyProvidersEdgesDidProxy acts as a singleton for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTelephonyProvidersEdgesDidProxy(clientConfig *platformclientv2.Configuration) *telephonyProvidersEdgesDidProxy {
-	if internalProxy == nil {
-		internalProxy = newTelephonyProvidersEdgesDidProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTelephonyProvidersEdgesDidProxy)
 }
 
 // getTelephonyProvidersEdgesDidIdByDid gets a Genesys Cloud telephony DID ID by DID number

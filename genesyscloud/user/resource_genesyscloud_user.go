@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/constants"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
@@ -42,14 +44,49 @@ func GetAllUsers(ctx context.Context, sdkConfig *platformclientv2.Configuration)
 		if user.Id == nil || user.Email == nil {
 			continue
 		}
-		hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department, user.PrimaryContactInfo, user.Addresses)
+		meta, err := userResourceMeta(user)
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}
-		resources[*user.Id] = &resourceExporter.ResourceMeta{BlockLabel: *user.Email, BlockHash: hashedUniqueFields}
+		resources[*user.Id] = meta
 	}
 
 	return resources, nil
+}
+
+// userResourceMeta builds the exporter metadata for a user. Shared by the list and by-ID paths so labels and hashes match.
+func userResourceMeta(user platformclientv2.User) (*resourceExporter.ResourceMeta, error) {
+	hashedUniqueFields, err := util.QuickHashFields(user.Name, user.Department, user.PrimaryContactInfo, user.Addresses)
+	if err != nil {
+		return nil, err
+	}
+	return &resourceExporter.ResourceMeta{BlockLabel: *user.Email, BlockHash: hashedUniqueFields}, nil
+}
+
+// getUserMetaById is the by-ID counterpart of GetAllUsers, used by the exporter when only specific users are needed
+// (e.g. queue members referenced by another resource) so that every user in the org is not listed.
+// It mirrors the list path: deleted users, and inactive users when inactive export is skipped, are left out.
+func getUserMetaById(ctx context.Context, sdkConfig *platformclientv2.Configuration, id string) (*resourceExporter.ResourceMeta, diag.Diagnostics) {
+	proxy := GetUserProxy(sdkConfig)
+	user, resp, err := proxy.getUserById(ctx, id, userExportExpands, "any")
+	if err != nil {
+		if util.IsStatus404(resp) {
+			return nil, nil
+		}
+		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get user %s error: %s", id, err), resp)
+	}
+	if user == nil || user.Id == nil || user.Email == nil {
+		return nil, nil
+	}
+	if user.State != nil && (*user.State == "deleted" || (*user.State == "inactive" && featureToggles.SkipInactiveUserExportToggleExists())) {
+		return nil, nil
+	}
+	meta, err := userResourceMeta(*user)
+	if err != nil {
+		return nil, diag.FromErr(err)
+	}
+	rc.SetCache(proxy.userCache, id, *user) // same as the list path, so readUser is served from the cache
+	return meta, nil
 }
 
 func createUser(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

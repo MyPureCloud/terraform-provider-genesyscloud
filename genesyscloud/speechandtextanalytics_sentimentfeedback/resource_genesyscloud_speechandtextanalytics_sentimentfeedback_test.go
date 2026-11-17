@@ -3,9 +3,11 @@ package speechandtextanalytics_sentimentfeedback
 import (
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -86,6 +88,63 @@ func TestAccResourceSentimentFeedback(t *testing.T) {
 		},
 		CheckDestroy: testVerifySentimentFeedbackDestroyed,
 	})
+}
+
+func TestAccResourceSentimentFeedbackForceNew(t *testing.T) {
+	var (
+		resourceLabel = "test-sentiment-feedback-forcenew"
+		phrase        = "tfacc wait time " + strings.ReplaceAll(uuid.NewString(), "-", "")[:12]
+		dialect       = "en-US"
+		resourcePath  = ResourceType + "." + resourceLabel
+		firstID       string
+		secondID      string
+	)
+
+	cleanupSentimentFeedbackByPhrase(phrase, dialect)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateSentimentFeedbackResource(resourceLabel, phrase, dialect, FeedbackValueNegative),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "feedback_value", FeedbackValueNegative),
+					testCaptureResourceID(resourcePath, &firstID),
+				),
+			},
+			{
+				Config: generateSentimentFeedbackResource(resourceLabel, phrase, dialect, FeedbackValueNeutral),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourcePath, "feedback_value", FeedbackValueNeutral),
+					testCaptureResourceID(resourcePath, &secondID),
+					func(_ *terraform.State) error {
+						if firstID == "" || firstID == secondID {
+							return fmt.Errorf("expected feedback_value change to replace the resource, id stayed %q", firstID)
+						}
+						return nil
+					},
+				),
+			},
+			{
+				ResourceName:      resourcePath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: testVerifySentimentFeedbackDestroyed,
+	})
+}
+
+func testCaptureResourceID(resourcePath string, dest *string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		rs, ok := state.RootModule().Resources[resourcePath]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", resourcePath)
+		}
+		*dest = rs.Primary.ID
+		return nil
+	}
 }
 
 func generateSentimentFeedbackResource(resourceLabel, phrase, dialect, feedbackValue string) string {

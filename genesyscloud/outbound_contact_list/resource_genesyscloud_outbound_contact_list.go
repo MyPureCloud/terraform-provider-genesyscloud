@@ -59,7 +59,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
-		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").([]interface{})),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		WhatsAppColumns:              buildSdkOutboundContactListContactWhatsAppColumnSlice(d.Get("whats_app_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
@@ -78,15 +78,7 @@ func createOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	if zipCodeColumnName != "" {
 		sdkContactList.ZipCodeColumnName = &zipCodeColumnName
 	}
-	if retentionType != "" {
-		sdkContactList.RetentionType = &retentionType
-	}
-	if retentionDays != 0 {
-		sdkContactList.RetentionDays = &retentionDays
-	}
-	if timeZone != "" {
-		sdkContactList.TimeZone = &timeZone
-	}
+	applyContactListRetention(&sdkContactList, d, retentionType, retentionDays, timeZone)
 
 	log.Printf("Creating Outbound Contact List %s", name)
 	outboundContactList, resp, err := proxy.createOutboundContactlist(ctx, &sdkContactList)
@@ -127,7 +119,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	sdkContactList := platformclientv2.Contactlist{
 		Division:                     util.BuildSdkDomainEntityRef(d, "division_id"),
 		ColumnNames:                  &columnNames,
-		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").(*schema.Set)),
+		PhoneColumns:                 buildSdkOutboundContactListContactPhoneNumberColumnSlice(d.Get("phone_columns").([]interface{})),
 		EmailColumns:                 buildSdkOutboundContactListContactEmailAddressColumnSlice(d.Get("email_columns").(*schema.Set)),
 		WhatsAppColumns:              buildSdkOutboundContactListContactWhatsAppColumnSlice(d.Get("whats_app_columns").(*schema.Set)),
 		PreviewModeAcceptedValues:    &previewModeAcceptedValues,
@@ -146,15 +138,7 @@ func updateOutboundContactList(ctx context.Context, d *schema.ResourceData, meta
 	if zipCodeColumnName != "" {
 		sdkContactList.ZipCodeColumnName = &zipCodeColumnName
 	}
-	if retentionType != "" {
-		sdkContactList.RetentionType = &retentionType
-	}
-	if retentionDays != 0 {
-		sdkContactList.RetentionDays = &retentionDays
-	}
-	if timeZone != "" {
-		sdkContactList.TimeZone = &timeZone
-	}
+	applyContactListRetention(&sdkContactList, d, retentionType, retentionDays, timeZone)
 
 	log.Printf("Updating Outbound Contact List %s", name)
 	diagErr := util.RetryWhen(util.IsVersionMismatch, func() (*platformclientv2.APIResponse, diag.Diagnostics) {
@@ -219,8 +203,8 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 			flattenedPhoneColumns := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneTzIdx)
 
 			if existingRaw, ok := d.GetOk("phone_columns"); ok {
-				if existingSet, ok := existingRaw.(*schema.Set); ok && existingSet != nil && flattenedPhoneColumns != nil {
-					flattenedPhoneColumns = mergePhoneColumnsCallableTimeColumnFromState(existingSet, flattenedPhoneColumns)
+				if existingList, ok := existingRaw.([]interface{}); ok && len(existingList) > 0 && flattenedPhoneColumns != nil {
+					flattenedPhoneColumns = mergePhoneColumnsCallableTimeColumnFromState(existingList, flattenedPhoneColumns)
 				}
 			}
 
@@ -253,15 +237,7 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		if sdkContactList.TrimWhitespace != nil {
 			_ = d.Set("trim_whitespace", *sdkContactList.TrimWhitespace)
 		}
-		if sdkContactList.RetentionType != nil {
-			_ = d.Set("retention_type", *sdkContactList.RetentionType)
-		}
-		if sdkContactList.RetentionDays != nil {
-			_ = d.Set("retention_days", *sdkContactList.RetentionDays)
-		}
-		if sdkContactList.TimeZone != nil {
-			_ = d.Set("time_zone", *sdkContactList.TimeZone)
-		}
+		setContactListRetentionState(d, sdkContactList.RetentionType, sdkContactList.RetentionDays, sdkContactList.TimeZone)
 		resourcedata.SetNillableTime(d, "date_expiration", sdkContactList.DateExpiration)
 
 		if sdkContactList.Id != nil {

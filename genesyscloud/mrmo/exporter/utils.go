@@ -64,15 +64,64 @@ func CreateClientConfig(creds Credentials) (_ *platformclientv2.Configuration, e
 		return nil, fmt.Errorf("insufficient client information provided")
 	}
 
-	config := platformclientv2.GetDefaultConfiguration()
+	// Copy the SDK's default Configuration rather than returning it.
+	//
+	// platformclientv2.GetDefaultConfiguration is a sync.Once singleton, and two orgs'
+	// configurations coexist in one process on the MRMO path: export reads the source org
+	// while apply writes the target org, and pairing bootstrap resolves both orgs' Home
+	// divisions back to back. Returning the singleton means the second caller
+	// re-authorizes the first caller's configuration, and both silently end up pointing
+	// at whichever org was configured last.
+	//
+	// The SDK's own constructors cannot be used per call either: NewConfiguration spawns a
+	// permanent periodicConfigUpdater goroutine, and both it and NewConfigurationWithConfigFile
+	// mutate package-level state — the trace/debug/error loggers via configureLogging, and
+	// global viper state via updateConfigFromFile. A struct copy avoids all of that, and
+	// Configuration holds no locks so copying it is safe.
+	base := platformclientv2.GetDefaultConfiguration()
+	config := *base
+
+	// A struct copy shares map headers, so clone them: a per-org header or API-key write
+	// must not bleed across tenants. LoggingConfiguration and RetryConfiguration stay
+	// shared deliberately — they hold no per-org state, are read-only on this path, and
+	// LoggingConfiguration's fields are unexported so it cannot be rebuilt outside the SDK
+	// (the API client dereferences it, so it must be non-nil).
+	config.DefaultHeader = cloneStringMap(base.DefaultHeader)
+	config.APIKey = cloneStringMap(base.APIKey)
+	config.APIKeyPrefix = cloneStringMap(base.APIKeyPrefix)
+
+	// Never inherit another org's identity from the singleton.
+	config.AccessToken = ""
+	config.RefreshToken = ""
+	config.OAuthToken = ""
+	config.ClientID = ""
+	config.ClientSecret = ""
+	config.UserName = ""
+	config.Password = ""
+
 	if creds.BasePathOverride != "" {
 		config.BasePath = creds.BasePathOverride
 	} else {
 		config.BasePath = provider.GetRegionBasePath(creds.Region)
 	}
 
+	// Rebind the API client so it references this copy instead of the singleton.
+	// NewAPIClient reuses the existing HTTP client, so the connection pool is preserved.
+	config.APIClient = platformclientv2.NewAPIClient(&config)
+
 	err = config.AuthorizeClientCredentials(creds.ClientId, creds.ClientSecret)
-	return config, err
+	return &config, err
+}
+
+// cloneStringMap returns an independent copy of m, never nil. Used so configs produced
+// by CreateClientConfig do not share mutable header/API-key maps with one another or
+// with the SDK's default Configuration.
+func cloneStringMap(m map[string]string) map[string]string {
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }
 
 // createExportResourceData generates the export resource config that the genesyscloud tf exporter will use

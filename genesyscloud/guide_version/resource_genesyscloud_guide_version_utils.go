@@ -8,7 +8,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func parseId(id string) (string, string, error) {
+// BuildGuideVersionId builds the guide_version composite resource ID, which is always in
+// the format <guide-id>/<version-id>.
+func BuildGuideVersionId(guideId string, versionId string) (id string) {
+	return guideId + "/" + versionId
+}
+
+// ParseGuideVersionId splits the guide_version composite resource ID, which is always in
+// the format <guide-id>/<version-id>, back into its parts.
+func ParseGuideVersionId(id string) (guideId string, versionId string, err error) {
 	ids := strings.Split(id, "/")
 	if len(ids) != 2 {
 		return "", "", fmt.Errorf("invalid resource ID format: %s", id)
@@ -18,8 +26,8 @@ func parseId(id string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid resource ID format: %s", id)
 	}
 
-	guideId := ids[0]
-	versionId := ids[1]
+	guideId = ids[0]
+	versionId = ids[1]
 
 	return guideId, versionId, nil
 }

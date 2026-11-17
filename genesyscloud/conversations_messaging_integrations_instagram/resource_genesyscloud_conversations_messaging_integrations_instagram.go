@@ -28,10 +28,10 @@ The resource_genesyscloud_conversations_messaging_integrations_instagram.go cont
 
 // getAllAuthConversationsMessagingIntegrationsInstagram retrieves all of the conversations messaging integrations instagram via Terraform in the Genesys Cloud and is used for the exporter
 func getAllAuthConversationsMessagingIntegrationsInstagrams(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getConversationsMessagingIntegrationsInstagramProxy(clientConfig)
+	proxy := GetConversationsMessagingIntegrationsInstagramProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	instagramIntegrationRequests, resp, err := proxy.getAllConversationsMessagingIntegrationsInstagram(ctx)
+	instagramIntegrationRequests, resp, err := proxy.GetAllConversationsMessagingIntegrationsInstagram(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get conversations messaging integrations instagram: %v", err), resp)
 	}
@@ -46,7 +46,7 @@ func getAllAuthConversationsMessagingIntegrationsInstagrams(ctx context.Context,
 // createConversationsMessagingIntegrationsInstagram is used by the conversations_messaging_integrations_instagram resource to create Genesys cloud conversations messaging integrations instagram
 func createConversationsMessagingIntegrationsInstagram(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
 
 	conversationsMessagingIntegrationsInstagram := getConversationsMessagingIntegrationsInstagramFromResourceData(d)
 
@@ -64,12 +64,12 @@ func createConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 // readConversationsMessagingIntegrationsInstagram is used by the conversations_messaging_integrations_instagram resource to read an conversations messaging integrations instagram from genesys cloud
 func readConversationsMessagingIntegrationsInstagram(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
 
 	log.Printf("Reading conversations messaging integrations instagram %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		instagramIntegrationRequest, resp, getErr := proxy.getConversationsMessagingIntegrationsInstagramById(ctx, d.Id())
+		instagramIntegrationRequest, resp, getErr := proxy.GetConversationsMessagingIntegrationsInstagramById(ctx, d.Id())
 		if getErr != nil {
 			if util.IsStatus404(resp) {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read conversations messaging integrations instagram %s: %s", d.Id(), getErr), resp))
@@ -100,7 +100,7 @@ func readConversationsMessagingIntegrationsInstagram(ctx context.Context, d *sch
 // updateConversationsMessagingIntegrationsInstagram is used by the conversations_messaging_integrations_instagram resource to update an conversations messaging integrations instagram in Genesys Cloud
 func updateConversationsMessagingIntegrationsInstagram(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
 
 	conversationsMessagingIntegrationsInstagram := getConversationsMessagingIntegrationsInstagramFromResourceDataForUpdate(d)
 
@@ -117,7 +117,7 @@ func updateConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 // deleteConversationsMessagingIntegrationsInstagram is used by the conversations_messaging_integrations_instagram resource to delete an conversations messaging integrations instagram from Genesys cloud
 func deleteConversationsMessagingIntegrationsInstagram(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsInstagramProxy(sdkConfig)
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsInstagram(ctx, d.Id())
 	if err != nil {
@@ -125,7 +125,7 @@ func deleteConversationsMessagingIntegrationsInstagram(ctx context.Context, d *s
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getConversationsMessagingIntegrationsInstagramById(ctx, d.Id())
+		_, resp, err := proxy.GetConversationsMessagingIntegrationsInstagramById(ctx, d.Id())
 
 		if err != nil {
 			if util.IsStatus404(resp) {

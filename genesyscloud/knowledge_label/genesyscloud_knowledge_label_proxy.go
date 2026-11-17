@@ -51,11 +51,7 @@ func newKnowledgeLabelProxy(clientConfig *platformclientv2.Configuration) *knowl
 }
 
 func GetKnowledgeLabelProxy(clientConfig *platformclientv2.Configuration) *knowledgeLabelProxy {
-	if internalProxy == nil {
-		internalProxy = newKnowledgeLabelProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newKnowledgeLabelProxy)
 }
 
 func (p *knowledgeLabelProxy) getKnowledgeLabel(ctx context.Context, knowledgeBaseId string, labelId string) (*platformclientv2.Labelresponse, *platformclientv2.APIResponse, error) {

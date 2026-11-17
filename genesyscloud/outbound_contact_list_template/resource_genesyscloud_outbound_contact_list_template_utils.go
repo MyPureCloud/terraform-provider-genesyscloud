@@ -387,3 +387,52 @@ func GenerateEmailColumnsBlock(columnName, columnType, contactableTimeColumn str
 	}
 `, columnName, columnType, contactableTimeColumn)
 }
+
+func applyContactListTemplateRetention(sdk *platformclientv2.Contactlisttemplate, d *schema.ResourceData, retentionType string, retentionDays int, timeZone string) {
+	if retentionType == "" {
+		if retentionDays != 0 {
+			sdk.RetentionDays = &retentionDays
+		}
+		if timeZone != "" {
+			sdk.TimeZone = &timeZone
+		}
+		return
+	}
+
+	sdk.RetentionType = &retentionType
+	switch retentionType {
+	case "Never":
+		sdk.RetentionDays = nil
+		if timeZone != "" {
+			sdk.TimeZone = &timeZone
+		}
+	case "Today":
+		sdk.RetentionDays = nil
+		if timeZone != "" || (d != nil && d.HasChange("time_zone")) {
+			sdk.TimeZone = &timeZone
+		}
+	case "RetentionDays":
+		if retentionDays != 0 || (d != nil && d.HasChange("retention_days")) {
+			sdk.RetentionDays = &retentionDays
+		}
+		if timeZone != "" || (d != nil && d.HasChange("time_zone")) {
+			sdk.TimeZone = &timeZone
+		}
+	}
+}
+
+func setContactListTemplateRetentionState(d *schema.ResourceData, retentionType *string, retentionDays *int, timeZone *string) {
+	if retentionType != nil {
+		_ = d.Set("retention_type", *retentionType)
+		if *retentionType != "RetentionDays" {
+			_ = d.Set("retention_days", 0)
+		} else if retentionDays != nil {
+			_ = d.Set("retention_days", *retentionDays)
+		}
+	} else if retentionDays != nil {
+		_ = d.Set("retention_days", *retentionDays)
+	}
+	if timeZone != nil {
+		_ = d.Set("time_zone", *timeZone)
+	}
+}

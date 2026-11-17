@@ -1,5 +1,11 @@
 package recording_media_retention_policy
 
+// @team: — Recording
+// @chat: — Genesys Cloud Recording
+// @description: —  rules to trigger interaction recordings retention, screen recording, quality management evaluations, and web surveys
+// @pm: — Daniel Ho
+// @jira: — REC
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

@@ -69,11 +69,7 @@ func newKnowledgebaseProxy(clientConfig *platformclientv2.Configuration) *knowle
 }
 
 func GetKnowledgebaseProxy(clientConfig *platformclientv2.Configuration) *knowledgebaseProxy {
-	if internalProxy == nil {
-		internalProxy = newKnowledgebaseProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newKnowledgebaseProxy)
 }
 
 // getAllKnowledgebaseEntities retrieves all Genesys Cloud knowledgebases

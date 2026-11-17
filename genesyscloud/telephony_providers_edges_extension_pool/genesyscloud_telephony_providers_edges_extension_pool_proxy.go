@@ -44,10 +44,7 @@ func newExtensionPoolProxy(clientConfig *platformclientv2.Configuration) *extens
 }
 
 func getExtensionPoolProxy(clientConfig *platformclientv2.Configuration) *extensionPoolProxy {
-	if internalProxy == nil {
-		internalProxy = newExtensionPoolProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newExtensionPoolProxy)
 }
 
 func (p *extensionPoolProxy) getExtensionPool(ctx context.Context, extensionPoolId string) (*platformclientv2.Extensionpool, *platformclientv2.APIResponse, error) {

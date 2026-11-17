@@ -23,10 +23,7 @@ type getPooledClientFunc func(ctx context.Context, method provider.GetCustomConf
 var internalProxy *bcpExporterProxy
 
 func getBcpExporterProxy(ClientConfig *platformclientv2.Configuration) *bcpExporterProxy {
-	if internalProxy == nil {
-		internalProxy = newBcpExporterProxy(ClientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, ClientConfig, newBcpExporterProxy)
 }
 
 func newBcpExporterProxy(clientConfig *platformclientv2.Configuration) *bcpExporterProxy {

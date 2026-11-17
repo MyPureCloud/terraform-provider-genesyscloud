@@ -55,11 +55,7 @@ func newAuthDivisionProxy(clientConfig *platformclientv2.Configuration) *authDiv
 // getAuthDivisionProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getAuthDivisionProxy(clientConfig *platformclientv2.Configuration) *authDivisionProxy {
-	if internalProxy == nil {
-		internalProxy = newAuthDivisionProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAuthDivisionProxy)
 }
 
 func (p *authDivisionProxy) getAllAuthDivision(ctx context.Context, name string) (*[]platformclientv2.Authzdivision, *platformclientv2.APIResponse, error) {

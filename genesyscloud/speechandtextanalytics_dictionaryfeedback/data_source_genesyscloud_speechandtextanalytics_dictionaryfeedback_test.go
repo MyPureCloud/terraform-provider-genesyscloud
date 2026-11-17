@@ -20,14 +20,14 @@ func TestAccDataSourceDictionaryFeedback(t *testing.T) {
 		speechAndTextAnalyticsDictionaryFeedbackDataLabel     = "data-speechAndTextAnalyticsDictionaryFeedback"
 		speechAndTextAnalyticsDictionaryFeedbackResourceLabel = "resource-speechAndTextAnalyticsDictionaryFeedback"
 
-		term           = "genesys"
+		term           = uniqueDictionaryTerm()
 		dialect        = "en-AU"
 		boostValue     = "2.0"
 		source         = "Manual"
 		soundsLike     = "genesis"
-		examplePhrase1 = "welcome to genesys"
-		examplePhrase2 = "thanks for calling genesys"
-		examplePhrase3 = "Genesys is a platform"
+		examplePhrase1 = fmt.Sprintf("welcome to %s", term)
+		examplePhrase2 = fmt.Sprintf("thanks for calling %s", term)
+		examplePhrase3 = fmt.Sprintf("%s is a platform", term)
 	)
 
 	// Clean up any leftover dictionary feedback from previous test runs

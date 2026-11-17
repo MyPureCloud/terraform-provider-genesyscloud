@@ -40,10 +40,7 @@ func newOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configura
 
 // etOutboundWrapupCodeMappingsProxy is a singleton method to return a single instance outboundWrapupCodeMappingsProxy
 func getOutboundWrapupCodeMappingsProxy(clientConfig *platformclientv2.Configuration) *outboundWrapupCodeMappingsProxy {
-	if internalProxy == nil {
-		internalProxy = newOutboundWrapupCodeMappingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newOutboundWrapupCodeMappingsProxy)
 }
 
 // getAllOutboundWrapupCodeMapping returns all of the outbound mapping.  This is the struct implementation that should be consumed by everypne.

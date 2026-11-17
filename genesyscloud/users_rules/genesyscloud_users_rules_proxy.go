@@ -56,10 +56,7 @@ func newUsersRulesProxy(clientConfig *platformclientv2.Configuration) *usersRule
 // getUsersRulesProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getUsersRulesProxy(clientConfig *platformclientv2.Configuration) *usersRulesProxy {
-	if internalProxy == nil {
-		internalProxy = newUsersRulesProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newUsersRulesProxy)
 }
 
 // createUsersRules creates a Genesys Cloud users rule

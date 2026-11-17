@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	utilAws "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/aws"
 
@@ -42,7 +43,7 @@ type S3Uploader struct {
 }
 
 func NewS3Uploader(reader io.Reader, formData map[string]io.Reader, substitutions map[string]interface{}, headers map[string]string, method, presignedUrl string) *S3Uploader {
-	c := &http.Client{}
+	c := provider.NewHTTPClient(nil)
 	var bodyBuf bytes.Buffer
 	writer := multipart.NewWriter(&bodyBuf)
 	s3Uploader := &S3Uploader{
@@ -208,7 +209,7 @@ func DownloadOrOpenFile(ctx context.Context, path string, supportS3 bool) (io.Re
 
 	// Check if the path has a protocol scheme to call as an HTTP request
 	if u, err := url.ParseRequestURI(path); err == nil && u.Scheme != "" {
-		resp, err := http.Get(path)
+		resp, err := provider.NewHTTPClient(nil).Get(path)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -244,7 +245,7 @@ var DownloadExportFileWithAccessToken = downloadExportFileWithAccessToken
 
 func downloadExportFileWithAccessToken(directory, fileName, uri, accessToken string) (*platformclientv2.APIResponse, error) {
 	const maxRetries = 10
-	client := &http.Client{}
+	client := provider.NewHTTPClient(nil)
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		req, err := http.NewRequest("GET", uri, nil)
@@ -383,7 +384,7 @@ func GetDirPath(directory string) (string, diag.Diagnostics) {
 
 // DownloadAndReadCSVFromURI downloads a CSV file from a URI with optional access token authentication and reads the CSV file
 func DownloadAndReadCSVFromURI(uri, accessToken string) ([][]string, error) {
-	client := &http.Client{}
+	client := provider.NewHTTPClient(nil)
 
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {

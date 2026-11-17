@@ -1,5 +1,11 @@
 package recording_settings
 
+// @team: — Recording
+// @chat: — Genesys Cloud Recording
+// @description: —  interaction recordings related settings
+// @pm: — Daniel Ho
+// @jira: — REC
+
 import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"

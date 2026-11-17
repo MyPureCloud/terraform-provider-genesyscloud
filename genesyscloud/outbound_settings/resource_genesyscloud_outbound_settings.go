@@ -94,14 +94,15 @@ func readOutboundSettings(ctx context.Context, d *schema.ResourceData, meta inte
 			_ = d.Set("automatic_time_zone_mapping", flattenOutboundSettingsAutomaticTimeZoneMapping(*settings.AutomaticTimeZoneMapping, automaticTimeZoneMapping))
 		}
 		resourcedata.SetNillableValue(d, "reschedule_time_zone_skipped_contacts", &rescheduleTimeZoneSkippedContacts)
-		if contactListDefaultRetentionType != "" || tfexporter_state.IsExporterActive() {
-			resourcedata.SetNillableValue(d, "contact_list_default_retention_type", settings.ContactListDefaultRetentionType)
-		}
-		if contactListDefaultRetentionDays != 0 || tfexporter_state.IsExporterActive() {
-			resourcedata.SetNillableValue(d, "contact_list_default_retention_days", settings.ContactListDefaultRetentionDays)
+		if contactListDefaultRetentionType != "" || contactListDefaultRetentionDays != 0 || tfexporter_state.IsExporterActive() {
+			setOutboundSettingsRetentionState(d, settings.ContactListDefaultRetentionType, settings.ContactListDefaultRetentionDays)
 		}
 		if timeZone != "" || tfexporter_state.IsExporterActive() {
 			resourcedata.SetNillableValue(d, "time_zone", settings.TimeZone)
+		} else {
+			// Config does not manage time_zone; clear stale state so apply/consistency
+			// checks match omitted HCL (API may still retain the zone server-side).
+			_ = d.Set("time_zone", "")
 		}
 
 		log.Printf("Read Outbound Setting")
@@ -152,17 +153,13 @@ func updateOutboundSettings(ctx context.Context, d *schema.ResourceData, meta in
 		if automaticTimeZoneMapping != nil || tfexporter_state.IsExporterActive() {
 			update.AutomaticTimeZoneMapping = buildOutboundSettingsAutomaticTimeZoneMapping(d)
 		}
-		// This resource uses PATCH, so omitting a field leaves it untouched on the server.
-		// Use d.HasChange so that clearing a previously-set value (e.g. removing
-		// contact_list_default_retention_days) actually pushes the zero value and clears it.
 		if contactListDefaultRetentionType != "" || d.HasChange("contact_list_default_retention_type") || tfexporter_state.IsExporterActive() {
 			update.ContactListDefaultRetentionType = &contactListDefaultRetentionType
 		}
-		if contactListDefaultRetentionDays != 0 || d.HasChange("contact_list_default_retention_days") || tfexporter_state.IsExporterActive() {
-			update.ContactListDefaultRetentionDays = &contactListDefaultRetentionDays
-		}
-		if timeZone != "" || d.HasChange("time_zone") || tfexporter_state.IsExporterActive() {
-			update.TimeZone = &timeZone
+		if contactListDefaultRetentionType != "" || d.HasChange("contact_list_default_retention_type") ||
+			d.HasChange("contact_list_default_retention_days") || d.HasChange("time_zone") ||
+			tfexporter_state.IsExporterActive() {
+			applyOutboundSettingsDefaultRetention(&update, d, contactListDefaultRetentionType, contactListDefaultRetentionDays, timeZone)
 		}
 
 		_, resp, err := proxy.updateOutboundSettings(ctx, &update)

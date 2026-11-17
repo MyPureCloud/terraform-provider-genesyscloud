@@ -63,10 +63,7 @@ func newTaskManagementWorkitemProxy(clientConfig *platformclientv2.Configuration
 // getTaskManagementWorkitemProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getTaskManagementWorkitemProxy(clientConfig *platformclientv2.Configuration) *taskManagementWorkitemProxy {
-	if internalProxy == nil {
-		internalProxy = newTaskManagementWorkitemProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newTaskManagementWorkitemProxy)
 }
 
 // createTaskManagementWorkitem creates a Genesys Cloud task management workitem
@@ -117,12 +114,13 @@ func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 	// Get all workbins
 	var allWorkbins []platformclientv2.Workbin
 	pageSize := 200
-	after := ""
+	// Leave 'after' unset on the first page; the API rejects an empty string
+	var after *string
 	var response *platformclientv2.APIResponse
 	for {
 		queryReq := &platformclientv2.Workbinqueryrequest{
 			PageSize: &pageSize,
-			After:    &after,
+			After:    after,
 		}
 		workbins, resp, err := p.taskManagementApi.PostTaskmanagementWorkbinsQuery(*queryReq)
 		response = resp
@@ -135,19 +133,20 @@ func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 		if workbins.After == nil || *workbins.After == "" {
 			break
 		}
-		after = *workbins.After
+		after = workbins.After
 	}
 
 	// Method to query workitems on a workbin
 	queryWorkitemsOnWorkbin := func(workbinId string) (*[]platformclientv2.Workitem, error) {
 		var wbWorkitems []platformclientv2.Workitem
 		pageSize := 200
-		after := ""
+		// Leave 'after' unset on the first page; the API rejects an empty string
+		var after *string
 
 		for {
 			queryReq := &platformclientv2.Workitemquerypostrequest{
 				PageSize: &pageSize,
-				After:    &after,
+				After:    after,
 				Filters: &[]platformclientv2.Workitemfilter{
 					{
 						Name:     platformclientv2.String("workbinId"),
@@ -168,7 +167,7 @@ func getAllTaskManagementWorkitemFn(ctx context.Context, p *taskManagementWorkit
 			if workitems.After == nil || *workitems.After == "" {
 				break
 			}
-			after = *workitems.After
+			after = workitems.After
 		}
 		return &wbWorkitems, nil
 	}

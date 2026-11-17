@@ -62,8 +62,10 @@ The following permissions are required to use this resource:
 * `wfm:schedule:generate`
 * `wfm:schedule:view`
 * `wfm:schedulingPreferencesQuery:view`
+* `wfm:schedulingPreferencesSchedulesQuery:view`
 * `wfm:schedulingPreferencesSettings:edit`
 * `wfm:schedulingPreferencesSettings:view`
+* `wfm:schedulingPreferencesSettingsQuery:view`
 * `wfm:serviceGoalTemplate:add`
 * `wfm:serviceGoalTemplate:delete`
 * `wfm:serviceGoalTemplate:edit`

@@ -53,10 +53,7 @@ func newKnowledgeCategoryProxy(clientConfig *platformclientv2.Configuration) *kn
 }
 
 func GetKnowledgeCategoryProxy(clientConfig *platformclientv2.Configuration) *knowledgeCategoryProxy {
-	if internalProxy == nil {
-		internalProxy = newKnowledgeCategoryProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newKnowledgeCategoryProxy)
 }
 
 func (p *knowledgeCategoryProxy) getAllKnowledgebaseEntities(ctx context.Context, published bool) (*[]platformclientv2.Knowledgebase, *platformclientv2.APIResponse, error) {
@@ -214,7 +211,7 @@ func getKnowledgeCategoryByNameFn(ctx context.Context, p *knowledgeCategoryProxy
 
 			for _, knowledgeCategory := range *knowledgeCategories {
 				if *knowledgeCategory.Name == categoryName {
-					id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+					id := BuildKnowledgeCategoryId(*knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 					return id, false, resp, nil
 				}
 			}
@@ -231,7 +228,7 @@ func getKnowledgeCategoryByNameFn(ctx context.Context, p *knowledgeCategoryProxy
 
 			for _, knowledgeCategory := range *knowledgeCategories {
 				if *knowledgeCategory.Name == categoryName {
-					id := fmt.Sprintf("%s,%s", *knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
+					id := BuildKnowledgeCategoryId(*knowledgeCategory.Id, *knowledgeCategory.KnowledgeBase.Id)
 					return id, false, resp, nil
 				}
 			}

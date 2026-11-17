@@ -224,7 +224,7 @@ func TestAccResourceArchitectIvrConfigDnisOverload(t *testing.T) {
 	*/
 	lastNumber, err := getLastDidNumberAsInteger()
 	if err == nil {
-		startNumber = lastNumber + 1000
+		startNumber = lastNumber + 1000 + (rand.Intn(100) * 1000)
 		endNumber = startNumber + didRangeLength
 		startNumberStr = fmt.Sprintf("+%v", startNumber)
 		endNumberStr = fmt.Sprintf("+%v", endNumber)

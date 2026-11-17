@@ -26,10 +26,10 @@ The resource_genesyscloud_apple_integration.go contains all of the methods that 
 
 // getAllAppleIntegrations retrieves all of the apple integration via Terraform in the Genesys Cloud and is used for the exporter
 func getAllConversationsMessagingIntegrationsApple(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
-	proxy := getConversationsMessagingIntegrationsAppleProxy(clientConfig)
+	proxy := GetConversationsMessagingIntegrationsAppleProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
-	appleIntegrations, resp, err := proxy.getAllConversationsMessagingIntegrationsApple(ctx)
+	appleIntegrations, resp, err := proxy.GetAllConversationsMessagingIntegrationsApple(ctx)
 	if err != nil {
 		return nil, util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to get apple integration: %s", err), resp)
 	}
@@ -44,7 +44,7 @@ func getAllConversationsMessagingIntegrationsApple(ctx context.Context, clientCo
 // createAppleIntegration is used by the apple_integration resource to create Genesys cloud apple integration
 func createConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 
 	request := getConversationsMessagingIntegrationsAppleFromResourceData(d)
 
@@ -62,13 +62,13 @@ func createConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 // readAppleIntegration is used by the apple_integration resource to read an apple integration from genesys cloud
 func readConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceConversationsMessagingIntegrationsApple(), 5, ResourceType)
 
 	log.Printf("Reading apple integration %s", d.Id())
 
 	return util.WithRetriesForRead(ctx, d, func() *retry.RetryError {
-		appleIntegration, resp, getErr := proxy.getConversationsMessagingIntegrationsAppleById(ctx, d.Id())
+		appleIntegration, resp, getErr := proxy.GetConversationsMessagingIntegrationsAppleById(ctx, d.Id())
 		if getErr != nil {
 			if resp != nil && resp.StatusCode == 404 {
 				return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read apple integration %s", d.Id()), resp))
@@ -98,7 +98,7 @@ func readConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.
 // updateAppleIntegration is used by the apple_integration resource to update an apple integration in Genesys Cloud
 func updateConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 
 	request := getConversationsMessagingIntegrationsAppleFromResourceDataForUpdate(d)
 
@@ -115,7 +115,7 @@ func updateConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 // deleteAppleIntegration is used by the apple_integration resource to delete an apple integration from Genesys cloud
 func deleteConversationsMessagingIntegrationsApple(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
-	proxy := getConversationsMessagingIntegrationsAppleProxy(sdkConfig)
+	proxy := GetConversationsMessagingIntegrationsAppleProxy(sdkConfig)
 
 	resp, err := proxy.deleteConversationsMessagingIntegrationsApple(ctx, d.Id())
 	if err != nil {
@@ -123,7 +123,7 @@ func deleteConversationsMessagingIntegrationsApple(ctx context.Context, d *schem
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
-		_, resp, err := proxy.getConversationsMessagingIntegrationsAppleById(ctx, d.Id())
+		_, resp, err := proxy.GetConversationsMessagingIntegrationsAppleById(ctx, d.Id())
 
 		if err != nil {
 			if resp != nil && resp.StatusCode == 404 {

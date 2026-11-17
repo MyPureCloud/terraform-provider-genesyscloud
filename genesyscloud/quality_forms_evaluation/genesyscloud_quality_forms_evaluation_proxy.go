@@ -86,10 +86,7 @@ This ensures consistency and control in managing the internalProxy across our co
 facilitating efficient testing by providing a straightforward way to substitute the proxy for testing purposes.
 */
 func getQualityFormsEvaluationProxy(clientConfig *platformclientv2.Configuration) *qualityFormsEvaluationProxy {
-	if internalProxy == nil {
-		internalProxy = newQualityFormsEvaluationProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newQualityFormsEvaluationProxy)
 }
 
 // createQualityFormsEvaluation creates a Genesys Cloud quality forms evaluation

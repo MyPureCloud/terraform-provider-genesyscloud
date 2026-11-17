@@ -323,6 +323,7 @@ func buildMetrics(objsSlice []interface{}) *[]platformclientv2.Journeyviewchartm
 		var metric platformclientv2.Journeyviewchartmetric
 		metric.Id = getStringPointerFromInterface(objMap["id"])
 		metric.Aggregate = getStringPointerFromInterface(objMap["aggregate"])
+		metric.Attribute = getStringPointerFromInterface(objMap["attribute"])
 		metric.DisplayLabel = getStringPointerFromInterface(objMap["display_label"])
 		metric.ElementId = getStringPointerFromInterface(objMap["element_id"])
 		objs = append(objs, metric)
@@ -581,6 +582,7 @@ func flattenMetrics(metrics *[]platformclientv2.Journeyviewchartmetric) []interf
 		resourcedata.SetMapValueIfNotNil(metricsMap, "id", metric.Id)
 		resourcedata.SetMapValueIfNotNil(metricsMap, "element_id", metric.ElementId)
 		resourcedata.SetMapValueIfNotNil(metricsMap, "aggregate", metric.Aggregate)
+		resourcedata.SetMapValueIfNotNil(metricsMap, "attribute", metric.Attribute)
 		resourcedata.SetMapValueIfNotNil(metricsMap, "display_label", metric.DisplayLabel)
 		metricsList = append(metricsList, metricsMap)
 	}

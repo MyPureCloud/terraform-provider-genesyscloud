@@ -2,6 +2,7 @@ package routing_queue
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +14,7 @@ import (
 	routingEmailDomain "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_domain"
 	routingEmailRoute "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	featureToggles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/feature_toggles"
 )
 
 // aoeaSubdomainPrefix is the fixed prefix for the throwaway subdomain this test creates. A stable
@@ -29,6 +31,7 @@ const aoeaSubdomainPrefix = "tfaoeadomain"
 // order-swapped config; both steps rely on the built-in post-apply plan check that fails on any
 // non-empty plan, so a spurious reorder diff would fail the test.
 func TestAccResourceRoutingQueueAllOutboundEmailAddresses(t *testing.T) {
+	unsetOEAToggle(t)
 	var (
 		queueResourceLabel = "test-queue-aoea"
 		queueName          = "Terraform Test Queue AOEA-" + uuid.NewString()
@@ -188,4 +191,17 @@ func generateRoutingQueueWithAllOutboundEmail(resourceLabel, name, defaultDomain
 	%s
 }
 `, resourceLabel, name, defaultDomainRef, defaultRouteRef, strings.Join(aoeaBlocks, "\n"))
+}
+
+// With the standalone toggle on, queue create omits outbound_email_address and the API rejects the list.
+func unsetOEAToggle(t *testing.T) {
+	t.Helper()
+	name := featureToggles.OEAToggleName()
+	previous, wasSet := os.LookupEnv(name)
+	os.Unsetenv(name)
+	t.Cleanup(func() {
+		if wasSet {
+			os.Setenv(name, previous)
+		}
+	})
 }

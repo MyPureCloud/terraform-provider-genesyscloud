@@ -262,7 +262,7 @@ func testVerifyGrammarLanguageDestroyed(state *terraform.State) error {
 		if rs.Type != ResourceType {
 			continue
 		}
-		grammarId, languageCode := splitGrammarLanguageId(rs.Primary.ID)
+		grammarId, languageCode := SplitGrammarLanguageId(rs.Primary.ID)
 		grammar, resp, err := architectAPI.GetArchitectGrammarLanguage(grammarId, languageCode)
 		if grammar != nil {
 			return fmt.Errorf("language (%s) still exists", rs.Primary.ID)

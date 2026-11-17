@@ -62,11 +62,7 @@ func newAiStudioSummarySettingProxy(clientConfig *platformclientv2.Configuration
 // getAiStudioSummarySettingProxy acts as a singleton to for the internalProxy.  It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getAiStudioSummarySettingProxy(clientConfig *platformclientv2.Configuration) *aiStudioSummarySettingProxy {
-	if internalProxy == nil {
-		internalProxy = newAiStudioSummarySettingProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAiStudioSummarySettingProxy)
 }
 
 // createAiStudioSummarySetting creates a Genesys Cloud ai studio summary setting

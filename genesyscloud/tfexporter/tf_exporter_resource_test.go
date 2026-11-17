@@ -18,6 +18,7 @@ import (
 	userPrompt "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_user_prompt"
 	authDivision "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_division"
 	authRole "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/auth_role"
+	authorizationRolesSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/authorization_roles_settings"
 	businessRulesDecisionTable "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_decision_table"
 	businessRulesSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/business_rules_schema"
 	integrationInstagram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram"
@@ -118,6 +119,21 @@ import (
 	userRoles "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user_roles"
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
+
+	analyticsDataretentionSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/analytics_dataretention_settings"
+	ivrIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr_identity_resolution"
+	appleIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple_identity_resolution"
+	instagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
+	openIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
+	whatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
+	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
+	emailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
+	queueIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_identity_resolution"
+	sttCategory "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_category"
+	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
+	sttSentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
+	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
+	webDeploymentIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment_identity_resolution"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -255,6 +271,23 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[agenticVirtualAgent.ResourceType] = agenticVirtualAgent.ResourceAgenticVirtualAgent()
 	providerResources[agenticVirtualAgentVersion.ResourceType] = agenticVirtualAgentVersion.ResourceAgenticVirtualAgentVersion()
 
+	providerResources[sttTopic.ResourceType] = sttTopic.ResourceSpeechAndTextAnalyticsTopic()
+	providerResources[sttProgram.ResourceType] = sttProgram.ResourceSpeechAndTextAnalyticsProgram()
+	providerResources[sttCategory.ResourceType] = sttCategory.ResourceCategory()
+	providerResources[sttSentimentFeedback.ResourceType] = sttSentimentFeedback.ResourceSentimentFeedback()
+	providerResources[sttSettings.ResourceType] = sttSettings.ResourceSpeechAndTextAnalyticsSettings()
+	providerResources[recordingSettings.ResourceType] = recordingSettings.ResourceRecordingSettings()
+	providerResources[ivrIdentityResolution.ResourceType] = ivrIdentityResolution.ResourceArchitectIvrIdentityResolution()
+	providerResources[appleIdentityResolution.ResourceType] = appleIdentityResolution.ResourceConversationsMessagingIntegrationsAppleIdentityResolution()
+	providerResources[instagramIdentityResolution.ResourceType] = instagramIdentityResolution.ResourceConversationsMessagingIntegrationsInstagramIdentityResolution()
+	providerResources[openIdentityResolution.ResourceType] = openIdentityResolution.ResourceConversationsMessagingIntegrationsOpenIdentityResolution()
+	providerResources[whatsappIdentityResolution.ResourceType] = whatsappIdentityResolution.ResourceConversationsMessagingIntegrationsWhatsappIdentityResolution()
+	providerResources[emailRouteIdentityResolution.ResourceType] = emailRouteIdentityResolution.ResourceRoutingEmailRouteIdentityResolution()
+	providerResources[webDeploymentIdentityResolution.ResourceType] = webDeploymentIdentityResolution.ResourceWebDeploymentIdentityResolution()
+	providerResources[queueIdentityResolution.ResourceType] = queueIdentityResolution.ResourceRoutingQueueIdentityResolution()
+	providerResources[analyticsDataretentionSettings.ResourceType] = analyticsDataretentionSettings.ResourceAnalyticsDataretentionSettings()
+	providerResources[authorizationRolesSettings.ResourceType] = authorizationRolesSettings.ResourceAuthorizationRolesSettings()
+
 	providerResources[ResourceType] = ResourceTfExport()
 }
 
@@ -373,6 +406,23 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(businessRulesDecisionTable.ResourceType, businessRulesDecisionTable.BusinessRulesDecisionTableExporter())
 	RegisterExporter(agenticVirtualAgent.ResourceType, agenticVirtualAgent.AgenticVirtualAgentExporter())
 	RegisterExporter(agenticVirtualAgentVersion.ResourceType, agenticVirtualAgentVersion.AgenticVirtualAgentVersionExporter())
+
+	RegisterExporter(sttTopic.ResourceType, sttTopic.SpeechAndTextAnalyticsTopicExporter())
+	RegisterExporter(sttProgram.ResourceType, sttProgram.SpeechAndTextAnalyticsProgramExporter())
+	RegisterExporter(sttCategory.ResourceType, sttCategory.CategoryExporter())
+	RegisterExporter(sttSentimentFeedback.ResourceType, sttSentimentFeedback.SentimentFeedbackExporter())
+	RegisterExporter(sttSettings.ResourceType, sttSettings.SpeechAndTextAnalyticsSettingsExporter())
+	RegisterExporter(recordingSettings.ResourceType, recordingSettings.RecordingSettingsExporter())
+	RegisterExporter(ivrIdentityResolution.ResourceType, ivrIdentityResolution.ArchitectIvrIdentityResolutionExporter())
+	RegisterExporter(appleIdentityResolution.ResourceType, appleIdentityResolution.ConversationsMessagingIntegrationsAppleIdentityResolutionExporter())
+	RegisterExporter(instagramIdentityResolution.ResourceType, instagramIdentityResolution.ConversationsMessagingIntegrationsInstagramIdentityResolutionExporter())
+	RegisterExporter(openIdentityResolution.ResourceType, openIdentityResolution.ConversationsMessagingIntegrationsOpenIdentityResolutionExporter())
+	RegisterExporter(whatsappIdentityResolution.ResourceType, whatsappIdentityResolution.ConversationsMessagingIntegrationsWhatsappIdentityResolutionExporter())
+	RegisterExporter(emailRouteIdentityResolution.ResourceType, emailRouteIdentityResolution.RoutingEmailRouteIdentityResolutionExporter())
+	RegisterExporter(webDeploymentIdentityResolution.ResourceType, webDeploymentIdentityResolution.WebDeploymentIdentityResolutionExporter())
+	RegisterExporter(queueIdentityResolution.ResourceType, queueIdentityResolution.RoutingQueueIdentityResolutionExporter())
+	RegisterExporter(analyticsDataretentionSettings.ResourceType, analyticsDataretentionSettings.AnalyticsDataretentionSettingsExporter())
+	RegisterExporter(authorizationRolesSettings.ResourceType, authorizationRolesSettings.AuthorizationRolesSettingsExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }

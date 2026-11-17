@@ -17,6 +17,22 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       }
     }
 
+    # A Data Action tool that authenticates the user and produces an "AuthResult" output.
+    tools {
+      type        = "DataAction"
+      name        = "Authenticate"
+      description = "Authenticate the user and return an auth token"
+
+      target {
+        id   = genesyscloud_integration_action.example_auth_action.id
+        name = genesyscloud_integration_action.example_auth_action.name
+      }
+
+      input_instructions = ["Call this to authenticate the user before answering account questions"]
+
+      output = "AuthResult"
+    }
+
     tools {
       type        = "KnowledgeBase"
       name        = "FAQ Search"
@@ -28,6 +44,27 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       }
 
       input_instructions = ["Use when the user asks a question"]
+
+      # Dependency-only input: links the Knowledge tool to the Authenticate tool's output so the
+      # Knowledge tool only runs after the user is authenticated. The value is NOT sent to the
+      # knowledge service — it exists only to gate the tool. dependency_only must be true for
+      # inputs on Knowledge tools, and fallback_to_user must be false for ToolOutput sources.
+      inputs {
+        target_name      = "auth_token"
+        type             = "AuthResult"
+        source           = "ToolOutput"
+        required         = true
+        fallback_to_user = false
+        mapping          = jsonencode(["AuthResult", "token"])
+        dependency_only  = true
+      }
+
+      # Only invoke the Knowledge tool once the auth token is present.
+      input_validation {
+        type             = "Structured"
+        if_condition     = jsonencode({ group = "And", rules = [{ name = "auth_token", operator = "IsNotNull" }] })
+        else_instruction = "Ask the customer to authenticate first."
+      }
 
       output_instructions {
         type = "Python"
@@ -41,6 +78,18 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
       type        = "string"
       description = "Customer order ID"
       direction   = "Input"
+    }
+
+    # AuthResult is an object with a "token" property so the Knowledge tool's dependency-only
+    # input mapping path ["AuthResult", "token"] resolves at publish time.
+    types {
+      name      = "AuthResult"
+      type      = "object"
+      direction = "Output"
+      properties {
+        name = "token"
+        type = "string"
+      }
     }
 
     events {
