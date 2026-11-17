@@ -59,7 +59,10 @@ The following permissions are required to use this resource:
 * `caseManagement:caseplanDataSchemas:view`
 * `caseManagement:caseplanIntakeSettings:edit`
 * `caseManagement:caseplanIntakeSettings:view`
+* `caseManagement:stageplan:add`
+* `caseManagement:stageplan:delete`
 * `caseManagement:stageplan:edit`
+* `caseManagement:stageplan:reposition`
 * `caseManagement:stageplan:view`
 * `caseManagement:stepplan:edit`
 * `caseManagement:stepplan:view`
