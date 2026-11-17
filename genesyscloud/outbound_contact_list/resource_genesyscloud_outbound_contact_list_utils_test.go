@@ -20,44 +20,21 @@ import (
 )
 
 func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *testing.T) {
-	// Create two phone number columns
-	phoneNumberColumns := []map[string]interface{}{
-		{
+	phoneNumberColumns := []interface{}{
+		map[string]interface{}{
 			"column_name":          "phone1",
 			"type":                 "home",
 			"callable_time_column": "call_time1",
 		},
-		{
+		map[string]interface{}{
 			"column_name":          "phone2",
 			"type":                 "mobile",
 			"callable_time_column": "call_time2",
 		},
 	}
 
-	// Create a new schema.Set with both phone number columns
-	phoneSet := schema.NewSet(schema.HashResource(&schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"column_name": {
-				Type: schema.TypeString,
-			},
-			"type": {
-				Type: schema.TypeString,
-			},
-			"callable_time_column": {
-				Type: schema.TypeString,
-			},
-		},
-	}), []interface{}{})
+	result := buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneNumberColumns)
 
-	// Add both columns to the set
-	for _, column := range phoneNumberColumns {
-		phoneSet.Add(column)
-	}
-
-	// Call the function being tested
-	result := buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneSet)
-
-	// Verify the result has exactly 2 elements
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -65,8 +42,14 @@ func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *
 		t.Errorf("Expected slice with 2 elements, got %d elements", len(*result))
 	}
 
-	// Verify the contents of both elements
 	phoneNumbers := *result
+	if phoneNumbers[0].ColumnName == nil || *phoneNumbers[0].ColumnName != "phone1" {
+		t.Errorf("Expected first column_name phone1, got %v", phoneNumbers[0].ColumnName)
+	}
+	if phoneNumbers[1].ColumnName == nil || *phoneNumbers[1].ColumnName != "phone2" {
+		t.Errorf("Expected second column_name phone2, got %v", phoneNumbers[1].ColumnName)
+	}
+
 	expectedNames := map[string]bool{"phone1": false, "phone2": false}
 	expectedTypes := map[string]bool{"home": false, "mobile": false}
 	expectedCallTimes := map[string]bool{"call_time1": false, "call_time2": false}
@@ -83,7 +66,6 @@ func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *
 		}
 	}
 
-	// Verify all expected values were found
 	for name, found := range expectedNames {
 		if !found {
 			t.Errorf("Expected to find column_name %s", name)
@@ -97,6 +79,29 @@ func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *
 	for callTime, found := range expectedCallTimes {
 		if !found {
 			t.Errorf("Expected to find callable_time_column %s", callTime)
+		}
+	}
+}
+
+func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlicePreservesOrder(t *testing.T) {
+	phoneNumberColumns := []interface{}{
+		map[string]interface{}{"column_name": "phoneNumber1", "type": "cell"},
+		map[string]interface{}{"column_name": "phoneNumber2", "type": "cell"},
+		map[string]interface{}{"column_name": "phoneNumber3", "type": "cell"},
+	}
+
+	result := buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneNumberColumns)
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+	if len(*result) != 3 {
+		t.Fatalf("Expected 3 phone columns, got %d", len(*result))
+	}
+
+	want := []string{"phoneNumber1", "phoneNumber2", "phoneNumber3"}
+	for i, col := range *result {
+		if col.ColumnName == nil || *col.ColumnName != want[i] {
+			t.Errorf("index %d: expected %s, got %v", i, want[i], col.ColumnName)
 		}
 	}
 }
@@ -355,17 +360,11 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 		t.Fatal("Expected non-nil result for single column")
 	}
 
-	if result.Len() != 1 {
-		t.Errorf("Expected 1 item in set, got %d", result.Len())
+	if len(result) != 1 {
+		t.Errorf("Expected 1 item in list, got %d", len(result))
 	}
 
-	// Convert set to slice to check values
-	resultList := result.List()
-	if len(resultList) != 1 {
-		t.Fatal("Expected 1 item in result list")
-	}
-
-	resultMap := resultList[0].(map[string]interface{})
+	resultMap := result[0].(map[string]interface{})
 
 	expectedValues := map[string]string{
 		"column_name":          "email_col",
@@ -398,8 +397,17 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 		t.Fatal("Expected non-nil result for multiple columns")
 	}
 
-	if multiResult.Len() != 2 {
-		t.Errorf("Expected 2 items in set, got %d", multiResult.Len())
+	if len(multiResult) != 2 {
+		t.Errorf("Expected 2 items in list, got %d", len(multiResult))
+	}
+
+	first, _ := multiResult[0].(map[string]interface{})
+	second, _ := multiResult[1].(map[string]interface{})
+	if first["column_name"] != "email1" {
+		t.Errorf("Expected first column_name email1, got %v", first["column_name"])
+	}
+	if second["column_name"] != "email2" {
+		t.Errorf("Expected second column_name email2, got %v", second["column_name"])
 	}
 }
 
@@ -1140,4 +1148,35 @@ func TestStripSystemColumnsFromCSV(t *testing.T) {
 			t.Errorf("Expected stripped row, got '%s'", lines[1])
 		}
 	})
+}
+
+func TestStateUpgraderOutboundContactListV3ToV4(t *testing.T) {
+	rawState := map[string]interface{}{
+		"name": "tf-phone-columns-order-repro",
+		"column_names": []interface{}{
+			"phoneNumber1", "phoneNumber2", "phoneNumber3",
+		},
+		"phone_columns": []interface{}{
+			map[string]interface{}{"column_name": "phoneNumber3", "type": "cell"},
+			map[string]interface{}{"column_name": "phoneNumber1", "type": "cell"},
+			map[string]interface{}{"column_name": "phoneNumber2", "type": "cell"},
+		},
+	}
+
+	upgraded, err := stateUpgraderOutboundContactListV3ToV4(context.Background(), rawState, nil)
+	if err != nil {
+		t.Fatalf("unexpected upgrade error: %v", err)
+	}
+
+	phoneColumns, ok := upgraded["phone_columns"].([]interface{})
+	if !ok {
+		t.Fatalf("expected phone_columns to remain a list, got %T", upgraded["phone_columns"])
+	}
+	if len(phoneColumns) != 3 {
+		t.Fatalf("expected 3 phone columns, got %d", len(phoneColumns))
+	}
+	first := phoneColumns[0].(map[string]interface{})
+	if first["column_name"] != "phoneNumber3" {
+		t.Errorf("upgrade should keep existing array order, got first column %v", first["column_name"])
+	}
 }
