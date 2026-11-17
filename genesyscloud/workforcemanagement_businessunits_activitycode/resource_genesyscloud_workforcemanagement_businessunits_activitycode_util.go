@@ -38,12 +38,14 @@ func activityCodeLabel(activityCode platformclientv2.Businessunitactivitycode) s
 // The exporter's fallbacks for equal labels either add a suffix to whichever duplicate it reaches second, which can change from one export to the next,
 // or flag them as duplicates. Giving the inactive code a hash makes its label differ from the active code's, and stay the same every time.
 // Active codes get no hash because their names are unique, so their labels do not change.
-// The hash leaves out the id, so the same code gets the same label in other exports and in other organizations.
-func activityCodeBlockHash(activityCode platformclientv2.Businessunitactivitycode) (string, error) {
+// The hash is built from the business unit id and the code id, which together are unique: the same code id can appear in different business units.
+// The exporter advises against ids in a hash so that labels match across organizations, but that does not apply here,
+// because an inactive code cannot exist as an inactive code in another organization.
+func activityCodeBlockHash(businessUnitId string, activityCode platformclientv2.Businessunitactivitycode) (string, error) {
 	if isActive(&activityCode) {
 		return "", nil
 	}
-	return util.QuickHashFields(*activityCode.Name, *activityCode.Category, "inactive")
+	return util.QuickHashFields(businessUnitId, *activityCode.Id)
 }
 
 // findActivityCodeIdByName returns the id of the active activity code with the name. Default activity codes that have not been renamed all have an empty name,

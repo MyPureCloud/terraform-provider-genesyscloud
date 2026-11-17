@@ -71,15 +71,31 @@ func TestUnitActivityCodeBlockHashOnlyForInactiveCodes(t *testing.T) {
 	active := testActivityCode("a", "Training", "Training", false, true)
 	inactive := testActivityCode("b", "Training", "Training", false, false)
 
-	if hash, err := activityCodeBlockHash(active); err != nil || hash != "" {
+	if hash, err := activityCodeBlockHash("bu-1", active); err != nil || hash != "" {
 		t.Errorf("expected no hash for an active code, got %q (%v)", hash, err)
 	}
-	hash, err := activityCodeBlockHash(inactive)
+	hash, err := activityCodeBlockHash("bu-1", inactive)
 	if err != nil || hash == "" {
 		t.Errorf("expected a hash for an inactive code, got %q (%v)", hash, err)
 	}
-	again, _ := activityCodeBlockHash(testActivityCode("c", "Training", "Training", false, false))
-	if hash != again {
-		t.Error("the hash must not depend on the id")
+	if again, _ := activityCodeBlockHash("bu-1", inactive); hash != again {
+		t.Error("the hash must be the same every time")
+	}
+}
+
+func TestUnitActivityCodeBlockHashTellsInactiveCodesApart(t *testing.T) {
+	first := testActivityCode("id-1", "Training", "Training", false, false)
+	second := testActivityCode("id-2", "Training", "Training", false, false)
+
+	a, _ := activityCodeBlockHash("bu-1", first)
+	b, _ := activityCodeBlockHash("bu-1", second)
+	if a == b {
+		t.Error("two inactive codes with the same name and category must still get different hashes")
+	}
+
+	// The same code id can appear in different business units, so the business unit has to be part of the hash
+	other, _ := activityCodeBlockHash("bu-2", first)
+	if a == other {
+		t.Error("the same code id in another business unit must get a different hash")
 	}
 }
