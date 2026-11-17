@@ -200,7 +200,7 @@ func createRoutingSkillGroupsMemberDivisions(ctx context.Context, d *schema.Reso
 		return diagErr
 	}
 
-	toRemove, diagErr = removeSkillGroupDivisionID(d, toRemove)
+	toRemove, diagErr = removeSkillGroupDivisionID(d, toRemove, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}

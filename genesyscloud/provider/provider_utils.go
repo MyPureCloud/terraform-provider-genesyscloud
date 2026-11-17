@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/homedivision"
 )
 
 // ProviderFactories are used to instantiate a provider during acceptance testing.
@@ -42,7 +44,7 @@ func CombineProviderFactories(providers ...map[string]func() (*schema.Provider, 
 // TestDefaultHomeDivision Verify default division is home division
 func TestDefaultHomeDivision(resource string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		homeDivID, err := getHomeDivisionID()
+		homeDivID, err := homedivision.ID(platformclientv2.GetDefaultConfiguration())
 		if err != nil {
 			return fmt.Errorf("Failed to query home division: %v", err)
 		}

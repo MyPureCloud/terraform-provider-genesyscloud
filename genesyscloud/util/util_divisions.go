@@ -3,21 +3,19 @@ package util
 import (
 	"fmt"
 	"log"
-	"sync"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/homedivision"
 )
 
 type JsonMap map[string]interface{}
 
-// Attempt to get the home division once during a provider run
-var divOnce sync.Once
-var homeDivID string
-var homeDivErr diag.Diagnostics
+// HomeDivisionFetcher looks up the home division ID of the org that sdkConfig is authorised against.
+type HomeDivisionFetcher = homedivision.Fetcher
 
 func GetHomeDivisionName(key string, divisionName *string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
@@ -30,21 +28,28 @@ func GetHomeDivisionName(key string, divisionName *string) resource.TestCheckFun
 	}
 }
 
+// GetHomeDivisionID returns the home division ID for the org the SDK default configuration is
+// authorised against. Prefer GetHomeDivisionIDWithConfig wherever a client config is in scope.
 func GetHomeDivisionID() (string, diag.Diagnostics) {
-	divOnce.Do(func() {
-		authAPI := platformclientv2.NewAuthorizationApi()
-		homeDiv, _, err := authAPI.GetAuthorizationDivisionsHome()
-		if err != nil {
-			homeDivErr = diag.Errorf("Failed to query home division: %s", err)
-			return
-		}
-		homeDivID = *homeDiv.Id
-	})
+	return GetHomeDivisionIDWithConfig(platformclientv2.GetDefaultConfiguration())
+}
 
-	if homeDivErr != nil {
-		return "", homeDivErr
+// GetHomeDivisionIDWithConfig returns the home division ID for the org that sdkConfig is authorised
+// against. Results are cached per org credential, so callers working against different orgs in the
+// same process each get their own org's home division. A nil sdkConfig is an error rather than a
+// fallback to the default configuration, which may belong to a different org.
+func GetHomeDivisionIDWithConfig(sdkConfig *platformclientv2.Configuration) (string, diag.Diagnostics) {
+	id, err := homedivision.ID(sdkConfig)
+	if err != nil {
+		return "", diag.Errorf("Failed to query home division: %s", err)
 	}
-	return homeDivID, nil
+	return id, nil
+}
+
+// SetHomeDivisionFetcherForTesting replaces the home division lookup and clears the cache. It returns a
+// function that restores the real lookup and clears the cache again. For unit tests only.
+func SetHomeDivisionFetcherForTesting(fetcher HomeDivisionFetcher) (restore func()) {
+	return homedivision.SetFetcherForTesting(fetcher)
 }
 
 func UpdateObjectDivision(d *schema.ResourceData, objType string, sdkConfig *platformclientv2.Configuration) diag.Diagnostics {
@@ -53,7 +58,7 @@ func UpdateObjectDivision(d *schema.ResourceData, objType string, sdkConfig *pla
 		divisionID := d.Get("division_id").(string)
 		if divisionID == "" {
 			// Default to home division
-			homeDivision, diagErr := GetHomeDivisionID()
+			homeDivision, diagErr := GetHomeDivisionIDWithConfig(sdkConfig)
 			if diagErr != nil {
 				return diagErr
 			}
