@@ -307,9 +307,9 @@ var (
 				ValidateFunc: validation.StringInSlice([]string{"EventCount", "CustomerCount", "Minimum", "Maximum", "Average", "Sum"}, false),
 			},
 			"attribute": {
-				Description:  "Attribute name.",
-				Type:         schema.TypeString,
-				Optional:     true,
+				Description: "Attribute name.",
+				Type:        schema.TypeString,
+				Optional:    true,
 			},
 			"display_label": {
 				Description: "Display label of metric.",
