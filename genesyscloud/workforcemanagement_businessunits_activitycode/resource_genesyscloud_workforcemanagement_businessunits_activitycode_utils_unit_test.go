@@ -66,3 +66,20 @@ func TestUnitFindDefaultActivityCodeIdByCategory(t *testing.T) {
 		t.Error("expected an error for a category without a default code")
 	}
 }
+
+func TestUnitActivityCodeBlockHashOnlyForInactiveCodes(t *testing.T) {
+	active := testActivityCode("a", "Training", "Training", false, true)
+	inactive := testActivityCode("b", "Training", "Training", false, false)
+
+	if hash, err := activityCodeBlockHash(active); err != nil || hash != "" {
+		t.Errorf("expected no hash for an active code, got %q (%v)", hash, err)
+	}
+	hash, err := activityCodeBlockHash(inactive)
+	if err != nil || hash == "" {
+		t.Errorf("expected a hash for an inactive code, got %q (%v)", hash, err)
+	}
+	again, _ := activityCodeBlockHash(testActivityCode("c", "Training", "Training", false, false))
+	if hash != again {
+		t.Error("the hash must not depend on the id")
+	}
+}

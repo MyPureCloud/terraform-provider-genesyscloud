@@ -26,9 +26,10 @@ import (
 The resource_genesyscloud_workforcemanagement_businessunits_activitycode.go contains all of the methods that perform the core logic for a resource.
 */
 
-// getAllActiveBusinessUnitActivityCodes retrieves all of the active business unit activity codes via Terraform in the Genesys Cloud and is used for the exporter.
+// getAllBusinessUnitActivityCodes retrieves all of the business unit activity codes, active and inactive, via Terraform in the Genesys Cloud and is used for the exporter.
+// Inactive codes are included because old schedules and work plans that have not been updated can still refer to them.
 // Default activity codes are included because they can be updated, even though they cannot be created or deleted.
-func getAllActiveBusinessUnitActivityCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
+func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
 	proxy := getBusinessUnitActivityCodeProxy(clientConfig)
 	resources := make(resourceExporter.ResourceIDMetaMap)
 
@@ -44,10 +45,11 @@ func getAllActiveBusinessUnitActivityCodes(ctx context.Context, clientConfig *pl
 		}
 
 		for _, activityCode := range *activityCodes {
-			if !isActive(&activityCode) {
-				continue
+			blockHash, err := activityCodeBlockHash(activityCode)
+			if err != nil {
+				return nil, diag.Errorf("failed to generate a block hash for activity code %s: %v", *activityCode.Id, err)
 			}
-			resources[*businessUnit.Id+"/"+*activityCode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *businessUnit.Name + "_" + activityCodeLabel(activityCode)}
+			resources[*businessUnit.Id+"/"+*activityCode.Id] = &resourceExporter.ResourceMeta{BlockLabel: *businessUnit.Name + "_" + activityCodeLabel(activityCode), BlockHash: blockHash}
 		}
 	}
 

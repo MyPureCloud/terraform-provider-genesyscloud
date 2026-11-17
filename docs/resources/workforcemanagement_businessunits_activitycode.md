@@ -137,7 +137,7 @@ resource "genesyscloud_workforcemanagement_businessunits_activitycode" "example_
 
 ### Read-Only
 
-- `active` (Boolean) Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it.
+- `active` (Boolean) Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it, and an inactive activity code can still be on old schedules and work plans. An inactive activity code is exported, but applying that configuration elsewhere creates an active one, because Genesys Cloud only creates active activity codes.
 - `default_code` (Boolean) Whether this is a default activity code. Default activity codes are created by Genesys Cloud, so they can only be managed by importing them, and they cannot be deleted. Destroying one only stops Terraform managing it.
 - `id` (String) The ID of this resource.
 

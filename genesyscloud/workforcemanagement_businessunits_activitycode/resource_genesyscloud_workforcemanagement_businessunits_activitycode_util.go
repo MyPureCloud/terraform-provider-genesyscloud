@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 )
 
@@ -30,6 +31,15 @@ func activityCodeLabel(activityCode platformclientv2.Businessunitactivitycode) s
 		return "default_" + *activityCode.Category
 	}
 	return *activityCode.Name
+}
+
+// activityCodeBlockHash tells an inactive activity code from an active one that has the same name in the export, because their block labels would otherwise be equal.
+// Active codes need none, since names are unique among them, and the hash leaves out the id so that it matches across organizations.
+func activityCodeBlockHash(activityCode platformclientv2.Businessunitactivitycode) (string, error) {
+	if isActive(&activityCode) {
+		return "", nil
+	}
+	return util.QuickHashFields(*activityCode.Name, *activityCode.Category, "inactive")
 }
 
 // findActivityCodeIdByName returns the id of the active activity code with the name. Default activity codes that have not been renamed all have an empty name,

@@ -103,7 +103,7 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"active": {
-				Description: `Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it.`,
+				Description: `Whether the activity code is active. Deleting an activity code in Genesys Cloud makes it inactive instead of removing it, and an inactive activity code can still be on old schedules and work plans. An inactive activity code is exported, but applying that configuration elsewhere creates an active one, because Genesys Cloud only creates active activity codes.`,
 				Type:        schema.TypeBool,
 				Computed:    true,
 			},
@@ -119,7 +119,7 @@ func ResourceBusinessUnitActivityCode() *schema.Resource {
 // BusinessUnitActivityCodeExporter returns the resourceExporter object used to hold the genesyscloud_workforcemanagement_businessunits_activitycode exporter's config
 func BusinessUnitActivityCodeExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
-		GetResourcesFunc: provider.GetAllWithPooledClient(getAllActiveBusinessUnitActivityCodes),
+		GetResourcesFunc: provider.GetAllWithPooledClient(getAllBusinessUnitActivityCodes),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"business_unit_id": {RefType: "genesyscloud_workforcemanagement_businessunits"},
 		},
