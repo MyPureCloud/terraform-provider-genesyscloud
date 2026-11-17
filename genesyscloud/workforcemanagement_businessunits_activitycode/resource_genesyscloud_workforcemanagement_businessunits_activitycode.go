@@ -148,9 +148,10 @@ func deleteBusinessUnitActivityCode(ctx context.Context, d *schema.ResourceData,
 	proxy := getBusinessUnitActivityCodeProxy(sdkConfig)
 	businessUnitId, activityCodeId := SplitBusinessUnitActivityCodeTerraformId(d.Id())
 
-	// Genesys Cloud does not allow a default activity code to be deleted, and a deleted one is only made inactive, so there is nothing to delete
-	if d.Get("default_code").(bool) || !d.Get("active").(bool) {
-		log.Printf("Business unit %s activity code %s is a default or already inactive activity code, so it is only removed from Terraform", businessUnitId, activityCodeId)
+	// Genesys Cloud does not allow a default activity code to be deleted, so destroying one only removes it from Terraform.
+	// An activity code that is already inactive is deleted again, because Genesys Cloud allows it and runs the deactivation again.
+	if d.Get("default_code").(bool) {
+		log.Printf("Business unit %s activity code %s is a default activity code, so it is only removed from Terraform", businessUnitId, activityCodeId)
 		return nil
 	}
 
