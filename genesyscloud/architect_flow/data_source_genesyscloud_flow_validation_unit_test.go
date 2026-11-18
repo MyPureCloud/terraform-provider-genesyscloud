@@ -18,9 +18,9 @@ import (
 
 func TestUnitBuildValidateFlowReference(t *testing.T) {
 	tests := []struct {
-		name                              string
-		flowId, flowName, flowType, flowV string
-		expected                          platformclientv2.Architectflowreference
+		name          string
+		flowId, flowV string
+		expected      platformclientv2.Architectflowreference
 	}{
 		{
 			name:     "id only",
@@ -28,25 +28,99 @@ func TestUnitBuildValidateFlowReference(t *testing.T) {
 			expected: platformclientv2.Architectflowreference{Id: platformclientv2.String("flow-1")},
 		},
 		{
-			name:     "name and type are sent with type uppercased",
-			flowName: "My Flow",
-			flowType: "inboundcall",
-			flowV:    "2.0",
+			name:   "id and version",
+			flowId: "flow-1",
+			flowV:  "2.0",
 			expected: platformclientv2.Architectflowreference{
-				Name:    platformclientv2.String("My Flow"),
-				VarType: platformclientv2.String("INBOUNDCALL"),
+				Id:      platformclientv2.String("flow-1"),
 				Version: platformclientv2.String("2.0"),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildValidateFlowReference(tt.flowId, tt.flowName, tt.flowType, tt.flowV)
+			got := buildValidateFlowReference(tt.flowId, tt.flowV)
 			if !reflect.DeepEqual(got, tt.expected) {
 				t.Errorf("expected %+v, got %+v", tt.expected, got)
 			}
 		})
 	}
+}
+
+func TestUnitResolveValidateFlowId(t *testing.T) {
+	original := flowIdLookupTimeout
+	flowIdLookupTimeout = 5 * time.Second
+	t.Cleanup(func() { flowIdLookupTimeout = original })
+
+	t.Run("flow_id is used without a lookup", func(t *testing.T) {
+		p := &architectFlowProxy{
+			getFlowIdByNameAndTypeAttr: func(ctx context.Context, a *architectFlowProxy, name, varType string) (string, *platformclientv2.APIResponse, bool, error) {
+				t.Fatal("lookup should not be called when flow_id is set")
+				return "", nil, false, nil
+			},
+		}
+		id, diags := resolveValidateFlowId(context.Background(), p, "flow-1", "", "")
+		if diags.HasError() || id != "flow-1" {
+			t.Fatalf("expected flow-1, got %q (%v)", id, diags)
+		}
+	})
+
+	t.Run("name and type are resolved to an id with type lowercased", func(t *testing.T) {
+		var gotName, gotType string
+		p := &architectFlowProxy{
+			getFlowIdByNameAndTypeAttr: func(ctx context.Context, a *architectFlowProxy, name, varType string) (string, *platformclientv2.APIResponse, bool, error) {
+				gotName, gotType = name, varType
+				return "resolved-id", nil, false, nil
+			},
+		}
+		id, diags := resolveValidateFlowId(context.Background(), p, "", "My Flow", "INBOUNDCALL")
+		if diags.HasError() || id != "resolved-id" {
+			t.Fatalf("expected resolved-id, got %q (%v)", id, diags)
+		}
+		if gotName != "My Flow" || gotType != "inboundcall" {
+			t.Errorf("expected lookup of 'My Flow' (inboundcall), got '%s' (%s)", gotName, gotType)
+		}
+	})
+
+	t.Run("retryable not-found is retried until it succeeds", func(t *testing.T) {
+		calls := 0
+		p := &architectFlowProxy{
+			getFlowIdByNameAndTypeAttr: func(ctx context.Context, a *architectFlowProxy, name, varType string) (string, *platformclientv2.APIResponse, bool, error) {
+				calls++
+				if calls == 1 {
+					return "", nil, true, errors.New("no flows found")
+				}
+				return "resolved-id", nil, false, nil
+			},
+		}
+		id, diags := resolveValidateFlowId(context.Background(), p, "", "My Flow", "inboundcall")
+		if diags.HasError() || id != "resolved-id" {
+			t.Fatalf("expected resolved-id, got %q (%v)", id, diags)
+		}
+		if calls != 2 {
+			t.Errorf("expected 2 lookups, got %d", calls)
+		}
+	})
+
+	t.Run("non-retryable lookup error is returned", func(t *testing.T) {
+		calls := 0
+		p := &architectFlowProxy{
+			getFlowIdByNameAndTypeAttr: func(ctx context.Context, a *architectFlowProxy, name, varType string) (string, *platformclientv2.APIResponse, bool, error) {
+				calls++
+				return "", nil, false, errors.New("boom")
+			},
+		}
+		_, diags := resolveValidateFlowId(context.Background(), p, "", "My Flow", "inboundcall")
+		if !diags.HasError() {
+			t.Fatal("expected an error diagnostic")
+		}
+		if calls != 1 {
+			t.Errorf("expected 1 lookup, got %d", calls)
+		}
+		if !strings.Contains(fmt.Sprint(diags), "My Flow") {
+			t.Errorf("expected diagnostic to name the flow, got %v", diags)
+		}
+	})
 }
 
 func TestUnitSplitValidateJobMessages(t *testing.T) {
@@ -166,7 +240,7 @@ func TestUnitRunFlowValidation(t *testing.T) {
 			if timeout == 0 {
 				timeout = time.Second
 			}
-			result, _, err := runFlowValidation(context.Background(), p, buildValidateFlowReference("flow-1", "", "", ""), timeout)
+			result, _, err := runFlowValidation(context.Background(), p, buildValidateFlowReference("flow-1", ""), timeout)
 
 			if tt.expectedErr != "" {
 				if err == nil || !strings.Contains(err.Error(), tt.expectedErr) {
@@ -201,7 +275,7 @@ func TestUnitCreateFlowValidateJobForwardsReference(t *testing.T) {
 			return &platformclientv2.Registerarchitectvalidatejobresponse{Id: platformclientv2.String("j")}, nil, nil
 		},
 	}
-	ref := buildValidateFlowReference("flow-1", "", "", "3.0")
+	ref := buildValidateFlowReference("flow-1", "3.0")
 	if _, _, err := p.CreateFlowValidateJob(context.Background(), ref); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -226,7 +300,7 @@ func TestUnitRunFlowValidationContextDeadlineIsTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	_, _, err := runFlowValidation(ctx, p, buildValidateFlowReference("flow-1", "", "", ""), time.Hour)
+	_, _, err := runFlowValidation(ctx, p, buildValidateFlowReference("flow-1", ""), time.Hour)
 	var timeoutErr *validateJobTimeoutError
 	if !errors.As(err, &timeoutErr) {
 		t.Fatalf("expected validateJobTimeoutError, got %v", err)

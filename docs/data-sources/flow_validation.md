@@ -3,8 +3,8 @@ page_title: "genesyscloud_flow_validation Data Source - terraform-provider-genes
 subcategory: ""
 description: |-
   Validates an existing Genesys Cloud Architect flow by running a validate job (POST /api/v2/flows/validate/jobs) and waiting for it to finish.
-  Select the flow by flow_id, or by name and type. Validation runs every time the data source is read. Set fail_on_error to make the plan or apply fail when the flow has validation errors.
-  In addition to the permissions listed below, the OAuth client needs architect:jobValidate:create to register the validate job.
+  Select the flow by flow_id, or by name and type. When selected by name and type, the flow ID is looked up first (GET /api/v2/flows). Validation runs every time the data source is read. Set fail_on_error to make the plan or apply fail when the flow has validation errors.
+  In addition to the permissions listed below, the OAuth client needs architect:jobValidate:create to register the validate job, and architect:flow:view when the flow is selected by name and type.
 ---
 # genesyscloud_flow_validation (Data Source)
 
@@ -12,9 +12,9 @@ description: |-
 
 Validates an existing Genesys Cloud Architect flow by running a validate job (POST /api/v2/flows/validate/jobs) and waiting for it to finish.
 
-Select the flow by `flow_id`, or by `name` and `type`. Validation runs every time the data source is read. Set `fail_on_error` to make the plan or apply fail when the flow has validation errors.
+Select the flow by `flow_id`, or by `name` and `type`. When selected by name and type, the flow ID is looked up first (GET /api/v2/flows). Validation runs every time the data source is read. Set `fail_on_error` to make the plan or apply fail when the flow has validation errors.
 
-In addition to the permissions listed below, the OAuth client needs `architect:jobValidate:create` to register the validate job.
+In addition to the permissions listed below, the OAuth client needs `architect:jobValidate:create` to register the validate job, and `architect:flow:view` when the flow is selected by name and type.
 
 ## API Usage
 

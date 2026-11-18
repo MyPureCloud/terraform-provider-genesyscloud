@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -30,6 +31,10 @@ const (
 
 // validateJobPollInterval is a variable so unit tests can shorten it.
 var validateJobPollInterval = 2 * time.Second
+
+// flowIdLookupTimeout bounds the retries when resolving a flow ID from name and type.
+// It is a variable so unit tests can shorten it.
+var flowIdLookupTimeout = 30 * time.Second
 
 // validateJobTimeoutError is returned by runFlowValidation when the job does not finish in time.
 type validateJobTimeoutError struct {
@@ -58,9 +63,9 @@ func DataSourceFlowValidation() *schema.Resource {
 	return &schema.Resource{
 		Description: `Validates an existing Genesys Cloud Architect flow by running a validate job (POST /api/v2/flows/validate/jobs) and waiting for it to finish.
 
-Select the flow by ` + "`flow_id`" + `, or by ` + "`name`" + ` and ` + "`type`" + `. Validation runs every time the data source is read. Set ` + "`fail_on_error`" + ` to make the plan or apply fail when the flow has validation errors.
+Select the flow by ` + "`flow_id`" + `, or by ` + "`name`" + ` and ` + "`type`" + `. When selected by name and type, the flow ID is looked up first (GET /api/v2/flows). Validation runs every time the data source is read. Set ` + "`fail_on_error`" + ` to make the plan or apply fail when the flow has validation errors.
 
-In addition to the permissions listed below, the OAuth client needs ` + "`architect:jobValidate:create`" + ` to register the validate job.`,
+In addition to the permissions listed below, the OAuth client needs ` + "`architect:jobValidate:create`" + ` to register the validate job, and ` + "`architect:flow:view`" + ` when the flow is selected by name and type.`,
 		ReadContext: provider.ReadWithPooledClient(dataSourceFlowValidationRead),
 		Timeouts: &schema.ResourceTimeout{
 			Read: schema.DefaultTimeout(defaultValidateJobTimeout),
@@ -132,14 +137,16 @@ func dataSourceFlowValidationRead(ctx context.Context, d *schema.ResourceData, m
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	p := getArchitectFlowProxy(sdkConfig)
 
-	flowRef := buildValidateFlowReference(
-		d.Get("flow_id").(string),
-		d.Get("name").(string),
-		d.Get("type").(string),
-		d.Get("version").(string),
-	)
-	flowLabel := describeFlowReference(flowRef)
+	name := d.Get("name").(string)
+	varType := d.Get("type").(string)
+	flowLabel := describeFlow(d.Get("flow_id").(string), name, varType)
 
+	flowId, diags := resolveValidateFlowId(ctx, p, d.Get("flow_id").(string), name, varType)
+	if diags.HasError() {
+		return diags
+	}
+
+	flowRef := buildValidateFlowReference(flowId, d.Get("version").(string))
 	result, resp, err := runFlowValidation(ctx, p, flowRef, d.Timeout(schema.TimeoutRead))
 	if err != nil {
 		return buildFlowValidationErrorDiagnostics(err, flowLabel, resp)
@@ -202,31 +209,52 @@ func buildFlowValidationResultDiagnostics(result *flowValidationResult, flowLabe
 	)...)
 }
 
-// buildValidateFlowReference builds the flow reference sent to the validate job.
-// The API's flow type enum is uppercase (e.g. INBOUNDCALL), so type is uppercased.
-func buildValidateFlowReference(flowId, name, varType, version string) platformclientv2.Architectflowreference {
-	ref := platformclientv2.Architectflowreference{}
+// resolveValidateFlowId returns flowId when set. Otherwise it looks the flow up by name and
+// type, so the validate job is always sent a flow ID rather than relying on the API to
+// resolve a name.
+func resolveValidateFlowId(ctx context.Context, p *architectFlowProxy, flowId, name, varType string) (string, diag.Diagnostics) {
 	if flowId != "" {
-		ref.Id = platformclientv2.String(flowId)
+		return flowId, nil
 	}
-	if name != "" {
-		ref.Name = platformclientv2.String(name)
+
+	varType = strings.ToLower(varType)
+	var (
+		resolvedId string
+		response   *platformclientv2.APIResponse
+	)
+	retryErr := util.WithRetries(ctx, flowIdLookupTimeout, func() *retry.RetryError {
+		id, resp, retryable, err := p.getFlowIdByNameAndType(ctx, name, varType)
+		if err != nil {
+			response = resp
+			if retryable {
+				return retry.RetryableError(err)
+			}
+			return retry.NonRetryableError(err)
+		}
+		resolvedId = id
+		return nil
+	})
+	if retryErr != nil {
+		return "", util.BuildAPIDiagnosticError(ValidationDataSourceType, fmt.Sprintf("error retrieving ID of flow %s | error: %v", describeFlow("", name, varType), retryErr), response)
 	}
-	if varType != "" {
-		ref.VarType = platformclientv2.String(strings.ToUpper(varType))
-	}
+	return resolvedId, nil
+}
+
+// buildValidateFlowReference builds the flow reference sent to the validate job.
+func buildValidateFlowReference(flowId, version string) platformclientv2.Architectflowreference {
+	ref := platformclientv2.Architectflowreference{Id: platformclientv2.String(flowId)}
 	if version != "" {
 		ref.Version = platformclientv2.String(version)
 	}
 	return ref
 }
 
-// describeFlowReference returns a label for a flow reference for use in diagnostics.
-func describeFlowReference(ref platformclientv2.Architectflowreference) string {
-	if ref.Id != nil {
-		return *ref.Id
+// describeFlow returns a label for the selected flow for use in diagnostics.
+func describeFlow(flowId, name, varType string) string {
+	if flowId != "" {
+		return flowId
 	}
-	return fmt.Sprintf("'%s' (%s)", derefString(ref.Name), derefString(ref.VarType))
+	return fmt.Sprintf("'%s' (%s)", name, varType)
 }
 
 // runFlowValidation starts a validate job for a single flow and polls it until it reaches
@@ -240,7 +268,7 @@ func runFlowValidation(ctx context.Context, p *architectFlowProxy, flowRef platf
 		return nil, resp, fmt.Errorf("validate job registration returned no job ID")
 	}
 	jobId := *job.Id
-	log.Printf("Registered flow validate job %s for flow %s", jobId, describeFlowReference(flowRef))
+	log.Printf("Registered flow validate job %s for flow %s", jobId, derefString(flowRef.Id))
 
 	deadline := time.Now().Add(timeout)
 	for {
@@ -257,6 +285,9 @@ func runFlowValidation(ctx context.Context, p *architectFlowProxy, flowRef platf
 
 		if status == validateJobStatusSuccess || status == validateJobStatusFailure {
 			errs, warnings := splitValidateJobMessages(state.Messages)
+			if status == validateJobStatusFailure {
+				log.Printf("Flow validate job %s failed. errors: %q, warnings: %q", jobId, errs, warnings)
+			}
 			return &flowValidationResult{
 				JobId:    jobId,
 				Status:   status,
