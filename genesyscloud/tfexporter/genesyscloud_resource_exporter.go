@@ -367,6 +367,10 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// were never applied to the exporter instances used during sanitization.
 	diagErr = append(diagErr, g.removeUserDefinedExcludedAttributesFromConfigMaps()...)
 
+	// Step #6.6 Make users that share a DID with an IVR depend on that IVR, so the IVR is created first.
+	// This runs after exclude_attributes is applied, so excluded dnis or addresses are not matched.
+	diagErr = append(diagErr, g.addSharedDidDependencies()...)
+
 	// Step #7 Write the terraform state file along with either the HCL or JSON
 	diagErr = append(diagErr, g.generateOutputFiles()...)
 	if diagErr.HasError() {
