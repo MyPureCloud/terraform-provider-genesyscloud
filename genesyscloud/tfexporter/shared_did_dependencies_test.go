@@ -1,10 +1,12 @@
 package tfexporter
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -291,5 +293,90 @@ func TestUnitSharedDidRendersQuotedReferenceInJson(t *testing.T) {
 
 	if out != `{"depends_on": ["genesyscloud_architect_ivr.direct_agent_routing"]}` {
 		t.Errorf("unexpected JSON output: %s", out)
+	}
+}
+
+func TestUnitSharedDidMatchesSmsNumbers(t *testing.T) {
+	// An SMS number that equals an IVR DNIS also gets the dependency (see userPhoneNumbers).
+	sms := util.JsonMap{"addresses": []interface{}{map[string]interface{}{"phone_numbers": []interface{}{
+		map[string]interface{}{"number": "+19164634135", "media_type": "SMS", "type": "MOBILE"},
+	}}}}
+	maps := map[string]ResourceJSONMaps{
+		sharedDidIvrResourceType:  {"ivr": testIvrConfig("+19164634135")},
+		sharedDidUserResourceType: {"sms_user": sms},
+	}
+
+	if added, _ := addSharedDidDependenciesToConfigMaps(maps); added != 1 {
+		t.Fatalf("expected the SMS number to match, got %d dependencies", added)
+	}
+	if got := sms["depends_on"]; !reflect.DeepEqual(got, []string{ivrDep("ivr")}) {
+		t.Errorf("unexpected depends_on: %v", got)
+	}
+}
+
+func TestUnitSharedDidSkippedWarningIsNilWhenNothingSkipped(t *testing.T) {
+	if diags := sharedDidSkippedWarning(nil); diags != nil {
+		t.Errorf("expected no diagnostics, got %v", diags)
+	}
+}
+
+func TestUnitSharedDidSkippedWarningListsSkippedDependencies(t *testing.T) {
+	diags := sharedDidSkippedWarning([]sharedDidSkippedDependency{
+		{UserBlockLabel: "supervisor", IvrBlockLabel: "ivr", Number: "+19164634135"},
+	})
+
+	if len(diags) != 1 || diags[0].Severity != diag.Warning {
+		t.Fatalf("expected one warning, got %v", diags)
+	}
+	if diags.HasError() {
+		t.Errorf("the warning must not fail the export")
+	}
+	if diags[0].Summary != "1 shared-DID dependency was skipped to avoid a dependency cycle" {
+		t.Errorf("unexpected summary: %q", diags[0].Summary)
+	}
+	want := "genesyscloud_user.supervisor -> genesyscloud_architect_ivr.ivr (+19164634135)"
+	if !strings.Contains(diags[0].Detail, want) {
+		t.Errorf("detail should contain %q, got:\n%s", want, diags[0].Detail)
+	}
+}
+
+func TestUnitSharedDidSkippedWarningIsCapped(t *testing.T) {
+	skipped := make([]sharedDidSkippedDependency, sharedDidMaxWarningEntries+5)
+	for i := range skipped {
+		skipped[i] = sharedDidSkippedDependency{UserBlockLabel: fmt.Sprintf("user_%d", i), IvrBlockLabel: "ivr", Number: "+19164634135"}
+	}
+
+	diags := sharedDidSkippedWarning(skipped)
+
+	if len(diags) != 1 {
+		t.Fatalf("expected one warning, got %d", len(diags))
+	}
+	if !strings.HasPrefix(diags[0].Summary, fmt.Sprintf("%d shared-DID dependencies were skipped", len(skipped))) {
+		t.Errorf("unexpected summary: %q", diags[0].Summary)
+	}
+	if got := strings.Count(diags[0].Detail, " -> "); got != sharedDidMaxWarningEntries {
+		t.Errorf("expected %d listed entries, got %d", sharedDidMaxWarningEntries, got)
+	}
+	if !strings.Contains(diags[0].Detail, "... and 5 more") {
+		t.Errorf("expected a count of the remaining entries, got:\n%s", diags[0].Detail)
+	}
+}
+
+func TestUnitSharedDidCycleProducesWarning(t *testing.T) {
+	ivr := testIvrConfig("+19164634135")
+	ivr["open_hours_flow_id"] = "${genesyscloud_flow.inbound.id}"
+	maps := map[string]ResourceJSONMaps{
+		sharedDidIvrResourceType: {"ivr": ivr},
+		"genesyscloud_flow": {"inbound": util.JsonMap{
+			"depends_on": []string{"$dep$genesyscloud_user.supervisor$dep$"},
+		}},
+		sharedDidUserResourceType: {"supervisor": testUserConfig("+19164634135")},
+	}
+
+	_, skipped := addSharedDidDependenciesToConfigMaps(maps)
+	diags := sharedDidSkippedWarning(skipped)
+
+	if len(diags) != 1 || !strings.Contains(diags[0].Detail, "genesyscloud_user.supervisor -> genesyscloud_architect_ivr.ivr") {
+		t.Errorf("expected a warning naming the skipped dependency, got %v", diags)
 	}
 }

@@ -8,8 +8,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
+
+// sharedDidMaxWarningEntries caps how many skipped dependencies are listed in the warning diagnostic.
+const sharedDidMaxWarningEntries = 20
 
 // Resource types involved in shared DID ordering. They are declared here instead of being imported from the
 // user and architect_ivr packages so that the exporter does not take a new dependency on those packages.
@@ -41,12 +45,48 @@ type sharedDidSkippedDependency struct {
 //
 // Terraform cannot infer this ordering on its own because both resources only hold the number as a literal
 // string. This pass runs independently of enable_dependency_resolution and of the export filter mode.
-func (g *GenesysCloudResourceExporter) addSharedDidDependencies() {
+//
+// When a dependency has to be skipped to avoid a cycle, a warning diagnostic is returned so that it shows in the
+// normal apply output, not only in the provider log.
+func (g *GenesysCloudResourceExporter) addSharedDidDependencies() diag.Diagnostics {
 	g.resourceTypesMapsMutex.Lock()
 	added, skipped := addSharedDidDependenciesToConfigMaps(g.resourceTypesMaps)
 	g.resourceTypesMapsMutex.Unlock()
 
 	logSharedDidResults(g.ctx, added, skipped)
+	return sharedDidSkippedWarning(skipped)
+}
+
+// sharedDidSkippedWarning returns one warning diagnostic listing the skipped dependencies, or nil if none were
+// skipped. At most sharedDidMaxWarningEntries are listed so that a large export does not flood the output.
+func sharedDidSkippedWarning(skipped []sharedDidSkippedDependency) diag.Diagnostics {
+	if len(skipped) == 0 {
+		return nil
+	}
+
+	noun := "dependencies were"
+	if len(skipped) == 1 {
+		noun = "dependency was"
+	}
+
+	var detail strings.Builder
+	detail.WriteString("The following users share a DID with an IVR, but adding depends_on would create a dependency cycle, ")
+	detail.WriteString("so Terraform may create the user before the IVR and the IVR can fail with DUPLICATE_VALUE:\n")
+	for i, s := range skipped {
+		if i == sharedDidMaxWarningEntries {
+			detail.WriteString(fmt.Sprintf("  ... and %d more\n", len(skipped)-sharedDidMaxWarningEntries))
+			break
+		}
+		detail.WriteString(fmt.Sprintf("  %s.%s -> %s.%s (%s)\n",
+			sharedDidUserResourceType, s.UserBlockLabel, sharedDidIvrResourceType, s.IvrBlockLabel, s.Number))
+	}
+	detail.WriteString("Add the ordering manually or break the cycle in the configuration.")
+
+	return diag.Diagnostics{{
+		Severity: diag.Warning,
+		Summary:  fmt.Sprintf("%d shared-DID %s skipped to avoid a dependency cycle", len(skipped), noun),
+		Detail:   detail.String(),
+	}}
 }
 
 func logSharedDidResults(ctx context.Context, added int, skipped []sharedDidSkippedDependency) {
@@ -182,7 +222,9 @@ func ivrDnisNumbers(configMap map[string]interface{}) []string {
 }
 
 // userPhoneNumbers returns the canonical phone numbers from a user config map (addresses.phone_numbers.number).
-// Extension-only entries have no number and are ignored.
+// Extension-only entries have no number and are ignored. Every media_type (PHONE and SMS) is matched on purpose:
+// it is not confirmed whether the IVR API rejects a DNIS that a user holds as an SMS address. A missing
+// dependency brings back the DUPLICATE_VALUE failure, while an extra one only makes the user wait for the IVR.
 func userPhoneNumbers(configMap map[string]interface{}) []string {
 	var numbers []string
 	for _, address := range mapValues(configMap["addresses"]) {
