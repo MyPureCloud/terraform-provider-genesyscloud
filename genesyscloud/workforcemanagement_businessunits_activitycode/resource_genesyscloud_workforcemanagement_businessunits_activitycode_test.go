@@ -10,6 +10,7 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/wfm"
 	businessUnits "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/workforcemanagement_businessunits"
 )
 
@@ -40,9 +41,9 @@ func TestAccResourceBusinessUnitActivityCode(t *testing.T) {
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				Config: generateTestBusinessUnit(buResourceLabel, buName) + GenerateBusinessUnitActivityCodeResource(
+				Config: wfm.GenerateTestBusinessUnit(buResourceLabel, buName) + GenerateBusinessUnitActivityCodeResource(
 					resourceLabel,
-					businessUnitIdRef(buResourceLabel),
+					wfm.BusinessUnitIdRef(buResourceLabel),
 					name1,
 					category,
 					"length_in_minutes = 30",
@@ -58,9 +59,9 @@ func TestAccResourceBusinessUnitActivityCode(t *testing.T) {
 				),
 			},
 			{
-				Config: generateTestBusinessUnit(buResourceLabel, buName) + GenerateBusinessUnitActivityCodeResource(
+				Config: wfm.GenerateTestBusinessUnit(buResourceLabel, buName) + GenerateBusinessUnitActivityCodeResource(
 					resourceLabel,
-					businessUnitIdRef(buResourceLabel),
+					wfm.BusinessUnitIdRef(buResourceLabel),
 					name2,
 					category,
 					"length_in_minutes = 45",
@@ -85,18 +86,6 @@ func TestAccResourceBusinessUnitActivityCode(t *testing.T) {
 		},
 		CheckDestroy: testVerifyBusinessUnitActivityCodeDestroyed,
 	})
-}
-
-func generateTestBusinessUnit(resourceLabel string, name string) string {
-	return businessUnits.GenerateWorkforcemanagementBusinessUnitResource(
-		resourceLabel,
-		name,
-		businessUnits.GenerateWorkforcemanagementBusinessUnitSettings("Sunday", "Etc/UTC", "", ""),
-	)
-}
-
-func businessUnitIdRef(buResourceLabel string) string {
-	return businessUnits.ResourceType + "." + buResourceLabel + ".id"
 }
 
 func testVerifyBusinessUnitActivityCodeDestroyed(state *terraform.State) error {
