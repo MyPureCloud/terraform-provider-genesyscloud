@@ -13,6 +13,9 @@ import (
 const (
 	DiagnosticCodeFlowPublishFailed  = "flow_publish_failed"
 	DiagnosticCodeFlowPublishTimeout = "flow_publish_timeout"
+
+	DiagnosticCodeFlowValidateFailed  = "flow_validate_failed"
+	DiagnosticCodeFlowValidateTimeout = "flow_validate_timeout"
 )
 
 type detailedDiagnosticInfo struct {

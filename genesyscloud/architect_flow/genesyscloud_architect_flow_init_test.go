@@ -33,6 +33,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceArchitectFlow()
+	providerDataSources[ValidationDataSourceType] = DataSourceFlowValidation()
 }
 
 // initTestResources initializes all test resources and data sources.
