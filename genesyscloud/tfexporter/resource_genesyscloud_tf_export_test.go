@@ -3809,37 +3809,40 @@ func assertAgenticVirtualAgentKnowledgeBaseToolTargetExport(configPath string) r
 				continue
 			}
 
-			toolMap, ok := tools[0].(map[string]interface{})
-			if !ok {
-				continue
-			}
+			// The export includes every version in the org, so only inspect this test's tool
+			for _, toolRaw := range tools {
+				toolMap, ok := toolRaw.(map[string]interface{})
+				if !ok || toolMap["type"] != "KnowledgeBase" || toolMap["name"] != "FAQ Search" {
+					continue
+				}
 
-			target, ok := toolMap["target"].([]interface{})
-			if !ok || len(target) == 0 {
-				return fmt.Errorf("exported version tool is missing target block")
-			}
+				target, ok := toolMap["target"].([]interface{})
+				if !ok || len(target) == 0 {
+					return fmt.Errorf("exported version tool is missing target block")
+				}
 
-			targetMap, ok := target[0].(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("exported version tool target has unexpected shape")
-			}
+				targetMap, ok := target[0].(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("exported version tool target has unexpected shape")
+				}
 
-			targetID, ok := targetMap["id"].(string)
-			if !ok || targetID == "" {
-				return fmt.Errorf("exported version tool target.id is missing or not a string")
-			}
+				targetID, ok := targetMap["id"].(string)
+				if !ok || targetID == "" {
+					return fmt.Errorf("exported version tool target.id is missing or not a string")
+				}
 
-			if uuidPattern.MatchString(targetID) {
-				return fmt.Errorf("exported tool target.id is still a raw UUID %q; expected a Terraform reference", targetID)
-			}
+				if uuidPattern.MatchString(targetID) {
+					return fmt.Errorf("exported tool target.id is still a raw UUID %q; expected a Terraform reference", targetID)
+				}
 
-			if !strings.HasPrefix(targetID, "${genesyscloud_knowledge_knowledgebase.") {
-				return fmt.Errorf("exported tool target.id = %q, want ${genesyscloud_knowledge_knowledgebase...} reference", targetID)
-			}
+				if !strings.HasPrefix(targetID, "${genesyscloud_knowledge_knowledgebase.") {
+					return fmt.Errorf("exported tool target.id = %q, want ${genesyscloud_knowledge_knowledgebase...} reference", targetID)
+				}
 
-			return nil
+				return nil
+			}
 		}
 
-		return fmt.Errorf("no exported genesyscloud_agentic_virtual_agent_version with tools found")
+		return fmt.Errorf("no exported genesyscloud_agentic_virtual_agent_version with the KnowledgeBase tool found")
 	}
 }

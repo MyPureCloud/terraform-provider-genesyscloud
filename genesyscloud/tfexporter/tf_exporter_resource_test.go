@@ -126,6 +126,7 @@ import (
 	instagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
 	openIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
 	whatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
+	qualityMiner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_miner"
 	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
 	emailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
 	queueIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_identity_resolution"
@@ -287,6 +288,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[queueIdentityResolution.ResourceType] = queueIdentityResolution.ResourceRoutingQueueIdentityResolution()
 	providerResources[analyticsDataretentionSettings.ResourceType] = analyticsDataretentionSettings.ResourceAnalyticsDataretentionSettings()
 	providerResources[authorizationRolesSettings.ResourceType] = authorizationRolesSettings.ResourceAuthorizationRolesSettings()
+	providerResources[qualityMiner.ResourceType] = qualityMiner.ResourceQualityMiner()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -423,6 +425,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(queueIdentityResolution.ResourceType, queueIdentityResolution.RoutingQueueIdentityResolutionExporter())
 	RegisterExporter(analyticsDataretentionSettings.ResourceType, analyticsDataretentionSettings.AnalyticsDataretentionSettingsExporter())
 	RegisterExporter(authorizationRolesSettings.ResourceType, authorizationRolesSettings.AuthorizationRolesSettingsExporter())
+	RegisterExporter(qualityMiner.ResourceType, qualityMiner.QualityMinerExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
