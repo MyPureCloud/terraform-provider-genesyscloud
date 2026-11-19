@@ -132,3 +132,97 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
     }
   }
 }
+
+# MCP integrations are managed outside this provider. This resource is disabled so the repository's
+# example acceptance test does not call Genesys Cloud with a placeholder integration ID. Copy the
+# definition into an active version and replace the target ID with an existing MCP integration ID.
+resource "genesyscloud_agentic_virtual_agent_version" "mcp_tool_example" {
+  count = 0
+
+  agent_id = genesyscloud_agentic_virtual_agent.example_agent.id
+
+  definition {
+    role         = "You are an order support agent for ACME Corp."
+    instructions = ["Use the MCP tool to answer order-status questions"]
+
+    tools {
+      type        = "MCP"
+      name        = "Get Order Status"
+      description = "Look up the current status of an existing order"
+
+      # For MCP tools, target.id is the MCP integration ID and target.name is the exact tool name
+      # advertised by the remote MCP server.
+      target {
+        id   = "00000000-0000-0000-0000-000000000000"
+        name = "get_order_status"
+      }
+
+      input_instructions = ["Use when the customer asks about an existing order"]
+
+      inputs {
+        target_name      = "order_id"
+        type             = "OrderId"
+        source           = "User"
+        required         = true
+        fallback_to_user = true
+      }
+
+      # A required External value can terminate the session instead of prompting the customer.
+      # Its type must be undisclosed, and fallback_to_failure is mutually exclusive with
+      # fallback_to_user on the same input.
+      inputs {
+        target_name         = "tenant_token"
+        type                = "TenantToken"
+        source              = "External"
+        required            = true
+        fallback_to_failure = true
+      }
+
+      output                    = "OrderStatus"
+      context_retention_enabled = true
+
+      input_validation {
+        type             = "Python"
+        if_condition     = "order_id is not None"
+        else_instruction = "Ask the customer for an order ID."
+      }
+
+      errors {
+        type        = "OrderLookupFailed"
+        instruction = "Apologize and offer to try the lookup again later."
+      }
+    }
+
+    types {
+      name        = "OrderId"
+      type        = "string"
+      description = "Customer order ID"
+      direction   = "Input"
+    }
+
+    types {
+      name        = "TenantToken"
+      type        = "string"
+      description = "Tenant authentication token supplied by start context"
+      direction   = "Input"
+      undisclosed = true
+    }
+
+    types {
+      name        = "OrderStatus"
+      type        = "string"
+      description = "Status returned by the MCP order lookup tool"
+      direction   = "Output"
+      enum_values = ["Processing", "Shipped", "Delivered"]
+    }
+
+    types {
+      name                = "OrderLookupFailed"
+      type                = "McpError"
+      description         = "The remote MCP order lookup failed"
+      direction           = "Output"
+      error_codes         = ["ToolError", "RemoteMcpError", "McpTimeout", "RateLimited"]
+      default_instruction = "Tell the customer that order lookup is temporarily unavailable."
+    }
+  }
+}
