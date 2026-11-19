@@ -45,7 +45,7 @@ func getAllBusinessUnitActivityCodes(ctx context.Context, clientConfig *platform
 		}
 
 		for _, activityCode := range *activityCodes {
-			blockHash, err := activityCodeBlockHash(*businessUnit.Id, activityCode)
+			blockHash, err := activityCodeBlockHash(*businessUnit.Name, activityCode)
 			if err != nil {
 				return nil, diag.Errorf("failed to generate a block hash for activity code %s: %v", *activityCode.Id, err)
 			}

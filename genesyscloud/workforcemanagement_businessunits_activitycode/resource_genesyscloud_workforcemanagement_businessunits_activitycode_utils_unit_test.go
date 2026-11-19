@@ -102,6 +102,26 @@ func TestUnitActivityCodeBlockHashTellsInactiveCodesApart(t *testing.T) {
 	}
 }
 
+func TestUnitActivityCodeBlockHashHandlesBusinessUnitNamesWithSpacesAndUnicode(t *testing.T) {
+	inactive := testActivityCode("id-1", "Training", "Training", false, false)
+	names := []string{"Support Team", "Support_Team", "Support  Team", " Support Team", "サポート チーム", "Équipe d'été", "Café\nNord", "Quote \" and \\ slash"}
+
+	seen := map[string]string{}
+	for _, name := range names {
+		hash, err := activityCodeBlockHash(name, inactive)
+		if err != nil || hash == "" {
+			t.Fatalf("expected a hash for business unit %q, got %q (%v)", name, hash, err)
+		}
+		if again, _ := activityCodeBlockHash(name, inactive); hash != again {
+			t.Errorf("the hash for business unit %q must be the same every time", name)
+		}
+		if previous, found := seen[hash]; found {
+			t.Errorf("business units %q and %q must get different hashes", previous, name)
+		}
+		seen[hash] = name
+	}
+}
+
 func planActivityCode(t *testing.T, active string) *terraform.InstanceDiff {
 	t.Helper()
 	state := &terraform.InstanceState{ID: "bu-1/code-1", Attributes: map[string]string{
