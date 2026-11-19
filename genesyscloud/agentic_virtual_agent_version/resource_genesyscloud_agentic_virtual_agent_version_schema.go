@@ -352,7 +352,7 @@ func toolInputResource() *schema.Resource {
 				Optional:    true,
 			},
 			"fallback_to_failure": {
-				Description: "Whether a missing value at runtime terminates the session with a 422 instead of prompting the user. Only valid on required External inputs of an undisclosed type, and mutually exclusive with fallback_to_user.",
+				Description: "Whether a missing value at runtime terminates the session with a 422 instead of prompting the user. Only valid on required External inputs of an undisclosed type, and mutually exclusive with fallback_to_user. If an input validation on the tool fails while this value is missing, the session also ends with the same 422.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
