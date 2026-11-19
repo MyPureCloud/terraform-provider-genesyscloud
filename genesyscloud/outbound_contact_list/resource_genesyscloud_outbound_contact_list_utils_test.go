@@ -13,6 +13,8 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -1179,4 +1181,192 @@ func TestStateUpgraderOutboundContactListV3ToV4(t *testing.T) {
 	if first["column_name"] != "phoneNumber3" {
 		t.Errorf("upgrade should keep existing array order, got first column %v", first["column_name"])
 	}
+}
+
+// Unit tests for reconcilePhoneColumnsLegacyCallableTimeColumn. The read flattens every phone column with both
+// callable_time_column_name and the deprecated callable_time_column. The deprecated attribute is Optional and not
+// Computed, so it may only stay in state when the user's previous state or configuration already had it.
+
+func flattenedPhoneColumn(name, colType, callableTime string) map[string]interface{} {
+	return map[string]interface{}{
+		"column_name":               name,
+		"type":                      colType,
+		"callable_time_column_name": callableTime,
+		"callable_time_column":      callableTime,
+	}
+}
+
+func existingPhoneColumn(name, colType, legacy, newName string) map[string]interface{} {
+	return map[string]interface{}{
+		"column_name":               name,
+		"type":                      colType,
+		"callable_time_column":      legacy,
+		"callable_time_column_name": newName,
+	}
+}
+
+func asMap(t *testing.T, v interface{}) map[string]interface{} {
+	t.Helper()
+	m, ok := v.(map[string]interface{})
+	require.True(t, ok, "expected a map, got %T", v)
+	return m
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_NewAttributeOnlyClearsLegacy(t *testing.T) {
+	// The user only wrote callable_time_column_name, so the existing element has no legacy value.
+	existing := []interface{}{
+		existingPhoneColumn("Cell", "cell", "", "Cell"),
+		existingPhoneColumn("Home", "home", "", "Home"),
+	}
+	updated := []interface{}{
+		flattenedPhoneColumn("Cell", "cell", "Cell"),
+		flattenedPhoneColumn("Home", "home", "Home"),
+	}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	require.Len(t, got, 2)
+	for i, want := range []string{"Cell", "Home"} {
+		m := asMap(t, got[i])
+		assert.Equal(t, want, m["callable_time_column_name"], "the new attribute must stay filled")
+		assert.NotContains(t, m, "callable_time_column", "the deprecated attribute must not be written to state")
+	}
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_LegacyOnlyKeepsLegacy(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "")}
+	updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	m := asMap(t, got[0])
+	assert.Equal(t, "Cell", m["callable_time_column"])
+	assert.Equal(t, "Cell", m["callable_time_column_name"])
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_BothSetKeepsBoth(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+	updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	m := asMap(t, got[0])
+	assert.Equal(t, "Cell", m["callable_time_column"])
+	assert.Equal(t, "Cell", m["callable_time_column_name"])
+}
+
+// Import and export have no previous value. Only the new attribute should be filled.
+func TestUnitReconcilePhoneColumnsLegacy_NoExistingClearsLegacy(t *testing.T) {
+	for name, existing := range map[string][]interface{}{"nil": nil, "empty": {}} {
+		t.Run(name, func(t *testing.T) {
+			updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+			got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+			m := asMap(t, got[0])
+			assert.Equal(t, "Cell", m["callable_time_column_name"])
+			assert.NotContains(t, m, "callable_time_column")
+		})
+	}
+}
+
+// When the user uses the deprecated attribute but the API returns no value, the previous value is kept so the
+// deprecated attribute does not report a change.
+func TestUnitReconcilePhoneColumnsLegacy_RestoresLegacyWhenApiReturnsNone(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+	updated := []interface{}{map[string]interface{}{"column_name": "Cell", "type": "cell"}}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	assert.Equal(t, "Cell", asMap(t, got[0])["callable_time_column"])
+}
+
+// A value that changed in Genesys Cloud must still be reported, so the API value wins when the user uses the attribute.
+func TestUnitReconcilePhoneColumnsLegacy_KeepsApiValueWhenItChanged(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+	updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Changed")}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	assert.Equal(t, "Changed", asMap(t, got[0])["callable_time_column"])
+}
+
+// Columns are matched on column_name and type, not on position, so one column using the deprecated attribute does
+// not leak into another.
+func TestUnitReconcilePhoneColumnsLegacy_MatchesOnNameAndType(t *testing.T) {
+	existing := []interface{}{
+		existingPhoneColumn("Cell", "cell", "Cell", "Cell"), // uses the deprecated attribute
+		existingPhoneColumn("Home", "home", "", "Home"),     // uses the new attribute
+		existingPhoneColumn("Cell", "home", "", "Cell"),     // same name, different type, new attribute
+	}
+	updated := []interface{}{
+		flattenedPhoneColumn("Home", "home", "Home"),
+		flattenedPhoneColumn("Cell", "cell", "Cell"),
+		flattenedPhoneColumn("Cell", "home", "Cell"),
+	}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	require.Len(t, got, 3)
+	assert.NotContains(t, asMap(t, got[0]), "callable_time_column", "Home/home uses the new attribute")
+	assert.Equal(t, "Cell", asMap(t, got[1])["callable_time_column"], "Cell/cell uses the deprecated attribute")
+	assert.NotContains(t, asMap(t, got[2]), "callable_time_column", "Cell/home uses the new attribute")
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_EdgeCases(t *testing.T) {
+	t.Run("nil updated is returned unchanged", func(t *testing.T) {
+		assert.Nil(t, reconcilePhoneColumnsLegacyCallableTimeColumn([]interface{}{existingPhoneColumn("a", "cell", "x", "x")}, nil))
+	})
+
+	t.Run("entries that are not maps are skipped without a panic", func(t *testing.T) {
+		existing := []interface{}{"not a map", existingPhoneColumn("Cell", "cell", "", "Cell")}
+		updated := []interface{}{"not a map", flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+		var got []interface{}
+		require.NotPanics(t, func() { got = reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated) })
+		require.Len(t, got, 1)
+		assert.NotContains(t, asMap(t, got[0]), "callable_time_column")
+	})
+
+	t.Run("existing slice is not modified", func(t *testing.T) {
+		existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+		updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+		reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+		assert.Equal(t, "Cell", asMap(t, existing[0])["callable_time_column"])
+	})
+}
+
+// End to end through the schema: previous state written with only the new attribute, then the reconciled read result
+// is stored the way readOutboundContactList stores it. The deprecated attribute must stay out of state, because that is
+// what produced `- callable_time_column = "Cell" -> null` on every plan.
+func TestUnitReconcilePhoneColumnsLegacy_StateKeepsOnlyNewAttribute(t *testing.T) {
+	state := &terraform.InstanceState{
+		ID: "list-id",
+		Attributes: map[string]string{
+			"name":                        "list",
+			"phone_columns.#":             "2",
+			"phone_columns.0.column_name": "Cell",
+			"phone_columns.0.type":        "cell",
+			"phone_columns.0.callable_time_column_name": "Cell",
+			"phone_columns.1.column_name":               "Home",
+			"phone_columns.1.type":                      "home",
+			"phone_columns.1.callable_time_column_name": "Home",
+		},
+	}
+	d := ResourceOutboundContactList().Data(state)
+
+	existing, _ := d.Get("phone_columns").([]interface{})
+	updated := []interface{}{
+		flattenedPhoneColumn("Cell", "cell", "Cell"),
+		flattenedPhoneColumn("Home", "home", "Home"),
+	}
+	require.NoError(t, d.Set("phone_columns", reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)))
+
+	attrs := d.State().Attributes
+	assert.Equal(t, "Cell", attrs["phone_columns.0.callable_time_column_name"])
+	assert.Equal(t, "Home", attrs["phone_columns.1.callable_time_column_name"])
+	assert.Empty(t, attrs["phone_columns.0.callable_time_column"])
+	assert.Empty(t, attrs["phone_columns.1.callable_time_column"])
 }

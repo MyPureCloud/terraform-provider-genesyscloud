@@ -202,11 +202,9 @@ func readOutboundContactList(ctx context.Context, d *schema.ResourceData, meta i
 		if sdkContactList.PhoneColumns != nil {
 			flattenedPhoneColumns := flattenSdkOutboundContactListContactPhoneNumberColumnSlice(*sdkContactList.PhoneColumns, phoneTzIdx)
 
-			if existingRaw, ok := d.GetOk("phone_columns"); ok {
-				if existingList, ok := existingRaw.([]interface{}); ok && len(existingList) > 0 && flattenedPhoneColumns != nil {
-					flattenedPhoneColumns = mergePhoneColumnsCallableTimeColumnFromState(existingList, flattenedPhoneColumns)
-				}
-			}
+			// d holds the previous state (or the planned values after create/update). It is empty on import and export.
+			existingList, _ := d.Get("phone_columns").([]interface{})
+			flattenedPhoneColumns = reconcilePhoneColumnsLegacyCallableTimeColumn(existingList, flattenedPhoneColumns)
 
 			_ = d.Set("phone_columns", flattenedPhoneColumns)
 		}
