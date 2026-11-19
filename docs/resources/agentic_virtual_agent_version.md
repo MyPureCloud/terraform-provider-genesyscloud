@@ -380,7 +380,7 @@ Required:
 Optional:
 
 - `context_retention_enabled` (Boolean) Whether this DataAction or MCP tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window.
-- `errors` (Block List) Error types this tool can raise. DataAction, ExternalA2AServer, and MCP tools reference DataActionHttpError, A2AError, and McpError types respectively. (see [below for nested schema](#nestedblock--definition--tools--errors))
+- `errors` (Block List) Error types this tool can raise. MCP tools reference McpError types, while DataAction tools reference DataActionHttpError types. (see [below for nested schema](#nestedblock--definition--tools--errors))
 - `input_instructions` (List of String) Additional instructions specific to using this tool.
 - `input_validation` (Block List) Conditions that must be checked before invoking this tool. Applies to DataAction, MCP, and Knowledge tools. (see [below for nested schema](#nestedblock--definition--tools--input_validation))
 - `inputs` (Block List) Inputs for this tool. Applies to DataAction, MCP, and Knowledge tools. For Knowledge tools, inputs must be sourced from a prior tool output and marked dependency_only = true; they establish a dependency and are not sent to the knowledge service. (see [below for nested schema](#nestedblock--definition--tools--inputs))
@@ -466,11 +466,11 @@ Required:
 
 Optional:
 
-- `default_instruction` (String) Default instruction for handling this error type. Applies when type is DataActionHttpError, A2AError, or McpError.
+- `default_instruction` (String) Default instruction for handling this error type. Applies when type is DataActionHttpError or McpError.
 - `description` (String) Additional context about what this type is used for.
 - `direction` (String) Intended direction of use for this type.
 - `enum_values` (List of String) Allowed enum values.
-- `error_codes` (List of String) Error codes this error type can handle. Applies when type is A2AError or McpError.
+- `error_codes` (List of String) MCP error codes this error type can handle. Applies when type is McpError.
 - `items` (String) Type of items in this array type. Applies when type is array.
 - `properties` (Block List) Properties of this object type. Applies when type is object. (see [below for nested schema](#nestedblock--definition--types--properties))
 - `status_codes` (List of Number) HTTP status codes this error type can handle. Applies when type is DataActionHttpError.

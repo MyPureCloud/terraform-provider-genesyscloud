@@ -22,29 +22,14 @@ const ResourceType = "genesyscloud_agentic_virtual_agent_version"
 // between an omitted value and false still trigger an update.
 const contextRetentionPresenceAttribute = "context_retention_enabled_presence"
 
-var agenticVirtualAgentErrorCodes = []string{
-	"AgentAuthRequired",
-	"AgentTaskIncomplete",
-	"TaskRejected",
-	"TaskCanceled",
-	"RateLimited",
-	"RemoteAgentRateLimited",
-	"IntegrationConfigError",
-	"InvalidToolInput",
-	"AgentAuthFailed",
-	"InternalError",
-	"RemoteAgentError",
-	"TaskFailed",
-	"TaskStateUnknown",
-	"EmptyAgentResponse",
-	"AgentUnavailable",
-	"AgentUnreachable",
-	"AgentTimeout",
+var agenticVirtualAgentMcpErrorCodes = []string{
 	"ToolError",
 	"EmptyToolResponse",
 	"RemoteMcpError",
 	"RemoteAuth",
 	"InvalidRequest",
+	"RateLimited",
+	"InternalError",
 	"McpTimeout",
 }
 
@@ -309,7 +294,7 @@ func toolResource() *schema.Resource {
 				Optional:    true,
 			},
 			"errors": {
-				Description: "Error types this tool can raise. DataAction, ExternalA2AServer, and MCP tools reference DataActionHttpError, A2AError, and McpError types respectively.",
+				Description: "Error types this tool can raise. MCP tools reference McpError types, while DataAction tools reference DataActionHttpError types.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        toolErrorResource(),
@@ -458,7 +443,7 @@ func typeDefinitionResource() *schema.Resource {
 				Description:  "Type value.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "boolean", "null", "object", "array", "DataActionHttpError", "A2AError", "McpError"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "boolean", "null", "object", "array", "DataActionHttpError", "McpError"}, false),
 			},
 			"user_utterance_substring": {
 				Description: "Whether values of this string type must be copied as a contiguous substring from recent user messages.",
@@ -488,16 +473,16 @@ func typeDefinitionResource() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
 			"error_codes": {
-				Description: "Error codes this error type can handle. Applies when type is A2AError or McpError.",
+				Description: "MCP error codes this error type can handle. Applies when type is McpError.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Schema{
 					Type:         schema.TypeString,
-					ValidateFunc: validation.StringInSlice(agenticVirtualAgentErrorCodes, false),
+					ValidateFunc: validation.StringInSlice(agenticVirtualAgentMcpErrorCodes, false),
 				},
 			},
 			"default_instruction": {
-				Description: "Default instruction for handling this error type. Applies when type is DataActionHttpError, A2AError, or McpError.",
+				Description: "Default instruction for handling this error type. Applies when type is DataActionHttpError or McpError.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

@@ -86,7 +86,7 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 // DataAction-specific: DataActionHttpError references
 // MCP-specific: McpError references
 // DataAction and MCP: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
-// ExternalA2AServer-specific: errors and skills (computed)
+// ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
 	Type               string                                     `json:"type"`
 	Name               string                                     `json:"name"`
@@ -202,7 +202,7 @@ type AgenticVirtualAgentToolInput struct {
 }
 
 // =============================================================================
-// Tool Errors (DataAction, ExternalA2AServer, and MCP)
+// Tool Errors
 // =============================================================================
 
 // AgenticVirtualAgentToolError represents error handling for a tool.

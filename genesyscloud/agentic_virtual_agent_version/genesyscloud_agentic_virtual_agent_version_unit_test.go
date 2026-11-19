@@ -190,7 +190,6 @@ func TestUnitMcpContractSchema(t *testing.T) {
 
 	assertSchemaValueAccepted(t, toolResource().Schema["type"], "MCP")
 	assertSchemaValueAccepted(t, typeDefinitionResource().Schema["type"], "McpError")
-	assertSchemaValueAccepted(t, typeDefinitionResource().Schema["type"], "A2AError")
 
 	inputSchema := toolInputResource().Schema
 	if _, ok := inputSchema["fallback_to_failure"]; !ok {
@@ -205,7 +204,7 @@ func TestUnitMcpContractSchema(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected error_codes elements to use *schema.Schema, got %T", errorCodesSchema.Elem)
 	}
-	for _, code := range []string{
+	mcpErrorCodes := []string{
 		"ToolError",
 		"EmptyToolResponse",
 		"RemoteMcpError",
@@ -214,8 +213,11 @@ func TestUnitMcpContractSchema(t *testing.T) {
 		"RateLimited",
 		"InternalError",
 		"McpTimeout",
-		"AgentUnavailable",
-	} {
+	}
+	if !reflect.DeepEqual(agenticVirtualAgentMcpErrorCodes, mcpErrorCodes) {
+		t.Fatalf("unexpected MCP error-code validator values: %#v", agenticVirtualAgentMcpErrorCodes)
+	}
+	for _, code := range mcpErrorCodes {
 		assertSchemaValueAccepted(t, errorCodeItemSchema, code)
 	}
 	if _, errors := errorCodeItemSchema.ValidateFunc("NotAnMcpErrorCode", "error_codes.0"); len(errors) == 0 {
