@@ -157,47 +157,56 @@ func flattenSdkOutboundContactListContactPhoneNumberColumnSlice(contactPhoneNumb
 	return contactPhoneNumberColumnList
 }
 
-func mergePhoneColumnsCallableTimeColumnFromState(existing, updated []interface{}) []interface{} {
-	if existing == nil || updated == nil {
+// reconcilePhoneColumnsLegacyCallableTimeColumn decides whether the deprecated `callable_time_column` is kept in state
+// for each phone column that was just read back from the API.
+//
+// The read always fills `callable_time_column_name`, and the flattened phone columns carry the same value in the
+// deprecated `callable_time_column`. That attribute is Optional and not Computed, so a value in state that is not in the
+// user's configuration is shown as a diff (`- callable_time_column = "Cell" -> null`), and applying it fails the
+// consistency check. To avoid that, the deprecated attribute is only kept for a phone column (matched on column_name
+// and type) when the previous state or configuration already had it. Otherwise it is cleared. That covers:
+//   - new attribute only: stays empty, no diff
+//   - deprecated attribute only, or both: stays set, as before
+//   - import or export, where there is no previous value: only the new attribute is filled
+func reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated []interface{}) []interface{} {
+	if updated == nil {
 		return updated
 	}
 
-	merged := make([]interface{}, 0, len(updated))
+	legacyInExisting := make(map[string]string, len(existing))
+	for _, e := range existing {
+		existingMap, ok := e.(map[string]any)
+		if !ok {
+			continue
+		}
+		legacy, _ := existingMap["callable_time_column"].(string)
+		if legacy == "" {
+			continue
+		}
+		colName, _ := existingMap["column_name"].(string)
+		colType, _ := existingMap["type"].(string)
+		legacyInExisting[colName+"|"+colType] = legacy
+	}
 
+	reconciled := make([]interface{}, 0, len(updated))
 	for _, u := range updated {
 		updatedMap, ok := u.(map[string]any)
 		if !ok {
 			continue
 		}
+		colName, _ := updatedMap["column_name"].(string)
+		colType, _ := updatedMap["type"].(string)
 
-		if uVal, ok := updatedMap["callable_time_column"].(string); !ok || uVal == "" {
-			colName, _ := updatedMap["column_name"].(string)
-			colType, _ := updatedMap["type"].(string)
-
-			for _, e := range existing {
-				existingMap, ok := e.(map[string]any)
-				if !ok {
-					continue
-				}
-
-				if existingColName, _ := existingMap["column_name"].(string); existingColName != colName {
-					continue
-				}
-				if existingColType, _ := existingMap["type"].(string); existingColType != colType {
-					continue
-				}
-
-				if existingCallable, ok := existingMap["callable_time_column"].(string); ok && existingCallable != "" {
-					updatedMap["callable_time_column"] = existingCallable
-				}
-				break
-			}
+		existingLegacy, hadLegacy := legacyInExisting[colName+"|"+colType]
+		if !hadLegacy {
+			delete(updatedMap, "callable_time_column")
+		} else if current, _ := updatedMap["callable_time_column"].(string); current == "" {
+			// The API did not return a value, so keep what was there instead of reporting a change.
+			updatedMap["callable_time_column"] = existingLegacy
 		}
-
-		merged = append(merged, updatedMap)
+		reconciled = append(reconciled, updatedMap)
 	}
-
-	return merged
+	return reconciled
 }
 
 func buildSdkOutboundContactListContactEmailAddressColumnSlice(contactEmailAddressColumn *schema.Set) *[]platformclientv2.Emailcolumn {
