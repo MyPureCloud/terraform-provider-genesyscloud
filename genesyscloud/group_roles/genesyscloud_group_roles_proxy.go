@@ -81,18 +81,15 @@ func updateGroupRolesFn(ctx context.Context, p *groupRolesProxy, roleId string, 
 	}
 
 	grants, resp, err := getAssignedGrants(*subject.Id, p)
-
-	existingGrants, configGrants, _ := getExistingAndConfigGrants(grants, rolesConfig)
 	if err != nil {
 		return resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
 	}
 
-	if subject != nil && subject.Grants != nil {
-		for _, grant := range *subject.Grants {
-			if grant.SubjectId != nil && *grant.SubjectId == roleId {
-				grants = append(grants, grant)
-			}
-		}
+	// The error must not be ignored: on failure configGrants is nil, which would mark every
+	// existing grant for removal below.
+	existingGrants, configGrants, err := getExistingAndConfigGrants(p.clientConfig, grants, rolesConfig)
+	if err != nil {
+		return resp, fmt.Errorf("failed to build grant lists for subject %s: %v", roleId, err)
 	}
 
 	grantsToRemove, grantsToAdd := getGrantsToAddAndRemove(existingGrants, configGrants)

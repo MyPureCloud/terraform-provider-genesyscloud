@@ -335,11 +335,12 @@ func InitClientConfig(ctx context.Context, data *schema.ResourceData, version st
 			log.Print("Setting access token set on configuration instance.")
 		}
 		config.AccessToken = accessToken
+		config.ClientID = ""
 	} else {
 		config.AutomaticTokenRefresh = true // Enable automatic token refreshing
 
 		return withRetries(ctx, time.Minute, func() *retry.RetryError {
-			err := config.AuthorizeClientCredentials(oauthclientID, oauthclientSecret)
+			err := AuthorizeClientCredentials(config, oauthclientID, oauthclientSecret)
 			if err != nil {
 				if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
 					return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))
@@ -477,6 +478,16 @@ func setupGateway(data *schema.ResourceData, config *platformclientv2.Configurat
 	}
 }
 
+// AuthorizeClientCredentials authorises sdkConfig with client credentials and records clientID on it.
+// The SDK's own AuthorizeClientCredentials does not set Configuration.ClientID, and per-org caches
+// (e.g. the home division lookup) key on it: without it they fall back to per-token keys, adding
+// one entry and one API call per token refresh. Use this instead of calling
+// sdkConfig.AuthorizeClientCredentials directly.
+func AuthorizeClientCredentials(sdkConfig *platformclientv2.Configuration, clientID, clientSecret string) error {
+	sdkConfig.ClientID = clientID
+	return sdkConfig.AuthorizeClientCredentials(clientID, clientSecret)
+}
+
 func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	// Create new config
 	sdkConfig := platformclientv2.GetDefaultConfiguration()
@@ -490,7 +501,7 @@ func AuthorizeSdk() (*platformclientv2.Configuration, error) {
 	sdkConfig.BasePath = GetRegionBasePath(os.Getenv("GENESYSCLOUD_REGION"))
 
 	diagErr := withRetries(context.Background(), time.Minute, func() *retry.RetryError {
-		err := sdkConfig.AuthorizeClientCredentials(os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
+		err := AuthorizeClientCredentials(sdkConfig, os.Getenv("GENESYSCLOUD_OAUTHCLIENT_ID"), os.Getenv("GENESYSCLOUD_OAUTHCLIENT_SECRET"))
 		if err != nil {
 			if !strings.Contains(err.Error(), "Auth Error: 400 - invalid_request (rate limit exceeded;") {
 				return retry.NonRetryableError(fmt.Errorf("failed to authorize Genesys Cloud client credentials: %v", err))

@@ -109,7 +109,7 @@ func CreateClientConfig(creds Credentials) (_ *platformclientv2.Configuration, e
 	// NewAPIClient reuses the existing HTTP client, so the connection pool is preserved.
 	config.APIClient = platformclientv2.NewAPIClient(&config)
 
-	err = config.AuthorizeClientCredentials(creds.ClientId, creds.ClientSecret)
+	err = provider.AuthorizeClientCredentials(&config, creds.ClientId, creds.ClientSecret)
 	return &config, err
 }
 
