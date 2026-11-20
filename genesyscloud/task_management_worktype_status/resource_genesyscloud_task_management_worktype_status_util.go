@@ -7,6 +7,8 @@ import (
 
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -14,6 +16,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
+
+// buildWorktypeStatusUpdate builds the PATCH body for updating a status.
+//
+// The status API is a PATCH, so a field that is missing from the body is left unchanged. A plain struct
+// would drop an empty description (json omitempty), which means removing `description` from the config
+// never cleared it in Genesys Cloud and the apply failed the consistency check. SetField makes the SDK
+// serialize only the fields that were set, so the description is sent explicitly (as "") when it changes.
+//
+// Because SetField switches the SDK to "only serialize what was set", every other field is set here too,
+// but only when it has a value, which keeps the body the same as before for those fields.
+func buildWorktypeStatusUpdate(d *schema.ResourceData) platformclientv2.Workitemstatusupdate {
+	update := platformclientv2.Workitemstatusupdate{}
+	update.SetField("Name", platformclientv2.String(d.Get("name").(string)))
+
+	if d.HasChange("description") {
+		// Sends "" when the description was removed, which clears it.
+		update.SetField("Description", platformclientv2.String(d.Get("description").(string)))
+	} else if description := resourcedata.GetNillableValue[string](d, "description"); description != nil {
+		update.SetField("Description", description)
+	}
+
+	update.SetField("DestinationStatusIds", lists.BuildSdkStringListFromInterfaceArray(d, "destination_status_ids"))
+
+	if v := resourcedata.GetNillableValue[string](d, "default_destination_status_id"); v != nil {
+		update.SetField("DefaultDestinationStatusId", v)
+	}
+	if v := resourcedata.GetNillableValue[int](d, "status_transition_delay_seconds"); v != nil {
+		update.SetField("StatusTransitionDelaySeconds", v)
+	}
+	if v := resourcedata.GetNillableValue[string](d, "status_transition_time"); v != nil {
+		update.SetField("StatusTransitionTime", v)
+	}
+	return update
+}
 
 // ModifyStatusIdStateValue will change the statusId before it is saved in the state file.
 // The worktype_status resource saves the status id as <worktypeId>/<statusId>.
