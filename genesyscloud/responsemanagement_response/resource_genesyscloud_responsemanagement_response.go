@@ -113,7 +113,9 @@ func readResponsemanagementResponse(ctx context.Context, d *schema.ResourceData,
 			_ = d.Set("messaging_template", flattenMessagingTemplate(sdkResponse.MessagingTemplate))
 		}
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "form", sdkResponse.Form, flattenForm)
-		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "asset_ids", sdkResponse.Assets, flattenAddressableEntityRefs)
+		inlineAssetIds, fileAttachmentAssetIds := splitResponseAssets(sdkResponse.Assets)
+		_ = d.Set("asset_ids", schema.NewSet(schema.HashString, inlineAssetIds))
+		_ = d.Set("file_attachment_asset_ids", schema.NewSet(schema.HashString, fileAttachmentAssetIds))
 		resourcedata.SetNillableValueWithSchemaSetWithFunc(d, "footer", sdkResponse.Footer, flattenFooterTemplate)
 
 		log.Printf("Read Responsemanagement Response %s %s", d.Id(), *sdkResponse.Name)
@@ -127,6 +129,12 @@ func updateResponsemanagementResponse(ctx context.Context, d *schema.ResourceDat
 	proxy := getResponsemanagementResponseProxy(sdkConfig)
 
 	sdkResponse := getResponseFromResourceData(d)
+
+	currentResponse, getResp, getErr := proxy.getResponsemanagementResponseById(ctx, d.Id())
+	if getErr != nil {
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to read response management response %s before update error: %s", d.Id(), getErr), getResp)
+	}
+	preserveUnrecognisedAssetUsages(sdkResponse.Assets, currentResponse.Assets)
 
 	log.Printf("Updating Responsemanagement Response %s", *sdkResponse.Name)
 	managementResponse, resp, err := proxy.updateResponsemanagementResponse(ctx, d.Id(), &sdkResponse)

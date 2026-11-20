@@ -1,13 +1,17 @@
 package responsemanagement_response
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"sort"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
@@ -23,7 +27,7 @@ func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Respon
 		Libraries:     util.BuildSdkDomainEntityRefArr(d, "library_ids"),
 		Texts:         buildResponseTexts(d.Get("texts").(*schema.Set)),
 		Substitutions: buildResponseSubstitutions(d.Get("substitutions").(*schema.Set)),
-		Assets:        buildAddressableEntityRefs(d.Get("asset_ids").(*schema.Set)),
+		Assets:        buildResponseAssets(d.Get("asset_ids").(*schema.Set), d.Get("file_attachment_asset_ids").(*schema.Set)),
 		Footer:        buildFooterTemplate(d.Get("footer").(*schema.Set)),
 		Form:          buildForm(d.Get("form").([]interface{})),
 	}
@@ -405,6 +409,120 @@ func buildAddressableEntityRefs(addressableEntityRef *schema.Set) *[]platformcli
 	return &addressableEntityRefs
 }
 
+// buildResponseAssets merges inline image assets and file attachment assets into the single
+// assets list the API expects. Inline images are sent without assetUsage.
+func buildResponseAssets(inlineAssetIds *schema.Set, fileAttachmentAssetIds *schema.Set) *[]platformclientv2.Rmsassetaddressableref {
+	assets := buildAddressableEntityRefs(inlineAssetIds)
+	if fileAttachmentAssetIds.Len() == 0 {
+		return assets
+	}
+
+	if assets == nil {
+		assets = &[]platformclientv2.Rmsassetaddressableref{}
+	}
+	for _, id := range *lists.SetToStringList(fileAttachmentAssetIds) {
+		tempId := id
+		*assets = append(*assets, platformclientv2.Rmsassetaddressableref{
+			Id:         &tempId,
+			AssetUsage: platformclientv2.String(assetUsageFileAttachments),
+		})
+	}
+	return assets
+}
+
+// validateResponseAssetIdsDiff runs at plan time and rejects configs that list the same asset as both an
+// inline image and a file attachment, because the API holds a single assetUsage per asset on a response.
+func validateResponseAssetIdsDiff(_ context.Context, d *schema.ResourceDiff, _ interface{}) error {
+	rawConfig := d.GetRawConfig()
+	if rawConfig.IsNull() || !rawConfig.IsKnown() {
+		return nil
+	}
+	return validateResponseAssetIds(rawConfig.GetAttr("asset_ids"), rawConfig.GetAttr("file_attachment_asset_ids"))
+}
+
+// validateResponseAssetIds compares the known IDs of both sets. IDs that are not known yet (for example an
+// asset created in the same apply) are skipped; Terraform plans again during apply, when they are known.
+func validateResponseAssetIds(inlineAssetIds cty.Value, fileAttachmentAssetIds cty.Value) error {
+	inline := knownStrings(inlineAssetIds)
+	var overlap []string
+	for id := range knownStrings(fileAttachmentAssetIds) {
+		if inline[id] {
+			overlap = append(overlap, id)
+		}
+	}
+	if len(overlap) == 0 {
+		return nil
+	}
+	sort.Strings(overlap)
+	return fmt.Errorf("asset IDs %s are listed in both asset_ids and file_attachment_asset_ids; each asset must be in only one of them", strings.Join(overlap, ", "))
+}
+
+func knownStrings(value cty.Value) map[string]bool {
+	result := map[string]bool{}
+	if value.IsNull() || !value.IsKnown() || !value.CanIterateElements() {
+		return result
+	}
+	for it := value.ElementIterator(); it.Next(); {
+		_, elem := it.Element()
+		if elem.IsKnown() && !elem.IsNull() && elem.Type() == cty.String {
+			result[elem.AsString()] = true
+		}
+	}
+	return result
+}
+
+// splitResponseAssets splits the API assets list into inline image asset IDs and file attachment
+// asset IDs, based on each asset's assetUsage.
+func splitResponseAssets(assets *[]platformclientv2.Rmsassetaddressableref) (inlineAssetIds []interface{}, fileAttachmentAssetIds []interface{}) {
+	if assets == nil {
+		return nil, nil
+	}
+	for _, asset := range *assets {
+		if asset.Id == nil {
+			continue
+		}
+		switch {
+		case asset.AssetUsage == nil || *asset.AssetUsage == "":
+			inlineAssetIds = append(inlineAssetIds, *asset.Id)
+		case *asset.AssetUsage == assetUsageFileAttachments:
+			fileAttachmentAssetIds = append(fileAttachmentAssetIds, *asset.Id)
+		default:
+			// Keep the asset in state so it is not dropped. preserveUnrecognisedAssetUsages keeps its
+			// usage on the next update, so it is not rewritten as an inline image.
+			log.Printf("[WARN] Response asset %s has unrecognised assetUsage %q; showing it in asset_ids and keeping its usage on update", *asset.Id, *asset.AssetUsage)
+			inlineAssetIds = append(inlineAssetIds, *asset.Id)
+		}
+	}
+	return inlineAssetIds, fileAttachmentAssetIds
+}
+
+// preserveUnrecognisedAssetUsages copies any assetUsage the provider does not model (anything other than
+// inline or FileAttachments) from the current API response onto the outgoing assets. Read shows those
+// assets in asset_ids, and without this an update would send them without a usage and change them.
+func preserveUnrecognisedAssetUsages(outgoing *[]platformclientv2.Rmsassetaddressableref, current *[]platformclientv2.Rmsassetaddressableref) {
+	if outgoing == nil || current == nil {
+		return
+	}
+	unrecognised := map[string]string{}
+	for _, asset := range *current {
+		if asset.Id == nil || asset.AssetUsage == nil {
+			continue
+		}
+		if usage := *asset.AssetUsage; usage != "" && usage != assetUsageFileAttachments {
+			unrecognised[*asset.Id] = usage
+		}
+	}
+	for i := range *outgoing {
+		asset := &(*outgoing)[i]
+		if asset.Id == nil || asset.AssetUsage != nil {
+			continue
+		}
+		if usage, ok := unrecognised[*asset.Id]; ok {
+			asset.AssetUsage = platformclientv2.String(usage)
+		}
+	}
+}
+
 func flattenResponseTexts(responseTexts *[]platformclientv2.Responsetext) *schema.Set {
 	if len(*responseTexts) == 0 {
 		return nil
@@ -718,14 +836,6 @@ func flattenMessagingTemplate(messagingTemplate *platformclientv2.Messagingtempl
 	messagingTemplateSet.Add(messagingTemplateMap)
 
 	return messagingTemplateSet
-}
-
-func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Rmsassetaddressableref) *schema.Set {
-	addressableEntityRefList := make([]interface{}, len(*addressableEntityRefs))
-	for i, v := range *addressableEntityRefs {
-		addressableEntityRefList[i] = *v.Id
-	}
-	return schema.NewSet(schema.HashString, addressableEntityRefList)
 }
 
 func GenerateResponseManagementResponseResource(
