@@ -6,6 +6,8 @@ on:
       - 'templates/**'
       - 'genesyscloud/**/*_schema.go'
       - 'genesyscloud/**/*_proxy.go'
+permissions:
+  contents: read
 jobs:
   docs-tests:
     name: Docs Example Unit Tests

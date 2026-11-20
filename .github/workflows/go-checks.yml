@@ -3,6 +3,8 @@ on:
   push:
     paths-ignore:
       - 'README.md'
+permissions:
+  contents: read
 jobs:
   go-checks:
     name: Go Checks
