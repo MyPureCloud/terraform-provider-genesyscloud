@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/dependent_consumers"
 	providerRegistrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider_registrar"
 
 	"golang.org/x/text/cases"
@@ -93,6 +94,18 @@ func buildDependencyTree(resourceNames []string) DependencyTree {
 			Name:         buildResourceName(resourceType),
 			Type:         resourceType,
 			Dependencies: []string{},
+		}
+
+		// Flows and scripts have no RefAttrs; their dependencies are discovered at export time via
+		// Architect dependency tracking, so publish the set of types they can depend on.
+		if resourceType == "genesyscloud_flow" || resourceType == "genesyscloud_script" {
+			for _, dep := range dependent_consumers.GetPossibleDependencyResourceTypes() {
+				if dep != resourceType {
+					node.Dependencies = append(node.Dependencies, dep)
+				}
+			}
+			resourceNodes = append(resourceNodes, node)
+			continue
 		}
 
 		exporter := providerRegistrar.GetResourceExporterByResourceType(resourceType)
