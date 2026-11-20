@@ -101,6 +101,7 @@ import (
 	routingUtilizationLabel "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_utilization_label"
 	routingWrapupcode "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_wrapupcode"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/scripts"
+	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
 	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
@@ -119,12 +120,13 @@ import (
 	webdeployConfig "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_configuration"
 	webdeployDeploy "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment"
 
+	analyticsDataretentionSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/analytics_dataretention_settings"
 	ivrIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr_identity_resolution"
 	appleIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple_identity_resolution"
 	instagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"
 	openIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_open_identity_resolution"
 	whatsappIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_whatsapp_identity_resolution"
-	analyticsDataretentionSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/analytics_dataretention_settings"
+	qualityMiner "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/quality_miner"
 	recordingSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/recording_settings"
 	emailRouteIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_email_route_identity_resolution"
 	queueIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue_identity_resolution"
@@ -132,7 +134,6 @@ import (
 	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
 	sttSentimentFeedback "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_sentimentfeedback"
 	sttSettings "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_settings"
-	sttTopic "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_topic"
 	webDeploymentIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/webdeployments_deployment_identity_resolution"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -263,6 +264,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[qualityFormsEvaluation.ResourceType] = qualityFormsEvaluation.ResourceEvaluationForm()
 	providerResources[knowledgeLabel.ResourceType] = knowledgeLabel.ResourceKnowledgeLabel()
 	providerResources[qualityFormsSurvey.ResourceType] = qualityFormsSurvey.ResourceQualityFormsSurvey()
+	providerResources[sttTopic.ResourceType] = sttTopic.ResourceSpeechAndTextAnalyticsTopic()
 	providerResources[guide.ResourceType] = guide.ResourceGuide()
 	providerResources[guideVersion.ResourceType] = guideVersion.ResourceGuideVersion()
 	providerResources[businessRulesSchema.ResourceType] = businessRulesSchema.ResourceBusinessRulesSchema()
@@ -286,6 +288,7 @@ func (r *registerTestInstance) registerTestResources() {
 	providerResources[queueIdentityResolution.ResourceType] = queueIdentityResolution.ResourceRoutingQueueIdentityResolution()
 	providerResources[analyticsDataretentionSettings.ResourceType] = analyticsDataretentionSettings.ResourceAnalyticsDataretentionSettings()
 	providerResources[authorizationRolesSettings.ResourceType] = authorizationRolesSettings.ResourceAuthorizationRolesSettings()
+	providerResources[qualityMiner.ResourceType] = qualityMiner.ResourceQualityMiner()
 
 	providerResources[ResourceType] = ResourceTfExport()
 }
@@ -398,6 +401,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(externalOrganization.ResourceType, externalOrganization.ExternalContactsOrganizationExporter())
 	RegisterExporter(externalUser.ResourceType, externalUser.ExternalUserIdentityExporter())
 	RegisterExporter(qualityFormsSurvey.ResourceType, qualityFormsSurvey.QualityFormsSurveyExporter())
+	RegisterExporter(sttTopic.ResourceType, sttTopic.SpeechAndTextAnalyticsTopicExporter())
 	RegisterExporter(guide.ResourceType, guide.GuideExporter())
 	RegisterExporter(guideVersion.ResourceType, guideVersion.GuideVersionExporter())
 	RegisterExporter(businessRulesSchema.ResourceType, businessRulesSchema.BusinessRulesSchemaExporter())
@@ -421,6 +425,7 @@ func (r *registerTestInstance) registerTestExporters() {
 	RegisterExporter(queueIdentityResolution.ResourceType, queueIdentityResolution.RoutingQueueIdentityResolutionExporter())
 	RegisterExporter(analyticsDataretentionSettings.ResourceType, analyticsDataretentionSettings.AnalyticsDataretentionSettingsExporter())
 	RegisterExporter(authorizationRolesSettings.ResourceType, authorizationRolesSettings.AuthorizationRolesSettingsExporter())
+	RegisterExporter(qualityMiner.ResourceType, qualityMiner.QualityMinerExporter())
 
 	resourceExporter.SetRegisterExporter(resourceExporters)
 }
@@ -436,6 +441,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	providerDataSources[routingWrapupcode.ResourceType] = routingWrapupcode.DataSourceRoutingWrapupCode()
 	providerDataSources[outboundRoute.ResourceType] = outboundRoute.DataSourceSiteOutboundRoute()
 	providerDataSources[guide.ResourceType] = guide.DataSourceGuide()
+	providerDataSources[sttTopic.ResourceType] = sttTopic.DataSourceSpeechAndTextAnalyticsTopic()
 }
 
 func RegisterExporter(exporterResourceType string, resourceExporter *resourceExporter.ResourceExporter) {

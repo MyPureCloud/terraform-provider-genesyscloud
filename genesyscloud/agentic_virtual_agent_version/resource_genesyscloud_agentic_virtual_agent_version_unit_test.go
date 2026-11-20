@@ -439,6 +439,95 @@ func boolPtr(value bool) *bool {
 	return &value
 }
 
+func TestUnitRawConfigDefinitionIsWhollyKnown(t *testing.T) {
+	if !rawConfigDefinitionIsWhollyKnown(testFallbackValidationRawConfig(cty.StringVal("External"))) {
+		t.Fatal("expected a fully known nested definition to be validated")
+	}
+	if rawConfigDefinitionIsWhollyKnown(testFallbackValidationRawConfig(cty.UnknownVal(cty.String))) {
+		t.Fatal("expected an unknown nested input source to defer validation")
+	}
+	if rawConfigDefinitionIsWhollyKnown(cty.NullVal(cty.Bool)) {
+		t.Fatal("expected a null raw configuration to defer validation")
+	}
+}
+
+func testFallbackValidationRawConfig(source cty.Value) cty.Value {
+	return cty.ObjectVal(map[string]cty.Value{
+		"definition": cty.ListVal([]cty.Value{
+			cty.ObjectVal(map[string]cty.Value{
+				"tools": cty.ListVal([]cty.Value{
+					cty.ObjectVal(map[string]cty.Value{
+						"inputs": cty.ListVal([]cty.Value{
+							cty.ObjectVal(map[string]cty.Value{
+								"fallback_to_failure": cty.True,
+								"source":              source,
+							}),
+						}),
+					}),
+				}),
+			}),
+		}),
+	})
+}
+
+func TestUnitCustomizeDiffValidatesKnownFallbackToFailureInput(t *testing.T) {
+	config := map[string]interface{}{
+		"agent_id": "agent-id",
+		"definition": []interface{}{
+			map[string]interface{}{
+				"role":         "You help customers with orders.",
+				"instructions": []interface{}{"Use the MCP tool."},
+				"tools": []interface{}{
+					map[string]interface{}{
+						"type":        "MCP",
+						"name":        "LookupOrder",
+						"description": "Looks up an order.",
+						"target": []interface{}{
+							map[string]interface{}{"id": "integration-id", "name": "get_order"},
+						},
+						"inputs": []interface{}{
+							map[string]interface{}{
+								"target_name":         "tenant_token",
+								"type":                "TenantToken",
+								"source":              "User",
+								"required":            true,
+								"fallback_to_failure": true,
+							},
+						},
+					},
+				},
+				"types": []interface{}{
+					map[string]interface{}{
+						"name":        "TenantToken",
+						"type":        "string",
+						"undisclosed": true,
+					},
+				},
+			},
+		},
+	}
+
+	_, err := ResourceAgenticVirtualAgentVersion().Diff(
+		context.Background(),
+		&terraform.InstanceState{RawConfig: testFallbackValidationRawConfig(cty.StringVal("User"))},
+		terraform.NewResourceConfigRaw(config),
+		nil,
+	)
+	if err == nil || !strings.Contains(err.Error(), "requires source to be External") {
+		t.Fatalf("expected CustomizeDiff to reject a known invalid source, got %v", err)
+	}
+
+	_, err = ResourceAgenticVirtualAgentVersion().Diff(
+		context.Background(),
+		&terraform.InstanceState{RawConfig: testFallbackValidationRawConfig(cty.UnknownVal(cty.String))},
+		terraform.NewResourceConfigRaw(config),
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("expected CustomizeDiff to defer validation for an unknown nested source, got %v", err)
+	}
+}
+
 const testComfortStatementDefault = "Before the tool call, provide one filler line in under eight words naming only the action being performed."
 
 func TestUnitBuiltinInputInstructionJSON(t *testing.T) {

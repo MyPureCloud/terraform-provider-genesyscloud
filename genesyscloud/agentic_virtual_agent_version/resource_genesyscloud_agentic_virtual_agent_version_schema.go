@@ -26,6 +26,17 @@ const builtinInputInstructionTypeComfortStatement = "ComfortStatement"
 
 const builtinInstructionMaxLength = 4000
 
+var agenticVirtualAgentMcpErrorCodes = []string{
+	"ToolError",
+	"EmptyToolResponse",
+	"RemoteMcpError",
+	"RemoteAuth",
+	"InvalidRequest",
+	"RateLimited",
+	"InternalError",
+	"McpTimeout",
+}
+
 // SetRegistrar registers the resource.
 func SetRegistrar(regInstance registrar.Registrar) {
 	regInstance.RegisterResource(ResourceType, ResourceAgenticVirtualAgentVersion())
@@ -217,7 +228,7 @@ func toolResource() *schema.Resource {
 				Description:  "Tool type discriminator.",
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringInSlice([]string{"KnowledgeSetting", "KnowledgeBase", "DataAction", "ExternalA2AServer"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"KnowledgeSetting", "KnowledgeBase", "DataAction", "ExternalA2AServer", "MCP"}, false),
 			},
 			"name": {
 				Description: "Name of the tool.",
@@ -230,7 +241,7 @@ func toolResource() *schema.Resource {
 				Required:    true,
 			},
 			"target": {
-				Description: "Resource selected for this tool.",
+				Description: "Resource selected for this tool. For MCP tools, id is the MCP integration ID and name is the remote MCP tool name.",
 				Type:        schema.TypeList,
 				Required:    true,
 				MaxItems:    1,
@@ -242,7 +253,7 @@ func toolResource() *schema.Resource {
 							Required:    true,
 						},
 						"name": {
-							Description: "Name of the target resource.",
+							Description: "Name of the target resource. For MCP tools, this is the remote MCP tool name.",
 							Type:        schema.TypeString,
 							Optional:    true,
 							Computed:    true,
@@ -275,34 +286,33 @@ func toolResource() *schema.Resource {
 				Optional:    true,
 				Elem:        outputInstructionResource(),
 			},
-			// Inputs and input_validation apply to DataAction tools and to Knowledge tools
-			// (KnowledgeSetting / KnowledgeBase). For Knowledge tools the inputs express a
-			// dependency/gating relationship only and must be marked dependency_only = true.
-			// DataAction-specific fields
+			// Inputs and input_validation apply to DataAction, MCP, and Knowledge tools.
+			// For Knowledge tools, inputs express a dependency/gating relationship only and
+			// must be marked dependency_only = true.
 			"context_retention_enabled": {
-				Description: "Whether this DataAction tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window. Only applicable when type is DataAction.",
+				Description: "Whether this DataAction or MCP tool's call and result are retained in the virtual agent's conversation context when older turns are pruned to fit the model's context window.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
 			"inputs": {
-				Description: "Inputs for this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase). For Knowledge tools, inputs must be sourced from a prior tool output and marked dependency_only = true; they establish a dependency and are not sent to the knowledge service.",
+				Description: "Inputs for this tool. Applies to DataAction, MCP, and Knowledge tools. For Knowledge tools, inputs must be sourced from a prior tool output and marked dependency_only = true; they establish a dependency and are not sent to the knowledge service.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        toolInputResource(),
 			},
 			"output": {
-				Description: "Name of the output type this tool returns. Only applicable when type is DataAction.",
+				Description: "Name of the output type this tool returns. Applies to DataAction and MCP tools. For an MCP tool with no declared output schema, this must reference a string alias type.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
 			"errors": {
-				Description: "Error types this tool can raise. Only applicable when type is DataAction.",
+				Description: "Error types this tool can raise. MCP tools reference McpError types, while DataAction tools reference DataActionHttpError types.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        toolErrorResource(),
 			},
 			"input_validation": {
-				Description: "Conditions that must be checked before invoking this tool. Applies to DataAction tools and to Knowledge tools (KnowledgeSetting / KnowledgeBase).",
+				Description: "Conditions that must be checked before invoking this tool. Applies to DataAction, MCP, and Knowledge tools.",
 				Type:        schema.TypeList,
 				Optional:    true,
 				Elem:        inputValidationResource(),
@@ -371,7 +381,7 @@ func toolInputResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"target_name": {
-				Description: "Name of the input field in the data action input schema.",
+				Description: "Name of the input field in the tool's input schema.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -393,6 +403,11 @@ func toolInputResource() *schema.Resource {
 			},
 			"fallback_to_user": {
 				Description: "Whether the virtual agent should ask the user for this input when not available from the configured source.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+			},
+			"fallback_to_failure": {
+				Description: "Whether an unavailable required External input should terminate the session with a 422 error instead of asking the user. Only valid for required External inputs that reference an undisclosed type, and mutually exclusive with fallback_to_user.",
 				Type:        schema.TypeBool,
 				Optional:    true,
 			},
@@ -473,7 +488,7 @@ func typeDefinitionResource() *schema.Resource {
 				Description:  "Type value.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "boolean", "null", "object", "array", "DataActionHttpError"}, false),
+				ValidateFunc: validation.StringInSlice([]string{"string", "integer", "number", "boolean", "null", "object", "array", "DataActionHttpError", "McpError"}, false),
 			},
 			"user_utterance_substring": {
 				Description: "Whether values of this string type must be copied as a contiguous substring from recent user messages.",
@@ -502,8 +517,17 @@ func typeDefinitionResource() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
+			"error_codes": {
+				Description: "MCP error codes this error type can handle. Applies when type is McpError.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringInSlice(agenticVirtualAgentMcpErrorCodes, false),
+				},
+			},
 			"default_instruction": {
-				Description: "Default instruction for handling this error type. Applies when type is DataActionHttpError.",
+				Description: "Default instruction for handling this error type. Applies when type is DataActionHttpError or McpError.",
 				Type:        schema.TypeString,
 				Optional:    true,
 			},

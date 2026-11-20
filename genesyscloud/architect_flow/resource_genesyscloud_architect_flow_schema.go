@@ -28,6 +28,7 @@ const (
 // SetRegistrar registers all resources, data sources and exporters in the package
 func SetRegistrar(l registrar.Registrar) {
 	l.RegisterDataSource(ResourceType, DataSourceArchitectFlow())
+	l.RegisterDataSource(ValidationDataSourceType, DataSourceFlowValidation())
 	l.RegisterResource(ResourceType, ResourceArchitectFlow())
 	l.RegisterExporter(ResourceType, ArchitectFlowExporter())
 }

@@ -99,7 +99,9 @@ func readOutboundCallabletimeset(ctx context.Context, d *schema.ResourceData, me
 		if callableTimeset.CallableTimes != nil {
 			// Remove the milliseconds added to start_time and stop_time by the API
 			trimTime(callableTimeset.CallableTimes)
-			d.Set("callable_times", flattenCallableTimes(*callableTimeset.CallableTimes))
+			// d holds the previous state (or the planned values after create/update). It is empty on import and export.
+			existingCallableTimes, _ := d.Get("callable_times").(*schema.Set)
+			d.Set("callable_times", flattenCallableTimes(*callableTimeset.CallableTimes, existingCallableTimes))
 		}
 		log.Printf("Read Outbound Callabletimeset %s %s", d.Id(), *callableTimeset.Name)
 		return cc.CheckState(d)

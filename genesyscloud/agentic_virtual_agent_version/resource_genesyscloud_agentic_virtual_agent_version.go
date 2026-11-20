@@ -157,6 +157,12 @@ func customizeAgenticVirtualAgentVersionDiff(_ context.Context, diff *schema.Res
 		return err
 	}
 
+	if rawConfigDefinitionIsWhollyKnown(diff.GetRawConfig()) {
+		if err := validateFallbackToFailureInputs(diff.Get("definition")); err != nil {
+			return err
+		}
+	}
+
 	// When a resource is created, the marker is set after the API request succeeds.
 	// This check is only needed for existing resources.
 	if diff.Id() == "" {
@@ -259,6 +265,89 @@ func hasContextualComfortStatement(tools []AgenticVirtualAgentTool) bool {
 		}
 	}
 	return false
+}
+
+// rawConfigDefinitionIsWhollyKnown prevents nested unknown values from being read as zero values
+// during CustomizeDiff validation.
+func rawConfigDefinitionIsWhollyKnown(rawConfig cty.Value) bool {
+	if rawConfig.IsNull() || !rawConfig.IsKnown() || !rawConfig.Type().IsObjectType() || !rawConfig.Type().HasAttribute("definition") {
+		return false
+	}
+	definition := rawConfig.GetAttr("definition")
+	return !definition.IsNull() && definition.IsWhollyKnown()
+}
+
+// validateFallbackToFailureInputs applies the public-api preconditions for fallbackToFailure.
+// The field only has behavior when true, so false and omitted values do not need validation.
+func validateFallbackToFailureInputs(definitionValue interface{}) error {
+	definitions, ok := definitionValue.([]interface{})
+	if !ok || len(definitions) == 0 || definitions[0] == nil {
+		return nil
+	}
+	definition, ok := definitions[0].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	typeDefinitions := make(map[string]map[string]interface{})
+	if types, ok := definition["types"].([]interface{}); ok {
+		for _, typeValue := range types {
+			typeDefinition, ok := typeValue.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			name, _ := typeDefinition["name"].(string)
+			if name != "" {
+				typeDefinitions[name] = typeDefinition
+			}
+		}
+	}
+
+	tools, _ := definition["tools"].([]interface{})
+	for toolIndex, toolValue := range tools {
+		tool, ok := toolValue.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		inputs, _ := tool["inputs"].([]interface{})
+		for inputIndex, inputValue := range inputs {
+			input, ok := inputValue.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			fallbackToFailure, _ := input["fallback_to_failure"].(bool)
+			if !fallbackToFailure {
+				continue
+			}
+
+			path := fmt.Sprintf("definition.0.tools.%d.inputs.%d.fallback_to_failure", toolIndex, inputIndex)
+			fallbackToUser, _ := input["fallback_to_user"].(bool)
+			if fallbackToUser {
+				return fmt.Errorf("%s cannot be true when fallback_to_user is true", path)
+			}
+			source, _ := input["source"].(string)
+			if source != "External" {
+				return fmt.Errorf("%s requires source to be External", path)
+			}
+			required, _ := input["required"].(bool)
+			if !required {
+				return fmt.Errorf("%s requires required to be true", path)
+			}
+
+			typeName, _ := input["type"].(string)
+			typeDefinition, found := typeDefinitions[typeName]
+			if !found {
+				return fmt.Errorf("%s requires input type %q to be defined as an undisclosed string type", path, typeName)
+			}
+			typeValue, _ := typeDefinition["type"].(string)
+			undisclosed, _ := typeDefinition["undisclosed"].(bool)
+			if typeValue != "string" || !undisclosed {
+				return fmt.Errorf("%s requires input type %q to be an undisclosed string type", path, typeName)
+			}
+		}
+	}
+
+	return nil
 }
 
 // Returns one marker bit for each tool. The bit is 1 when
@@ -655,22 +744,22 @@ func expandTools(toolsList []interface{}, configuredContextRetention []*bool) []
 			tool.OutputInstructions = expandOutputInstructions(v)
 		}
 
-		// DataAction-specific: inputs
+		// Tool inputs
 		if v, ok := toolMap["inputs"].([]interface{}); ok && len(v) > 0 {
 			tool.Inputs = expandToolInputs(v)
 		}
 
-		// DataAction-specific: output
+		// Tool output type
 		if v, ok := toolMap["output"].(string); ok && v != "" {
 			tool.Output = v
 		}
 
-		// DataAction-specific: errors
+		// Tool error handling
 		if v, ok := toolMap["errors"].([]interface{}); ok && len(v) > 0 {
 			tool.Errors = expandToolErrors(v)
 		}
 
-		// DataAction-specific: input_validation
+		// Tool input validation
 		if v, ok := toolMap["input_validation"].([]interface{}); ok && len(v) > 0 {
 			tool.InputValidation = expandInputValidation(v)
 		}
@@ -799,6 +888,9 @@ func expandToolInputs(list []interface{}) []AgenticVirtualAgentToolInput {
 		if v, ok := m["fallback_to_user"].(bool); ok {
 			input.FallbackToUser = &v
 		}
+		if v, ok := m["fallback_to_failure"].(bool); ok && v {
+			input.FallbackToFailure = &v
+		}
 		if v, ok := m["mapping"].(string); ok && v != "" {
 			var mapping []interface{}
 			_ = json.Unmarshal([]byte(v), &mapping)
@@ -878,6 +970,9 @@ func expandTypes(list []interface{}) []AgenticVirtualAgentTypeDefinition {
 		}
 		if v, ok := m["status_codes"].([]interface{}); ok && len(v) > 0 {
 			typeDef.StatusCodes = expandIntList(v)
+		}
+		if v, ok := m["error_codes"].([]interface{}); ok && len(v) > 0 {
+			typeDef.ErrorCodes = expandStringList(v)
 		}
 		if v, ok := m["enum_values"].([]interface{}); ok && len(v) > 0 {
 			typeDef.Enum = expandStringList(v)
@@ -1126,6 +1221,9 @@ func flattenToolInputs(inputs []AgenticVirtualAgentToolInput) []interface{} {
 		if input.FallbackToUser != nil {
 			m["fallback_to_user"] = *input.FallbackToUser
 		}
+		if input.FallbackToFailure != nil {
+			m["fallback_to_failure"] = *input.FallbackToFailure
+		}
 		if len(input.Mapping) > 0 {
 			mappingBytes, _ := json.Marshal(input.Mapping)
 			m["mapping"] = string(mappingBytes)
@@ -1205,6 +1303,9 @@ func flattenTypes(types []AgenticVirtualAgentTypeDefinition) []interface{} {
 		}
 		if len(t.StatusCodes) > 0 {
 			m["status_codes"] = t.StatusCodes
+		}
+		if len(t.ErrorCodes) > 0 {
+			m["error_codes"] = t.ErrorCodes
 		}
 		if len(t.Enum) > 0 {
 			m["enum_values"] = t.Enum

@@ -24,6 +24,8 @@ type deleteArchitectFlowFunc func(context.Context, *architectFlowProxy, string) 
 type createArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, bool) (*platformclientv2.Registerarchitectjobresponse, *platformclientv2.APIResponse, error)
 type getArchitectFlowJobsFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Architectjobstateresponse, *platformclientv2.APIResponse, error)
 type getAllArchitectFlowsFunc func(context.Context, *architectFlowProxy, string, []string) (*[]platformclientv2.Flow, *platformclientv2.APIResponse, error)
+type createFlowValidateJobFunc func(context.Context, *architectFlowProxy, platformclientv2.Architectflowreference) (*platformclientv2.Registerarchitectvalidatejobresponse, *platformclientv2.APIResponse, error)
+type getFlowValidateJobFunc func(context.Context, *architectFlowProxy, string) (*platformclientv2.Architectvalidatejobstateresponse, *platformclientv2.APIResponse, error)
 type getFlowIdByNameAndTypeFunc func(ctx context.Context, a *architectFlowProxy, name string, varType string) (id string, resp *platformclientv2.APIResponse, retryable bool, err error)
 
 type generateDownloadUrlFunc func(a *architectFlowProxy, flowId, flowVersion string) (string, error)
@@ -43,6 +45,8 @@ type architectFlowProxy struct {
 	createArchitectFlowJobsAttr     createArchitectFlowJobsFunc
 	getArchitectFlowJobsAttr        getArchitectFlowJobsFunc
 	getFlowIdByNameAndTypeAttr      getFlowIdByNameAndTypeFunc
+	createFlowValidateJobAttr       createFlowValidateJobFunc
+	getFlowValidateJobAttr          getFlowValidateJobFunc
 	createExportJobAttr             createExportJobFunc
 	getExportJobStatusByIdAttr      getExportJobStatusByIdFunc
 	pollExportJobForDownloadUrlAttr pollExportJobForDownloadUrlFunc
@@ -67,6 +71,8 @@ func newArchitectFlowProxy(clientConfig *platformclientv2.Configuration) *archit
 		createArchitectFlowJobsAttr:     createArchitectFlowJobsFn,
 		getArchitectFlowJobsAttr:        getArchitectFlowJobsFn,
 		getFlowIdByNameAndTypeAttr:      getFlowIdByNameAndTypeFn,
+		createFlowValidateJobAttr:       createFlowValidateJobFn,
+		getFlowValidateJobAttr:          getFlowValidateJobFn,
 		generateDownloadUrlAttr:         generateDownloadUrlFn,
 		createExportJobAttr:             createExportJobFn,
 		getExportJobStatusByIdAttr:      getExportJobStatusByIdFn,

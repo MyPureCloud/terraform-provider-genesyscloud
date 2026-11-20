@@ -81,11 +81,11 @@ type AgenticVirtualAgentGuardrailInstruction struct {
 
 // AgenticVirtualAgentTool represents any tool type.
 // Common fields: type, name, description, target, inputInstructions, outputInstructions
-// Inputs and inputValidation apply to DataAction tools and to Knowledge tools
-// (KnowledgeSetting / KnowledgeBase; SAGE-861 / public-api-v2 PR #17904). For Knowledge tools the
-// inputs are dependency-only and are not sent to the knowledge service.
-// DataAction-specific: errors, output, schemas (computed)
-// DataAction-specific: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
+// Inputs and inputValidation apply to DataAction, MCP, and Knowledge tools.
+// For Knowledge tools, inputs are dependency-only and are not sent to the knowledge service.
+// DataAction-specific: DataActionHttpError references
+// MCP-specific: McpError references
+// DataAction and MCP: contextRetentionEnabled, errors, inputs, output, inputValidation, schemas (computed)
 // ExternalA2AServer-specific: skills (computed)
 type AgenticVirtualAgentTool struct {
 	Type                     string                                       `json:"type"`
@@ -95,7 +95,7 @@ type AgenticVirtualAgentTool struct {
 	InputInstructions        []string                                     `json:"inputInstructions,omitempty"`
 	BuiltinInputInstructions []AgenticVirtualAgentBuiltinInputInstruction `json:"builtinInputInstructions,omitempty"`
 	OutputInstructions       []AgenticVirtualAgentToolOutputInstruction   `json:"outputInstructions,omitempty"`
-	// DataAction-specific fields
+	// Fields used by one or more concrete tool types
 	ContextRetentionEnabled *bool                                 `json:"contextRetentionEnabled,omitempty"`
 	Errors                  []AgenticVirtualAgentToolError        `json:"errors,omitempty"`
 	Inputs                  []AgenticVirtualAgentToolInput        `json:"inputs,omitempty"`
@@ -155,7 +155,7 @@ type AgenticVirtualAgentStructuredOutputRule struct {
 // Tool Input Validation (Discriminator: type — Python or Structured)
 // =============================================================================
 
-// AgenticVirtualAgentInputValidation represents input validation for a DataAction tool.
+// AgenticVirtualAgentInputValidation represents input validation for a DataAction, MCP, or Knowledge tool.
 // For Python type: If is a string (Python condition).
 // For Structured type: If is a structured condition group object.
 type AgenticVirtualAgentInputValidation struct {
@@ -181,10 +181,10 @@ type AgenticVirtualAgentStructuredRule struct {
 }
 
 // =============================================================================
-// Tool Inputs (DataAction only)
+// Tool Inputs (DataAction, MCP, and Knowledge)
 // =============================================================================
 
-// AgenticVirtualAgentToolInput represents an input for a tool (DataAction or Knowledge).
+// AgenticVirtualAgentToolInput represents an input for a DataAction, MCP, or Knowledge tool.
 // Required: targetName, type, source
 //
 // DependencyOnly marks an input as used only to establish a dependency/precondition; the value is
@@ -196,19 +196,22 @@ type AgenticVirtualAgentStructuredRule struct {
 // always populates, so expandToolInputs always sets this to a non-nil pointer. The omitempty tag
 // therefore never drops it in practice — every input serializes an explicit "dependencyOnly":
 // true|false. The pointer type is kept only for consistency with the other optional *bool fields
-// (required, fallbackToUser) and to allow a nil value in direct (non-Terraform) struct use.
+// (required, fallbackToUser, fallbackToFailure) and to allow a nil value in direct (non-Terraform) struct use.
 type AgenticVirtualAgentToolInput struct {
-	TargetName     string        `json:"targetName"`
-	Type           string        `json:"type"`
-	Source         string        `json:"source"`
-	Required       *bool         `json:"required,omitempty"`
-	FallbackToUser *bool         `json:"fallbackToUser,omitempty"`
-	Mapping        []interface{} `json:"mapping,omitempty"`
-	DependencyOnly *bool         `json:"dependencyOnly,omitempty"`
+	TargetName     string `json:"targetName"`
+	Type           string `json:"type"`
+	Source         string `json:"source"`
+	Required       *bool  `json:"required,omitempty"`
+	FallbackToUser *bool  `json:"fallbackToUser,omitempty"`
+	// False is semantically equivalent to omission and the field is only valid for qualifying
+	// External inputs, so Terraform request expansion sets this pointer only when configured true.
+	FallbackToFailure *bool         `json:"fallbackToFailure,omitempty"`
+	Mapping           []interface{} `json:"mapping,omitempty"`
+	DependencyOnly    *bool         `json:"dependencyOnly,omitempty"`
 }
 
 // =============================================================================
-// Tool Errors (DataAction only)
+// Tool Errors
 // =============================================================================
 
 // AgenticVirtualAgentToolError represents error handling for a tool.
@@ -219,10 +222,12 @@ type AgenticVirtualAgentToolError struct {
 }
 
 // =============================================================================
-// Data Action Schemas (Computed — populated at publish time)
+// Tool Schemas (Computed — populated at publish time)
 // =============================================================================
 
-// AgenticVirtualAgentDataActionSchemas holds the input/output JSON schemas.
+// AgenticVirtualAgentDataActionSchemas holds tool input/output JSON schema metadata. The public
+// API's DataAction and MCP schema contracts have the same JSON shape, so the fat tool model can
+// use this representation for both tool types.
 type AgenticVirtualAgentDataActionSchemas struct {
 	Inputs  map[string]interface{} `json:"inputs,omitempty"`
 	Outputs map[string]interface{} `json:"outputs,omitempty"`
@@ -259,6 +264,7 @@ type AgenticVirtualAgentTypeDefinition struct {
 	Properties             []AgenticVirtualAgentPropertyDefinition `json:"properties,omitempty"`
 	Items                  string                                  `json:"items,omitempty"`
 	StatusCodes            []int                                   `json:"statusCodes,omitempty"`
+	ErrorCodes             []string                                `json:"errorCodes,omitempty"`
 	DefaultInstruction     string                                  `json:"defaultInstruction,omitempty"`
 	Enum                   []string                                `json:"enum,omitempty"`
 }
