@@ -659,6 +659,9 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 			`asset_ids`: {
 				RefType: "genesyscloud_responsemanagement_responseasset",
 			},
+			`messaging_template.whats_app.integration_id`: {
+				RefType: "genesyscloud_conversations_messaging_integrations_whatsapp",
+			},
 		},
 		JsonEncodeAttributes: []string{"substitutions_schema_id"},
 		// The form block has attributes that are required by the schema but may legitimately come back

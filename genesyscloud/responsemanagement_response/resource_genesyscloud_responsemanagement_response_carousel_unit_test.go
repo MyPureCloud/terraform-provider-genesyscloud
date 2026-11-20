@@ -278,3 +278,13 @@ func TestUnitCarouselReplacementKeys(t *testing.T) {
 		t.Errorf("carouselReplacementKeys() = %v, want %v", got, want)
 	}
 }
+
+func TestUnitResponsemanagementResponseExporterWhatsappIntegrationRef(t *testing.T) {
+	refAttr, ok := ResponsemanagementResponseExporter().RefAttrs["messaging_template.whats_app.integration_id"]
+	if !ok {
+		t.Fatal("expected messaging_template.whats_app.integration_id to be an exporter reference")
+	}
+	if want := "genesyscloud_conversations_messaging_integrations_whatsapp"; refAttr.RefType != want {
+		t.Errorf("RefType = %q, want %q", refAttr.RefType, want)
+	}
+}
