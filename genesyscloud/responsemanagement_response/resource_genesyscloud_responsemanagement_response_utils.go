@@ -1,7 +1,10 @@
 package responsemanagement_response
 
 import (
+	"context"
 	"fmt"
+	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -16,7 +19,7 @@ func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Respon
 	interactionType := d.Get("interaction_type").(string)
 	substitutionsSchema := d.Get("substitutions_schema_id").(string)
 	responseType := d.Get("response_type").(string)
-	messagingTemplate := d.Get("messaging_template").(*schema.Set)
+	messagingTemplate, _ := d.Get("messaging_template").([]interface{})
 
 	response := platformclientv2.Response{
 		Name:          platformclientv2.String(d.Get("name").(string)),
@@ -38,7 +41,7 @@ func getResponseFromResourceData(d *schema.ResourceData) platformclientv2.Respon
 		response.ResponseType = &responseType
 	}
 	// Need to check messaging template like this to avoid the responseType being giving a default value
-	if messagingTemplate.Len() > 0 {
+	if len(messagingTemplate) > 0 {
 		response.MessagingTemplate = buildMessagingTemplate(messagingTemplate)
 	}
 
@@ -85,22 +88,96 @@ func buildResponseSubstitutions(responseSubstitutions *schema.Set) *[]platformcl
 	return &sdkResponseSubstitutions
 }
 
-func buildWhatsappDefinition(whatsappDefinition *schema.Set) *platformclientv2.Whatsappdefinition {
-	if whatsappDefinition == nil {
+func buildWhatsappDefinition(whatsappDefinitionList []interface{}) *platformclientv2.Whatsappdefinition {
+	if whatsappDefinitionList == nil {
 		return nil
 	}
 
 	var sdkWhatsappDefinition platformclientv2.Whatsappdefinition
-	whatsappDefinitionList := whatsappDefinition.List()
-	if len(whatsappDefinitionList) > 0 {
+	if len(whatsappDefinitionList) > 0 && whatsappDefinitionList[0] != nil {
 		whatsappDefinitionMap := whatsappDefinitionList[0].(map[string]interface{})
 
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWhatsappDefinition.Name, whatsappDefinitionMap, "name")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWhatsappDefinition.Namespace, whatsappDefinitionMap, "namespace")
 		resourcedata.BuildSDKStringValueIfNotNil(&sdkWhatsappDefinition.Language, whatsappDefinitionMap, "language")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWhatsappDefinition.IntegrationId, whatsappDefinitionMap, "integration_id")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkWhatsappDefinition.Category, whatsappDefinitionMap, "category")
+		if carousel, ok := whatsappDefinitionMap["carousel"].([]interface{}); ok {
+			sdkWhatsappDefinition.Carousel = buildCarousel(carousel)
+		}
 	}
 
 	return &sdkWhatsappDefinition
+}
+
+func buildCarousel(carousel []interface{}) *platformclientv2.Carousel {
+	if len(carousel) == 0 || carousel[0] == nil {
+		return nil
+	}
+	carouselMap := carousel[0].(map[string]interface{})
+
+	cardList, _ := carouselMap["cards"].([]interface{})
+	cards := make([]platformclientv2.Carouselcard, 0, len(cardList))
+	for _, card := range cardList {
+		cardMap, ok := card.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		sdkCard := platformclientv2.Carouselcard{}
+		if header, ok := cardMap["header"].([]interface{}); ok {
+			sdkCard.Header = buildMessageHeader(header)
+		}
+		if buttons, ok := cardMap["buttons"].([]interface{}); ok {
+			sdkCard.Buttons = buildWhatsappButtons(buttons)
+		}
+		if cardBodyText, ok := cardMap["card_body_text"].([]interface{}); ok {
+			sdkCard.CardBodyText = buildCardBodyText(cardBodyText)
+		}
+		cards = append(cards, sdkCard)
+	}
+
+	return &platformclientv2.Carousel{Cards: &cards}
+}
+
+func buildMessageHeader(header []interface{}) *platformclientv2.Messageheader {
+	if len(header) == 0 || header[0] == nil {
+		return nil
+	}
+	headerMap := header[0].(map[string]interface{})
+
+	var sdkHeader platformclientv2.Messageheader
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkHeader.VarType, headerMap, "type")
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkHeader.Content, headerMap, "content")
+	return &sdkHeader
+}
+
+func buildWhatsappButtons(buttons []interface{}) *[]platformclientv2.Button {
+	sdkButtons := make([]platformclientv2.Button, 0, len(buttons))
+	for _, button := range buttons {
+		buttonMap, ok := button.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		var sdkButton platformclientv2.Button
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkButton.VarType, buttonMap, "type")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkButton.Content, buttonMap, "content")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkButton.ContentText, buttonMap, "content_text")
+		resourcedata.BuildSDKStringValueIfNotNil(&sdkButton.Payload, buttonMap, "payload")
+		sdkButtons = append(sdkButtons, sdkButton)
+	}
+	return &sdkButtons
+}
+
+func buildCardBodyText(cardBodyText []interface{}) *platformclientv2.Cardbodytext {
+	if len(cardBodyText) == 0 || cardBodyText[0] == nil {
+		return nil
+	}
+	cardBodyTextMap := cardBodyText[0].(map[string]interface{})
+
+	var sdkCardBodyText platformclientv2.Cardbodytext
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkCardBodyText.Content, cardBodyTextMap, "content")
+	resourcedata.BuildSDKStringValueIfNotNil(&sdkCardBodyText.ContentType, cardBodyTextMap, "content_type")
+	return &sdkCardBodyText
 }
 
 func buildFooterTemplate(footerTemplate *schema.Set) *platformclientv2.Footertemplate {
@@ -369,18 +446,17 @@ func buildFormWheelPickerItems(items []interface{}) *[]platformclientv2.Wheelpic
 	return &sdkItems
 }
 
-func buildMessagingTemplate(messagingTemplate *schema.Set) *platformclientv2.Messagingtemplate {
-	if messagingTemplate == nil {
+func buildMessagingTemplate(messagingTemplateList []interface{}) *platformclientv2.Messagingtemplate {
+	if messagingTemplateList == nil {
 		return nil
 	}
 
 	var sdkMessagingTemplate platformclientv2.Messagingtemplate
-	messagingTemplateList := messagingTemplate.List()
-	if len(messagingTemplateList) > 0 {
+	if len(messagingTemplateList) > 0 && messagingTemplateList[0] != nil {
 		messagingTemplateMap := messagingTemplateList[0].(map[string]interface{})
 
-		if whatsApp := messagingTemplateMap["whats_app"]; whatsApp != nil {
-			sdkMessagingTemplate.WhatsApp = buildWhatsappDefinition(whatsApp.(*schema.Set))
+		if whatsApp, ok := messagingTemplateMap["whats_app"].([]interface{}); ok && len(whatsApp) > 0 {
+			sdkMessagingTemplate.WhatsApp = buildWhatsappDefinition(whatsApp)
 		}
 	}
 
@@ -443,21 +519,77 @@ func flattenResponseSubstitutions(responseSubstitutions *[]platformclientv2.Resp
 	return responseSubstitutionSet
 }
 
-func flattenWhatsappDefinition(whatsappDefinition *platformclientv2.Whatsappdefinition) *schema.Set {
+func flattenWhatsappDefinition(whatsappDefinition *platformclientv2.Whatsappdefinition) []interface{} {
 	if whatsappDefinition == nil {
 		return nil
 	}
 
-	whatsappDefinitionSet := schema.NewSet(schema.HashResource(whatsappDefinitionResource), []interface{}{})
 	whatsappDefinitionMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(whatsappDefinitionMap, "name", whatsappDefinition.Name)
 	resourcedata.SetMapValueIfNotNil(whatsappDefinitionMap, "namespace", whatsappDefinition.Namespace)
 	resourcedata.SetMapValueIfNotNil(whatsappDefinitionMap, "language", whatsappDefinition.Language)
+	resourcedata.SetMapValueIfNotNil(whatsappDefinitionMap, "integration_id", whatsappDefinition.IntegrationId)
+	// The API echoes the category in upper case (MARKETING) although the public enum is lower case.
+	if whatsappDefinition.Category != nil {
+		whatsappDefinitionMap["category"] = strings.ToLower(*whatsappDefinition.Category)
+	}
+	resourcedata.SetMapValueIfNotNil(whatsappDefinitionMap, "template_status", whatsappDefinition.TemplateStatus)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(whatsappDefinitionMap, "carousel", whatsappDefinition.Carousel, flattenCarousel)
+	resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(whatsappDefinitionMap, "status_info", whatsappDefinition.StatusInfo, flattenStatusInfo)
 
-	whatsappDefinitionSet.Add(whatsappDefinitionMap)
+	return []interface{}{whatsappDefinitionMap}
+}
 
-	return whatsappDefinitionSet
+func flattenCarousel(carousel *platformclientv2.Carousel) []interface{} {
+	if carousel.Cards == nil {
+		return nil
+	}
+
+	cards := make([]interface{}, 0, len(*carousel.Cards))
+	for _, card := range *carousel.Cards {
+		cardMap := make(map[string]interface{})
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(cardMap, "header", card.Header, flattenMessageHeader)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(cardMap, "buttons", card.Buttons, flattenWhatsappButtons)
+		resourcedata.SetMapInterfaceArrayWithFuncIfNotNil(cardMap, "card_body_text", card.CardBodyText, flattenCardBodyText)
+		cards = append(cards, cardMap)
+	}
+
+	return []interface{}{map[string]interface{}{"cards": cards}}
+}
+
+func flattenMessageHeader(header *platformclientv2.Messageheader) []interface{} {
+	headerMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(headerMap, "type", header.VarType)
+	resourcedata.SetMapValueIfNotNil(headerMap, "content", header.Content)
+	return []interface{}{headerMap}
+}
+
+func flattenWhatsappButtons(buttons *[]platformclientv2.Button) []interface{} {
+	buttonList := make([]interface{}, 0, len(*buttons))
+	for _, button := range *buttons {
+		buttonMap := make(map[string]interface{})
+		resourcedata.SetMapValueIfNotNil(buttonMap, "type", button.VarType)
+		resourcedata.SetMapValueIfNotNil(buttonMap, "content", button.Content)
+		resourcedata.SetMapValueIfNotNil(buttonMap, "content_text", button.ContentText)
+		resourcedata.SetMapValueIfNotNil(buttonMap, "payload", button.Payload)
+		buttonList = append(buttonList, buttonMap)
+	}
+	return buttonList
+}
+
+func flattenCardBodyText(cardBodyText *platformclientv2.Cardbodytext) []interface{} {
+	cardBodyTextMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(cardBodyTextMap, "content", cardBodyText.Content)
+	resourcedata.SetMapValueIfNotNil(cardBodyTextMap, "content_type", cardBodyText.ContentType)
+	return []interface{}{cardBodyTextMap}
+}
+
+func flattenStatusInfo(statusInfo *platformclientv2.Statusinfo) []interface{} {
+	statusInfoMap := make(map[string]interface{})
+	resourcedata.SetMapValueIfNotNil(statusInfoMap, "code", statusInfo.Code)
+	resourcedata.SetMapValueIfNotNil(statusInfoMap, "message", statusInfo.Message)
+	return []interface{}{statusInfoMap}
 }
 
 func flattenFooterTemplate(footerTemplate *platformclientv2.Footertemplate) *schema.Set {
@@ -703,21 +835,18 @@ func flattenFormWheelPickerItems(items *[]platformclientv2.Wheelpickeritem) []in
 	return itemList
 }
 
-func flattenMessagingTemplate(messagingTemplate *platformclientv2.Messagingtemplate) *schema.Set {
+func flattenMessagingTemplate(messagingTemplate *platformclientv2.Messagingtemplate) []interface{} {
 	if messagingTemplate == nil {
 		return nil
 	}
 
-	messagingTemplateSet := schema.NewSet(schema.HashResource(messagingtemplateResource), []interface{}{})
 	messagingTemplateMap := make(map[string]interface{})
 
 	if messagingTemplate.WhatsApp != nil {
 		messagingTemplateMap["whats_app"] = flattenWhatsappDefinition(messagingTemplate.WhatsApp)
 	}
 
-	messagingTemplateSet.Add(messagingTemplateMap)
-
-	return messagingTemplateSet
+	return []interface{}{messagingTemplateMap}
 }
 
 func flattenAddressableEntityRefs(addressableEntityRefs *[]platformclientv2.Rmsassetaddressableref) *schema.Set {
@@ -759,4 +888,99 @@ func GenerateTextsBlock(content string, contentType string, cType string) string
 			type = %s
 		}
 	`, content, contentType, cType)
+}
+
+// carouselLockedWhatsappKeys are the whats_app fields the API refuses to change once a carousel
+// template exists, unless WhatsApp review left it in the ERROR status.
+var carouselLockedWhatsappKeys = []string{"name", "language", "integration_id", "category", "carousel"}
+
+const carouselEditableTemplateStatus = "ERROR"
+
+// customizeCarouselTemplateDiff turns an in-place update the API would reject with a 400 into a
+// replacement, so a changed carousel template plans as destroy/create instead of failing on apply.
+func customizeCarouselTemplateDiff(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	if diff.Id() == "" {
+		return nil
+	}
+
+	oldTemplate, newTemplate := diff.GetChange("messaging_template")
+	if !shouldReplaceCarouselTemplate(
+		firstWhatsappDefinition(oldTemplate),
+		firstWhatsappDefinition(newTemplate),
+		diff.HasChange("texts"),
+	) {
+		return nil
+	}
+
+	// ForceNew on a parent block only takes effect when its item count changes, so flag every changed
+	// nested key instead.
+	for _, key := range carouselReplacementKeys(diff.GetChangedKeysPrefix("messaging_template"), diff.GetChangedKeysPrefix("texts")) {
+		if !diff.HasChange(key) {
+			continue
+		}
+		if err := diff.ForceNew(key); err != nil {
+			return fmt.Errorf("failed to mark %s for replacement on carousel template change: %w", key, err)
+		}
+	}
+	return nil
+}
+
+const whatsappDiffPrefix = "messaging_template.0.whats_app.0."
+
+// carouselReplacementKeys keeps the changed texts keys and the changed messaging_template keys that belong
+// to a locked whats_app field, dropping computed fields such as template_status.
+func carouselReplacementKeys(messagingTemplateKeys, textsKeys []string) []string {
+	keys := append([]string{}, textsKeys...)
+	for _, key := range messagingTemplateKeys {
+		relative, isWhatsappField := strings.CutPrefix(key, whatsappDiffPrefix)
+		if !isWhatsappField {
+			// messaging_template.# or whats_app.# changed, i.e. the template itself was added or removed.
+			keys = append(keys, key)
+			continue
+		}
+		field, _, _ := strings.Cut(relative, ".")
+		if lists.ItemInSlice(field, carouselLockedWhatsappKeys) {
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func shouldReplaceCarouselTemplate(oldWhatsapp, newWhatsapp map[string]interface{}, textsChanged bool) bool {
+	if oldWhatsapp == nil {
+		return false
+	}
+	if carousel, _ := oldWhatsapp["carousel"].([]interface{}); len(carousel) == 0 {
+		return false
+	}
+	if status, _ := oldWhatsapp["template_status"].(string); status == carouselEditableTemplateStatus {
+		return false
+	}
+	if textsChanged {
+		return true
+	}
+	if newWhatsapp == nil {
+		return true
+	}
+	for _, key := range carouselLockedWhatsappKeys {
+		if !reflect.DeepEqual(oldWhatsapp[key], newWhatsapp[key]) {
+			return true
+		}
+	}
+	return false
+}
+
+func firstWhatsappDefinition(messagingTemplate interface{}) map[string]interface{} {
+	templateList, ok := messagingTemplate.([]interface{})
+	if !ok || len(templateList) == 0 {
+		return nil
+	}
+	templateMap, _ := templateList[0].(map[string]interface{})
+	whatsappList, ok := templateMap["whats_app"].([]interface{})
+	if !ok || len(whatsappList) == 0 {
+		return nil
+	}
+	whatsappMap, _ := whatsappList[0].(map[string]interface{})
+	return whatsappMap
 }
