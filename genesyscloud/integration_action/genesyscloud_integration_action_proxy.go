@@ -63,6 +63,8 @@ type updateIntegrationActionFunc func(ctx context.Context, p *integrationActions
 type deleteIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionTemplateFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error)
 type createIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error)
+type createIntegrationActionDraftFromExistingFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
+type patchIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, body platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
 type uploadIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, filePath string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
 type getIntegrationActionFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
@@ -85,6 +87,8 @@ type integrationActionsProxy struct {
 	deleteIntegrationActionAttr                  deleteIntegrationActionFunc
 	getIntegrationActionTemplateAttr             getIntegrationActionTemplateFunc
 	createIntegrationActionDraftAttr             createIntegrationActionDraftFunc
+	createIntegrationActionDraftFromExistingAttr createIntegrationActionDraftFromExistingFunc
+	patchIntegrationActionDraftAttr              patchIntegrationActionDraftFunc
 	uploadIntegrationActionDraftFunctionAttr     uploadIntegrationActionDraftFunctionFunc
 	getIntegrationActionDraftFunctionAttr        getIntegrationActionDraftFunctionFunc
 	getIntegrationActionFunctionAttr             getIntegrationActionFunctionFunc
@@ -103,6 +107,8 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 		getAllIntegrationsAttr:                       getAllIntegrationsFn,
 		createIntegrationActionAttr:                  createIntegrationActionFn,
 		createIntegrationActionDraftAttr:             createIntegrationActionDraftFn,
+		createIntegrationActionDraftFromExistingAttr: createIntegrationActionDraftFromExistingFn,
+		patchIntegrationActionDraftAttr:              patchIntegrationActionDraftFn,
 		uploadIntegrationActionDraftFunctionAttr:     uploadIntegrationActionDraftFunctionFn,
 		getIntegrationActionDraftFunctionAttr:        getIntegrationActionDraftFunctionFn,
 		getIntegrationActionFunctionAttr:             getIntegrationActionFunctionFn,
@@ -153,6 +159,18 @@ func (p *integrationActionsProxy) getIntegrationActionDraftById(ctx context.Cont
 // getIntegrationActionById gets a Genesys Cloud Integration Action by id
 func (p *integrationActionsProxy) createIntegrationActionDraft(ctx context.Context, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
 	return p.createIntegrationActionDraftAttr(ctx, p, actionInput)
+}
+
+// createIntegrationActionDraftFromExisting creates a draft FROM an existing action, preserving its id.
+// This is used on update so the action id is not changed (see DEVTOOLING-1886 / GitHub #2638).
+func (p *integrationActionsProxy) createIntegrationActionDraftFromExisting(ctx context.Context, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	return p.createIntegrationActionDraftFromExistingAttr(ctx, p, actionId)
+}
+
+// patchIntegrationActionDraft applies name/category/contract/config/secure changes to an existing
+// action's draft (keeping the same action id) before the draft is published.
+func (p *integrationActionsProxy) patchIntegrationActionDraft(ctx context.Context, actionId string, body platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	return p.patchIntegrationActionDraftAttr(ctx, p, actionId, body)
 }
 
 // uploadIntegrationActionDraftFunction uploads a function file to a Genesys Cloud Integration Action Draft
@@ -255,6 +273,23 @@ func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 		return nil, resp, err
 	}
 	return action, resp, nil
+}
+
+// createIntegrationActionDraftFromExistingFn creates a draft for an EXISTING action via
+// POST /api/v2/integrations/actions/{actionId}/draft. Unlike the drafts-collection POST
+// (sdkPostIntegrationActionDraft), this keeps the original action id, which is required so
+// that updating a function-data-action's zip does not mint a new action (DEVTOOLING-1886 /
+// GitHub #2638).
+func createIntegrationActionDraftFromExistingFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.integrationsApi.PostIntegrationsActionDraft(actionId)
+}
+
+// patchIntegrationActionDraftFn applies metadata/contract/config changes to an existing action's
+// draft via PATCH /api/v2/integrations/actions/{actionId}/draft, keeping the original action id.
+func patchIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string, body platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+	return p.integrationsApi.PatchIntegrationsActionDraft(actionId, body)
 }
 
 // uploadIntegrationActionDraftFunctionFn is the implementation for uploading a function file to an integration action draft
