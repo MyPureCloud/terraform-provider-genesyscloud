@@ -52,6 +52,8 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 		metricId                      = "Metric 1"
 		metricDisplayLabel            = "Display Label"
 		metricAggregate               = "CustomerCount"
+		numericMetricAggregate        = "Average"
+		metricAttribute               = "wrapupDurationMs"
 		chartGroupByTime              = "Day"
 		chartGroupByMax               = 1
 		displayAttributesVarType      = "Column"
@@ -89,11 +91,11 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					}),
 					generateObjectsList([]string{
 						generateCharts(chartName, chartVersion, chartRank,
-							generateMetrics(metricId, elementId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
+							generateMetrics(metricId, elementId, metricAggregate, "", metricDisplayLabel), chartGroupByTime, chartGroupByMax,
 							generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 							""),
 						generateCharts(chartName2, chartVersion, chartRank2,
-							generateMetrics(metricId, elementId, metricAggregate, metricDisplayLabel), "", chartGroupByMax,
+							generateMetrics(metricId, elementId, numericMetricAggregate, metricAttribute, metricDisplayLabel), "", chartGroupByMax,
 							generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 							generateGroupeByAttributes(elementId, groupByAttributesAttribute)),
 					}),
@@ -153,6 +155,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.id", metricId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.display_label", metricDisplayLabel),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.aggregate", metricAggregate),
+					testCheckMetricAttributeNotSet("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.attribute"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.element_id", elementId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_time", chartGroupByTime),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
@@ -167,6 +170,8 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.#", "1"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.0.element_id", elementId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.group_by_attributes.0.attribute", groupByAttributesAttribute),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.metrics.0.aggregate", numericMetricAggregate),
+					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.1.metrics.0.attribute", metricAttribute),
 				),
 			},
 			{
@@ -194,7 +199,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 							""),
 					}),
 					generateCharts(chartName, chartVersion, chartRank,
-						generateMetrics(metricId, elementId, metricAggregate, metricDisplayLabel), chartGroupByTime, chartGroupByMax,
+						generateMetrics(metricId, elementId, metricAggregate, "", metricDisplayLabel), chartGroupByTime, chartGroupByMax,
 						generateDisplayAttributes(displayAttributesVarType, displayAttributesGroupByTitle, displayAttributesMetricsTitle, displayAttributesShowLegend),
 						""),
 				),
@@ -252,6 +257,7 @@ func TestAccResourceJourneyViewsBasic(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.id", metricId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.display_label", metricDisplayLabel),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.aggregate", metricAggregate),
+					testCheckMetricAttributeNotSet("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.attribute"),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.metrics.0.element_id", elementId),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_time", chartGroupByTime),
 					resource.TestCheckResourceAttr("genesyscloud_journey_views."+journeyResourceLabel, "charts.0.group_by_max", fmt.Sprintf("%d", chartGroupByMax)),
@@ -436,15 +442,34 @@ func generateCharts(name string, version int, rank int, metricsBlock string, gro
 		displayAttributesBlock, groupByAttributesblock)
 }
 
-func generateMetrics(id string, elementId string, aggregate string, displayLabel string) string {
+// attribute is only valid for the numeric aggregates (Sum, Average, Minimum, Maximum), so it is omitted when empty
+func generateMetrics(id string, elementId string, aggregate string, attribute string, displayLabel string) string {
+	attributeLine := ""
+	if attribute != "" {
+		attributeLine = fmt.Sprintf(`attribute = "%s"`, attribute)
+	}
 	return fmt.Sprintf(`
         metrics {
             id = "%s"
             element_id = "%s"
             aggregate = "%s"
+            %s
             display_label = "%s"
         }
-        `, id, elementId, aggregate, displayLabel)
+        `, id, elementId, aggregate, attributeLine, displayLabel)
+}
+
+func testCheckMetricAttributeNotSet(resourcePath, key string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourcePath]
+		if !ok {
+			return fmt.Errorf("resource %s not found in state", resourcePath)
+		}
+		if value := rs.Primary.Attributes[key]; value != "" {
+			return fmt.Errorf("%s = %q, expected it to be unset", key, value)
+		}
+		return nil
+	}
 }
 
 func generateDisplayAttributes(varType string, groupByTitle string, metricsTitle string, showLegend bool) string {

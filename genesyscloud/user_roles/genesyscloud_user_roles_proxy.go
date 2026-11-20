@@ -83,7 +83,7 @@ func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, ro
 		return resp, fmt.Errorf("failed to get current grants for subject %s: %v", roleId, err)
 	}
 
-	existingGrants, configGrants, err := getExistingAndConfigGrants(grants, rolesConfig)
+	existingGrants, configGrants, err := getExistingAndConfigGrants(p.clientConfig, grants, rolesConfig)
 	if err != nil {
 		return resp, fmt.Errorf("failed to build grant lists for subject %s: %v", roleId, err)
 	}

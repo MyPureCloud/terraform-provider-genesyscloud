@@ -2,6 +2,7 @@ package case_management_caseplan
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -9,55 +10,174 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	gcloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
+	workbin "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workbin"
 	workitemSchema "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_workitem_schema"
+	worktype "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/task_management_worktype"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
+const accCaseplanPath = "genesyscloud_case_management_caseplan.cp"
+
+type accCaseplanNames struct {
+	caseplan, refPrefix, schema, workbin, worktype, emailLocal string
+}
+
+func newAccCaseplanNames(prefix string) accCaseplanNames {
+	suffix := uuid.NewString()
+	return accCaseplanNames{
+		caseplan:   "tf_acc_" + prefix + "_" + suffix,
+		refPrefix:  AccReferencePrefix(suffix),
+		schema:     AccSubstrSchema("tf_" + prefix + "_" + suffix),
+		workbin:    "tf_acc_" + prefix + "_wb_" + suffix,
+		worktype:   "tf_acc_" + prefix + "_wt_" + suffix,
+		emailLocal: "tf_acc_" + prefix + "_" + strings.ReplaceAll(suffix, "-", ""),
+	}
+}
+
+type accCaseplanOptions struct {
+	name        string
+	description string
+	dueSeconds  int
+	stageplans  []string
+	intake      string
+}
+
+func accStageplan(name, stepName string, workitem bool) string {
+	activity := ""
+	if workitem {
+		activity = `
+      activity_type = "Workitem"
+      workitem_settings {
+        worktype_id = genesyscloud_task_management_worktype.wt.id
+      }`
+	}
+	return fmt.Sprintf(`
+  stageplan {
+    name = %q
+    stepplan {
+      name = %q%s
+    }
+  }
+`, name, stepName, activity)
+}
+
+func accIntake(required bool, order int) string {
+	return fmt.Sprintf(`
+  intake_settings {
+    property      = "acc_note_text"
+    required      = %t
+    display_order = %d
+  }
+`, required, order)
+}
+
 // Do not use t.Parallel(): each test creates a workitem schema; parallel acc runs can exceed org limits (e.g. 100 schemas).
 func TestAccResourceCaseManagementCaseplan(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cp_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cp_" + suffix)
-	emailLocal := "tf_acc_cp_" + strings.ReplaceAll(suffix, "-", "")
-
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
+	n := newAccCaseplanNames("cp")
 	dataPath := "data.genesyscloud_case_management_caseplan.by_name"
+
+	ids := map[string]string{}
+	base := accCaseplanOptions{
+		name:        n.caseplan,
+		description: "acc caseplan",
+		dueSeconds:  86400,
+		stageplans: []string{
+			accStageplan("Intake", "Triage", false),
+			accStageplan("Investigate", "Work it", true),
+			accStageplan("Resolve", "Close out", false),
+		},
+	}
+	renamed := base
+	renamed.name = n.caseplan + "_renamed"
+	renamed.description = "acc caseplan renamed"
+
+	reshaped := renamed
+	reshaped.stageplans = []string{
+		accStageplan("Resolve", "Close out", false),
+		accStageplan("Escalate", "Hand off", false),
+		accStageplan("Investigation", "Work it", true),
+		accStageplan("Intake", "Triage", false),
+	}
+
+	shrunk := reshaped
+	shrunk.stageplans = []string{accStageplan("Investigation", "Work it", true)}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+				// Create everything except the caseplan first so the owner's roles propagate.
+				Config: testAccCaseplanDeps(n),
 			},
 			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal) + fmt.Sprintf(`
+				PreConfig: func() { time.Sleep(15 * time.Second) },
+				Config: testAccCaseplanConfig(n, base) + fmt.Sprintf(`
 data "genesyscloud_case_management_caseplan" "by_name" {
-  name       = "%s"
+  name       = %q
   depends_on = [genesyscloud_case_management_caseplan.cp]
 }
-`, caseplanName),
+`, n.caseplan),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "name", caseplanName),
-					resource.TestCheckResourceAttr(resourcePath, "reference_prefix", refPrefix),
-					resource.TestCheckResourceAttrPair(resourcePath, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
-					resource.TestCheckResourceAttrPair(resourcePath, "customer_intent.0.id", "genesyscloud_intents_customerintents.intent", "id"),
-					resource.TestCheckResourceAttrPair(resourcePath, "default_case_owner.0.id", "genesyscloud_user.owner", "id"),
-					resource.TestCheckResourceAttrPair(resourcePath, "data_schema.0.id", "genesyscloud_task_management_workitem_schema.schema", "id"),
-					resource.TestCheckResourceAttrPair(dataPath, "id", resourcePath, "id"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "name", n.caseplan),
+					resource.TestCheckResourceAttr(accCaseplanPath, "reference_prefix", n.refPrefix),
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "has_draft", "false"),
+					resource.TestCheckResourceAttrPair(accCaseplanPath, "division_id", "data.genesyscloud_auth_division_home.home", "id"),
+					resource.TestCheckResourceAttrPair(accCaseplanPath, "customer_intent.0.id", "genesyscloud_intents_customerintents.intent", "id"),
+					resource.TestCheckResourceAttrPair(accCaseplanPath, "default_case_owner.0.id", "genesyscloud_user.owner", "id"),
+					resource.TestCheckResourceAttrPair(accCaseplanPath, "data_schema.0.id", "genesyscloud_task_management_workitem_schema.schema", "id"),
+					resource.TestCheckResourceAttrPair(dataPath, "id", accCaseplanPath, "id"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.#", "3"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.name", "Intake"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.stepplan.0.activity_type", "None"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.1.name", "Investigate"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.1.stepplan.0.activity_type", "Workitem"),
+					resource.TestCheckResourceAttrPair(accCaseplanPath, "stageplan.1.stepplan.0.workitem_settings.0.worktype_id", "genesyscloud_task_management_worktype.wt", "id"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.2.name", "Resolve"),
+					captureAttr(accCaseplanPath, "stageplan.0.id", ids, "intake"),
+					captureAttr(accCaseplanPath, "stageplan.1.id", ids, "investigate"),
+					captureAttr(accCaseplanPath, "stageplan.2.id", ids, "resolve"),
 				),
 			},
 			{
-				ResourceName:      resourcePath,
+				// name and description are unversioned: no new draft, no publish.
+				Config: testAccCaseplanConfig(n, renamed),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "name", renamed.name),
+					resource.TestCheckResourceAttr(accCaseplanPath, "description", renamed.description),
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+				),
+			},
+			{
+				// Reorder, rename in place, and insert in one apply; matched stageplans keep their ids.
+				Config: testAccCaseplanConfig(n, reshaped),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "2"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "has_draft", "false"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.#", "4"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.name", "Resolve"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.1.name", "Escalate"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.2.name", "Investigation"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.3.name", "Intake"),
+					checkCapturedAttr(accCaseplanPath, "stageplan.0.id", ids, "resolve"),
+					checkCapturedAttr(accCaseplanPath, "stageplan.3.id", ids, "intake"),
+				),
+			},
+			{
+				Config: testAccCaseplanConfig(n, shrunk),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "3"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.#", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.name", "Investigation"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.stepplan.0.activity_type", "Workitem"),
+				),
+			},
+			{
+				ResourceName:      accCaseplanPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -67,46 +187,46 @@ data "genesyscloud_case_management_caseplan" "by_name" {
 }
 
 func TestAccResourceCaseManagementCaseplanIntakeSettings(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cpin_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cpin_" + suffix)
-	emailLocal := "tf_acc_cpin_" + strings.ReplaceAll(suffix, "-", "")
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
+	n := newAccCaseplanNames("cpin")
+	opts := accCaseplanOptions{
+		name:        n.caseplan,
+		description: "acc caseplan intake",
+		dueSeconds:  86400,
+		stageplans:  []string{accStageplan("Only stage", "Only step", false)},
+		intake:      accIntake(false, 1),
+	}
+	updated := opts
+	updated.intake = accIntake(true, 2)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { util.TestAccPreCheck(t) },
 		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
 		Steps: []resource.TestStep{
 			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
+				Config: testAccCaseplanDeps(n),
 			},
 			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, false, 1),
+				PreConfig: func() { time.Sleep(15 * time.Second) },
+				Config:    testAccCaseplanConfig(n, opts),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.property", "acc_note_text"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.required", "false"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.#", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.0.property", "acc_note_text"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.0.required", "false"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.0.display_order", "1"),
 				),
 			},
 			{
-				Config: testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan intake", 86400, 604800, true, 2),
+				// Intake settings are versioned but not frozen: editable after publish via a new draft.
+				Config: testAccCaseplanConfig(n, updated),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.#", "1"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.property", "acc_note_text"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.required", "true"),
-					resource.TestCheckResourceAttr(resourcePath, "intake_settings.0.display_order", "2"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "2"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.0.required", "true"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.0.display_order", "2"),
 				),
 			},
 			{
-				ResourceName:      resourcePath,
+				ResourceName:      accCaseplanPath,
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
@@ -115,364 +235,27 @@ func TestAccResourceCaseManagementCaseplanIntakeSettings(t *testing.T) {
 	})
 }
 
-func TestAccResourceCaseManagementCaseplanPublish(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cppub_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cpp_" + suffix)
-	emailLocal := "tf_acc_cpp_" + strings.ReplaceAll(suffix, "-", "")
-
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
-	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
-			},
-			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal) + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-			{
-				ResourceName:            publishPath,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"revision"},
-			},
-		},
-		CheckDestroy: AccVerifyCaseplanDestroyed,
+func captureAttr(path, key string, into map[string]string, as string) resource.TestCheckFunc {
+	return resource.TestCheckResourceAttrWith(path, key, func(v string) error {
+		if v == "" {
+			return fmt.Errorf("%s.%s is empty", path, key)
+		}
+		into[as] = v
+		return nil
 	})
 }
 
-func TestAccResourceCaseManagementCaseplanPublish_revisionBump(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cppubr_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cppr_" + suffix)
-	emailLocal := "tf_acc_cppr_" + strings.ReplaceAll(suffix, "-", "")
-
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
-	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
-	base := testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
-			},
-			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: base + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(publishPath, "revision", "0"),
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-			{
-				Config: base + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-			{
-				Config: base + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 1
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(publishPath, "revision", "1"),
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-		},
-		CheckDestroy: AccVerifyCaseplanDestroyed,
+func checkCapturedAttr(path, key string, from map[string]string, as string) resource.TestCheckFunc {
+	return resource.TestCheckResourceAttrWith(path, key, func(v string) error {
+		if v != from[as] {
+			return fmt.Errorf("%s.%s = %q, expected the id captured as %q (%q)", path, key, v, as, from[as])
+		}
+		return nil
 	})
 }
 
-func TestAccResourceCaseManagementCaseplanCreateVersion(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cpver_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cpv_" + suffix)
-	emailLocal := "tf_acc_cpv_" + strings.ReplaceAll(suffix, "-", "")
-
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
-	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
-	versionPath := "genesyscloud_case_management_caseplan_create_version.new_draft"
-	base := testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
-			},
-			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: base + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-			{
-				ResourceName:            versionPath,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"revision"},
-			},
-		},
-		CheckDestroy: AccVerifyCaseplanDestroyed,
-	})
-}
-
-func TestAccResourceCaseManagementCaseplanCreateVersion_revisionAfterRepublish(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cpverr_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cpvr_" + suffix)
-	emailLocal := "tf_acc_cpvr_" + strings.ReplaceAll(suffix, "-", "")
-
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
-	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
-	versionPath := "genesyscloud_case_management_caseplan_create_version.new_draft"
-	base := testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
-			},
-			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: base + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(publishPath, "revision", "0"),
-					resource.TestCheckResourceAttr(versionPath, "revision", "0"),
-					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-			{
-				Config: base + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 1
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 1
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(publishPath, "revision", "1"),
-					resource.TestCheckResourceAttr(versionPath, "revision", "1"),
-					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-		},
-		CheckDestroy: AccVerifyCaseplanDestroyed,
-	})
-}
-
-// TestAccResourceCaseManagementCaseplan_publishDraftUpdateRepublish exercises: create → publish → POST new draft
-// (create_version) → PATCH caseplan (allowed fields after publish) → publish again (revision bump).
-func TestAccResourceCaseManagementCaseplan_publishDraftUpdateRepublish(t *testing.T) {
-	suffix := uuid.NewString()
-	caseplanName := "tf_acc_cpup_" + suffix
-	refPrefix := AccReferencePrefix(suffix)
-	schemaName := AccSubstrSchema("tf_cpup_" + suffix)
-	emailLocal := "tf_acc_cpup_" + strings.ReplaceAll(suffix, "-", "")
-
-	resourcePath := "genesyscloud_case_management_caseplan.cp"
-	publishPath := "genesyscloud_case_management_caseplan_publish.pub"
-	versionPath := "genesyscloud_case_management_caseplan_create_version.new_draft"
-
-	descInitial := "acc caseplan draft before publish"
-	descUpdated := "acc caseplan updated patch after draft"
-	dueInitial, ttlInitial := 86400, 604800
-	dueUpdated, ttlUpdated := 86401, 604801
-
-	base := func(desc string, due, ttl int) string {
-		return testAccCaseManagementCaseplanConfigFlexible(caseplanName, refPrefix, schemaName, emailLocal, desc, due, ttl)
-	}
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { util.TestAccPreCheck(t) },
-		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
-		Steps: []resource.TestStep{
-			{
-				// Step 1: Create user + roles + dependencies (everything EXCEPT caseplan)
-				// to allow role propagation before creating the caseplan.
-				Config: testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal),
-			},
-			{
-				PreConfig: func() {
-					// Allow time for role propagation before creating caseplan
-					time.Sleep(15 * time.Second)
-				},
-				Config: base(descInitial, dueInitial, ttlInitial),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "description", descInitial),
-					resource.TestCheckResourceAttr(resourcePath, "default_due_duration_in_seconds", fmt.Sprintf("%d", dueInitial)),
-					resource.TestCheckResourceAttr(resourcePath, "default_ttl_seconds", fmt.Sprintf("%d", ttlInitial)),
-				),
-			},
-			{
-				Config: base(descInitial, dueInitial, ttlInitial) + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(publishPath, "revision", "0"),
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-			{
-				Config: base(descInitial, dueInitial, ttlInitial) + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrPair(versionPath, "caseplan_id", resourcePath, "id"),
-					resource.TestCheckResourceAttr(versionPath, "revision", "0"),
-				),
-			},
-			{
-				Config: base(descUpdated, dueUpdated, ttlUpdated) + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourcePath, "description", descUpdated),
-					resource.TestCheckResourceAttr(resourcePath, "default_due_duration_in_seconds", fmt.Sprintf("%d", dueUpdated)),
-					resource.TestCheckResourceAttr(resourcePath, "default_ttl_seconds", fmt.Sprintf("%d", ttlUpdated)),
-				),
-			},
-			{
-				Config: base(descUpdated, dueUpdated, ttlUpdated) + `
-resource "genesyscloud_case_management_caseplan_publish" "pub" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 1
-}
-
-resource "genesyscloud_case_management_caseplan_create_version" "new_draft" {
-  caseplan_id = genesyscloud_case_management_caseplan.cp.id
-  revision    = 0
-  depends_on  = [genesyscloud_case_management_caseplan_publish.pub]
-}
-`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(publishPath, "revision", "1"),
-					resource.TestCheckResourceAttrPair(publishPath, "caseplan_id", resourcePath, "id"),
-				),
-			},
-		},
-		CheckDestroy: AccVerifyCaseplanDestroyed,
-	})
-}
-
-// testAccUserAndDepsForCaseplan returns the config with user, roles, and all dependencies
-// but WITHOUT the caseplan resource. This allows role propagation before creating the caseplan.
-func testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal string) string {
+// testAccCaseplanDeps returns every dependency of the caseplan without the caseplan itself.
+func testAccCaseplanDeps(n accCaseplanNames) string {
 	props := `jsonencode({
     acc_note_text = {
       allOf     = [{ "$ref" = "#/definitions/text" }]
@@ -481,10 +264,17 @@ func testAccUserAndDepsForCaseplan(caseplanName, schemaName, emailLocal string) 
       maxLength = 100
     }
   })`
+	wtExtra := `
+  schema_id          = genesyscloud_task_management_workitem_schema.schema.id
+  schema_version     = floor(genesyscloud_task_management_workitem_schema.schema.version)
+  assignment_enabled = false
+`
 
 	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
-		AccCustomerIntentDepsHCL(caseplanName, "acc caseplan deps") +
-		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
+		AccCustomerIntentDepsHCL(n.caseplan, "acc caseplan deps") +
+		workitemSchema.GenerateWorkitemSchemaResource("schema", n.schema, "acc caseplan schema", props, util.TrueValue) +
+		workbin.GenerateWorkbinResource("wb", n.workbin, "acc", "data.genesyscloud_auth_division_home.home.id") +
+		worktype.GenerateWorktypeResourceBasic("wt", n.worktype, "acc", "genesyscloud_task_management_workbin.wb.id", wtExtra) +
 		fmt.Sprintf(`
 resource "genesyscloud_user" "owner" {
   email       = "%[1]s@exampleuser.com"
@@ -494,49 +284,20 @@ resource "genesyscloud_user" "owner" {
 }
 
 %[3]s
-`, emailLocal, caseplanName, AccOwnerRoleAndUserRolesHCL(caseplanName))
+`, n.emailLocal, n.caseplan, AccOwnerRoleAndUserRolesHCL(n.caseplan))
 }
 
-func testAccCaseManagementCaseplanConfig(caseplanName, refPrefix, schemaName, emailLocal string) string {
-	return testAccCaseManagementCaseplanConfigFlexible(caseplanName, refPrefix, schemaName, emailLocal, "acc caseplan", 86400, 604800)
-}
-
-func testAccCaseManagementCaseplanConfigFlexible(caseplanName, refPrefix, schemaName, emailLocal, description string, defaultDueSec, defaultTtlSec int) string {
-	props := `jsonencode({
-    acc_note_text = {
-      allOf     = [{ "$ref" = "#/definitions/text" }]
-      title     = "n"
-      minLength = 1
-      maxLength = 100
-    }
-  })`
-
-	ownerGrants := AccOwnerRoleAndUserRolesHCL(caseplanName)
-	// POST accepts mixed case but GET canonicalizes uppercase; mismatch fails SDK post-apply empty-plan checks.
-	refNormalized := strings.ToUpper(strings.TrimSpace(refPrefix))
-
-	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
-		AccCustomerIntentDepsHCL(caseplanName, "acc caseplan deps") +
-		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
-		fmt.Sprintf(`
-resource "genesyscloud_user" "owner" {
-  email       = "%[1]s@exampleuser.com"
-  name        = "%[2]s owner"
-  password    = "TfAccCaseplan1!"
-  division_id = data.genesyscloud_auth_division_home.home.id
-}
-
-%[7]s
-
+func testAccCaseplanConfig(n accCaseplanNames, o accCaseplanOptions) string {
+	return testAccCaseplanDeps(n) + fmt.Sprintf(`
 resource "genesyscloud_case_management_caseplan" "cp" {
   depends_on = [genesyscloud_user_roles.cp_owner_roles]
 
-  name                            = "%[2]s"
+  name                            = %[1]q
   division_id                     = data.genesyscloud_auth_division_home.home.id
-  description                     = %[4]s
-  reference_prefix                = "%[3]s"
-  default_due_duration_in_seconds = %[5]d
-  default_ttl_seconds             = %[6]d
+  description                     = %[2]s
+  reference_prefix                = %[3]q
+  default_due_duration_in_seconds = %[4]d
+  default_ttl_seconds             = 604800
 
   customer_intent {
     id = genesyscloud_intents_customerintents.intent.id
@@ -549,71 +310,134 @@ resource "genesyscloud_case_management_caseplan" "cp" {
   data_schema {
     id = genesyscloud_task_management_workitem_schema.schema.id
   }
-
-  lifecycle {
-    ignore_changes = [data_schema]
-  }
-}
-`, emailLocal, caseplanName, refNormalized, strconv.Quote(description), defaultDueSec, defaultTtlSec, ownerGrants)
+%[5]s%[6]s}
+`, o.name, strconv.Quote(o.description), strings.ToUpper(n.refPrefix), o.dueSeconds, o.intake, strings.Join(o.stageplans, ""))
 }
 
-func testAccCaseManagementCaseplanConfigIntake(caseplanName, refPrefix, schemaName, emailLocal, description string, defaultDueSec, defaultTtlSec int, intakeRequired bool, intakeOrder int) string {
-	props := `jsonencode({
-    acc_note_text = {
-      allOf     = [{ "$ref" = "#/definitions/text" }]
-      title     = "n"
-      minLength = 1
-      maxLength = 100
-    }
-  })`
+// TestAccResourceCaseManagementCaseplanFrozenFields checks that fields the API freezes at first publish fail at
+// plan time, and that the caseplan is untouched afterwards.
+func TestAccResourceCaseManagementCaseplanFrozenFields(t *testing.T) {
+	n := newAccCaseplanNames("cpfz")
+	opts := accCaseplanOptions{
+		name:        n.caseplan,
+		description: "acc caseplan frozen",
+		dueSeconds:  86400,
+		stageplans:  []string{accStageplan("Only stage", "Only step", false)},
+	}
+	base := testAccCaseplanConfig(n, opts)
+	other := "00000000-0000-0000-0000-000000000000"
 
-	ownerGrants := AccOwnerRoleAndUserRolesHCL(caseplanName)
-	refNormalized := strings.ToUpper(strings.TrimSpace(refPrefix))
+	steps := []resource.TestStep{
+		{Config: testAccCaseplanDeps(n)},
+		{
+			PreConfig: func() { time.Sleep(15 * time.Second) },
+			Config:    base,
+			Check:     resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+		},
+	}
+	for _, edit := range []struct{ field, from, to string }{
+		{"division_id", "division_id                     = data.genesyscloud_auth_division_home.home.id", `division_id = "` + other + `"`},
+		{"reference_prefix", fmt.Sprintf("reference_prefix                = %q", strings.ToUpper(n.refPrefix)), `reference_prefix = "ZZZZ9999"`},
+		{"customer_intent", "id = genesyscloud_intents_customerintents.intent.id", `id = "` + other + `"`},
+		{"data_schema", "id = genesyscloud_task_management_workitem_schema.schema.id", `id = "` + other + `"`},
+	} {
+		if !strings.Contains(base, edit.from) {
+			t.Fatalf("test config no longer contains %q for %s", edit.from, edit.field)
+		}
+		steps = append(steps, resource.TestStep{
+			Config:      strings.Replace(base, edit.from, edit.to, 1),
+			ExpectError: regexp.MustCompile(edit.field + ` cannot change after the caseplan has been published`),
+		})
+	}
+	// The caseplan is unchanged and still plans empty with the original config.
+	steps = append(steps, resource.TestStep{
+		Config: base,
+		Check:  resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+	})
 
-	return gcloud.GenerateAuthDivisionHomeDataSource("home") +
-		AccCustomerIntentDepsHCL(caseplanName, "acc caseplan deps") +
-		workitemSchema.GenerateWorkitemSchemaResource("schema", schemaName, "acc caseplan schema", props, util.TrueValue) +
-		fmt.Sprintf(`
-resource "genesyscloud_user" "owner" {
-  email       = "%[1]s@exampleuser.com"
-  name        = "%[2]s owner"
-  password    = "TfAccCaseplan1!"
-  division_id = data.genesyscloud_auth_division_home.home.id
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps:             steps,
+		CheckDestroy:      AccVerifyCaseplanDestroyed,
+	})
 }
 
-%[7]s
+// TestAccResourceCaseManagementCaseplanVersionedFields covers versioned changes other than stageplan order:
+// scalar fields, an unpublished UI draft being overwritten, clearing intake, and a Workitem step becoming None.
+func TestAccResourceCaseManagementCaseplanVersionedFields(t *testing.T) {
+	n := newAccCaseplanNames("cpvf")
+	ids := map[string]string{}
+	opts := accCaseplanOptions{
+		name:        n.caseplan,
+		description: "acc caseplan versioned",
+		dueSeconds:  86400,
+		stageplans:  []string{accStageplan("Work", "Do it", true)},
+		intake:      accIntake(true, 1),
+	}
+	due := opts
+	due.dueSeconds = 90000
+	noIntake := due
+	noIntake.intake = ""
+	noWorkitem := noIntake
+	noWorkitem.stageplans = []string{accStageplan("Work", "Do it", false)}
 
-resource "genesyscloud_case_management_caseplan" "cp" {
-  depends_on = [genesyscloud_user_roles.cp_owner_roles]
-
-  name                            = "%[2]s"
-  division_id                     = data.genesyscloud_auth_division_home.home.id
-  description                     = %[4]s
-  reference_prefix                = "%[3]s"
-  default_due_duration_in_seconds = %[5]d
-  default_ttl_seconds             = %[6]d
-
-  customer_intent {
-    id = genesyscloud_intents_customerintents.intent.id
-  }
-
-  default_case_owner {
-    id = genesyscloud_user.owner.id
-  }
-
-  data_schema {
-    id = genesyscloud_task_management_workitem_schema.schema.id
-  }
-
-  intake_settings {
-    property      = "acc_note_text"
-    required      = %[8]t
-    display_order = %[9]d
-  }
-
-  lifecycle {
-    ignore_changes = [data_schema]
-  }
-}
-`, emailLocal, caseplanName, refNormalized, strconv.Quote(description), defaultDueSec, defaultTtlSec, ownerGrants, intakeRequired, intakeOrder)
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{Config: testAccCaseplanDeps(n)},
+			{
+				PreConfig: func() { time.Sleep(15 * time.Second) },
+				Config:    testAccCaseplanConfig(n, opts),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "1"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "default_due_duration_in_seconds", "86400"),
+					captureAttr(accCaseplanPath, "id", ids, "caseplan"),
+				),
+			},
+			{
+				// Someone edits the caseplan in the UI, leaving an unpublished draft. The next apply overwrites it
+				// with config and publishes exactly what is configured.
+				PreConfig: func() {
+					api := platformclientv2.NewCaseManagementApi()
+					if _, _, err := api.PostCasemanagementCaseplanVersions(ids["caseplan"]); err != nil {
+						t.Fatalf("creating UI draft: %v", err)
+					}
+					patch := platformclientv2.Caseplanupdate{DefaultTtlSeconds: platformclientv2.Int(172800)}
+					if _, _, err := api.PatchCasemanagementCaseplan(ids["caseplan"], patch); err != nil {
+						t.Fatalf("editing UI draft: %v", err)
+					}
+				},
+				Config: testAccCaseplanConfig(n, due),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "2"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "has_draft", "false"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "default_due_duration_in_seconds", "90000"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "default_ttl_seconds", "604800"),
+				),
+			},
+			{
+				Config: testAccCaseplanConfig(n, noIntake),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "3"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "intake_settings.#", "0"),
+				),
+			},
+			{
+				Config: testAccCaseplanConfig(n, noWorkitem),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(accCaseplanPath, "published_version", "4"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.stepplan.0.activity_type", "None"),
+					resource.TestCheckResourceAttr(accCaseplanPath, "stageplan.0.stepplan.0.workitem_settings.#", "0"),
+				),
+			},
+			{
+				ResourceName:      accCaseplanPath,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+		CheckDestroy: AccVerifyCaseplanDestroyed,
+	})
 }

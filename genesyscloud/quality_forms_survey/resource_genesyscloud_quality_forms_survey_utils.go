@@ -5,11 +5,28 @@ import (
 	"strconv"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/lists"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/resourcedata"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
+
+// buildSdkDivision builds the form division from division_id. Returns nil when division_id is not set.
+func buildSdkDivision(d *schema.ResourceData) *platformclientv2.Writablestarrabledivision {
+	divisionId := resourcedata.GetNillableValue[string](d, "division_id")
+	if divisionId == nil {
+		return nil
+	}
+	return &platformclientv2.Writablestarrabledivision{Id: divisionId}
+}
+
+// flattenDivisionId reads the division id from the API response and sets division_id.
+func flattenDivisionId(d *schema.ResourceData, division *platformclientv2.Writablestarrabledivision) {
+	if division != nil {
+		resourcedata.SetNillableValue(d, "division_id", division.Id)
+	}
+}
 
 func buildSurveyQuestionGroups(d *schema.ResourceData) (*[]platformclientv2.Surveyquestiongroup, diag.Diagnostics) {
 	questionGroupType := "questionGroup"
@@ -301,6 +318,7 @@ func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStru
         header = "%s"
         footer = "%s"
 		%s
+		%s
         %s
 	}
 	`, ResourceType, resourceLabel,
@@ -310,11 +328,19 @@ func GenerateSurveyFormResource(resourceLabel string, surveyForm *SurveyFormStru
 		surveyForm.Language,
 		surveyForm.Header,
 		surveyForm.Footer,
+		generateSurveyFormDivisionId(surveyForm.DivisionId),
 		generateSurveyFormQuestionGroups(&surveyForm.QuestionGroups),
 		generateLifeCycle(),
 	)
 
 	return form
+}
+
+func generateSurveyFormDivisionId(divisionId string) string {
+	if divisionId == "" {
+		return ""
+	}
+	return fmt.Sprintf(`division_id = %s`, divisionId)
 }
 
 func generateLifeCycle() string {

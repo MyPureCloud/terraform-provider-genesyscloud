@@ -104,28 +104,106 @@ func flattenCampaignTimeslots(campaigntimeslots []platformclientv2.Campaigntimes
 	return campaigntimeslotSet
 }
 
-func flattenCallableTimes(callabletimes []platformclientv2.Callabletime) *schema.Set {
+// flattenCallableTimes converts the API callable times to the schema set.
+//
+// `existing` is the previous state, or the planned values right after a create or update (nil when there is none,
+// for example on import or export). It decides whether the `name` the API returned is written to state.
+//
+// When a callable time is created without a `name`, the API fills one in (the time zone id). `name` is Computed, so
+// Terraform accepts that. The provider's consistency check does not: callable_times is a set, and the identity of each
+// element includes `name`, so the element that was read back (with a name) does not match the planned one (without),
+// and the apply fails after the check retries. To avoid that, the API's name is only written to state when the
+// matching planned or previous element already had a name. Otherwise it is left empty.
+func flattenCallableTimes(callabletimes []platformclientv2.Callabletime, existing *schema.Set) *schema.Set {
 	if len(callabletimes) == 0 {
 		return nil
 	}
+
+	var existingElements []map[string]interface{}
+	if existing != nil {
+		for _, e := range existing.List() {
+			if m, ok := e.(map[string]interface{}); ok {
+				existingElements = append(existingElements, m)
+			}
+		}
+	}
+	used := make([]bool, len(existingElements))
 
 	callabletimeSet := schema.NewSet(schema.HashResource(timeSlotResource), []interface{}{})
 	for _, callabletime := range callabletimes {
 		callabletimeMap := make(map[string]interface{})
 
+		var timeSlots *schema.Set
 		if callabletime.TimeSlots != nil {
-			callabletimeMap["time_slots"] = flattenCampaignTimeslots(*callabletime.TimeSlots)
+			timeSlots = flattenCampaignTimeslots(*callabletime.TimeSlots)
+			callabletimeMap["time_slots"] = timeSlots
 		}
+		timeZoneId := ""
 		if callabletime.TimeZoneId != nil {
-			callabletimeMap["time_zone_id"] = *callabletime.TimeZoneId
+			timeZoneId = *callabletime.TimeZoneId
+			callabletimeMap["time_zone_id"] = timeZoneId
 		}
 		if callabletime.Name != nil {
-			callabletimeMap["name"] = *callabletime.Name
+			if keepApiCallableTimeName(existingElements, used, timeZoneId, timeSlots, *callabletime.Name) {
+				callabletimeMap["name"] = *callabletime.Name
+			}
 		}
 
 		callabletimeSet.Add(callabletimeMap)
 	}
 	return callabletimeSet
+}
+
+// keepApiCallableTimeName reports whether the name returned by the API should be written to state.
+// The API callable time is matched to a planned or previous element with the same time zone and time slots. If that
+// element has no name, the name was filled in by the API and is not written. If it has a name, or there is no matching
+// element at all (import, export, or the callable time changed outside Terraform), the API's name is kept.
+// Each existing element is matched at most once, so duplicates are paired one to one.
+func keepApiCallableTimeName(existing []map[string]interface{}, used []bool, timeZoneId string, timeSlots *schema.Set, apiName string) bool {
+	match := -1
+	for i, candidate := range existing {
+		if used[i] {
+			continue
+		}
+		if existingZone, _ := candidate["time_zone_id"].(string); existingZone != timeZoneId {
+			continue
+		}
+		existingSlots, _ := candidate["time_slots"].(*schema.Set)
+		if !sameTimeSlots(existingSlots, timeSlots) {
+			continue
+		}
+		if match == -1 {
+			match = i
+		}
+		// Prefer the element whose name is the one the API returned, so duplicates are paired correctly.
+		if existingName, _ := candidate["name"].(string); existingName == apiName {
+			match = i
+			break
+		}
+	}
+	if match == -1 {
+		return true
+	}
+	used[match] = true
+	plannedName, _ := existing[match]["name"].(string)
+	return plannedName != ""
+}
+
+func sameTimeSlots(a, b *schema.Set) bool {
+	aLen, bLen := 0, 0
+	if a != nil {
+		aLen = a.Len()
+	}
+	if b != nil {
+		bLen = b.Len()
+	}
+	if aLen == 0 && bLen == 0 {
+		return true
+	}
+	if aLen != bLen {
+		return false
+	}
+	return a.Equal(b)
 }
 
 func GenerateOutboundCallabletimeset(

@@ -503,6 +503,7 @@ func cleanupConfiguration(config *platformclientv2.Configuration) error {
 
 	// Clear any access tokens or sensitive data
 	config.AccessToken = ""
+	config.ClientID = ""
 	config.BasePath = ""
 
 	// Clear any default headers that might contain sensitive info

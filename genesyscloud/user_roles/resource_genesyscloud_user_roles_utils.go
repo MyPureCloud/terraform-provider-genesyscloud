@@ -17,7 +17,7 @@ func flattenSubjectRoles(d *schema.ResourceData, p *userRolesProxy) (*schema.Set
 		return nil, resp, fmt.Errorf("error getting assigned grants %s", diagErr)
 	}
 
-	homeDivId, err := util.GetHomeDivisionID()
+	homeDivId, err := util.GetHomeDivisionIDWithConfig(p.clientConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting home division id %v", err)
 	}
@@ -103,7 +103,7 @@ func addDivisionIdsSetToRole(d *schema.ResourceData, divIdsFromApi *schema.Set, 
 }
 
 // getExistingAndConfigGrants is used to generate the existing and config grants for the resource
-func getExistingAndConfigGrants(grants []platformclientv2.Authzgrant, rolesConfig *schema.Set) ([]string, []string, error) {
+func getExistingAndConfigGrants(sdkConfig *platformclientv2.Configuration, grants []platformclientv2.Authzgrant, rolesConfig *schema.Set) ([]string, []string, error) {
 	rolesList := rolesConfig.List()
 	var existingGrants []string
 
@@ -116,7 +116,7 @@ func getExistingAndConfigGrants(grants []platformclientv2.Authzgrant, rolesConfi
 	}
 
 	var configGrants []string
-	homeDiv, err := util.GetHomeDivisionID()
+	homeDiv, err := util.GetHomeDivisionIDWithConfig(sdkConfig)
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get home division ID %v", err)

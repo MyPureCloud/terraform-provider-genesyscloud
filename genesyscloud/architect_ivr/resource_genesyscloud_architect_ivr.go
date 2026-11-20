@@ -99,7 +99,7 @@ func readIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface{}
 		} else {
 			utilE164 := util.NewUtilE164Service()
 			dnis := lists.Map(*ivrConfig.Dnis, utilE164.FormatAsCalculatedE164Number)
-			_ = d.Set("dnis", lists.StringListToSetOrNil(&dnis))
+			_ = d.Set("dnis", orderDnisLikeCurrent(d, dnis))
 		}
 
 		resourcedata.SetNillableValue(d, "description", ivrConfig.Description)
@@ -146,6 +146,11 @@ func updateIvrConfig(ctx context.Context, d *schema.ResourceData, meta interface
 	}, 400)
 
 	if diagErr != nil {
+		// Preserve prior state on apply error (DEVTOOLING-1533 / DEVTOOLING-1881).
+		// A failed update leaves the IVR as it was (the proxy restores it if a dnis chunk fails),
+		// so the prior state is the accurate one. Partial causes State() to read from prior state
+		// instead of the planned config.
+		d.Partial(true)
 		return diagErr
 	}
 

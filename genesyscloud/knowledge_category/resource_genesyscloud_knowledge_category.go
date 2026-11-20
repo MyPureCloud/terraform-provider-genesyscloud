@@ -146,18 +146,29 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("Deleting knowledge category %s", d.Id())
 	_, resp, err := proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
 	if err != nil {
-		if strings.Contains(err.Error(), "in use by Bot flow status unknown") {
-			rebuildErr := rebuildDatabase()
-			if rebuildErr != nil {
-				log.Printf("Failed to rebuild knowledge category database: %v", rebuildErr)
-			}
-			time.Sleep(10 * time.Second)
-			_, resp, err = proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
-			if err != nil {
-				return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", d.Id(), err), resp)
-			}
-		} else {
+		if !strings.Contains(err.Error(), "in use by Bot flow") {
 			return util.BuildAPIDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", d.Id(), err), resp)
+		}
+
+		// The knowledge category is still referenced by a bot flow in the dependency-tracking graph.
+		// Rebuild the dependency tracking database once, then keep retrying the delete until the
+		// (asynchronous, eventually-consistent) dependency link clears.
+		if rebuildErr := rebuildDatabase(sdkConfig); rebuildErr != nil {
+			log.Printf("Failed to rebuild knowledge category database: %v", rebuildErr)
+		}
+
+		diagErr := util.WithRetries(ctx, 2*time.Minute, func() *retry.RetryError {
+			_, resp, err := proxy.deleteKnowledgeCategory(ctx, knowledgeBaseId, knowledgeCategoryId)
+			if err != nil {
+				if strings.Contains(err.Error(), "in use by Bot flow") {
+					return retry.RetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Knowledge category %s still in use by a bot flow, retrying delete", d.Id()), resp))
+				}
+				return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError("genesyscloud_knowledge_category", fmt.Sprintf("Failed to delete knowledge category %s error: %s", d.Id(), err), resp))
+			}
+			return nil
+		})
+		if diagErr != nil {
+			return diagErr
 		}
 	}
 
@@ -176,10 +187,10 @@ func deleteKnowledgeCategory(ctx context.Context, d *schema.ResourceData, meta i
 	})
 }
 
-func rebuildDatabase() diag.Diagnostics {
+func rebuildDatabase(clientConfig *platformclientv2.Configuration) diag.Diagnostics {
 	log.Printf("Rebuilding knowledge base database")
 
-	architectApi := platformclientv2.NewArchitectApi()
+	architectApi := platformclientv2.NewArchitectApiWithConfig(clientConfig)
 
 	resp, architectError := architectApi.PostArchitectDependencytrackingBuild()
 	if architectError != nil {
