@@ -87,36 +87,43 @@ func ResourceTaskManagementOnAttributeChangeRule() *schema.Resource {
 	}
 }
 
+// conditionStatusAttribute is the value of condition.attribute for which condition.new_value / condition.old_value
+// are worktype status IDs. Other attributes hold plain values and are not references.
+const conditionStatusAttribute = "statusId"
+
 // TaskManagementOnAttributeChangeRuleExporter returns the resourceExporter object used to hold the genesyscloud_task_management_worktype_flow_onattributechange_rule exporter's config
 func TaskManagementOnAttributeChangeRuleExporter() *resourceExporter.ResourceExporter {
-	return &resourceExporter.ResourceExporter{
+	// Declared statically (not only via CustomAttributeResolver) so dependency graphs built from exporter metadata
+	// can see the rule -> worktype_status dependency. Intentionally not in RefAttrs, which is unconditional.
+	conditionalRefAttrs := map[string][]*resourceExporter.ConditionalRefAttr{}
+	for _, attr := range []string{"condition.new_value", "condition.old_value"} {
+		conditionalRefAttrs[attr] = []*resourceExporter.ConditionalRefAttr{{
+			SiblingAttr:  "attribute",
+			SiblingValue: conditionStatusAttribute,
+			RefType:      "genesyscloud_task_management_worktype_status",
+		}}
+	}
+
+	exporter := &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthTaskManagementOnAttributeChangeRule),
 		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
 			"worktype_id": {RefType: "genesyscloud_task_management_worktype"},
 		},
-		CustomAttributeResolver: map[string]*resourceExporter.RefAttrCustomResolver{
-			"condition.new_value": {ResolveRefTypeFunc: resolveConditionValueRefType},
-			"condition.old_value": {ResolveRefTypeFunc: resolveConditionValueRefType},
-		},
+		ConditionalRefAttrs: conditionalRefAttrs,
 	}
+	exporter.CustomAttributeResolver = map[string]*resourceExporter.RefAttrCustomResolver{
+		"condition.new_value": {ResolveRefTypeFunc: conditionValueRefTypeResolver(exporter, "condition.new_value")},
+		"condition.old_value": {ResolveRefTypeFunc: conditionValueRefTypeResolver(exporter, "condition.old_value")},
+	}
+	return exporter
 }
 
-// resolveConditionValueRefType checks the condition.attribute field to determine
-// whether new_value/old_value should be resolved as a worktype_status reference.
-// Only statusId attribute values are references to worktype_status resources.
-func resolveConditionValueRefType(configMap map[string]interface{}) (string, error) {
-	attribute, ok := configMap["attribute"]
-	if !ok {
-		return "", nil
+// conditionValueRefTypeResolver returns a ResolveRefTypeFunc driven by the exporter's ConditionalRefAttrs, so the
+// export-time behavior and the static metadata come from one declaration.
+func conditionValueRefTypeResolver(exporter *resourceExporter.ResourceExporter, attrPath string) func(map[string]interface{}) (string, error) {
+	return func(configMap map[string]interface{}) (string, error) {
+		return exporter.ResolveConditionalRefType(attrPath, configMap), nil
 	}
-	attrStr, ok := attribute.(string)
-	if !ok {
-		return "", nil
-	}
-	if attrStr == "statusId" {
-		return "genesyscloud_task_management_worktype_status", nil
-	}
-	return "", nil
 }
 
 // DataSourceTaskManagementOnAttributeChangeRule registers the genesyscloud_task_management_worktype_flow_onattributechange_rule data source
