@@ -71,6 +71,23 @@ type RefAttrSettings struct {
 	AltValues []string
 }
 
+// ConditionalRefAttr declares a reference whose target type applies only when a sibling attribute
+// (in the same nested object) has a specific value, e.g. condition.new_value references a worktype status
+// only when condition.attribute == "statusId".
+//
+// It is static metadata: it lets consumers build a dependency graph without running an export. It does not
+// change how the exporter resolves references; exporters still need a CustomAttributeResolver to do that.
+type ConditionalRefAttr struct {
+	// SiblingAttr is the name of the attribute, within the same object as the referencing attribute, that is tested.
+	SiblingAttr string
+
+	// SiblingValue is the value SiblingAttr must equal for the reference to apply.
+	SiblingValue string
+
+	// RefType is the referenced resource type when the condition holds.
+	RefType string
+}
+
 type ResourceInfo struct {
 	State         *terraform.InstanceState
 	BlockLabel    string
@@ -164,6 +181,11 @@ type ResourceExporter struct {
 	// A map of resource attributes to types that they reference
 	// Attributes in nested objects can be defined with a '.' separator
 	RefAttrs map[string]*RefAttrSettings
+
+	// ConditionalRefAttrs declares attributes that are references only when a sibling attribute has a given value.
+	// Keys use the same '.' separated path format as RefAttrs. Do not also list the attribute in RefAttrs: RefAttrs
+	// are unconditional and take precedence over CustomAttributeResolver ref type resolution at export time.
+	ConditionalRefAttrs map[string][]*ConditionalRefAttr
 
 	// ThirdPartyRefAttrs specifies which attributes reference third party files e.g. genesyscloud_flow.filepath references a YAML file
 	ThirdPartyRefAttrs []string
@@ -399,6 +421,7 @@ func CloneResourceExporter(template *ResourceExporter) *ResourceExporter {
 		IsSingleton:             template.IsSingleton,
 		ExportId:                template.ExportId,
 		RefAttrs:                template.RefAttrs,
+		ConditionalRefAttrs:     template.ConditionalRefAttrs,
 		ThirdPartyRefAttrs:      template.ThirdPartyRefAttrs,
 		AllowZeroValues:         template.AllowZeroValues,
 		AllowZeroValuesInMap:    template.AllowZeroValuesInMap,
@@ -429,6 +452,29 @@ func (r *ResourceExporter) GetRefAttrSettings(attribute string) *RefAttrSettings
 		return nil
 	}
 	return r.RefAttrs[attribute]
+}
+
+// GetConditionalRefAttrs returns the conditional reference declarations for the attribute path, or nil.
+func (r *ResourceExporter) GetConditionalRefAttrs(attribute string) []*ConditionalRefAttr {
+	if r.ConditionalRefAttrs == nil {
+		return nil
+	}
+	return r.ConditionalRefAttrs[attribute]
+}
+
+// ResolveConditionalRefType returns the referenced resource type for the attribute path given the config map of the
+// object that contains it, or "" when no declaration matches (including when the sibling attribute is missing or
+// is not a string).
+func (r *ResourceExporter) ResolveConditionalRefType(attribute string, configMap map[string]interface{}) string {
+	for _, c := range r.GetConditionalRefAttrs(attribute) {
+		if c == nil {
+			continue
+		}
+		if v, ok := configMap[c.SiblingAttr].(string); ok && v == c.SiblingValue {
+			return c.RefType
+		}
+	}
+	return ""
 }
 
 func (r *ResourceExporter) GetNestedRefAttrSettings(attribute string) *RefAttrSettings {

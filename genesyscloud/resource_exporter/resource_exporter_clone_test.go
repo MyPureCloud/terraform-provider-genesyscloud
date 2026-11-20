@@ -42,6 +42,42 @@ func TestCloneResourceExporter_isolatesMutableState(t *testing.T) {
 	assert.Equal(t, template.RefAttrs, clone.RefAttrs)
 }
 
+func TestCloneResourceExporter_copiesConditionalRefAttrs(t *testing.T) {
+	t.Parallel()
+
+	template := &ResourceExporter{
+		ConditionalRefAttrs: map[string][]*ConditionalRefAttr{
+			"condition.new_value": {{SiblingAttr: "attribute", SiblingValue: "statusId", RefType: "genesyscloud_task_management_worktype_status"}},
+		},
+	}
+
+	clone := CloneResourceExporter(template)
+	require.NotNil(t, clone)
+	assert.Equal(t, template.ConditionalRefAttrs, clone.ConditionalRefAttrs)
+	assert.Equal(t, "genesyscloud_task_management_worktype_status",
+		clone.ResolveConditionalRefType("condition.new_value", map[string]interface{}{"attribute": "statusId"}))
+}
+
+func TestResolveConditionalRefType(t *testing.T) {
+	t.Parallel()
+
+	r := &ResourceExporter{
+		ConditionalRefAttrs: map[string][]*ConditionalRefAttr{
+			"a.value": {
+				nil,
+				{SiblingAttr: "kind", SiblingValue: "x", RefType: "type_x"},
+				{SiblingAttr: "kind", SiblingValue: "y", RefType: "type_y"},
+			},
+		},
+	}
+
+	assert.Equal(t, "type_x", r.ResolveConditionalRefType("a.value", map[string]interface{}{"kind": "x"}))
+	assert.Equal(t, "type_y", r.ResolveConditionalRefType("a.value", map[string]interface{}{"kind": "y"}))
+	assert.Equal(t, "", r.ResolveConditionalRefType("a.value", map[string]interface{}{"kind": "z"}))
+	assert.Equal(t, "", r.ResolveConditionalRefType("other", map[string]interface{}{"kind": "x"}))
+	assert.Equal(t, "", (&ResourceExporter{}).ResolveConditionalRefType("a.value", map[string]interface{}{"kind": "x"}))
+}
+
 func TestCloneResourceExporter_nilTemplate(t *testing.T) {
 	t.Parallel()
 
