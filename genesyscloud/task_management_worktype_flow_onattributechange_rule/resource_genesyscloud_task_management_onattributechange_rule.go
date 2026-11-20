@@ -93,6 +93,12 @@ func readTaskManagementOnAttributeChangeRule(ctx context.Context, d *schema.Reso
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("failed to read task management onattributechange rule %s for worktype %s | error: %s", id, worktypeId, getErr), resp))
 		}
 
+		// Rules built with condition groups (match) have no condition, as the two fields are mutually exclusive.
+		// The SDK has no model for match yet, so fail visibly instead of writing an empty condition to state.
+		if onAttributeChangeRule.Condition == nil {
+			return retry.NonRetryableError(fmt.Errorf("%s: OnAttributeChange rule %s for worktype %s uses condition groups (match), which this provider version does not support", ResourceType, id, worktypeId))
+		}
+
 		resourcedata.SetNillableValue(d, "name", onAttributeChangeRule.Name)
 		resourcedata.SetNillableValue(d, "worktype_id", onAttributeChangeRule.Worktype.Id)
 		resourcedata.SetNillableValueWithInterfaceArrayWithFunc(d, "condition", onAttributeChangeRule, flattenSdkCondition)

@@ -125,11 +125,14 @@ func ComposeWorktypeBasedTerraformId(worktypeId string, id string) (composedId s
 
 // flattenSdkCondition converts a *platformclientv2.Workitemonattributechangerule into a map and then into array for consumption by Terraform
 func flattenSdkCondition(rule *platformclientv2.Workitemonattributechangerule) []interface{} {
+	if rule == nil || rule.Condition == nil {
+		return nil
+	}
 	conditionInterface := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(conditionInterface, "attribute", rule.Condition.Attribute)
 
-	if *rule.Condition.Attribute == "statusId" {
+	if rule.Condition.Attribute != nil && *rule.Condition.Attribute == "statusId" && rule.Worktype != nil && rule.Worktype.Id != nil && rule.Condition.NewValue != nil {
 		newValue := ComposeWorktypeBasedTerraformId(*rule.Worktype.Id, *rule.Condition.NewValue)
 		resourcedata.SetMapValueIfNotNil(conditionInterface, "new_value", &newValue)
 
