@@ -444,9 +444,8 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Type:        schema.TypeString,
 			},
 			`library_ids`: {
-				Description: `One or more libraries response is associated with. Changing the library IDs will result in the resource being recreated`,
+				Description: `One or more libraries response is associated with.`,
 				Required:    true,
-				ForceNew:    true,
 				Type:        schema.TypeSet,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
