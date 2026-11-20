@@ -13,6 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 var dataSourceRoutingSkillCache *rc.DataSourceCache
@@ -21,17 +22,21 @@ func dataSourceRoutingSkillRead(ctx context.Context, d *schema.ResourceData, m i
 	sdkConfig := m.(*provider.ProviderMeta).ClientConfig
 	key := d.Get("name").(string)
 
-	if dataSourceRoutingSkillCache == nil {
-		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn)
-	}
-
-	queueId, err := rc.RetrieveId(dataSourceRoutingSkillCache, ResourceType, key, ctx)
+	skillId, err := getRoutingSkillIdByNameFromCache(ctx, sdkConfig, key)
 	if err != nil {
 		return err
 	}
 
-	d.SetId(queueId)
+	d.SetId(skillId)
 	return nil
+}
+
+func getRoutingSkillIdByNameFromCache(ctx context.Context, sdkConfig *platformclientv2.Configuration, name string) (string, diag.Diagnostics) {
+	if dataSourceRoutingSkillCache == nil {
+		dataSourceRoutingSkillCache = rc.NewDataSourceCache(sdkConfig, hydrateRoutingSkillCacheFn, getSkillByNameFn)
+	}
+
+	return rc.RetrieveId(dataSourceRoutingSkillCache, ResourceType, name, ctx)
 }
 
 func hydrateRoutingSkillCacheFn(c *rc.DataSourceCache, ctx context.Context) error {
