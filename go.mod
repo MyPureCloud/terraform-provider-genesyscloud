@@ -20,7 +20,7 @@ require (
 	github.com/rjNemo/underscore v0.10.0
 	github.com/shirou/gopsutil/v4 v4.26.2
 	github.com/zclconf/go-cty v1.18.0
-	golang.org/x/sync v0.22.0
+	golang.org/x/sync v0.25.0
 	gonum.org/v1/gonum v0.17.0
 )
 
