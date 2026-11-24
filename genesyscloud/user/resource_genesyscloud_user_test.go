@@ -28,7 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 // fixed ranges used by other tests that can run at the same time

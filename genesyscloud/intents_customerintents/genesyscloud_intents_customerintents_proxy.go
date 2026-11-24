@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -198,7 +198,7 @@ func getCustomerIntentIdByNameFn(ctx context.Context, p *customerIntentProxy, na
 // getCustomerIntentByIdFn is an implementation of the function to get a Genesys Cloud customer intent by Id
 func getCustomerIntentByIdFn(ctx context.Context, p *customerIntentProxy, id string) (*platformclientv2.Customerintentresponse, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.intentsApi.GetIntentsCustomerintent(id)
+	return p.intentsApi.GetIntentsCustomerintent(id, false)
 }
 
 // updateCustomerIntentFn is an implementation of the function to update a Genesys Cloud customer intent

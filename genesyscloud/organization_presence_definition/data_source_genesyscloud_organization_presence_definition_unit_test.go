@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 // apiPayload is a real /api/v2/presencedefinitions response captured from an org. Note that none of the

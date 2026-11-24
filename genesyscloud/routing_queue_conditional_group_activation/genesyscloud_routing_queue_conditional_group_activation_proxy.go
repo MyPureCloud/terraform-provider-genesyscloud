@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 var internalProxy *routingQueueConditionalGroupActivationProxy
@@ -145,5 +145,5 @@ func updateRoutingQueueConditionActivationFn(ctx context.Context, p *routingQueu
 
 func getRoutingQueueByIdFn(ctx context.Context, p *routingQueueConditionalGroupActivationProxy, id string) (*platformclientv2.Queue, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.routingApi.GetRoutingQueue(id, nil)
+	return p.routingApi.GetRoutingQueue(id, nil, false)
 }

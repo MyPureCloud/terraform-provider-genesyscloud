@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	ivrIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_ivr_identity_resolution"
 	appleIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_apple_identity_resolution"
 	instagramIdentityResolution "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/conversations_messaging_integrations_instagram_identity_resolution"

@@ -13,7 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 func TestAccResourceJourneySegment(t *testing.T) {
@@ -59,7 +59,7 @@ func cleanupJourneySegments(idPrefix string) {
 	// go through all segments to find those to delete
 	const pageSize = 200
 	for pageNum := 1; ; pageNum++ {
-		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
+		journeySegments, _, getErr := journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "", nil)
 		if getErr != nil {
 			log.Printf("failed to get page %v of journeySegments: %v", pageNum, getErr)
 			return
