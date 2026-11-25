@@ -44,10 +44,7 @@ func newAnalyticsDataretentionSettingsProxy(clientConfig *platformclientv2.Confi
 // getAnalyticsDataretentionSettingsProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getAnalyticsDataretentionSettingsProxy(clientConfig *platformclientv2.Configuration) *analyticsDataretentionSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newAnalyticsDataretentionSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newAnalyticsDataretentionSettingsProxy)
 }
 
 // getAnalyticsDataretentionSettings retrieves the Genesys Cloud organization analytics data retention setting

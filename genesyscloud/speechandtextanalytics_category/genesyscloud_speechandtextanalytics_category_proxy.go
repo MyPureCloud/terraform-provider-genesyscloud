@@ -57,10 +57,7 @@ func newCategoryProxy(clientConfig *platformclientv2.Configuration) *categoryPro
 // getCategoryProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getCategoryProxy(clientConfig *platformclientv2.Configuration) *categoryProxy {
-	if internalProxy == nil {
-		internalProxy = newCategoryProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newCategoryProxy)
 }
 
 // createCategory creates a Genesys Cloud category

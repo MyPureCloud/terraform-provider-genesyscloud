@@ -40,10 +40,7 @@ func newRoutingEmailRouteIdentityResolutionProxy(clientConfig *platformclientv2.
 }
 
 func getRoutingEmailRouteIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *routingEmailRouteIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newRoutingEmailRouteIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRoutingEmailRouteIdentityResolutionProxy)
 }
 
 func (p *routingEmailRouteIdentityResolutionProxy) getRoutingEmailRouteIdentityResolution(ctx context.Context, domainName string, routeId string) (*platformclientv2.Routeidentityresolutionconfig, *platformclientv2.APIResponse, error) {

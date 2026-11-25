@@ -40,10 +40,7 @@ func newArchitectIvrIdentityResolutionProxy(clientConfig *platformclientv2.Confi
 }
 
 func getArchitectIvrIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *architectIvrIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newArchitectIvrIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newArchitectIvrIdentityResolutionProxy)
 }
 
 func (p *architectIvrIdentityResolutionProxy) getArchitectIvrIdentityResolution(ctx context.Context, ivrId string) (*platformclientv2.Ivridentityresolutionconfig, *platformclientv2.APIResponse, error) {

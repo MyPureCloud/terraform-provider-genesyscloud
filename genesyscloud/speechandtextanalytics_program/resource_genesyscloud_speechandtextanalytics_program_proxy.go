@@ -48,10 +48,7 @@ func newSttProgramProxy(clientConfig *platformclientv2.Configuration) *sttProgra
 }
 
 func getSttProgramProxy(clientConfig *platformclientv2.Configuration) *sttProgramProxy {
-	if internalProxy == nil {
-		internalProxy = newSttProgramProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSttProgramProxy)
 }
 
 func (p *sttProgramProxy) createProgram(ctx context.Context, body *platformclientv2.Programrequest) (*platformclientv2.Program, *platformclientv2.APIResponse, error) {

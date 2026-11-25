@@ -44,10 +44,7 @@ func newConversationsMessagingIntegrationsOpenIdentityResolutionProxy(clientConf
 }
 
 func getConversationsMessagingIntegrationsOpenIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsOpenIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsOpenIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsOpenIdentityResolutionProxy)
 }
 
 func (p *conversationsMessagingIntegrationsOpenIdentityResolutionProxy) getConversationsMessagingIntegrationsOpenIdentityResolution(ctx context.Context, openIntegrationId string) (openIdentityResolution *platformclientv2.Openmessagingidentityresolutionconfig, response *platformclientv2.APIResponse, err error) {

@@ -44,10 +44,7 @@ func newConversationsMessagingIntegrationsInstagramIdentityResolutionProxy(clien
 }
 
 func getConversationsMessagingIntegrationsInstagramIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsInstagramIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsInstagramIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsInstagramIdentityResolutionProxy)
 }
 
 func (p *conversationsMessagingIntegrationsInstagramIdentityResolutionProxy) getConversationsMessagingIntegrationsInstagramIdentityResolution(ctx context.Context, instagramIntegrationId string) (instagramIdentityResolution *platformclientv2.Instagramidentityresolutionconfig, response *platformclientv2.APIResponse, err error) {

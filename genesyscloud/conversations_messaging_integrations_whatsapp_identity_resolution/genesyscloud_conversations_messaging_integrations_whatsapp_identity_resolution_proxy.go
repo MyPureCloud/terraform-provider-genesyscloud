@@ -44,10 +44,7 @@ func newConversationsMessagingIntegrationsWhatsappIdentityResolutionProxy(client
 }
 
 func getConversationsMessagingIntegrationsWhatsappIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsWhatsappIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsWhatsappIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsWhatsappIdentityResolutionProxy)
 }
 
 func (p *conversationsMessagingIntegrationsWhatsappIdentityResolutionProxy) getConversationsMessagingIntegrationsWhatsappIdentityResolution(ctx context.Context, whatsappIntegrationId string) (whatsappIdentityResolution *platformclientv2.Whatsappidentityresolutionconfig, response *platformclientv2.APIResponse, err error) {
