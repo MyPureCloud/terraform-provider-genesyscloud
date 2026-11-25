@@ -83,7 +83,11 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
+	// An imported or exported resource has only its ID in state, and the ID is the flow ID.
 	flowId := d.Get("flow_id").(string)
+	if flowId == "" {
+		flowId = d.Id()
+	}
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
@@ -99,6 +103,7 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		flowLogLevel := flowSettingsResponse.LogLevelCharacteristics
 
+		_ = d.Set("flow_id", flowId)
 		resourcedata.SetNillableValue(d, "flow_log_level", flowLogLevel.Level)
 
 		log.Printf("Read flow log level %s", flowId)
