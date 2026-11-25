@@ -110,30 +110,103 @@ func TestUnitIntegrationActionExporterStripsFunctionZipID(t *testing.T) {
 	}
 }
 
-// TestUnitIntegrationActionExporterStripsRequestURLTemplate verifies the DEVTOOLING-1797
-// fix: for function data actions request_url_template is set server-side to the generated
-// function id (an org-specific GUID) and must be dropped on export to avoid perpetual drift.
+// requestURLTemplateFromConfigMap is a test helper that reads
+// config_request.0.request_url_template out of a top-level action config map, returning the
+// value and whether the key is present.
+func requestURLTemplateFromConfigMap(t *testing.T, configMap map[string]interface{}) (string, bool) {
+	t.Helper()
+	configRequestList, ok := configMap["config_request"].([]interface{})
+	if !ok || len(configRequestList) == 0 {
+		t.Fatalf("expected a config_request block, got %#v", configMap["config_request"])
+	}
+	configRequest, ok := configRequestList[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected config_request[0] to be a map, got %#v", configRequestList[0])
+	}
+	val, exists := configRequest["request_url_template"]
+	if !exists {
+		return "", false
+	}
+	strVal, _ := val.(string)
+	return strVal, true
+}
+
+// newActionConfigMap builds a minimal top-level integration action config map for exporter
+// resolver tests. functionConfigSet controls whether a non-empty function_config block is
+// present (the signal that distinguishes a function data action from an HTTP data action).
+func newActionConfigMap(category, urlTemplate string, functionConfigSet bool) map[string]interface{} {
+	configMap := map[string]interface{}{
+		"category": category,
+		"config_request": []interface{}{
+			map[string]interface{}{
+				"request_type":         "POST",
+				"request_url_template": urlTemplate,
+			},
+		},
+	}
+	if functionConfigSet {
+		configMap["function_config"] = []interface{}{
+			map[string]interface{}{
+				"handler": "dist/index.handler",
+			},
+		}
+	}
+	return configMap
+}
+
+// TestUnitIntegrationActionExporterStripsRequestURLTemplate verifies that
+// config_request.request_url_template is dropped on export ONLY for function data actions
+// (where the platform sets it to the server-generated function id and keeping it causes
+// perpetual drift — DEVTOOLING-1797), and is PRESERVED for normal HTTP data actions (where it
+// is required config — GitHub issue #2626).
 func TestUnitIntegrationActionExporterStripsRequestURLTemplate(t *testing.T) {
 	exporter := IntegrationActionExporter()
 
-	urlResolver, ok := exporter.CustomAttributeResolver["config_request.request_url_template"]
-	if !ok || urlResolver == nil || urlResolver.ResolverFunc == nil {
-		t.Fatal("expected custom resolver to strip config_request.request_url_template")
+	resolver, ok := exporter.CustomAttributeResolver["category"]
+	if !ok || resolver == nil || resolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver on \"category\" to strip request_url_template for function actions")
 	}
 
-	configMap := map[string]interface{}{
-		"request_type":         "POST",
-		"request_url_template": "22222222-2222-2222-2222-222222222222",
+	// There must no longer be a blanket resolver on config_request.request_url_template, which
+	// stripped the field for every action and broke HTTP data action export (#2626).
+	if _, exists := exporter.CustomAttributeResolver["config_request.request_url_template"]; exists {
+		t.Fatal("unexpected blanket resolver on config_request.request_url_template; it strips HTTP data actions too (#2626)")
 	}
-	if err := urlResolver.ResolverFunc(configMap, nil, "label"); err != nil {
-		t.Fatalf("request_url_template resolver returned error: %v", err)
-	}
-	if _, exists := configMap["request_url_template"]; exists {
-		t.Fatal("request_url_template should be stripped on export")
-	}
-	if configMap["request_type"] != "POST" {
-		t.Fatalf("request_type should be preserved, got %v", configMap["request_type"])
-	}
+
+	t.Run("function action by category - stripped", func(t *testing.T) {
+		configMap := newActionConfigMap("MyFunction Data Action", "22222222-2222-2222-2222-222222222222", false)
+		if err := resolver.ResolverFunc(configMap, nil, "label"); err != nil {
+			t.Fatalf("resolver returned error: %v", err)
+		}
+		if _, exists := requestURLTemplateFromConfigMap(t, configMap); exists {
+			t.Fatal("request_url_template should be stripped for a function data action")
+		}
+	})
+
+	t.Run("function action by function_config presence - stripped", func(t *testing.T) {
+		configMap := newActionConfigMap("Some Category", "22222222-2222-2222-2222-222222222222", true)
+		if err := resolver.ResolverFunc(configMap, nil, "label"); err != nil {
+			t.Fatalf("resolver returned error: %v", err)
+		}
+		if _, exists := requestURLTemplateFromConfigMap(t, configMap); exists {
+			t.Fatal("request_url_template should be stripped when a function_config block is present")
+		}
+	})
+
+	t.Run("http data action - preserved", func(t *testing.T) {
+		const url = "https://api.example.com/api/v2/divisions"
+		configMap := newActionConfigMap("MSD Genesys Cloud Public API Integration", url, false)
+		if err := resolver.ResolverFunc(configMap, nil, "label"); err != nil {
+			t.Fatalf("resolver returned error: %v", err)
+		}
+		got, exists := requestURLTemplateFromConfigMap(t, configMap)
+		if !exists {
+			t.Fatal("request_url_template must be preserved for an HTTP data action (#2626)")
+		}
+		if got != url {
+			t.Fatalf("request_url_template changed; want %q, got %q", url, got)
+		}
+	})
 }
 
 func TestUnitContainsFunctionDataAction(t *testing.T) {
