@@ -276,8 +276,12 @@ func IntegrationActionExporter() *resourceExporter.ResourceExporter {
 			// generated function id (an org-specific GUID). Like zip_id, exporting it makes
 			// the config non-portable and causes perpetual drift. Remove it so the platform
 			// recomputes it on apply.
-			"config_request.request_url_template": {
-				ResolverFunc: stripConfigRequestURLTemplate,
+			// The resolver is registered on the top-level function_config attribute (not on
+			// config_request.request_url_template) because it must see the whole action to
+			// tell function actions apart from regular ones. For regular data actions
+			// request_url_template is user-defined and required by the API, so it is kept.
+			"function_config": {
+				ResolverFunc: stripConfigRequestURLTemplateForFunctionActions,
 			},
 		},
 		ThirdPartyRefAttrs: []string{
@@ -306,13 +310,44 @@ func stripFunctionConfigZipID(configMap map[string]interface{}, _ map[string]*re
 	return nil
 }
 
-// stripConfigRequestURLTemplate drops request_url_template on export for function data
-// actions. The platform sets it server-side to the generated function id (an org-specific
-// GUID), so exporting it makes the config non-portable and causes perpetual drift. The
-// platform recomputes it on apply.
-func stripConfigRequestURLTemplate(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
-	delete(configMap, "request_url_template")
+// stripConfigRequestURLTemplateForFunctionActions drops config_request.request_url_template
+// on export, but only for function data actions (actions with a non-empty function_config).
+// For function actions the platform sets it server-side to the generated function id (an
+// org-specific GUID), so exporting it makes the config non-portable and causes perpetual
+// drift; the platform recomputes it on apply. For regular data actions request_url_template
+// is user-defined and required by the API, so it is left untouched.
+//
+// configMap is the top-level resource config map, since this resolver is registered on the
+// top-level function_config attribute.
+func stripConfigRequestURLTemplateForFunctionActions(configMap map[string]interface{}, _ map[string]*resourceExporter.ResourceExporter, _ string) error {
+	if !hasFunctionConfig(configMap["function_config"]) {
+		return nil
+	}
+	configRequest, ok := configMap["config_request"].([]interface{})
+	if !ok {
+		return nil
+	}
+	for _, item := range configRequest {
+		if requestMap, ok := item.(map[string]interface{}); ok {
+			delete(requestMap, "request_url_template")
+		}
+	}
 	return nil
+}
+
+// hasFunctionConfig reports whether the exported function_config value contains at least
+// one non-empty block, i.e. the action is a function data action.
+func hasFunctionConfig(functionConfig interface{}) bool {
+	blocks, ok := functionConfig.([]interface{})
+	if !ok {
+		return false
+	}
+	for _, block := range blocks {
+		if blockMap, ok := block.(map[string]interface{}); ok && len(blockMap) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // DataSourceIntegrationAction registers the genesyscloud_integration_action data source

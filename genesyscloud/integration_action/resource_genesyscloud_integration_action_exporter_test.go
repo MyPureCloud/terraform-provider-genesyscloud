@@ -110,29 +110,79 @@ func TestUnitIntegrationActionExporterStripsFunctionZipID(t *testing.T) {
 	}
 }
 
+// getRequestURLTemplateResolver returns the resolver that strips request_url_template for
+// function data actions. It is registered on the top-level function_config attribute.
+func getRequestURLTemplateResolver(t *testing.T) func(map[string]interface{}) {
+	t.Helper()
+	exporter := IntegrationActionExporter()
+	if _, ok := exporter.CustomAttributeResolver["config_request.request_url_template"]; ok {
+		t.Fatal("config_request.request_url_template must not have an unconditional resolver; it would strip the field from regular data actions")
+	}
+	resolver, ok := exporter.CustomAttributeResolver["function_config"]
+	if !ok || resolver == nil || resolver.ResolverFunc == nil {
+		t.Fatal("expected custom resolver on function_config to strip request_url_template for function actions")
+	}
+	return func(configMap map[string]interface{}) {
+		if err := resolver.ResolverFunc(configMap, nil, "label"); err != nil {
+			t.Fatalf("request_url_template resolver returned error: %v", err)
+		}
+	}
+}
+
 // TestUnitIntegrationActionExporterStripsRequestURLTemplate verifies the DEVTOOLING-1797
 // fix: for function data actions request_url_template is set server-side to the generated
 // function id (an org-specific GUID) and must be dropped on export to avoid perpetual drift.
 func TestUnitIntegrationActionExporterStripsRequestURLTemplate(t *testing.T) {
-	exporter := IntegrationActionExporter()
-
-	urlResolver, ok := exporter.CustomAttributeResolver["config_request.request_url_template"]
-	if !ok || urlResolver == nil || urlResolver.ResolverFunc == nil {
-		t.Fatal("expected custom resolver to strip config_request.request_url_template")
-	}
-
-	configMap := map[string]interface{}{
+	resolve := getRequestURLTemplateResolver(t)
+	requestMap := map[string]interface{}{
 		"request_type":         "POST",
 		"request_url_template": "22222222-2222-2222-2222-222222222222",
 	}
-	if err := urlResolver.ResolverFunc(configMap, nil, "label"); err != nil {
-		t.Fatalf("request_url_template resolver returned error: %v", err)
+	configMap := map[string]interface{}{
+		"name":           "Function Action",
+		"config_request": []interface{}{requestMap},
+		"function_config": []interface{}{
+			map[string]interface{}{"handler": "index.handler", "runtime": "nodejs22.x"},
+		},
 	}
-	if _, exists := configMap["request_url_template"]; exists {
-		t.Fatal("request_url_template should be stripped on export")
+	resolve(configMap)
+	if _, exists := requestMap["request_url_template"]; exists {
+		t.Fatal("request_url_template should be stripped on export for function data actions")
 	}
-	if configMap["request_type"] != "POST" {
-		t.Fatalf("request_type should be preserved, got %v", configMap["request_type"])
+	if requestMap["request_type"] != "POST" {
+		t.Fatalf("request_type should be preserved, got %v", requestMap["request_type"])
+	}
+}
+
+// TestUnitIntegrationActionExporterKeepsRequestURLTemplateForRegularActions guards against the
+// v1.87.0 regression: regular data actions must keep request_url_template on export, because it
+// is user-defined and the API rejects creating an action without it.
+func TestUnitIntegrationActionExporterKeepsRequestURLTemplateForRegularActions(t *testing.T) {
+	resolve := getRequestURLTemplateResolver(t)
+	cases := map[string]interface{}{
+		"function_config absent": nil,
+		"function_config empty":  []interface{}{},
+		"function_config nil":    []interface{}{nil},
+	}
+	for name, functionConfig := range cases {
+		t.Run(name, func(t *testing.T) {
+			requestMap := map[string]interface{}{
+				"request_type":         "GET",
+				"request_template":     "$${input.rawRequest}",
+				"request_url_template": "/api/path",
+			}
+			configMap := map[string]interface{}{
+				"name":           "DA Source 1",
+				"config_request": []interface{}{requestMap},
+			}
+			if functionConfig != nil {
+				configMap["function_config"] = functionConfig
+			}
+			resolve(configMap)
+			if requestMap["request_url_template"] != "/api/path" {
+				t.Fatalf("request_url_template should be preserved for regular data actions, got %v", requestMap["request_url_template"])
+			}
+		})
 	}
 }
 
