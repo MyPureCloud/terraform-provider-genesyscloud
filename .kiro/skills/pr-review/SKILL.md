@@ -16,6 +16,37 @@ against ground truth, and (2) tunnel-visioning on the interesting change and mis
 an obvious gap. Read `.kiro/steering/code-review.md` for the underlying discipline;
 this skill is the step-by-step procedure.
 
+## Step 0 — Verify the PR's target branch (do this first, every time)
+
+PRs in this repo must target `dev` (see `.kiro/steering/tech.md`). A PR opened
+against `main` has been reviewed, approved, and then accidentally merged straight
+into `main`. Check the target before reading any code.
+
+1. Find the PR's **target (base) branch** from the PR itself, not from what the
+   user said or from the branch you diff against:
+   - `gh pr view <number> --repo MyPureCloud/terraform-provider-genesyscloud --json baseRefName,headRefName,state`
+     if `gh` is installed.
+   - Otherwise fetch the public API (no auth needed):
+     `https://api.github.com/repos/MyPureCloud/terraform-provider-genesyscloud/pulls/<number>`
+     and read `base.ref` (target) and `head.label` (fork:branch). Also note
+     `state` / `merged`, because an already-merged PR can't be retargeted.
+     The HTML PR page is a last resort; its "wants to merge" line often doesn't
+     come through a plain fetch.
+2. If the target is `dev`, say so in one line at the top of the review
+   ("Target branch: `dev` ✅") and continue.
+3. If the target is **anything other than `dev`** (especially `main`):
+   - Put it at the very top of the review as **🔴 Blocking — wrong target branch**,
+     before any code findings: name the current target, and ask the author to
+     change the base to `dev` in the PR itself (GitHub: **Edit** next to the PR
+     title → change base branch). Don't suggest closing and reopening the PR.
+   - The recommendation must be **Request-changes** regardless of code quality,
+     and the approval condition list must start with "PR base changed to `dev`".
+   - Still do the code review, but diff against `origin/dev` (where it will
+     actually land), and note that retargeting may change the file list.
+4. If you **cannot determine** the target (no `gh`, API and page unreachable),
+   don't assume `dev`. Say "Target branch not verified" at the top of the review
+   and ask the user to confirm it before anyone approves or merges.
+
 ## Step 1 — Establish scope (gather, do not judge)
 
 1. Identify the branch and the correct base to diff against. The local `main` is
@@ -185,6 +216,10 @@ Then offer two views so the author can act fast:
 
 ## Step 6 — Self-check before delivering
 
+- The PR's target branch was read from the PR itself (Step 0) and is stated at
+  the top of the review. If it isn't `dev`, the review leads with a 🔴 Blocking
+  "wrong target branch" item and the recommendation is Request-changes. If it
+  couldn't be verified, the review says so.
 - Every comment has a `file:line` anchor with the verbatim line, and I re-read the
   file to confirm the line number is current (not a diff offset).
 - Every 🔴 has a citation (else it is a ❓).
