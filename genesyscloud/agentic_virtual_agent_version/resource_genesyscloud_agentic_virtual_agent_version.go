@@ -153,6 +153,10 @@ func omittedContextRetentionPaths(definition *AgenticVirtualAgentVersionDefiniti
 // nested boolean and false as the same value, so the marker makes Terraform
 // detect the change.
 func customizeAgenticVirtualAgentVersionDiff(_ context.Context, diff *schema.ResourceDiff, _ interface{}) error {
+	if err := validateComfortStatementConfiguration(diff.GetRawConfig()); err != nil {
+		return err
+	}
+
 	if rawConfigDefinitionIsWhollyKnown(diff.GetRawConfig()) {
 		if err := validateFallbackToFailureInputs(diff.Get("definition")); err != nil {
 			return err
@@ -185,6 +189,82 @@ func customizeAgenticVirtualAgentVersionDiff(_ context.Context, diff *schema.Res
 	}
 
 	return diff.SetNew(contextRetentionPresenceAttribute, configuredPresence)
+}
+
+// The API strips settings.comfortStatement when any tool has a ComfortStatement built-in, so
+// configuring both would never converge.
+func validateComfortStatementConfiguration(rawConfig cty.Value) error {
+	if !rawConfigHasComfortStatementBuiltin(rawConfigTools(rawConfig)) {
+		return nil
+	}
+	if !rawConfigHasV1ComfortStatement(rawConfig) {
+		return nil
+	}
+	return fmt.Errorf("definition.settings.comfort_statement cannot be set when a tool has a %s built-in input instruction: "+
+		"a contextual comfort statement on any tool disables the version-level comfort statement for the whole virtual agent. "+
+		"Remove the settings.comfort_statement block", builtinInputInstructionTypeComfortStatement)
+}
+
+func rawConfigHasComfortStatementBuiltin(tools []cty.Value) bool {
+	for _, tool := range tools {
+		if tool.IsNull() || !tool.IsKnown() || !tool.Type().IsObjectType() || !tool.Type().HasAttribute("builtin_input_instructions") {
+			continue
+		}
+		builtins := tool.GetAttr("builtin_input_instructions")
+		if builtins.IsNull() || !builtins.IsKnown() || !builtins.CanIterateElements() {
+			continue
+		}
+		for _, builtin := range builtins.AsValueSlice() {
+			if builtin.IsNull() || !builtin.IsKnown() || !builtin.Type().IsObjectType() || !builtin.Type().HasAttribute("type") {
+				continue
+			}
+			builtinType := builtin.GetAttr("type")
+			if builtinType.IsNull() || !builtinType.IsKnown() || !builtinType.Type().Equals(cty.String) {
+				continue
+			}
+			if builtinType.AsString() == builtinInputInstructionTypeComfortStatement {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func rawConfigHasV1ComfortStatement(rawConfig cty.Value) bool {
+	if rawConfig.IsNull() || !rawConfig.IsKnown() || !rawConfig.Type().IsObjectType() || !rawConfig.Type().HasAttribute("definition") {
+		return false
+	}
+	definition := rawConfig.GetAttr("definition")
+	if definition.IsNull() || !definition.IsKnown() || !definition.CanIterateElements() || definition.LengthInt() == 0 {
+		return false
+	}
+	definitionBlock := definition.AsValueSlice()[0]
+	if definitionBlock.IsNull() || !definitionBlock.IsKnown() || !definitionBlock.Type().IsObjectType() || !definitionBlock.Type().HasAttribute("settings") {
+		return false
+	}
+	settings := definitionBlock.GetAttr("settings")
+	if settings.IsNull() || !settings.IsKnown() || !settings.CanIterateElements() || settings.LengthInt() == 0 {
+		return false
+	}
+	settingsBlock := settings.AsValueSlice()[0]
+	if settingsBlock.IsNull() || !settingsBlock.IsKnown() || !settingsBlock.Type().IsObjectType() || !settingsBlock.Type().HasAttribute("comfort_statement") {
+		return false
+	}
+	comfortStatement := settingsBlock.GetAttr("comfort_statement")
+	return !comfortStatement.IsNull() && comfortStatement.IsKnown() && comfortStatement.CanIterateElements() && comfortStatement.LengthInt() > 0
+}
+
+const v1ComfortStatementEnabledPath = "definition.0.settings.0.comfort_statement.0.enabled"
+
+func hasContextualComfortStatement(tools []AgenticVirtualAgentTool) bool {
+	for _, tool := range tools {
+		for _, builtin := range tool.BuiltinInputInstructions {
+			if builtin.Type == builtinInputInstructionTypeComfortStatement {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // rawConfigDefinitionIsWhollyKnown prevents nested unknown values from being read as zero values
@@ -500,6 +580,9 @@ func readAgenticVirtualAgentVersion(ctx context.Context, d *schema.ResourceData,
 		log.Printf("Read Agentic Virtual Agent Version: %s", d.Id())
 		ignoredPaths := omittedContextRetentionPaths(versionResp.Definition)
 		ignoredPaths = append(ignoredPaths, contextRetentionPresenceAttribute)
+		if versionResp.Definition != nil && hasContextualComfortStatement(versionResp.Definition.Tools) {
+			ignoredPaths = append(ignoredPaths, v1ComfortStatementEnabledPath)
+		}
 		return cc.CheckState(d, ignoredPaths...)
 	})
 }
@@ -581,7 +664,14 @@ func buildDefinitionFromResourceData(d *schema.ResourceData) *AgenticVirtualAgen
 
 	// Settings
 	if v, ok := defMap["settings"].([]interface{}); ok && len(v) > 0 {
-		def.Settings = expandSettings(v[0].(map[string]interface{}))
+		if settingsMap, ok := v[0].(map[string]interface{}); ok {
+			def.Settings = expandSettings(settingsMap)
+		}
+	}
+
+	// settings is computed, so a stripped V1 value can linger in state.
+	if def.Settings != nil && hasContextualComfortStatement(def.Tools) {
+		def.Settings.ComfortStatement = nil
 	}
 
 	return def
@@ -643,6 +733,10 @@ func expandTools(toolsList []interface{}, configuredContextRetention []*bool) []
 		// Input instructions
 		if v, ok := toolMap["input_instructions"].([]interface{}); ok && len(v) > 0 {
 			tool.InputInstructions = expandStringList(v)
+		}
+
+		if v, ok := toolMap["builtin_input_instructions"].([]interface{}); ok && len(v) > 0 {
+			tool.BuiltinInputInstructions = expandBuiltinInputInstructions(v)
 		}
 
 		// Output instructions
@@ -753,6 +847,26 @@ func expandOutputInstructions(list []interface{}) []AgenticVirtualAgentToolOutpu
 				// Structured: when is a JSON object, pass through as raw JSON
 				instruction.When = json.RawMessage(whenStr)
 			}
+		}
+		instructions = append(instructions, instruction)
+	}
+	return instructions
+}
+
+func expandBuiltinInputInstructions(list []interface{}) []AgenticVirtualAgentBuiltinInputInstruction {
+	instructions := make([]AgenticVirtualAgentBuiltinInputInstruction, 0, len(list))
+	for _, item := range list {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		instruction := AgenticVirtualAgentBuiltinInputInstruction{
+			Type:    m["type"].(string),
+			Index:   m["index"].(int),
+			Default: m["default"].(string),
+		}
+		if v, ok := m["override"].(string); ok && v != "" {
+			instruction.Override = &v
 		}
 		instructions = append(instructions, instruction)
 	}
@@ -1024,6 +1138,9 @@ func flattenTools(tools []AgenticVirtualAgentTool) []interface{} {
 		if len(tool.InputInstructions) > 0 {
 			m["input_instructions"] = tool.InputInstructions
 		}
+		if len(tool.BuiltinInputInstructions) > 0 {
+			m["builtin_input_instructions"] = flattenBuiltinInputInstructions(tool.BuiltinInputInstructions)
+		}
 		if len(tool.OutputInstructions) > 0 {
 			m["output_instructions"] = flattenOutputInstructions(tool.OutputInstructions)
 		}
@@ -1068,6 +1185,22 @@ func flattenOutputInstructions(instructions []AgenticVirtualAgentToolOutputInstr
 				// Structured: store as JSON string
 				m["when"] = string(instr.When)
 			}
+		}
+		result = append(result, m)
+	}
+	return result
+}
+
+func flattenBuiltinInputInstructions(instructions []AgenticVirtualAgentBuiltinInputInstruction) []interface{} {
+	result := make([]interface{}, 0, len(instructions))
+	for _, instr := range instructions {
+		m := map[string]interface{}{
+			"type":    instr.Type,
+			"index":   instr.Index,
+			"default": instr.Default,
+		}
+		if instr.Override != nil {
+			m["override"] = *instr.Override
 		}
 		result = append(result, m)
 	}

@@ -30,6 +30,15 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
 
       input_instructions = ["Call this to authenticate the user before answering account questions"]
 
+      # index is the position in input_instructions + builtin_input_instructions. Keep it in range
+      # when editing input_instructions, or the API returns a 400.
+      builtin_input_instructions {
+        type     = "ComfortStatement"
+        index    = 1
+        default  = "Before the tool call, provide one filler line in under eight words naming only the action being performed."
+        override = "Before the tool call, let the user know you are verifying their identity."
+      }
+
       output = "AuthResult"
     }
 
@@ -110,10 +119,6 @@ resource "genesyscloud_agentic_virtual_agent_version" "example_version" {
     }
 
     settings {
-      comfort_statement {
-        enabled = true
-      }
-
       dynamic_turn_instructions {
         repetition_check {
           type        = "Agent"
