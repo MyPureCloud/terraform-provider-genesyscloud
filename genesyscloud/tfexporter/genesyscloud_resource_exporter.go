@@ -324,18 +324,6 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 		return diagErr
 	}
 
-	if !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
-		currentFlowExporter := (*g.exporters)[architectFlow.ResourceType]
-
-		if currentFlowExporter != nil && len(currentFlowExporter.SanitizedResourceMap) > 0 {
-			newFlowExporter := resourceExporter.GetNewFlowResourceExporter()
-
-			newFlowExporter.SetSanitizedResourceMap(currentFlowExporter.GetSanitizedResourceMap())
-			(*g.exporters)[architectFlow.ResourceType] = newFlowExporter
-			tflog.Info(g.ctx, fmt.Sprintf("Replaced flow exporter with new exporter preserving %d flow resources in SanitizedResourceMap", len(currentFlowExporter.SanitizedResourceMap)))
-		}
-	}
-
 	// Step #3 Retrieve the individual genesys cloud object instances
 	diagErr = append(diagErr, g.retrieveGenesysCloudObjectInstances()...)
 	if diagErr.HasError() {
@@ -490,6 +478,18 @@ func (g *GenesysCloudResourceExporter) retrieveExporters() (diagErr diag.Diagnos
 			if res, ok := providerResources[resourceType]; ok && res.DeprecationMessage != "" {
 				tflog.Info(g.ctx, fmt.Sprintf("Excluding deprecated resource type '%s' from export", resourceType))
 				delete(exports, resourceType)
+			}
+		}
+	}
+
+	// The registry holds the legacy flow exporter. Swap in the new flow exporter here, rather than once in Export(),
+	// so the dependency resolution passes (rebuildExports -> retrieveExporters) also use it. Otherwise flows pulled
+	// in as dependencies are sanitized by the legacy exporter, which records filepath as an unresolvable attribute
+	// and emits an unused filepath variable (DEVTOOLING-1776).
+	if !g.d.Get("use_legacy_architect_flow_exporter").(bool) {
+		if _, ok := exports[architectFlow.ResourceType]; ok {
+			if newFlowExporter := resourceExporter.GetNewFlowResourceExporter(); newFlowExporter != nil {
+				exports[architectFlow.ResourceType] = newFlowExporter
 			}
 		}
 	}
