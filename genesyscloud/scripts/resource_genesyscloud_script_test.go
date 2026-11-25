@@ -145,6 +145,137 @@ func TestAccResourceScriptUpdate(t *testing.T) {
 	}
 }
 
+// TestAccResourceScriptUpdateWithDuplicateName is a regression test for issue #2670.
+// When another script in the org shares the same name as a Terraform-managed script,
+// updating the managed script must still succeed: the update path must act on the
+// script ID already held in state, not re-resolve the script by name (which fails
+// with "more than one script found with name ...").
+func TestAccResourceScriptUpdateWithDuplicateName(t *testing.T) {
+	var (
+		resourceLabel       = "script-dup"
+		name                = "testscriptname" + uuid.NewString()
+		filePath            = testrunner.GetTestDataPath("resource", ResourceType, "test_script.json")
+		substitutions       = make(map[string]string)
+		substitutionsUpdate = make(map[string]string)
+
+		scriptIdAfterCreate string
+		scriptIdAfterUpdate string
+		duplicateScriptId   string
+	)
+
+	substitutions["foo"] = "bar"
+	substitutionsUpdate["hello"] = "world"
+
+	// Cleanup for the out-of-band duplicate script, which Terraform does not manage.
+	defer func() {
+		if duplicateScriptId == "" {
+			return
+		}
+		sdkConfig, err := provider.AuthorizeSdk()
+		if err != nil {
+			t.Logf("Warning: failed to authorize to clean up duplicate script %s: %s", duplicateScriptId, err.Error())
+			return
+		}
+		proxy := getScriptsProxy(sdkConfig)
+		if err := proxy.deleteScript(context.Background(), duplicateScriptId); err != nil {
+			t.Logf("Warning: failed to delete duplicate script %s: %s", duplicateScriptId, err.Error())
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateScriptResource(
+					resourceLabel,
+					name,
+					filePath,
+					util.GenerateSubstitutionsMap(substitutions),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "script_name", name),
+					validateScriptPublished(ResourceType+"."+resourceLabel),
+					getScriptId(ResourceType+"."+resourceLabel, &scriptIdAfterCreate),
+					// Out-of-band: upload a SECOND script with the same name so the org
+					// now contains two scripts named `name`. This mirrors the manual repro.
+					createDuplicateNamedScript(name, filePath, &duplicateScriptId),
+				),
+			},
+			// Update the managed script. Before the fix this failed with
+			// "more than one script found with name ...". It must now succeed.
+			{
+				Config: generateScriptResource(
+					resourceLabel,
+					name,
+					filePath,
+					util.GenerateSubstitutionsMap(substitutionsUpdate),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(ResourceType+"."+resourceLabel, "script_name", name),
+					validateScriptPublished(ResourceType+"."+resourceLabel),
+					getScriptId(ResourceType+"."+resourceLabel, &scriptIdAfterUpdate),
+				),
+			},
+		},
+		CheckDestroy: testVerifyScriptDestroyed,
+	})
+
+	if scriptIdAfterCreate != scriptIdAfterUpdate {
+		t.Errorf("Expected script ID to remain the same after update. Before: %s After: %s", scriptIdAfterCreate, scriptIdAfterUpdate)
+	}
+}
+
+// createDuplicateNamedScript uploads a second, unmanaged script sharing scriptName and
+// captures its ID in duplicateScriptId so the test can clean it up afterwards.
+func createDuplicateNamedScript(scriptName, filePath string, duplicateScriptId *string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		sdkConfig, err := provider.AuthorizeSdk()
+		if err != nil {
+			return fmt.Errorf("failed to authorize to create duplicate script: %w", err)
+		}
+		proxy := getScriptsProxy(sdkConfig)
+		ctx := context.Background()
+
+		// Record the IDs that already exist for this name so we can identify the new one.
+		before, _, err := proxy.getScriptsByName(ctx, scriptName)
+		if err != nil {
+			return fmt.Errorf("failed to list scripts named %q before duplicate upload: %w", scriptName, err)
+		}
+		existing := make(map[string]bool, len(before))
+		for _, s := range before {
+			existing[*s.Id] = true
+		}
+
+		body, err := proxy.uploadScriptFile(filePath, scriptName, "", nil)
+		if err != nil {
+			return fmt.Errorf("failed to upload duplicate script %q: %w", scriptName, err)
+		}
+		success, err := proxy.verifyScriptUploadSuccess(ctx, body)
+		if err != nil {
+			return fmt.Errorf("failed to verify duplicate script upload %q: %w", scriptName, err)
+		}
+		if !success {
+			return fmt.Errorf("duplicate script %q failed to upload successfully", scriptName)
+		}
+
+		after, _, err := proxy.getScriptsByName(ctx, scriptName)
+		if err != nil {
+			return fmt.Errorf("failed to list scripts named %q after duplicate upload: %w", scriptName, err)
+		}
+		for _, s := range after {
+			if !existing[*s.Id] {
+				*duplicateScriptId = *s.Id
+				break
+			}
+		}
+		if *duplicateScriptId == "" {
+			return fmt.Errorf("could not identify the newly created duplicate script named %q", scriptName)
+		}
+		return nil
+	}
+}
+
 // TestAccDefaultScriptIDS validates that the default script IDs we have defined as constants are still correct.
 // In every Genesys Cloud org, there are default scripts that share the same ID. This test case will alert us if that ID
 // changes, or if they take a different approach as opposed to reusing **Globally Unique Identifiers**
