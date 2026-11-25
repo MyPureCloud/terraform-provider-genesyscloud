@@ -21,7 +21,7 @@ Institutional knowledge that has caused real bugs or wasted time. Check these be
 
 ## Proxies
 
-- **Proxy getters must return `provider.SingletonOrFresh(&internalProxy, clientConfig, newXProxy)`.** Never write a bare `if internalProxy == nil { internalProxy = newXProxy(clientConfig) }`. That pattern caches the first caller's client config (org, base path, token) for the life of the process, so a later call with a different config silently uses the first one. `SingletonOrFresh` keeps the singleton for normal Terraform runs and returns a fresh proxy per call when the provider is used as a library serving multiple orgs. Its behavior is tested in `genesyscloud/provider/proxy_singleton_test.go`; do not add per-package tests for it.
+- **Proxy getters must return `provider.SingletonOrFresh(&internalProxy, clientConfig, newXProxy)`.** Never write a bare `if internalProxy == nil { internalProxy = newXProxy(clientConfig) }`. That pattern caches the first caller's client config (org, base path, token) for the life of the process, so a later call with a different config silently uses the first one. `SingletonOrFresh` keeps the singleton for normal Terraform runs and returns a fresh proxy per call when the provider is used as a library serving multiple orgs.
 
 ## Registration
 
