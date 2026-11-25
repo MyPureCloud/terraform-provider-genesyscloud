@@ -124,10 +124,7 @@ func newRecordingSettingsProxy(clientConfig *platformclientv2.Configuration) *re
 }
 
 func getRecordingSettingsProxy(clientConfig *platformclientv2.Configuration) *recordingSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newRecordingSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRecordingSettingsProxy)
 }
 
 // wrapper methods delegate to the func pointers
