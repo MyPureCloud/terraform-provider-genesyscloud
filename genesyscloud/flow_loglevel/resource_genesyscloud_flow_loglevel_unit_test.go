@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,4 +62,12 @@ func TestUnitResourceFlowLogLevelReadPrefersFlowId(t *testing.T) {
 	assert.False(t, diags.HasError(), "%v", diags)
 	assert.Equal(t, flowId, requested)
 	assert.Equal(t, flowId, d.Get("flow_id"))
+}
+
+// flow_id references the flow, so exports resolve it to the flow rather than hard-coding its GUID.
+func TestUnitFlowLogLevelExporterFlowIdIsFlowReference(t *testing.T) {
+	ref, ok := FlowLogLevelExporter().RefAttrs["flow_id"]
+	if assert.True(t, ok, "flow_id must be a RefAttr") {
+		assert.Equal(t, architectFlow.ResourceType, ref.RefType)
+	}
 }
