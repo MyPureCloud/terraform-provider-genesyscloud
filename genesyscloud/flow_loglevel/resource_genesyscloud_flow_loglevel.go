@@ -121,13 +121,13 @@ func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
 	}
 
-	updatedFlow, apiResponse, err := ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
+	_, apiResponse, err := ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update flow log level: %s", flowId), apiResponse)
 	}
 
-	log.Printf("Sucessfully updated flow log level for flow:  %s flowLogLevelId: %s", flowId, *updatedFlow.Id)
+	log.Printf("Sucessfully updated flow log level for flow:  %s", flowId)
 
 	return readFlowLogLevel(ctx, d, meta)
 }

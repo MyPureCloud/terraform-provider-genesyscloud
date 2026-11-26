@@ -91,14 +91,15 @@ func TestUnitResourceFlowLogLevelCreateSetsIdToFlowId(t *testing.T) {
 	assert.Equal(t, flowId, requested)
 }
 
-// Update and delete address the flow by the resource ID.
+// Update and delete address the flow by the resource ID, and update does not depend on the response's ID.
 func TestUnitResourceFlowLogLevelUpdateAndDeleteUseResourceId(t *testing.T) {
 	const flowId = "11111111-2222-3333-4444-555555555555"
 	var requested, updated, deleted string
 	proxy := newReadTestProxy(&requested, "All")
 	proxy.updateFlowLogLevelAttr = func(_ context.Context, _ *flowLogLevelProxy, id string, _ *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
 		updated = id
-		return &platformclientv2.Flowsettingsresponse{Id: platformclientv2.String(id)}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+		// No Id in the response.
+		return &platformclientv2.Flowsettingsresponse{}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
 	}
 	proxy.deleteFlowLogLevelByIdAttr = func(_ context.Context, _ *flowLogLevelProxy, id string) (*platformclientv2.APIResponse, error) {
 		deleted = id
