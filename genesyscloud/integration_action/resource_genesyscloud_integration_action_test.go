@@ -327,6 +327,10 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 		transMapValDefault2 = "NotKnown"
 	)
 
+	// Id of the action after create. The in-place update step must leave it unchanged (GH-2690).
+	var createdActionId string
+	actionResourcePath := "genesyscloud_integration_action." + actionResourceLabel1
+
 	// Note: This test validates the schema structure for function_config
 	// The actual file validation will be tested in integration tests
 
@@ -383,9 +387,65 @@ func TestAccResourceIntegrationActionFunctionData(t *testing.T) {
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.timeout_seconds", timeout1),
 					resource.TestCheckResourceAttr("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_path", filePath1),
 					resource.TestCheckResourceAttrSet("genesyscloud_integration_action."+actionResourceLabel1, "function_config.0.file_content_hash"),
+					// Remember the id so the in-place update step can prove it did not change
+					func(s *terraform.State) error {
+						rs, ok := s.RootModule().Resources[actionResourcePath]
+						if !ok {
+							return fmt.Errorf("resource %s not found in state", actionResourcePath)
+						}
+						createdActionId = rs.Primary.ID
+						return nil
+					},
 				),
 				// Function actions: API rewrites request_url_template to the function id and
 				// may omit empty header/translation maps. function_config (incl. file_path) stays stable.
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				// In-place update: change only attributes that are not ForceNew (name and function_config);
+				// keep secure and the contracts the same. updateFunctionDataActionDraft must run and the
+				// action id must stay the same. A regression to create-a-new-action would change the id.
+				Config: integration.GenerateIntegrationResource(
+					integResourceLabel1,
+					util.NullValue,
+					strconv.Quote(integTypeID),
+				) + generateIntegrationActionResource(
+					actionResourceLabel1,
+					actionName2,
+					actionCateg1,
+					"genesyscloud_integration."+integResourceLabel1+".id",
+					util.NullValue, // Secure unchanged (false)
+					util.NullValue, // Timeout default
+					util.GenerateJsonSchemaDocStr(inputAttr1),  // contract_input unchanged
+					util.GenerateJsonSchemaDocStr(outputAttr1), // contract_output unchanged
+					generateIntegrationActionConfigRequest(
+						reqUrlTemplate1,
+						reqType1,
+						util.NullValue,
+						"headers = {}",
+					),
+					generateIntegrationActionConfigResponse(
+						util.NullValue,
+						"translation_map = {}",
+						"translation_map_defaults = {}",
+					),
+					generateIntegrationActionFunctionConfig(
+						strconv.Quote(description2),
+						strconv.Quote(handler2),
+						strconv.Quote(runtime2),
+						timeout2,
+						strconv.Quote(filePath2),
+					),
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(actionResourcePath, "name", actionName2),
+					resource.TestCheckResourceAttr(actionResourcePath, "secure", util.FalseValue),
+					resource.TestCheckResourceAttr(actionResourcePath, "function_config.0.description", description2),
+					resource.TestCheckResourceAttr(actionResourcePath, "function_config.0.handler", handler2),
+					resource.TestCheckResourceAttr(actionResourcePath, "function_config.0.timeout_seconds", timeout2),
+					resource.TestCheckResourceAttr(actionResourcePath, "function_config.0.file_path", filePath2),
+					resource.TestCheckResourceAttrPtr(actionResourcePath, "id", &createdActionId),
+				),
 				ExpectNonEmptyPlan: true,
 			},
 			{
