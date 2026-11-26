@@ -68,14 +68,15 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 		LogLevelCharacteristics: getFlowLogLevelFromResourceData(d),
 	}
 
-	flowLogLevel, apiResponse, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
+	_, apiResponse, err := ep.createFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 	if err != nil {
 		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to create flow log level: %s %s", err, d.Id()), apiResponse)
 	}
 
-	log.Printf("Sucessfully created flow log level for flow:  %s flowLogLevelId: %s", flowId, *flowLogLevel.Id)
+	log.Printf("Sucessfully created flow log level for flow:  %s", flowId)
 
-	d.SetId(*flowLogLevel.Id)
+	// The resource ID is the flow ID, which read, update and delete address the flow by.
+	d.SetId(flowId)
 	return readFlowLogLevel(ctx, d, meta)
 }
 
@@ -83,11 +84,9 @@ func createFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
-	// An imported or exported resource has only its ID in state, and the ID is the flow ID.
-	flowId := d.Get("flow_id").(string)
-	if flowId == "" {
-		flowId = d.Id()
-	}
+	// The resource ID is the flow ID. Imported and exported resources have only the ID in state,
+	// so flow_id is set from it.
+	flowId := d.Id()
 	cc := consistency_checker.NewConsistencyCheck(ctx, d, meta, ResourceFlowLoglevel(), constants.ConsistencyChecks(), ResourceType)
 
 	log.Printf("Reading readFlowLogLevel with flowId %s", flowId)
@@ -115,7 +114,7 @@ func readFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interfac
 func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
-	flowId := d.Get("flow_id").(string)
+	flowId := d.Id()
 	log.Printf("Updating flow log level for flow %s", flowId)
 
 	flowLogLevelRequest := platformclientv2.Flowloglevelrequest{
@@ -125,7 +124,7 @@ func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 	updatedFlow, apiResponse, err := ep.updateFlowLogLevel(ctx, flowId, &flowLogLevelRequest)
 
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update flow log level: %s %s", flowId, d.Id()), apiResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to update flow log level: %s", flowId), apiResponse)
 	}
 
 	log.Printf("Sucessfully updated flow log level for flow:  %s flowLogLevelId: %s", flowId, *updatedFlow.Id)
@@ -137,19 +136,19 @@ func updateFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interf
 func deleteFlowLogLevel(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	ep := getFlowLogLevelProxy(sdkConfig)
-	flowId := d.Get("flow_id").(string)
+	flowId := d.Id()
 	log.Printf("Deleting flow log level for flow  %s", flowId)
 
 	apiResponse, err := ep.deleteFlowLogLevelById(ctx, flowId)
 	if err != nil {
-		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete flow log level %s: %s", flowId, d.Id()), apiResponse)
+		return util.BuildAPIDiagnosticError(ResourceType, fmt.Sprintf("Failed to delete flow log level %s", flowId), apiResponse)
 	}
 
 	return util.WithRetries(ctx, 180*time.Second, func() *retry.RetryError {
 		_, apiResponse, err := ep.getFlowLogLevelById(ctx, flowId)
 
 		if err == nil {
-			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting flow log level %s %s | error: %s", flowId, d.Id(), err), apiResponse))
+			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Error deleting flow log level %s | error: %s", flowId, err), apiResponse))
 		}
 		if util.IsStatus404ByInt(apiResponse.StatusCode) {
 			log.Printf("Deleted flow log level %s", flowId)

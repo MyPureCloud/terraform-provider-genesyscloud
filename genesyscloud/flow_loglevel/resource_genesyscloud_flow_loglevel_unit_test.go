@@ -2,6 +2,7 @@ package flow_loglevel
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -44,8 +45,8 @@ func TestUnitResourceFlowLogLevelReadFromIdOnly(t *testing.T) {
 	assert.Equal(t, "All", d.Get("flow_log_level"))
 }
 
-// A configured resource keeps reading the flow named by flow_id, as before.
-func TestUnitResourceFlowLogLevelReadPrefersFlowId(t *testing.T) {
+// The read addresses the flow by the resource ID and sets flow_id from it, as group_roles does.
+func TestUnitResourceFlowLogLevelReadUsesResourceId(t *testing.T) {
 	const flowId = "11111111-2222-3333-4444-555555555555"
 	var requested string
 	internalProxy = newReadTestProxy(&requested, "Base")
@@ -55,13 +56,72 @@ func TestUnitResourceFlowLogLevelReadPrefersFlowId(t *testing.T) {
 		"flow_id":        flowId,
 		"flow_log_level": "Base",
 	})
-	d.SetId("some-other-id")
+	d.SetId(flowId)
 
 	diags := readFlowLogLevel(context.Background(), d, &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}})
 
 	assert.False(t, diags.HasError(), "%v", diags)
 	assert.Equal(t, flowId, requested)
 	assert.Equal(t, flowId, d.Get("flow_id"))
+}
+
+// Create sets the resource ID to the flow ID itself, so it does not depend on the response's ID.
+func TestUnitResourceFlowLogLevelCreateSetsIdToFlowId(t *testing.T) {
+	const flowId = "11111111-2222-3333-4444-555555555555"
+	var requested, created string
+	proxy := newReadTestProxy(&requested, "All")
+	proxy.createFlowLogLevelAttr = func(_ context.Context, _ *flowLogLevelProxy, id string, _ *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
+		created = id
+		// No Id in the response.
+		return &platformclientv2.Flowsettingsresponse{}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	d := schema.TestResourceDataRaw(t, ResourceFlowLoglevel().Schema, map[string]interface{}{
+		"flow_id":        flowId,
+		"flow_log_level": "All",
+	})
+
+	diags := createFlowLogLevel(context.Background(), d, &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}})
+
+	assert.False(t, diags.HasError(), "%v", diags)
+	assert.Equal(t, flowId, created)
+	assert.Equal(t, flowId, d.Id())
+	assert.Equal(t, flowId, requested)
+}
+
+// Update and delete address the flow by the resource ID.
+func TestUnitResourceFlowLogLevelUpdateAndDeleteUseResourceId(t *testing.T) {
+	const flowId = "11111111-2222-3333-4444-555555555555"
+	var requested, updated, deleted string
+	proxy := newReadTestProxy(&requested, "All")
+	proxy.updateFlowLogLevelAttr = func(_ context.Context, _ *flowLogLevelProxy, id string, _ *platformclientv2.Flowloglevelrequest) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
+		updated = id
+		return &platformclientv2.Flowsettingsresponse{Id: platformclientv2.String(id)}, &platformclientv2.APIResponse{StatusCode: http.StatusOK}, nil
+	}
+	proxy.deleteFlowLogLevelByIdAttr = func(_ context.Context, _ *flowLogLevelProxy, id string) (*platformclientv2.APIResponse, error) {
+		deleted = id
+		// Deleted from here on, so the delete's follow-up read sees a 404.
+		proxy.getFlowLogLevelByIdAttr = func(_ context.Context, _ *flowLogLevelProxy, _ string) (*platformclientv2.Flowsettingsresponse, *platformclientv2.APIResponse, error) {
+			return nil, &platformclientv2.APIResponse{StatusCode: http.StatusNotFound}, fmt.Errorf("not found")
+		}
+		return &platformclientv2.APIResponse{StatusCode: http.StatusNoContent}, nil
+	}
+	internalProxy = proxy
+	defer func() { internalProxy = nil }()
+
+	meta := &provider.ProviderMeta{ClientConfig: &platformclientv2.Configuration{}}
+	d := schema.TestResourceDataRaw(t, ResourceFlowLoglevel().Schema, map[string]interface{}{
+		"flow_id":        flowId,
+		"flow_log_level": "All",
+	})
+	d.SetId(flowId)
+
+	assert.False(t, updateFlowLogLevel(context.Background(), d, meta).HasError())
+	assert.Equal(t, flowId, updated)
+	assert.False(t, deleteFlowLogLevel(context.Background(), d, meta).HasError())
+	assert.Equal(t, flowId, deleted)
 }
 
 // flow_id references the flow, so exports resolve it to the flow rather than hard-coding its GUID.
