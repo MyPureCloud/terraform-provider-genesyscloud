@@ -3,7 +3,10 @@ package tfexporter
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
+	"sync"
 
 	agenticVirtualAgentVersion "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/agentic_virtual_agent_version"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
@@ -131,18 +134,83 @@ func TestUnitTfExportPostProcessHclBytesFunc(t *testing.T) {
 	testCases = append(testCases, testCase1)
 	testCases = append(testCases, testCase2)
 
-	defer func() {
-		attributesDecoded = make(map[string]string)
-	}()
-
 	for _, tc := range testCases {
-		attributesDecoded = tc.decodedMap
-
-		resultBytes := postProcessHclBytes([]byte(tc.original))
+		resultBytes := postProcessHclBytes([]byte(tc.original), tc.decodedMap)
 		if string(resultBytes) != tc.expected {
 			t.Errorf("\nExpected: %s\nGot: %s", tc.expected, string(resultBytes))
 		}
 	}
+}
+
+// DEVTOOLING-1585: several genesyscloud_tf_export resources in one apply run in the same provider process.
+// While one export writes its HCL files (postProcessHclBytes iterates its jsonencode placeholders), another
+// export can still be sanitizing resources and adding placeholders. When the placeholder map was shared
+// (package level), this stopped the provider with "fatal error: concurrent map iteration and map write".
+// Each export must use its own map, so the two exports never touch the same map.
+func TestUnitTfExportConcurrentExportsSharingDecodedAttributes(t *testing.T) {
+	resourceType := "test_resource"
+	exporters := map[string]*resourceExporter.ResourceExporter{
+		resourceType: {JsonEncodeAttributes: []string{"properties"}},
+	}
+	resource := resourceExporter.ResourceInfo{
+		Type:       resourceType,
+		BlockLabel: "test_label",
+		BlockType:  "resource",
+		State:      &terraform.InstanceState{ID: "resource-id"},
+	}
+
+	// Two separate exports, like two genesyscloud_tf_export resources in one apply.
+	sanitizingExport := setupGenesysCloudResourceExporter(t)
+	writingExport := setupGenesysCloudResourceExporter(t)
+
+	// The writing export has already sanitized its resource, so it holds one placeholder of its own.
+	writerConfig := map[string]interface{}{"name": "writer", "properties": `{"key":"writer"}`}
+	writingExport.sanitizeConfigMap(resource, writerConfig, "", exporters, false, "hcl", true)
+	placeholder, ok := writerConfig["properties"].(string)
+	require.True(t, ok, "properties should be replaced by a placeholder string")
+	require.Contains(t, writingExport.attributesDecoded, placeholder)
+
+	const iterations = 2000
+	hclPath := filepath.Join(t.TempDir(), "genesyscloud.tf")
+	block := []byte(fmt.Sprintf("resource \"test_resource\" \"test_label\" {\n  properties = \"%s\"\n}\n", placeholder))
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Export 1: still sanitizing resources, which adds placeholders (real write path).
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			configMap := map[string]interface{}{
+				"name":       fmt.Sprintf("resource_%d", i),
+				"properties": fmt.Sprintf(`{"key":"value_%d"}`, i),
+			}
+			sanitizingExport.sanitizeConfigMap(resource, configMap, "", exporters, false, "hcl", true)
+		}
+	}()
+
+	// Export 2: writing its HCL files, which iterates its placeholders (real read path).
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			if diags := writeHCLToFile([][]byte{block}, hclPath, writingExport.attributesDecoded); diags.HasError() {
+				t.Errorf("writeHCLToFile: %v", diags)
+				return
+			}
+		}
+	}()
+
+	wg.Wait()
+
+	// Each export kept only its own placeholders.
+	assert.Len(t, sanitizingExport.attributesDecoded, iterations)
+	assert.Len(t, writingExport.attributesDecoded, 1)
+
+	// The written file has the writer's placeholder replaced with its jsonencode value.
+	written, err := os.ReadFile(hclPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(written), writingExport.attributesDecoded[placeholder])
+	assert.NotContains(t, string(written), placeholder)
 }
 
 func TestUnitTfExportRemoveZeroValuesFunc(t *testing.T) {
