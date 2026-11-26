@@ -392,6 +392,12 @@ func TestUnitResponseResourceSchemaIsValid(t *testing.T) {
 		t.Fatalf("resource schema failed InternalValidate: %s", err)
 	}
 
+	// library_ids must be updatable in place; ForceNew would recreate the response on any library change.
+	if libraryIds, ok := resourceSchema.Schema["library_ids"]; !ok {
+		t.Fatal("expected a `library_ids` attribute on the resource schema")
+	} else if libraryIds.ForceNew {
+		t.Error("library_ids must not be ForceNew")
+	}
 	formAttr, ok := resourceSchema.Schema["form"]
 	if !ok {
 		t.Fatal("expected a `form` attribute on the resource schema")
