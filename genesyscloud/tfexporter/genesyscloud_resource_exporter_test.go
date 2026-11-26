@@ -647,7 +647,10 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 		return scriptResourceType, defaultOutboundScriptResourceLabel, dataSourceConfig, true
 	}
 	attrCustomResolver := make(map[string]*resourceExporter.RefAttrCustomResolver)
-	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{
+		ResolveToDataSourceFunc:   resolverFunc,
+		AlwaysResolveToDataSource: true,
+	}
 	exporter := &resourceExporter.ResourceExporter{
 		CustomAttributeResolver: attrCustomResolver,
 	}
@@ -689,6 +692,33 @@ func TestUnitResolveValueToDataSource(t *testing.T) {
 
 	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; ok {
 		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps", scriptResourceType)
+	}
+
+	// set up - resolver says yes, but AlwaysResolveToDataSource is unset and the type is not in replace_with_datasource
+	resolverFunc = func(configMap map[string]any, value any, sdkConfig *platformclientv2.Configuration) (string, string, map[string]any, bool) {
+		return scriptResourceType, defaultOutboundScriptResourceLabel, map[string]any{"name": defaultOutboundScriptName}, true
+	}
+	g.dataSourceTypesMaps = make(map[string]ResourceJSONMaps)
+	attrCustomResolver["script_id"] = &resourceExporter.RefAttrCustomResolver{ResolveToDataSourceFunc: resolverFunc}
+	exporter = &resourceExporter.ResourceExporter{
+		CustomAttributeResolver: attrCustomResolver,
+	}
+
+	// invoke - not expecting script data source to be added since the type is not in replace_with_datasource
+	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType]; ok {
+		t.Errorf("expected key '%s' to not exist in dataSourceTypesMaps when type is not in replace_with_datasource", scriptResourceType)
+	}
+
+	// set up - same resolver, but the type is now listed in replace_with_datasource
+	g.addReplaceWithDatasource(scriptResourceType)
+
+	// invoke - expecting script data source to be added
+	g.resolveValueToDataSource(exporter, configMap, "script_id", originalValueOfScriptId)
+
+	if _, ok := g.dataSourceTypesMaps[scriptResourceType][defaultOutboundScriptResourceLabel]; !ok {
+		t.Errorf("expected dataSourceTypesMaps['%s'] to hold nested key '%s' when type is in replace_with_datasource", scriptResourceType, defaultOutboundScriptResourceLabel)
 	}
 }
 

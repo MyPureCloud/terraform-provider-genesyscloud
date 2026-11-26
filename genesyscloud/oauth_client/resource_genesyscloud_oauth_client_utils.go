@@ -32,7 +32,7 @@ func buildOAuthScopes(d *schema.ResourceData) *[]string {
 	return nil
 }
 
-func buildOAuthRoles(d *schema.ResourceData) (*[]platformclientv2.Roledivision, diag.Diagnostics) {
+func buildOAuthRoles(d *schema.ResourceData, sdkConfig *platformclientv2.Configuration) (*[]platformclientv2.Roledivision, diag.Diagnostics) {
 	if config, ok := d.GetOk("roles"); ok {
 		var sdkRoles []platformclientv2.Roledivision
 		roleConfig := config.(*schema.Set).List()
@@ -48,7 +48,7 @@ func buildOAuthRoles(d *schema.ResourceData) (*[]platformclientv2.Roledivision, 
 			if divisionId == "" {
 				// Set to home division if not set
 				var diagErr diag.Diagnostics
-				divisionId, diagErr = util.GetHomeDivisionID()
+				divisionId, diagErr = util.GetHomeDivisionIDWithConfig(sdkConfig)
 				if diagErr != nil {
 					return nil, diagErr
 				}

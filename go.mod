@@ -20,6 +20,7 @@ require (
 	github.com/rjNemo/underscore v0.10.0
 	github.com/shirou/gopsutil/v4 v4.26.2
 	github.com/zclconf/go-cty v1.18.0
+	golang.org/x/sync v0.22.0
 	gonum.org/v1/gonum v0.17.0
 )
 
@@ -67,7 +68,6 @@ require (
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
-	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/tools v0.47.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

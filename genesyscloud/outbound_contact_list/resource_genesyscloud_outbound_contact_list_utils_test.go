@@ -13,6 +13,8 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/files"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -20,44 +22,21 @@ import (
 )
 
 func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *testing.T) {
-	// Create two phone number columns
-	phoneNumberColumns := []map[string]interface{}{
-		{
+	phoneNumberColumns := []interface{}{
+		map[string]interface{}{
 			"column_name":          "phone1",
 			"type":                 "home",
 			"callable_time_column": "call_time1",
 		},
-		{
+		map[string]interface{}{
 			"column_name":          "phone2",
 			"type":                 "mobile",
 			"callable_time_column": "call_time2",
 		},
 	}
 
-	// Create a new schema.Set with both phone number columns
-	phoneSet := schema.NewSet(schema.HashResource(&schema.Resource{
-		Schema: map[string]*schema.Schema{
-			"column_name": {
-				Type: schema.TypeString,
-			},
-			"type": {
-				Type: schema.TypeString,
-			},
-			"callable_time_column": {
-				Type: schema.TypeString,
-			},
-		},
-	}), []interface{}{})
+	result := buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneNumberColumns)
 
-	// Add both columns to the set
-	for _, column := range phoneNumberColumns {
-		phoneSet.Add(column)
-	}
-
-	// Call the function being tested
-	result := buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneSet)
-
-	// Verify the result has exactly 2 elements
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -65,8 +44,14 @@ func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *
 		t.Errorf("Expected slice with 2 elements, got %d elements", len(*result))
 	}
 
-	// Verify the contents of both elements
 	phoneNumbers := *result
+	if phoneNumbers[0].ColumnName == nil || *phoneNumbers[0].ColumnName != "phone1" {
+		t.Errorf("Expected first column_name phone1, got %v", phoneNumbers[0].ColumnName)
+	}
+	if phoneNumbers[1].ColumnName == nil || *phoneNumbers[1].ColumnName != "phone2" {
+		t.Errorf("Expected second column_name phone2, got %v", phoneNumbers[1].ColumnName)
+	}
+
 	expectedNames := map[string]bool{"phone1": false, "phone2": false}
 	expectedTypes := map[string]bool{"home": false, "mobile": false}
 	expectedCallTimes := map[string]bool{"call_time1": false, "call_time2": false}
@@ -83,7 +68,6 @@ func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *
 		}
 	}
 
-	// Verify all expected values were found
 	for name, found := range expectedNames {
 		if !found {
 			t.Errorf("Expected to find column_name %s", name)
@@ -97,6 +81,29 @@ func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlice(t *
 	for callTime, found := range expectedCallTimes {
 		if !found {
 			t.Errorf("Expected to find callable_time_column %s", callTime)
+		}
+	}
+}
+
+func TestContactListBuildSdkOutboundContactListContactPhoneNumberColumnSlicePreservesOrder(t *testing.T) {
+	phoneNumberColumns := []interface{}{
+		map[string]interface{}{"column_name": "phoneNumber1", "type": "cell"},
+		map[string]interface{}{"column_name": "phoneNumber2", "type": "cell"},
+		map[string]interface{}{"column_name": "phoneNumber3", "type": "cell"},
+	}
+
+	result := buildSdkOutboundContactListContactPhoneNumberColumnSlice(phoneNumberColumns)
+	if result == nil {
+		t.Fatal("Expected non-nil result")
+	}
+	if len(*result) != 3 {
+		t.Fatalf("Expected 3 phone columns, got %d", len(*result))
+	}
+
+	want := []string{"phoneNumber1", "phoneNumber2", "phoneNumber3"}
+	for i, col := range *result {
+		if col.ColumnName == nil || *col.ColumnName != want[i] {
+			t.Errorf("index %d: expected %s, got %v", i, want[i], col.ColumnName)
 		}
 	}
 }
@@ -355,17 +362,11 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 		t.Fatal("Expected non-nil result for single column")
 	}
 
-	if result.Len() != 1 {
-		t.Errorf("Expected 1 item in set, got %d", result.Len())
+	if len(result) != 1 {
+		t.Errorf("Expected 1 item in list, got %d", len(result))
 	}
 
-	// Convert set to slice to check values
-	resultList := result.List()
-	if len(resultList) != 1 {
-		t.Fatal("Expected 1 item in result list")
-	}
-
-	resultMap := resultList[0].(map[string]interface{})
+	resultMap := result[0].(map[string]interface{})
 
 	expectedValues := map[string]string{
 		"column_name":          "email_col",
@@ -398,8 +399,17 @@ func TestContactListFlattenSdkOutboundContactListContactPhoneNumberColumnSlice(t
 		t.Fatal("Expected non-nil result for multiple columns")
 	}
 
-	if multiResult.Len() != 2 {
-		t.Errorf("Expected 2 items in set, got %d", multiResult.Len())
+	if len(multiResult) != 2 {
+		t.Errorf("Expected 2 items in list, got %d", len(multiResult))
+	}
+
+	first, _ := multiResult[0].(map[string]interface{})
+	second, _ := multiResult[1].(map[string]interface{})
+	if first["column_name"] != "email1" {
+		t.Errorf("Expected first column_name email1, got %v", first["column_name"])
+	}
+	if second["column_name"] != "email2" {
+		t.Errorf("Expected second column_name email2, got %v", second["column_name"])
 	}
 }
 
@@ -1140,4 +1150,223 @@ func TestStripSystemColumnsFromCSV(t *testing.T) {
 			t.Errorf("Expected stripped row, got '%s'", lines[1])
 		}
 	})
+}
+
+func TestStateUpgraderOutboundContactListV3ToV4(t *testing.T) {
+	rawState := map[string]interface{}{
+		"name": "tf-phone-columns-order-repro",
+		"column_names": []interface{}{
+			"phoneNumber1", "phoneNumber2", "phoneNumber3",
+		},
+		"phone_columns": []interface{}{
+			map[string]interface{}{"column_name": "phoneNumber3", "type": "cell"},
+			map[string]interface{}{"column_name": "phoneNumber1", "type": "cell"},
+			map[string]interface{}{"column_name": "phoneNumber2", "type": "cell"},
+		},
+	}
+
+	upgraded, err := stateUpgraderOutboundContactListV3ToV4(context.Background(), rawState, nil)
+	if err != nil {
+		t.Fatalf("unexpected upgrade error: %v", err)
+	}
+
+	phoneColumns, ok := upgraded["phone_columns"].([]interface{})
+	if !ok {
+		t.Fatalf("expected phone_columns to remain a list, got %T", upgraded["phone_columns"])
+	}
+	if len(phoneColumns) != 3 {
+		t.Fatalf("expected 3 phone columns, got %d", len(phoneColumns))
+	}
+	first := phoneColumns[0].(map[string]interface{})
+	if first["column_name"] != "phoneNumber3" {
+		t.Errorf("upgrade should keep existing array order, got first column %v", first["column_name"])
+	}
+}
+
+// Unit tests for reconcilePhoneColumnsLegacyCallableTimeColumn. The read flattens every phone column with both
+// callable_time_column_name and the deprecated callable_time_column. The deprecated attribute is Optional and not
+// Computed, so it may only stay in state when the user's previous state or configuration already had it.
+
+func flattenedPhoneColumn(name, colType, callableTime string) map[string]interface{} {
+	return map[string]interface{}{
+		"column_name":               name,
+		"type":                      colType,
+		"callable_time_column_name": callableTime,
+		"callable_time_column":      callableTime,
+	}
+}
+
+func existingPhoneColumn(name, colType, legacy, newName string) map[string]interface{} {
+	return map[string]interface{}{
+		"column_name":               name,
+		"type":                      colType,
+		"callable_time_column":      legacy,
+		"callable_time_column_name": newName,
+	}
+}
+
+func asMap(t *testing.T, v interface{}) map[string]interface{} {
+	t.Helper()
+	m, ok := v.(map[string]interface{})
+	require.True(t, ok, "expected a map, got %T", v)
+	return m
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_NewAttributeOnlyClearsLegacy(t *testing.T) {
+	// The user only wrote callable_time_column_name, so the existing element has no legacy value.
+	existing := []interface{}{
+		existingPhoneColumn("Cell", "cell", "", "Cell"),
+		existingPhoneColumn("Home", "home", "", "Home"),
+	}
+	updated := []interface{}{
+		flattenedPhoneColumn("Cell", "cell", "Cell"),
+		flattenedPhoneColumn("Home", "home", "Home"),
+	}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	require.Len(t, got, 2)
+	for i, want := range []string{"Cell", "Home"} {
+		m := asMap(t, got[i])
+		assert.Equal(t, want, m["callable_time_column_name"], "the new attribute must stay filled")
+		assert.NotContains(t, m, "callable_time_column", "the deprecated attribute must not be written to state")
+	}
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_LegacyOnlyKeepsLegacy(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "")}
+	updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	m := asMap(t, got[0])
+	assert.Equal(t, "Cell", m["callable_time_column"])
+	assert.Equal(t, "Cell", m["callable_time_column_name"])
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_BothSetKeepsBoth(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+	updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	m := asMap(t, got[0])
+	assert.Equal(t, "Cell", m["callable_time_column"])
+	assert.Equal(t, "Cell", m["callable_time_column_name"])
+}
+
+// Import and export have no previous value. Only the new attribute should be filled.
+func TestUnitReconcilePhoneColumnsLegacy_NoExistingClearsLegacy(t *testing.T) {
+	for name, existing := range map[string][]interface{}{"nil": nil, "empty": {}} {
+		t.Run(name, func(t *testing.T) {
+			updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+			got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+			m := asMap(t, got[0])
+			assert.Equal(t, "Cell", m["callable_time_column_name"])
+			assert.NotContains(t, m, "callable_time_column")
+		})
+	}
+}
+
+// When the user uses the deprecated attribute but the API returns no value, the previous value is kept so the
+// deprecated attribute does not report a change.
+func TestUnitReconcilePhoneColumnsLegacy_RestoresLegacyWhenApiReturnsNone(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+	updated := []interface{}{map[string]interface{}{"column_name": "Cell", "type": "cell"}}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	assert.Equal(t, "Cell", asMap(t, got[0])["callable_time_column"])
+}
+
+// A value that changed in Genesys Cloud must still be reported, so the API value wins when the user uses the attribute.
+func TestUnitReconcilePhoneColumnsLegacy_KeepsApiValueWhenItChanged(t *testing.T) {
+	existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+	updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Changed")}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	assert.Equal(t, "Changed", asMap(t, got[0])["callable_time_column"])
+}
+
+// Columns are matched on column_name and type, not on position, so one column using the deprecated attribute does
+// not leak into another.
+func TestUnitReconcilePhoneColumnsLegacy_MatchesOnNameAndType(t *testing.T) {
+	existing := []interface{}{
+		existingPhoneColumn("Cell", "cell", "Cell", "Cell"), // uses the deprecated attribute
+		existingPhoneColumn("Home", "home", "", "Home"),     // uses the new attribute
+		existingPhoneColumn("Cell", "home", "", "Cell"),     // same name, different type, new attribute
+	}
+	updated := []interface{}{
+		flattenedPhoneColumn("Home", "home", "Home"),
+		flattenedPhoneColumn("Cell", "cell", "Cell"),
+		flattenedPhoneColumn("Cell", "home", "Cell"),
+	}
+
+	got := reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+	require.Len(t, got, 3)
+	assert.NotContains(t, asMap(t, got[0]), "callable_time_column", "Home/home uses the new attribute")
+	assert.Equal(t, "Cell", asMap(t, got[1])["callable_time_column"], "Cell/cell uses the deprecated attribute")
+	assert.NotContains(t, asMap(t, got[2]), "callable_time_column", "Cell/home uses the new attribute")
+}
+
+func TestUnitReconcilePhoneColumnsLegacy_EdgeCases(t *testing.T) {
+	t.Run("nil updated is returned unchanged", func(t *testing.T) {
+		assert.Nil(t, reconcilePhoneColumnsLegacyCallableTimeColumn([]interface{}{existingPhoneColumn("a", "cell", "x", "x")}, nil))
+	})
+
+	t.Run("entries that are not maps are skipped without a panic", func(t *testing.T) {
+		existing := []interface{}{"not a map", existingPhoneColumn("Cell", "cell", "", "Cell")}
+		updated := []interface{}{"not a map", flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+		var got []interface{}
+		require.NotPanics(t, func() { got = reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated) })
+		require.Len(t, got, 1)
+		assert.NotContains(t, asMap(t, got[0]), "callable_time_column")
+	})
+
+	t.Run("existing slice is not modified", func(t *testing.T) {
+		existing := []interface{}{existingPhoneColumn("Cell", "cell", "Cell", "Cell")}
+		updated := []interface{}{flattenedPhoneColumn("Cell", "cell", "Cell")}
+
+		reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)
+
+		assert.Equal(t, "Cell", asMap(t, existing[0])["callable_time_column"])
+	})
+}
+
+// End to end through the schema: previous state written with only the new attribute, then the reconciled read result
+// is stored the way readOutboundContactList stores it. The deprecated attribute must stay out of state, because that is
+// what produced `- callable_time_column = "Cell" -> null` on every plan.
+func TestUnitReconcilePhoneColumnsLegacy_StateKeepsOnlyNewAttribute(t *testing.T) {
+	state := &terraform.InstanceState{
+		ID: "list-id",
+		Attributes: map[string]string{
+			"name":                        "list",
+			"phone_columns.#":             "2",
+			"phone_columns.0.column_name": "Cell",
+			"phone_columns.0.type":        "cell",
+			"phone_columns.0.callable_time_column_name": "Cell",
+			"phone_columns.1.column_name":               "Home",
+			"phone_columns.1.type":                      "home",
+			"phone_columns.1.callable_time_column_name": "Home",
+		},
+	}
+	d := ResourceOutboundContactList().Data(state)
+
+	existing, _ := d.Get("phone_columns").([]interface{})
+	updated := []interface{}{
+		flattenedPhoneColumn("Cell", "cell", "Cell"),
+		flattenedPhoneColumn("Home", "home", "Home"),
+	}
+	require.NoError(t, d.Set("phone_columns", reconcilePhoneColumnsLegacyCallableTimeColumn(existing, updated)))
+
+	attrs := d.State().Attributes
+	assert.Equal(t, "Cell", attrs["phone_columns.0.callable_time_column_name"])
+	assert.Equal(t, "Home", attrs["phone_columns.1.callable_time_column_name"])
+	assert.Empty(t, attrs["phone_columns.0.callable_time_column"])
+	assert.Empty(t, attrs["phone_columns.1.callable_time_column"])
 }

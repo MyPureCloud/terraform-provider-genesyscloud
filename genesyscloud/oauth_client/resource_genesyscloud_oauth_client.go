@@ -55,7 +55,7 @@ func createOAuthClient(ctx context.Context, d *schema.ResourceData, meta interfa
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
-	roles, diagErr := buildOAuthRoles(d)
+	roles, diagErr := buildOAuthRoles(d, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
@@ -276,7 +276,7 @@ func cascadeUpdateOAuthClient(ctx context.Context, d *schema.ResourceData, meta 
 	sdkConfig := meta.(*provider.ProviderMeta).ClientConfig
 	oauthClientProxy := GetOAuthClientProxy(sdkConfig)
 
-	roles, diagErr := buildOAuthRoles(d)
+	roles, diagErr := buildOAuthRoles(d, sdkConfig)
 	if diagErr != nil {
 		return diagErr
 	}
