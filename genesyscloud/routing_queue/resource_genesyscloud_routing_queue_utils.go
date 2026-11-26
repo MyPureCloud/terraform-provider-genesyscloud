@@ -172,12 +172,23 @@ func buildSdkMediaSetting(settings []interface{}) *platformclientv2.Mediasetting
 	}
 
 	mediaSetting := &platformclientv2.Mediasettings{
-		AlertingTimeoutSeconds: platformclientv2.Int(settingsMap["alerting_timeout_sec"].(int)),
-		EnableAutoAnswer:       platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
-		ServiceLevel: &platformclientv2.Servicelevel{
-			Percentage: platformclientv2.Float64(settingsMap["service_level_percentage"].(float64)),
-			DurationMs: platformclientv2.Int(settingsMap["service_level_duration_ms"].(int)),
-		},
+		// enable_auto_answer has a schema default of false, so it is always sent.
+		EnableAutoAnswer: platformclientv2.Bool(settingsMap["enable_auto_answer"].(bool)),
+	}
+
+	// These fields are documented as optional. Only send them when the user
+	// actually set a non-zero value; otherwise omit them so the API applies its
+	// defaults instead of rejecting zero values (e.g. serviceLevel.durationMs
+	// must be >= 1000). See GitHub issue #2597.
+	mediaSetting.AlertingTimeoutSeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "alerting_timeout_sec", false)
+
+	serviceLevelPercentage := resourcedata.GetNillableValueFromMap[float64](settingsMap, "service_level_percentage", false)
+	serviceLevelDurationMs := resourcedata.GetNillableValueFromMap[int](settingsMap, "service_level_duration_ms", false)
+	if serviceLevelPercentage != nil || serviceLevelDurationMs != nil {
+		mediaSetting.ServiceLevel = &platformclientv2.Servicelevel{
+			Percentage: serviceLevelPercentage,
+			DurationMs: serviceLevelDurationMs,
+		}
 	}
 
 	mediaSetting.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", false)
@@ -274,27 +285,32 @@ func buildSdkMediaSettingCallback(settings []interface{}) *platformclientv2.Call
 
 	var callbackSettings platformclientv2.Callbackmediasettings
 
-	if serviceLevelPercentage, ok := settingsMap["service_level_percentage"].(float64); ok {
+	// service_level_percentage / _duration_ms are optional. Only send them when
+	// the user set a non-zero value; otherwise omit serviceLevel so the API
+	// applies its defaults instead of rejecting zero values (percentage must be
+	// >= 0.01, durationMs must be >= 1000). See GitHub issue #2597.
+	serviceLevelPercentage := resourcedata.GetNillableValueFromMap[float64](settingsMap, "service_level_percentage", false)
+	serviceLevelDurationMs := resourcedata.GetNillableValueFromMap[int](settingsMap, "service_level_duration_ms", false)
+	if serviceLevelPercentage != nil || serviceLevelDurationMs != nil {
 		callbackSettings.ServiceLevel = &platformclientv2.Servicelevel{
-			Percentage: &serviceLevelPercentage,
+			Percentage: serviceLevelPercentage,
+			DurationMs: serviceLevelDurationMs,
 		}
 	}
 
-	if serviceLevelDurationMs, ok := settingsMap["service_level_duration_ms"].(int); ok {
-		if callbackSettings.ServiceLevel == nil {
-			callbackSettings.ServiceLevel = &platformclientv2.Servicelevel{}
-		}
-		callbackSettings.ServiceLevel.DurationMs = &serviceLevelDurationMs
-	}
-
-	callbackSettings.AlertingTimeoutSeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "alerting_timeout_sec", true)
+	// alerting_timeout_sec is optional (API requires >= 7 when present). Omit it
+	// when unset/zero rather than sending 0. See GitHub issue #2597.
+	callbackSettings.AlertingTimeoutSeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "alerting_timeout_sec", false)
 	callbackSettings.EnableAutoAnswer = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_auto_answer", true)
 	callbackSettings.AutoEndDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "auto_end_delay_seconds", true)
 	callbackSettings.AutoDialDelaySeconds = resourcedata.GetNillableValueFromMap[int](settingsMap, "auto_dial_delay_seconds", true)
 	callbackSettings.EnableAutoDialAndEnd = resourcedata.GetNillableValueFromMap[bool](settingsMap, "enable_auto_dial_and_end", true)
 	callbackSettings.Mode = resourcedata.GetNillableValueFromMap[string](settingsMap, "mode", false)
-	callbackSettings.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", true)
-	callbackSettings.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", true)
+	// Only send the alert-tone values when the user set a non-zero value.
+	// Sending 0 causes the callback "Audio Duration" option to be enabled in
+	// Genesys Cloud with no way to turn it off. See GitHub issue #2597.
+	callbackSettings.AutoAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "auto_answer_alert_tone_seconds", false)
+	callbackSettings.ManualAnswerAlertToneSeconds = resourcedata.GetNillableValueFromMap[float64](settingsMap, "manual_answer_alert_tone_seconds", false)
 	callbackSettings.PacingModifier = resourcedata.GetNillableValueFromMap[float64](settingsMap, "pacing_modifier", false)
 	callbackSettings.LiveVoiceReactionType = resourcedata.GetNillableValueFromMap[string](settingsMap, "live_voice_reaction_type", false)
 	callbackSettings.LiveVoiceFlow = util.GetNillableDomainEntityRefFromMap(settingsMap, "live_voice_flow_id")
@@ -752,10 +768,12 @@ func flattenMediaEmailSetting(settings *platformclientv2.Emailmediasettings) []i
 func flattenMediaSetting(settings *platformclientv2.Mediasettings) []interface{} {
 	settingsMap := make(map[string]interface{})
 
-	settingsMap["alerting_timeout_sec"] = *settings.AlertingTimeoutSeconds
+	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
-	settingsMap["service_level_percentage"] = *settings.ServiceLevel.Percentage
-	settingsMap["service_level_duration_ms"] = *settings.ServiceLevel.DurationMs
+	if settings.ServiceLevel != nil {
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
+	}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_answer_alert_tone_seconds", settings.AutoAnswerAlertToneSeconds)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "manual_answer_alert_tone_seconds", settings.ManualAnswerAlertToneSeconds)
 	return []interface{}{settingsMap}
@@ -958,8 +976,10 @@ func flattenMediaSettingCallback(settings *platformclientv2.Callbackmediasetting
 	settingsMap := make(map[string]interface{})
 
 	resourcedata.SetMapValueIfNotNil(settingsMap, "alerting_timeout_sec", settings.AlertingTimeoutSeconds)
-	resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
-	resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
+	if settings.ServiceLevel != nil {
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_percentage", settings.ServiceLevel.Percentage)
+		resourcedata.SetMapValueIfNotNil(settingsMap, "service_level_duration_ms", settings.ServiceLevel.DurationMs)
+	}
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_answer", settings.EnableAutoAnswer)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "enable_auto_dial_and_end", settings.EnableAutoDialAndEnd)
 	resourcedata.SetMapValueIfNotNil(settingsMap, "auto_end_delay_seconds", settings.AutoEndDelaySeconds)

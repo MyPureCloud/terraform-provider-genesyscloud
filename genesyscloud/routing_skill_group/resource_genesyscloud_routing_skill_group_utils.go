@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
 // Prepare member_division_ids list to avoid an unnecessary plan not empty error
@@ -47,7 +48,7 @@ func organizeMemberDivisionIdsForRead(schemaList, apiList []string, divisionId s
 }
 
 // Remove the value of division_id, or if this field was left blank; the home division ID
-func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string, diag.Diagnostics) {
+func removeSkillGroupDivisionID(d *schema.ResourceData, list []string, sdkConfig *platformclientv2.Configuration) ([]string, diag.Diagnostics) {
 	if len(list) == 0 || list == nil {
 		return list, nil
 	}
@@ -55,7 +56,7 @@ func removeSkillGroupDivisionID(d *schema.ResourceData, list []string) ([]string
 	divisionId := d.Get("division_id").(string)
 
 	if divisionId == "" {
-		id, diagErr := util.GetHomeDivisionID()
+		id, diagErr := util.GetHomeDivisionIDWithConfig(sdkConfig)
 		if diagErr != nil {
 			return nil, diagErr
 		}

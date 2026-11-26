@@ -5,6 +5,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
+	sttProgram "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/speechandtextanalytics_program"
 )
 
 /*
@@ -101,6 +102,8 @@ func SpeechAndTextAnalyticsSettingsExporter() *resourceExporter.ResourceExporter
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllSpeechAndTextAnalyticsSettings),
 		IsSingleton:      true,
 		ExportId:         ResourceType,
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{},
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"default_program_id": {RefType: sttProgram.ResourceType},
+		},
 	}
 }

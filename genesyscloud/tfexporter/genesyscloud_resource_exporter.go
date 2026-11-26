@@ -367,6 +367,10 @@ func (g *GenesysCloudResourceExporter) Export() (diagErr diag.Diagnostics) {
 	// were never applied to the exporter instances used during sanitization.
 	diagErr = append(diagErr, g.removeUserDefinedExcludedAttributesFromConfigMaps()...)
 
+	// Step #6.6 Make users that share a DID with an IVR depend on that IVR, so the IVR is created first.
+	// This runs after exclude_attributes is applied, so excluded dnis or addresses are not matched.
+	diagErr = append(diagErr, g.addSharedDidDependencies()...)
+
 	// Step #7 Write the terraform state file along with either the HCL or JSON
 	diagErr = append(diagErr, g.generateOutputFiles()...)
 	if diagErr.HasError() {
@@ -2719,6 +2723,15 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 	return unresolvableAttrs, true
 }
 
+// shouldResolveToDataSource returns true when a ResolveToDataSourceFunc result should be applied.
+// By default, data source resolution only runs when the target type is listed in replace_with_datasource.
+func (g *GenesysCloudResourceExporter) shouldResolveToDataSource(resolver *resourceExporter.RefAttrCustomResolver, dsType, dsLabel string) bool {
+	if resolver.AlwaysResolveToDataSource {
+		return true
+	}
+	return g.isDataSource(dsType, dsLabel, "")
+}
+
 // resolveValueToDataSource invokes a custom resolver method to add a data source to the export and
 // update an attribute to reference the data source
 func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resourceExporter.ResourceExporter, configMap map[string]any, attribute string, originalValue any) {
@@ -2734,7 +2747,7 @@ func (g *GenesysCloudResourceExporter) resolveValueToDataSource(exporter *resour
 
 	sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 	dataSourceType, dataSourceLabel, dataSourceConfig, resolve := resolveToDataSourceFunc(configMap, originalValue, sdkConfig)
-	if !resolve {
+	if !resolve || !g.shouldResolveToDataSource(refAttrCustomResolver, dataSourceType, dataSourceLabel) {
 		return
 	}
 
@@ -2894,7 +2907,7 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigArray(
 					if refAttrCustomResolver, ok := exporter.CustomAttributeResolver[currAttr]; ok && refAttrCustomResolver.ResolveToDataSourceFunc != nil {
 						sdkConfig := g.meta.(*provider.ProviderMeta).ClientConfig
 						dsType, dsLabel, dsConfig, resolve := refAttrCustomResolver.ResolveToDataSourceFunc(nil, strVal, sdkConfig)
-						if resolve {
+						if resolve && g.shouldResolveToDataSource(refAttrCustomResolver, dsType, dsLabel) {
 							g.addToDataSourceMaps(dsType, dsLabel, dsConfig)
 							referenceVal = fmt.Sprintf("${data.%s.%s.id}", dsType, dsLabel)
 						}
