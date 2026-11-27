@@ -63,6 +63,8 @@ type updateIntegrationActionFunc func(ctx context.Context, p *integrationActions
 type deleteIntegrationActionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionTemplateFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, fileName string) (*string, *platformclientv2.APIResponse, error)
 type createIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error)
+type openIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
+type updateIntegrationActionDraftFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, updateDraft *platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error)
 type uploadIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string, filePath string) (*platformclientv2.APIResponse, error)
 type getIntegrationActionDraftFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
 type getIntegrationActionFunctionFunc func(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Functionconfig, *platformclientv2.APIResponse, error)
@@ -85,6 +87,8 @@ type integrationActionsProxy struct {
 	deleteIntegrationActionAttr                  deleteIntegrationActionFunc
 	getIntegrationActionTemplateAttr             getIntegrationActionTemplateFunc
 	createIntegrationActionDraftAttr             createIntegrationActionDraftFunc
+	openIntegrationActionDraftAttr               openIntegrationActionDraftFunc
+	updateIntegrationActionDraftAttr             updateIntegrationActionDraftFunc
 	uploadIntegrationActionDraftFunctionAttr     uploadIntegrationActionDraftFunctionFunc
 	getIntegrationActionDraftFunctionAttr        getIntegrationActionDraftFunctionFunc
 	getIntegrationActionFunctionAttr             getIntegrationActionFunctionFunc
@@ -103,6 +107,8 @@ func newIntegrationActionsProxy(clientConfig *platformclientv2.Configuration) *i
 		getAllIntegrationsAttr:                       getAllIntegrationsFn,
 		createIntegrationActionAttr:                  createIntegrationActionFn,
 		createIntegrationActionDraftAttr:             createIntegrationActionDraftFn,
+		openIntegrationActionDraftAttr:               openIntegrationActionDraftFn,
+		updateIntegrationActionDraftAttr:             updateIntegrationActionDraftFn,
 		uploadIntegrationActionDraftFunctionAttr:     uploadIntegrationActionDraftFunctionFn,
 		getIntegrationActionDraftFunctionAttr:        getIntegrationActionDraftFunctionFn,
 		getIntegrationActionFunctionAttr:             getIntegrationActionFunctionFn,
@@ -150,9 +156,19 @@ func (p *integrationActionsProxy) getIntegrationActionDraftById(ctx context.Cont
 	return p.getIntegrationActionDraftByIdAttr(ctx, p, actionId)
 }
 
-// getIntegrationActionById gets a Genesys Cloud Integration Action by id
+// createIntegrationActionDraft creates a brand-new Genesys Cloud Integration Action as a draft (new action id)
 func (p *integrationActionsProxy) createIntegrationActionDraft(ctx context.Context, actionInput *IntegrationAction) (*IntegrationAction, *platformclientv2.APIResponse, error) {
 	return p.createIntegrationActionDraftAttr(ctx, p, actionInput)
+}
+
+// openIntegrationActionDraft opens a draft on an existing Integration Action (same action id)
+func (p *integrationActionsProxy) openIntegrationActionDraft(ctx context.Context, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	return p.openIntegrationActionDraftAttr(ctx, p, actionId)
+}
+
+// updateIntegrationActionDraft updates the draft of an existing Integration Action
+func (p *integrationActionsProxy) updateIntegrationActionDraft(ctx context.Context, actionId string, updateDraft *platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	return p.updateIntegrationActionDraftAttr(ctx, p, actionId, updateDraft)
 }
 
 // uploadIntegrationActionDraftFunction uploads a function file to a Genesys Cloud Integration Action Draft
@@ -251,6 +267,30 @@ func createIntegrationActionDraftFn(ctx context.Context, p *integrationActionsPr
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	action, resp, err := sdkPostIntegrationActionDraft(ctx, actionInput, p.integrationsApi)
+	if err != nil {
+		return nil, resp, err
+	}
+	return action, resp, nil
+}
+
+// openIntegrationActionDraftFn is the implementation for opening a draft on an existing integration action
+// (POST /api/v2/integrations/actions/{actionId}/draft). The draft keeps the action's id.
+func openIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	action, resp, err := p.integrationsApi.PostIntegrationsActionDraft(actionId)
+	if err != nil {
+		return nil, resp, err
+	}
+	return action, resp, nil
+}
+
+// updateIntegrationActionDraftFn is the implementation for updating an existing integration action's draft
+// (PATCH /api/v2/integrations/actions/{actionId}/draft).
+func updateIntegrationActionDraftFn(ctx context.Context, p *integrationActionsProxy, actionId string, updateDraft *platformclientv2.Updatedraftinput) (*platformclientv2.Action, *platformclientv2.APIResponse, error) {
+	ctx = provider.EnsureResourceContext(ctx, ResourceType)
+
+	action, resp, err := p.integrationsApi.PatchIntegrationsActionDraft(actionId, *updateDraft)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -452,10 +492,9 @@ func getIntegrationActionDraftFunctionFn(ctx context.Context, p *integrationActi
 	}
 
 	log.Printf("DEBUG: Function details response: %+v", functionData)
-	if functionData.Function != nil {
-		log.Printf("DEBUG: Function data - Description: %s, Handler: %s, Runtime: %s, TimeoutSeconds: %d, ZipId: %s",
-			*functionData.Function.Description, *functionData.Function.Handler, *functionData.Function.Runtime,
-			*functionData.Function.TimeoutSeconds, *functionData.Function.ZipId)
+	if functionData != nil && functionData.Function != nil {
+		// Fields are pointers and may be unset on a draft opened from a published action; don't dereference.
+		log.Printf("DEBUG: Function data: %+v", *functionData.Function)
 	}
 
 	return functionData, resp, nil
