@@ -54,12 +54,6 @@ var (
 	terraformHCLBlock string
 	mockError         diag.Diagnostics
 
-	// UID : "jsonencode({decoded representation of json string})"
-	// Attrs which can be exported in jsonencode objects are populated with a UID
-	// The same UID is stored as the key in attributesDecoded, with the value being the jsonencode representation of the json string.
-	// When the bytes are being written to the file, the UID is found and replaced with the unquoted jsonencode object
-	attributesDecoded = make(map[string]string)
-
 	providerDataSources map[string]*schema.Resource
 	providerResources   map[string]*schema.Resource
 	resourceExporters   map[string]*resourceExporter.ResourceExporter
@@ -93,6 +87,14 @@ type GenesysCloudResourceExporter struct {
 
 	// 8-byte alignment
 	// .. Pointers and reference types
+
+	// attributesDecoded maps UID -> "jsonencode({decoded representation of json string})".
+	// Attrs which can be exported in jsonencode objects are populated with a UID. When the HCL files are
+	// written, the UID is found and replaced with the unquoted jsonencode object.
+	// It belongs to this export only: several exports can run at the same time in one provider process
+	// (e.g. multiple genesyscloud_tf_export resources in one apply), so a shared map would be read and
+	// written concurrently. Guarded by attributesDecodedMutex.
+	attributesDecoded   map[string]string
 	buildSecondDeps     map[string][]string
 	configExporter      Exporter
 	ctx                 context.Context
@@ -1009,7 +1011,11 @@ func (g *GenesysCloudResourceExporter) generateOutputFiles() (diags diag.Diagnos
 	}
 
 	if g.matchesExportFormat(formatHCL, formatJSONHCL) {
-		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource)
+		// All workers that write attributesDecoded have finished by now (buildResourceConfigMap waits for them).
+		g.attributesDecodedMutex.Lock()
+		decoded := g.attributesDecoded
+		g.attributesDecodedMutex.Unlock()
+		hclExporter := NewHClExporter(g.resourceTypesMaps, g.dataSourceTypesMaps, g.unresolvedAttrs, g.providerRegistry, g.version, g.exportDirPath, g.splitFilesByResource, decoded)
 		diags = append(diags, hclExporter.exportHCLConfig()...)
 	}
 
@@ -2707,7 +2713,10 @@ func (g *GenesysCloudResourceExporter) sanitizeConfigMap(
 				} else {
 					uid := uuid.NewString()
 					g.attributesDecodedMutex.Lock()
-					attributesDecoded[uid] = decodedData
+					if g.attributesDecoded == nil {
+						g.attributesDecoded = make(map[string]string)
+					}
+					g.attributesDecoded[uid] = decodedData
 					g.attributesDecodedMutex.Unlock()
 					configMap[attributeConfigKey] = uid
 				}

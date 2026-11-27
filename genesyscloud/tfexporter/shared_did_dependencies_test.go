@@ -272,7 +272,7 @@ func TestUnitSharedDidRendersRawReferenceInHcl(t *testing.T) {
 	}
 	addSharedDidDependenciesToConfigMaps(maps)
 
-	block := string(postProcessHclBytes(instanceStateToHCLBlock(sharedDidUserResourceType, "supervisor", maps[sharedDidUserResourceType]["supervisor"], false)))
+	block := string(postProcessHclBytes(instanceStateToHCLBlock(sharedDidUserResourceType, "supervisor", maps[sharedDidUserResourceType]["supervisor"], false), nil))
 
 	if !strings.Contains(block, "genesyscloud_architect_ivr.direct_agent_routing") {
 		t.Fatalf("rendered HCL is missing the IVR reference:\n%s", block)

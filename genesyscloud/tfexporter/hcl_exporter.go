@@ -2,11 +2,12 @@ package tfexporter
 
 import (
 	"fmt"
-	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,9 +28,11 @@ type HCLExporter struct {
 	version               string
 	dirPath               string
 	splitFilesByResource  bool
+	// attributesDecoded holds this export's jsonencode placeholders (UID -> jsonencode(...)).
+	attributesDecoded map[string]string
 }
 
-func NewHClExporter(resourceTypesJSONMaps map[string]ResourceJSONMaps, dataSourceTypesMaps map[string]ResourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool) *HCLExporter {
+func NewHClExporter(resourceTypesJSONMaps map[string]ResourceJSONMaps, dataSourceTypesMaps map[string]ResourceJSONMaps, unresolvedAttrs []unresolvableAttributeInfo, providerRegistry string, version string, dirPath string, splitFilesByResource bool, attributesDecoded map[string]string) *HCLExporter {
 	hclExporter := &HCLExporter{
 		resourceTypesJSONMaps: resourceTypesJSONMaps,
 		dataSourceTypesMaps:   dataSourceTypesMaps,
@@ -38,6 +41,7 @@ func NewHClExporter(resourceTypesJSONMaps map[string]ResourceJSONMaps, dataSourc
 		version:               version,
 		dirPath:               dirPath,
 		splitFilesByResource:  splitFilesByResource,
+		attributesDecoded:     attributesDecoded,
 	}
 	return hclExporter
 }
@@ -86,7 +90,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		if providerHCLFilePath == "" {
 			return diag.Errorf("Failed to create file path %s", providerHCLFilePath)
 		}
-		if diagErr := writeHCLToFile([][]byte{providerBlock}, providerHCLFilePath); diagErr != nil {
+		if diagErr := writeHCLToFile([][]byte{providerBlock}, providerHCLFilePath, h.attributesDecoded); diagErr != nil {
 			return diagErr
 		}
 
@@ -95,7 +99,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		if variablesHCLFilePath == "" {
 			return diag.Errorf("Failed to create file path %s", variablesHCLFilePath)
 		}
-		if diagErr := writeHCLToFile([][]byte{variablesBlock}, variablesHCLFilePath); diagErr != nil {
+		if diagErr := writeHCLToFile([][]byte{variablesBlock}, variablesHCLFilePath, h.attributesDecoded); diagErr != nil {
 			return diagErr
 		}
 
@@ -105,7 +109,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 			if resourceHCLFilePath == "" {
 				return diag.Errorf("Failed to create file path %s", resourceHCLFilePath)
 			}
-			if diagErr := writeHCLToFile(hclContent, resourceHCLFilePath); diagErr != nil {
+			if diagErr := writeHCLToFile(hclContent, resourceHCLFilePath, h.attributesDecoded); diagErr != nil {
 				return diagErr
 			}
 		}
@@ -132,7 +136,7 @@ func (h *HCLExporter) exportHCLConfig() diag.Diagnostics {
 		if hclFilePath == "" {
 			return diag.Errorf("Failed to create file path %s", hclFilePath)
 		}
-		if diagErr := writeHCLToFile(allBlockSlice, hclFilePath); diagErr != nil {
+		if diagErr := writeHCLToFile(allBlockSlice, hclFilePath, h.attributesDecoded); diagErr != nil {
 			return diagErr
 		}
 	}
@@ -213,7 +217,8 @@ func createHCLVariablesBlock(unresolvedAttrs []unresolvableAttributeInfo) []byte
 	return mFile.Bytes()
 }
 
-func postProcessHclBytes(resource []byte) []byte {
+// postProcessHclBytes replaces the jsonencode placeholders of one export (attributesDecoded) and fixes custom functions.
+func postProcessHclBytes(resource []byte, attributesDecoded map[string]string) []byte {
 	resourceStr := string(resource)
 	for placeholderId, val := range attributesDecoded {
 		resourceStr = strings.Replace(resourceStr, fmt.Sprintf("\"%s\"", placeholderId), val, -1)
@@ -223,7 +228,7 @@ func postProcessHclBytes(resource []byte) []byte {
 	return []byte(resourceStr)
 }
 
-func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
+func writeHCLToFile(bytes [][]byte, path string, attributesDecoded map[string]string) diag.Diagnostics {
 	// clear contents
 	_ = os.WriteFile(path, nil, os.ModePerm)
 	for _, v := range bytes {
@@ -232,7 +237,7 @@ func writeHCLToFile(bytes [][]byte, path string) diag.Diagnostics {
 			return diag.Errorf("Error opening/creating file %s: %v", path, err)
 		}
 
-		v = postProcessHclBytes(v)
+		v = postProcessHclBytes(v, attributesDecoded)
 
 		if _, err := f.Write(v); err != nil {
 			return diag.Errorf("Error writing file %s: %v", path, err)
