@@ -51,6 +51,12 @@ func ResourceResponsemanagementLibrary() *schema.Resource {
 				Required:    true,
 				Type:        schema.TypeString,
 			},
+			`division_id`: {
+				Description: `The division to which this entity belongs.`,
+				Optional:    true,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
 		},
 	}
 }
@@ -59,6 +65,9 @@ func ResourceResponsemanagementLibrary() *schema.Resource {
 func ResponsemanagementLibraryExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllAuthResponsemanagementLibrarys),
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"division_id": {RefType: "genesyscloud_auth_division"},
+		},
 	}
 }
 
@@ -88,4 +97,16 @@ func GenerateResponseManagementLibraryResource(
 			name = "%s"
 		}
 	`, resourceLabel, name)
+}
+
+func GenerateResponseManagementLibraryResourceWithDivision(
+	resourceLabel string,
+	name string,
+	divisionId string) string {
+	return fmt.Sprintf(`
+		resource "genesyscloud_responsemanagement_library" "%s" {
+			name        = "%s"
+			division_id = %s
+		}
+	`, resourceLabel, name, divisionId)
 }

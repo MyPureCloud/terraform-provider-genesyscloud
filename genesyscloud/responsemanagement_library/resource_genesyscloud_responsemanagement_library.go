@@ -49,6 +49,9 @@ func createResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 	responsemanagementLibrary := platformclientv2.Library{
 		Name: platformclientv2.String(d.Get("name").(string)),
 	}
+	if divisionId := d.Get("division_id").(string); divisionId != "" {
+		responsemanagementLibrary.Division = &platformclientv2.Writabledivision{Id: &divisionId}
+	}
 
 	log.Printf("Creating responsemanagement library %s", *responsemanagementLibrary.Name)
 	library, resp, err := proxy.createResponsemanagementLibrary(ctx, &responsemanagementLibrary)
@@ -78,6 +81,7 @@ func readResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData, 
 			return retry.NonRetryableError(util.BuildWithRetriesApiDiagnosticError(ResourceType, fmt.Sprintf("Failed to read responsemanagement library %s | error: %s", d.Id(), getErr), resp))
 		}
 
+		resourcedata.SetNillableReferenceWritableDivision(d, "division_id", library.Division)
 		resourcedata.SetNillableValue(d, "name", library.Name)
 		log.Printf("Read responsemanagement library %s %s", d.Id(), *library.Name)
 		return cc.CheckState(d)
@@ -91,6 +95,9 @@ func updateResponsemanagementLibrary(ctx context.Context, d *schema.ResourceData
 
 	responsemanagementLibrary := platformclientv2.Library{
 		Name: platformclientv2.String(d.Get("name").(string)),
+	}
+	if divisionId := d.Get("division_id").(string); divisionId != "" {
+		responsemanagementLibrary.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
 	log.Printf("Updating responsemanagement library %s", *responsemanagementLibrary.Name)
