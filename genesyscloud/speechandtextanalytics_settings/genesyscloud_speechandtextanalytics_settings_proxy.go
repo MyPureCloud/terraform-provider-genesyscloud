@@ -44,10 +44,7 @@ func newSpeechAndTextAnalyticsSettingsProxy(clientConfig *platformclientv2.Confi
 // getSpeechAndTextAnalyticsSettingsProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getSpeechAndTextAnalyticsSettingsProxy(clientConfig *platformclientv2.Configuration) *speechAndTextAnalyticsSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newSpeechAndTextAnalyticsSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSpeechAndTextAnalyticsSettingsProxy)
 }
 
 // getSpeechAndTextAnalyticsSettings returns the Genesys Cloud organization Speech & Text Analytics settings

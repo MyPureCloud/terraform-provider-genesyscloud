@@ -54,10 +54,7 @@ func newQualityMinerProxy(clientConfig *platformclientv2.Configuration) *quality
 }
 
 func getQualityMinerProxy(clientConfig *platformclientv2.Configuration) *qualityMinerProxy {
-	if internalProxy == nil {
-		internalProxy = newQualityMinerProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newQualityMinerProxy)
 }
 
 // getAllQualityMiners retrieves all Genesys Cloud miners (across every type)

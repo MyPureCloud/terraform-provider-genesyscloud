@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
@@ -65,11 +66,7 @@ func newSentimentFeedbackProxy(clientConfig *platformclientv2.Configuration) *se
 // getSentimentFeedbackProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getSentimentFeedbackProxy(clientConfig *platformclientv2.Configuration) *sentimentFeedbackProxy {
-	if internalProxy == nil {
-		internalProxy = newSentimentFeedbackProxy(clientConfig)
-	}
-
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newSentimentFeedbackProxy)
 }
 
 // createSentimentFeedback creates a Genesys Cloud sentiment feedback

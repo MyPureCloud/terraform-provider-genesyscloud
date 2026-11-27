@@ -44,10 +44,7 @@ func newRecordingSettingsProxy(clientConfig *platformclientv2.Configuration) *re
 // getRecordingSettingsProxy acts as a singleton for the internalProxy. It also ensures
 // that we can still proxy our tests by directly setting internalProxy package variable
 func getRecordingSettingsProxy(clientConfig *platformclientv2.Configuration) *recordingSettingsProxy {
-	if internalProxy == nil {
-		internalProxy = newRecordingSettingsProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newRecordingSettingsProxy)
 }
 
 // getRecordingSettings retrieves the Genesys Cloud organization recording settings

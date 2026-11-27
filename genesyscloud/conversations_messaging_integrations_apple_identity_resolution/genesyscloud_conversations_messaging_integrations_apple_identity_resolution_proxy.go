@@ -44,10 +44,7 @@ func newConversationsMessagingIntegrationsAppleIdentityResolutionProxy(clientCon
 }
 
 func getConversationsMessagingIntegrationsAppleIdentityResolutionProxy(clientConfig *platformclientv2.Configuration) *conversationsMessagingIntegrationsAppleIdentityResolutionProxy {
-	if internalProxy == nil {
-		internalProxy = newConversationsMessagingIntegrationsAppleIdentityResolutionProxy(clientConfig)
-	}
-	return internalProxy
+	return provider.SingletonOrFresh(&internalProxy, clientConfig, newConversationsMessagingIntegrationsAppleIdentityResolutionProxy)
 }
 
 func (p *conversationsMessagingIntegrationsAppleIdentityResolutionProxy) getConversationsMessagingIntegrationsAppleIdentityResolution(ctx context.Context, appleIntegrationId string) (appleIdentityResolution *platformclientv2.Appleidentityresolutionconfig, response *platformclientv2.APIResponse, err error) {
