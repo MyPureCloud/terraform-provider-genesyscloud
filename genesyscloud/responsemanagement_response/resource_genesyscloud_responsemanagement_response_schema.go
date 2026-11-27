@@ -97,18 +97,15 @@ var (
 				Description: `Defines a messaging template for a WhatsApp messaging channel`,
 				Optional:    true,
 				MaxItems:    1,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        whatsappDefinitionResource,
-				Set: func(_ interface{}) int {
-					return 0
-				},
 			},
 		},
 	}
 	whatsappDefinitionResource = &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			`name`: {
-				Description: `The messaging template name.`,
+				Description: `The messaging template name. For carousel templates it can only contain lowercase letters, numbers and underscores.`,
 				Required:    true,
 				Type:        schema.TypeString,
 			},
@@ -120,6 +117,143 @@ var (
 			`language`: {
 				Description: `The messaging template language configured for this template. This is a WhatsApp specific value. For example, 'en_US'`,
 				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`integration_id`: {
+				Description: `WhatsApp integration ID for WhatsApp carousels.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`category`: {
+				Description:  `Category of the WhatsApp carousel template.`,
+				Optional:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`marketing`}, false),
+			},
+			`carousel`: {
+				Description: `Definition for a WhatsApp carousel template. Requires 'integration_id', 'category' and exactly one 'texts' block. Once created, changing 'name', 'language', 'integration_id', 'category', 'carousel' or 'texts' recreates the response, unless 'template_status' is 'ERROR'.`,
+				Optional:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Elem:        carouselResource,
+			},
+			`template_status`: {
+				Description: `Template status of the WhatsApp carousel template. Starts as 'ACCEPTED' and is updated asynchronously once WhatsApp has reviewed the template.`,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
+			`status_info`: {
+				Description: `Status information about the WhatsApp carousel template.`,
+				Computed:    true,
+				Type:        schema.TypeList,
+				Elem:        statusInfoResource,
+			},
+		},
+	}
+	carouselResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`cards`: {
+				Description: `List of cards in the carousel template, between 2 and 10. Card order is preserved. If one card sets 'card_body_text', every card must.`,
+				Required:    true,
+				MinItems:    2,
+				MaxItems:    10,
+				Type:        schema.TypeList,
+				Elem:        carouselCardResource,
+			},
+		},
+	}
+	carouselCardResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`header`: {
+				Description: `Header for the carousel card.`,
+				Required:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Elem:        messageHeaderResource,
+			},
+			`buttons`: {
+				Description: `Buttons included in the carousel card, 1 or 2. Every card must have the same number and types of buttons, with at most one 'PhoneNumber' button.`,
+				Required:    true,
+				MinItems:    1,
+				MaxItems:    2,
+				Type:        schema.TypeList,
+				Elem:        whatsappButtonResource,
+			},
+			`card_body_text`: {
+				Description: `Optional body text for the carousel card.`,
+				Optional:    true,
+				MaxItems:    1,
+				Type:        schema.TypeList,
+				Elem:        cardBodyTextResource,
+			},
+		},
+	}
+	messageHeaderResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`type`: {
+				Description:  `Content type of the card header. 'Video' is only accepted when video carousels are enabled for the org.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`Image`, `Video`}, false),
+			},
+			`content`: {
+				Description: `URL of the image or video shown in the card header.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+	whatsappButtonResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`type`: {
+				Description:  `Type of button.`,
+				Required:     true,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`QuickReply`, `PhoneNumber`, `Url`}, false),
+			},
+			`content`: {
+				Description: `Content of the button. Used for 'Url' and 'PhoneNumber' button types.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`content_text`: {
+				Description: `The text label displayed on the button.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+			`payload`: {
+				Description: `A payload that uniquely identifies a 'QuickReply' button in a carousel.`,
+				Optional:    true,
+				Type:        schema.TypeString,
+			},
+		},
+	}
+	cardBodyTextResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`content`: {
+				Description: `Body content for the carousel card.`,
+				Required:    true,
+				Type:        schema.TypeString,
+			},
+			`content_type`: {
+				Description:  `Body content type for the carousel card.`,
+				Optional:     true,
+				Default:      `text/plain`,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringInSlice([]string{`text/plain`}, false),
+			},
+		},
+	}
+	statusInfoResource = &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			`code`: {
+				Description: `Status code.`,
+				Computed:    true,
+				Type:        schema.TypeString,
+			},
+			`message`: {
+				Description: `Status message.`,
+				Computed:    true,
 				Type:        schema.TypeString,
 			},
 		},
@@ -436,6 +570,7 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: customizeCarouselTemplateDiff,
 		SchemaVersion: 1,
 		Schema: map[string]*schema.Schema{
 			`name`: {
@@ -483,11 +618,8 @@ func ResourceResponsemanagementResponse() *schema.Resource {
 				Description: `An optional messaging template definition for responseType.MessagingTemplate.`,
 				Optional:    true,
 				MaxItems:    1,
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Elem:        messagingtemplateResource,
-				Set: func(_ interface{}) int {
-					return 0
-				},
 			},
 			`asset_ids`: {
 				Description: `Assets used in the response`,
@@ -526,6 +658,9 @@ func ResponsemanagementResponseExporter() *resourceExporter.ResourceExporter {
 			},
 			`asset_ids`: {
 				RefType: "genesyscloud_responsemanagement_responseasset",
+			},
+			`messaging_template.whats_app.integration_id`: {
+				RefType: "genesyscloud_conversations_messaging_integrations_whatsapp",
 			},
 		},
 		JsonEncodeAttributes: []string{"substitutions_schema_id"},
