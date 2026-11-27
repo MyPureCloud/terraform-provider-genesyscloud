@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 func getAllExtensionPools(ctx context.Context, clientConfig *platformclientv2.Configuration) (resourceExporter.ResourceIDMetaMap, diag.Diagnostics) {
@@ -55,7 +55,7 @@ func createExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 
 	divisionId := d.Get("division_id").(string)
 	if divisionId != "" {
-		extensionPoolReq.Division = &platformclientv2.Division{Id: &divisionId}
+		extensionPoolReq.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
 	log.Printf("Creating Extension pool %s", startNumber)
@@ -122,7 +122,7 @@ func updateExtensionPool(ctx context.Context, d *schema.ResourceData, meta inter
 
 	divisionId := d.Get("division_id").(string)
 	if divisionId != "" {
-		extensionPoolBody.Division = &platformclientv2.Division{Id: &divisionId}
+		extensionPoolBody.Division = &platformclientv2.Writabledivision{Id: &divisionId}
 	}
 
 	log.Printf("Updating Extension pool %s", d.Id())

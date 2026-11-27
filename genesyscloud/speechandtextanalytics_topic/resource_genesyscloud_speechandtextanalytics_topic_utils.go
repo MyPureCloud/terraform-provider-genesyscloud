@@ -3,12 +3,13 @@ package speechandtextanalytics_topic
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 )
 
@@ -16,7 +17,7 @@ func buildTopicRequest(d *schema.ResourceData) *platformclientv2.Topicrequest {
 	name := d.Get("name").(string)
 	dialect := d.Get("dialect").(string)
 	description := d.Get("description").(string)
-	strictness := d.Get("strictness").(string)
+	strictness, _ := strconv.Atoi(d.Get("strictness").(string))
 	participants := d.Get("participants").(string)
 
 	req := &platformclientv2.Topicrequest{
@@ -53,7 +54,9 @@ func buildTopicRequest(d *schema.ResourceData) *platformclientv2.Topicrequest {
 			text := m["text"].(string)
 			phrase := platformclientv2.Phrase{Text: &text}
 			if v, ok := m["strictness"].(string); ok && v != "" {
-				phrase.Strictness = &v
+				if n, convErr := strconv.Atoi(v); convErr == nil {
+					phrase.Strictness = &n
+				}
 			}
 			if v, ok := m["sentiment"].(string); ok && v != "" {
 				phrase.Sentiment = &v
@@ -83,7 +86,7 @@ func flattenTopicToResourceData(d *schema.ResourceData, topic *platformclientv2.
 		_ = d.Set("description", "")
 	}
 	if topic.Strictness != nil {
-		_ = d.Set("strictness", *topic.Strictness)
+		_ = d.Set("strictness", strconv.Itoa(*topic.Strictness))
 	}
 	if topic.Participants != nil {
 		_ = d.Set("participants", *topic.Participants)
@@ -105,7 +108,7 @@ func flattenTopicToResourceData(d *schema.ResourceData, topic *platformclientv2.
 				pm["text"] = *p.Text
 			}
 			if p.Strictness != nil {
-				pm["strictness"] = *p.Strictness
+				pm["strictness"] = strconv.Itoa(*p.Strictness)
 			}
 			if p.Sentiment != nil {
 				pm["sentiment"] = *p.Sentiment

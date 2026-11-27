@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
@@ -27,7 +27,7 @@ const caseplanDataschemaKeyDefault = "default"
 const caseplanAPIVersionLatest = "latest"
 
 // stageplanPageSize must hold every stageplan in one page: the API applies process-flow ordering per page.
-const stageplanPageSize = "25"
+const stageplanPageSize = 25
 
 // Type definitions for each func on our proxy so we can easily mock them out later
 type createCaseManagementCaseplanFunc func(ctx context.Context, p *caseManagementCaseplanProxy, body *platformclientv2.Caseplancreate) (*platformclientv2.Caseplancreateresponse, *platformclientv2.APIResponse, error)
@@ -315,7 +315,7 @@ func listStageplansFn(ctx context.Context, p *caseManagementCaseplanProxy, casep
 	var all []platformclientv2.Stageplan
 	after := ""
 	for {
-		listing, resp, err := p.caseManagementApi.GetCasemanagementCaseplanVersionStageplans(caseplanId, versionId, "", after, stageplanPageSize, nil)
+		listing, resp, err := p.caseManagementApi.GetCasemanagementCaseplanVersionStageplans(caseplanId, versionId, after, stageplanPageSize, nil)
 		if err != nil {
 			return nil, resp, err
 		}
@@ -356,7 +356,7 @@ func listStepplansFn(ctx context.Context, p *caseManagementCaseplanProxy, casepl
 	var all []platformclientv2.Stepplan
 	after := ""
 	for {
-		listing, resp, err := p.caseManagementApi.GetCasemanagementCaseplanVersionStageplanStepplans(caseplanId, versionId, stageplanId, "", after, stageplanPageSize, nil)
+		listing, resp, err := p.caseManagementApi.GetCasemanagementCaseplanVersionStageplanStepplans(caseplanId, versionId, stageplanId, after, stageplanPageSize, nil)
 		if err != nil {
 			return nil, resp, err
 		}
