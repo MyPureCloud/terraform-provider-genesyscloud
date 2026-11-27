@@ -1,10 +1,13 @@
 package tfexporter
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"sort"
 	"strings"
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/platform"
@@ -140,7 +143,78 @@ func (t *TFStateFileWriter) writeTfState() diag.Diagnostics {
 	}
 
 	log.Print(replaceProviderOutput.Stdout)
+
+	// The CLI upgrade leaves sensitive_attributes empty, which Terraform plans as an update with no visible diff.
+	if err := t.addSensitiveAttributesToStateFile(stateFilePath); err != nil {
+		log.Printf("Failed to add sensitive attribute markers to the generated state file, so terraform plan may show in-place updates with no visible diff: %v", err)
+	}
 	return nil
+}
+
+func (t *TFStateFileWriter) addSensitiveAttributesToStateFile(stateFilePath string) error {
+	data, err := os.ReadFile(stateFilePath)
+	if err != nil {
+		return err
+	}
+	updated, err := addSensitiveAttributesToState(data, t.providerResources)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(stateFilePath, updated, 0600)
+}
+
+// addSensitiveAttributesToState sets sensitive_attributes on managed instances of a v4 state file from the top-level
+// attributes the provider schema marks as Sensitive.
+func addSensitiveAttributesToState(data []byte, providerResources map[string]*schema.Resource) ([]byte, error) {
+	var state map[string]interface{}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	if err := decoder.Decode(&state); err != nil {
+		return nil, fmt.Errorf("failed to decode state: %w", err)
+	}
+	if version, _ := state["version"].(json.Number); version.String() != "4" {
+		return nil, fmt.Errorf("unsupported state version %q, expected 4", version.String())
+	}
+
+	resources, _ := state["resources"].([]interface{})
+	for _, r := range resources {
+		resource, _ := r.(map[string]interface{})
+		if resource == nil || resource["mode"] != "managed" {
+			continue
+		}
+		resourceType, _ := resource["type"].(string)
+		resSchema := providerResources[resourceType]
+		if resSchema == nil {
+			continue
+		}
+
+		var sensitiveKeys []string
+		for key, attr := range resSchema.Schema {
+			if attr.Sensitive {
+				sensitiveKeys = append(sensitiveKeys, key)
+			}
+		}
+		if len(sensitiveKeys) == 0 {
+			continue
+		}
+		sort.Strings(sensitiveKeys)
+
+		sensitivePaths := make([]interface{}, 0, len(sensitiveKeys))
+		for _, key := range sensitiveKeys {
+			sensitivePaths = append(sensitivePaths, []interface{}{
+				map[string]interface{}{"type": "get_attr", "value": key},
+			})
+		}
+
+		instances, _ := resource["instances"].([]interface{})
+		for _, i := range instances {
+			if instance, _ := i.(map[string]interface{}); instance != nil {
+				instance["sensitive_attributes"] = sensitivePaths
+			}
+		}
+	}
+
+	return json.MarshalIndent(state, "", "  ")
 }
 
 func setExportedResourceSchemaVersions(resources []resourceExporter.ResourceInfo, providerResources map[string]*schema.Resource) {
