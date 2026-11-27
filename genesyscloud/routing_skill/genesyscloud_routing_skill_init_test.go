@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	genesyscloud "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud"
+	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/user"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -23,6 +24,7 @@ func (r *registerTestInstance) registerTestResources() {
 	defer r.resourceMapMutex.Unlock()
 
 	providerResources[ResourceType] = ResourceRoutingSkill()
+	providerResources[user.ResourceType] = user.ResourceUser()
 }
 
 // registerTestDataSources registers all data sources used in the tests.
@@ -31,6 +33,7 @@ func (r *registerTestInstance) registerTestDataSources() {
 	defer r.datasourceMapMutex.Unlock()
 
 	providerDataSources[ResourceType] = DataSourceRoutingSkill()
+	providerDataSources[UsersResourceType] = DataSourceRoutingSkillUsers()
 	providerDataSources["genesyscloud_auth_division_home"] = genesyscloud.DataSourceAuthDivisionHome()
 }
 
