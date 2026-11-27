@@ -7,6 +7,7 @@ package flow_loglevel
 // @description: manages user and system data for Genesys Cloud Architect. This includes Architect flows, user and system prompts as well as flow outcomes.
 
 import (
+	architectFlow "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/architect_flow"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	resourceExporter "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_exporter"
 	registrar "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_register"
@@ -34,7 +35,9 @@ func SetRegistrar(regInstance registrar.Registrar) {
 func FlowLogLevelExporter() *resourceExporter.ResourceExporter {
 	return &resourceExporter.ResourceExporter{
 		GetResourcesFunc: provider.GetAllWithPooledClient(getAllFlowLogLevels),
-		RefAttrs:         map[string]*resourceExporter.RefAttrSettings{}, // No references
+		RefAttrs: map[string]*resourceExporter.RefAttrSettings{
+			"flow_id": {RefType: architectFlow.ResourceType},
+		},
 	}
 }
 
