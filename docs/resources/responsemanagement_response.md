@@ -223,7 +223,7 @@ resource "genesyscloud_responsemanagement_response" "example_responsemanagement_
 
 ### Required
 
-- `library_ids` (Set of String) One or more libraries response is associated with. Changing the library IDs will result in the resource being recreated
+- `library_ids` (Set of String) One or more libraries response is associated with.
 - `name` (String) Name of the responsemanagement response
 
 ### Optional
