@@ -101,6 +101,11 @@ func ResourceGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Optional:    true,
 			},
+			"email": {
+				Description: "Email address for the group.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			"type": {
 				Description:  "Group type (official | social). This cannot be modified. Changing type attribute will cause the existing genesys_group object to dropped and recreated with a new ID.",
 				Type:         schema.TypeString,

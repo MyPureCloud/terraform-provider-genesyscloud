@@ -44,6 +44,7 @@ func getAllGroups(ctx context.Context, clientConfig *platformclientv2.Configurat
 func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
+	email := d.Get("email").(string)
 	groupType := d.Get("type").(string)
 	visibility := d.Get("visibility").(string)
 	rulesVisible := d.Get("rules_visible").(bool)
@@ -61,6 +62,7 @@ func createGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	createGroup := &platformclientv2.Groupcreate{
 		Name:          &name,
+		Email:         nillableGroupEmail(email),
 		VarType:       &groupType,
 		Visibility:    &visibility,
 		RulesVisible:  &rulesVisible,
@@ -123,6 +125,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 		resourcedata.SetNillableValue(d, "visibility", group.Visibility)
 		resourcedata.SetNillableValue(d, "rules_visible", group.RulesVisible)
 		resourcedata.SetNillableValue(d, "description", group.Description)
+		resourcedata.SetNillableValue(d, "email", group.Email)
 		resourcedata.SetNillableValue(d, "roles_enabled", group.RolesEnabled)
 		resourcedata.SetNillableValue(d, "calls_enabled", group.CallsEnabled)
 		resourcedata.SetNillableValue(d, "include_owners", group.IncludeOwners)
@@ -163,6 +166,7 @@ func readGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) di
 func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
+	email := d.Get("email").(string)
 	visibility := d.Get("visibility").(string)
 	rulesVisible := d.Get("rules_visible").(bool)
 	rolesEnabled := d.Get("roles_enabled").(bool)
@@ -189,6 +193,7 @@ func updateGroup(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 			Version:       group.Version,
 			Name:          &name,
 			Description:   &description,
+			Email:         &email,
 			Visibility:    &visibility,
 			RulesVisible:  &rulesVisible,
 			Addresses:     addresses,

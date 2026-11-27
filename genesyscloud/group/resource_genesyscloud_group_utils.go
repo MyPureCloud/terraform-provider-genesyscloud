@@ -15,6 +15,13 @@ import (
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 )
 
+func nillableGroupEmail(email string) *string {
+	if email == "" {
+		return nil
+	}
+	return &email
+}
+
 func updateGroupVoicemailPolicy(ctx context.Context, d *schema.ResourceData, gp *groupProxy) diag.Diagnostics {
 	voicemailPolicy := buildSdkGroupVoicemailPolicy(d)
 	_, resp, err := gp.updateGroupVoicemailPolicy(ctx, d.Id(), voicemailPolicy)
@@ -208,6 +215,11 @@ func generateGroupAddress(number string, phoneType string, extension string) str
 func GenerateGroupOwners(userIDs ...string) string {
 	return fmt.Sprintf(`owner_ids = [%s]
 	`, strings.Join(userIDs, ","))
+}
+
+func generateGroupEmail(email string) string {
+	return fmt.Sprintf(`email = %s
+	`, email)
 }
 
 func generateGroupMembers(userIDs ...string) string {

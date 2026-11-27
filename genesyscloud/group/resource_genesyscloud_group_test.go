@@ -16,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
 	"github.com/stretchr/testify/assert"
@@ -145,6 +146,90 @@ func TestAccResourceGroupBasic(t *testing.T) {
 					GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
 				),
 				// Import/Read
+				ResourceName:      "genesyscloud_group." + groupResourceLabel1,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Destroy:           true,
+			},
+		},
+		CheckDestroy: func(state *terraform.State) error {
+			time.Sleep(60 * time.Second)
+			return testVerifyGroupsAndUsersDestroyed(state)
+		},
+	})
+}
+
+func TestAccResourceGroupEmail(t *testing.T) {
+	var (
+		groupResourceLabel1   = "test-group-email"
+		groupName             = "terraform-" + uuid.NewString()
+		groupDesc1            = "Terraform Group Description with Email"
+		groupEmail1           = "group1-" + uuid.NewString() + "@example.com"
+		groupEmail2           = "group2-" + uuid.NewString() + "@example.com"
+		typeOfficial          = "official"
+		visPublic             = "public"
+		testUserResourceLabel = "user_resource1"
+		testUserName          = "nameUser1" + uuid.NewString()
+		testUserEmail         = uuid.NewString() + "@group.com"
+	)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { util.TestAccPreCheck(t) },
+		ProviderFactories: provider.GetProviderFactories(providerResources, providerDataSources),
+		Steps: []resource.TestStep{
+			{
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"roles_enabled = false",
+						"calls_enabled = false",
+						generateGroupEmail(strconv.Quote(groupEmail1)),
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "type", typeOfficial),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "description", groupDesc1),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "visibility", visPublic),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "email", groupEmail1),
+				),
+			},
+			{
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						"roles_enabled = false",
+						"calls_enabled = false",
+						generateGroupEmail(strconv.Quote(groupEmail2)),
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "name", groupName),
+					resource.TestCheckResourceAttr("genesyscloud_group."+groupResourceLabel1, "email", groupEmail2),
+				),
+			},
+			{
+				Config: generateUserWithCustomAttrs(testUserResourceLabel, testUserEmail, testUserName) +
+					GenerateGroupResource(
+						groupResourceLabel1,
+						groupName,
+						strconv.Quote(groupDesc1),
+						util.NullValue,
+						util.NullValue,
+						util.NullValue,
+						generateGroupEmail(strconv.Quote(groupEmail2)),
+						GenerateGroupOwners("genesyscloud_user."+testUserResourceLabel+".id"),
+					),
 				ResourceName:      "genesyscloud_group." + groupResourceLabel1,
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -746,4 +831,34 @@ func TestUnitGetGroupVoicemailPolicyCacheHit(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, policy)
 	assert.True(t, *policy.Enabled)
+}
+
+func TestUnitNillableGroupEmail(t *testing.T) {
+	assert.Nil(t, nillableGroupEmail(""))
+	email := nillableGroupEmail("group@example.com")
+	require.NotNil(t, email)
+	assert.Equal(t, "group@example.com", *email)
+}
+
+func TestUnitGroupEmailIsExported(t *testing.T) {
+	schemaAttr, ok := ResourceGroup().Schema["email"]
+	require.True(t, ok, "email schema attribute should exist")
+	assert.Equal(t, schema.TypeString, schemaAttr.Type)
+	assert.True(t, schemaAttr.Optional)
+
+	hcl := GenerateGroupResource(
+		"example",
+		"Example Group",
+		util.NullValue,
+		util.NullValue,
+		util.NullValue,
+		util.TrueValue,
+		generateGroupEmail(strconv.Quote("group@example.com")),
+	)
+	assert.Contains(t, hcl, `email = "group@example.com"`)
+
+	exporter := GroupExporter()
+	for _, excluded := range exporter.ExcludedAttributes {
+		assert.NotEqual(t, "email", excluded, "email should not be excluded from export")
+	}
 }
