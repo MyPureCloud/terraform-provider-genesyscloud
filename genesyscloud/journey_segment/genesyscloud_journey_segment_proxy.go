@@ -7,7 +7,7 @@ import (
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 /*
@@ -130,7 +130,7 @@ func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]pl
 	const pageSize = 100
 
 	// Get first page
-	segments, resp, err := p.journeyApi.GetJourneySegments("", pageSize, 1, true, nil, nil, "")
+	segments, resp, err := p.journeyApi.GetJourneySegments("", pageSize, 1, true, nil, nil, "", nil)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -152,7 +152,7 @@ func getAllJourneySegmentsFn(ctx context.Context, p *journeySegmentProxy) (*[]pl
 
 	// Get remaining pages
 	for pageNum := 2; pageNum <= *segments.PageCount; pageNum++ {
-		segments, resp, err := p.journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "")
+		segments, resp, err := p.journeyApi.GetJourneySegments("", pageSize, pageNum, true, nil, nil, "", nil)
 		if err != nil {
 			return nil, resp, err
 		}

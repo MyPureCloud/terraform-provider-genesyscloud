@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -159,5 +159,5 @@ func getRoutingQueueByIdFn(ctx context.Context, p *routingQueueConditionalGroupR
 	// Set resource context for SDK debug logging
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
-	return p.routingApi.GetRoutingQueue(id, nil)
+	return p.routingApi.GetRoutingQueue(id, nil, false)
 }

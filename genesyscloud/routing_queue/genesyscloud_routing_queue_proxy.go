@@ -11,7 +11,7 @@ import (
 
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/delay"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util/page_size"
 )
@@ -295,7 +295,7 @@ func getRoutingQueueByIdFn(ctx context.Context, p *RoutingQueueProxy, queueId st
 		}
 	}
 
-	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)
+	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil, false)
 	if err != nil {
 		return nil, resp, err
 	}
