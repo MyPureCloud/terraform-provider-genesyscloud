@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 var internalProxy *userRolesProxy
@@ -49,7 +49,7 @@ func (p *userRolesProxy) updateUserRoles(ctx context.Context, roleID string, rol
 func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (*[]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false, false)
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", roleId, err)
@@ -72,7 +72,7 @@ func getUserRolesByIdFn(ctx context.Context, p *userRolesProxy, roleId string) (
 func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, rolesConfig *schema.Set, subjectType string) (*platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 	// Get existing roles/divisions
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(roleId, false, false)
 
 	if err != nil || (resp != nil && resp.StatusCode == http.StatusNotFound) || subject == nil || subject.Id == nil {
 		return resp, fmt.Errorf("failed to get current grants for subject %s: %v while updating user role", roleId, err)
@@ -122,7 +122,7 @@ func updateUserRolesFn(ctx context.Context, p *userRolesProxy, roleId string, ro
 
 func getAssignedGrants(subjectID string, p *userRolesProxy) ([]platformclientv2.Authzgrant, *platformclientv2.APIResponse, error) {
 	var grants []platformclientv2.Authzgrant
-	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, false)
+	subject, resp, err := p.authorizationApi.GetAuthorizationSubject(subjectID, false, false)
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("failed to get current grants for subject %s: %s", subjectID, err)

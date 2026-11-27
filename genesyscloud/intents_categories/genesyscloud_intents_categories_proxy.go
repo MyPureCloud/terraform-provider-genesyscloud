@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 )
 
@@ -179,7 +179,7 @@ func getIntentCategoryIdByNameFn(ctx context.Context, p *intentCategoryProxy, na
 // getIntentCategoryByIdFn is an implementation of the function to get a Genesys Cloud intent category by Id
 func getIntentCategoryByIdFn(ctx context.Context, p *intentCategoryProxy, id string) (*platformclientv2.Intentscategory, *platformclientv2.APIResponse, error) {
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
-	return p.intentsApi.GetIntentsCategory(id)
+	return p.intentsApi.GetIntentsCategory(id, false)
 }
 
 // updateIntentCategoryFn is an implementation of the function to update a Genesys Cloud intent category

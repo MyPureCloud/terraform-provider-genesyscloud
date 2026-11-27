@@ -8,7 +8,7 @@ import (
 	rc "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/resource_cache"
 	routingQueue "github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/routing_queue"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 )
 
 // internalProxy holds a proxy instance that can be used throughout the package
@@ -67,7 +67,7 @@ func getRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQueueO
 
 	queue = rc.GetCacheItem(p.routingQueueProxy.RoutingQueueCache, queueId)
 	if queue == nil {
-		queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil)
+		queue, resp, err = p.routingApi.GetRoutingQueue(queueId, nil, false)
 		if err != nil {
 			return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 		}
@@ -87,7 +87,7 @@ func updateRoutingQueueOutboundEmailAddressFn(ctx context.Context, p *routingQue
 	ctx = provider.EnsureResourceContext(ctx, ResourceType)
 
 	// Get the routing queue the rules belong to
-	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil)
+	queue, resp, err := p.routingApi.GetRoutingQueue(queueId, nil, false)
 	if err != nil {
 		return nil, resp, fmt.Errorf("error when reading queue %s: %s", queueId, err)
 	}

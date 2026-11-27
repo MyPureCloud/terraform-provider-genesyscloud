@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mypurecloud/platform-client-sdk-go/v200/platformclientv2"
+	"github.com/mypurecloud/platform-client-sdk-go/v204/platformclientv2"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/provider"
 	"github.com/mypurecloud/terraform-provider-genesyscloud/genesyscloud/util"
 
@@ -61,7 +61,7 @@ func testVerifyIntentCategoryDestroyed(state *terraform.State) error {
 			continue
 		}
 
-		intentCategory, resp, err := intentsApi.GetIntentsCategory(rs.Primary.ID)
+		intentCategory, resp, err := intentsApi.GetIntentsCategory(rs.Primary.ID, false)
 		if intentCategory != nil {
 			return fmt.Errorf("Intent category (%s) still exists", rs.Primary.ID)
 		} else if util.IsStatus404(resp) {
